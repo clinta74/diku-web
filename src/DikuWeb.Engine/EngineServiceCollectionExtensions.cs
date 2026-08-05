@@ -1,6 +1,8 @@
 using DikuWeb.Engine.Commands;
+using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
+using DikuWeb.Engine.Randomness;
 using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
@@ -29,6 +31,7 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<SystemGameClock>();
         services.AddSingleton<IGameClock>(sp => sp.GetRequiredService<SystemGameClock>());
+        services.AddSingleton<IRandomSource>(sp => new SeededRandomSource(Random.Shared.Next()));
 
         // Singletons because the world is a single shared object owned by one thread.
         services.AddSingleton<WorldState>();
@@ -41,6 +44,7 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<SpawnerSystem>();
         services.AddSingleton<MobSpawner>();
         services.AddSingleton<ItemSpawner>();
+        services.AddSingleton<MobAiSystem>();
 
         services.AddHostedService<GameLoop>();
 
