@@ -20,11 +20,13 @@ public static class PersistenceServiceCollectionExtensions
                 connectionString,
                 npgsql => npgsql.MigrationsAssembly(typeof(DikuWebDbContext).Assembly.GetName().Name)));
 
-        // Register factory for spawning systems and other services that need to create their own DbContext
-        services.AddDbContextFactory<DikuWebDbContext>(options =>
-            options.UseNpgsql(
-                connectionString,
-                npgsql => npgsql.MigrationsAssembly(typeof(DikuWebDbContext).Assembly.GetName().Name)));
+        // Register factory for spawning systems and other services that need to create their own DbContext.
+        // Note: Disabled in Phase 4.1 due to EF Core 10 lifetime validation issues with scoped DbContextOptions.
+        // Will re-enable when Phase 3 repositories are implemented.
+        // services.AddDbContextFactory<DikuWebDbContext>(options =>
+        //     options.UseNpgsql(
+        //         connectionString,
+        //         npgsql => npgsql.MigrationsAssembly(typeof(DikuWebDbContext).Assembly.GetName().Name)));
 
         return services;
     }

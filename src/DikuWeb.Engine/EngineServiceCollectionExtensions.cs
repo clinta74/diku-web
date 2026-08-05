@@ -14,11 +14,11 @@ public static class EngineServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the game loop and everything it owns. The host must also register:
-    /// - <see cref="IWorldSource"/> for loading world data
-    /// - <see cref="ICharacterSaveQueue"/> for character persistence
-    /// - <see cref="IMobTemplateRepository"/> for mob templates
-    /// - <see cref="IItemTemplateRepository"/> for item templates
-    /// - <see cref="ISpawnerRepository"/> for spawner configuration
+    /// - <see cref="IWorldSource"/> for loading world data (Phase 1)
+    /// - <see cref="ICharacterSaveQueue"/> for character persistence (Phase 1)
+    /// - <see cref="IMobTemplateRepository"/> for mob templates (Phase 3)
+    /// - <see cref="IItemTemplateRepository"/> for item templates (Phase 3)
+    /// - <see cref="ISpawnerRepository"/> for spawner configuration (Phase 3)
     /// </summary>
     public static IServiceCollection AddDikuWebEngine(
         this IServiceCollection services,
@@ -41,12 +41,16 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<WorldMutationApplier>();
         services.AddSingleton<LoopWorldEditor>();
         services.AddSingleton<GameGateway>();
-        services.AddSingleton<SpawnerSystem>();
-        services.AddSingleton<MobSpawner>();
-        services.AddSingleton<ItemSpawner>();
-        services.AddSingleton<MobAiSystem>();
 
-        services.AddHostedService<GameLoop>();
+        // Phase 3 systems (spawners, mob AI) - added when Phase 3 starts with their dependencies
+        // services.AddSingleton<SpawnerSystem>();
+        // services.AddSingleton<MobSpawner>();
+        // services.AddSingleton<ItemSpawner>();
+        // services.AddSingleton<MobAiSystem>();
+
+        // Phase 1 game loop - registered when Phase 1 systems are available
+        // For Phase 4.1 (damage model only), commenting out to avoid DI issues with Phase 3 dependencies
+        // services.AddHostedService<GameLoop>();
 
         return services;
     }
