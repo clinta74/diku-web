@@ -874,6 +874,43 @@ Notes:
 - Passwords: ASP.NET Core `PasswordHasher<T>` (PBKDF2) minimum; Argon2id preferred.
 - Migrations via EF Core, checked in, applied explicitly on deploy — never `EnsureCreated`.
 
+### 6.1 Production deployment and migrations
+
+**Development convenience:** On startup, `Program.cs` auto-migrates if `ASPNETCORE_ENVIRONMENT == Development`.
+This is safe because only one instance runs locally.
+
+**Production:** Migrations run as a separate pre-deployment step, before any app instances boot.
+This avoids the race condition of multiple instances attempting concurrent migrations.
+
+**Migration process:**
+
+1. **Build phase**: Compile the app and bundle the EF Core migrations (checked into source).
+2. **Migration phase**: Single-instance, single-threaded, runs before any app starts:
+   ```bash
+   dotnet ef database update --project DikuWeb.Persistence \
+     --startup-project DikuWeb.Server \
+     --configuration Release
+   ```
+   Idempotent: running it twice is safe. EF tracks applied migrations in the `__EFMigrationsHistory` table.
+3. **App phase**: Launch all app instances (containers, processes, replicas) after migrations succeed.
+   Each instance is read-only for the database until Phase 6's read-write separation (if needed).
+
+**Container deployment strategy** (when deploying to Kubernetes, Docker Compose on prod, etc.):
+
+- **Init container** (Kubernetes) or **migration service** (Docker Compose): runs the migration command,
+  waits for success, then exits. Orchestrator does not start app containers until the init container succeeds.
+- **Health check gates startup:** The `/health/ready` endpoint (§3.2) includes a database check, so even
+  if an instance somehow starts before migration completes, it reports not-ready and orchestrators do not
+  route traffic to it.
+
+**What if migration fails?**
+
+- Rollback manually: `dotnet ef database update --to-migration <previous-migration>`, fix the issue, retry.
+- EF's transaction isolation means a failed migration leaves the database unchanged (all migrations run
+  inside a transaction by default in Postgres).
+- Do not ship an app instance that depends on a migration that failed — the `/health/ready` check will
+  reject it, and the fix is to resolve the migration, not to deploy around it.
+
 ---
 
 ## 7. The world builder
@@ -1353,7 +1390,13 @@ Notes from the build:
 - [ ] OpenTelemetry: pulse duration p50/p99, sessions, commands/s, queue depths
 - [ ] Scheduled `pg_dump` backups + a rehearsed restore drill
 - [ ] World export/import (JSON) for moving content between environments
-- [ ] Deployment: container + reverse proxy with SSE buffering off
+- [ ] Deployment pipeline:
+      - [ ] Dockerfile (multi-stage: publish layer, runtime layer)
+      - [ ] Init container / migration service (run `dotnet ef database update` before app launch)
+      - [ ] Health checks gate readiness; `/health/ready` includes database check
+      - [ ] Reverse proxy with SSE buffering off (`X-Accel-Buffering: no`)
+      - [ ] Deployment automation (Kubernetes manifests, Docker Compose prod variant, or similar)
+      - [ ] Runbook: rollback procedure if migration fails, monitoring dashboard, incident response
 
 ---
 
