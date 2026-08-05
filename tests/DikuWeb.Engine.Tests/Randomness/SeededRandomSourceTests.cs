@@ -1,4 +1,4 @@
-using DikuWeb.Engine.Randomness;
+using DikuWeb.Domain.Randomness;
 
 namespace DikuWeb.Engine.Tests.Randomness;
 

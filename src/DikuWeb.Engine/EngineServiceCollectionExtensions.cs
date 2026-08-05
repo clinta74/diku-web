@@ -1,8 +1,8 @@
+using DikuWeb.Domain.Randomness;
 using DikuWeb.Engine.Commands;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
-using DikuWeb.Engine.Randomness;
 using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
