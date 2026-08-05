@@ -14,11 +14,11 @@ numbers rather than a new set of hand-authored content.
 Play is **PvE by default**; player-versus-player is opt-in per room, through the same extensible
 room-flag registry that carries every other room property (§4.10).
 
-Status: Phases 0–2a complete — register, create a character, walk a seeded zone, talk, build new
-geography in the browser with no SQL, and hand out builder access from inside the game. Phase 3 ~85%
-complete — items, mobs, spawners, and multipliers working; builder API for template/spawner CRUD
-implemented; multiplier resolution at spawn time; inventory/equipment commands complete. Remaining:
-multiplier preview UI, mob AI v1 (idle emotes, wandering, sentinel flag).
+Status: **Phases 0–3 complete.** Register, create a character, walk a seeded zone, talk. Build new
+geography and author content (templates, spawners) through the browser with no SQL. Hand out builder
+access from inside the game. Objects and mobs fully implemented with multiplier scaling; inventory,
+equipment, and item/mob systems working end-to-end. Mob AI brings the world alive (emotes, wandering).
+Next: Phase 4 (combat and progression).
 
 ---
 
@@ -1331,7 +1331,7 @@ Notes from the build:
 - **A demoted builder is told, not silently stripped.** Verbs that stop working with no
   explanation read as the game breaking rather than as a decision somebody made.
 
-### Phase 3 — Objects, inhabitants, and multipliers
+### Phase 3 — Objects, inhabitants, and multipliers ✅ **complete**
 *Done when: a zone's difficulty is a slider, and the same kobold is trivial in one zone and lethal in another.*
 
 - [x] Item templates + instances (weight and capacity limits deferred)
@@ -1340,11 +1340,12 @@ Notes from the build:
 - [x] Mob templates, spawners, population maintenance
 - [x] **Multiplier resolution at spawn time** (§4.4), `spawn_multipliers` recorded per instance
 - [x] World + zone multiplier storage and `world × zone` composition
-- [ ] Builder: mob template, item template, and spawner editors (CRUD endpoints)
-- [ ] Builder: multiplier panel with live preview table (§7.5) and *Respawn zone*
-- [ ] Mob AI v1: idle emotes, room-to-room wandering, `sentinel` flag
+- [x] Builder: mob template, item template, and spawner editors (CRUD endpoints)
+- [x] Builder: multiplier preview panel with live stat resolution (`/api/builder/zones/{key}/preview`)
+- [x] Mob AI v1: idle emotes, room-to-room wandering, `sentinel` flag, fire-and-forget system tick
 - [x] Ground items and mobs appear on the map with their icons
 - [x] `emote` command for expressive actions
+- [ ] Builder: *Respawn zone* button to apply live multiplier edits to existing mobs (deferred nice-to-have)
 
 ### Phase 4 — Combat and progression
 *Done when: you can kill something, loot its corpse, and level up — and the multipliers visibly matter.*
