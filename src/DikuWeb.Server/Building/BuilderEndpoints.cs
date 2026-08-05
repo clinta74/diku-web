@@ -37,6 +37,7 @@ public static class BuilderEndpoints
         group.MapGet("/zones/{key}/rooms", ListRoomsAsync);
         group.MapGet("/zones/{key}/validate", ValidateZoneAsync);
         group.MapGet("/zones/{key}/unfinished", UnfinishedAsync);
+        group.MapGet("/zones/{key}/preview", PreviewAsync);
 
         group.MapGet("/audit", AuditAsync);
 
@@ -232,6 +233,14 @@ public static class BuilderEndpoints
         BuilderQueries queries,
         CancellationToken ct) =>
         Results.Ok(await queries.UnfinishedAsync(key, ct));
+
+    private static async Task<IResult> PreviewAsync(
+        string key,
+        BuilderQueries queries,
+        CancellationToken ct) =>
+        await queries.PreviewAsync(key, ct) is { } preview
+            ? Results.Ok(preview)
+            : Results.NotFound();
 
     private static async Task<IResult> AuditAsync(
         string? kind,

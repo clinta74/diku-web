@@ -279,6 +279,139 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             new List<string>(spawner.RoomKeys), spawner.TargetCount, spawner.RespawnSeconds);
     }
 
+    /// <summary>
+    /// Multiplier preview for a zone: shows how templates resolve with current multipliers.
+    /// Used for difficulty tuning (PLAN.md §7.5).
+    /// </summary>
+    public async Task<MultiplierPreview?> PreviewAsync(string zoneKey, CancellationToken cancellationToken)
+    {
+        var zone = await db.Zones.AsNoTracking()
+            .FirstOrDefaultAsync(z => z.Key == zoneKey, cancellationToken);
+        if (zone is null)
+        {
+            return null;
+        }
+
+        var world = await db.Worlds.AsNoTracking()
+            .FirstOrDefaultAsync(w => w.Key == zone.WorldKey, cancellationToken);
+        if (world is null)
+        {
+            return null;
+        }
+
+        // Get all spawners for this zone to find unique templates
+        var spawners = await db.Spawners.AsNoTracking()
+            .Where(s => s.ZoneKey == zoneKey)
+            .ToListAsync(cancellationToken);
+
+        var mobTemplateKeys = spawners
+            .Where(s => s.TemplateKind == DikuWeb.Domain.Spawning.TemplateKind.Mob)
+            .Select(s => s.TemplateKey)
+            .Distinct()
+            .ToList();
+
+        var itemTemplateKeys = spawners
+            .Where(s => s.TemplateKind == DikuWeb.Domain.Spawning.TemplateKind.Item)
+            .Select(s => s.TemplateKey)
+            .Distinct()
+            .ToList();
+
+        var mobTemplates = await db.MobTemplates.AsNoTracking()
+            .Where(t => mobTemplateKeys.Contains(t.Key))
+            .ToListAsync(cancellationToken);
+
+        var itemTemplates = await db.ItemTemplates.AsNoTracking()
+            .Where(t => itemTemplateKeys.Contains(t.Key))
+            .ToListAsync(cancellationToken);
+
+        var rows = new List<MultiplierPreviewRow>();
+
+        // Add mob templates
+        foreach (var mob in mobTemplates.OrderBy(t => t.Key))
+        {
+            var resolved = ResolveMobStats(mob, world.Multipliers, zone.Multipliers);
+            rows.Add(new MultiplierPreviewRow(
+                mob.Key,
+                mob.Name,
+                DikuWeb.Domain.Spawning.TemplateKind.Mob,
+                new Dictionary<string, object>(mob.BaseStats),
+                resolved));
+        }
+
+        // Add item templates
+        foreach (var item in itemTemplates.OrderBy(t => t.Key))
+        {
+            var resolved = ResolveItemStats(item, world.Multipliers, zone.Multipliers);
+            rows.Add(new MultiplierPreviewRow(
+                item.Key,
+                item.Name,
+                DikuWeb.Domain.Spawning.TemplateKind.Item,
+                new Dictionary<string, object>(item.BaseStats),
+                resolved));
+        }
+
+        return new MultiplierPreview(
+            zoneKey,
+            MultipliersDictionary(world.Multipliers),
+            MultipliersDictionary(zone.Multipliers),
+            rows);
+    }
+
+    private static Dictionary<string, int> ResolveMobStats(
+        DikuWeb.Domain.Inhabitants.MobTemplate template,
+        DikuWeb.Domain.Worlds.Multipliers worldMults,
+        DikuWeb.Domain.Worlds.Multipliers zoneMults)
+    {
+        var resolved = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        // Health: use Strength multiplier
+        if (template.BaseStats.TryGetValue("health", out var health))
+        {
+            var healthVal = health is int h ? h : (health is long l ? (int)l : 40);
+            resolved["health"] = DikuWeb.Domain.Worlds.Multipliers.Resolve(
+                healthVal, worldMults, zoneMults, DikuWeb.Domain.Worlds.MultiplierType.Strength);
+        }
+
+        // XP: use Xp multiplier
+        resolved["xp"] = DikuWeb.Domain.Worlds.Multipliers.Resolve(
+            template.BaseXp, worldMults, zoneMults, DikuWeb.Domain.Worlds.MultiplierType.Xp);
+
+        // Gold: use Gold multiplier
+        resolved["gold"] = DikuWeb.Domain.Worlds.Multipliers.Resolve(
+            template.BaseGold, worldMults, zoneMults, DikuWeb.Domain.Worlds.MultiplierType.Gold);
+
+        return resolved;
+    }
+
+    private static Dictionary<string, int> ResolveItemStats(
+        DikuWeb.Domain.Items.ItemTemplate template,
+        DikuWeb.Domain.Worlds.Multipliers worldMults,
+        DikuWeb.Domain.Worlds.Multipliers zoneMults)
+    {
+        var resolved = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        // Value: use ItemValue multiplier
+        resolved["value"] = DikuWeb.Domain.Worlds.Multipliers.Resolve(
+            template.BaseValue, worldMults, zoneMults, DikuWeb.Domain.Worlds.MultiplierType.ItemValue);
+
+        return resolved;
+    }
+
+    private static Dictionary<string, decimal> MultipliersDictionary(DikuWeb.Domain.Worlds.Multipliers mults)
+    {
+        return new Dictionary<string, decimal>(StringComparer.Ordinal)
+        {
+            ["strength"] = mults.Strength,
+            ["health"] = mults.Health,
+            ["damage"] = mults.Damage,
+            ["xp"] = mults.Xp,
+            ["gold"] = mults.Gold,
+            ["itemValue"] = mults.ItemValue,
+            ["itemPower"] = mults.ItemPower,
+            ["spawnDensity"] = mults.SpawnDensity,
+        };
+    }
+
     // -----------------------------------------------------------------------
     // Validation (PLAN.md §7.4) - advisory only, never blocks a save
     // -----------------------------------------------------------------------

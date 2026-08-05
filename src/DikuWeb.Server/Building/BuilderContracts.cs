@@ -184,3 +184,20 @@ public sealed record SaveSpawnerRequest(
     List<string>? RoomKeys,
     int? TargetCount,
     int? RespawnSeconds);
+
+/// <summary>
+/// Multiplier preview for a zone: shows how templates resolve with current multipliers.
+/// Used for difficulty tuning in the builder UI.
+/// </summary>
+public sealed record MultiplierPreviewRow(
+    string TemplateKey,
+    string TemplateName,
+    TemplateKind Kind,
+    Dictionary<string, object> BaseStats,
+    Dictionary<string, int> ResolvedStats);
+
+public sealed record MultiplierPreview(
+    string ZoneKey,
+    Dictionary<string, decimal> WorldMultipliers,
+    Dictionary<string, decimal> ZoneMultipliers,
+    List<MultiplierPreviewRow> Templates);
