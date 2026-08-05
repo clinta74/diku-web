@@ -22,9 +22,7 @@ var builder = WebApplication.CreateBuilder(args);
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
-var connectionString = builder.Configuration.GetConnectionString("DikuWeb")
-    ?? throw new InvalidOperationException(
-        "Connection string 'DikuWeb' is not configured. See README.md for local setup.");
+var connectionString = BuildConnectionString(builder.Configuration);
 
 // ---------------------------------------------------------------------------
 // Services
@@ -36,8 +34,12 @@ builder.Services.AddDikuWebEngine(options =>
     options.StartingRoom = StarterWorldSeeder.StartingRoom;
 });
 
-// The Engine does not reference EF Core, so the Server supplies both adapters.
+// The Engine does not reference EF Core, so the Server supplies adapters.
 builder.Services.AddSingleton<IWorldSource, EfWorldSource>();
+builder.Services.AddSingleton<IMobTemplateRepository, EfMobTemplateRepository>();
+builder.Services.AddSingleton<IItemTemplateRepository, EfItemTemplateRepository>();
+builder.Services.AddSingleton<ISpawnerRepository, EfSpawnerRepository>();
+
 builder.Services.AddSingleton<CharacterSaveQueue>();
 builder.Services.AddSingleton<ICharacterSaveQueue>(sp => sp.GetRequiredService<CharacterSaveQueue>());
 builder.Services.AddHostedService<CharacterSaveWorker>();
@@ -180,6 +182,46 @@ await app.RunAsync();
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+static string BuildConnectionString(IConfiguration config)
+{
+    // Try to build from individual connection parts first (docker-compose / container orchestration)
+    var host = config["DatabaseConnection:Host"];
+    var port = config["DatabaseConnection:Port"];
+    var database = config["DatabaseConnection:Database"];
+    var user = config["DatabaseConnection:User"];
+    var password = config["DatabaseConnection:Password"];
+
+    if (!string.IsNullOrEmpty(host) && !string.IsNullOrEmpty(database))
+    {
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = host,
+            Port = string.IsNullOrEmpty(port) ? 5432 : int.Parse(port),
+            Database = database,
+            Username = user ?? "postgres",
+            Password = password,
+            Pooling = true,
+            MaxPoolSize = 20,
+            ApplicationName = "dikuweb-web",
+            CommandTimeout = 30,
+            Timezone = "UTC",
+        };
+        return builder.ConnectionString;
+    }
+
+    // Fallback to appsettings/user secrets connection string (development)
+    var connectionString = config.GetConnectionString("DikuWeb");
+    if (!string.IsNullOrEmpty(connectionString))
+    {
+        return connectionString;
+    }
+
+    throw new InvalidOperationException(
+        "Connection string not configured. Set either:\n" +
+        "  1. DatabaseConnection:* environment variables (docker), or\n" +
+        "  2. ConnectionStrings:DikuWeb in appsettings.json / user secrets");
+}
 
 static Task WriteHealthResponseAsync(HttpContext context, HealthReport report)
 {

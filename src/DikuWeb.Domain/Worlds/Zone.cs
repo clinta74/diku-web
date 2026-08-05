@@ -22,6 +22,12 @@ public sealed class Zone
     public int MaxLevel { get; set; } = 50;
 
     /// <summary>
+    /// Difficulty multipliers applied to mobs and items spawned in this zone (PLAN.md §4.4).
+    /// Composed with world-level multipliers. Persisted as jsonb.
+    /// </summary>
+    public Multipliers Multipliers { get; set; } = new();
+
+    /// <summary>
     /// Flag defaults for every room in this zone (PLAN.md §4.10). Setting <c>pvp</c> here is
     /// how a duelling zone is authored, rather than flagging forty rooms one at a time.
     /// </summary>

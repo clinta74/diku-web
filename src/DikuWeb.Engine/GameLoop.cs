@@ -4,6 +4,7 @@ using DikuWeb.Engine.Commands;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
+using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
 using Microsoft.Extensions.Hosting;
@@ -29,6 +30,7 @@ public sealed class GameLoop(
     SystemGameClock clock,
     IWorldSource worldSource,
     ICharacterSaveQueue saveQueue,
+    SpawnerSystem spawnerSystem,
     EngineOptions options,
     ILogger<GameLoop> logger) : BackgroundService
 {
@@ -97,6 +99,12 @@ public sealed class GameLoop(
         if (GameTiming.RunsOn(pulse, LinkDeadCheckPulses))
         {
             ExpireLinkDeadPlayers();
+        }
+
+        if (GameTiming.RunsOn(pulse, GameTiming.SpawnSweepPulses))
+        {
+            // Fire and forget - spawner runs on thread pool, never blocks the loop
+            _ = spawnerSystem.RunAsync(world, CancellationToken.None);
         }
 
         if (pulse > 0 && GameTiming.RunsOn(pulse, GameTiming.AutosavePulses))

@@ -1,0 +1,64 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Build artifacts
+bin/
+obj/
+*.dll
+*.pdb
+
+# NuGet
+.nuget/
+*.nupkg
+*.snupkg
+
+# IDE
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
+.DS_Store
+.idea/
+*.iml
+
+# Test results
+TestResults/
+coverage/
+*.trx
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.gitea/
+appveyor.yml
+
+# Documentation
+*.md
+docs/
+README.md
+LICENSE
+
+# Root level files
+.editorconfig
+.env
+.env.*.local
+appsettings.local.json
+
+# Node/npm (if using frontend build)
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+
+# Backups
+*.bak
+*.backup
+backups/

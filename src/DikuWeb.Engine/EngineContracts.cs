@@ -1,5 +1,8 @@
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
+using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 
 namespace DikuWeb.Engine;
@@ -18,32 +21,13 @@ public sealed record WorldData(
     IReadOnlyList<Zone> Zones,
     IReadOnlyList<Room> Rooms);
 
-/// <summary>
-/// Where the game loop hands off characters to be saved.
-/// </summary>
-/// <remarks>
-/// Deliberately fire-and-forget and non-blocking. PLAN.md §2.1 forbids any database call on
-/// the loop thread - a save that waited on Postgres would stall every player in the world
-/// for the duration of the round trip.
-/// </remarks>
+/// <summary>Where the game loop hands off characters to be saved.</summary>
 public interface ICharacterSaveQueue
 {
     void Enqueue(CharacterSnapshot snapshot);
 }
 
-/// <summary>
-/// Where in-game builder commands hand off their writes.
-/// </summary>
-/// <remarks>
-/// Builder edits made over HTTP await persistence before answering, because the caller is a
-/// request that can wait (PLAN.md §7.3). A <c>dig</c> typed at the command line cannot: it runs
-/// on the loop thread, and the loop is forbidden from touching the database at all (§2.1). So
-/// the in-game path is fire-and-forget through this queue, exactly like a character save.
-///
-/// The cost of that is real and worth stating: a failed write from an in-game command is logged
-/// rather than reported to the builder, and the edit stays live until a restart drops it. The
-/// builder panel, which is where anyone authoring seriously works, does not have this problem.
-/// </remarks>
+/// <summary>Where in-game builder commands hand off their writes.</summary>
 public interface IWorldWriteQueue
 {
     void Enqueue(WorldWriteJob job);
@@ -53,18 +37,7 @@ public sealed record WorldWriteJob(
     IReadOnlyList<Mutations.WorldChange> Changes,
     Guid? AccountId);
 
-/// <summary>
-/// Where the in-game admin commands hand off work that touches the account store (PLAN.md §7.7).
-/// </summary>
-/// <remarks>
-/// Roles do not live in the world, they live in the database, and the loop is forbidden from
-/// reading it (§2.1) - the Engine has no account repository at all, which is precisely why a
-/// character's role is carried in on <see cref="Protocol.EnterWorld"/> rather than looked up.
-///
-/// So <c>promote</c> and <c>whois</c> are not command handlers that do the work. They validate
-/// their arguments, enqueue here, and the answer comes back later as a
-/// <see cref="Protocol.Notify"/> addressed at the session that asked.
-/// </remarks>
+/// <summary>Where the in-game admin commands hand off work that touches the account store.</summary>
 public interface IAccountAdminQueue
 {
     void Enqueue(AccountAdminRequest request);
@@ -72,17 +45,13 @@ public interface IAccountAdminQueue
 
 public abstract record AccountAdminRequest
 {
-    /// <summary>Who asked. Used for the audit row and for the self-demotion guard.</summary>
     public required Guid ActorAccountId { get; init; }
-
-    /// <summary>Where the answer goes. The command is fire-and-forget; the reply is not.</summary>
     public required Guid ReplyToSessionId { get; init; }
 }
 
 public sealed record SetAccountRoleRequest : AccountAdminRequest
 {
     public required string TargetUsername { get; init; }
-
     public required AccountRole Role { get; init; }
 }
 
@@ -91,15 +60,23 @@ public sealed record LookupAccountRequest : AccountAdminRequest
     public required string TargetUsername { get; init; }
 }
 
-/// <summary>
-/// An immutable copy of the persistable state of a character, taken on the game loop thread.
-/// </summary>
-/// <remarks>
-/// A snapshot rather than the live <see cref="Character"/> for a specific reason: the loop
-/// keeps mutating that object while the save worker runs on another thread. Handing over the
-/// entity itself would be a data race, and the symptom would be a character saved with a
-/// room from one moment and vitals from another - rare, unreproducible, and awful to chase.
-/// </remarks>
+/// <summary>Read-only access to template data for spawning systems.</summary>
+public interface IMobTemplateRepository
+{
+    Task<MobTemplate?> GetByKeyAsync(string key, CancellationToken ct);
+}
+
+public interface IItemTemplateRepository
+{
+    Task<ItemTemplate?> GetByKeyAsync(string key, CancellationToken ct);
+}
+
+public interface ISpawnerRepository
+{
+    Task<IReadOnlyList<Spawner>> GetAllAsync(CancellationToken ct);
+}
+
+/// <summary>An immutable copy of the persistable state of a character, taken on the game loop thread.</summary>
 public sealed record CharacterSnapshot(
     Guid Id,
     RoomKey RoomKey,
@@ -141,7 +118,7 @@ public sealed class EngineOptions
 {
     /// <summary>
     /// Where new characters start, and where anyone whose saved room no longer exists is
-    /// placed on login (PLAN.md §7.4 - live editing can delete a room out from under them).
+    /// placed on login (PLAN.md §7.4).
     /// </summary>
     public RoomKey StartingRoom { get; set; } = RoomKey.Parse("aldenmoor.millbrook.north-gate");
 

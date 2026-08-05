@@ -1,6 +1,7 @@
 using DikuWeb.Engine.Commands;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
+using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,9 +11,12 @@ namespace DikuWeb.Engine;
 public static class EngineServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers the game loop and everything it owns. The host must also register an
-    /// <see cref="IWorldSource"/> and an <see cref="ICharacterSaveQueue"/>, which live in the
-    /// Server because the Engine does not reference the persistence layer.
+    /// Registers the game loop and everything it owns. The host must also register:
+    /// - <see cref="IWorldSource"/> for loading world data
+    /// - <see cref="ICharacterSaveQueue"/> for character persistence
+    /// - <see cref="IMobTemplateRepository"/> for mob templates
+    /// - <see cref="IItemTemplateRepository"/> for item templates
+    /// - <see cref="ISpawnerRepository"/> for spawner configuration
     /// </summary>
     public static IServiceCollection AddDikuWebEngine(
         this IServiceCollection services,
@@ -34,6 +38,9 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<WorldMutationApplier>();
         services.AddSingleton<LoopWorldEditor>();
         services.AddSingleton<GameGateway>();
+        services.AddSingleton<SpawnerSystem>();
+        services.AddSingleton<MobSpawner>();
+        services.AddSingleton<ItemSpawner>();
 
         services.AddHostedService<GameLoop>();
 

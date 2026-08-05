@@ -1,43 +1,175 @@
 name: diku-web
 
+# Production docker-compose configuration
+# All settings are hardcoded below - edit this file to change values
+# No .env file needed
+
 services:
   postgres:
-    # PLAN.md §6: PostgreSQL 18, pinned here and in the Testcontainers image tag
-    # so dev, test, and prod agree. Chosen for the support window (Nov 2030) and uuidv7().
+    # PLAN.md §6: PostgreSQL 18, pinned for version consistency across dev/test/prod
     image: postgres:18
     container_name: dikuweb-postgres
-    restart: unless-stopped
+    restart: always
+    networks:
+      - dikuweb-network
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-dikuweb}
-      POSTGRES_USER: ${POSTGRES_USER:-dikuweb}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dikuweb_dev_only}
+      # Database initialization - EDIT THESE VALUES
+      POSTGRES_DB: dikuweb
+      POSTGRES_USER: dikuweb
+      POSTGRES_PASSWORD: change_this_password_in_production
+      POSTGRES_INITDB_ARGS: >-
+        -c timezone=UTC
+        -c shared_buffers=256MB
+        -c max_connections=200
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      # Production: remove this port mapping (use internal network only)
+      # Dev: expose to localhost only
+      - "127.0.0.1:5432:5432"
     volumes:
-      # PG 18+ stores data in a major-version subdirectory (/var/lib/postgresql/18/docker)
-      # so that pg_upgrade --link works without crossing a mount boundary. Mounting at
-      # /var/lib/postgresql/data (correct through PG 17) makes the container refuse to start.
+      # PG 18+ stores data in a major-version subdirectory, so mount at /var/lib/postgresql
       # See https://github.com/docker-library/postgres/pull/1259
       - pgdata:/var/lib/postgresql
+      # Optional: backup directory for pg_dump
+      - ./backups:/backups:rw
     healthcheck:
-      # Adminer waits on this, and so does the Testcontainers-free local workflow.
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dikuweb} -d ${POSTGRES_DB:-dikuweb}"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U dikuweb -d dikuweb"]
+      interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 10s
+      retries: 5
+      start_period: 15s
+    # Recommended production settings
+    shm_size: 256mb
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=postgres"
 
-  adminer:
-    image: adminer:5
-    container_name: dikuweb-adminer
-    restart: unless-stopped
-    ports:
-      - "${ADMINER_PORT:-8080}:8080"
-    environment:
-      ADMINER_DEFAULT_SERVER: postgres
+  web:
+    # ASP.NET Core backend API server
+    # REQUIRED: Set via environment variables:
+    #   - REGISTRY (default: ghcr.io)
+    #   - IMAGE_REPO (default: your-org/diku-web)
+    #   - DIKUWEB_IMAGE_TAG (default: latest)
+    image: ${REGISTRY}/${IMAGE_REPO}:${DIKUWEB_IMAGE_TAG}
+    container_name: dikuweb-web
+    restart: always
+    networks:
+      - dikuweb-network
     depends_on:
       postgres:
         condition: service_healthy
+    # Port 5000 is only exposed internally; nginx proxies to it
+    # For debugging, uncomment and set WEB_DEBUG_PORT:
+    # ports:
+    #   - "${WEB_DEBUG_PORT}:5000"
+    environment:
+      # ASP.NET Core runtime
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5000
+      # Database connection parts - builder constructs from these in appsettings
+      # Edit these to match postgres service above
+      DatabaseConnection__Host: postgres
+      DatabaseConnection__Port: "5432"
+      DatabaseConnection__Database: dikuweb
+      DatabaseConnection__User: dikuweb
+      DatabaseConnection__Password: change_this_password_in_production
+      # Logging
+      Logging__LogLevel__Default: Warning
+      Logging__LogLevel__Microsoft: Warning
+      Logging__LogLevel__Microsoft.EntityFrameworkCore: Warning
+      # Sessions (PLAN.md §3.2)
+      Sessions__MaxCharactersPerAccount: "5"
+      Sessions__MaxConcurrentSessions: "100"
+      # Auth (PLAN.md §7.1)
+      Auth__CookieName: dikuweb.session
+      Auth__SessionTimeoutMinutes: "20160"
+      # Game engine
+      Engine__LinkDeadGraceSeconds: "30"
+      Engine__StartingRoom: hall@0.0.0
+      # Swagger (disable in production)
+      SwaggerEnabled: "false"
+    volumes:
+      # Shared logs directory (optional)
+      - ./logs:/app/logs:rw
+    healthcheck:
+      # Health endpoint provided by ASP.NET Core
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=web"
+
+  client:
+    # React SPA frontend with nginx reverse proxy
+    # Built from client/Dockerfile
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    image: ghcr.io/your-org/diku-web-client:latest
+    container_name: dikuweb-client
+    restart: always
+    networks:
+      - dikuweb-network
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      # Public-facing web UI - EDIT PORT TO MATCH YOUR NEEDS
+      - "80:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        labels: "service=client"
+
+  # Database admin: DISABLED for production security
+  # Use `docker-compose exec postgres psql` instead for CLI access
+  # Or connect with your PostgreSQL client:
+  #   psql -h localhost -U dikuweb -d dikuweb
+  #
+  # To re-enable Adminer for development, uncomment below:
+  # adminer:
+  #   image: adminer:5
+  #   container_name: dikuweb-adminer
+  #   restart: unless-stopped
+  #   networks:
+  #     - dikuweb-network
+  #   ports:
+  #     - "127.0.0.1:8080:8080"
+  #   environment:
+  #     ADMINER_DEFAULT_SERVER: postgres
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   logging:
+  #     driver: json-file
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "2"
+
+
+networks:
+  dikuweb-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
 
 volumes:
   pgdata:
+    driver: local

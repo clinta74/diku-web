@@ -18,6 +18,12 @@ internal sealed class WorldConfiguration : IEntityTypeConfiguration<World>
         builder.Property(w => w.Description).HasColumnName("description").IsRequired();
         builder.Property(w => w.SortOrder).HasColumnName("sort_order").IsRequired();
 
+        builder.Property(w => w.Multipliers)
+            .HasColumnName("multipliers")
+            .HasColumnType("jsonb")
+            .HasConversion(new MultiplicersConverter())
+            .IsRequired();
+
         builder.Property(w => w.Flags)
             .HasColumnName("flags")
             .HasColumnType("jsonb")
@@ -47,6 +53,12 @@ internal sealed class ZoneConfiguration : IEntityTypeConfiguration<Zone>
         builder.Property(z => z.Description).HasColumnName("description").IsRequired();
         builder.Property(z => z.MinLevel).HasColumnName("min_level").IsRequired();
         builder.Property(z => z.MaxLevel).HasColumnName("max_level").IsRequired();
+
+        builder.Property(z => z.Multipliers)
+            .HasColumnName("multipliers")
+            .HasColumnType("jsonb")
+            .HasConversion(new MultiplicersConverter())
+            .IsRequired();
 
         builder.Property(z => z.Flags)
             .HasColumnName("flags")

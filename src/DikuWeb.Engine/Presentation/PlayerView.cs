@@ -1,3 +1,5 @@
+using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.World;
@@ -31,6 +33,8 @@ public sealed class PlayerView(RoomLayoutService layout)
         }
 
         var occupants = world.OccupantsOf(actor.RoomKey);
+        var mobs = world.MobsIn(actor.RoomKey);
+        var items = world.ItemsIn(actor.RoomKey);
         var exits = room.Exits
             .OrderBy(e => DirectionExtensions.All.ToList().IndexOf(e.Direction))
             .Select(e => e.Direction.ToLowerName())
@@ -46,9 +50,9 @@ public sealed class PlayerView(RoomLayoutService layout)
 
         actor.Send(new OutboundEvent(
             EventTypes.Contents,
-            BuildContents(occupants, actor)));
+            BuildContents(occupants, mobs, items, actor)));
 
-        SendProse(actor, room, occupants, exits, verbose);
+        SendProse(actor, room, occupants, mobs, items, exits, verbose);
     }
 
     /// <summary>Refreshes the map and contents for everyone standing in a room.</summary>
@@ -63,12 +67,14 @@ public sealed class PlayerView(RoomLayoutService layout)
         }
 
         var occupants = world.OccupantsOf(roomKey);
-        var contents = BuildContentsFor(occupants);
+        var mobs = world.MobsIn(roomKey);
+        var items = world.ItemsIn(roomKey);
+        var contents = BuildContentsFor(occupants, mobs, items);
 
         foreach (var viewer in occupants)
         {
             viewer.Send(new OutboundEvent(EventTypes.Map, _layout.BuildMap(room, occupants, viewer)));
-            viewer.Send(new OutboundEvent(EventTypes.Contents, BuildContents(occupants, viewer, contents)));
+            viewer.Send(new OutboundEvent(EventTypes.Contents, BuildContents(occupants, mobs, items, viewer, contents)));
         }
     }
 
@@ -92,6 +98,8 @@ public sealed class PlayerView(RoomLayoutService layout)
         PlayerActor actor,
         Room room,
         IReadOnlyList<PlayerActor> occupants,
+        IReadOnlyList<Mob> mobs,
+        IReadOnlyList<ItemInstance> items,
         IReadOnlyList<string> exits,
         bool verbose)
     {
@@ -114,15 +122,27 @@ public sealed class PlayerView(RoomLayoutService layout)
             spans.Add(new TextSpan($"\n{other.Name} is here.{suffix}", "occupant"));
         }
 
+        foreach (var mob in mobs.OrderBy(m => m.TemplateKey))
+        {
+            spans.Add(new TextSpan($"\n{mob.TemplateKey} is here.", "mob"));
+        }
+
+        foreach (var item in items.OrderBy(i => i.TemplateKey))
+        {
+            spans.Add(new TextSpan($"\nYou see {item.TemplateKey} here.", "item"));
+        }
+
         actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
     }
 
     private static ContentsPayload BuildContents(
         IReadOnlyList<PlayerActor> occupants,
+        IReadOnlyList<Mob> mobs,
+        IReadOnlyList<ItemInstance> items,
         PlayerActor viewer,
         IReadOnlyList<ContentEntry>? prebuilt = null)
     {
-        var entries = prebuilt ?? BuildContentsFor(occupants);
+        var entries = prebuilt ?? BuildContentsFor(occupants, mobs, items);
 
         // The viewer is shown as "you" to match how they appear on the map.
         var adjusted = entries
@@ -134,11 +154,31 @@ public sealed class PlayerView(RoomLayoutService layout)
         return new ContentsPayload(adjusted, []);
     }
 
-    private static List<ContentEntry> BuildContentsFor(IReadOnlyList<PlayerActor> occupants) =>
-        [.. occupants
+    private static List<ContentEntry> BuildContentsFor(
+        IReadOnlyList<PlayerActor> occupants,
+        IReadOnlyList<Mob> mobs,
+        IReadOnlyList<ItemInstance> items)
+    {
+        var entries = new List<ContentEntry>();
+
+        // Add players
+        entries.AddRange(occupants
             .OrderBy(o => o.Name, StringComparer.OrdinalIgnoreCase)
             .Select(o => new ContentEntry(
                 o.Icon,
                 o.IsLinkDead ? $"{o.Name} (link-dead)" : o.Name,
-                o.Name.ToLowerInvariant()))];
+                o.Name.ToLowerInvariant())));
+
+        // Add mobs
+        entries.AddRange(mobs
+            .OrderBy(m => m.TemplateKey)
+            .Select(m => new ContentEntry(m.TemplateKey, m.TemplateKey, m.TemplateKey.ToLowerInvariant())));
+
+        // Add items
+        entries.AddRange(items
+            .OrderBy(i => i.TemplateKey)
+            .Select(i => new ContentEntry("*", i.TemplateKey, i.TemplateKey.ToLowerInvariant())));
+
+        return entries;
+    }
 }

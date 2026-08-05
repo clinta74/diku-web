@@ -1,3 +1,5 @@
+using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Worlds;
 
 namespace DikuWeb.Engine.World;
@@ -15,6 +17,10 @@ public sealed class WorldState
     private readonly Dictionary<RoomKey, List<PlayerActor>> _occupants = [];
     private readonly Dictionary<Guid, PlayerActor> _bySession = [];
     private readonly Dictionary<Guid, PlayerActor> _byCharacter = [];
+    private readonly Dictionary<Guid, Mob> _mobs = [];
+    private readonly Dictionary<RoomKey, List<Mob>> _mobsByRoom = [];
+    private readonly Dictionary<Guid, ItemInstance> _items = [];
+    private readonly Dictionary<RoomKey, List<ItemInstance>> _itemsByRoom = [];
 
     public int RoomCount => _rooms.Count;
 
@@ -199,6 +205,150 @@ public sealed class WorldState
         {
             list = [];
             _occupants[key] = list;
+        }
+
+        return list;
+    }
+
+    /// <summary>Adds a mob to a room.</summary>
+    public void AddMob(Mob mob)
+    {
+        ArgumentNullException.ThrowIfNull(mob);
+
+        var roomKey = RoomKey.Parse(mob.RoomKey);
+        _mobs[mob.Id] = mob;
+        MobListFor(roomKey).Add(mob);
+    }
+
+    /// <summary>Removes a mob from the world.</summary>
+    public void RemoveMob(Mob mob)
+    {
+        ArgumentNullException.ThrowIfNull(mob);
+
+        var roomKey = RoomKey.Parse(mob.RoomKey);
+        _mobs.Remove(mob.Id);
+        MobListFor(roomKey).Remove(mob);
+    }
+
+    /// <summary>Moves a mob to a new room.</summary>
+    public void MoveMob(Mob mob, RoomKey destination)
+    {
+        ArgumentNullException.ThrowIfNull(mob);
+
+        var current = RoomKey.Parse(mob.RoomKey);
+        MobListFor(current).Remove(mob);
+        mob.RoomKey = destination.ToString();
+        MobListFor(destination).Add(mob);
+    }
+
+    /// <summary>All mobs in a specific room.</summary>
+    public IReadOnlyList<Mob> MobsIn(RoomKey key) =>
+        _mobsByRoom.TryGetValue(key, out var list) ? list : [];
+
+    /// <summary>All mobs currently in the world.</summary>
+    public IEnumerable<Mob> AllMobs => _mobs.Values;
+
+    public Mob? FindMob(Guid mobId) => _mobs.GetValueOrDefault(mobId);
+
+    private List<Mob> MobListFor(RoomKey key)
+    {
+        if (!_mobsByRoom.TryGetValue(key, out var list))
+        {
+            list = [];
+            _mobsByRoom[key] = list;
+        }
+
+        return list;
+    }
+
+    /// <summary>Adds an item instance to a room.</summary>
+    public void AddItem(ItemInstance item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        if (item.RoomKey is not null)
+        {
+            var roomKey = RoomKey.Parse(item.RoomKey);
+            _items[item.Id] = item;
+            ItemListFor(roomKey).Add(item);
+        }
+    }
+
+    /// <summary>Removes an item from the world.</summary>
+    public void RemoveItem(ItemInstance item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        _items.Remove(item.Id);
+        if (item.RoomKey is not null)
+        {
+            var roomKey = RoomKey.Parse(item.RoomKey);
+            ItemListFor(roomKey).Remove(item);
+        }
+    }
+
+    /// <summary>All items in a specific room.</summary>
+    public IReadOnlyList<ItemInstance> ItemsIn(RoomKey key) =>
+        _itemsByRoom.TryGetValue(key, out var list) ? list : [];
+
+    /// <summary>All items currently in the world.</summary>
+    public IEnumerable<ItemInstance> AllItems => _items.Values;
+
+    public ItemInstance? FindItem(Guid itemId) => _items.GetValueOrDefault(itemId);
+
+    /// <summary>All items in a character's inventory.</summary>
+    public IReadOnlyList<ItemInstance> InventoryOf(Guid characterId) =>
+        _items.Values.Where(i => i.OwnerCharacterId == characterId).ToList();
+
+    /// <summary>All items equipped on a character.</summary>
+    public IReadOnlyList<ItemInstance> EquipmentOf(Guid characterId) =>
+        _items.Values.Where(i => i.OwnerCharacterId == characterId && i.EquippedSlot != null).ToList();
+
+    /// <summary>Moves an item to a character's inventory.</summary>
+    public void PickUpItem(ItemInstance item, Guid characterId)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        if (item.RoomKey is not null)
+        {
+            var roomKey = RoomKey.Parse(item.RoomKey);
+            ItemListFor(roomKey).Remove(item);
+        }
+
+        item.RoomKey = null;
+        item.OwnerCharacterId = characterId;
+    }
+
+    /// <summary>Moves an item to the ground in a room.</summary>
+    public void DropItem(ItemInstance item, RoomKey room)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        item.OwnerCharacterId = null;
+        item.RoomKey = room.ToString();
+        ItemListFor(room).Add(item);
+    }
+
+    /// <summary>Equips an item on a character.</summary>
+    public void EquipItem(ItemInstance item, ItemSlot slot)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        item.EquippedSlot = slot;
+    }
+
+    /// <summary>Unequips an item from a character.</summary>
+    public void UnequipItem(ItemInstance item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        item.EquippedSlot = null;
+    }
+
+    private List<ItemInstance> ItemListFor(RoomKey key)
+    {
+        if (!_itemsByRoom.TryGetValue(key, out var list))
+        {
+            list = [];
+            _itemsByRoom[key] = list;
         }
 
         return list;

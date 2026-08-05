@@ -73,4 +73,8 @@ internal static partial class EngineLog
     [LoggerMessage(EventId = 2015, Level = LogLevel.Information,
         Message = "{Character} is now {Role} in the world")]
     public static partial void ActorRoleChanged(ILogger logger, string character, string role);
+
+    [LoggerMessage(EventId = 2016, Level = LogLevel.Warning,
+        Message = "Spawner {SpawnerId} template '{TemplateKey}' not found")]
+    public static partial void SpawnerTemplateNotFound(ILogger logger, Guid spawnerId, string templateKey);
 }
