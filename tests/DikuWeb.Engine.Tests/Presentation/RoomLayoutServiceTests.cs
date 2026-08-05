@@ -24,8 +24,8 @@ public sealed class RoomLayoutServiceTests
         var room = harness.World.FindRoom(West)!;
         var occupants = harness.World.OccupantsOf(West);
 
-        var first = _layout.BuildMap(room, occupants, kael);
-        var second = new RoomLayoutService().BuildMap(room, occupants, kael);
+        var first = _layout.BuildMap(room, occupants, [], [], kael);
+        var second = new RoomLayoutService().BuildMap(room, occupants, [], [], kael);
 
         Assert.Equal(first.Entities.Count, second.Entities.Count);
         foreach (var (a, b) in first.Entities.Zip(second.Entities))
@@ -55,8 +55,8 @@ public sealed class RoomLayoutServiceTests
         harnessB.AddPlayer("Mira", roomB.Key);
         var kaelB = harnessB.AddPlayer("Kael", roomB.Key);
 
-        var mapA = _layout.BuildMap(roomA, harnessA.World.OccupantsOf(roomA.Key), kaelA);
-        var mapB = _layout.BuildMap(roomB, harnessB.World.OccupantsOf(roomB.Key), kaelB);
+        var mapA = _layout.BuildMap(roomA, harnessA.World.OccupantsOf(roomA.Key), [], [], kaelA);
+        var mapB = _layout.BuildMap(roomB, harnessB.World.OccupantsOf(roomB.Key), [], [], kaelB);
 
         // Entity ids differ per run, so compare the shape: the same number of entities
         // placed, and every one of them on a distinct cell.
@@ -77,7 +77,7 @@ public sealed class RoomLayoutServiceTests
             harness.AddPlayer($"Extra{i}", room.Key);
         }
 
-        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), viewer);
+        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), [], [], viewer);
         var cells = map.Entities.Select(e => (e.X, e.Y)).ToList();
 
         Assert.Equal(cells.Count, cells.Distinct().Count());
@@ -92,7 +92,7 @@ public sealed class RoomLayoutServiceTests
         harness.AddPlayer("Mira", West);
 
         var room = harness.World.FindRoom(West)!;
-        var map = _layout.BuildMap(room, harness.World.OccupantsOf(West), kael);
+        var map = _layout.BuildMap(room, harness.World.OccupantsOf(West), [], [], kael);
 
         var self = Assert.Single(map.Entities, e => e.Id == kael.EntityId);
         Assert.Equal("@", self.Icon);
@@ -112,7 +112,7 @@ public sealed class RoomLayoutServiceTests
         harness.World.Load([], [], [room]);
         var kael = harness.AddPlayer("Kael", room.Key);
 
-        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), kael);
+        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), [], [], kael);
 
         Assert.True(map.W > 0);
         Assert.True(map.H > 0);
@@ -133,7 +133,7 @@ public sealed class RoomLayoutServiceTests
         var viewer = harness.AddPlayer("Viewer", room.Key);
         harness.AddPlayer("Other", room.Key);
 
-        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), viewer);
+        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), [], [], viewer);
 
         Assert.NotEmpty(map.Entities);
         foreach (var entity in map.Entities)
@@ -159,7 +159,7 @@ public sealed class RoomLayoutServiceTests
         harness.AddPlayer("Second", room.Key);
         harness.AddPlayer("Third", room.Key);
 
-        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), viewer);
+        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), [], [], viewer);
 
         Assert.Equal(3, map.Entities.Count);
         Assert.All(map.Entities, e => Assert.Equal('.', map.Terrain[e.Y][e.X]));
@@ -177,7 +177,7 @@ public sealed class RoomLayoutServiceTests
         harness.World.Load([], [], [room]);
         var kael = harness.AddPlayer("Kael", room.Key);
 
-        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), kael);
+        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), [], [], kael);
 
         Assert.Single(map.Entities);
     }
@@ -196,7 +196,7 @@ public sealed class RoomLayoutServiceTests
         harness.World.Load([], [], [room]);
         var kael = harness.AddPlayer("Kael", room.Key);
 
-        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), kael);
+        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), [], [], kael);
 
         Assert.All(map.Terrain, row => Assert.Equal(map.W, row.Length));
     }

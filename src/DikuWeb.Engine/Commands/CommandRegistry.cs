@@ -49,6 +49,21 @@ public sealed class CommandRegistry
             "drop", 1, "drop <item> - put down an item from your inventory", Drop));
 
         _commands.Add(new CommandDefinition(
+            "wear", 1, "wear <item> - equip an item on your body", Wear));
+
+        _commands.Add(new CommandDefinition(
+            "wield", 1, "wield <item> - equip an item in your hand", Wield));
+
+        _commands.Add(new CommandDefinition(
+            "remove", 2, "remove <item> (r) - unequip an item", Remove));
+
+        _commands.Add(new CommandDefinition(
+            "give", 1, "give <item> <character> - give an item to someone", Give));
+
+        _commands.Add(new CommandDefinition(
+            "emote", 1, "emote <message> - express an emotion or action", Emote));
+
+        _commands.Add(new CommandDefinition(
             "help", 1, "help - this list", Help));
 
         // Full word required: quitting by fumbling a key would be a bad surprise.
@@ -281,6 +296,158 @@ public sealed class CommandRegistry
 
         ctx.Reply($"You drop the {ctx.Argument}.", "good");
         ctx.Broadcast($"{ctx.Actor.Name} drops the {ctx.Argument}.", "movement");
+    }
+
+    private static void Wear(CommandContext ctx)
+    {
+        if (!ctx.HasArgument)
+        {
+            ctx.Reply("Wear what?", "bad");
+            return;
+        }
+
+        var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
+        var targetItem = inventory.FirstOrDefault(i =>
+            i.TemplateKey.Equals(ctx.Argument, StringComparison.OrdinalIgnoreCase));
+
+        if (targetItem is null)
+        {
+            ctx.Reply($"You don't have {ctx.Argument}.", "bad");
+            return;
+        }
+
+        if (targetItem.EquippedSlot is not null)
+        {
+            ctx.Reply($"You're already wearing the {ctx.Argument}.", "bad");
+            return;
+        }
+
+        // Determine slot from item configuration
+        // For now, just use a default body slot if no slot specified in item
+        var slot = ItemSlot.Chest; // Placeholder logic
+        ctx.World.EquipItem(targetItem, slot);
+
+        ctx.Reply($"You wear the {ctx.Argument}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} wears the {ctx.Argument}.", "movement");
+    }
+
+    private static void Wield(CommandContext ctx)
+    {
+        if (!ctx.HasArgument)
+        {
+            ctx.Reply("Wield what?", "bad");
+            return;
+        }
+
+        var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
+        var targetItem = inventory.FirstOrDefault(i =>
+            i.TemplateKey.Equals(ctx.Argument, StringComparison.OrdinalIgnoreCase));
+
+        if (targetItem is null)
+        {
+            ctx.Reply($"You don't have {ctx.Argument}.", "bad");
+            return;
+        }
+
+        if (targetItem.EquippedSlot is not null)
+        {
+            ctx.Reply($"You're already wielding the {ctx.Argument}.", "bad");
+            return;
+        }
+
+        ctx.World.EquipItem(targetItem, ItemSlot.MainHand);
+
+        ctx.Reply($"You wield the {ctx.Argument}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} wields the {ctx.Argument}.", "movement");
+    }
+
+    private static void Remove(CommandContext ctx)
+    {
+        if (!ctx.HasArgument)
+        {
+            ctx.Reply("Remove what?", "bad");
+            return;
+        }
+
+        var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
+        var targetItem = inventory.FirstOrDefault(i =>
+            i.TemplateKey.Equals(ctx.Argument, StringComparison.OrdinalIgnoreCase));
+
+        if (targetItem is null)
+        {
+            ctx.Reply($"You don't have {ctx.Argument}.", "bad");
+            return;
+        }
+
+        if (targetItem.EquippedSlot is null)
+        {
+            ctx.Reply($"You're not wearing the {ctx.Argument}.", "bad");
+            return;
+        }
+
+        ctx.World.UnequipItem(targetItem);
+
+        ctx.Reply($"You remove the {ctx.Argument}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} removes the {ctx.Argument}.", "movement");
+    }
+
+    private static void Give(CommandContext ctx)
+    {
+        if (!ctx.HasArgument)
+        {
+            ctx.Reply("Give what to whom?", "bad");
+            return;
+        }
+
+        var parts = ctx.Argument.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2)
+        {
+            ctx.Reply("Give what to whom?", "bad");
+            return;
+        }
+
+        var itemName = parts[0];
+        var targetName = parts[1];
+
+        var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
+        var targetItem = inventory.FirstOrDefault(i =>
+            i.TemplateKey.Equals(itemName, StringComparison.OrdinalIgnoreCase));
+
+        if (targetItem is null)
+        {
+            ctx.Reply($"You don't have {itemName}.", "bad");
+            return;
+        }
+
+        var targetPlayer = ctx.World.FindPlayerByName(targetName);
+        if (targetPlayer is null)
+        {
+            ctx.Reply($"There is no one named {targetName} here.", "bad");
+            return;
+        }
+
+        if (targetPlayer.CharacterId == ctx.Actor.CharacterId)
+        {
+            ctx.Reply("You can't give items to yourself.", "bad");
+            return;
+        }
+
+        ctx.World.PickUpItem(targetItem, targetPlayer.CharacterId);
+
+        ctx.Reply($"You give the {itemName} to {targetPlayer.Name}.", "good");
+        targetPlayer.SendText($"{ctx.Actor.Name} gives you the {itemName}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} gives the {itemName} to {targetPlayer.Name}.", "movement");
+    }
+
+    private static void Emote(CommandContext ctx)
+    {
+        if (!ctx.HasArgument)
+        {
+            ctx.Reply("Emote what?", "bad");
+            return;
+        }
+
+        ctx.Broadcast($"{ctx.Actor.Name} {ctx.Argument}", "emote");
     }
 
     private static bool IsDirection(string name) =>

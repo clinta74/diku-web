@@ -12,7 +12,8 @@
       "Bash(dotnet build *)",
       "Bash(dotnet test *)",
       "Bash(git add *)",
-      "Bash(git commit -m 'Add inventory command handlers and WorldState methods for item management *)"
+      "Bash(git commit -m 'Add inventory command handlers and WorldState methods for item management *)",
+      "Bash(git checkout *)"
     ]
   }
 }

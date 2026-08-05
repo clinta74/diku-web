@@ -1,3 +1,5 @@
+using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.World;
@@ -28,10 +30,17 @@ public sealed class RoomLayoutService
     private static readonly IReadOnlyDictionary<string, string> DefaultLegend =
         new Dictionary<string, string>(StringComparer.Ordinal) { [DefaultFloor] = "floor" };
 
-    public MapPayload BuildMap(Room room, IReadOnlyList<PlayerActor> occupants, PlayerActor viewer)
+    public MapPayload BuildMap(
+        Room room,
+        IReadOnlyList<PlayerActor> occupants,
+        IReadOnlyList<Mob> mobs,
+        IReadOnlyList<ItemInstance> items,
+        PlayerActor viewer)
     {
         ArgumentNullException.ThrowIfNull(room);
         ArgumentNullException.ThrowIfNull(occupants);
+        ArgumentNullException.ThrowIfNull(mobs);
+        ArgumentNullException.ThrowIfNull(items);
         ArgumentNullException.ThrowIfNull(viewer);
 
         var terrain = ResolveTerrain(room);
@@ -40,11 +49,11 @@ public sealed class RoomLayoutService
         var width = height == 0 ? 0 : terrain[0].Length;
 
         var placeable = PlaceableCells(terrain, legend);
-        var entities = new List<MapEntity>(occupants.Count);
+        var entities = new List<MapEntity>(occupants.Count + mobs.Count + items.Count);
         var taken = new HashSet<int>();
 
-        // Sorted so the result depends only on WHO is in the room, not on the order they
-        // arrived. Two clients viewing the same room must draw it identically.
+        // Players first, sorted so the result depends only on WHO is in the room, not on the
+        // order they arrived. Two clients viewing the same room must draw it identically.
         foreach (var actor in occupants.OrderBy(o => o.EntityId, StringComparer.Ordinal))
         {
             var index = AssignCell(room.Key, actor.EntityId, placeable.Count, taken);
@@ -62,6 +71,34 @@ public sealed class RoomLayoutService
                 x,
                 y,
                 isViewer ? "you" : actor.Name));
+        }
+
+        // Mobs, sorted by their ID for stability.
+        foreach (var mob in mobs.OrderBy(m => m.Id))
+        {
+            var entityId = $"m_{mob.Id:N}";
+            var index = AssignCell(room.Key, entityId, placeable.Count, taken);
+            if (index < 0)
+            {
+                continue;
+            }
+
+            var (x, y) = placeable[index];
+            entities.Add(new MapEntity(entityId, mob.TemplateKey[0].ToString(), x, y, mob.TemplateKey));
+        }
+
+        // Items, sorted by their ID for stability.
+        foreach (var item in items.OrderBy(i => i.Id))
+        {
+            var entityId = $"i_{item.Id:N}";
+            var index = AssignCell(room.Key, entityId, placeable.Count, taken);
+            if (index < 0)
+            {
+                continue;
+            }
+
+            var (x, y) = placeable[index];
+            entities.Add(new MapEntity(entityId, "$", x, y, item.TemplateKey));
         }
 
         return new MapPayload(width, height, terrain, legend, entities);

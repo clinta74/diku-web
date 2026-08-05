@@ -46,7 +46,7 @@ public sealed class PlayerView(RoomLayoutService layout)
 
         actor.Send(new OutboundEvent(
             EventTypes.Map,
-            _layout.BuildMap(room, occupants, actor)));
+            _layout.BuildMap(room, occupants, mobs, items, actor)));
 
         actor.Send(new OutboundEvent(
             EventTypes.Contents,
@@ -73,7 +73,7 @@ public sealed class PlayerView(RoomLayoutService layout)
 
         foreach (var viewer in occupants)
         {
-            viewer.Send(new OutboundEvent(EventTypes.Map, _layout.BuildMap(room, occupants, viewer)));
+            viewer.Send(new OutboundEvent(EventTypes.Map, _layout.BuildMap(room, occupants, mobs, items, viewer)));
             viewer.Send(new OutboundEvent(EventTypes.Contents, BuildContents(occupants, mobs, items, viewer, contents)));
         }
     }
@@ -140,29 +140,30 @@ public sealed class PlayerView(RoomLayoutService layout)
         IReadOnlyList<Mob> mobs,
         IReadOnlyList<ItemInstance> items,
         PlayerActor viewer,
-        IReadOnlyList<ContentEntry>? prebuilt = null)
+        (List<ContentEntry> Occupants, List<ContentEntry> Items)? prebuilt = null)
     {
-        var entries = prebuilt ?? BuildContentsFor(occupants, mobs, items);
+        var (occupantEntries, itemEntries) = prebuilt ?? BuildContentsFor(occupants, mobs, items);
 
         // The viewer is shown as "you" to match how they appear on the map.
-        var adjusted = entries
+        var adjusted = occupantEntries
             .Select(e => e.Keyword == viewer.Name.ToLowerInvariant()
                 ? e with { Icon = "@", Label = "you" }
                 : e)
             .ToList();
 
-        return new ContentsPayload(adjusted, []);
+        return new ContentsPayload(adjusted, itemEntries);
     }
 
-    private static List<ContentEntry> BuildContentsFor(
+    private static (List<ContentEntry> Occupants, List<ContentEntry> Items) BuildContentsFor(
         IReadOnlyList<PlayerActor> occupants,
         IReadOnlyList<Mob> mobs,
         IReadOnlyList<ItemInstance> items)
     {
-        var entries = new List<ContentEntry>();
+        var occupantEntries = new List<ContentEntry>();
+        var itemEntries = new List<ContentEntry>();
 
         // Add players
-        entries.AddRange(occupants
+        occupantEntries.AddRange(occupants
             .OrderBy(o => o.Name, StringComparer.OrdinalIgnoreCase)
             .Select(o => new ContentEntry(
                 o.Icon,
@@ -170,15 +171,15 @@ public sealed class PlayerView(RoomLayoutService layout)
                 o.Name.ToLowerInvariant())));
 
         // Add mobs
-        entries.AddRange(mobs
+        occupantEntries.AddRange(mobs
             .OrderBy(m => m.TemplateKey)
             .Select(m => new ContentEntry(m.TemplateKey, m.TemplateKey, m.TemplateKey.ToLowerInvariant())));
 
         // Add items
-        entries.AddRange(items
+        itemEntries.AddRange(items
             .OrderBy(i => i.TemplateKey)
-            .Select(i => new ContentEntry("*", i.TemplateKey, i.TemplateKey.ToLowerInvariant())));
+            .Select(i => new ContentEntry("$", i.TemplateKey, i.TemplateKey.ToLowerInvariant())));
 
-        return entries;
+        return (occupantEntries, itemEntries);
     }
 }
