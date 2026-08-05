@@ -11,7 +11,12 @@ The world is built through a **web-based builder** in the same app. Zones carry 
 multipliers that scale base monsters and treasure, so difficulty tiers are a new zone with new
 numbers rather than a new set of hand-authored content.
 
-Status: planning. Nothing built yet.
+Play is **PvE by default**; player-versus-player is opt-in per room, through the same extensible
+room-flag registry that carries every other room property (§4.10).
+
+Status: Phases 0–2a complete — register, create a character, walk a seeded zone, talk, build new
+geography in the browser with no SQL, and hand out builder access from inside the game. Phase 3
+(objects, inhabitants, multipliers) is next.
 
 ---
 
@@ -29,14 +34,18 @@ Status: planning. Nothing built yet.
 | Edit application | Live immediate | Saves reach the running world at once; no draft/publish gate |
 | Difficulty scaling | Fractional zone multipliers | One template library, many power tiers |
 | Logging | `ILogger<T>` + `[LoggerMessage]` | Zero-allocation on the hot loop; no Serilog |
+| Room flags | Open registry over `flags jsonb` | New flags cost a registry entry, not a migration (§4.10) |
+| Granting roles | In-game `promote`, over an admin API | Reaching the builder must not require SQL (§7.7) |
+| PvP | PvE by default, opt-in per room via the `pvp` flag | Geography decides, not a global switch (§4.11) |
+| Death | XP loss, no corpse retrieval, respawn at your bind point | Costly enough to matter, never a naked corpse run (§4.12) |
 | First milestone | Vertical slice | Thin but real end-to-end before breadth |
 | Client | React + Vite + TypeScript | Game panels plus the builder, one app, shared auth |
 
 ### Open questions (decide before the phase that needs them)
 
-- **Q1 (Phase 4):** Is player-vs-player combat in scope at all, or PvE only?
-- **Q2 (Phase 4):** Permadeath, XP loss, or corpse-retrieval on death?
 - **Q3 (Phase 5):** Are the four Paths (§4.5) fixed at creation or respec-able?
+
+*Resolved: **Q1** (PvP) → §4.11. **Q2** (death penalty) → §4.12.*
 
 ---
 
@@ -201,16 +210,37 @@ with `Last-Event-ID`, and on needing no framing library at either end.
 | `POST` | `/api/auth/logout` | |
 | `GET`  | `/api/characters` | List account's characters |
 | `POST` | `/api/characters` | Create character |
-| `POST` | `/api/game/enter` | Bind session to a character, put it in the world |
-| `GET`  | `/api/game/stream` | **SSE**, long-lived |
-| `POST` | `/api/game/command` | `{ "input": "north" }` → `202 Accepted`, empty body |
+| `GET`  | `/api/game/sessions` | Which of this account's characters are in the world |
+| `POST` | `/api/game/{characterId}/enter` | Put that character in the world |
+| `GET`  | `/api/game/{characterId}/stream` | **SSE**, long-lived |
+| `POST` | `/api/game/{characterId}/command` | `{ "input": "north" }` → `202 Accepted`, empty body |
+| `POST` | `/api/game/{characterId}/leave` | Remove it now rather than waiting out link-dead |
 | — | `/api/builder/**` | Builder API, see §7.3 |
+| — | `/api/admin/**` | Role administration, see §7.7 |
 | `GET`  | `/health` | Liveness/readiness |
 
 **Auth must be cookie-based.** The browser's native `EventSource` cannot set request headers,
 so a bearer token in an `Authorization` header is impossible on the stream. Use an HttpOnly,
 `Secure`, `SameSite=Lax` session cookie. Do not put tokens in the query string — they land in
 access logs.
+
+**Game routes are scoped by character, not by account**, so one login can drive several
+characters simultaneously — each with its own stream, scrollback, and link-dead window. The
+cookie still does all the authorising; the id in the path only selects *which* of the caller's
+own characters is meant, and ownership is re-checked on every request. That is materially
+different from a token in a URL: the id is not a secret (it is already returned by
+`/api/characters`) and possessing it grants nothing.
+
+Two consequences worth stating:
+
+- **Sessions are keyed by character.** Keying by account made entering a second character
+  silently evict the first. The Engine already keyed players by character id, so this was
+  purely a Server-side limitation.
+- **A per-account cap applies** (`Sessions:MaxConcurrentCharactersPerAccount`, default 3).
+  Each character in the world holds an open SSE connection, a session, and a 250-event ring
+  buffer, so an uncapped account could exhaust server resources by looping over its character
+  list. This is a resource bound, not a game rule about multi-boxing — raise it freely.
+  Re-entering a character already in the world is a reconnect and does not consume a slot.
 
 ### 3.3 The command POST returns nothing
 
@@ -431,6 +461,11 @@ final  = max(1, (damage − armorFlat) × (1 − armorPercent))
 No positional terms and no zone terms anywhere in the formula — the whole thing is a pure
 function of the two combatants, which is exactly what makes it unit-testable in isolation.
 
+**Whether a fight is allowed at all is decided before this math runs**, by room flags (§4.10):
+`peaceful` forbids combat entirely, and player-versus-player requires the `pvp` flag (§4.11).
+Target validation is a separate gate on purpose — the damage formula never learns who is a
+player and who is a mob, so it stays the same pure function either way.
+
 ### 4.7 Progression
 
 Levels 1–50. XP from kills, quest completion, and first-time room discovery — rewarding
@@ -511,6 +546,167 @@ respawn timer for no reason.
 me five wolf pelts". Multi-objective quests (kill N of X *and* visit room Y) would need an
 objectives child table; that is a deliberate later extension, not a Phase 5 goal.
 
+### 4.10 Room flags — an open registry, not an enum
+
+Rooms carry a `flags jsonb` map of flag key → value. It is deliberately **not** a bit field or a
+C# `[Flags]` enum, because both make every new flag a schema change: a migration, a backfill, and
+a coordinated deploy. Here a new flag costs a registry entry and the code that reads it. Nothing
+else.
+
+The registry is a static table in Domain and is the single source of truth for what a flag means:
+
+```csharp
+public static class RoomFlags
+{
+    public static readonly RoomFlag Pvp = Register("pvp", RoomFlagKind.Boolean, @default: false,
+        summary: "Players may attack one another here.");
+    …
+}
+```
+
+Adding a flag is three steps, none of which touch the database:
+
+1. One `Register(...)` line.
+2. The code that reads it, via the typed accessor — `room.Flags.IsSet(RoomFlags.Pvp)`, never a
+   string literal at the call site, so a typo is a compile error rather than a flag that is
+   silently always off.
+3. Nothing in the builder. The room editor renders its checkboxes **from the registry**, so a new
+   flag appears in the UI with its summary as the label the moment it is registered.
+
+Four rules make this safe to extend:
+
+- **Absence is the safe value, always.** This is why the flag is `pvp` rather than `safe`. Every
+  room authored before the flag existed, every room whose key was mistyped, and every room whose
+  jsonb failed to parse resolves to *not* PvP. A `safe` flag would have inverted that and made
+  forgetting a flag dangerous. Any future flag must be phrased so the default is the harmless one.
+- **Unknown keys are preserved, never stripped.** A save round-trips flags the running binary does
+  not recognise, so rolling a server back does not quietly erase flags a newer one wrote.
+  `/validate` reports them as advisory warnings (§7.4).
+- **Flags are read, never written, by game logic.** They are content, edited through the builder
+  like a room's description — no spell, trap, or quest reward toggles one. The builder's `rflag`
+  command (§7.6) looks like an in-game action but is not: it is a `WorldMutation` that writes a
+  `content_audit` row like every other edit. If a *temporary* room state is ever wanted — a
+  ritual that pacifies a chamber for a minute — it needs its own expiring-effect mechanism, not
+  a write into content.
+- **Inheritance resolves room → zone → world → registry default.** The same three-level hierarchy
+  the multipliers use (§4.4), but *overriding* rather than composing: the nearest level that
+  declares the flag wins. An arena world or a duelling zone sets `pvp` once instead of on forty
+  rooms. The room editor shows inherited values greyed out with their source, so a room that is
+  PvP because of its zone never looks like a plain unflagged room.
+
+The starting registry:
+
+| Flag | Default | Read by | Meaning | Enforced in |
+|---|---|---|---|---|
+| `pvp` | false | combat targeting | Players may attack one another here (§4.11) | Phase 4 |
+| `peaceful` | false | combat targeting | No combat at all, mobs included | Phase 4 |
+| `respawn` | false | death, `bind` | A valid bind point (§4.12) | Phase 4 |
+| `noMob` | false | mob AI | Wandering mobs will not path in | Phase 3 |
+| `noRecall` | false | movement, abilities | `recall` and teleport out are refused | Phase 5 |
+| `dark` | false | room rendering | Description withheld without a light source | Phase 5 |
+| `indoors` | false | presentation | Shelters from weather when weather exists | later |
+| `unfinished` | false | builder | The build to-do list (§7.6) | Phase 2 |
+
+**`peaceful` beats `pvp`.** A room carrying both is peaceful. Conflicts must resolve toward the
+safe value for the same reason absence does.
+
+### 4.11 Player-versus-player
+
+**PvE by default. A player may attack another player only in a room that resolves `pvp` true.**
+PvP is a property of geography, not a global server switch and not a per-character opt-in flag —
+so an arena, a contested dungeon floor, or a duelling ground is authored in the builder like any
+other content, and the rest of the world stays safe without anyone configuring anything.
+
+- **Checked every round, not only at initiation.** Combat is room-local (§4.2), so both
+  combatants are in the same room by definition and there is one check. If either party leaves
+  for a non-PvP room the fight ends immediately. That makes a safe room a genuine escape, which
+  is the point of putting the rule in the geography: you can always see where you stand.
+- **Mobs are unaffected.** PvE combat works everywhere except `peaceful` rooms. The `pvp` flag
+  only ever widens what a *player* may target.
+- **A refused attack is narrated, never silent.** *"You cannot attack Kael here."*
+- **Pets and charmed mobs inherit their owner's permissions.** A pet is an extension of the player
+  who commands it; routing an attack through one must not launder it past the check. The ability
+  system (Phase 5) has to honour this the day charm exists.
+- **Area effects filter per target, not per room.** An AoE cast in a mixed room hits the mobs and
+  skips the players. Running the check once for the room would make a single flag the difference
+  between a spell and a massacre.
+- **Party members are never valid targets**, `pvp` room or not — this exists so an AoE cannot wipe
+  your own group by accident.
+- **PvP kills go to the moderation log**, not the application log, so griefing patterns are
+  visible without reading `command_log` by hand.
+
+The economics are deliberately flat: a PvP kill yields no XP, no loot, and costs the loser no XP
+(§4.12). There is nothing to farm, so PvP is for people who want the fight — the flag decides
+*where* that is possible and nothing else is stacked on top of it.
+
+### 4.12 Death — XP loss, no corpse run
+
+Death costs experience and time. It never costs items and it never costs the character.
+
+| | |
+|---|---|
+| **Items** | Kept. Everything: inventory, equipment, coin. |
+| **Player corpse** | None is created. There is nothing to run back to and nothing to lose to a looter. |
+| **Mob corpse** | Unchanged — mobs still leave lootable corpses. That is how looting works (Phase 4). |
+| **XP** | A bounded loss, below. |
+| **Level** | Never lost. |
+| **Location** | Respawn at your bind point. |
+
+**The XP penalty is a fraction of the current level band, floored at the level threshold:**
+
+```
+band(level) = xpForLevel(level + 1) − xpForLevel(level)
+loss        = round(band(level) × Death:XpLossPercent)     -- default 0.10
+xp          = max(xpForLevel(level), xp − loss)
+```
+
+Expressing the loss against the *band* rather than against total XP keeps the penalty
+proportionate as the curve steepens — 10% of a level's worth of progress means the same thing at
+level 6 and at level 46, where 10% of lifetime XP would be catastrophic late and trivial early.
+
+Two consequences, stated plainly rather than discovered in play:
+
+- **Dying just after levelling is free; dying just before levelling costs the full 10%.** That is
+  the price of clamping at the threshold, and it errs in the forgiving direction — a fresh level
+  is a safe moment to push into something dangerous. The alternative, letting XP go negative into
+  a debt that must be repaid before progress resumes, punishes exactly the players already
+  struggling. Rejected.
+- **De-levelling is impossible by construction**, not by a check somewhere. A character cannot
+  drop below a level and lose the abilities and spent points that came with it, so no code
+  downstream needs to handle a character who has un-learned something.
+
+**No XP loss** below `Death:XpLossMinLevel` (default 5 — the early levels are the tutorial and
+there is nothing there worth taking), and **none on a PvP death** (§4.11).
+
+**Respawn location resolves in order, falling through if a room no longer exists** — live editing
+means a bind point can be deleted out from under a player (§7.4):
+
+```
+1. characters.respawn_room_key    -- set by `bind` in a room that resolves `respawn` true
+2. the entrance room of the character's home zone
+3. EngineOptions.StartingRoom     -- the world's origin, guaranteed to exist
+```
+
+A character who has never used `bind` therefore respawns where they first entered the world, which
+is the simple behaviour; `bind` and the `respawn` flag exist so builders can place waypoints as the
+world grows outward, without that being a second system.
+
+**On respawn** the character is at 25% Health, 0 Focus, 0 Stamina, and out of combat. The real
+cost of dying is the walk back and the rest afterwards; reviving at full vitals would make death
+a teleport, and reviving at 1 HP would stack a second punishment on top of the XP already lost.
+
+Death while link-dead follows exactly the same path — the character is still in the world for the
+grace window and can still be killed (§3.6), so the respawn has to work with nobody watching.
+
+Every knob here is configuration, not a constant:
+
+| Setting | Default |
+|---|---|
+| `Death:XpLossPercent` | `0.10` |
+| `Death:XpLossMinLevel` | `5` |
+| `Death:RespawnHealthPercent` | `0.25` |
+| `Death:PvpCostsXp` | `false` |
+
 ---
 
 ## 5. Game client layout
@@ -574,11 +770,13 @@ accounts            id, email citext unique, username citext unique, password_ha
 
 characters          id, account_id → accounts, name citext unique, path, level, xp,
                     attributes jsonb, vitals jsonb, room_key, created_at,
-                    last_played_at, playtime_seconds, deleted_at null
+                    last_played_at, playtime_seconds, deleted_at null,
+                    respawn_room_key null    -- `bind` point (§4.12); not a FK, the room
+                                             -- can be deleted under a bound character
 
-worlds              key pk, name, description, multipliers jsonb, sort_order
+worlds              key pk, name, description, multipliers jsonb, flags jsonb, sort_order
 zones               key pk, world_key → worlds, name, description,
-                    level_range int4range, multipliers jsonb
+                    level_range int4range, multipliers jsonb, flags jsonb
 rooms               key pk, zone_key → zones, title, description, flags jsonb,
                     grid text[], legend jsonb,        -- terrain art + icon map
                     editor_x, editor_y                 -- builder canvas only, nullable
@@ -604,6 +802,13 @@ item_instances      id, template_key, state jsonb, resolved_stats jsonb,
 content_audit       id, account_id, entity_kind, entity_key, action,
                     before jsonb, after jsonb, at
                     -- replaces git history for world content
+
+admin_audit         id, actor_account_id, target_account_id, action,
+                    before, after, reason, at
+                    -- role changes (§7.7), and later mute/kick/ban. Deliberately NOT
+                    -- content_audit: an account is not content, and merging the two
+                    -- makes "who edited this room" and "who promoted this person"
+                    -- both harder to answer
 
 quests              key pk, zone_key → zones, name, summary, description,
                     giver_mob_key, turnin_mob_key,
@@ -631,6 +836,15 @@ Notes:
   coordinate and belongs to the builder canvas, not the game.
 - `multipliers jsonb` on both `worlds` and `zones` — a small map of the §4.4 keys. `jsonb`
   because the set will grow as we find new dials worth having.
+- `flags jsonb` on all three of `worlds`, `zones`, and `rooms`, for the same reason and resolved
+  nearest-level-wins (§4.10). A flag the running binary does not recognise is round-tripped, not
+  dropped. **No flag ever becomes a column** — the moment one does, adding the next one is a
+  migration again and the whole point is lost. Query flags with the jsonb operators
+  (`flags @> '{"pvp": true}'`), and add a GIN index on `rooms(flags)` only if a flag search ever
+  shows up in a plan; at world sizes measured in thousands of rooms it will not.
+- `characters.respawn_room_key` is nullable and deliberately **not** a foreign key, matching
+  `room_exits.to_room_key`: a builder can delete a room that characters are bound to, and death
+  falls through to the next candidate (§4.12) rather than the save failing.
 - `room_exits.to_room_key` is deliberately **not** a foreign key. Live editing means a builder
   links an exit before creating its destination; a FK would reject the save. Dangling exits are
   a validation warning, and in-game they fail closed (§7.4).
@@ -670,9 +884,9 @@ API client, and types with the game.
 | Screen | Edits |
 |---|---|
 | **World tree** | Worlds → zones → rooms, searchable. Create, rename, delete, move. |
-| **World** | Name, description, world-level multipliers. |
-| **Zone** | Name, description, level range, **multipliers with live preview** (§7.5). |
-| **Room** | Title, description, flags, ASCII grid painter, legend, exits. |
+| **World** | Name, description, world-level multipliers, world-level flag defaults. |
+| **Zone** | Name, description, level range, **multipliers with live preview** (§7.5), zone flag defaults. |
+| **Room** | Title, description, **flags** (rendered from the registry, §4.10), ASCII grid painter, legend, exits. |
 | **Zone canvas** | Rooms as boxes, exits as lines. Drag to arrange, drag between boxes to link. |
 | **Item templates** | Name, description, icon, slot, weight, base value, base stats. |
 | **Mob templates** | Name, description, icon, level, base stats, base xp/gold, behavior, loot. |
@@ -704,6 +918,10 @@ GET  POST PATCH DELETE  /api/builder/mob-templates[/{key}]
 GET  POST PATCH DELETE  /api/builder/item-templates[/{key}]
 GET  POST PATCH DELETE  /api/builder/spawners[/{id}]
 GET  POST PATCH DELETE  /api/builder/quests[/{key}]
+
+GET  /api/builder/room-flags                 -- the flag registry: key, default, summary (§4.10)
+                                             -- the room editor renders its checkboxes from this,
+                                             -- so a newly registered flag needs no client change
 
 GET  /api/builder/quests/{key}/reachability  -- can the required item actually be obtained?
 GET  /api/builder/storyline?zone={key}       -- quest graph: chain order, cycles, dead ends
@@ -738,13 +956,22 @@ because of it. Failure is always closed and always narrated:
 | Spawner references a deleted template | Spawner goes dormant and reports a warning. No crash, no empty mobs. |
 | Quest references a deleted mob or item | Quest goes dormant: the giver stops offering it, and an already-Active copy stays in the journal marked *unavailable* rather than being deleted from the character. Never silently wipe player progress. |
 | Quest prerequisites form a cycle | Every quest in the cycle is unstartable. Reported by `/storyline`, not enforced at save time. |
+| Flag key is not in the registry | Preserved on save, ignored by the engine, reported by `/validate`. Covers both a typo and a flag written by a newer binary (§4.10). |
+| Flag value is the wrong type (`"pvp": "yes"`) | Treated as absent, so it resolves to the registry default — which is always the safe value. Advisory warning. |
+| `pvp` cleared on a room mid-fight | The fight ends on the next round, exactly as if the combatants had walked out (§4.11). A live edit can stop a duel; it can never start one retroactively. |
+| A character's bind room is deleted | Death falls through to the next respawn candidate (§4.12). The stale `respawn_room_key` is cleared the first time it fails to resolve. |
 | Room has no description | Renders a placeholder; the room still works. |
 | Grid rows ragged or legend incomplete | Map falls back to a plain floor rectangle of the same size. |
 | Zone deleted with players inside | Blocked outright — the one destructive edit that requires the zone be empty. |
 
 Validation is **advisory**: `/validate` reports dangling exits, orphan rooms, empty spawners,
-unreachable areas, and **quest items that nothing drops or spawns** as warnings in the builder
-UI. It never rejects a save.
+unreachable areas, unrecognised flag keys, **rooms that are PvP only by inheritance** (§4.10), and
+**quest items that nothing drops or spawns** as warnings in the builder UI. It never rejects a save.
+
+The inherited-`pvp` warning is there because it is the one flag whose blast radius is larger than
+the thing you edited: setting `pvp` on a zone makes every room in it lethal, including the town
+square someone else authored last week. A warning listing exactly which rooms just became PvP
+turns an invisible edit into a visible one.
 
 That last check is worth calling out. An unobtainable quest item is the classic quest bug: the
 quest looks correct in the editor, the dialogue reads fine, and it is simply impossible to
@@ -817,13 +1044,84 @@ dig <dir> [into <zone>]     create + link a room (or materialize a dangling exit
 link <dir> <room-key>       point an exit at an existing room
 unlink <dir>                remove an exit
 rtitle <text>               set the title of the room you're in
+rflag <flag> [on|off]       set or clear a flag here; bare `rflag` lists them with their source
 goto <room-key>             jump anywhere, no exits required
 ```
+
+`rflag` completes against the registry (§4.10), so it lists the flags that actually exist rather
+than accepting any string and silently doing nothing.
 
 **Safety.** Builder role only — players never auto-create anything, and a player hitting a
 dangling exit still just gets *"The way is blocked."* `dig` is rate-limited to guard against a
 key-repeat sending a walk command forty times, every dig writes a `content_audit` row, and
 deleting a room dug by mistake is an ordinary delete gated on the room being empty.
+
+### 7.7 Granting the builder role
+
+Everything in §7 is gated on a role that, as shipped, can only be granted with
+`UPDATE accounts SET role = 'Builder'`. That is a hole: the whole point of the builder is that
+authoring a world needs no SQL, and requiring SQL to *reach* the builder concedes the argument on
+the first step. The first account on an empty database becoming Admin is a bootstrap, not an
+answer — it does nothing for the second person to join.
+
+**An admin promotes from inside the game:**
+
+```
+promote <name> <role>       role is builder, moderator, admin, or player
+demote <name>               shorthand for: promote <name> player
+whois <name>                account, role, and whether they are online
+```
+
+Admin only, hidden from everyone else's `help` exactly as the builder verbs are (§7.6). The
+target does **not** need to be online — these name an account, not a character in the room, which
+is what makes them usable for the ordinary case of someone asking to help build.
+
+Backed by `PATCH /api/admin/accounts/{username}/role` and `GET /api/admin/accounts?q=`, both
+behind the Admin policy. The API is the real interface; the verbs are a convenience over it.
+
+Three things make this harder than it looks, and each has to be handled explicitly.
+
+**The loop cannot read the account store.** §2.1 forbids a database call on the loop thread, and
+the Engine has no account repository at all — a character's role is carried in on `EnterWorld`
+precisely because the loop cannot look it up. So `promote` is not an ordinary command handler
+that does the work. It validates its arguments, enqueues an `AccountRoleChange` on a queue the
+Server drains (the same shape as the world write queue, §7.6), and the worker performs the
+change. This is the same fire-and-forget split, for the same reason.
+
+**The result therefore has to come back asynchronously.** A role change can fail — no such
+account, refusing to demote yourself — and the admin who typed the command deserves to be told.
+That needs an inbound message the Server can send *to* the loop, addressed at a session:
+`Notify(sessionId, message, kind)`, emitted as a `sys` event. This is the first outbound path
+that does not originate from a player's own command, and it is generally useful: Phase 6's
+`kick` and `ban` need exactly the same thing.
+
+**The role lives in the auth cookie, so changing the row changes nothing.** The claim is written
+at sign-in (§3.2), which means a freshly promoted builder keeps a cookie that still says Player
+until they log out and back in, and — worse in the other direction — a *demoted* builder keeps
+their access for up to fourteen days. The same flaw already applies to bans: `is_banned` is
+checked at login and never again, so banning someone who is currently connected does nothing at
+all until they choose to reconnect.
+
+The fix is one mechanism for both: **revalidate the principal against the database** in
+`CookieAuthenticationEvents.OnValidatePrincipal`, on an interval rather than every request. If
+the stored role differs from the claim, refresh the principal; if the account is banned, reject
+the cookie outright. A short interval (~60 s) is the right trade — role changes are rare, and
+nobody is harmed by a promotion taking a minute to reach an open tab, while a ban that takes at
+most a minute is a fundamentally different thing from one that takes two weeks.
+
+A character already in the world also carries `PlayerActor.Role`, which is a copy made at
+`EnterWorld` and would go stale the same way. The role-change worker therefore sends a
+`SetActorRole` message to the loop, so the builder verbs light up (or stop working) without the
+player relogging — matching how a live content edit reaches the room without a relog (§3.5).
+
+**Every role change is audited.** Not to `content_audit` — an account is not content, and mixing
+them makes both harder to read. A separate `admin_audit` table (§6) records actor, target,
+action, before, and after, and Phase 6's `mute` / `kick` / `ban` write to the same place.
+
+**Guard rails.** An admin cannot demote themselves — that is how an installation ends up with no
+admins at all, and there is no recovery path from that state except the SQL this section exists
+to remove. Promotion to Admin is permitted but confirmed, since Admin is the only role that can
+grant Admin.
 
 ---
 
@@ -893,26 +1191,106 @@ Notes from the build:
   occupants used to omit the extras from the map entirely — present in the room and the contents
   list, invisible on the grid. Overlapping icons are the better failure.
 
-### Phase 2 — World builder: geography
+### Phase 2 — World builder: geography ✅ **complete**
 *Done when: a new zone can be built end to end in the browser, with no SQL and no seeder edits.*
 
-- [ ] Roles (player / builder / moderator / admin) + authorization policies **(moved up from Ops)**
-- [ ] `WorldMutation` path: enqueue → loop applies → persist → notify occupants
-- [ ] Request/response mutation pattern with loop ack (§7.3)
-- [ ] World / zone / room / exit CRUD API + `content_audit` on every write
-- [ ] Graceful degradation for every broken state in §7.4 — with tests for each row
-- [ ] Advisory `/validate`: dangling exits, orphan rooms, unreachable areas
-- [ ] Builder UI: world tree, world editor, zone editor, room editor
-- [ ] ASCII grid painter with legend management
-- [ ] Zone canvas: auto-layout from the exit graph, drag to arrange, drag to link
-- [ ] Live push of edits to players standing in an edited room
-- [ ] **Walk-and-build (§7.6):** `dig` endpoint covering both materialize and dig cases
-- [ ] Reciprocal exits, provisional key generation, automatic `editor_x/y` placement
-- [ ] `flags.unfinished` on new rooms, `/unfinished` to-do list, hatched on the canvas
-- [ ] In-game builder commands: `dig`, `link`, `unlink`, `rtitle`, `goto`
-- [ ] Follow mode: builder panel re-targets the room the character walks into
-- [ ] Room rename rewrites inbound exit references in the same mutation
-- [ ] Dig rate limiting; builder-only gating with player fallback to "The way is blocked."
+- [x] Roles (player / builder / moderator / admin) + authorization policies **(moved up from Ops)**
+- [x] `WorldMutation` path: enqueue → loop applies → persist → notify occupants
+- [x] Request/response mutation pattern with loop ack (§7.3)
+- [x] World / zone / room / exit CRUD API + `content_audit` on every write
+- [x] **Room flag registry (§4.10):** typed accessors, room → zone → world resolution,
+      unknown keys preserved and wrong-typed values treated as absent
+- [x] `GET /api/builder/room-flags`; the room editor renders flags from it, inherited values
+      shown greyed with their source
+- [x] Graceful degradation for every broken state in §7.4 — with tests for each row
+- [x] Advisory `/validate`: dangling exits, orphan rooms, unreachable areas, unknown flag keys,
+      rooms that are PvP only by inheritance
+- [x] Builder UI: world tree, world editor, zone editor, room editor
+- [x] ASCII grid painter with legend management
+- [x] Zone canvas: auto-layout from the exit graph, drag to arrange, drag to link
+- [x] Live push of edits to players standing in an edited room
+- [x] **Walk-and-build (§7.6):** `dig` endpoint covering both materialize and dig cases
+- [x] Reciprocal exits, provisional key generation, automatic `editor_x/y` placement
+- [x] `flags.unfinished` on new rooms, `/unfinished` to-do list, hatched on the canvas
+- [x] In-game builder commands: `dig`, `link`, `unlink`, `rtitle`, `rflag`, `goto`
+- [x] Follow mode: builder panel re-targets the room the character walks into
+- [x] Room rename rewrites inbound exit references in the same mutation
+- [x] Dig rate limiting; builder-only gating with player fallback to "The way is blocked."
+- [x] 232 .NET tests + 18 client tests
+
+Notes from the build:
+
+- **The loop normalises requests into primitives, and persistence replays that exact list.**
+  A builder asks for `dig north`; the loop answers with `[UpsertRoom, SetExit, SetExit]` and
+  hands the same list to the writer. Letting both sides interpret the request independently
+  would work right up until they disagreed — and `dig` is where they would, because the loop
+  picks the new room's key and nothing else can know it.
+- **Reads come from Postgres, writes go through the loop.** Enumerating `WorldState` from a
+  request thread is a real race, not a theoretical one: it is mutated with no locks, and the
+  moment it would bite is a builder editing a busy world. Since every mutation persists before
+  its HTTP call returns, the database is never more than one in-flight edit behind.
+- **A failed persist reloads the world rather than leaving memory ahead of it.** The alternative
+  was a 200 for an edit that evaporates at the next restart. The reload is blunt — every room,
+  not just the failed one — but a failure here means Postgres is unreachable, not that the edit
+  was bad, so bluntness costs nothing and correctness is restored.
+- **In-game builder commands persist fire-and-forget, and that asymmetry is forced.** A command
+  handler runs *on* the loop; enqueueing a mutation and awaiting it would wait for a pulse that
+  cannot start until the current one ends. So `dig` typed at the command line queues its writes
+  like a character save, and a failure is logged rather than reported. The builder panel, where
+  anyone authoring seriously works, does not have that gap.
+- **`peaceful` beating `pvp`, and absence beating both, is the whole safety argument.** The
+  test that matters is `A_room_with_no_flags_at_all_is_not_pvp` — every other claim in §4.11
+  rests on it.
+- **EF scaffolded the `flags` migration with a default of `""`.** Postgres rejects an empty
+  string as jsonb, so the generated migration would have failed on any database that already
+  had a world in it. Hand-corrected to `{}`, with a comment saying why.
+- **Test hosts no longer use the Windows Event Log provider.** Each test builds its own host in
+  one process, and `EventLogLoggerProvider` wraps a handle the first host to be disposed closes
+  for all of them; a later host logging a warning then threw `ObjectDisposedException` from
+  inside `ILogger.Log`. It surfaced as a failure in the readiness test — the one most reliably
+  logging a warning — with a stack trace pointing at logging rather than anything that test did.
+- **Both background workers now swallow `OperationCanceledException`.** An exception escaping a
+  `BackgroundService` is treated as a fault: the host logs Critical and stops. During a shutdown
+  already under way, that Critical reaches logging providers midway through disposal.
+
+### Phase 2a — Role administration ✅ **complete**
+*Done when: an admin can make somebody a builder from inside the game, and a ban takes effect on
+someone who is already connected.*
+
+Small, and it came before Phase 3 because Phase 2 shipped a builder that needed SQL to reach
+(§7.7).
+
+- [x] `admin_audit` table + migration
+- [x] `PATCH /api/admin/accounts/{username}/role`, `GET /api/admin/accounts?q=`, Admin policy
+- [x] `AccountAdminQueue` + worker, mirroring the world write queue
+- [x] In-game `promote`, `demote`, `whois` — admin-only, hidden from `help`, target may be offline
+- [x] `Notify(sessionId, …)` inbound message so an async result reaches the admin as a `sys` event
+- [x] `SetActorRole` so a promoted character's verbs work without relogging
+- [x] `OnValidatePrincipal` revalidation on a ~60 s interval: refresh a changed role, reject a
+      banned account — **this is what makes banning a connected player work at all**
+- [x] Self-demotion refused; an installation must never be able to lose its last admin
+- [x] README: replace the `UPDATE accounts` instruction with the command
+- [x] 278 .NET tests
+
+Notes from the build:
+
+- **`AccountRole` is not a ladder, and pretending it is would be a privilege bug.** The numbers
+  ascend, so `actor >= required` reads as obviously correct — and quietly makes every Moderator a
+  builder. `AccountRoleExtensions.Satisfies` is the single definition; the HTTP policies and the
+  in-game command table both derive from it, and a test asserts the two agree for all sixteen
+  pairs. Two copies of an access rule is how they end up disagreeing.
+- **The revalidation interval had to become configuration to be testable.** At a fixed 60 s, a
+  test that promoted somebody and immediately checked their access would assert the cache rather
+  than the behaviour — and would keep passing if revalidation were deleted. `Auth:Revalidation`
+  `IntervalSeconds` is 0 in tests, and 0 is a legitimate production setting for a small server
+  that would rather pay a read per request.
+- **Roles are parsed in full, never by prefix.** `promote kael a` silently meaning Admin is the
+  one place where the abbreviation convenience the rest of the parser is built on becomes a
+  hazard. Typing the whole word *is* the confirmation step.
+- **`Notify` is addressed by session, not by character.** An account may have several tabs open
+  and only one of them typed the command; the reply belongs to the connection that asked.
+- **A demoted builder is told, not silently stripped.** Verbs that stop working with no
+  explanation read as the game breaking rather than as a decision somebody made.
 
 ### Phase 3 — Objects, inhabitants, and multipliers
 *Done when: a zone's difficulty is a slider, and the same kobold is trivial in one zone and lethal in another.*
@@ -935,14 +1313,23 @@ Notes from the build:
 - [ ] Combat state machine on the 2 s round system
 - [ ] `kill`, `flee`, `consider`, auto-attack continuation
 - [ ] Damage model per §4.6, injectable RNG, full unit coverage of the formula
-- [ ] Death: corpse creation, item transfer, respawn point, penalty (**resolve Q2**)
+- [ ] **Target validation gate (§4.11), separate from the damage formula:** `peaceful` forbids all
+      combat, player-vs-player requires `pvp`, party members are never targets
+- [ ] PvP re-checked every round, so leaving a `pvp` room ends the fight; refusals are narrated
+- [ ] PvP kills recorded to the moderation log
+- [ ] **Death (§4.12):** no player corpse, no item loss, mob corpses unchanged
+- [ ] XP penalty as a fraction of the level band, floored at the threshold — never de-level;
+      exempt below `Death:XpLossMinLevel` and on PvP deaths
+- [ ] `bind` in a `respawn`-flagged room; three-step respawn fall-through, stale bind cleared
+- [ ] Respawn at 25% Health / 0 Focus / 0 Stamina, out of combat; same path when link-dead
 - [ ] XP awards with zone `xp` multiplier, leveling, point spend
 - [ ] Regen tied to Vitality and rest state (`sleep`, `rest`, `stand`)
 - [ ] Aggressive mobs, assist behavior, target selection
-- [ ] Resolve **Q1** (PvP scope) before writing target-validation rules
 
 ### Phase 5 — Depth
 - [ ] Ability system: cost, cooldown, cast time, targeting rules
+- [ ] Abilities reuse the §4.11 gate: AoE filters **per target**, pets and charmed mobs inherit
+      their owner's permissions, `noRecall` refuses teleports out
 - [ ] Per-Path ability trees (**resolve Q3** on respec)
 - [ ] Buffs/debuffs with duration, stacking, expiry on the 60 s tick
 - [ ] Shops, currency, `buy` / `sell` / `list` — priced through `itemValue`
@@ -978,8 +1365,12 @@ Notes from the build:
 | Layout | Same room + same occupants ⇒ identical cells across restarts; no two blocking entities share a cell. |
 | Robustness | One test per row of §7.4. Delete a room out from under a player, point an exit at nothing, orphan a spawner — the loop must survive every one. |
 | Multipliers | Boundary cases: `0.0` yields none, tiny fractions still yield ≥1 health, world × zone composes, rounding is half-away-from-zero. |
+| Room flags | Resolution is room → zone → world → default; an unknown key survives a save/load round-trip; a wrong-typed value resolves to the default; `peaceful` beats `pvp`. The load-bearing test is that **a room with no flags at all is not PvP** — that is the property every other safety claim rests on. |
+| PvP | Refused in an unflagged room, allowed in a flagged one, ends the round after either party leaves, never targets a party member, and cannot be laundered through a pet. AoE in a mixed room hits mobs and skips players. |
+| Death | XP loss floors at the level threshold and never de-levels; no loss below the min level or on a PvP death; dying at the exact threshold costs nothing. Respawn falls through all three candidates, including when the bind room was deleted mid-session. Nothing leaves the inventory. |
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
 | Builder | Mutation → loop → persist → occupants notified, end to end. Audit row written on every write. |
+| Roles | Promotion reaches an open session without a relog, and demotion revokes builder access within the revalidation interval rather than at cookie expiry. A banned account is rejected while still connected. Self-demotion refused. An offline target can be promoted. Every change writes an `admin_audit` row. |
 | Server | `WebApplicationFactory` + Testcontainers Postgres, including an SSE test that opens the stream, POSTs a command, and asserts events arrive in order. |
 | Client | Vitest for the protocol/state layer; Playwright for login → move → see-map, and build-a-room → walk-into-it. |
 
@@ -1000,6 +1391,11 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 | **Multiplier misconfiguration ships an unkillable zone** | Preview table before saving; `strength` on a sane slider range with a warning past ~10×; multipliers apply only on respawn, so there is a window to notice |
 | **An unfinishable quest — required item that nothing drops or spawns** | `/reachability` walks loot tables and spawners before it ships. This fails silently in play: the quest reads correctly and the player just wanders, so it must be caught in the editor |
 | **A content edit strands players mid-storyline** | Deleting a referenced mob or item makes the quest dormant, never deletes `character_quests` rows. Progress survives the content churn that live editing invites |
+| **A stray `pvp` flag turns a town into a killing field, live, with no rollback** | The flag defaults to off and absence is always safe (§4.10); zone- and world-level sets are warned about by `/validate` with the affected rooms listed; `peaceful` overrides; every flag change writes a `content_audit` row, so *"who made the square PvP"* is one query |
+| **Flags accrete until nobody knows what a room does** | The registry is the single source of truth and carries a summary per flag; the builder renders from it, so UI and behavior cannot drift. A flag with no reader is dead weight and should be deleted — the registry makes that auditable |
+| **The XP penalty feels punishing enough to drive players off** | It is bounded by construction — one fraction of a single level band, never a de-level, nothing below level 5, nothing on PvP — and all four knobs are configuration, so it can be tuned without a deploy |
+| **A role or ban change does nothing until the cookie expires** | The claim is written at sign-in, so a demoted builder keeps access for up to 14 days and a ban on a connected player does nothing at all. `OnValidatePrincipal` revalidation on a ~60 s interval (§7.7). This is the security-relevant half of Phase 2a and the reason it is not deferred to Phase 6 |
+| **An installation loses its last admin and cannot get it back** | Self-demotion is refused outright. There is no recovery from zero admins except the SQL that §7.7 exists to eliminate |
 | Map creep — someone adds range checks and the cosmetic grid quietly becomes a rules system | Coordinates physically absent from Domain; architecture test fails the build; §4.2 is the contract to point at in review |
 | Idle SSE connections reaped by infrastructure | 15 s heartbeat, keep-alive timeouts tuned above it |
 | Missed events on flaky mobile connections | `Last-Event-ID` + 250-event ring buffer replay |
@@ -1023,5 +1419,13 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 
 ## 12. Next step
 
-Phase 0 is unblocked and needs no further decisions. Say the word and I'll scaffold the solution,
-projects, `docker-compose.yml`, first EF migration, and the Vite client.
+**Phase 3 — objects, inhabitants, and multipliers.** Unblocked; the builder now exists to author
+them with, and roles can be handed out without touching the database.
+
+Two things Phase 2 leaves in place for it. The **mutation path generalises**: item and mob
+templates and spawners are more `WorldChange` primitives and more writer arms, not a second
+editing mechanism. And the **flag registry is already the extension point** — `noMob` is
+registered and waiting for the mob AI that reads it, and `pvp`/`respawn` are waiting for Phase 4,
+which will add two reads rather than retrofitting a flag system into shipped combat code.
+
+Q3 (Path respec) is the only open question left, and nothing before Phase 5 depends on it.

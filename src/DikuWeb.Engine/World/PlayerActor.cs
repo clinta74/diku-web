@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Protocol;
@@ -12,6 +13,19 @@ namespace DikuWeb.Engine.World;
 public sealed class PlayerActor
 {
     public required Character Character { get; init; }
+
+    /// <summary>
+    /// The account's role, carried in so builder commands can be gated without the Engine
+    /// reaching for an account store. A player hitting a dangling exit gets "The way is
+    /// blocked."; a builder standing in the same spot is offered <c>dig</c> (PLAN.md §7.6).
+    /// </summary>
+    /// <remarks>
+    /// Settable because a promotion or demotion must reach a character already in the world
+    /// (PLAN.md §7.7). Only the loop writes it, on a <see cref="Protocol.SetActorRole"/>.
+    /// </remarks>
+    public AccountRole Role { get; set; } = AccountRole.Player;
+
+    public bool IsBuilder => Role is AccountRole.Builder or AccountRole.Admin;
 
     /// <summary>Mutable: a reconnect inside the grace window rebinds a new session.</summary>
     public Guid SessionId { get; set; }

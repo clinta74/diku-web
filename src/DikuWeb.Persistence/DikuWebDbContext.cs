@@ -1,4 +1,5 @@
 using DikuWeb.Domain.Accounts;
+using DikuWeb.Domain.Building;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Worlds;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,10 @@ public sealed class DikuWebDbContext(DbContextOptions<DikuWebDbContext> options)
     public DbSet<Room> Rooms => Set<Room>();
 
     public DbSet<RoomExit> RoomExits => Set<RoomExit>();
+
+    public DbSet<ContentAudit> ContentAudits => Set<ContentAudit>();
+
+    public DbSet<AdminAudit> AdminAudits => Set<AdminAudit>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

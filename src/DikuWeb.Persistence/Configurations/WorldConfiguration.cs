@@ -1,4 +1,5 @@
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,6 +17,12 @@ internal sealed class WorldConfiguration : IEntityTypeConfiguration<World>
         builder.Property(w => w.Name).HasColumnName("name").HasMaxLength(64).IsRequired();
         builder.Property(w => w.Description).HasColumnName("description").IsRequired();
         builder.Property(w => w.SortOrder).HasColumnName("sort_order").IsRequired();
+
+        builder.Property(w => w.Flags)
+            .HasColumnName("flags")
+            .HasColumnType("jsonb")
+            .HasConversion(new FlagSetConverter(), new FlagSetComparer())
+            .IsRequired();
 
         builder.HasMany(w => w.Zones)
             .WithOne(z => z.World)
@@ -40,6 +47,12 @@ internal sealed class ZoneConfiguration : IEntityTypeConfiguration<Zone>
         builder.Property(z => z.Description).HasColumnName("description").IsRequired();
         builder.Property(z => z.MinLevel).HasColumnName("min_level").IsRequired();
         builder.Property(z => z.MaxLevel).HasColumnName("max_level").IsRequired();
+
+        builder.Property(z => z.Flags)
+            .HasColumnName("flags")
+            .HasColumnType("jsonb")
+            .HasConversion(new FlagSetConverter(), new FlagSetComparer())
+            .IsRequired();
 
         builder.HasMany(z => z.Rooms)
             .WithOne(r => r.Zone)

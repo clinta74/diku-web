@@ -86,6 +86,107 @@ namespace DikuWeb.Persistence.Migrations
                     b.ToTable("accounts", (string)null);
                 });
 
+            modelBuilder.Entity("DikuWeb.Domain.Accounts.AdminAudit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuidv7()");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("action");
+
+                    b.Property<Guid?>("ActorAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_account_id");
+
+                    b.Property<string>("After")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("after");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<string>("Before")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("before");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("TargetAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_account_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TargetAccountId", "At")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_admin_audit_target");
+
+                    b.ToTable("admin_audit", (string)null);
+                });
+
+            modelBuilder.Entity("DikuWeb.Domain.Building.ContentAudit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("uuidv7()");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("action");
+
+                    b.Property<string>("After")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("after");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<string>("Before")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("before");
+
+                    b.Property<string>("EntityKey")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("entity_key");
+
+                    b.Property<string>("EntityKind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("entity_kind");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityKind", "EntityKey", "At")
+                        .IsDescending(false, false, true)
+                        .HasDatabaseName("ix_content_audit_entity");
+
+                    b.ToTable("content_audit", (string)null);
+                });
+
             modelBuilder.Entity("DikuWeb.Domain.Characters.Character", b =>
                 {
                     b.Property<Guid>("Id")
@@ -172,12 +273,17 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("editor_y");
 
-                    b.PrimitiveCollection<string[]>("Grid")
+                    b.Property<string>("Flags")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("flags");
+
+                    b.PrimitiveCollection<List<string>>("Grid")
                         .IsRequired()
                         .HasColumnType("text[]")
                         .HasColumnName("grid");
 
-                    b.Property<IReadOnlyDictionary<string, string>>("Legend")
+                    b.Property<string>("Legend")
                         .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("legend");
@@ -240,6 +346,11 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
+                    b.Property<string>("Flags")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("flags");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -266,6 +377,11 @@ namespace DikuWeb.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("description");
+
+                    b.Property<string>("Flags")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("flags");
 
                     b.Property<int>("MaxLevel")
                         .HasColumnType("integer")

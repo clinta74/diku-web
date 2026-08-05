@@ -33,7 +33,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
@@ -81,19 +81,35 @@ export const api = {
       body: JSON.stringify({ name, path }),
     }),
 
+  /**
+   * Game routes are scoped by character so one login can drive several at once. The cookie
+   * still authorises; the id only selects which of your own characters is meant.
+   */
   enter: (characterId: string) =>
-    request<{ sessionId: string; character: string }>('/api/game/enter', {
-      method: 'POST',
-      body: JSON.stringify({ characterId }),
-    }),
+    request<{
+      sessionId: string
+      characterId: string
+      character: string
+      reconnected: boolean
+    }>(`/api/game/${characterId}/enter`, { method: 'POST' }),
 
   /**
    * Returns 202 with no body on purpose. Every result, including this command's own output,
-   * arrives over the SSE stream so the scrollback is always in true order (PLAN.md §3.3).
+   * arrives over that character's SSE stream so the scrollback is always in true order
+   * (PLAN.md §3.3).
    */
-  command: (input: string) =>
-    request<void>('/api/game/command', {
+  command: (characterId: string, input: string) =>
+    request<void>(`/api/game/${characterId}/command`, {
       method: 'POST',
       body: JSON.stringify({ input }),
     }),
+
+  leave: (characterId: string) =>
+    request<void>(`/api/game/${characterId}/leave`, { method: 'POST' }),
+
+  /** Which of this account's characters are currently in the world. */
+  sessions: () =>
+    request<{ characterId: string; character: string; streaming: boolean }[]>(
+      '/api/game/sessions',
+    ),
 }

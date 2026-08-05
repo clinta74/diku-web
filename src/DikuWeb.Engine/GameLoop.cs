@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Commands;
+using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.Time;
@@ -22,6 +23,9 @@ public sealed class GameLoop(
     WorldState world,
     CommandRegistry commands,
     PlayerView view,
+    WorldMutationApplier applier,
+    LoopWorldEditor loopEditor,
+    IAccountAdminQueue adminQueue,
     SystemGameClock clock,
     IWorldSource worldSource,
     ICharacterSaveQueue saveQueue,
@@ -120,7 +124,107 @@ public sealed class GameLoop(
                 case LeaveWorld leave:
                     HandleLeave(leave);
                     break;
+                case WorldMutation mutation:
+                    HandleMutation(mutation);
+                    break;
+                case ReplaceWorld replace:
+                    HandleReplaceWorld(replace);
+                    break;
+                case Notify notify:
+                    world.FindBySession(notify.SessionId)?.SendSys(notify.Message, notify.Kind);
+                    break;
+                case SetActorRole role:
+                    HandleSetActorRole(role);
+                    break;
             }
+        }
+    }
+
+    /// <summary>
+    /// Applies a role change to every character this account has in the world (PLAN.md §7.7).
+    /// </summary>
+    private void HandleSetActorRole(SetActorRole message)
+    {
+        foreach (var actor in world.AllPlayers.Where(p => p.Character.AccountId == message.AccountId))
+        {
+            if (actor.Role == message.Role)
+            {
+                continue;
+            }
+
+            actor.Role = message.Role;
+
+            // Told plainly, because it changes what their commands do. Silently revoking the
+            // builder verbs would read as the game breaking.
+            actor.SendSys(
+                actor.IsBuilder
+                    ? "You have been granted building privileges."
+                    : "Your building privileges have been removed.",
+                SysKinds.Warning);
+
+            EngineLog.ActorRoleChanged(logger, actor.Name, message.Role.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Applies a builder edit and answers the waiting HTTP request (PLAN.md §7.3).
+    /// </summary>
+    private void HandleMutation(WorldMutation message)
+    {
+        try
+        {
+            var result = applier.Apply(message.Change);
+
+            if (result.Success)
+            {
+                EngineLog.MutationApplied(
+                    logger, message.Change.EntityKind, message.Change.EntityKey, result.Applied.Count);
+            }
+            else
+            {
+                EngineLog.MutationRefused(
+                    logger, message.Change.EntityKind, message.Change.EntityKey, result.Message ?? "");
+            }
+
+            message.Completion.TrySetResult(result);
+        }
+        catch (Exception ex)
+        {
+            // The applier is written not to throw, so reaching here is a bug rather than a
+            // refusal. Fail the request instead of the loop, and make sure the builder's
+            // request does not hang waiting for a completion that never arrives.
+            EngineLog.MutationFailed(logger, message.Change.EntityKind, message.Change.EntityKey, ex);
+            message.Completion.TrySetResult(
+                MutationResult.Fail(MutationError.Invalid, "The edit could not be applied."));
+        }
+    }
+
+    private void HandleReplaceWorld(ReplaceWorld message)
+    {
+        try
+        {
+            world.Load(message.Data.Worlds, message.Data.Zones, message.Data.Rooms);
+
+            // A reload can remove the room someone is standing in. Same treatment as a
+            // deleted room (PLAN.md §7.4): move them somewhere real, never leave them nowhere.
+            foreach (var actor in world.AllPlayers.ToList())
+            {
+                if (world.FindRoom(actor.RoomKey) is null)
+                {
+                    actor.SendSys("The world shifted around you.", SysKinds.Warning);
+                    world.Move(actor, options.StartingRoom);
+                }
+
+                view.SendRoom(world, actor, verbose: false);
+            }
+
+            EngineLog.WorldReloaded(logger, world.RoomCount);
+            message.Completion.TrySetResult(true);
+        }
+        catch (Exception ex)
+        {
+            EngineLog.WorldReloadFailed(logger, ex);
+            message.Completion.TrySetResult(false);
         }
     }
 
@@ -172,6 +276,7 @@ public sealed class GameLoop(
         var actor = new PlayerActor
         {
             Character = character,
+            Role = message.Role,
             SessionId = message.SessionId,
             Output = message.Output,
         };
@@ -217,6 +322,8 @@ public sealed class GameLoop(
             Actor = actor,
             World = world,
             View = view,
+            Editor = loopEditor,
+            AdminQueue = adminQueue,
             Verb = verb,
             Argument = argument,
         };

@@ -1,3 +1,5 @@
+using DikuWeb.Domain.Accounts;
+
 namespace DikuWeb.Engine.Commands;
 
 /// <summary>
@@ -10,11 +12,17 @@ namespace DikuWeb.Engine.Commands;
 /// </param>
 /// <param name="Help">One line shown by the help command.</param>
 /// <param name="Handler">Executes the command.</param>
+/// <param name="Requires">
+/// The role needed to see this verb in <c>help</c>. Handlers still check for themselves - this
+/// only keeps the verb out of sight, so a player never learns the world can be edited from here
+/// and nobody below Admin learns that roles can be granted from here.
+/// </param>
 public sealed record CommandDefinition(
     string Name,
     int MinLength,
     string Help,
-    Action<CommandContext> Handler)
+    Action<CommandContext> Handler,
+    AccountRole Requires = AccountRole.Player)
 {
     /// <summary>
     /// True when the typed verb is an acceptable abbreviation. Order in the table breaks
@@ -24,4 +32,6 @@ public sealed record CommandDefinition(
         verb.Length >= MinLength
         && verb.Length <= Name.Length
         && Name.StartsWith(verb, StringComparison.Ordinal);
+
+    public bool VisibleTo(AccountRole role) => role.Satisfies(Requires);
 }

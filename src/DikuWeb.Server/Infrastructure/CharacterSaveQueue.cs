@@ -35,26 +35,38 @@ public sealed class CharacterSaveWorker(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await foreach (var snapshot in queue.Reader.ReadAllAsync(stoppingToken))
+        // ReadAllAsync throws OperationCanceledException on shutdown, and an exception
+        // escaping a BackgroundService is a fault: the host logs Critical and stops. During a
+        // shutdown that is already under way, that Critical reaches logging providers midway
+        // through disposal. Normal shutdown must not look like a fault.
+        try
         {
-            // Coalesce anything already queued for the same character: during shutdown or a
-            // busy autosave the same id can appear several times, and only the last matters.
-            var batch = new Dictionary<Guid, CharacterSnapshot> { [snapshot.Id] = snapshot };
+            await foreach (var snapshot in queue.Reader.ReadAllAsync(stoppingToken))
+            {
+                // Coalesce anything already queued for the same character: during shutdown or
+                // a busy autosave the same id can appear several times, and only the last
+                // matters.
+                var batch = new Dictionary<Guid, CharacterSnapshot> { [snapshot.Id] = snapshot };
 
-            while (queue.Reader.TryRead(out var extra))
-            {
-                batch[extra.Id] = extra;
-            }
+                while (queue.Reader.TryRead(out var extra))
+                {
+                    batch[extra.Id] = extra;
+                }
 
-            try
-            {
-                await SaveBatchAsync(batch.Values, stoppingToken);
+                try
+                {
+                    await SaveBatchAsync(batch.Values, stoppingToken);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    // A failed save must not kill the worker, or every later save is lost too.
+                    ServerLog.CharacterSaveFailed(logger, batch.Count, ex);
+                }
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                // A failed save must not kill the worker, or every later save is lost too.
-                ServerLog.CharacterSaveFailed(logger, batch.Count, ex);
-            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal shutdown.
         }
     }
 

@@ -51,9 +51,9 @@ public sealed class GameFlowTests(PostgresFixture postgres)
         return body.RootElement.GetProperty("id").GetGuid();
     }
 
-    private static async Task<SseStream> OpenStreamAsync(HttpClient client)
+    private static async Task<SseStream> OpenStreamAsync(HttpClient client, Guid characterId)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/game/stream");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/game/{characterId}/stream");
         var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
         response.EnsureSuccessStatusCode();
@@ -69,10 +69,10 @@ public sealed class GameFlowTests(PostgresFixture postgres)
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Kael"));
-        var enter = await client.PostAsJsonAsync("/api/game/enter", new { characterId });
+        var enter = await client.PostAsJsonAsync($"/api/game/{characterId}/enter", new { });
         Assert.Equal(HttpStatusCode.OK, enter.StatusCode);
 
-        await using var stream = await OpenStreamAsync(client);
+        await using var stream = await OpenStreamAsync(client, characterId);
         var frames = await stream.ReadUntilAsync(f => f.Any(x => x.EventType == "room") && f.Any(x => x.EventType == "map"),
             EventTimeout);
 
@@ -95,9 +95,9 @@ public sealed class GameFlowTests(PostgresFixture postgres)
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Mono"));
-        await client.PostAsJsonAsync("/api/game/enter", new { characterId });
+        await client.PostAsJsonAsync($"/api/game/{characterId}/enter", new { });
 
-        await using var stream = await OpenStreamAsync(client);
+        await using var stream = await OpenStreamAsync(client, characterId);
         var frames = await stream.ReadUntilAsync(f => f.Count >= 4, EventTimeout);
 
         var ids = frames.Where(f => f.Id.HasValue).Select(f => f.Id!.Value).ToList();
@@ -116,14 +116,14 @@ public sealed class GameFlowTests(PostgresFixture postgres)
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Walk"));
-        await client.PostAsJsonAsync("/api/game/enter", new { characterId });
+        await client.PostAsJsonAsync($"/api/game/{characterId}/enter", new { });
 
-        await using var stream = await OpenStreamAsync(client);
+        await using var stream = await OpenStreamAsync(client, characterId);
 
         // Drain the entry burst first so the assertion below is about the command.
         await stream.ReadUntilAsync(f => f.Any(x => x.EventType == "room"), EventTimeout);
 
-        var command = await client.PostAsJsonAsync("/api/game/command", new { input = "east" });
+        var command = await client.PostAsJsonAsync($"/api/game/{characterId}/command", new { input = "east" });
 
         Assert.Equal(HttpStatusCode.Accepted, command.StatusCode);
         Assert.Empty(await command.Content.ReadAsStringAsync());
@@ -149,13 +149,13 @@ public sealed class GameFlowTests(PostgresFixture postgres)
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Wall"));
-        await client.PostAsJsonAsync("/api/game/enter", new { characterId });
+        await client.PostAsJsonAsync($"/api/game/{characterId}/enter", new { });
 
-        await using var stream = await OpenStreamAsync(client);
+        await using var stream = await OpenStreamAsync(client, characterId);
         await stream.ReadUntilAsync(f => f.Any(x => x.EventType == "room"), EventTimeout);
 
         // The north gate has no "down" exit.
-        await client.PostAsJsonAsync("/api/game/command", new { input = "down" });
+        await client.PostAsJsonAsync($"/api/game/{characterId}/command", new { input = "down" });
 
         var frames = await stream.ReadUntilAsync(f => f.HasText("cannot go down"),
             EventTimeout);
@@ -174,15 +174,15 @@ public sealed class GameFlowTests(PostgresFixture postgres)
         var kaelId = await CreatePlayerAsync(kael, UniqueName("Kae"));
         var miraId = await CreatePlayerAsync(mira, UniqueName("Mir"));
 
-        await kael.PostAsJsonAsync("/api/game/enter", new { characterId = kaelId });
-        await using var kaelStream = await OpenStreamAsync(kael);
+        await kael.PostAsJsonAsync($"/api/game/{kaelId}/enter", new { });
+        await using var kaelStream = await OpenStreamAsync(kael, kaelId);
         await kaelStream.ReadUntilAsync(f => f.Any(x => x.EventType == "room"), EventTimeout);
 
-        await mira.PostAsJsonAsync("/api/game/enter", new { characterId = miraId });
-        await using var miraStream = await OpenStreamAsync(mira);
+        await mira.PostAsJsonAsync($"/api/game/{miraId}/enter", new { });
+        await using var miraStream = await OpenStreamAsync(mira, miraId);
         await miraStream.ReadUntilAsync(f => f.Any(x => x.EventType == "room"), EventTimeout);
 
-        await mira.PostAsJsonAsync("/api/game/command", new { input = "say hello there" });
+        await mira.PostAsJsonAsync($"/api/game/{miraId}/command", new { input = "say hello there" });
 
         var heard = await kaelStream.ReadUntilAsync(f => f.HasText("hello there"), EventTimeout);
         Assert.True(heard.HasText("hello there"), "Kael never heard Mira speak.");
@@ -198,9 +198,9 @@ public sealed class GameFlowTests(PostgresFixture postgres)
         using var factory = NewFactory();
         using var client = NewClient(factory);
 
-        await CreatePlayerAsync(client, UniqueName("Idle"));
+        var characterId = await CreatePlayerAsync(client, UniqueName("Idle"));
 
-        var response = await client.PostAsJsonAsync("/api/game/command", new { input = "look" });
+        var response = await client.PostAsJsonAsync($"/api/game/{characterId}/command", new { input = "look" });
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
@@ -211,9 +211,9 @@ public sealed class GameFlowTests(PostgresFixture postgres)
         using var factory = NewFactory();
         using var client = NewClient(factory);
 
-        await CreatePlayerAsync(client, UniqueName("Prem"));
+        var characterId = await CreatePlayerAsync(client, UniqueName("Prem"));
 
-        var response = await client.GetAsync(new Uri("/api/game/stream", UriKind.Relative));
+        var response = await client.GetAsync(new Uri($"/api/game/{characterId}/stream", UriKind.Relative));
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
@@ -228,7 +228,7 @@ public sealed class GameFlowTests(PostgresFixture postgres)
         var characterId = await CreatePlayerAsync(owner, UniqueName("Own"));
         await CreatePlayerAsync(intruder, UniqueName("Int"));
 
-        var response = await intruder.PostAsJsonAsync("/api/game/enter", new { characterId });
+        var response = await intruder.PostAsJsonAsync($"/api/game/{characterId}/enter", new { });
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }

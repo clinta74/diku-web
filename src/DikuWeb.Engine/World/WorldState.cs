@@ -53,9 +53,91 @@ public sealed class WorldState
 
     public bool TryGetRoom(RoomKey key, out Room room) => _rooms.TryGetValue(key, out room!);
 
+    // -----------------------------------------------------------------------
+    // Content mutation (PLAN.md §7.3). Called only from WorldMutationApplier,
+    // which the game loop calls on its own thread.
+    // -----------------------------------------------------------------------
+
+    public void PutWorld(Domain.Worlds.World world)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        _worlds[world.Key] = world;
+    }
+
+    public bool RemoveWorld(string key) => _worlds.Remove(key);
+
+    public void PutZone(Zone zone)
+    {
+        ArgumentNullException.ThrowIfNull(zone);
+        _zones[zone.Key] = zone;
+    }
+
+    public bool RemoveZone(string key) => _zones.Remove(key);
+
+    public void PutRoom(Room room)
+    {
+        ArgumentNullException.ThrowIfNull(room);
+        _rooms[room.Key] = room;
+    }
+
+    /// <summary>
+    /// Removes the room and the exits out of it. Exits pointing <em>at</em> it are left alone
+    /// and become dangling links, which movement fails closed on (PLAN.md §7.4).
+    /// </summary>
+    public bool RemoveRoom(RoomKey key)
+    {
+        _occupants.Remove(key);
+        return _rooms.Remove(key);
+    }
+
+    /// <summary>Every exit anywhere in the world that points at this room.</summary>
+    public IEnumerable<RoomExit> ExitsPointingAt(RoomKey key) =>
+        _rooms.Values.SelectMany(r => r.Exits).Where(e => e.ToRoomKey == key);
+
     public Room? FindRoom(RoomKey key) => _rooms.GetValueOrDefault(key);
 
     public Zone? FindZone(string zoneKey) => _zones.GetValueOrDefault(zoneKey);
+
+    public Domain.Worlds.World? FindWorld(string worldKey) => _worlds.GetValueOrDefault(worldKey);
+
+    public IEnumerable<Domain.Worlds.World> AllWorlds => _worlds.Values;
+
+    public IEnumerable<Zone> AllZones => _zones.Values;
+
+    public IEnumerable<Room> AllRooms => _rooms.Values;
+
+    public IEnumerable<Zone> ZonesIn(string worldKey) =>
+        _zones.Values.Where(z => string.Equals(z.WorldKey, worldKey, StringComparison.Ordinal));
+
+    public IEnumerable<Room> RoomsIn(string zoneKey) =>
+        _rooms.Values.Where(r => string.Equals(r.ZoneKey, zoneKey, StringComparison.Ordinal));
+
+    /// <summary>
+    /// Resolves a flag down room → zone → world → registry default (PLAN.md §4.10). The
+    /// lookups are done here rather than through navigation properties because the world is
+    /// loaded AsNoTracking, so <see cref="Room.Zone"/> is null in the running engine.
+    /// </summary>
+    public FlagResolution ResolveFlag(Room room, RoomFlag flag)
+    {
+        ArgumentNullException.ThrowIfNull(room);
+
+        var zone = FindZone(room.ZoneKey);
+        var world = zone is null ? null : FindWorld(zone.WorldKey);
+
+        return RoomFlags.Resolve(flag, room.Flags, zone?.Flags, world?.Flags);
+    }
+
+    /// <summary>
+    /// True when the flag resolves on. A room that does not exist resolves to the registry
+    /// default, which is always the safe value - so a deleted room never becomes PvP.
+    /// </summary>
+    public bool IsFlagSet(RoomKey key, RoomFlag flag)
+    {
+        ArgumentNullException.ThrowIfNull(flag);
+
+        var room = FindRoom(key);
+        return room is null ? flag.Default : ResolveFlag(room, flag).Value;
+    }
 
     public PlayerActor? FindBySession(Guid sessionId) => _bySession.GetValueOrDefault(sessionId);
 

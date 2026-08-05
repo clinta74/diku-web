@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(cd e:/Projects/diku-web; Start-Process -FilePath \"dotnet\" -ArgumentList \"run\",\"--project\",\"src/DikuWeb.Server\",\"--urls\",\"http://localhost:5199\",\"--no-build\" -RedirectStandardOutput \"$env:TEMP\\\\dw2.log\" -RedirectStandardError \"$env:TEMP\\\\dw2err.log\" -NoNewWindow; Start-Sleep -Seconds 12; try { \\(Invoke-WebRequest \"http://localhost:5199/health\" -UseBasicParsing\\).StatusCode } catch { $_.Exception.Message })",
+      "Bash(cd /tmp)",
+      "Bash(cat tgtname.txt)",
+      "Bash(echo \"=== promote via API ===\")",
+      "Bash(curl -s -b adm.txt -X PATCH http://localhost:5199/api/admin/accounts/__TRACKED_VAR__/role -H 'Content-Type: application/json' -d '{\"role\":\"Builder\"}')",
+      "Bash(echo \"\")",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' -b t2.txt -c t2.txt http://localhost:5199/api/builder/worlds)",
+      "Bash(echo \"after the interval \\(expect 200\\): $\\(curl -s -o /dev/null -w '%{http_code}' -b t2.txt -c t2.txt http://localhost:5199/api/builder/worlds\\)\")"
+    ]
+  }
+}

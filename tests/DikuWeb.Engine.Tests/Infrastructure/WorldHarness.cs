@@ -1,12 +1,38 @@
 using System.Threading.Channels;
+using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Commands;
+using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.World;
 
 namespace DikuWeb.Engine.Tests.Infrastructure;
+
+/// <summary>
+/// Captures what would have been persisted, so a test can assert the primitives the loop
+/// produced without a database anywhere near it.
+/// </summary>
+internal sealed class RecordingWriteQueue : IWorldWriteQueue
+{
+    public List<WorldWriteJob> Jobs { get; } = [];
+
+    public IEnumerable<WorldChange> AllChanges => Jobs.SelectMany(j => j.Changes);
+
+    public void Enqueue(WorldWriteJob job) => Jobs.Add(job);
+}
+
+/// <summary>
+/// Captures admin requests instead of touching an account store, which the loop could not do
+/// anyway (PLAN.md §7.7). What the command produced is the whole of what these tests assert.
+/// </summary>
+internal sealed class RecordingAdminQueue : IAccountAdminQueue
+{
+    public List<AccountAdminRequest> Requests { get; } = [];
+
+    public void Enqueue(AccountAdminRequest request) => Requests.Add(request);
+}
 
 /// <summary>
 /// Wires the real WorldState, CommandRegistry, and PlayerView without the hosted service, so
@@ -21,6 +47,11 @@ internal sealed class WorldHarness
         World = new WorldState();
         Commands = new CommandRegistry();
         View = new PlayerView(new RoomLayoutService());
+        Options = new EngineOptions { StartingRoom = RoomKey.Parse("test.zone.west") };
+        Applier = new WorldMutationApplier(World, View, Options);
+        Writes = new RecordingWriteQueue();
+        Editor = new LoopWorldEditor(Applier, Writes);
+        Admin = new RecordingAdminQueue();
     }
 
     public WorldState World { get; }
@@ -28,6 +59,19 @@ internal sealed class WorldHarness
     public CommandRegistry Commands { get; }
 
     public PlayerView View { get; }
+
+    public EngineOptions Options { get; }
+
+    public WorldMutationApplier Applier { get; }
+
+    public RecordingWriteQueue Writes { get; }
+
+    public LoopWorldEditor Editor { get; }
+
+    public RecordingAdminQueue Admin { get; }
+
+    /// <summary>Applies a builder edit exactly as the loop would, minus persistence.</summary>
+    public MutationResult Mutate(WorldChange change) => Applier.Apply(change);
 
     /// <summary>
     /// Three rooms west-to-east, plus a fourth exit off the east room that points at a room
@@ -55,11 +99,23 @@ internal sealed class WorldHarness
         return (west, middle, east);
     }
 
+    /// <summary>
+    /// The world plus its containing zone and world rows, which the flag chain needs: a room
+    /// whose zone is not loaded can only ever resolve to the registry default.
+    /// </summary>
     public void LoadTestWorld()
     {
         var (west, middle, east) = BuildTestRooms();
-        World.Load([], [], [west, middle, east]);
+
+        World.Load(
+            [new Domain.Worlds.World { Key = "test", Name = "Test" }],
+            [new Zone { Key = "test.zone", WorldKey = "test", Name = "Test Zone" }],
+            [west, middle, east]);
     }
+
+    public Zone Zone => World.FindZone("test.zone")!;
+
+    public Domain.Worlds.World World_ => World.FindWorld("test")!;
 
     public static Room NewRoom(
         string slug,
@@ -92,13 +148,14 @@ internal sealed class WorldHarness
         });
     }
 
-    public PlayerActor AddPlayer(string name, RoomKey at)
+    public PlayerActor AddPlayer(string name, RoomKey at, AccountRole role = AccountRole.Player)
     {
         var channel = Channel.CreateUnbounded<OutboundEvent>();
 
         var actor = new PlayerActor
         {
             Character = NewCharacter(name, at),
+            Role = role,
             SessionId = Guid.CreateVersion7(),
             Output = channel.Writer,
         };
@@ -131,6 +188,8 @@ internal sealed class WorldHarness
             Actor = actor,
             World = World,
             View = View,
+            Editor = Editor,
+            AdminQueue = Admin,
             Verb = verb,
             Argument = argument,
         };

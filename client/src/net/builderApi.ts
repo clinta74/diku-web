@@ -1,0 +1,192 @@
+/**
+ * The builder API (PLAN.md §7.3). Same-origin and cookie-authorised like everything else;
+ * the server additionally requires the Builder role, so every call here can 403.
+ */
+
+import { request } from './api'
+
+export interface RoomFlagDefinition {
+  key: string
+  default: boolean
+  summary: string
+  phase: string
+}
+
+export interface WorldSummary {
+  key: string
+  name: string
+  description: string
+  sortOrder: number
+  flags: Record<string, boolean>
+  zoneCount: number
+}
+
+export interface ZoneSummary {
+  key: string
+  worldKey: string
+  name: string
+  description: string
+  minLevel: number
+  maxLevel: number
+  flags: Record<string, boolean>
+  roomCount: number
+}
+
+export interface RoomExit {
+  direction: string
+  to: string
+  /** False for a dangling link - allowed, and worth drawing differently (PLAN.md §7.4). */
+  targetExists: boolean
+}
+
+/** Where a flag's effective value came from, so inherited values can be shown as inherited. */
+export interface ResolvedFlag {
+  key: string
+  value: boolean
+  source: 'room' | 'zone' | 'world' | 'default'
+  summary: string
+}
+
+export interface RoomDetail {
+  key: string
+  zoneKey: string
+  title: string
+  description: string
+  flags: Record<string, boolean>
+  resolved: ResolvedFlag[]
+  grid: string[]
+  legend: Record<string, string>
+  editorX: number | null
+  editorY: number | null
+  exits: RoomExit[]
+}
+
+export interface ValidationWarning {
+  kind: string
+  entityKey: string
+  message: string
+}
+
+export interface ZoneValidation {
+  zoneKey: string
+  warnings: ValidationWarning[]
+}
+
+export interface UnfinishedRoom {
+  key: string
+  title: string
+  editorX: number | null
+  editorY: number | null
+}
+
+export interface AuditEntry {
+  id: string
+  accountId: string | null
+  username: string | null
+  entityKind: string
+  entityKey: string
+  action: string
+  at: string
+}
+
+const base = '/api/builder'
+
+export const builderApi = {
+  roomFlags: () => request<RoomFlagDefinition[]>(`${base}/room-flags`),
+
+  worlds: () => request<WorldSummary[]>(`${base}/worlds`),
+
+  createWorld: (key: string, body: Partial<WorldSummary>) =>
+    request<WorldSummary>(`${base}/worlds/${key}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateWorld: (key: string, body: Partial<WorldSummary>) =>
+    request<WorldSummary>(`${base}/worlds/${key}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  deleteWorld: (key: string) =>
+    request<void>(`${base}/worlds/${key}`, { method: 'DELETE' }),
+
+  zones: (worldKey?: string) =>
+    request<ZoneSummary[]>(worldKey ? `${base}/zones?world=${worldKey}` : `${base}/zones`),
+
+  createZone: (key: string, body: Partial<ZoneSummary>) =>
+    request<ZoneSummary>(`${base}/zones/${key}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateZone: (key: string, body: Partial<ZoneSummary>) =>
+    request<ZoneSummary>(`${base}/zones/${key}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  deleteZone: (key: string) => request<void>(`${base}/zones/${key}`, { method: 'DELETE' }),
+
+  rooms: (zoneKey: string) => request<RoomDetail[]>(`${base}/zones/${zoneKey}/rooms`),
+
+  room: (key: string) => request<RoomDetail>(`${base}/rooms/${key}`),
+
+  createRoom: (key: string, body: Record<string, unknown>) =>
+    request<RoomDetail>(`${base}/rooms/${key}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateRoom: (key: string, body: Record<string, unknown>) =>
+    request<RoomDetail>(`${base}/rooms/${key}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  deleteRoom: (key: string) => request<void>(`${base}/rooms/${key}`, { method: 'DELETE' }),
+
+  renameRoom: (key: string, newKey: string) =>
+    request<RoomDetail>(`${base}/rooms/${key}/rename`, {
+      method: 'POST',
+      body: JSON.stringify({ newKey }),
+    }),
+
+  /**
+   * Creates and links a room, or materializes one a dangling exit already names - the server
+   * picks from current state, so the caller never has to know which case it is (PLAN.md §7.6).
+   */
+  dig: (key: string, direction: string, options?: { reciprocal?: boolean; zoneKey?: string }) =>
+    request<RoomDetail>(`${base}/rooms/${key}/dig`, {
+      method: 'POST',
+      body: JSON.stringify({ direction, reciprocal: options?.reciprocal ?? true, zoneKey: options?.zoneKey ?? null }),
+    }),
+
+  setExit: (key: string, direction: string, to: string, reciprocal = true) =>
+    request<RoomDetail>(`${base}/rooms/${key}/exits/${direction}`, {
+      method: 'PUT',
+      body: JSON.stringify({ to, reciprocal }),
+    }),
+
+  removeExit: (key: string, direction: string) =>
+    request<RoomDetail>(`${base}/rooms/${key}/exits/${direction}`, { method: 'DELETE' }),
+
+  validate: (zoneKey: string) => request<ZoneValidation>(`${base}/zones/${zoneKey}/validate`),
+
+  unfinished: (zoneKey: string) =>
+    request<UnfinishedRoom[]>(`${base}/zones/${zoneKey}/unfinished`),
+
+  audit: (kind: string, key: string) =>
+    request<AuditEntry[]>(`${base}/audit?kind=${kind}&key=${encodeURIComponent(key)}`),
+}
+
+export const DIRECTIONS = ['north', 'east', 'south', 'west', 'up', 'down'] as const
+
+export const OPPOSITE: Record<string, string> = {
+  north: 'south',
+  south: 'north',
+  east: 'west',
+  west: 'east',
+  up: 'down',
+  down: 'up',
+}

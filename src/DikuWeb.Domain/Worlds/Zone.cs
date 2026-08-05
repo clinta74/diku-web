@@ -21,5 +21,11 @@ public sealed class Zone
 
     public int MaxLevel { get; set; } = 50;
 
+    /// <summary>
+    /// Flag defaults for every room in this zone (PLAN.md §4.10). Setting <c>pvp</c> here is
+    /// how a duelling zone is authored, rather than flagging forty rooms one at a time.
+    /// </summary>
+    public FlagSet Flags { get; set; } = new();
+
     public ICollection<Room> Rooms { get; init; } = [];
 }

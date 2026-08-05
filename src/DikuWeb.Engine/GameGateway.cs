@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Protocol;
 
 namespace DikuWeb.Engine;
@@ -9,6 +10,9 @@ namespace DikuWeb.Engine;
 /// </summary>
 public sealed class GameGateway
 {
+    /// <summary>Generous next to the 250 ms pulse: this catches a stopped loop, not a slow one.</summary>
+    private static readonly TimeSpan MutationTimeout = TimeSpan.FromSeconds(10);
+
     private readonly Channel<InboundMessage> _inbound;
 
     public GameGateway(EngineOptions options)
@@ -36,6 +40,63 @@ public sealed class GameGateway
     {
         ArgumentNullException.ThrowIfNull(message);
         return _inbound.Writer.TryWrite(message);
+    }
+
+    /// <summary>
+    /// Submits a builder edit and waits for the loop to apply it (PLAN.md §7.3).
+    /// </summary>
+    /// <remarks>
+    /// The timeout is a liveness guard, not a latency target. A mutation normally lands within
+    /// one pulse; if the loop is wedged or has stopped, a builder should get an error rather
+    /// than a request that hangs until the browser gives up.
+    /// </remarks>
+    public async Task<MutationResult> MutateAsync(
+        WorldChange change,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+
+        var completion = new TaskCompletionSource<MutationResult>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        if (!TrySubmit(new WorldMutation { Change = change, Completion = completion }))
+        {
+            return MutationResult.Fail(MutationError.Invalid, "The server is busy. Try again.");
+        }
+
+        return await AwaitOrTimeout(
+            completion.Task,
+            MutationResult.Fail(MutationError.Invalid, "The world did not respond in time."),
+            cancellationToken);
+    }
+
+    /// <summary>Swaps the loaded world for freshly-read data. See <see cref="ReplaceWorld"/>.</summary>
+    public async Task<bool> ReplaceWorldAsync(
+        WorldData data,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+
+        var completion = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        return TrySubmit(new ReplaceWorld { Data = data, Completion = completion })
+            && await AwaitOrTimeout(completion.Task, false, cancellationToken);
+    }
+
+    private static async Task<T> AwaitOrTimeout<T>(
+        Task<T> task,
+        T onTimeout,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await task.WaitAsync(MutationTimeout, cancellationToken);
+        }
+        catch (TimeoutException)
+        {
+            return onTimeout;
+        }
     }
 
     internal void Complete() => _inbound.Writer.TryComplete();

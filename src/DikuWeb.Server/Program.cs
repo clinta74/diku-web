@@ -4,7 +4,9 @@ using DikuWeb.Engine;
 using DikuWeb.Persistence;
 using DikuWeb.Persistence.Seeding;
 using DikuWeb.Server;
+using DikuWeb.Server.Admin;
 using DikuWeb.Server.Auth;
+using DikuWeb.Server.Building;
 using DikuWeb.Server.Characters;
 using DikuWeb.Server.Game;
 using DikuWeb.Server.Infrastructure;
@@ -40,8 +42,29 @@ builder.Services.AddSingleton<CharacterSaveQueue>();
 builder.Services.AddSingleton<ICharacterSaveQueue>(sp => sp.GetRequiredService<CharacterSaveQueue>());
 builder.Services.AddHostedService<CharacterSaveWorker>();
 
+builder.Services.AddSingleton<WorldWriteQueue>();
+builder.Services.AddSingleton<IWorldWriteQueue>(sp => sp.GetRequiredService<WorldWriteQueue>());
+builder.Services.AddHostedService<WorldWriteWorker>();
+
+// Account administration (PLAN.md §7.7). Same shape: the loop enqueues, a worker does the
+// database work and sends the answer back through the loop.
+builder.Services.AddSingleton<AccountAdminQueue>();
+builder.Services.AddSingleton<IAccountAdminQueue>(sp => sp.GetRequiredService<AccountAdminQueue>());
+builder.Services.AddHostedService<AccountAdminWorker>();
+builder.Services.AddScoped<AccountAdminService>();
+
+// Sessions are keyed by character, so one account can play several at once. The cap exists
+// because each character holds an open SSE connection and a ring buffer.
+var sessionOptions = new SessionRegistryOptions();
+builder.Configuration.GetSection("Sessions").Bind(sessionOptions);
+builder.Services.AddSingleton(sessionOptions);
 builder.Services.AddSingleton<SessionRegistry>();
+
 builder.Services.AddSingleton<IPasswordHasher<Account>, PasswordHasher<Account>>();
+
+var authOptions = new AuthOptions();
+builder.Configuration.GetSection("Auth").Bind(authOptions);
+builder.Services.AddSingleton(authOptions);
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -75,9 +98,21 @@ builder.Services
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             return Task.CompletedTask;
         };
+
+        // Re-checks role and ban state against the database on an interval (PLAN.md §7.7).
+        // Without it a demotion, or a ban on someone already connected, does nothing until the
+        // cookie expires a fortnight later.
+        options.Events.OnValidatePrincipal = PrincipalRevalidator.ValidateAsync;
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options => options.AddDikuWebPolicies());
+
+// The world builder (PLAN.md §7). Queries and writes are scoped because they own a DbContext;
+// the throttle is a singleton because it is per-account state that must outlive a request.
+builder.Services.AddScoped<BuilderQueries>();
+builder.Services.AddScoped<WorldWriter>();
+builder.Services.AddScoped<WorldEditor>();
+builder.Services.AddSingleton<DigThrottle>();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<DikuWebDbContext>("database", tags: ["ready"]);
@@ -93,6 +128,8 @@ app.UseAuthorization();
 app.MapAuthEndpoints();
 app.MapCharacterEndpoints();
 app.MapGameEndpoints();
+app.MapBuilderEndpoints();
+app.MapAdminEndpoints();
 
 // Liveness: is the process up? Deliberately runs no checks, so a database outage never
 // causes an orchestrator to restart an otherwise healthy server.

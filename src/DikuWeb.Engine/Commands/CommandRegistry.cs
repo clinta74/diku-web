@@ -41,6 +41,9 @@ public sealed class CommandRegistry
         // Full word required: quitting by fumbling a key would be a bad surprise.
         _commands.Add(new CommandDefinition(
             "quit", 4, "quit - save and leave the world", Quit));
+
+        BuilderCommands.Register(_commands);
+        AdminCommands.Register(_commands);
     }
 
     public IReadOnlyList<CommandDefinition> Commands => _commands;
@@ -87,7 +90,22 @@ public sealed class CommandRegistry
         {
             // A dangling exit: the builder linked it before creating the target, or deleted
             // the target later. Fails closed rather than throwing on the loop (PLAN.md §7.4).
-            ctx.Reply("The way is blocked.", "bad");
+            //
+            // A builder gets the offer to materialize it instead - that is what turns walking
+            // into the fastest way to lay out geography (§7.6). A player must never learn that
+            // the world can be incomplete here.
+            if (ctx.Actor.IsBuilder)
+            {
+                ctx.Reply(
+                    $"There is no room {direction.ToLowerName()} yet ('{exit.ToRoomKey}'). "
+                    + $"Type 'dig {direction.ToLowerName()}' to create it.",
+                    "bad");
+            }
+            else
+            {
+                ctx.Reply("The way is blocked.", "bad");
+            }
+
             return;
         }
 
@@ -148,7 +166,8 @@ public sealed class CommandRegistry
         // Directions collapse to one line; listing all six adds nothing.
         spans.Add(new TextSpan("\n  n / e / s / w / u / d - move between rooms"));
 
-        foreach (var command in _commands.Where(c => !IsDirection(c.Name)))
+        foreach (var command in _commands.Where(
+            c => !IsDirection(c.Name) && c.VisibleTo(ctx.Actor.Role)))
         {
             spans.Add(new TextSpan($"\n  {command.Help}"));
         }

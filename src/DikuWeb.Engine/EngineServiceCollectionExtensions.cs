@@ -1,4 +1,5 @@
 using DikuWeb.Engine.Commands;
+using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
@@ -30,6 +31,8 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<CommandRegistry>();
         services.AddSingleton<RoomLayoutService>();
         services.AddSingleton<PlayerView>();
+        services.AddSingleton<WorldMutationApplier>();
+        services.AddSingleton<LoopWorldEditor>();
         services.AddSingleton<GameGateway>();
 
         services.AddHostedService<GameLoop>();

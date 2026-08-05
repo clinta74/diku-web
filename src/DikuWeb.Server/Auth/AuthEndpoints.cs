@@ -76,11 +76,19 @@ public static partial class AuthEndpoints
             return Results.Conflict(new { error = "That username or email is already registered." });
         }
 
+        // The first account on an empty database becomes Admin. Without this there is no way
+        // to reach the world builder at all on a fresh install except by hand-editing a row,
+        // and a first-run step that requires SQL is a first-run step nobody completes.
+        // Safe by construction: it can only ever happen once, when there is nobody to escalate
+        // over (PLAN.md Phase 2 - roles).
+        var isFirstAccount = !await db.Accounts.AnyAsync(cancellationToken);
+
         var account = new Account
         {
             Email = email,
             Username = username,
             PasswordHash = string.Empty,
+            Role = isFirstAccount ? AccountRole.Admin : AccountRole.Player,
             CreatedAt = clock.GetUtcNow(),
         };
 
@@ -88,6 +96,13 @@ public static partial class AuthEndpoints
 
         db.Accounts.Add(account);
         await db.SaveChangesAsync(cancellationToken);
+
+        if (isFirstAccount)
+        {
+            ServerLog.FirstAccountPromoted(
+                http.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("DikuWeb.Server"),
+                account.Username);
+        }
 
         await SignInAsync(http, account);
         return Results.Ok(ToResponse(account));
@@ -150,20 +165,24 @@ public static partial class AuthEndpoints
         return account is null ? Results.Unauthorized() : Results.Ok(ToResponse(account));
     }
 
-    private static Task SignInAsync(HttpContext http, Account account)
-    {
-        var identity = new ClaimsIdentity(
-            [
-                new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
-                new Claim(ClaimTypes.Name, account.Username),
-                new Claim(ClaimTypes.Role, account.Role.ToString()),
-            ],
-            CookieAuthenticationDefaults.AuthenticationScheme);
-
-        return http.SignInAsync(
+    private static Task SignInAsync(HttpContext http, Account account) =>
+        http.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(identity));
-    }
+            BuildPrincipal(account.Id, account.Username, account.Role));
+
+    /// <summary>
+    /// The one place the claim set is defined. Shared with
+    /// <see cref="PrincipalRevalidator"/>, which rebuilds it when a role changes mid-session -
+    /// two constructions of the same principal would drift the moment a claim was added.
+    /// </summary>
+    internal static ClaimsPrincipal BuildPrincipal(Guid id, string username, AccountRole role) =>
+        new(new ClaimsIdentity(
+            [
+                new Claim(ClaimTypes.NameIdentifier, id.ToString()),
+                new Claim(ClaimTypes.Name, username),
+                new Claim(ClaimTypes.Role, role.ToString()),
+            ],
+            CookieAuthenticationDefaults.AuthenticationScheme));
 
     private static AccountResponse ToResponse(Account account) =>
         new(account.Id, account.Username, account.Email, account.Role.ToString());

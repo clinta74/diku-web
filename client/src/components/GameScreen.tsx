@@ -5,34 +5,57 @@ import { gameReducer, initialGameState } from '../state/gameReducer'
 import type { ContentEntry, MapPayload, TextSpan, VitalsPayload } from '../net/protocol'
 
 interface Props {
+  characterId: string
   characterName: string
   onLeave: () => void
+  /** Drives the builder's follow mode (PLAN.md §7.6). Ignored for ordinary players. */
+  onRoomChange?: (roomKey: string) => void
+  /** Shown only to builders; opens the builder alongside this session. */
+  onOpenBuilder?: () => void
 }
 
-export function GameScreen({ characterName, onLeave }: Props) {
+export function GameScreen({
+  characterId,
+  characterName,
+  onLeave,
+  onRoomChange,
+  onOpenBuilder,
+}: Props) {
   const [state, dispatch] = useReducer(gameReducer, initialGameState)
+  const roomKey = state.room?.key ?? null
+
+  // Reported upward rather than read from the builder, because the stream is the only thing
+  // that knows where the character actually is - including after a goto or a rename.
+  useEffect(() => {
+    if (roomKey) onRoomChange?.(roomKey)
+  }, [roomKey, onRoomChange])
 
   // Lets the contents list type a keyword into the input box without lifting the input's
   // value up here, which would re-render all five panels on every keystroke.
   const insertKeyword = useRef<((keyword: string) => void) | null>(null)
 
+  // Keyed by character, so a second tab on a different character opens its own stream
+  // rather than evicting this one.
   useEffect(() => {
-    const close = connectStream({
+    const close = connectStream(characterId, {
       onEvent: (event) => dispatch({ kind: 'event', event }),
       onOpen: () => dispatch({ kind: 'connection', connected: true }),
       onError: () => dispatch({ kind: 'connection', connected: false }),
     })
     return close
-  }, [])
+  }, [characterId])
 
-  const send = useCallback((input: string) => {
-    // Echo locally so the player sees what they typed immediately. The result itself still
-    // arrives over SSE, keeping one ordered output channel (PLAN.md §3.3).
-    dispatch({ kind: 'local', spans: [{ t: `> ${input}`, s: 'echo' }] })
-    void api.command(input).catch(() => {
-      dispatch({ kind: 'local', spans: [{ t: 'Command not delivered.', s: 'bad' }] })
-    })
-  }, [])
+  const send = useCallback(
+    (input: string) => {
+      // Echo locally so the player sees what they typed immediately. The result itself still
+      // arrives over SSE, keeping one ordered output channel (PLAN.md §3.3).
+      dispatch({ kind: 'local', spans: [{ t: `> ${input}`, s: 'echo' }] })
+      void api.command(characterId, input).catch(() => {
+        dispatch({ kind: 'local', spans: [{ t: 'Command not delivered.', s: 'bad' }] })
+      })
+    },
+    [characterId],
+  )
 
   return (
     <div className="game">
@@ -51,6 +74,7 @@ export function GameScreen({ characterName, onLeave }: Props) {
         characterName={characterName}
         connected={state.connected}
         onLeave={onLeave}
+        onOpenBuilder={onOpenBuilder}
       />
     </div>
   )
@@ -237,11 +261,13 @@ function VitalsBar({
   characterName,
   connected,
   onLeave,
+  onOpenBuilder,
 }: {
   vitals: VitalsPayload | null
   characterName: string
   connected: boolean
   onLeave: () => void
+  onOpenBuilder?: () => void
 }) {
   return (
     <div className="vitals-bar">
@@ -261,6 +287,11 @@ function VitalsBar({
       <span className={connected ? 'status good' : 'status bad'}>
         {connected ? 'connected' : 'reconnecting…'}
       </span>
+      {onOpenBuilder && (
+        <button type="button" className="leave" onClick={onOpenBuilder}>
+          builder
+        </button>
+      )}
       <button type="button" className="leave" onClick={onLeave}>
         leave
       </button>

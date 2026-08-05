@@ -17,6 +17,12 @@ public sealed class Room
     public string Description { get; set; } = string.Empty;
 
     /// <summary>
+    /// Room-level flags (PLAN.md §4.10). An absent key falls through to the zone, then the
+    /// world, then the registry default - so this holds only what this room overrides.
+    /// </summary>
+    public FlagSet Flags { get; set; } = new();
+
+    /// <summary>
     /// Optional ASCII terrain art, one string per row (PLAN.md §4.4). Decoration and
     /// spawn-placement surface only - walls block nothing, because there is nothing to block.
     /// A room with no grid renders a plain rectangle, so art is an upgrade rather than a tax.

@@ -106,4 +106,17 @@ public static class SseFrameExtensions
 {
     public static bool HasText(this IReadOnlyList<SseFrame> frames, string fragment) =>
         frames.Any(f => f.EventType == "text" && f.Data.Contains(fragment, StringComparison.Ordinal));
+
+    /// <summary>
+    /// Matches a <c>sys</c> frame - connection notices, and anything reported to a session from
+    /// outside its own command flow, such as the result of an admin command (PLAN.md §7.7).
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="HasText"/> on purpose. The client renders both into the same
+    /// scrollback, so a matcher covering both would pass whichever channel the server happened
+    /// to use - and these two are not interchangeable: <c>text</c> is game prose, <c>sys</c> is
+    /// the client talking about the connection.
+    /// </remarks>
+    public static bool HasSys(this IReadOnlyList<SseFrame> frames, string fragment) =>
+        frames.Any(f => f.EventType == "sys" && f.Data.Contains(fragment, StringComparison.Ordinal));
 }

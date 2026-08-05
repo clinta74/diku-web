@@ -1,0 +1,349 @@
+using System.Text.Json.Nodes;
+using DikuWeb.Domain.Building;
+using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Mutations;
+using DikuWeb.Persistence;
+using DikuWeb.Persistence.Converters;
+using Microsoft.EntityFrameworkCore;
+
+namespace DikuWeb.Server.Building;
+
+/// <summary>
+/// Replays the primitives the game loop applied to memory into Postgres, writing a
+/// <see cref="ContentAudit"/> row for each (PLAN.md §7.3).
+/// </summary>
+/// <remarks>
+/// This runs on the request thread, never on the loop - §2.1 forbids database work there.
+/// It deliberately loads its own entity instances rather than sharing the loop's: the loop's
+/// world is a long-lived singleton it mutates freely, and handing those objects to a change
+/// tracker on another thread is the data race the single-writer rule exists to prevent.
+///
+/// The whole primitive list runs in one transaction with a save per step. Saving per step
+/// preserves the order the loop applied them in - which matters for a rename, where the new
+/// room must exist before exits can point at it - and the transaction means a failure halfway
+/// through leaves nothing behind.
+/// </remarks>
+public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
+{
+    public async Task WriteAsync(
+        IReadOnlyList<WorldChange> changes,
+        Guid? accountId,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(changes);
+
+        if (changes.Count == 0)
+        {
+            return;
+        }
+
+        var now = clock.GetUtcNow();
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        foreach (var change in changes)
+        {
+            var before = await CaptureAsync(change, cancellationToken);
+            var action = await ApplyAsync(change, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+
+            var after = action == ContentAction.Delete
+                ? null
+                : await CaptureAsync(change, cancellationToken);
+
+            db.ContentAudits.Add(new ContentAudit
+            {
+                AccountId = accountId,
+                EntityKind = change.EntityKind,
+                EntityKey = change.EntityKey,
+                Action = action,
+                Before = before,
+                After = after,
+                At = now,
+            });
+
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    // -----------------------------------------------------------------------
+    // Applying
+    // -----------------------------------------------------------------------
+
+    private async Task<ContentAction> ApplyAsync(WorldChange change, CancellationToken cancellationToken)
+    {
+        switch (change)
+        {
+            case UpsertWorld c:
+            {
+                var entity = await db.Worlds.FirstOrDefaultAsync(w => w.Key == c.Key, cancellationToken);
+
+                if (entity is null)
+                {
+                    db.Worlds.Add(new World
+                    {
+                        Key = c.Key,
+                        Name = c.Name,
+                        Description = c.Description,
+                        SortOrder = c.SortOrder,
+                        Flags = c.Flags.Clone(),
+                    });
+
+                    return ContentAction.Create;
+                }
+
+                entity.Name = c.Name;
+                entity.Description = c.Description;
+                entity.SortOrder = c.SortOrder;
+                entity.Flags = c.Flags.Clone();
+                return ContentAction.Update;
+            }
+
+            case DeleteWorld c:
+            {
+                var entity = await db.Worlds.FirstOrDefaultAsync(w => w.Key == c.Key, cancellationToken);
+                if (entity is not null)
+                {
+                    db.Worlds.Remove(entity);
+                }
+
+                return ContentAction.Delete;
+            }
+
+            case UpsertZone c:
+            {
+                var entity = await db.Zones.FirstOrDefaultAsync(z => z.Key == c.Key, cancellationToken);
+
+                if (entity is null)
+                {
+                    db.Zones.Add(new Zone
+                    {
+                        Key = c.Key,
+                        WorldKey = c.WorldKey,
+                        Name = c.Name,
+                        Description = c.Description,
+                        MinLevel = c.MinLevel,
+                        MaxLevel = c.MaxLevel,
+                        Flags = c.Flags.Clone(),
+                    });
+
+                    return ContentAction.Create;
+                }
+
+                entity.Name = c.Name;
+                entity.Description = c.Description;
+                entity.MinLevel = c.MinLevel;
+                entity.MaxLevel = c.MaxLevel;
+                entity.Flags = c.Flags.Clone();
+                return ContentAction.Update;
+            }
+
+            case DeleteZone c:
+            {
+                var entity = await db.Zones.FirstOrDefaultAsync(z => z.Key == c.Key, cancellationToken);
+                if (entity is not null)
+                {
+                    db.Zones.Remove(entity);
+                }
+
+                return ContentAction.Delete;
+            }
+
+            case UpsertRoom c:
+            {
+                var entity = await db.Rooms.FirstOrDefaultAsync(r => r.Key == c.Key, cancellationToken);
+
+                if (entity is null)
+                {
+                    db.Rooms.Add(new Room
+                    {
+                        Key = c.Key,
+                        ZoneKey = c.ZoneKey,
+                        Title = c.Title,
+                        Description = c.Description,
+                        Flags = c.Flags.Clone(),
+                        Grid = [.. c.Grid],
+                        Legend = new Dictionary<string, string>(c.Legend, StringComparer.Ordinal),
+                        EditorX = c.EditorX,
+                        EditorY = c.EditorY,
+                    });
+
+                    return ContentAction.Create;
+                }
+
+                entity.Title = c.Title;
+                entity.Description = c.Description;
+                entity.Flags = c.Flags.Clone();
+                entity.Grid = [.. c.Grid];
+                entity.Legend = new Dictionary<string, string>(c.Legend, StringComparer.Ordinal);
+                entity.EditorX = c.EditorX;
+                entity.EditorY = c.EditorY;
+                return ContentAction.Update;
+            }
+
+            case DeleteRoom c:
+            {
+                var entity = await db.Rooms.FirstOrDefaultAsync(r => r.Key == c.Key, cancellationToken);
+                if (entity is not null)
+                {
+                    db.Rooms.Remove(entity);
+                }
+
+                return ContentAction.Delete;
+            }
+
+            case SetExit c:
+            {
+                var entity = await db.RoomExits.FirstOrDefaultAsync(
+                    e => e.FromRoomKey == c.From && e.Direction == c.Direction,
+                    cancellationToken);
+
+                if (entity is null)
+                {
+                    db.RoomExits.Add(new RoomExit
+                    {
+                        FromRoomKey = c.From,
+                        Direction = c.Direction,
+                        ToRoomKey = c.To,
+                    });
+
+                    return ContentAction.Create;
+                }
+
+                entity.ToRoomKey = c.To;
+                return ContentAction.Update;
+            }
+
+            case RemoveExit c:
+            {
+                var entity = await db.RoomExits.FirstOrDefaultAsync(
+                    e => e.FromRoomKey == c.From && e.Direction == c.Direction,
+                    cancellationToken);
+
+                if (entity is not null)
+                {
+                    db.RoomExits.Remove(entity);
+                }
+
+                return ContentAction.Delete;
+            }
+
+            default:
+                // Requests are normalised into primitives by the loop before they get here, so
+                // this is unreachable unless a new primitive was added without a writer arm.
+                throw new InvalidOperationException(
+                    $"{change.GetType().Name} is not a persistable primitive.");
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Audit snapshots
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// The entity as it currently stands in the database, or null when it does not exist -
+    /// which is what makes "before" null on a create and "after" null on a delete.
+    /// </summary>
+    private async Task<string?> CaptureAsync(WorldChange change, CancellationToken cancellationToken)
+    {
+        switch (change)
+        {
+            case UpsertWorld or DeleteWorld:
+            {
+                var key = change.EntityKey;
+                var entity = await db.Worlds.AsNoTracking()
+                    .FirstOrDefaultAsync(w => w.Key == key, cancellationToken);
+
+                return entity is null ? null : new JsonObject
+                {
+                    ["key"] = entity.Key,
+                    ["name"] = entity.Name,
+                    ["description"] = entity.Description,
+                    ["sortOrder"] = entity.SortOrder,
+                    ["flags"] = JsonNode.Parse(FlagSetJson.Serialize(entity.Flags)),
+                }.ToJsonString();
+            }
+
+            case UpsertZone or DeleteZone:
+            {
+                var key = change.EntityKey;
+                var entity = await db.Zones.AsNoTracking()
+                    .FirstOrDefaultAsync(z => z.Key == key, cancellationToken);
+
+                return entity is null ? null : new JsonObject
+                {
+                    ["key"] = entity.Key,
+                    ["worldKey"] = entity.WorldKey,
+                    ["name"] = entity.Name,
+                    ["description"] = entity.Description,
+                    ["minLevel"] = entity.MinLevel,
+                    ["maxLevel"] = entity.MaxLevel,
+                    ["flags"] = JsonNode.Parse(FlagSetJson.Serialize(entity.Flags)),
+                }.ToJsonString();
+            }
+
+            case UpsertRoom or DeleteRoom:
+            {
+                if (!RoomKey.TryParse(change.EntityKey, out var key))
+                {
+                    return null;
+                }
+
+                var entity = await db.Rooms.AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.Key == key, cancellationToken);
+
+                return entity is null ? null : new JsonObject
+                {
+                    ["key"] = entity.Key.ToString(),
+                    ["zoneKey"] = entity.ZoneKey,
+                    ["title"] = entity.Title,
+                    ["description"] = entity.Description,
+                    ["flags"] = JsonNode.Parse(FlagSetJson.Serialize(entity.Flags)),
+                    ["grid"] = new JsonArray([.. entity.Grid.Select(row => (JsonNode?)row)]),
+                    ["legend"] = ToJson(entity.Legend),
+                    ["editorX"] = entity.EditorX,
+                    ["editorY"] = entity.EditorY,
+                }.ToJsonString();
+            }
+
+            case SetExit or RemoveExit:
+            {
+                var (from, direction) = change switch
+                {
+                    SetExit c => (c.From, c.Direction),
+                    RemoveExit c => (c.From, c.Direction),
+                    _ => default,
+                };
+
+                var entity = await db.RoomExits.AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        e => e.FromRoomKey == from && e.Direction == direction,
+                        cancellationToken);
+
+                return entity is null ? null : new JsonObject
+                {
+                    ["from"] = entity.FromRoomKey.ToString(),
+                    ["direction"] = entity.Direction.ToLowerName(),
+                    ["to"] = entity.ToRoomKey.ToString(),
+                }.ToJsonString();
+            }
+
+            default:
+                return null;
+        }
+    }
+
+    private static JsonObject ToJson(IReadOnlyDictionary<string, string> map)
+    {
+        var node = new JsonObject();
+
+        foreach (var (key, value) in map)
+        {
+            node[key] = value;
+        }
+
+        return node;
+    }
+}

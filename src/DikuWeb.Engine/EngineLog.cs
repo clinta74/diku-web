@@ -44,4 +44,33 @@ internal static partial class EngineLog
         Message = "{Character} was saved in {Room}, which no longer exists; moved to {Fallback}")]
     public static partial void RelocatedFromMissingRoom(
         ILogger logger, string character, string room, string fallback);
+
+    [LoggerMessage(EventId = 2009, Level = LogLevel.Information,
+        Message = "Applied {Kind} '{Key}' as {Count} write(s)")]
+    public static partial void MutationApplied(ILogger logger, string kind, string key, int count);
+
+    [LoggerMessage(EventId = 2010, Level = LogLevel.Information,
+        Message = "Refused {Kind} '{Key}': {Reason}")]
+    public static partial void MutationRefused(ILogger logger, string kind, string key, string reason);
+
+    [LoggerMessage(EventId = 2011, Level = LogLevel.Error,
+        Message = "Applying {Kind} '{Key}' threw; the loop continues")]
+    public static partial void MutationFailed(ILogger logger, string kind, string key, Exception exception);
+
+    [LoggerMessage(EventId = 2012, Level = LogLevel.Warning,
+        Message = "World reloaded from the database: {RoomCount} rooms")]
+    public static partial void WorldReloaded(ILogger logger, int roomCount);
+
+    [LoggerMessage(EventId = 2013, Level = LogLevel.Error,
+        Message = "World reload failed; memory may be ahead of the database")]
+    public static partial void WorldReloadFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(EventId = 2014, Level = LogLevel.Warning,
+        Message = "Exit {Room} {Direction} points at '{Target}', which does not exist")]
+    public static partial void DanglingExit(
+        ILogger logger, string room, string direction, string target);
+
+    [LoggerMessage(EventId = 2015, Level = LogLevel.Information,
+        Message = "{Character} is now {Role} in the world")]
+    public static partial void ActorRoleChanged(ILogger logger, string character, string role);
 }

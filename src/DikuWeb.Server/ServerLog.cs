@@ -61,4 +61,42 @@ internal static partial class ServerLog
         Level = LogLevel.Error,
         Message = "Failed to save a batch of {Count} character(s); the worker continues")]
     public static partial void CharacterSaveFailed(ILogger logger, int count, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1008,
+        Level = LogLevel.Error,
+        Message = "{Kind} '{Key}' applied to the world but could not be persisted; reloading")]
+    public static partial void MutationNotPersisted(
+        ILogger logger, string kind, string key, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1009,
+        Level = LogLevel.Critical,
+        Message = "World reload was refused by the loop; memory is ahead of the database")]
+    public static partial void ResyncFailed(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 1010,
+        Level = LogLevel.Critical,
+        Message = "World reload threw; memory is ahead of the database")]
+    public static partial void ResyncThrew(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1011,
+        Level = LogLevel.Information,
+        Message = "First account '{Username}' promoted to Admin")]
+    public static partial void FirstAccountPromoted(ILogger logger, string username);
+
+    [LoggerMessage(
+        EventId = 1012,
+        Level = LogLevel.Information,
+        Message = "Account '{Username}' role changed from {Before} to {After}")]
+    public static partial void RoleChanged(
+        ILogger logger, string username, string before, string after);
+
+    [LoggerMessage(
+        EventId = 1013,
+        Level = LogLevel.Error,
+        Message = "Admin request {Request} failed; the worker continues")]
+    public static partial void AdminRequestFailed(ILogger logger, string request, Exception exception);
 }

@@ -16,5 +16,11 @@ public sealed class World
 
     public int SortOrder { get; set; }
 
+    /// <summary>
+    /// Flag defaults for every zone and room in this world (PLAN.md §4.10). The outermost
+    /// level of the chain: an arena realm sets <c>pvp</c> once, here.
+    /// </summary>
+    public FlagSet Flags { get; set; } = new();
+
     public ICollection<Zone> Zones { get; init; } = [];
 }

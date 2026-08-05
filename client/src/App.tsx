@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { AuthScreen, CharacterScreen } from './components/AuthScreen'
 import { GameScreen } from './components/GameScreen'
+import { BuilderScreen } from './builder/BuilderScreen'
 import { api, type Account, type Character } from './net/api'
 import './App.css'
 
@@ -10,8 +11,12 @@ type Stage =
   | { name: 'choosing'; account: Account }
   | { name: 'playing'; account: Account; character: Character }
 
+const BUILDER_ROLES = ['Builder', 'Admin']
+
 export default function App() {
   const [stage, setStage] = useState<Stage>({ name: 'loading' })
+  const [builderOpen, setBuilderOpen] = useState(false)
+  const [currentRoom, setCurrentRoom] = useState<string | null>(null)
 
   // The session cookie survives a reload, so check for an existing login before showing
   // the form - otherwise a refresh mid-session looks like being logged out.
@@ -22,8 +27,12 @@ export default function App() {
       .catch(() => setStage({ name: 'anonymous' }))
   }, [])
 
+  // Stable so GameScreen's effect does not re-fire on every render of App.
+  const onRoomChange = useCallback((roomKey: string) => setCurrentRoom(roomKey), [])
+
   async function logout() {
     await api.logout().catch(() => undefined)
+    setBuilderOpen(false)
     setStage({ name: 'anonymous' })
   }
 
@@ -46,12 +55,35 @@ export default function App() {
         />
       )
 
-    case 'playing':
+    case 'playing': {
+      const canBuild = BUILDER_ROLES.includes(stage.account.role)
+
       return (
-        <GameScreen
-          characterName={stage.character.name}
-          onLeave={() => setStage({ name: 'choosing', account: stage.account })}
-        />
+        <>
+          {/* Hidden rather than unmounted while the builder is open. Unmounting would close
+              the SSE stream, mark the character link-dead, and reconnect on the way back -
+              and follow mode depends on that stream staying live to know where you are. */}
+          <div className={builderOpen ? 'workspace hidden' : 'workspace'}>
+            <GameScreen
+              characterId={stage.character.id}
+              characterName={stage.character.name}
+              onRoomChange={onRoomChange}
+              onOpenBuilder={canBuild ? () => setBuilderOpen(true) : undefined}
+              onLeave={() => {
+                // Frees the slot against the per-account cap straight away rather than waiting
+                // out the 90 s link-dead window.
+                void api.leave(stage.character.id).catch(() => undefined)
+                setBuilderOpen(false)
+                setStage({ name: 'choosing', account: stage.account })
+              }}
+            />
+          </div>
+
+          {builderOpen && canBuild && (
+            <BuilderScreen occupiedRoom={currentRoom} onClose={() => setBuilderOpen(false)} />
+          )}
+        </>
       )
+    }
   }
 }

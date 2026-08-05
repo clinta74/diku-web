@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Worlds;
 
@@ -28,6 +29,66 @@ public sealed record WorldData(
 public interface ICharacterSaveQueue
 {
     void Enqueue(CharacterSnapshot snapshot);
+}
+
+/// <summary>
+/// Where in-game builder commands hand off their writes.
+/// </summary>
+/// <remarks>
+/// Builder edits made over HTTP await persistence before answering, because the caller is a
+/// request that can wait (PLAN.md §7.3). A <c>dig</c> typed at the command line cannot: it runs
+/// on the loop thread, and the loop is forbidden from touching the database at all (§2.1). So
+/// the in-game path is fire-and-forget through this queue, exactly like a character save.
+///
+/// The cost of that is real and worth stating: a failed write from an in-game command is logged
+/// rather than reported to the builder, and the edit stays live until a restart drops it. The
+/// builder panel, which is where anyone authoring seriously works, does not have this problem.
+/// </remarks>
+public interface IWorldWriteQueue
+{
+    void Enqueue(WorldWriteJob job);
+}
+
+public sealed record WorldWriteJob(
+    IReadOnlyList<Mutations.WorldChange> Changes,
+    Guid? AccountId);
+
+/// <summary>
+/// Where the in-game admin commands hand off work that touches the account store (PLAN.md §7.7).
+/// </summary>
+/// <remarks>
+/// Roles do not live in the world, they live in the database, and the loop is forbidden from
+/// reading it (§2.1) - the Engine has no account repository at all, which is precisely why a
+/// character's role is carried in on <see cref="Protocol.EnterWorld"/> rather than looked up.
+///
+/// So <c>promote</c> and <c>whois</c> are not command handlers that do the work. They validate
+/// their arguments, enqueue here, and the answer comes back later as a
+/// <see cref="Protocol.Notify"/> addressed at the session that asked.
+/// </remarks>
+public interface IAccountAdminQueue
+{
+    void Enqueue(AccountAdminRequest request);
+}
+
+public abstract record AccountAdminRequest
+{
+    /// <summary>Who asked. Used for the audit row and for the self-demotion guard.</summary>
+    public required Guid ActorAccountId { get; init; }
+
+    /// <summary>Where the answer goes. The command is fire-and-forget; the reply is not.</summary>
+    public required Guid ReplyToSessionId { get; init; }
+}
+
+public sealed record SetAccountRoleRequest : AccountAdminRequest
+{
+    public required string TargetUsername { get; init; }
+
+    public required AccountRole Role { get; init; }
+}
+
+public sealed record LookupAccountRequest : AccountAdminRequest
+{
+    public required string TargetUsername { get; init; }
 }
 
 /// <summary>

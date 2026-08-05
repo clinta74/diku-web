@@ -99,6 +99,7 @@ export function CharacterScreen({
   onLogout: () => void
 }) {
   const [characters, setCharacters] = useState<Character[] | null>(null)
+  const [active, setActive] = useState<Set<string>>(new Set())
   const [name, setName] = useState('')
   const [path, setPath] = useState<string>(PATHS[0])
   const [error, setError] = useState<string | null>(null)
@@ -109,6 +110,13 @@ export function CharacterScreen({
       .characters()
       .then(setCharacters)
       .catch(() => setCharacters([]))
+
+    // Several characters can be in the world at once, so show which already are - otherwise
+    // it is impossible to tell from here.
+    void api
+      .sessions()
+      .then((sessions) => setActive(new Set(sessions.map((s) => s.characterId))))
+      .catch(() => undefined)
   }, [])
 
   async function create(event: React.FormEvent) {
@@ -154,11 +162,16 @@ export function CharacterScreen({
                 <strong>{character.name}</strong>
                 <span className="dim">
                   {character.path} · level {character.level}
+                  {active.has(character.id) && <span className="good"> · in world</span>}
                 </span>
               </button>
             </li>
           ))}
         </ul>
+
+        <p className="detail dim">
+          You can play several characters at once — open each in its own browser tab.
+        </p>
       </section>
 
       <form className="panel form" onSubmit={create}>

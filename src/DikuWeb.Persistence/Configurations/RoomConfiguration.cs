@@ -23,6 +23,14 @@ internal sealed class RoomConfiguration : IEntityTypeConfiguration<Room>
         builder.Property(r => r.Title).HasColumnName("title").HasMaxLength(128).IsRequired();
         builder.Property(r => r.Description).HasColumnName("description").IsRequired();
 
+        // An open map, never promoted to columns (PLAN.md §4.10, §6). The moment one flag
+        // becomes a column, adding the next one is a migration again.
+        builder.Property(r => r.Flags)
+            .HasColumnName("flags")
+            .HasColumnType("jsonb")
+            .HasConversion(new FlagSetConverter(), new FlagSetComparer())
+            .IsRequired();
+
         // text[] rather than jsonb: the grid is genuinely an array of rows, and Postgres
         // arrays keep it readable in Adminer during world building.
         builder.Property(r => r.Grid)

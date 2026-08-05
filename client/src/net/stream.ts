@@ -13,8 +13,8 @@ export interface StreamHandlers {
  * Last-Event-ID header, which the server answers from its ring buffer (PLAN.md §3.4).
  * It also cannot set request headers, which is exactly why auth is a cookie.
  */
-export function connectStream(handlers: StreamHandlers): () => void {
-  const source = new EventSource('/api/game/stream')
+export function connectStream(characterId: string, handlers: StreamHandlers): () => void {
+  const source = new EventSource(`/api/game/${characterId}/stream`)
 
   source.onopen = () => handlers.onOpen?.()
 
