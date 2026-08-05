@@ -189,6 +189,97 @@ public sealed class BuilderQueries(DikuWebDbContext db)
     }
 
     // -----------------------------------------------------------------------
+    // Templates and Spawners (Phase 3)
+    // -----------------------------------------------------------------------
+
+    public async Task<IReadOnlyList<MobTemplateResponse>> MobTemplatesAsync(
+        CancellationToken cancellationToken)
+    {
+        var templates = await db.MobTemplates.AsNoTracking().OrderBy(t => t.Key).ToListAsync(cancellationToken);
+        return [.. templates.Select(t => new MobTemplateResponse(
+            t.Key, t.Name, t.Description, t.Icon, t.Level,
+            new Dictionary<string, object>(t.BaseStats),
+            t.BaseXp, t.BaseGold,
+            new Dictionary<string, object>(t.Behavior),
+            new List<Dictionary<string, object>>(t.Loot)))];
+    }
+
+    public async Task<MobTemplateResponse?> MobTemplateAsync(
+        string key,
+        CancellationToken cancellationToken)
+    {
+        var template = await db.MobTemplates.AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Key == key, cancellationToken);
+        if (template is null)
+        {
+            return null;
+        }
+        return new MobTemplateResponse(
+            template.Key, template.Name, template.Description, template.Icon, template.Level,
+            new Dictionary<string, object>(template.BaseStats),
+            template.BaseXp, template.BaseGold,
+            new Dictionary<string, object>(template.Behavior),
+            new List<Dictionary<string, object>>(template.Loot));
+    }
+
+    public async Task<IReadOnlyList<ItemTemplateResponse>> ItemTemplatesAsync(
+        CancellationToken cancellationToken)
+    {
+        var templates = await db.ItemTemplates.AsNoTracking().OrderBy(t => t.Key).ToListAsync(cancellationToken);
+        return [.. templates.Select(t => new ItemTemplateResponse(
+            t.Key, t.Name, t.Description, t.Icon, t.Slot, t.Weight, t.BaseValue,
+            new Dictionary<string, object>(t.BaseStats)))];
+    }
+
+    public async Task<ItemTemplateResponse?> ItemTemplateAsync(
+        string key,
+        CancellationToken cancellationToken)
+    {
+        var template = await db.ItemTemplates.AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Key == key, cancellationToken);
+        if (template is null)
+        {
+            return null;
+        }
+        return new ItemTemplateResponse(
+            template.Key, template.Name, template.Description, template.Icon, template.Slot,
+            template.Weight, template.BaseValue,
+            new Dictionary<string, object>(template.BaseStats));
+    }
+
+    public async Task<IReadOnlyList<SpawnerResponse>> SpawnersAsync(
+        string? zoneKey,
+        CancellationToken cancellationToken)
+    {
+        var query = db.Spawners.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(zoneKey))
+        {
+            query = query.Where(s => s.ZoneKey == zoneKey);
+        }
+
+        var spawners = await query.OrderBy(s => s.Id).ToListAsync(cancellationToken);
+        return [.. spawners.Select(s => new SpawnerResponse(
+            s.Id, s.ZoneKey, s.TemplateKey, s.TemplateKind,
+            new List<string>(s.RoomKeys), s.TargetCount, s.RespawnSeconds))];
+    }
+
+    public async Task<SpawnerResponse?> SpawnerAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var spawner = await db.Spawners.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        if (spawner is null)
+        {
+            return null;
+        }
+        return new SpawnerResponse(
+            spawner.Id, spawner.ZoneKey, spawner.TemplateKey, spawner.TemplateKind,
+            new List<string>(spawner.RoomKeys), spawner.TargetCount, spawner.RespawnSeconds);
+    }
+
+    // -----------------------------------------------------------------------
     // Validation (PLAN.md §7.4) - advisory only, never blocks a save
     // -----------------------------------------------------------------------
 

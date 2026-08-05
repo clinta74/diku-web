@@ -1,3 +1,6 @@
+using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
+using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 
 namespace DikuWeb.Server.Building;
@@ -118,3 +121,66 @@ public sealed record DigRequest(
     string? NewRoomKey = null);
 
 public sealed record RenameRoomRequest(string? NewKey);
+
+// ---------------------------------------------------------------------------
+// Templates and Spawners
+// ---------------------------------------------------------------------------
+
+public sealed record MobTemplateResponse(
+    string Key,
+    string Name,
+    string Description,
+    string Icon,
+    int Level,
+    Dictionary<string, object> BaseStats,
+    int BaseXp,
+    int BaseGold,
+    Dictionary<string, object> Behavior,
+    List<Dictionary<string, object>> Loot);
+
+public sealed record SaveMobTemplateRequest(
+    string? Name,
+    string? Description,
+    string? Icon,
+    int? Level,
+    Dictionary<string, object>? BaseStats,
+    int? BaseXp,
+    int? BaseGold,
+    Dictionary<string, object>? Behavior,
+    List<Dictionary<string, object>>? Loot);
+
+public sealed record ItemTemplateResponse(
+    string Key,
+    string Name,
+    string Description,
+    string Icon,
+    ItemSlot? Slot,
+    int Weight,
+    int BaseValue,
+    Dictionary<string, object> BaseStats);
+
+public sealed record SaveItemTemplateRequest(
+    string? Name,
+    string? Description,
+    string? Icon,
+    ItemSlot? Slot,
+    int? Weight,
+    int? BaseValue,
+    Dictionary<string, object>? BaseStats);
+
+public sealed record SpawnerResponse(
+    Guid Id,
+    string ZoneKey,
+    string TemplateKey,
+    TemplateKind TemplateKind,
+    List<string> RoomKeys,
+    int TargetCount,
+    int RespawnSeconds);
+
+public sealed record SaveSpawnerRequest(
+    string? ZoneKey,
+    string? TemplateKey,
+    TemplateKind? TemplateKind,
+    List<string>? RoomKeys,
+    int? TargetCount,
+    int? RespawnSeconds);

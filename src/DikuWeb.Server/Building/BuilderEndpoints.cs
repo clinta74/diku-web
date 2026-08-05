@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Server.Auth;
@@ -38,6 +39,24 @@ public static class BuilderEndpoints
         group.MapGet("/zones/{key}/unfinished", UnfinishedAsync);
 
         group.MapGet("/audit", AuditAsync);
+
+        group.MapGet("/mob-templates", ListMobTemplatesAsync);
+        group.MapGet("/mob-templates/{key}", GetMobTemplateAsync);
+        group.MapPost("/mob-templates/{key}", CreateMobTemplateAsync);
+        group.MapPatch("/mob-templates/{key}", UpdateMobTemplateAsync);
+        group.MapDelete("/mob-templates/{key}", DeleteMobTemplateAsync);
+
+        group.MapGet("/item-templates", ListItemTemplatesAsync);
+        group.MapGet("/item-templates/{key}", GetItemTemplateAsync);
+        group.MapPost("/item-templates/{key}", CreateItemTemplateAsync);
+        group.MapPatch("/item-templates/{key}", UpdateItemTemplateAsync);
+        group.MapDelete("/item-templates/{key}", DeleteItemTemplateAsync);
+
+        group.MapGet("/spawners", ListSpawnersAsync);
+        group.MapGet("/spawners/{id}", GetSpawnerAsync);
+        group.MapPost("/spawners", CreateSpawnerAsync);
+        group.MapPatch("/spawners/{id}", UpdateSpawnerAsync);
+        group.MapDelete("/spawners/{id}", DeleteSpawnerAsync);
 
         routes.MapBuilderRoomEndpoints();
     }
@@ -221,6 +240,257 @@ public static class BuilderEndpoints
         BuilderQueries queries,
         CancellationToken ct) =>
         Results.Ok(await queries.AuditAsync(kind, key, limit ?? 50, ct));
+
+    // -----------------------------------------------------------------------
+    // Mob Templates
+    // -----------------------------------------------------------------------
+
+    private static async Task<IResult> ListMobTemplatesAsync(
+        BuilderQueries queries,
+        CancellationToken ct) =>
+        Results.Ok(await queries.MobTemplatesAsync(ct));
+
+    private static async Task<IResult> GetMobTemplateAsync(
+        string key,
+        BuilderQueries queries,
+        CancellationToken ct) =>
+        await queries.MobTemplateAsync(key, ct) is { } template ? Results.Ok(template) : Results.NotFound();
+
+    private static async Task<IResult> CreateMobTemplateAsync(
+        string key,
+        SaveMobTemplateRequest request,
+        BuilderQueries queries,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (!IsKeySegment(key))
+        {
+            return Invalid("A mob template key must be lowercase letters, digits, or hyphens.");
+        }
+
+        if (await queries.MobTemplateAsync(key, ct) is not null)
+        {
+            return Results.Conflict(new { error = $"Mob template '{key}' already exists." });
+        }
+
+        var change = new UpsertMobTemplate(
+            key,
+            Trim(request.Name) ?? key,
+            request.Description ?? string.Empty,
+            request.Icon ?? "m",
+            request.Level ?? 1,
+            request.BaseStats ?? new Dictionary<string, object>(),
+            request.BaseXp ?? 0,
+            request.BaseGold ?? 0,
+            request.Behavior ?? new Dictionary<string, object>(),
+            request.Loot ?? new List<Dictionary<string, object>>());
+
+        return await SaveAsync(editor, change, http, ct, () => queries.MobTemplateAsync(key, ct));
+    }
+
+    private static async Task<IResult> UpdateMobTemplateAsync(
+        string key,
+        SaveMobTemplateRequest request,
+        BuilderQueries queries,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (await queries.MobTemplateAsync(key, ct) is not { } existing)
+        {
+            return Results.NotFound();
+        }
+
+        var change = new UpsertMobTemplate(
+            key,
+            Trim(request.Name) ?? existing.Name,
+            request.Description ?? existing.Description,
+            request.Icon ?? existing.Icon,
+            request.Level ?? existing.Level,
+            request.BaseStats ?? existing.BaseStats,
+            request.BaseXp ?? existing.BaseXp,
+            request.BaseGold ?? existing.BaseGold,
+            request.Behavior ?? existing.Behavior,
+            request.Loot ?? existing.Loot);
+
+        return await SaveAsync(editor, change, http, ct, () => queries.MobTemplateAsync(key, ct));
+    }
+
+    private static async Task<IResult> DeleteMobTemplateAsync(
+        string key,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct) =>
+        await SaveAsync(editor, new DeleteMobTemplate(key), http, ct, () => Task.FromResult<object?>(null));
+
+    // -----------------------------------------------------------------------
+    // Item Templates
+    // -----------------------------------------------------------------------
+
+    private static async Task<IResult> ListItemTemplatesAsync(
+        BuilderQueries queries,
+        CancellationToken ct) =>
+        Results.Ok(await queries.ItemTemplatesAsync(ct));
+
+    private static async Task<IResult> GetItemTemplateAsync(
+        string key,
+        BuilderQueries queries,
+        CancellationToken ct) =>
+        await queries.ItemTemplateAsync(key, ct) is { } template ? Results.Ok(template) : Results.NotFound();
+
+    private static async Task<IResult> CreateItemTemplateAsync(
+        string key,
+        SaveItemTemplateRequest request,
+        BuilderQueries queries,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (!IsKeySegment(key))
+        {
+            return Invalid("An item template key must be lowercase letters, digits, or hyphens.");
+        }
+
+        if (await queries.ItemTemplateAsync(key, ct) is not null)
+        {
+            return Results.Conflict(new { error = $"Item template '{key}' already exists." });
+        }
+
+        var change = new UpsertItemTemplate(
+            key,
+            Trim(request.Name) ?? key,
+            request.Description ?? string.Empty,
+            request.Icon ?? "$",
+            request.Slot,
+            request.Weight ?? 1,
+            request.BaseValue ?? 0,
+            request.BaseStats ?? new Dictionary<string, object>());
+
+        return await SaveAsync(editor, change, http, ct, () => queries.ItemTemplateAsync(key, ct));
+    }
+
+    private static async Task<IResult> UpdateItemTemplateAsync(
+        string key,
+        SaveItemTemplateRequest request,
+        BuilderQueries queries,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (await queries.ItemTemplateAsync(key, ct) is not { } existing)
+        {
+            return Results.NotFound();
+        }
+
+        var change = new UpsertItemTemplate(
+            key,
+            Trim(request.Name) ?? existing.Name,
+            request.Description ?? existing.Description,
+            request.Icon ?? existing.Icon,
+            request.Slot ?? existing.Slot,
+            request.Weight ?? existing.Weight,
+            request.BaseValue ?? existing.BaseValue,
+            request.BaseStats ?? existing.BaseStats);
+
+        return await SaveAsync(editor, change, http, ct, () => queries.ItemTemplateAsync(key, ct));
+    }
+
+    private static async Task<IResult> DeleteItemTemplateAsync(
+        string key,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct) =>
+        await SaveAsync(editor, new DeleteItemTemplate(key), http, ct, () => Task.FromResult<object?>(null));
+
+    // -----------------------------------------------------------------------
+    // Spawners
+    // -----------------------------------------------------------------------
+
+    private static async Task<IResult> ListSpawnersAsync(
+        string? zone,
+        BuilderQueries queries,
+        CancellationToken ct) =>
+        Results.Ok(await queries.SpawnersAsync(zone, ct));
+
+    private static async Task<IResult> GetSpawnerAsync(
+        Guid id,
+        BuilderQueries queries,
+        CancellationToken ct) =>
+        await queries.SpawnerAsync(id, ct) is { } spawner ? Results.Ok(spawner) : Results.NotFound();
+
+    private static async Task<IResult> CreateSpawnerAsync(
+        SaveSpawnerRequest request,
+        BuilderQueries queries,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.ZoneKey))
+        {
+            return Invalid("Zone key is required.");
+        }
+
+        if (await queries.ZoneAsync(request.ZoneKey, ct) is null)
+        {
+            return Invalid($"No zone '{request.ZoneKey}'.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.TemplateKey))
+        {
+            return Invalid("Template key is required.");
+        }
+
+        var id = Guid.CreateVersion7();
+        var change = new UpsertSpawner(
+            id,
+            request.ZoneKey,
+            request.TemplateKey,
+            request.TemplateKind ?? TemplateKind.Mob,
+            request.RoomKeys ?? new List<string>(),
+            request.TargetCount ?? 1,
+            request.RespawnSeconds ?? 60);
+
+        return await SaveAsync(editor, change, http, ct, () => queries.SpawnerAsync(id, ct));
+    }
+
+    private static async Task<IResult> UpdateSpawnerAsync(
+        Guid id,
+        SaveSpawnerRequest request,
+        BuilderQueries queries,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (await queries.SpawnerAsync(id, ct) is not { } existing)
+        {
+            return Results.NotFound();
+        }
+
+        var zoneKey = request.ZoneKey ?? existing.ZoneKey;
+        if (await queries.ZoneAsync(zoneKey, ct) is null)
+        {
+            return Invalid($"No zone '{zoneKey}'.");
+        }
+
+        var change = new UpsertSpawner(
+            id,
+            zoneKey,
+            request.TemplateKey ?? existing.TemplateKey,
+            request.TemplateKind ?? existing.TemplateKind,
+            request.RoomKeys ?? existing.RoomKeys,
+            request.TargetCount ?? existing.TargetCount,
+            request.RespawnSeconds ?? existing.RespawnSeconds);
+
+        return await SaveAsync(editor, change, http, ct, () => queries.SpawnerAsync(id, ct));
+    }
+
+    private static async Task<IResult> DeleteSpawnerAsync(
+        Guid id,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct) =>
+        await SaveAsync(editor, new DeleteSpawner(id), http, ct, () => Task.FromResult<object?>(null));
 
     // -----------------------------------------------------------------------
     // Shared plumbing

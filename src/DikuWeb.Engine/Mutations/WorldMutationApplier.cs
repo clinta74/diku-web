@@ -47,6 +47,12 @@ public sealed class WorldMutationApplier(WorldState world, PlayerView view, Engi
             DigRoom change => ApplyDig(change),
             RenameRoom change => ApplyRename(change),
             SetRoomFlag change => ApplySetFlag(change),
+            UpsertMobTemplate change => ApplyUpsertMobTemplate(change),
+            DeleteMobTemplate change => ApplyDeleteMobTemplate(change),
+            UpsertItemTemplate change => ApplyUpsertItemTemplate(change),
+            DeleteItemTemplate change => ApplyDeleteItemTemplate(change),
+            UpsertSpawner change => ApplyUpsertSpawner(change),
+            DeleteSpawner change => ApplyDeleteSpawner(change),
             _ => MutationResult.Fail(MutationError.Invalid, "Unsupported change."),
         };
     }
@@ -697,4 +703,26 @@ public sealed class WorldMutationApplier(WorldState world, PlayerView view, Engi
             view.SendRoom(world, actor, verbose: false);
         }
     }
+
+    // -----------------------------------------------------------------------
+    // Templates and Spawners (Phase 3)
+    // -----------------------------------------------------------------------
+
+    private MutationResult ApplyUpsertMobTemplate(UpsertMobTemplate change) =>
+        MutationResult.Ok([change]);
+
+    private MutationResult ApplyDeleteMobTemplate(DeleteMobTemplate change) =>
+        MutationResult.Ok([change]);
+
+    private MutationResult ApplyUpsertItemTemplate(UpsertItemTemplate change) =>
+        MutationResult.Ok([change]);
+
+    private MutationResult ApplyDeleteItemTemplate(DeleteItemTemplate change) =>
+        MutationResult.Ok([change]);
+
+    private MutationResult ApplyUpsertSpawner(UpsertSpawner change) =>
+        MutationResult.Ok([change]);
+
+    private MutationResult ApplyDeleteSpawner(DeleteSpawner change) =>
+        MutationResult.Ok([change]);
 }

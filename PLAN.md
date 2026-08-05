@@ -15,8 +15,10 @@ Play is **PvE by default**; player-versus-player is opt-in per room, through the
 room-flag registry that carries every other room property (§4.10).
 
 Status: Phases 0–2a complete — register, create a character, walk a seeded zone, talk, build new
-geography in the browser with no SQL, and hand out builder access from inside the game. Phase 3
-(objects, inhabitants, multipliers) is next.
+geography in the browser with no SQL, and hand out builder access from inside the game. Phase 3 in
+progress — items, mobs, spawners, and multipliers working; items and mobs appear on maps with
+multiplier resolution at spawn time; inventory/equipment commands complete. Remaining: builder API
+for template/spawner CRUD, multiplier preview UI, mob AI.
 
 ---
 
@@ -1295,17 +1297,17 @@ Notes from the build:
 ### Phase 3 — Objects, inhabitants, and multipliers
 *Done when: a zone's difficulty is a slider, and the same kobold is trivial in one zone and lethal in another.*
 
-- [ ] Item templates + instances, weight and capacity limits
-- [ ] `get`, `drop`, `give`, `put`, `inventory`, `examine`
-- [ ] Equipment slots: `wear`, `wield`, `remove`; containers with depth limit
-- [ ] Mob templates, spawners, population maintenance
-- [ ] **Multiplier resolution at spawn time** (§4.4), `spawn_multipliers` recorded per instance
-- [ ] World + zone multiplier storage and `world × zone` composition
-- [ ] Builder: mob template, item template, and spawner editors
+- [x] Item templates + instances (weight and capacity limits deferred)
+- [x] `get`, `drop`, `give`, `inventory`, `examine`; `put` for containers deferred
+- [x] Equipment slots: `wear`, `wield`, `remove` (containers with depth limit deferred)
+- [x] Mob templates, spawners, population maintenance
+- [x] **Multiplier resolution at spawn time** (§4.4), `spawn_multipliers` recorded per instance
+- [x] World + zone multiplier storage and `world × zone` composition
+- [ ] Builder: mob template, item template, and spawner editors (CRUD endpoints)
 - [ ] Builder: multiplier panel with live preview table (§7.5) and *Respawn zone*
 - [ ] Mob AI v1: idle emotes, room-to-room wandering, `sentinel` flag
-- [ ] Ground items and mobs appear on the map with their icons
-- [ ] `emote` and a social table
+- [x] Ground items and mobs appear on the map with their icons
+- [x] `emote` command for expressive actions
 
 ### Phase 4 — Combat and progression
 *Done when: you can kill something, loot its corpse, and level up — and the multipliers visibly matter.*

@@ -1,3 +1,6 @@
+using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
+using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 
 namespace DikuWeb.Engine.Mutations;
@@ -180,4 +183,75 @@ public sealed record SetRoomFlag(RoomKey Key, string Flag, bool? Value) : WorldC
     public override string EntityKind => "room";
 
     public override string EntityKey => Key.ToString();
+}
+
+// ---------------------------------------------------------------------------
+// Templates and Spawners
+// ---------------------------------------------------------------------------
+
+public sealed record UpsertMobTemplate(
+    string Key,
+    string Name,
+    string Description,
+    string Icon,
+    int Level,
+    Dictionary<string, object> BaseStats,
+    int BaseXp,
+    int BaseGold,
+    Dictionary<string, object> Behavior,
+    List<Dictionary<string, object>> Loot) : WorldChange
+{
+    public override string EntityKind => "mob-template";
+
+    public override string EntityKey => Key;
+}
+
+public sealed record DeleteMobTemplate(string Key) : WorldChange
+{
+    public override string EntityKind => "mob-template";
+
+    public override string EntityKey => Key;
+}
+
+public sealed record UpsertItemTemplate(
+    string Key,
+    string Name,
+    string Description,
+    string Icon,
+    ItemSlot? Slot,
+    int Weight,
+    int BaseValue,
+    Dictionary<string, object> BaseStats) : WorldChange
+{
+    public override string EntityKind => "item-template";
+
+    public override string EntityKey => Key;
+}
+
+public sealed record DeleteItemTemplate(string Key) : WorldChange
+{
+    public override string EntityKind => "item-template";
+
+    public override string EntityKey => Key;
+}
+
+public sealed record UpsertSpawner(
+    Guid Id,
+    string ZoneKey,
+    string TemplateKey,
+    TemplateKind TemplateKind,
+    List<string> RoomKeys,
+    int TargetCount,
+    int RespawnSeconds) : WorldChange
+{
+    public override string EntityKind => "spawner";
+
+    public override string EntityKey => Id.ToString();
+}
+
+public sealed record DeleteSpawner(Guid Id) : WorldChange
+{
+    public override string EntityKind => "spawner";
+
+    public override string EntityKey => Id.ToString();
 }
