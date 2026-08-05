@@ -15,10 +15,10 @@ Play is **PvE by default**; player-versus-player is opt-in per room, through the
 room-flag registry that carries every other room property (§4.10).
 
 Status: Phases 0–2a complete — register, create a character, walk a seeded zone, talk, build new
-geography in the browser with no SQL, and hand out builder access from inside the game. Phase 3 in
-progress — items, mobs, spawners, and multipliers working; items and mobs appear on maps with
-multiplier resolution at spawn time; inventory/equipment commands complete. Remaining: builder API
-for template/spawner CRUD, multiplier preview UI, mob AI.
+geography in the browser with no SQL, and hand out builder access from inside the game. Phase 3 ~85%
+complete — items, mobs, spawners, and multipliers working; builder API for template/spawner CRUD
+implemented; multiplier resolution at spawn time; inventory/equipment commands complete. Remaining:
+multiplier preview UI, mob AI v1 (idle emotes, wandering, sentinel flag).
 
 ---
 
