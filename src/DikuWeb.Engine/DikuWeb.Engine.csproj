@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DikuWeb.Domain\DikuWeb.Domain.csproj" />
+  </ItemGroup>
+
+  <!--
+    Framework reference rather than packages: the engine needs ILogger, hosted services,
+    and Channels, all of which ship in the shared framework. The app host supplies providers.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

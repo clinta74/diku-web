@@ -1,0 +1,296 @@
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { api } from '../net/api'
+import { connectStream } from '../net/stream'
+import { gameReducer, initialGameState } from '../state/gameReducer'
+import type { ContentEntry, MapPayload, TextSpan, VitalsPayload } from '../net/protocol'
+
+interface Props {
+  characterName: string
+  onLeave: () => void
+}
+
+export function GameScreen({ characterName, onLeave }: Props) {
+  const [state, dispatch] = useReducer(gameReducer, initialGameState)
+
+  // Lets the contents list type a keyword into the input box without lifting the input's
+  // value up here, which would re-render all five panels on every keystroke.
+  const insertKeyword = useRef<((keyword: string) => void) | null>(null)
+
+  useEffect(() => {
+    const close = connectStream({
+      onEvent: (event) => dispatch({ kind: 'event', event }),
+      onOpen: () => dispatch({ kind: 'connection', connected: true }),
+      onError: () => dispatch({ kind: 'connection', connected: false }),
+    })
+    return close
+  }, [])
+
+  const send = useCallback((input: string) => {
+    // Echo locally so the player sees what they typed immediately. The result itself still
+    // arrives over SSE, keeping one ordered output channel (PLAN.md §3.3).
+    dispatch({ kind: 'local', spans: [{ t: `> ${input}`, s: 'echo' }] })
+    void api.command(input).catch(() => {
+      dispatch({ kind: 'local', spans: [{ t: 'Command not delivered.', s: 'bad' }] })
+    })
+  }, [])
+
+  return (
+    <div className="game">
+      <MapPanel map={state.map} />
+      <RoomPanel
+        title={state.room?.title ?? '...'}
+        description={state.room?.description ?? ''}
+        exits={state.room?.exits ?? []}
+        contents={state.contents?.occupants ?? []}
+        onKeyword={(keyword) => insertKeyword.current?.(keyword)}
+      />
+      <Scrollback lines={state.scrollback} />
+      <InputBar onSend={send} insertRef={insertKeyword} />
+      <VitalsBar
+        vitals={state.vitals}
+        characterName={characterName}
+        connected={state.connected}
+        onLeave={onLeave}
+      />
+    </div>
+  )
+}
+
+function MapPanel({ map }: { map: MapPayload | null }) {
+  if (!map) {
+    return (
+      <section className="panel map-panel">
+        <h2>Room map</h2>
+        <p className="dim">Waiting for the world…</p>
+      </section>
+    )
+  }
+
+  const glyphs = new Map<string, string>()
+  for (const [glyph, tile] of Object.entries(map.legend)) glyphs.set(glyph, tile)
+
+  // Overlay entities onto a mutable copy of the terrain rows.
+  const rows = map.terrain.map((row) => row.split(''))
+  for (const entity of map.entities) {
+    if (rows[entity.y] && entity.x < rows[entity.y].length) {
+      rows[entity.y][entity.x] = entity.icon
+    }
+  }
+
+  return (
+    <section className="panel map-panel">
+      <h2>Room map</h2>
+      <pre className="map">{rows.map((row) => row.join('')).join('\n')}</pre>
+      <ul className="legend">
+        {map.entities.map((entity) => (
+          <li key={entity.id}>
+            <span className="glyph">{entity.icon}</span> {entity.label}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function RoomPanel({
+  title,
+  description,
+  exits,
+  contents,
+  onKeyword,
+}: {
+  title: string
+  description: string
+  exits: string[]
+  contents: ContentEntry[]
+  onKeyword: (keyword: string) => void
+}) {
+  return (
+    <section className="panel room-panel">
+      <h1 className="room-title">{title}</h1>
+      {description && <p className="room-description">{description}</p>}
+      <p className="exits">
+        {exits.length ? `Exits: ${exits.join(', ')}` : 'There are no obvious exits.'}
+      </p>
+
+      <h2>Here</h2>
+      <ul className="contents">
+        {contents.length === 0 && <li className="dim">Nobody else.</li>}
+        {contents.map((entry) => (
+          <li key={entry.keyword}>
+            <button type="button" onClick={() => onKeyword(entry.keyword)}>
+              <span className="glyph">{entry.icon}</span> {entry.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function Scrollback({ lines }: { lines: { id: number; spans: TextSpan[] }[] }) {
+  const endRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'end' })
+  }, [lines])
+
+  return (
+    <section className="scrollback" aria-live="polite">
+      {lines.map((line) => (
+        <div key={line.id} className="line">
+          {line.spans.map((span, i) => (
+            <span key={i} className={span.s ?? undefined}>
+              {span.t}
+            </span>
+          ))}
+        </div>
+      ))}
+      <div ref={endRef} />
+    </section>
+  )
+}
+
+function InputBar({
+  onSend,
+  insertRef,
+}: {
+  onSend: (input: string) => void
+  insertRef: React.RefObject<((keyword: string) => void) | null>
+}) {
+  const [value, setValue] = useState('')
+  const [history, setHistory] = useState<string[]>([])
+  const [cursor, setCursor] = useState(-1)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const ref = insertRef
+    ref.current = (keyword: string) => {
+      setValue((current) => (current ? `${current} ${keyword}` : keyword))
+      inputRef.current?.focus()
+    }
+    return () => {
+      ref.current = null
+    }
+  }, [insertRef])
+
+  function submit() {
+    const input = value.trim()
+    if (!input) return
+
+    onSend(input)
+    setHistory((h) => [...h, input])
+    setCursor(-1)
+    setValue('')
+  }
+
+  function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Enter') {
+      submit()
+      return
+    }
+
+    // Up/down walk the history, the way every MUD client has since 1990.
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      if (history.length === 0) return
+      const next = cursor === -1 ? history.length - 1 : Math.max(0, cursor - 1)
+      setCursor(next)
+      setValue(history[next])
+      return
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      if (cursor === -1) return
+      const next = cursor + 1
+      if (next >= history.length) {
+        setCursor(-1)
+        setValue('')
+      } else {
+        setCursor(next)
+        setValue(history[next])
+      }
+    }
+  }
+
+  return (
+    <div className="input-bar">
+      <span className="prompt">&gt;</span>
+      <input
+        ref={inputRef}
+        value={value}
+        autoFocus
+        spellCheck={false}
+        autoComplete="off"
+        placeholder="look, north, say hello, help"
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={onKeyDown}
+        aria-label="Command input"
+      />
+    </div>
+  )
+}
+
+function VitalsBar({
+  vitals,
+  characterName,
+  connected,
+  onLeave,
+}: {
+  vitals: VitalsPayload | null
+  characterName: string
+  connected: boolean
+  onLeave: () => void
+}) {
+  return (
+    <div className="vitals-bar">
+      {vitals ? (
+        <>
+          <Meter label="HP" value={vitals.health} max={vitals.healthMax} tone="health" />
+          <Meter label="FO" value={vitals.focus} max={vitals.focusMax} tone="focus" />
+          <Meter label="ST" value={vitals.stamina} max={vitals.staminaMax} tone="stamina" />
+          <span className="identity">
+            {characterName} · {vitals.path} · level {vitals.level} · {vitals.xp.toLocaleString()} xp
+          </span>
+        </>
+      ) : (
+        <span className="dim">{characterName}</span>
+      )}
+
+      <span className={connected ? 'status good' : 'status bad'}>
+        {connected ? 'connected' : 'reconnecting…'}
+      </span>
+      <button type="button" className="leave" onClick={onLeave}>
+        leave
+      </button>
+    </div>
+  )
+}
+
+function Meter({
+  label,
+  value,
+  max,
+  tone,
+}: {
+  label: string
+  value: number
+  max: number
+  tone: string
+}) {
+  const filled = max > 0 ? Math.round((value / max) * 10) : 0
+
+  return (
+    <span className={`meter ${tone}`} title={`${label} ${value}/${max}`}>
+      <span className="meter-label">{label}</span>
+      <span className="meter-bar">
+        {'█'.repeat(filled)}
+        <span className="dim">{'░'.repeat(Math.max(0, 10 - filled))}</span>
+      </span>
+      <span className="meter-value">
+        {value}/{max}
+      </span>
+    </span>
+  )
+}

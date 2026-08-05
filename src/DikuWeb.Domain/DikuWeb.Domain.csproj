@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    PLAN.md §2.2: Domain has ZERO external dependencies and no project references.
+    Entities, rules, scaling math, and validation only. Do not add a PackageReference here
+    without a very good reason - this project's isolation is what keeps the rules testable.
+  -->
+
+</Project>

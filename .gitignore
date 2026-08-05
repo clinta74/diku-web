@@ -1,0 +1,36 @@
+# ---- .NET ----
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.received.*
+
+# ---- Node / client ----
+node_modules/
+client/dist/
+client/.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# ---- Local configuration and secrets ----
+# .env holds local docker-compose credentials; .env.example is committed instead.
+.env
+*.local
+appsettings.Local.json
+appsettings.*.Local.json
+
+# ---- Tooling ----
+.idea/
+.DS_Store
+Thumbs.db
+coverage/
+TestResults/
+*.coverage
+*.trx
