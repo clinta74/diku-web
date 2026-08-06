@@ -89,6 +89,7 @@ public sealed class CommandRegistry
         RestCommands.Register(_commands);
         AbilityCommands.Register(_commands, abilityCache);
         QuestCommands.Register(_commands, questCache);
+        StatusCommands.Register(_commands);
         BuilderCommands.Register(_commands, mobTemplates, itemTemplates, mobSpawner, itemSpawner);
         AdminCommands.Register(_commands);
     }

@@ -206,7 +206,25 @@ public sealed class CombatSystem(
         // Apply damage if hit
         if (round.Damage.Hit)
         {
-            ApplyDamage(world, targetId, round.Damage.DamageDealt);
+            // Apply buff/debuff damage multipliers
+            var damageDealt = round.Damage.DamageDealt;
+
+            // Get attacker's outgoing damage multiplier
+            var attackerIdGuid = Guid.Parse(attackerId.Substring(2));
+            var attackerEffects = world.GetActiveEffects(attackerIdGuid);
+            var outgoingMultiplier = CalculateMultiplier(attackerEffects, e => e.OutgoingDamageMultiplier);
+
+            // Get target's incoming damage multiplier
+            var targetIdGuid = Guid.Parse(targetId.Substring(2));
+            var targetEffects = world.GetActiveEffects(targetIdGuid);
+            var incomingMultiplier = CalculateMultiplier(targetEffects, e => e.IncomingDamageMultiplier);
+
+            // Apply both multipliers
+            var totalMultiplier = outgoingMultiplier * incomingMultiplier;
+            damageDealt = (int)Math.Round(damageDealt * totalMultiplier, MidpointRounding.AwayFromZero);
+            damageDealt = Math.Max(0, damageDealt);
+
+            ApplyDamage(world, targetId, damageDealt);
 
             // Send damage calculation breakdown to attacker (for debugging)
             if (attackerActo is PlayerActor attackerPlayer)
@@ -307,6 +325,25 @@ public sealed class CombatSystem(
         }
 
         return (attacker, defender);
+    }
+
+    private decimal CalculateMultiplier(IReadOnlyList<DikuWeb.Domain.Abilities.Effects.ActiveEffect> effects, Func<DikuWeb.Domain.Abilities.Effects.ActiveEffect, decimal> selector)
+    {
+        var multiplier = 1.0m;
+
+        foreach (var effect in effects)
+        {
+            var effectMultiplier = selector(effect);
+            if (effectMultiplier != 1.0m)
+            {
+                var stackMultiplier = effect.StackingRule == DikuWeb.Domain.Abilities.Effects.EffectStackingRule.Stack
+                    ? 1.0m + (effectMultiplier - 1.0m) * effect.Stacks
+                    : effectMultiplier;
+                multiplier *= stackMultiplier;
+            }
+        }
+
+        return multiplier;
     }
 
     private void ApplyDamage(WorldState world, string targetId, int damage)

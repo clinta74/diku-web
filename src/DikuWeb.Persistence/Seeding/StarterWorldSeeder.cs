@@ -352,5 +352,69 @@ public static class StarterWorldSeeder
             EffectKey = "heal.restore",
             EffectParams = new() { { "baseHeal", "18" } },
         });
+
+        // Buff/Debuff abilities (Phase 5.2a)
+        db.Abilities.Add(new Ability
+        {
+            Key = "warden.battle-fury",
+            Name = "Battle Fury",
+            Description = "Increase your outgoing damage for a time.",
+            CostType = CostType.Focus,
+            CostValue = 12,
+            CooldownPulses = 60,
+            CastTimePulses = null,
+            TargetingType = TargetingType.Self,
+            EffectKey = "buff.damage-up",
+            EffectParams = new()
+            {
+                { "outgoingMultiplier", "1.5" },
+                { "durationPulses", "240" },
+                { "maxStacks", "1" },
+                { "stackingRule", "Refresh" },
+                { "name", "battle fury" },
+            },
+        });
+
+        db.Abilities.Add(new Ability
+        {
+            Key = "adept.weaken",
+            Name = "Weaken",
+            Description = "Weaken a target's defenses, making them take more damage.",
+            CostType = CostType.Focus,
+            CostValue = 15,
+            CooldownPulses = 60,
+            CastTimePulses = 4,
+            TargetingType = TargetingType.SingleTarget,
+            EffectKey = "debuff.weaken",
+            EffectParams = new()
+            {
+                { "incomingMultiplier", "1.3" },
+                { "durationPulses", "240" },
+                { "maxStacks", "1" },
+                { "stackingRule", "Refresh" },
+                { "name", "weakness" },
+            },
+        });
+
+        db.Abilities.Add(new Ability
+        {
+            Key = "shade.fortify",
+            Name = "Fortify",
+            Description = "Reduce the incoming damage you take.",
+            CostType = CostType.Focus,
+            CostValue = 10,
+            CooldownPulses = 48,
+            CastTimePulses = null,
+            TargetingType = TargetingType.Self,
+            EffectKey = "buff.damage-up",
+            EffectParams = new()
+            {
+                { "incomingMultiplier", "0.75" },
+                { "durationPulses", "240" },
+                { "maxStacks", "1" },
+                { "stackingRule", "Refresh" },
+                { "name", "fortified" },
+            },
+        });
     }
 }
