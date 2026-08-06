@@ -84,6 +84,8 @@ public sealed record CharacterSnapshot(
     long Xp,
     AttributeSet Attributes,
     Vitals Vitals,
+    RoomKey? RespawnRoomKey,
+    long Gold,
     DateTimeOffset LastPlayedAt,
     long PlaytimeSeconds)
 {
@@ -108,6 +110,8 @@ public sealed record CharacterSnapshot(
                 Stamina = character.Vitals.Stamina,
                 StaminaMax = character.Vitals.StaminaMax,
             },
+            character.RespawnRoomKey,
+            character.Gold,
             now,
             character.PlaytimeSeconds);
     }
@@ -127,4 +131,10 @@ public sealed class EngineOptions
 
     /// <summary>Bound on the inbound queue; a full queue produces backpressure, not growth.</summary>
     public int InboundCapacity { get; set; } = 4096;
+
+    /// <summary>Death system configuration (PLAN.md §4.12).</summary>
+    public double XpLossPercent { get; set; } = 0.10;
+    public int XpLossMinLevel { get; set; } = 5;
+    public double RespawnHealthPercent { get; set; } = 0.25;
+    public bool PvpCostsXp { get; set; } = false;
 }

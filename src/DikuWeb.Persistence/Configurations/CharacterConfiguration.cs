@@ -51,6 +51,16 @@ internal sealed class CharacterConfiguration : IEntityTypeConfiguration<Characte
             .HasMaxLength(RoomKey.MaxLength)
             .IsRequired();
 
+        // Respawn point, also a plain string for the same reason (PLAN.md §4.12)
+        builder.Property(c => c.RespawnRoomKey)
+            .HasColumnName("respawn_room_key")
+            .HasConversion<RoomKeyConverter>()
+            .HasMaxLength(RoomKey.MaxLength);
+
+        builder.Property(c => c.Gold).HasColumnName("gold").IsRequired();
+        builder.Property(c => c.CombatState).HasColumnName("combat_state").HasConversion<int>().IsRequired();
+        builder.Property(c => c.CurrentTarget).HasColumnName("current_target").HasMaxLength(64);
+
         builder.Property(c => c.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(c => c.LastPlayedAt).HasColumnName("last_played_at");
         builder.Property(c => c.PlaytimeSeconds).HasColumnName("playtime_seconds").IsRequired();

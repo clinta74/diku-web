@@ -47,6 +47,12 @@ public sealed class Character
     /// <summary>Entity ID of current target (character ID, mob ID, or null).</summary>
     public string? CurrentTarget { get; set; }
 
+    /// <summary>Respawn point set by bind command in a respawn-flagged room (PLAN.md §4.12).</summary>
+    public RoomKey? RespawnRoomKey { get; set; }
+
+    /// <summary>Gold wallet from mob kills (PLAN.md §4.8).</summary>
+    public long Gold { get; set; }
+
     public required DateTimeOffset CreatedAt { get; init; }
 
     public DateTimeOffset? LastPlayedAt { get; set; }
