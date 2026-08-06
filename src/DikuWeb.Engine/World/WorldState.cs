@@ -4,6 +4,7 @@ using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Randomness;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Abilities;
 
 namespace DikuWeb.Engine.World;
 
@@ -26,8 +27,11 @@ public sealed class WorldState(IRandomSource random)
     private readonly Dictionary<Guid, ItemInstance> _items = [];
     private readonly Dictionary<RoomKey, List<ItemInstance>> _itemsByRoom = [];
     private readonly Dictionary<RoomKey, Combat> _combatsByRoom = [];
+    private readonly CastQueueService _castQueue = new();
 
     public IRandomSource Random => _random;
+
+    public CastQueueService CastQueue => _castQueue;
 
     public int RoomCount => _rooms.Count;
 

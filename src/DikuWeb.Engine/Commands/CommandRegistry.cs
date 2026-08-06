@@ -72,6 +72,7 @@ public sealed class CommandRegistry
 
         CombatCommands.Register(_commands);
         RestCommands.Register(_commands);
+        AbilityCommands.Register(_commands);
         BuilderCommands.Register(_commands);
         AdminCommands.Register(_commands);
     }

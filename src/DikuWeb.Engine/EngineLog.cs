@@ -81,4 +81,16 @@ internal static partial class EngineLog
     [LoggerMessage(EventId = 2017, Level = LogLevel.Information,
         Message = "PvP kill: {Killer} killed {Victim} in {Room}")]
     public static partial void PvpKill(ILogger logger, string killer, string victim, string room);
+
+    [LoggerMessage(EventId = 2018, Level = LogLevel.Information,
+        Message = "{Character} cast {Ability}")]
+    public static partial void AbilityCast(ILogger logger, string character, string ability);
+
+    [LoggerMessage(EventId = 2019, Level = LogLevel.Information,
+        Message = "{Character}'s {Ability} resolves")]
+    public static partial void AbilityResolving(ILogger logger, string character, string ability);
+
+    [LoggerMessage(EventId = 2020, Level = LogLevel.Information,
+        Message = "{Character}'s {Ability} was interrupted")]
+    public static partial void AbilityCastInterrupted(ILogger logger, string character, string ability);
 }
