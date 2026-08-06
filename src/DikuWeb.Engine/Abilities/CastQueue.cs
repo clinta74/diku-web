@@ -17,6 +17,9 @@ public sealed class CastJob
     /// <summary>The game pulse at which this cast resolves.</summary>
     public required long ResolveAtPulse { get; init; }
 
+    /// <summary>The room where the cast started (for movement interruption check).</summary>
+    public required string StartingRoomKey { get; init; }
+
     /// <summary>Optional narration about what's being cast (for interruption messages).</summary>
     public string? CastingDescription { get; init; }
 }

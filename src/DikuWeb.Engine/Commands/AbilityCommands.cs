@@ -1,6 +1,7 @@
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Engine.Abilities;
+using DikuWeb.Engine.Time;
 
 namespace DikuWeb.Engine.Commands;
 
@@ -41,7 +42,6 @@ public static class AbilityCommands
         }
 
         // Find ability by key or name prefix
-        // For now, just check against the known keys (ability details would come from repo in real impl)
         var matchingKey = knownAbilityKeys.FirstOrDefault(k =>
             k.EndsWith(abilityNameOrKey, StringComparison.OrdinalIgnoreCase) ||
             k.Contains(abilityNameOrKey, StringComparison.OrdinalIgnoreCase));
@@ -52,20 +52,42 @@ public static class AbilityCommands
             return;
         }
 
-        // TODO: Resolve ability from repository and apply effects
-        // For now, just emit a placeholder message
-        ctx.Reply($"You cast {matchingKey}!");
-
-        // If target specified, try to find them
+        // Resolve target if specified
+        string? targetId = null;
         if (!string.IsNullOrEmpty(targetName))
         {
             var targetActor = ctx.World.OthersIn(character.RoomKey, ctx.Actor)
                 .FirstOrDefault(p => string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase));
 
             if (targetActor != null)
+                targetId = $"c_{targetActor.CharacterId}";
+        }
+
+        // TODO: Resolve ability from repository and check cost/cooldown
+        // For now, assume instant cast and enqueue to cast queue
+        var castJob = new CastJob
+        {
+            CharacterId = character.Id,
+            AbilityKey = matchingKey,
+            TargetId = targetId,
+            ResolveAtPulse = 0, // Instant (would be clock.CurrentPulse + castTimePulses otherwise)
+            StartingRoomKey = character.RoomKey.ToString(),
+        };
+
+        ctx.World.CastQueue.Enqueue(castJob);
+
+        // Narrate to player
+        ctx.Reply($"You cast {matchingKey}!");
+
+        // Narrate to room
+        if (targetId != null)
+        {
+            var target = ctx.World.OthersIn(character.RoomKey, ctx.Actor)
+                .FirstOrDefault(p => $"c_{p.CharacterId}" == targetId);
+            if (target != null)
             {
-                ctx.Broadcast($"{ctx.Actor.Name} casts {matchingKey} on {targetActor.Name}!");
-                targetActor.SendText($"{ctx.Actor.Name} casts {matchingKey} on you!");
+                ctx.Broadcast($"{ctx.Actor.Name} casts {matchingKey} on {target.Name}!");
+                target.SendText($"{ctx.Actor.Name} casts {matchingKey} on you!", "ability");
             }
         }
         else

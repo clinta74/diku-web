@@ -1,4 +1,5 @@
 using DikuWeb.Domain.Randomness;
+using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Commands;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
@@ -51,6 +52,9 @@ public static class EngineServiceCollectionExtensions
 
         // Phase 4 systems (combat, progression)
         services.AddSingleton<CombatSystem>();
+
+        // Phase 5 systems (abilities)
+        services.AddSingleton<AbilitySystem>();
 
         // Game loop - wired once all systems are available
         services.AddHostedService<GameLoop>();

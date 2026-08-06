@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Commands;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
@@ -35,6 +36,7 @@ public sealed class GameLoop(
     SpawnerSystem? spawnerSystem,
     MobAiSystem? mobAiSystem,
     CombatSystem? combatSystem,
+    AbilitySystem? abilitySystem,
     EngineOptions options,
     ILogger<GameLoop> logger) : BackgroundService
 {
@@ -116,6 +118,12 @@ public sealed class GameLoop(
             // Fire and forget - mob AI runs on thread pool for template lookups, but updates
             // are applied on the loop thread via SendText and RefreshRoom
             _ = mobAiSystem.RunAsync(world, CancellationToken.None);
+        }
+
+        if (abilitySystem != null)
+        {
+            // Run every pulse - checks for cast-time resolution and interruption
+            abilitySystem.Tick(world);
         }
 
         if (GameTiming.RunsOn(pulse, GameTiming.RegenPulses))

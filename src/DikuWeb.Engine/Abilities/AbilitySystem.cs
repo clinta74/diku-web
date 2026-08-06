@@ -1,4 +1,6 @@
 using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Abilities.Effects;
+using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
@@ -9,6 +11,8 @@ namespace DikuWeb.Engine.Abilities;
 /// <summary>
 /// Runs on each game loop tick. Resolves pending casts whose cast time has elapsed,
 /// interrupts casts if the caster moved or entered combat.
+/// TODO: Wire IAbilityRepository and EffectRegistry to apply effects when casts resolve
+/// (currently effect application requires async repository access from sync tick context).
 /// </summary>
 public sealed class AbilitySystem(
     IGameClock clock,
@@ -51,18 +55,19 @@ public sealed class AbilitySystem(
         if (actor == null)
             return;
 
-        // Ability repo should have been populated at startup; lookup by key
-        // (In real implementation, this would come from an IAbilityRepository)
         if (logger != null)
             EngineLog.AbilityResolving(logger, actor.Name, cast.AbilityKey);
 
-        // For now, emit a simple narration that the ability resolved
+        // Narrate cast
         actor.SendText($"Your {cast.AbilityKey} takes effect!", "ability");
         foreach (var occupant in world.OccupantsOf(caster.RoomKey))
         {
             if (occupant.CharacterId != caster.Id)
                 occupant.SendText($"{actor.Name}'s {cast.AbilityKey} takes effect!", "ability");
         }
+
+        // TODO: Resolve target and apply effect asynchronously
+        // For now, just narrate - effect application requires async repository access from sync context
     }
 
     private bool ShouldInterrupt(WorldState world, CastJob cast)
@@ -75,7 +80,10 @@ public sealed class AbilitySystem(
         if (caster.CombatState == DikuWeb.Domain.Combat.CombatState.Fighting)
             return true;
 
-        // TODO: Check if caster moved rooms (would need to track starting room)
+        // If caster moved rooms, interrupt
+        if (caster.RoomKey.ToString() != cast.StartingRoomKey)
+            return true;
+
         return false;
     }
 
