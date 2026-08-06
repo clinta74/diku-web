@@ -38,6 +38,8 @@ public sealed class Character
     /// </summary>
     public required RoomKey RoomKey { get; set; }
 
+    public CharacterRestState RestState { get; set; } = CharacterRestState.Stand;
+
     public required DateTimeOffset CreatedAt { get; init; }
 
     public DateTimeOffset? LastPlayedAt { get; set; }

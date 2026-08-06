@@ -70,6 +70,7 @@ public sealed class CommandRegistry
         _commands.Add(new CommandDefinition(
             "quit", 4, "quit - save and leave the world", Quit));
 
+        RestCommands.Register(_commands);
         BuilderCommands.Register(_commands);
         AdminCommands.Register(_commands);
     }

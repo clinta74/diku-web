@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using DikuWeb.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DikuWeb.Persistence.Migrations
 {
     [DbContext(typeof(DikuWebDbContext))]
-    partial class DikuWebDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260806004350_AddCharacterRestState")]
+    partial class AddCharacterRestState
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

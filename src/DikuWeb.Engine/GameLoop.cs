@@ -6,6 +6,7 @@ using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.Spawning;
+using DikuWeb.Engine.Systems;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
 using Microsoft.Extensions.Hosting;
@@ -114,6 +115,11 @@ public sealed class GameLoop(
             // Fire and forget - mob AI runs on thread pool for template lookups, but updates
             // are applied on the loop thread via SendText and RefreshRoom
             _ = mobAiSystem.RunAsync(world, CancellationToken.None);
+        }
+
+        if (GameTiming.RunsOn(pulse, GameTiming.RegenPulses))
+        {
+            RegenSystem.Tick(world);
         }
 
         if (pulse > 0 && GameTiming.RunsOn(pulse, GameTiming.AutosavePulses))
