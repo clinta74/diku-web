@@ -1,7 +1,6 @@
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Engine.Abilities;
-using DikuWeb.Engine.Time;
 
 namespace DikuWeb.Engine.Commands;
 
@@ -10,16 +9,17 @@ namespace DikuWeb.Engine.Commands;
 /// </summary>
 public static class AbilityCommands
 {
-    public static void Register(List<CommandDefinition> commands)
+    public static void Register(List<CommandDefinition> commands, AbilityCache? abilityCache = null)
     {
         commands.Add(new CommandDefinition(
-            "cast", 1, "cast <ability> [target] (c) - cast an ability", Cast));
+            "cast", 1, "cast <ability> [target] (c) - cast an ability",
+            ctx => Cast(ctx, abilityCache)));
 
         commands.Add(new CommandDefinition(
             "abilities", 0, "abilities (ab) - list your known abilities", ListAbilities));
     }
 
-    private static void Cast(CommandContext ctx)
+    private static void Cast(CommandContext ctx, AbilityCache? cache)
     {
         if (!ctx.HasArgument)
         {
@@ -52,6 +52,40 @@ public static class AbilityCommands
             return;
         }
 
+        // Resolve ability template from cache
+        var ability = cache?.Get(matchingKey);
+        if (ability == null)
+        {
+            ctx.Reply($"Ability '{matchingKey}' not configured. (Server error)");
+            return;
+        }
+
+        // Check cooldown
+        var lastCastPulse = ctx.World.GetAbilityCooldown(character.Id, matchingKey);
+        var currentPulse = 0L; // TODO: inject game clock to get current pulse
+        var cooldownRemaining = (lastCastPulse + ability.CooldownPulses) - currentPulse;
+        if (cooldownRemaining > 0)
+        {
+            var secondsRemaining = Math.Ceiling(cooldownRemaining * 0.25); // 250ms per pulse
+            ctx.Reply($"{ability.Name} is on cooldown ({secondsRemaining}s remaining).");
+            return;
+        }
+
+        // Check cost
+        var currentResource = ability.CostType switch
+        {
+            CostType.Focus => character.Vitals.Focus,
+            CostType.Stamina => character.Vitals.Stamina,
+            CostType.Health => character.Vitals.Health,
+            _ => 0,
+        };
+
+        if (currentResource < ability.CostValue)
+        {
+            ctx.Reply($"Not enough {ability.CostType.ToString().ToLower()} (need {ability.CostValue}, have {currentResource}).");
+            return;
+        }
+
         // Resolve target if specified
         string? targetId = null;
         if (!string.IsNullOrEmpty(targetName))
@@ -63,14 +97,13 @@ public static class AbilityCommands
                 targetId = $"c_{targetActor.CharacterId}";
         }
 
-        // TODO: Resolve ability from repository and check cost/cooldown
-        // For now, assume instant cast and enqueue to cast queue
+        // Enqueue cast
         var castJob = new CastJob
         {
             CharacterId = character.Id,
             AbilityKey = matchingKey,
             TargetId = targetId,
-            ResolveAtPulse = 0, // Instant (would be clock.CurrentPulse + castTimePulses otherwise)
+            ResolveAtPulse = 0, // Instant (would be currentPulse + ability.CastTimePulses otherwise)
             StartingRoomKey = character.RoomKey.ToString(),
         };
 

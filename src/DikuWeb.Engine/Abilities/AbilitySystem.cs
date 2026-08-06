@@ -10,12 +10,12 @@ namespace DikuWeb.Engine.Abilities;
 
 /// <summary>
 /// Runs on each game loop tick. Resolves pending casts whose cast time has elapsed,
-/// interrupts casts if the caster moved or entered combat.
-/// TODO: Wire IAbilityRepository and EffectRegistry to apply effects when casts resolve
-/// (currently effect application requires async repository access from sync tick context).
+/// interrupts casts if the caster moved or entered combat, applies effects and costs.
 /// </summary>
 public sealed class AbilitySystem(
     IGameClock clock,
+    AbilityCache? cache = null,
+    EffectRegistry? effects = null,
     ILogger<AbilitySystem>? logger = null)
 {
     public const long TickIntervalPulses = 1; // Every pulse, so cast-time resolution is smooth
@@ -58,16 +58,69 @@ public sealed class AbilitySystem(
         if (logger != null)
             EngineLog.AbilityResolving(logger, actor.Name, cast.AbilityKey);
 
+        // Resolve ability from cache
+        var ability = cache?.Get(cast.AbilityKey);
+        if (ability == null)
+            return;
+
         // Narrate cast
-        actor.SendText($"Your {cast.AbilityKey} takes effect!", "ability");
+        actor.SendText($"Your {ability.Name} takes effect!", "ability");
         foreach (var occupant in world.OccupantsOf(caster.RoomKey))
         {
             if (occupant.CharacterId != caster.Id)
-                occupant.SendText($"{actor.Name}'s {cast.AbilityKey} takes effect!", "ability");
+                occupant.SendText($"{actor.Name}'s {ability.Name} takes effect!", "ability");
         }
 
-        // TODO: Resolve target and apply effect asynchronously
-        // For now, just narrate - effect application requires async repository access from sync context
+        // Deduct cost
+        var costAmount = ability.CostValue;
+        switch (ability.CostType)
+        {
+            case CostType.Focus:
+                caster.Vitals.Focus = Math.Max(0, caster.Vitals.Focus - costAmount);
+                break;
+            case CostType.Stamina:
+                caster.Vitals.Stamina = Math.Max(0, caster.Vitals.Stamina - costAmount);
+                break;
+            case CostType.Health:
+                caster.Vitals.Health = Math.Max(0, caster.Vitals.Health - costAmount);
+                break;
+        }
+
+        // Set cooldown
+        world.SetAbilityCooldown(caster.Id, cast.AbilityKey, clock.CurrentPulse);
+
+        // Apply effect if available
+        if (effects != null)
+        {
+            var effect = effects.Get(ability.EffectKey);
+            if (effect != null)
+            {
+                // Resolve target based on targeting type
+                object? target = null;
+                if (ability.TargetingType == TargetingType.Self)
+                {
+                    target = caster;
+                }
+                else if (ability.TargetingType == TargetingType.SingleTarget && !string.IsNullOrEmpty(cast.TargetId))
+                {
+                    if (cast.TargetId.StartsWith("c_"))
+                    {
+                        var targetId = Guid.Parse(cast.TargetId.Substring(2));
+                        target = world.GetCharacter(targetId);
+                    }
+                    else if (cast.TargetId.StartsWith("m_"))
+                    {
+                        var targetId = Guid.Parse(cast.TargetId.Substring(2));
+                        target = world.GetMob(targetId);
+                    }
+                }
+
+                if (target != null)
+                {
+                    effect.Apply(caster, target, ability.EffectParams, world.Random);
+                }
+            }
+        }
     }
 
     private bool ShouldInterrupt(WorldState world, CastJob cast)

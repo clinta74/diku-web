@@ -28,10 +28,26 @@ public sealed class WorldState(IRandomSource random)
     private readonly Dictionary<RoomKey, List<ItemInstance>> _itemsByRoom = [];
     private readonly Dictionary<RoomKey, Combat> _combatsByRoom = [];
     private readonly CastQueueService _castQueue = new();
+    private readonly Dictionary<(Guid CharacterId, string AbilityKey), long> _abilityCooldowns = [];
 
     public IRandomSource Random => _random;
 
     public CastQueueService CastQueue => _castQueue;
+
+    /// <summary>Get the last pulse when an ability was cast (for cooldown checking).</summary>
+    public long GetAbilityCooldown(Guid characterId, string abilityKey)
+    {
+        var key = (characterId, abilityKey);
+        _abilityCooldowns.TryGetValue(key, out var lastPulse);
+        return lastPulse;
+    }
+
+    /// <summary>Set the last pulse when an ability was cast.</summary>
+    public void SetAbilityCooldown(Guid characterId, string abilityKey, long pulse)
+    {
+        var key = (characterId, abilityKey);
+        _abilityCooldowns[key] = pulse;
+    }
 
     public int RoomCount => _rooms.Count;
 

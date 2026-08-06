@@ -54,6 +54,7 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<CombatSystem>();
 
         // Phase 5 systems (abilities)
+        services.AddSingleton<AbilityCache>();
         services.AddSingleton<AbilitySystem>();
 
         // Game loop - wired once all systems are available

@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Protocol;
 
 namespace DikuWeb.Engine.Commands;
@@ -11,7 +12,7 @@ public sealed class CommandRegistry
 {
     private readonly List<CommandDefinition> _commands;
 
-    public CommandRegistry()
+    public CommandRegistry(AbilityCache? abilityCache = null)
     {
         _commands = [];
 
@@ -72,7 +73,7 @@ public sealed class CommandRegistry
 
         CombatCommands.Register(_commands);
         RestCommands.Register(_commands);
-        AbilityCommands.Register(_commands);
+        AbilityCommands.Register(_commands, abilityCache);
         BuilderCommands.Register(_commands);
         AdminCommands.Register(_commands);
     }

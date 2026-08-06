@@ -33,6 +33,8 @@ public sealed class GameLoop(
     SystemGameClock clock,
     IWorldSource worldSource,
     ICharacterSaveQueue saveQueue,
+    IAbilityRepository? abilityRepository,
+    AbilityCache? abilityCache,
     SpawnerSystem? spawnerSystem,
     MobAiSystem? mobAiSystem,
     CombatSystem? combatSystem,
@@ -51,6 +53,12 @@ public sealed class GameLoop(
     {
         var data = await worldSource.LoadAsync(stoppingToken);
         world.Load(data.Worlds, data.Zones, data.Rooms);
+
+        // Load ability cache for synchronous lookups during command handling
+        if (abilityRepository != null && abilityCache != null)
+        {
+            await abilityCache.LoadAsync(abilityRepository, stoppingToken);
+        }
 
         EngineLog.LoopStarting(logger, world.RoomCount, GameTiming.PulseInterval.TotalMilliseconds);
 
