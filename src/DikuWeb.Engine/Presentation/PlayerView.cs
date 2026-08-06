@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
+using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.World;
@@ -128,13 +129,15 @@ public sealed class PlayerView(RoomLayoutService layout)
         foreach (var mob in mobs.OrderBy(m => m.TemplateKey))
         {
             var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
-            spans.Add(new TextSpan($"\n{displayName} is here.", "mob"));
+            var prose = NarrationHelper.BuildSentence(displayName, "is here.");
+            spans.Add(new TextSpan($"\n{prose}", "mob"));
         }
 
         foreach (var item in items.OrderBy(i => i.TemplateKey))
         {
             var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
-            spans.Add(new TextSpan($"\nYou see {displayName} here.", "item"));
+            var prose = NarrationHelper.BuildSentence(displayName, "is here.");
+            spans.Add(new TextSpan($"\nYou see {prose}", "item"));
         }
 
         actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));

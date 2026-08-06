@@ -92,9 +92,10 @@ public sealed class SpawnerSystem(
 
                 // Narrate spawn to room occupants
                 var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
+                var prose = NarrationHelper.BuildSentence(displayName, "appears.");
                 foreach (var occupant in world.OccupantsOf(room))
                 {
-                    occupant.SendText($"{NarrationHelper.WithArticle(displayName)} appears.", "arrival");
+                    occupant.SendText(prose, "arrival");
                 }
 
                 logger.LogDebug("Spawner {id}: spawned {template} in room {room}", spawner.Id, spawner.TemplateKey, room);
@@ -138,9 +139,10 @@ public sealed class SpawnerSystem(
 
             // Narrate spawn to room occupants
             var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
+            var prose = NarrationHelper.BuildSentence(displayName, "appears.");
             foreach (var occupant in world.OccupantsOf(room))
             {
-                occupant.SendText($"{NarrationHelper.WithArticle(displayName)} appears.", "arrival");
+                occupant.SendText(prose, "arrival");
             }
         }
     }
