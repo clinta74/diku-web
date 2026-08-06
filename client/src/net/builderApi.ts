@@ -93,11 +93,11 @@ export interface MobTemplate {
   key: string
   name: string
   description: string
+  icon: string
   level: number
-  experience: number
-  health: number
-  mana: number
-  stamina: number
+  baseStats: Record<string, unknown>
+  baseXp: number
+  baseGold: number
   loot: Array<Record<string, unknown>>
   behavior: Record<string, unknown>
 }

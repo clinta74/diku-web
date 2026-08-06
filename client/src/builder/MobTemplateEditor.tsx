@@ -11,11 +11,10 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
   const [template, setTemplate] = useState<MobTemplate | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [icon, setIcon] = useState('m')
   const [level, setLevel] = useState(1)
-  const [experience, setExperience] = useState(0)
-  const [health, setHealth] = useState(10)
-  const [mana, setMana] = useState(0)
-  const [stamina, setStamina] = useState(10)
+  const [baseXp, setBaseXp] = useState(0)
+  const [baseGold, setBaseGold] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -45,11 +44,10 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
     setTemplate(loaded)
     setName(loaded.name)
     setDescription(loaded.description)
+    setIcon(loaded.icon)
     setLevel(loaded.level)
-    setExperience(loaded.experience)
-    setHealth(loaded.health)
-    setMana(loaded.mana)
-    setStamina(loaded.stamina)
+    setBaseXp(loaded.baseXp)
+    setBaseGold(loaded.baseGold)
     setDirty(false)
   }
 
@@ -61,11 +59,10 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
       const updated = await builderApi.updateMobTemplate(templateKey, {
         name,
         description,
+        icon,
         level,
-        experience,
-        health,
-        mana,
-        stamina,
+        baseXp,
+        baseGold,
       })
       apply(updated)
       onChanged(updated)
@@ -131,6 +128,19 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
 
       <div className="field-row">
         <label>
+          Icon (single character)
+          <input
+            value={icon}
+            onChange={(e) => {
+              setIcon(e.target.value.slice(0, 1) || 'm')
+              setDirty(true)
+            }}
+            disabled={busy}
+            maxLength={1}
+          />
+        </label>
+
+        <label>
           Level
           <input
             type="number"
@@ -143,44 +153,16 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
             min="1"
           />
         </label>
-
-        <label>
-          Experience
-          <input
-            type="number"
-            value={experience}
-            onChange={(e) => {
-              setExperience(parseInt(e.target.value) || 0)
-              setDirty(true)
-            }}
-            disabled={busy}
-            min="0"
-          />
-        </label>
       </div>
 
       <div className="field-row">
         <label>
-          Health
+          Base XP
           <input
             type="number"
-            value={health}
+            value={baseXp}
             onChange={(e) => {
-              setHealth(parseInt(e.target.value) || 0)
-              setDirty(true)
-            }}
-            disabled={busy}
-            min="1"
-          />
-        </label>
-
-        <label>
-          Mana
-          <input
-            type="number"
-            value={mana}
-            onChange={(e) => {
-              setMana(parseInt(e.target.value) || 0)
+              setBaseXp(parseInt(e.target.value) || 0)
               setDirty(true)
             }}
             disabled={busy}
@@ -189,16 +171,16 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         </label>
 
         <label>
-          Stamina
+          Base Gold
           <input
             type="number"
-            value={stamina}
+            value={baseGold}
             onChange={(e) => {
-              setStamina(parseInt(e.target.value) || 0)
+              setBaseGold(parseInt(e.target.value) || 0)
               setDirty(true)
             }}
             disabled={busy}
-            min="1"
+            min="0"
           />
         </label>
       </div>

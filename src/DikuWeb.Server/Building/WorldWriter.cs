@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
 using DikuWeb.Domain.Building;
+using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Persistence;
@@ -225,6 +227,108 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 if (entity is not null)
                 {
                     db.RoomExits.Remove(entity);
+                }
+
+                return ContentAction.Delete;
+            }
+
+            case UpsertMobTemplate c:
+            {
+                var entity = await db.MobTemplates.FirstOrDefaultAsync(
+                    m => m.Key == c.Key,
+                    cancellationToken);
+
+                if (entity is null)
+                {
+                    db.MobTemplates.Add(new Domain.Inhabitants.MobTemplate
+                    {
+                        Key = c.Key,
+                        Name = c.Name,
+                        Description = c.Description,
+                        Icon = c.Icon,
+                        Level = c.Level,
+                        BaseStats = c.BaseStats,
+                        BaseXp = c.BaseXp,
+                        BaseGold = c.BaseGold,
+                        Behavior = c.Behavior,
+                        Loot = c.Loot,
+                    });
+
+                    return ContentAction.Create;
+                }
+
+                entity.Name = c.Name;
+                entity.Description = c.Description;
+                entity.Icon = c.Icon;
+                entity.Level = c.Level;
+                entity.BaseStats = c.BaseStats;
+                entity.BaseXp = c.BaseXp;
+                entity.BaseGold = c.BaseGold;
+                entity.Behavior = c.Behavior;
+                entity.Loot = c.Loot;
+                return ContentAction.Update;
+            }
+
+            case DeleteMobTemplate c:
+            {
+                var entity = await db.MobTemplates.FirstOrDefaultAsync(
+                    m => m.Key == c.Key,
+                    cancellationToken);
+
+                if (entity is not null)
+                {
+                    db.MobTemplates.Remove(entity);
+                }
+
+                return ContentAction.Delete;
+            }
+
+            case UpsertSpawner c:
+            {
+                var entity = await db.Spawners.FirstOrDefaultAsync(
+                    s => s.Id == c.Id,
+                    cancellationToken);
+
+                if (entity is null)
+                {
+                    db.Spawners.Add(new Spawner
+                    {
+                        Id = c.Id,
+                        ZoneKey = c.ZoneKey,
+                        TemplateKey = c.TemplateKey,
+                        TemplateKind = c.TemplateKind,
+                        RoomKeys = new List<string>(c.RoomKeys),
+                        TargetCount = c.TargetCount,
+                        RespawnSeconds = c.RespawnSeconds,
+                    });
+
+                    return ContentAction.Create;
+                }
+
+                // Update existing spawner (can't use init properties, so replace the object)
+                db.Spawners.Remove(entity);
+                db.Spawners.Add(new Spawner
+                {
+                    Id = c.Id,
+                    ZoneKey = c.ZoneKey,
+                    TemplateKey = c.TemplateKey,
+                    TemplateKind = c.TemplateKind,
+                    RoomKeys = new List<string>(c.RoomKeys),
+                    TargetCount = c.TargetCount,
+                    RespawnSeconds = c.RespawnSeconds,
+                });
+                return ContentAction.Update;
+            }
+
+            case DeleteSpawner c:
+            {
+                var entity = await db.Spawners.FirstOrDefaultAsync(
+                    s => s.Id == c.Id,
+                    cancellationToken);
+
+                if (entity is not null)
+                {
+                    db.Spawners.Remove(entity);
                 }
 
                 return ContentAction.Delete;

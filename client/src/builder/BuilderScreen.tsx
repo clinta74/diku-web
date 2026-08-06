@@ -11,6 +11,7 @@ import {
 import { RoomEditor } from './RoomEditor'
 import { ZoneCanvas } from './ZoneCanvas'
 import { MobTemplateEditor } from './MobTemplateEditor'
+import { CreateTemplateDialog } from './CreateTemplateDialog'
 
 interface Props {
   /**
@@ -511,7 +512,7 @@ function MobTemplateTree({
   onCreated: () => void
 }) {
   const [filter, setFilter] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
 
   const visible = mobTemplates.filter(
     (t) =>
@@ -520,64 +521,64 @@ function MobTemplateTree({
       t.name.toLowerCase().includes(filter.toLowerCase()),
   )
 
-  async function createTemplate() {
-    const key = prompt('New mob template key (lowercase, e.g. "warden-mentor")')?.trim()
-    if (!key) return
-
-    try {
-      await builderApi.createMobTemplate(key, {
-        name: key,
-        description: '',
-        level: 1,
-        experience: 0,
-        health: 10,
-        mana: 0,
-        stamina: 10,
-        loot: [],
-        behavior: {},
-      })
-      onCreated()
-      onSelect(key)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not create that template.')
-    }
+  async function createTemplate(key: string) {
+    await builderApi.createMobTemplate(key, {
+      name: key,
+      description: '',
+      icon: 'm',
+      level: 1,
+      baseStats: {},
+      baseXp: 0,
+      baseGold: 0,
+      loot: [],
+      behavior: {},
+    })
+    onCreated()
+    onSelect(key)
   }
 
   return (
-    <div className="tree">
-      {error && <p className="bad">{error}</p>}
+    <>
+      <div className="tree">
 
-      <div className="tree-section">
-        <div className="tree-head">
-          <h3>Mob templates</h3>
-          <button type="button" className="link" onClick={() => void createTemplate()}>
-            + new
-          </button>
+        <div className="tree-section">
+          <div className="tree-head">
+            <h3>Mob templates</h3>
+            <button type="button" className="link" onClick={() => setShowCreateDialog(true)}>
+              + new
+            </button>
+          </div>
+
+          <input
+            className="tree-filter"
+            value={filter}
+            placeholder="filter"
+            spellCheck={false}
+            onChange={(e) => setFilter(e.target.value)}
+          />
+
+          <ul className="mob-list">
+            {visible.map((template) => (
+              <li key={template.key}>
+                <button
+                  type="button"
+                  className={template.key === selectedKey ? 'selected' : ''}
+                  onClick={() => onSelect(template.key)}
+                >
+                  {template.name || template.key}
+                  <span className="dim"> · L{template.level}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
-
-        <input
-          className="tree-filter"
-          value={filter}
-          placeholder="filter"
-          spellCheck={false}
-          onChange={(e) => setFilter(e.target.value)}
-        />
-
-        <ul className="mob-list">
-          {visible.map((template) => (
-            <li key={template.key}>
-              <button
-                type="button"
-                className={template.key === selectedKey ? 'selected' : ''}
-                onClick={() => onSelect(template.key)}
-              >
-                {template.name || template.key}
-                <span className="dim"> · L{template.level}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
       </div>
-    </div>
+
+      <CreateTemplateDialog
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onCreate={createTemplate}
+      />
+    </>
   )
 }
