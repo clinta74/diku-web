@@ -89,6 +89,29 @@ export interface AuditEntry {
   at: string
 }
 
+export interface MobTemplate {
+  key: string
+  name: string
+  description: string
+  level: number
+  experience: number
+  health: number
+  mana: number
+  stamina: number
+  loot: Array<Record<string, unknown>>
+  behavior: Record<string, unknown>
+}
+
+export interface Spawner {
+  id: string
+  zoneKey: string
+  templateKey: string
+  templateKind: 'Mob' | 'Item'
+  roomKeys: string[]
+  targetCount: number
+  respawnSeconds: number
+}
+
 const base = '/api/builder'
 
 export const builderApi = {
@@ -178,6 +201,45 @@ export const builderApi = {
 
   audit: (kind: string, key: string) =>
     request<AuditEntry[]>(`${base}/audit?kind=${kind}&key=${encodeURIComponent(key)}`),
+
+  mobTemplates: () => request<MobTemplate[]>(`${base}/mob-templates`),
+
+  mobTemplate: (key: string) => request<MobTemplate>(`${base}/mob-templates/${key}`),
+
+  createMobTemplate: (key: string, body: Partial<MobTemplate>) =>
+    request<MobTemplate>(`${base}/mob-templates/${key}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateMobTemplate: (key: string, body: Partial<MobTemplate>) =>
+    request<MobTemplate>(`${base}/mob-templates/${key}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  deleteMobTemplate: (key: string) =>
+    request<void>(`${base}/mob-templates/${key}`, { method: 'DELETE' }),
+
+  spawners: (zoneKey?: string) =>
+    request<Spawner[]>(zoneKey ? `${base}/spawners?zone=${zoneKey}` : `${base}/spawners`),
+
+  spawner: (id: string) => request<Spawner>(`${base}/spawners/${id}`),
+
+  createSpawner: (body: Partial<Spawner>) =>
+    request<Spawner>(`${base}/spawners`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateSpawner: (id: string, body: Partial<Spawner>) =>
+    request<Spawner>(`${base}/spawners/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  deleteSpawner: (id: string) =>
+    request<void>(`${base}/spawners/${id}`, { method: 'DELETE' }),
 }
 
 export const DIRECTIONS = ['north', 'east', 'south', 'west', 'up', 'down'] as const

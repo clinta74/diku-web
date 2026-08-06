@@ -6,6 +6,7 @@ import {
   type RoomFlagDefinition,
 } from '../net/builderApi'
 import { GridPainter } from './GridPainter'
+import { SpawnerManager } from './SpawnerManager'
 
 interface Props {
   roomKey: string
@@ -153,6 +154,14 @@ export function RoomEditor({
       </section>
 
       <ExitEditor room={room} onChanged={apply} onNavigate={onNavigate} onError={setError} />
+
+      <section className="editor-section">
+        <SpawnerManager
+          roomKey={room.key}
+          zoneKey={room.zoneKey}
+          onChanged={() => {/* Room doesn't need refresh for spawner changes */}}
+        />
+      </section>
 
       <section className="editor-section danger">
         <h3>Room</h3>

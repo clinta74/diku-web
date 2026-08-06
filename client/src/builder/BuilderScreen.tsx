@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   builderApi,
+  type MobTemplate,
   type RoomDetail,
   type RoomFlagDefinition,
   type WorldSummary,
@@ -9,6 +10,7 @@ import {
 } from '../net/builderApi'
 import { RoomEditor } from './RoomEditor'
 import { ZoneCanvas } from './ZoneCanvas'
+import { MobTemplateEditor } from './MobTemplateEditor'
 
 interface Props {
   /**
@@ -21,14 +23,17 @@ interface Props {
 }
 
 export function BuilderScreen({ occupiedRoom, onClose }: Props) {
+  const [mode, setMode] = useState<'world' | 'templates'>('world')
   const [flagDefinitions, setFlagDefinitions] = useState<RoomFlagDefinition[]>([])
   const [worlds, setWorlds] = useState<WorldSummary[]>([])
   const [zones, setZones] = useState<ZoneSummary[]>([])
   const [rooms, setRooms] = useState<RoomDetail[]>([])
+  const [mobTemplates, setMobTemplates] = useState<MobTemplate[]>([])
 
   const [worldKey, setWorldKey] = useState<string | null>(null)
   const [zoneKey, setZoneKey] = useState<string | null>(null)
   const [roomKey, setRoomKey] = useState<string | null>(null)
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState<string | null>(null)
 
   const [validation, setValidation] = useState<ZoneValidation | null>(null)
   const [follow, setFollow] = useState(true)
@@ -43,6 +48,10 @@ export function BuilderScreen({ occupiedRoom, onClose }: Props) {
         if (loaded.length > 0) setWorldKey((current) => current ?? loaded[0].key)
       })
       .catch((e) => setError(e instanceof Error ? e.message : 'Could not load worlds.'))
+    void builderApi
+      .mobTemplates()
+      .then(setMobTemplates)
+      .catch(() => setMobTemplates([]))
   }, [])
 
   useEffect(() => {
@@ -98,66 +107,125 @@ export function BuilderScreen({ occupiedRoom, onClose }: Props) {
 
         {error && <p className="bad">{error}</p>}
 
-        <WorldTree
-          worlds={worlds}
-          zones={zones}
-          rooms={rooms}
-          worldKey={worldKey}
-          zoneKey={zoneKey}
-          roomKey={roomKey}
-          onWorld={setWorldKey}
-          onZone={(key) => {
-            setZoneKey(key)
-            setRoomKey(null)
-          }}
-          onRoom={setRoomKey}
-          onCreated={() => {
-            void builderApi.worlds().then(setWorlds)
-            if (worldKey) void builderApi.zones(worldKey).then(setZones)
-            refreshZone()
-          }}
-        />
+        <div className="mode-tabs">
+          <button
+            type="button"
+            className={mode === 'world' ? 'selected' : ''}
+            onClick={() => {
+              setMode('world')
+              setSelectedTemplateKey(null)
+            }}
+          >
+            World
+          </button>
+          <button
+            type="button"
+            className={mode === 'templates' ? 'selected' : ''}
+            onClick={() => setMode('templates')}
+          >
+            Mobs
+          </button>
+        </div>
 
-        <label className="follow-toggle">
-          <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} />
-          Follow my character
-          {occupiedRoom && <code className="dim"> {occupiedRoom}</code>}
-        </label>
+        {mode === 'world' ? (
+          <>
+            <WorldTree
+              worlds={worlds}
+              zones={zones}
+              rooms={rooms}
+              worldKey={worldKey}
+              zoneKey={zoneKey}
+              roomKey={roomKey}
+              onWorld={setWorldKey}
+              onZone={(key) => {
+                setZoneKey(key)
+                setRoomKey(null)
+              }}
+              onRoom={setRoomKey}
+              onCreated={() => {
+                void builderApi.worlds().then(setWorlds)
+                if (worldKey) void builderApi.zones(worldKey).then(setZones)
+                refreshZone()
+              }}
+            />
+
+            <label className="follow-toggle">
+              <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} />
+              Follow my character
+              {occupiedRoom && <code className="dim"> {occupiedRoom}</code>}
+            </label>
+          </>
+        ) : (
+          <MobTemplateTree
+            mobTemplates={mobTemplates}
+            selectedKey={selectedTemplateKey}
+            onSelect={setSelectedTemplateKey}
+            onCreated={() => {
+              void builderApi.mobTemplates().then(setMobTemplates)
+            }}
+          />
+        )}
       </aside>
 
       <main className="builder-main">
-        {zoneKey && (
-          <ZoneCanvas
-            rooms={rooms}
-            selected={roomKey}
-            occupied={occupiedRoom}
-            onSelect={setRoomKey}
-            onChanged={refreshZone}
-          />
-        )}
-
-        {roomKey ? (
+        {mode === 'world' ? (
           <>
-            <RoomWarnings warnings={warningsFor(roomKey)} />
-            <RoomEditor
-              roomKey={roomKey}
-              flagDefinitions={flagDefinitions}
-              onChanged={refreshZone}
-              onDeleted={() => {
-                setRoomKey(null)
-                refreshZone()
-              }}
-              onNavigate={(key) => setRoomKey(key)}
-            />
+            {zoneKey && (
+              <ZoneCanvas
+                rooms={rooms}
+                selected={roomKey}
+                occupied={occupiedRoom}
+                onSelect={setRoomKey}
+                onChanged={refreshZone}
+              />
+            )}
+
+            {roomKey ? (
+              <>
+                <RoomWarnings warnings={warningsFor(roomKey)} />
+                <RoomEditor
+                  roomKey={roomKey}
+                  flagDefinitions={flagDefinitions}
+                  onChanged={refreshZone}
+                  onDeleted={() => {
+                    setRoomKey(null)
+                    refreshZone()
+                  }}
+                  onNavigate={(key) => setRoomKey(key)}
+                />
+              </>
+            ) : (
+              <p className="dim">Pick a room, or dig one from the room you are standing in.</p>
+            )}
           </>
         ) : (
-          <p className="dim">Pick a room, or dig one from the room you are standing in.</p>
+          <>
+            {selectedTemplateKey ? (
+              <MobTemplateEditor
+                templateKey={selectedTemplateKey}
+                onChanged={(updated) => {
+                  const idx = mobTemplates.findIndex((t) => t.key === updated.key)
+                  if (idx >= 0) {
+                    const next = [...mobTemplates]
+                    next[idx] = updated
+                    setMobTemplates(next)
+                  }
+                }}
+                onDeleted={(key) => {
+                  setMobTemplates(mobTemplates.filter((t) => t.key !== key))
+                  setSelectedTemplateKey(null)
+                }}
+              />
+            ) : (
+              <p className="dim">Select a mob template, or create a new one.</p>
+            )}
+          </>
         )}
       </main>
 
       <aside className="builder-side">
-        {zoneKey && <ZonePanel zoneKey={zoneKey} zones={zones} onSaved={refreshZone} />}
-        <ValidationPanel validation={validation} onSelect={setRoomKey} />
+        {mode === 'world' && zoneKey && <ZonePanel zoneKey={zoneKey} zones={zones} onSaved={refreshZone} />}
+        {mode === 'world' && <ValidationPanel validation={validation} onSelect={setRoomKey} />}
       </aside>
     </div>
   )
@@ -428,5 +496,88 @@ function RoomWarnings({ warnings }: { warnings: { kind: string; message: string 
         </li>
       ))}
     </ul>
+  )
+}
+
+function MobTemplateTree({
+  mobTemplates,
+  selectedKey,
+  onSelect,
+  onCreated,
+}: {
+  mobTemplates: MobTemplate[]
+  selectedKey: string | null
+  onSelect: (key: string) => void
+  onCreated: () => void
+}) {
+  const [filter, setFilter] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  const visible = mobTemplates.filter(
+    (t) =>
+      !filter ||
+      t.key.includes(filter.toLowerCase()) ||
+      t.name.toLowerCase().includes(filter.toLowerCase()),
+  )
+
+  async function createTemplate() {
+    const key = prompt('New mob template key (lowercase, e.g. "warden-mentor")')?.trim()
+    if (!key) return
+
+    try {
+      await builderApi.createMobTemplate(key, {
+        name: key,
+        description: '',
+        level: 1,
+        experience: 0,
+        health: 10,
+        mana: 0,
+        stamina: 10,
+        loot: [],
+        behavior: {},
+      })
+      onCreated()
+      onSelect(key)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not create that template.')
+    }
+  }
+
+  return (
+    <div className="tree">
+      {error && <p className="bad">{error}</p>}
+
+      <div className="tree-section">
+        <div className="tree-head">
+          <h3>Mob templates</h3>
+          <button type="button" className="link" onClick={() => void createTemplate()}>
+            + new
+          </button>
+        </div>
+
+        <input
+          className="tree-filter"
+          value={filter}
+          placeholder="filter"
+          spellCheck={false}
+          onChange={(e) => setFilter(e.target.value)}
+        />
+
+        <ul className="mob-list">
+          {visible.map((template) => (
+            <li key={template.key}>
+              <button
+                type="button"
+                className={template.key === selectedKey ? 'selected' : ''}
+                onClick={() => onSelect(template.key)}
+              >
+                {template.name || template.key}
+                <span className="dim"> · L{template.level}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   )
 }
