@@ -122,6 +122,11 @@ public sealed class GameLoop(
             RegenSystem.Tick(world);
         }
 
+        if (GameTiming.RunsOn(pulse, CombatSystem.TickIntervalPulses))
+        {
+            CombatSystem.Tick(world);
+        }
+
         if (pulse > 0 && GameTiming.RunsOn(pulse, GameTiming.AutosavePulses))
         {
             Autosave();

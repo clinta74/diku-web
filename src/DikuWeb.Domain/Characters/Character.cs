@@ -1,4 +1,5 @@
 using DikuWeb.Domain.Accounts;
+using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Worlds;
 
 namespace DikuWeb.Domain.Characters;
@@ -39,6 +40,12 @@ public sealed class Character
     public required RoomKey RoomKey { get; set; }
 
     public CharacterRestState RestState { get; set; } = CharacterRestState.Stand;
+
+    /// <summary>Current combat engagement state (idle, fighting, fleeing).</summary>
+    public CombatState CombatState { get; set; } = CombatState.Idle;
+
+    /// <summary>Entity ID of current target (character ID, mob ID, or null).</summary>
+    public string? CurrentTarget { get; set; }
 
     public required DateTimeOffset CreatedAt { get; init; }
 

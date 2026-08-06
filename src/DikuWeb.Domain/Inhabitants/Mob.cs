@@ -1,6 +1,7 @@
 namespace DikuWeb.Domain.Inhabitants;
 
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Worlds;
 
 /// <summary>
@@ -43,6 +44,12 @@ public sealed class Mob
         Stamina = 0,
         StaminaMax = 0,
     };
+
+    /// <summary>Current combat engagement state.</summary>
+    public CombatState CombatState { get; set; } = CombatState.Idle;
+
+    /// <summary>Entity ID of current target (character ID or other mob ID).</summary>
+    public string? CurrentTarget { get; set; }
 
     /// <summary>Free-form state: { "inCombat": true, "targetId": "...", "sentinelFlag": false }</summary>
     public Dictionary<string, object> State { get; set; } = new();

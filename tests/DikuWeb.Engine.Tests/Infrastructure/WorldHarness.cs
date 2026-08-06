@@ -44,7 +44,8 @@ internal sealed class WorldHarness
 
     public WorldHarness()
     {
-        World = new WorldState();
+        var random = new DikuWeb.Domain.Randomness.SeededRandomSource(42);
+        World = new WorldState(random);
         Commands = new CommandRegistry();
         View = new PlayerView(new RoomLayoutService());
         Options = new EngineOptions { StartingRoom = RoomKey.Parse("test.zone.west") };

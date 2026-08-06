@@ -1,3 +1,5 @@
+using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Randomness;
 
 namespace DikuWeb.Domain.Combat;
@@ -93,5 +95,58 @@ public static class DamageCalculator
         final = Math.Max(1, final);
 
         return new DamageResult(naturalRoll, true, isCrit, final);
+    }
+
+    /// <summary>
+    /// Build attacker stats from a player character.
+    /// Unarmed damage: 1d4 + might modifier.
+    /// </summary>
+    public static AttackerStats StatsFrom(Character character)
+    {
+        var attackRating = (character.Level / 2) + character.Attributes.MightModifier;
+        var mightMod = character.Attributes.MightModifier;
+        return new AttackerStats(
+            AttackRating: attackRating,
+            BaseDamage: mightMod,
+            MinDamage: 1,
+            MaxDamage: 4);
+    }
+
+    /// <summary>
+    /// Build attacker stats from a mob.
+    /// Mobs use level-based attack rating and damage (no attributes).
+    /// </summary>
+    public static AttackerStats StatsFrom(Mob mob)
+    {
+        var attackRating = mob.Level / 2;
+        return new AttackerStats(
+            AttackRating: attackRating,
+            BaseDamage: mob.Level / 3, // Level-scaled damage
+            MinDamage: 1,
+            MaxDamage: 4);
+    }
+
+    /// <summary>
+    /// Build defender stats from a player character.
+    /// No armor yet; defense is agility modifier + base 10.
+    /// </summary>
+    public static DefenderStats DefenderStatsFrom(Character character)
+    {
+        return new DefenderStats(
+            DefenseRating: character.Attributes.AgilityModifier,
+            ArmorFlat: 0,
+            ArmorPercent: 0m);
+    }
+
+    /// <summary>
+    /// Build defender stats from a mob.
+    /// Mobs have flat defense scaling with level.
+    /// </summary>
+    public static DefenderStats DefenderStatsFrom(Mob mob)
+    {
+        return new DefenderStats(
+            DefenseRating: mob.Level / 4,
+            ArmorFlat: 0,
+            ArmorPercent: 0m);
     }
 }

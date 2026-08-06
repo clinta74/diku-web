@@ -1,5 +1,8 @@
+using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
+using DikuWeb.Domain.Randomness;
 using DikuWeb.Domain.Worlds;
 
 namespace DikuWeb.Engine.World;
@@ -9,8 +12,9 @@ namespace DikuWeb.Engine.World;
 /// NOT thread-safe (PLAN.md §2.1) - adding a lock here would be a sign something is calling
 /// it from the wrong place.
 /// </summary>
-public sealed class WorldState
+public sealed class WorldState(IRandomSource random)
 {
+    private readonly IRandomSource _random = random;
     private readonly Dictionary<string, Domain.Worlds.World> _worlds = [];
     private readonly Dictionary<string, Zone> _zones = [];
     private readonly Dictionary<RoomKey, Room> _rooms = [];
@@ -21,6 +25,9 @@ public sealed class WorldState
     private readonly Dictionary<RoomKey, List<Mob>> _mobsByRoom = [];
     private readonly Dictionary<Guid, ItemInstance> _items = [];
     private readonly Dictionary<RoomKey, List<ItemInstance>> _itemsByRoom = [];
+    private readonly Dictionary<RoomKey, Combat> _combatsByRoom = [];
+
+    public IRandomSource Random => _random;
 
     public int RoomCount => _rooms.Count;
 
@@ -353,4 +360,31 @@ public sealed class WorldState
 
         return list;
     }
+
+    /// <summary>Get or create a combat instance for a room.</summary>
+    public Combat GetOrCreateCombat(RoomKey roomKey)
+    {
+        if (!_combatsByRoom.TryGetValue(roomKey, out var combat))
+        {
+            combat = new Combat { RoomKey = roomKey };
+            _combatsByRoom[roomKey] = combat;
+        }
+        return combat;
+    }
+
+    /// <summary>Find an existing combat in a room, or null if none.</summary>
+    public Combat? FindCombat(RoomKey roomKey) =>
+        _combatsByRoom.TryGetValue(roomKey, out var combat) ? combat : null;
+
+    /// <summary>All active combats in the world.</summary>
+    public IEnumerable<Combat> AllCombats => _combatsByRoom.Values;
+
+    /// <summary>Remove a combat (when it ends).</summary>
+    public void EndCombat(RoomKey roomKey) => _combatsByRoom.Remove(roomKey);
+
+    /// <summary>Get a character by ID (format: c_<guid>).</summary>
+    public Character? GetCharacter(Guid characterId) => FindByCharacter(characterId)?.Character;
+
+    /// <summary>Get a mob by ID.</summary>
+    public Mob? GetMob(Guid mobId) => FindMob(mobId);
 }
