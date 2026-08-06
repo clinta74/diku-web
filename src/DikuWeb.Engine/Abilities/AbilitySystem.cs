@@ -1,5 +1,7 @@
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
+using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Time;
@@ -118,6 +120,14 @@ public sealed class AbilitySystem(
                 if (target != null)
                 {
                     effect.Apply(caster, target, ability.EffectParams, world.Random);
+
+                    // If this is a buff/debuff effect, also create the ongoing active effect state
+                    if (effect is IBuffEffect buffEffect)
+                    {
+                        var activeEffect = buffEffect.CreateActiveEffect(caster, target, ability.EffectParams, clock.CurrentPulse);
+                        var targetEntityId = target is Character c ? c.Id : ((Mob)target).Id;
+                        world.ApplyEffect(targetEntityId, activeEffect);
+                    }
                 }
             }
         }

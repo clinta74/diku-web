@@ -14,11 +14,12 @@ numbers rather than a new set of hand-authored content.
 Play is **PvE by default**; player-versus-player is opt-in per room, through the same extensible
 room-flag registry that carries every other room property (§4.10).
 
-Status: **Phases 0–3 complete.** Register, create a character, walk a seeded zone, talk. Build new
+Status: **Phases 0–4 complete. Phase 5.1a-d (ability system) complete.** Register, create a character, walk a seeded zone, talk. Build new
 geography and author content (templates, spawners) through the browser with no SQL. Hand out builder
 access from inside the game. Objects and mobs fully implemented with multiplier scaling; inventory,
 equipment, and item/mob systems working end-to-end. Mob AI brings the world alive (emotes, wandering).
-Next: Phase 4 (combat and progression).
+Full combat: kill, loot, level up; XP penalties and respawning work; mobs are aggressive. Ability
+system with cost, cooldown, cast time, targeting, and extensible effects. Next: Phase 5.2+ (buffs, quests, shops, communication).
 
 ---
 
@@ -1347,27 +1348,39 @@ Notes from the build:
 - [x] `emote` command for expressive actions
 - [ ] Builder: *Respawn zone* button to apply live multiplier edits to existing mobs (deferred nice-to-have)
 
-### Phase 4 — Combat and progression
+### Phase 4 — Combat and progression ✅ **complete**
 *Done when: you can kill something, loot its corpse, and level up — and the multipliers visibly matter.*
 
-- [ ] Combat state machine on the 2 s round system
-- [ ] `kill`, `flee`, `consider`, auto-attack continuation
-- [ ] Damage model per §4.6, injectable RNG, full unit coverage of the formula
-- [ ] **Target validation gate (§4.11), separate from the damage formula:** `peaceful` forbids all
+- [x] Combat state machine on the 2 s round system
+- [x] `kill`, `flee`, `consider`, auto-attack continuation
+- [x] Damage model per §4.6, injectable RNG, full unit coverage of the formula
+- [x] **Target validation gate (§4.11), separate from the damage formula:** `peaceful` forbids all
       combat, player-vs-player requires `pvp`, party members are never targets
-- [ ] PvP re-checked every round, so leaving a `pvp` room ends the fight; refusals are narrated
-- [ ] PvP kills recorded to the moderation log
-- [ ] **Death (§4.12):** no player corpse, no item loss, mob corpses unchanged
-- [ ] XP penalty as a fraction of the level band, floored at the threshold — never de-level;
+- [x] PvP re-checked every round, so leaving a `pvp` room ends the fight; refusals are narrated
+- [x] PvP kills recorded to the moderation log
+- [x] **Death (§4.12):** no player corpse, no item loss, mob corpses unchanged
+- [x] XP penalty as a fraction of the level band, floored at the threshold — never de-level;
       exempt below `Death:XpLossMinLevel` and on PvP deaths
-- [ ] `bind` in a `respawn`-flagged room; three-step respawn fall-through, stale bind cleared
-- [ ] Respawn at 25% Health / 0 Focus / 0 Stamina, out of combat; same path when link-dead
-- [ ] XP awards with zone `xp` multiplier, leveling, point spend
-- [ ] Regen tied to Vitality and rest state (`sleep`, `rest`, `stand`)
-- [ ] Aggressive mobs, assist behavior, target selection
+- [x] `bind` in a `respawn`-flagged room; three-step respawn fall-through, stale bind cleared
+- [x] Respawn at 25% Health / 0 Focus / 0 Stamina, out of combat; same path when link-dead
+- [x] XP awards with zone `xp` multiplier, leveling, point spend
+- [x] Regen tied to Vitality and rest state (`sleep`, `rest`, `stand`)
+- [x] Aggressive mobs, assist behavior, target selection
 
 ### Phase 5 — Depth
-- [ ] Ability system: cost, cooldown, cast time, targeting rules
+
+#### 5.1a–5.1d — Ability System ✅ **complete**
+- [x] Ability system: cost, cooldown, cast time, targeting rules
+- [x] `/cast <ability> [target]` command with validation
+- [x] Per-Path ability trees with level-based unlocks
+- [x] Extensible `IAbilityEffect` interface for effect resolution
+- [x] `DamageEffect` and `HealEffect` with scaling and variance
+- [x] Pulse-based cast resolution (250ms intervals)
+- [x] Cast queue with interruption detection (movement, combat entry)
+- [x] Cooldown tracking per (CharacterId, AbilityKey)
+- [x] In-memory caching at game loop startup
+
+#### 5.2+ — Remaining depth features
 - [ ] Abilities reuse the §4.11 gate: AoE filters **per target**, pets and charmed mobs inherit
       their owner's permissions, `noRecall` refuses teleports out
 - [ ] Per-Path ability trees (**resolve Q3** on respec)

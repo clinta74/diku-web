@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
@@ -29,6 +30,7 @@ public sealed class WorldState(IRandomSource random)
     private readonly Dictionary<RoomKey, Combat> _combatsByRoom = [];
     private readonly CastQueueService _castQueue = new();
     private readonly Dictionary<(Guid CharacterId, string AbilityKey), long> _abilityCooldowns = [];
+    private readonly Dictionary<Guid, List<ActiveEffect>> _activeEffects = [];
 
     public IRandomSource Random => _random;
 
@@ -401,6 +403,81 @@ public sealed class WorldState(IRandomSource random)
 
     /// <summary>Remove a combat (when it ends).</summary>
     public void EndCombat(RoomKey roomKey) => _combatsByRoom.Remove(roomKey);
+
+    /// <summary>Get all active effects on an entity.</summary>
+    public IReadOnlyList<ActiveEffect> GetActiveEffects(Guid entityId) =>
+        _activeEffects.TryGetValue(entityId, out var list) ? list : [];
+
+    /// <summary>Apply a new effect to an entity, handling stacking rules.</summary>
+    public void ApplyEffect(Guid entityId, ActiveEffect effect)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+
+        if (!_activeEffects.TryGetValue(entityId, out var effects))
+        {
+            effects = [];
+            _activeEffects[entityId] = effects;
+        }
+
+        // Find existing effect by key and source
+        var existing = effects.FirstOrDefault(e => e.EffectKey == effect.EffectKey && e.SourceEntityId == effect.SourceEntityId);
+
+        if (existing is null)
+        {
+            // No existing effect, add new one
+            effects.Add(effect);
+        }
+        else
+        {
+            // Existing effect found, apply stacking rule
+            switch (existing.StackingRule)
+            {
+                case EffectStackingRule.Refresh:
+                    // Just reset expiry, keep everything else
+                    existing.ExpiresAtPulse = effect.ExpiresAtPulse;
+                    break;
+
+                case EffectStackingRule.Stack:
+                    // Add stack if below max, update expiry
+                    if (existing.Stacks < existing.MaxStacks)
+                    {
+                        existing.Stacks++;
+                    }
+                    existing.ExpiresAtPulse = effect.ExpiresAtPulse;
+                    break;
+
+                case EffectStackingRule.Ignore:
+                    // Do nothing, existing effect continues unchanged
+                    break;
+            }
+        }
+    }
+
+    /// <summary>Remove and return all expired effects across all entities.</summary>
+    public IReadOnlyList<ActiveEffect> ExpireEffects(long currentPulse)
+    {
+        var expired = new List<ActiveEffect>();
+
+        foreach (var entityId in _activeEffects.Keys.ToList())
+        {
+            var effects = _activeEffects[entityId];
+            var toRemove = effects.Where(e => e.ExpiresAtPulse <= currentPulse).ToList();
+
+            foreach (var effect in toRemove)
+            {
+                effects.Remove(effect);
+                expired.Add(effect);
+            }
+
+            // Clean up empty lists
+            if (effects.Count == 0)
+            {
+                _activeEffects.Remove(entityId);
+            }
+        }
+
+        return expired;
+    }
 
     /// <summary>Get a character by ID (format: c_<guid>).</summary>
     public Character? GetCharacter(Guid characterId) => FindByCharacter(characterId)?.Character;

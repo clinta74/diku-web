@@ -137,6 +137,7 @@ public sealed class GameLoop(
         if (GameTiming.RunsOn(pulse, GameTiming.RegenPulses))
         {
             RegenSystem.Tick(world);
+            EffectExpirySystem.Tick(world, pulse);
         }
 
         if (combatSystem != null && GameTiming.RunsOn(pulse, CombatSystem.TickIntervalPulses))

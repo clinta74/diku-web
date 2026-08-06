@@ -13,6 +13,8 @@ public sealed class EffectRegistry
         // Register all built-in effects
         Register(new DamageEffect());
         Register(new HealEffect());
+        Register(new BuffEffect());
+        Register(new DebuffEffect());
     }
 
     public void Register(IAbilityEffect effect)
