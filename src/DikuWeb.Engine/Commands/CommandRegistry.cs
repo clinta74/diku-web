@@ -2,6 +2,7 @@ using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Protocol;
+using DikuWeb.Engine.Quests;
 
 namespace DikuWeb.Engine.Commands;
 
@@ -12,7 +13,7 @@ public sealed class CommandRegistry
 {
     private readonly List<CommandDefinition> _commands;
 
-    public CommandRegistry(AbilityCache? abilityCache = null)
+    public CommandRegistry(AbilityCache? abilityCache = null, QuestCache? questCache = null)
     {
         _commands = [];
 
@@ -74,6 +75,7 @@ public sealed class CommandRegistry
         CombatCommands.Register(_commands);
         RestCommands.Register(_commands);
         AbilityCommands.Register(_commands, abilityCache);
+        QuestCommands.Register(_commands, questCache);
         BuilderCommands.Register(_commands);
         AdminCommands.Register(_commands);
     }
@@ -420,6 +422,12 @@ public sealed class CommandRegistry
         if (targetItem is null)
         {
             ctx.Reply($"You don't have {itemName}.", "bad");
+            return;
+        }
+
+        // Check for NPC quest turn-in first (PLAN.md §5.2b)
+        if (QuestCommands.TryTurnInQuest(ctx, itemName, targetName))
+        {
             return;
         }
 

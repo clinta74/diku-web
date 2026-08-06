@@ -38,7 +38,8 @@ public static class EngineServiceCollectionExtensions
 
         // Singletons because the world is a single shared object owned by one thread.
         services.AddSingleton<WorldState>();
-        services.AddSingleton<CommandRegistry>();
+        services.AddSingleton<CommandRegistry>(sp =>
+            new CommandRegistry(sp.GetService<AbilityCache>(), sp.GetService<QuestCache>()));
         services.AddSingleton<RoomLayoutService>();
         services.AddSingleton<PlayerView>();
         services.AddSingleton<WorldMutationApplier>();
