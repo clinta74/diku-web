@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Worlds;
 
 namespace DikuWeb.Engine.Commands;
 
@@ -47,6 +48,31 @@ public static class CombatCommands
         {
             ctx.Reply("You're already in combat!");
             return;
+        }
+
+        // Validate target before entering combat
+        bool peaceful = ctx.World.IsFlagSet(character.RoomKey, RoomFlags.Peaceful);
+        bool pvp = ctx.World.IsFlagSet(character.RoomKey, RoomFlags.Pvp);
+
+        if (targetActor != null)
+        {
+            var validation = TargetValidator.ValidateTarget(
+                CombatantType.Player, CombatantType.Player, targetActor.Name, peaceful, pvp);
+            if (!validation.IsAllowed)
+            {
+                ctx.Reply(validation.RefusalReason ?? "You cannot attack that target.");
+                return;
+            }
+        }
+        else if (targetMob != null)
+        {
+            var validation = TargetValidator.ValidateTarget(
+                CombatantType.Player, CombatantType.Mob, targetMob.TemplateKey, peaceful, pvp);
+            if (!validation.IsAllowed)
+            {
+                ctx.Reply(validation.RefusalReason ?? "You cannot attack that target.");
+                return;
+            }
         }
 
         // Get or create combat for this room

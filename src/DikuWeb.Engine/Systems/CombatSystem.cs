@@ -1,7 +1,9 @@
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.World;
+using DomainCombatSystem = DikuWeb.Domain.Combat.CombatSystem;
 
 namespace DikuWeb.Engine.Systems;
 
@@ -108,25 +110,108 @@ public sealed class CombatSystem
         if (string.IsNullOrEmpty(targetId) || targetId == attackerId)
             return;
 
+        // Resolve attacker and target names/types for narration and validation
+        var (attackerType, attackerName, attackerActo) = ResolveCombatantInfo(world, attackerId);
+        var (targetType, targetName, targetActor) = ResolveCombatantInfo(world, targetId);
+        if (attackerType == null || targetType == null)
+            return;
+
+        // Check target validity (peaceful, pvp, etc.)
+        bool peaceful = world.IsFlagSet(combat.RoomKey, RoomFlags.Peaceful);
+        bool pvp = world.IsFlagSet(combat.RoomKey, RoomFlags.Pvp);
+        var validation = TargetValidator.ValidateTarget(attackerType.Value, targetType.Value, targetName, peaceful, pvp);
+
+        if (!validation.IsAllowed)
+        {
+            // Refusal: send to attacker if player, end their engagement
+            if (attackerActo is PlayerActor attackerPlayer)
+            {
+                attackerPlayer.SendText(validation.RefusalReason ?? "The attack is not allowed.", "bad");
+            }
+            combat.RemoveCombatant(attackerId);
+            if (attackerId.StartsWith("c_"))
+            {
+                var charId = Guid.Parse(attackerId.Substring(2));
+                var character = world.GetCharacter(charId);
+                if (character != null)
+                {
+                    character.CombatState = CombatState.Idle;
+                    character.CurrentTarget = null;
+                }
+            }
+            return;
+        }
+
         // Get combatants' stats
         var (attacker, defender) = GetCombatantPair(world, attackerId, targetId);
         if (attacker == null || defender == null)
             return;
 
-        // Resolve attack
-        var result = DamageCalculator.CalculateDamage(attacker, defender, world.Random);
+        // Use Domain combat system to execute the round (includes narration)
+        int targetHealth = targetId.StartsWith("c_")
+            ? world.GetCharacter(Guid.Parse(targetId.Substring(2)))?.Vitals.Health ?? 0
+            : world.GetMob(Guid.Parse(targetId.Substring(2)))?.Vitals.Health ?? 0;
 
-        if (result.Hit)
+        var round = DomainCombatSystem.ExecuteRound(
+            attackerType.Value,
+            attackerName,
+            attacker,
+            targetType.Value,
+            targetName,
+            defender,
+            targetHealth,
+            validation,
+            world.Random);
+
+        // Send narration
+        if (attackerActo is PlayerActor player)
+            player.SendText(round.AttackerNarration, "combat");
+
+        if (targetActor is PlayerActor targetPlayer)
+            targetPlayer.SendText(round.TargetNarration, "combat");
+
+        foreach (var occupant in world.OccupantsOf(combat.RoomKey))
         {
-            // Apply damage
-            ApplyDamage(world, targetId, result.DamageDealt);
+            if (occupant.CharacterId != (attackerActo as PlayerActor)?.CharacterId &&
+                occupant.CharacterId != (targetActor as PlayerActor)?.CharacterId)
+            {
+                occupant.SendText(round.RoomNarration, "combat");
+            }
+        }
+
+        // Apply damage if hit
+        if (round.Damage.Hit)
+        {
+            ApplyDamage(world, targetId, round.Damage.DamageDealt);
 
             // Add to hate list if target is a mob
             if (targetId.StartsWith("m_"))
             {
-                combat.AddToHateList(targetId, attackerId, result.DamageDealt);
+                combat.AddToHateList(targetId, attackerId, round.Damage.DamageDealt);
             }
         }
+    }
+
+    /// <summary>
+    /// Resolves a combatant's type, name, and actor reference for display and narration.
+    /// </summary>
+    private (CombatantType?, string, object?) ResolveCombatantInfo(WorldState world, string entityId)
+    {
+        if (entityId.StartsWith("c_"))
+        {
+            var charId = Guid.Parse(entityId.Substring(2));
+            var actor = world.FindByCharacter(charId);
+            if (actor != null)
+                return (CombatantType.Player, actor.Name, actor);
+        }
+        else if (entityId.StartsWith("m_"))
+        {
+            var mobId = Guid.Parse(entityId.Substring(2));
+            var mob = world.FindMob(mobId);
+            if (mob != null)
+                return (CombatantType.Mob, mob.TemplateKey, mob);
+        }
+        return (null, "", null);
     }
 
     private (AttackerStats?, DefenderStats?) GetCombatantPair(
@@ -196,11 +281,8 @@ public sealed class CombatSystem
 
     private bool IsCombatActive(Combat combat)
     {
-        // Combat is active if there are combatants from more than one "side"
-        // Simple heuristic: at least one player or one mob on each side
-        var hasPlayer = combat.Combatants.Any(c => c.StartsWith("c_"));
-        var hasMob = combat.Combatants.Any(c => c.StartsWith("m_"));
-        return combat.Combatants.Count > 1 && hasPlayer && hasMob;
+        // Combat is active if there are at least 2 combatants (allows PvP and PvE)
+        return combat.Combatants.Count >= 2;
     }
 
     private void EndCombatFor(WorldState world, string combatantId)
