@@ -88,12 +88,19 @@ public static class GameEndpoints
             .Select(a => a.Role)
             .FirstOrDefaultAsync(cancellationToken);
 
+        // Load character's inventory and equipped items
+        var items = await db.ItemInstances
+            .Where(i => i.OwnerCharacterId == characterId)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
         var accepted = gateway.TrySubmit(new EnterWorld
         {
             SessionId = session.Id,
             Character = character,
             Role = role,
             Output = session.Events.Writer,
+            Items = items,
         });
 
         if (!accepted)

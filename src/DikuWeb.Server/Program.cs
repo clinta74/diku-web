@@ -53,6 +53,10 @@ builder.Services.AddSingleton<CharacterSaveQueue>();
 builder.Services.AddSingleton<ICharacterSaveQueue>(sp => sp.GetRequiredService<CharacterSaveQueue>());
 builder.Services.AddHostedService<CharacterSaveWorker>();
 
+builder.Services.AddSingleton<ItemSaveQueue>();
+builder.Services.AddSingleton<IItemSaveQueue>(sp => sp.GetRequiredService<ItemSaveQueue>());
+builder.Services.AddHostedService<ItemSaveQueueWorker>();
+
 builder.Services.AddSingleton<WorldWriteQueue>();
 builder.Services.AddSingleton<IWorldWriteQueue>(sp => sp.GetRequiredService<WorldWriteQueue>());
 builder.Services.AddHostedService<WorldWriteWorker>();

@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Quests;
 using DikuWeb.Engine.Mutations;
 
@@ -49,6 +50,12 @@ public sealed record EnterWorld : SessionMessage
     /// Empty by default; the Server populates this if quest support is enabled.
     /// </summary>
     public IReadOnlyList<CharacterQuest> Quests { get; init; } = [];
+
+    /// <summary>
+    /// Character's inventory and equipped items, loaded from the database by the Server.
+    /// Empty by default; the Server populates this on entering the game.
+    /// </summary>
+    public IReadOnlyList<ItemInstance> Items { get; init; } = [];
 }
 
 public sealed record PlayerCommand : SessionMessage

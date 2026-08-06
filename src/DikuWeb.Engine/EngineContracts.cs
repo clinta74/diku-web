@@ -29,6 +29,12 @@ public interface ICharacterSaveQueue
     void Enqueue(CharacterSnapshot snapshot);
 }
 
+/// <summary>Where the game loop hands off items to be saved.</summary>
+public interface IItemSaveQueue
+{
+    void Enqueue(ItemInstance item);
+}
+
 /// <summary>Where in-game builder commands hand off their writes.</summary>
 public interface IWorldWriteQueue
 {

@@ -105,4 +105,22 @@ internal static partial class ServerLog
         Level = LogLevel.Information,
         Message = "Server shutting down; flushing character and world mutation queues")]
     public static partial void ShutdownFlushingQueues(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 1015,
+        Level = LogLevel.Error,
+        Message = "Failed to save a batch of item(s); the worker continues")]
+    public static partial void ItemSaveQueueError(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1016,
+        Level = LogLevel.Debug,
+        Message = "Saved {Count} item(s) to the database")]
+    public static partial void ItemsSaved(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 1017,
+        Level = LogLevel.Information,
+        Message = "Item save queue worker stopped")]
+    public static partial void ItemSaveQueueStopped(ILogger logger);
 }

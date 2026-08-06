@@ -502,6 +502,15 @@ public sealed class WorldState(IRandomSource random)
         }
     }
 
+    /// <summary>Load a character's inventory and equipped items from the database.</summary>
+    public void LoadCharacterItems(Guid characterId, IEnumerable<ItemInstance> items)
+    {
+        foreach (var item in items)
+        {
+            _items[item.Id] = item;
+        }
+    }
+
     /// <summary>Get all quests for a character, grouped by status.</summary>
     public IReadOnlyList<CharacterQuest> QuestsFor(Guid characterId) =>
         _questsByCharacter.TryGetValue(characterId, out var quests) ? quests.Values.ToList() : [];

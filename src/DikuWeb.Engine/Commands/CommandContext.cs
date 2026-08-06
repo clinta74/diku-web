@@ -31,6 +31,9 @@ public sealed class CommandContext
     /// </summary>
     public IAccountAdminQueue? AdminQueue { get; init; }
 
+    /// <summary>Where items are handed off to be persisted. Null if item saving is not available.</summary>
+    public IItemSaveQueue? ItemSaveQueue { get; init; }
+
     /// <summary>Applies a content edit and queues it for persistence.</summary>
     public MutationResult Edit(WorldChange change) =>
         Editor is null

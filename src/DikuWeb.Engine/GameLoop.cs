@@ -34,6 +34,7 @@ public sealed class GameLoop(
     SystemGameClock clock,
     IWorldSource worldSource,
     ICharacterSaveQueue saveQueue,
+    IItemSaveQueue itemSaveQueue,
     IAbilityRepository? abilityRepository,
     AbilityCache? abilityCache,
     IQuestRepository? questRepository,
@@ -333,6 +334,12 @@ public sealed class GameLoop(
                 world.LoadCharacterQuests(existing.Character.Id, message.Quests);
             }
 
+            // Reload items in case inventory changed while link-dead
+            if (message.Items.Count > 0)
+            {
+                world.LoadCharacterItems(existing.Character.Id, message.Items);
+            }
+
             if (wasLinkDead)
             {
                 existing.SendSys("Reconnected.", SysKinds.Info);
@@ -373,6 +380,12 @@ public sealed class GameLoop(
         if (message.Quests.Count > 0)
         {
             world.LoadCharacterQuests(character.Id, message.Quests);
+        }
+
+        // Load character's inventory and equipped items from the message
+        if (message.Items.Count > 0)
+        {
+            world.LoadCharacterItems(character.Id, message.Items);
         }
 
         actor.SendSys($"Welcome to Aldenmoor, {actor.Name}.", SysKinds.Info);
@@ -416,6 +429,7 @@ public sealed class GameLoop(
             View = view,
             Editor = loopEditor,
             AdminQueue = adminQueue,
+            ItemSaveQueue = itemSaveQueue,
             Verb = verb,
             Argument = argument,
         };

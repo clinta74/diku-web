@@ -329,6 +329,7 @@ public sealed class CommandRegistry
         }
 
         ctx.World.PickUpItem(targetItem, ctx.Actor.CharacterId);
+        ctx.ItemSaveQueue?.Enqueue(targetItem);
 
         ctx.Reply($"You take the {targetItem.TemplateName}.", "good");
         ctx.Broadcast($"{ctx.Actor.Name} takes the {targetItem.TemplateName}.", "movement");
@@ -353,6 +354,7 @@ public sealed class CommandRegistry
         }
 
         ctx.World.DropItem(targetItem, ctx.Actor.RoomKey);
+        ctx.ItemSaveQueue?.Enqueue(targetItem);
 
         ctx.Reply($"You drop the {targetItem.TemplateName}.", "good");
         ctx.Broadcast($"{ctx.Actor.Name} drops the {targetItem.TemplateName}.", "movement");
@@ -386,6 +388,7 @@ public sealed class CommandRegistry
         // For now, just use a default body slot if no slot specified in item
         var slot = ItemSlot.Chest; // Placeholder logic
         ctx.World.EquipItem(targetItem, slot);
+        ctx.ItemSaveQueue?.Enqueue(targetItem);
 
         ctx.Reply($"You wear the {targetItem.TemplateName}.", "good");
         ctx.Broadcast($"{ctx.Actor.Name} wears the {targetItem.TemplateName}.", "movement");
@@ -415,6 +418,7 @@ public sealed class CommandRegistry
         }
 
         ctx.World.EquipItem(targetItem, ItemSlot.MainHand);
+        ctx.ItemSaveQueue?.Enqueue(targetItem);
 
         ctx.Reply($"You wield the {targetItem.TemplateName}.", "good");
         ctx.Broadcast($"{ctx.Actor.Name} wields the {targetItem.TemplateName}.", "movement");
@@ -444,6 +448,7 @@ public sealed class CommandRegistry
         }
 
         ctx.World.UnequipItem(targetItem);
+        ctx.ItemSaveQueue?.Enqueue(targetItem);
 
         ctx.Reply($"You remove the {targetItem.TemplateName}.", "good");
         ctx.Broadcast($"{ctx.Actor.Name} removes the {targetItem.TemplateName}.", "movement");
@@ -496,6 +501,7 @@ public sealed class CommandRegistry
         }
 
         ctx.World.PickUpItem(targetItem, targetPlayer.CharacterId);
+        ctx.ItemSaveQueue?.Enqueue(targetItem);
 
         ctx.Reply($"You give the {targetItem.TemplateName} to {targetPlayer.Name}.", "good");
         targetPlayer.SendText($"{ctx.Actor.Name} gives you the {targetItem.TemplateName}.", "good");
