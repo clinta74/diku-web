@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Worlds;
 using Microsoft.EntityFrameworkCore;
 
@@ -218,6 +219,9 @@ public static class StarterWorldSeeder
             });
         }
 
+        // Seed starter abilities per Path
+        SeedAbilities(db);
+
         await db.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -230,4 +234,123 @@ public static class StarterWorldSeeder
         string Description,
         string[] Grid,
         Dictionary<string, string> Legend);
+
+    private static void SeedAbilities(DikuWebDbContext db)
+    {
+        // Warden abilities
+        db.Abilities.Add(new Ability
+        {
+            Key = "warden.slash",
+            Name = "Slash",
+            Description = "A basic melee attack.",
+            CostType = CostType.Stamina,
+            CostValue = 10,
+            CooldownPulses = 12,
+            CastTimePulses = null,
+            TargetingType = TargetingType.SingleTarget,
+            EffectKey = "damage.physical",
+            EffectParams = new() { { "scalingFactor", "1.1" }, { "minDamage", "3" } },
+        });
+
+        db.Abilities.Add(new Ability
+        {
+            Key = "warden.bash",
+            Name = "Bash",
+            Description = "A heavy blow that hits harder.",
+            CostType = CostType.Stamina,
+            CostValue = 15,
+            CooldownPulses = 20,
+            CastTimePulses = null,
+            TargetingType = TargetingType.SingleTarget,
+            EffectKey = "damage.physical",
+            EffectParams = new() { { "scalingFactor", "1.4" }, { "minDamage", "5" } },
+        });
+
+        // Adept abilities
+        db.Abilities.Add(new Ability
+        {
+            Key = "adept.bolt",
+            Name = "Bolt",
+            Description = "A magical energy blast.",
+            CostType = CostType.Focus,
+            CostValue = 15,
+            CooldownPulses = 12,
+            CastTimePulses = 8,
+            TargetingType = TargetingType.SingleTarget,
+            EffectKey = "damage.physical",
+            EffectParams = new() { { "scalingFactor", "1.2" }, { "minDamage", "4" } },
+        });
+
+        db.Abilities.Add(new Ability
+        {
+            Key = "adept.shield",
+            Name = "Arcane Shield",
+            Description = "A protective barrier.",
+            CostType = CostType.Focus,
+            CostValue = 12,
+            CooldownPulses = 24,
+            CastTimePulses = null,
+            TargetingType = TargetingType.Self,
+            EffectKey = "heal.restore",
+            EffectParams = new() { { "baseHeal", "20" } },
+        });
+
+        // Shade abilities
+        db.Abilities.Add(new Ability
+        {
+            Key = "shade.strike",
+            Name = "Quick Strike",
+            Description = "A swift and precise strike.",
+            CostType = CostType.Stamina,
+            CostValue = 12,
+            CooldownPulses = 10,
+            CastTimePulses = null,
+            TargetingType = TargetingType.SingleTarget,
+            EffectKey = "damage.physical",
+            EffectParams = new() { { "scalingFactor", "1.25" }, { "minDamage", "4" } },
+        });
+
+        db.Abilities.Add(new Ability
+        {
+            Key = "shade.evasion",
+            Name = "Evasion",
+            Description = "A defensive technique.",
+            CostType = CostType.Focus,
+            CostValue = 10,
+            CooldownPulses = 16,
+            CastTimePulses = null,
+            TargetingType = TargetingType.Self,
+            EffectKey = "heal.restore",
+            EffectParams = new() { { "baseHeal", "15" } },
+        });
+
+        // Channeler abilities
+        db.Abilities.Add(new Ability
+        {
+            Key = "channeler.mend",
+            Name = "Mend",
+            Description = "Restore health to yourself or an ally.",
+            CostType = CostType.Focus,
+            CostValue = 20,
+            CooldownPulses = 20,
+            CastTimePulses = 4,
+            TargetingType = TargetingType.Self,
+            EffectKey = "heal.restore",
+            EffectParams = new() { { "baseHeal", "25" } },
+        });
+
+        db.Abilities.Add(new Ability
+        {
+            Key = "channeler.guidance",
+            Name = "Guidance",
+            Description = "Grant insight and aid.",
+            CostType = CostType.Focus,
+            CostValue = 15,
+            CooldownPulses = 24,
+            CastTimePulses = null,
+            TargetingType = TargetingType.Self,
+            EffectKey = "heal.restore",
+            EffectParams = new() { { "baseHeal", "18" } },
+        });
+    }
 }

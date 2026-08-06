@@ -33,8 +33,8 @@ public sealed class Ability
     /// <summary>Effect key: e.g., "damage.physical", "heal.restore". Resolved by EffectRegistry at runtime.</summary>
     public required string EffectKey { get; init; }
 
-    /// <summary>Parameters passed to the effect executor: e.g., scalingFactor, minDamage, etc.</summary>
-    public Dictionary<string, object> EffectParams { get; init; } = [];
+    /// <summary>Parameters passed to the effect executor as JSON strings: e.g., scalingFactor, minDamage, etc.</summary>
+    public Dictionary<string, string> EffectParams { get; init; } = [];
 }
 
 /// <summary>Resource consumed by an ability.</summary>

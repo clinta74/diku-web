@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
@@ -74,6 +75,12 @@ public interface IItemTemplateRepository
 public interface ISpawnerRepository
 {
     Task<IReadOnlyList<Spawner>> GetAllAsync(CancellationToken ct);
+}
+
+public interface IAbilityRepository
+{
+    Task<Ability?> GetByKeyAsync(string key, CancellationToken ct);
+    Task<IReadOnlyList<Ability>> GetAllAsync(CancellationToken ct);
 }
 
 /// <summary>An immutable copy of the persistable state of a character, taken on the game loop thread.</summary>

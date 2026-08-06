@@ -16,11 +16,11 @@ public interface IAbilityEffect
     /// </summary>
     /// <param name="caster">The character casting the ability.</param>
     /// <param name="target">The target (character or mob), or null for self/AoE context.</param>
-    /// <param name="parameters">Ability-specific parameters: e.g., scalingFactor, minDamage.</param>
+    /// <param name="parameters">Ability-specific parameters as JSON strings: e.g., scalingFactor, minDamage.</param>
     /// <param name="random">RNG for variance (critical hits, etc.).</param>
     void Apply(
         object caster,
         object? target,
-        Dictionary<string, object> parameters,
+        Dictionary<string, string> parameters,
         IRandomSource random);
 }

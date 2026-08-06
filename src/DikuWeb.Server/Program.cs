@@ -1,4 +1,6 @@
 using System.Text.Json;
+using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Engine;
 using DikuWeb.Persistence;
@@ -39,6 +41,9 @@ builder.Services.AddSingleton<IWorldSource, EfWorldSource>();
 builder.Services.AddSingleton<IMobTemplateRepository, EfMobTemplateRepository>();
 builder.Services.AddSingleton<IItemTemplateRepository, EfItemTemplateRepository>();
 builder.Services.AddSingleton<ISpawnerRepository, EfSpawnerRepository>();
+builder.Services.AddSingleton<IAbilityRepository, EfAbilityRepository>();
+
+builder.Services.AddSingleton<EffectRegistry>();
 
 builder.Services.AddSingleton<CharacterSaveQueue>();
 builder.Services.AddSingleton<ICharacterSaveQueue>(sp => sp.GetRequiredService<CharacterSaveQueue>());

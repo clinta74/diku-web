@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Building;
 using DikuWeb.Domain.Characters;
@@ -17,6 +18,8 @@ public sealed class DikuWebDbContext(DbContextOptions<DikuWebDbContext> options)
     public DbSet<Account> Accounts => Set<Account>();
 
     public DbSet<Character> Characters => Set<Character>();
+
+    public DbSet<Ability> Abilities => Set<Ability>();
 
     public DbSet<World> Worlds => Set<World>();
 
