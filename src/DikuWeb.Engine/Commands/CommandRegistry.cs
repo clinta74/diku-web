@@ -332,6 +332,7 @@ public sealed class CommandRegistry
 
         ctx.Reply($"You take the {targetItem.TemplateName}.", "good");
         ctx.Broadcast($"{ctx.Actor.Name} takes the {targetItem.TemplateName}.", "movement");
+        ctx.View.RefreshRoom(ctx.World, ctx.Actor.RoomKey);
     }
 
     private static void Drop(CommandContext ctx)
@@ -355,6 +356,7 @@ public sealed class CommandRegistry
 
         ctx.Reply($"You drop the {targetItem.TemplateName}.", "good");
         ctx.Broadcast($"{ctx.Actor.Name} drops the {targetItem.TemplateName}.", "movement");
+        ctx.View.RefreshRoom(ctx.World, ctx.Actor.RoomKey);
     }
 
     private static void Wear(CommandContext ctx)
@@ -498,6 +500,7 @@ public sealed class CommandRegistry
         ctx.Reply($"You give the {targetItem.TemplateName} to {targetPlayer.Name}.", "good");
         targetPlayer.SendText($"{ctx.Actor.Name} gives you the {targetItem.TemplateName}.", "good");
         ctx.Broadcast($"{ctx.Actor.Name} gives the {targetItem.TemplateName} to {targetPlayer.Name}.", "movement");
+        ctx.View.RefreshRoom(ctx.World, ctx.Actor.RoomKey);
     }
 
     private static void Emote(CommandContext ctx)

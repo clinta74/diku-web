@@ -3,6 +3,7 @@ using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.World;
 using DomainCombatSystem = DikuWeb.Domain.Combat.CombatSystem;
@@ -16,6 +17,7 @@ namespace DikuWeb.Engine.Systems;
 /// </summary>
 public sealed class CombatSystem(
     EngineOptions options,
+    PlayerView? view = null,
     IMobTemplateRepository? mobTemplates = null,
     IItemTemplateRepository? itemTemplates = null,
     ItemSpawner? itemSpawner = null,
@@ -505,6 +507,9 @@ public sealed class CombatSystem(
 
         // Remove mob from world
         world.RemoveMob(mob);
+
+        // Refresh the room for all players to see the mob removed and any loot spawned
+        view?.RefreshRoom(world, mobRoomKey);
     }
 
     private void EndCombatFor(WorldState world, string combatantId)

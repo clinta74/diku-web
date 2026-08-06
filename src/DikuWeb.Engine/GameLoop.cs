@@ -158,6 +158,7 @@ public sealed class GameLoop(
         if (combatSystem != null && GameTiming.RunsOn(pulse, CombatSystem.TickIntervalPulses))
         {
             // Fire and forget - combat runs on thread pool for template/item lookups
+            // PlayerView is passed for room refreshes after mob death or loot spawning
             _ = combatSystem.Tick(world, CancellationToken.None);
 
             // Send updated vitals to all combatants after combat resolves
