@@ -458,7 +458,8 @@ public static class BuilderEndpoints
             request.TemplateKind ?? TemplateKind.Mob,
             request.RoomKeys ?? new List<string>(),
             request.TargetCount ?? 1,
-            request.RespawnSeconds ?? 60);
+            request.RespawnSeconds ?? 60,
+            request.Sentinel ?? false);
 
         return await SaveAsync(editor, change, http, ct, () => queries.SpawnerAsync(id, ct));
     }
@@ -489,7 +490,8 @@ public static class BuilderEndpoints
             request.TemplateKind ?? existing.TemplateKind,
             request.RoomKeys ?? existing.RoomKeys,
             request.TargetCount ?? existing.TargetCount,
-            request.RespawnSeconds ?? existing.RespawnSeconds);
+            request.RespawnSeconds ?? existing.RespawnSeconds,
+            request.Sentinel ?? existing.Sentinel);
 
         return await SaveAsync(editor, change, http, ct, () => queries.SpawnerAsync(id, ct));
     }

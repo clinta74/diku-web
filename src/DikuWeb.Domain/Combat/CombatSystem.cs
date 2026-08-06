@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Randomness;
 
 namespace DikuWeb.Domain.Combat;
@@ -66,7 +67,7 @@ public static class CombatSystem
 
         // Build narration based on hit/miss/crit.
         var (attackerText, targetText, roomText) = BuildNarration(
-            attackerName, targetName, damage);
+            attackerName, targetName, damage, attacker, target);
 
         // Check if target is defeated (would drop to 0 or below health).
         bool isDefeated = targetCurrentHealth - damage.DamageDealt <= 0;
@@ -89,23 +90,29 @@ public static class CombatSystem
     private static (string AttackerText, string TargetText, string RoomText) BuildNarration(
         string attackerName,
         string targetName,
-        DamageResult damage)
+        DamageResult damage,
+        CombatantType attacker,
+        CombatantType target)
     {
+        // Add article prefix for mobs in third-person narration
+        var attackerDisplay = attacker == CombatantType.Mob ? NarrationHelper.WithArticle(attackerName, capitalize: true) : attackerName;
+        var targetDisplay = target == CombatantType.Mob ? NarrationHelper.WithArticle(targetName, capitalize: false) : targetName;
+
         if (!damage.Hit)
         {
-            var missText = $"You miss {targetName}.";
+            var missText = $"You miss {targetDisplay}.";
             return (
                 AttackerText: missText,
-                TargetText: $"{attackerName} misses you.",
-                RoomText: $"{attackerName} misses {targetName}.");
+                TargetText: $"{attackerDisplay} misses you.",
+                RoomText: $"{attackerDisplay} misses {targetDisplay}.");
         }
 
         string critMarker = damage.IsCritical ? " **CRITICAL**" : string.Empty;
         string damageText = $"{damage.DamageDealt} damage{critMarker}";
 
-        var attackerNarration = $"You hit {targetName} for {damageText}.";
-        var targetNarration = $"{attackerName} hits you for {damageText}.";
-        var roomNarration = $"{attackerName} hits {targetName} for {damageText}.";
+        var attackerNarration = $"You hit {targetDisplay} for {damageText}.";
+        var targetNarration = $"{attackerDisplay} hits you for {damageText}.";
+        var roomNarration = $"{attackerDisplay} hits {targetDisplay} for {damageText}.";
 
         return (attackerNarration, targetNarration, roomNarration);
     }

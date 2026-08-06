@@ -16,6 +16,9 @@ public sealed class Mob
     /// <summary>Which template was this spawned from.</summary>
     public required string TemplateKey { get; init; }
 
+    /// <summary>Display name from template at spawn time (cached for consistency).</summary>
+    public string TemplateName { get; init; } = string.Empty;
+
     /// <summary>Level, unchanged from template (not stat-adjusted).</summary>
     public int Level { get; set; }
 

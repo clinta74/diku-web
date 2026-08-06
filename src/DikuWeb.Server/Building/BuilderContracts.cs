@@ -175,7 +175,8 @@ public sealed record SpawnerResponse(
     TemplateKind TemplateKind,
     List<string> RoomKeys,
     int TargetCount,
-    int RespawnSeconds);
+    int RespawnSeconds,
+    bool Sentinel);
 
 public sealed record SaveSpawnerRequest(
     string? ZoneKey,
@@ -183,7 +184,8 @@ public sealed record SaveSpawnerRequest(
     TemplateKind? TemplateKind,
     List<string>? RoomKeys,
     int? TargetCount,
-    int? RespawnSeconds);
+    int? RespawnSeconds,
+    bool? Sentinel);
 
 /// <summary>
 /// Multiplier preview for a zone: shows how templates resolve with current multipliers.

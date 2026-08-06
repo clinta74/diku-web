@@ -1,6 +1,7 @@
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.World;
@@ -121,6 +122,16 @@ public sealed class CombatSystem(
         if (string.IsNullOrEmpty(targetId) || targetId == attackerId)
             return;
 
+        // Validate both combatants are in the same room
+        var attackerRoom = GetCombatantRoom(world, attackerId);
+        var targetRoom = GetCombatantRoom(world, targetId);
+        if (attackerRoom != combat.RoomKey || targetRoom != combat.RoomKey)
+        {
+            // Combatant left the room, remove them from combat
+            combat.RemoveCombatant(attackerId);
+            return;
+        }
+
         // Resolve attacker and target names/types for narration and validation
         var (attackerType, attackerName, attackerActo) = ResolveCombatantInfo(world, attackerId);
         var (targetType, targetName, targetActor) = ResolveCombatantInfo(world, targetId);
@@ -206,6 +217,23 @@ public sealed class CombatSystem(
     /// <summary>
     /// Resolves a combatant's type, name, and actor reference for display and narration.
     /// </summary>
+    private RoomKey? GetCombatantRoom(WorldState world, string entityId)
+    {
+        if (entityId.StartsWith("c_"))
+        {
+            var charId = Guid.Parse(entityId.Substring(2));
+            var character = world.GetCharacter(charId);
+            return character?.RoomKey;
+        }
+        else if (entityId.StartsWith("m_"))
+        {
+            var mobId = Guid.Parse(entityId.Substring(2));
+            var mob = world.GetMob(mobId);
+            return mob != null ? RoomKey.Parse(mob.RoomKey) : null;
+        }
+        return null;
+    }
+
     private (CombatantType?, string, object?) ResolveCombatantInfo(WorldState world, string entityId)
     {
         if (entityId.StartsWith("c_"))
@@ -220,7 +248,10 @@ public sealed class CombatSystem(
             var mobId = Guid.Parse(entityId.Substring(2));
             var mob = world.FindMob(mobId);
             if (mob != null)
-                return (CombatantType.Mob, mob.TemplateKey, mob);
+            {
+                var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+                return (CombatantType.Mob, displayName, mob);
+            }
         }
         return (null, "", null);
     }
@@ -454,6 +485,14 @@ public sealed class CombatSystem(
                     }
                 }
             }
+        }
+
+        // Narrate mob death to the room
+        var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+        var mobRoomKey = RoomKey.Parse(mob.RoomKey);
+        foreach (var occupant in world.OccupantsOf(mobRoomKey))
+        {
+            occupant.SendText($"{NarrationHelper.WithArticle(displayName)} falls.", "death");
         }
 
         // Remove mob from world

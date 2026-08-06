@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
 
 namespace DikuWeb.Engine.Commands;
@@ -89,6 +90,7 @@ public static class CombatCommands
             character.CurrentTarget = targetId;
             combat.AddCombatant($"c_{character.Id}");
             combat.AddCombatant(targetId);
+            combat.PlayerTargets[character.Id] = targetId;
 
             ctx.Reply($"You begin attacking {targetActor.Name}!");
             ctx.Broadcast($"{actor.Name} attacks {targetActor.Name}!");
@@ -96,14 +98,16 @@ public static class CombatCommands
         }
         else if (targetMob != null)
         {
+            var displayName = string.IsNullOrEmpty(targetMob.TemplateName) ? targetMob.TemplateKey : targetMob.TemplateName;
             var targetId = $"m_{targetMob.Id}";
             character.CombatState = CombatState.Fighting;
             character.CurrentTarget = targetId;
             combat.AddCombatant($"c_{character.Id}");
             combat.AddCombatant(targetId);
+            combat.PlayerTargets[character.Id] = targetId;
 
-            ctx.Reply($"You begin attacking {targetMob.TemplateKey}!");
-            ctx.Broadcast($"{actor.Name} attacks a {targetMob.TemplateKey}!");
+            ctx.Reply($"You begin attacking {NarrationHelper.WithArticle(displayName, capitalize: false)}!");
+            ctx.Broadcast($"{actor.Name} attacks {NarrationHelper.WithArticle(displayName)}!");
             targetMob.CombatState = CombatState.Fighting;
         }
     }
@@ -175,9 +179,25 @@ public static class CombatCommands
             return;
         }
 
-        character.CombatState = CombatState.Fleeing;
-        ctx.Reply("You attempt to flee!");
-        ctx.Broadcast($"{ctx.Actor.Name} attempts to flee!");
+        // End combat for this character
+        var combat = ctx.World.FindCombat(character.RoomKey);
+        if (combat != null)
+        {
+            var combatantId = $"c_{character.Id}";
+            combat.RemoveCombatant(combatantId);
+            character.CombatState = CombatState.Idle;
+            character.CurrentTarget = null;
+
+            ctx.Reply("You manage to escape!");
+            ctx.Broadcast($"{ctx.Actor.Name} flees from combat!");
+        }
+        else
+        {
+            // Shouldn't happen, but handle gracefully
+            character.CombatState = CombatState.Idle;
+            character.CurrentTarget = null;
+            ctx.Reply("You're no longer in combat.");
+        }
     }
 
     private static void Bind(CommandContext ctx)

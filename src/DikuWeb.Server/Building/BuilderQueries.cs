@@ -261,7 +261,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
         var spawners = await query.OrderBy(s => s.Id).ToListAsync(cancellationToken);
         return [.. spawners.Select(s => new SpawnerResponse(
             s.Id, s.ZoneKey, s.TemplateKey, s.TemplateKind,
-            new List<string>(s.RoomKeys), s.TargetCount, s.RespawnSeconds))];
+            new List<string>(s.RoomKeys), s.TargetCount, s.RespawnSeconds, s.Sentinel))];
     }
 
     public async Task<SpawnerResponse?> SpawnerAsync(
@@ -276,7 +276,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
         }
         return new SpawnerResponse(
             spawner.Id, spawner.ZoneKey, spawner.TemplateKey, spawner.TemplateKind,
-            new List<string>(spawner.RoomKeys), spawner.TargetCount, spawner.RespawnSeconds);
+            new List<string>(spawner.RoomKeys), spawner.TargetCount, spawner.RespawnSeconds, spawner.Sentinel);
     }
 
     /// <summary>

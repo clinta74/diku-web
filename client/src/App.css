@@ -604,14 +604,16 @@ input:focus {
 
 /* --- Room editor -------------------------------------------------- */
 
-.room-editor header {
+.room-editor header,
+.mob-editor header {
   display: flex;
   align-items: baseline;
   gap: 0.6rem;
   margin-bottom: 0.6rem;
 }
 
-.room-editor header h2 {
+.room-editor header h2,
+.mob-editor header h2 {
   margin: 0;
   color: var(--accent);
   font-size: 1rem;
@@ -625,7 +627,8 @@ code.dim {
   font-size: 0.85em;
 }
 
-.room-editor label {
+.room-editor label,
+.mob-editor label {
   display: block;
   margin-bottom: 0.6rem;
 }
@@ -633,6 +636,9 @@ code.dim {
 .room-editor input,
 .room-editor textarea,
 .room-editor select,
+.mob-editor input,
+.mob-editor textarea,
+.mob-editor select,
 .tree-filter {
   display: block;
   width: 100%;

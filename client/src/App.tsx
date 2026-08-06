@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AuthScreen, CharacterScreen } from './components/AuthScreen'
 import { GameScreen } from './components/GameScreen'
 import { BuilderScreen } from './builder/BuilderScreen'
@@ -17,6 +17,7 @@ export default function App() {
   const [stage, setStage] = useState<Stage>({ name: 'loading' })
   const [builderOpen, setBuilderOpen] = useState(false)
   const [currentRoom, setCurrentRoom] = useState<string | null>(null)
+  const focusInputRef = useRef<(() => void) | null>(null)
 
   // The session cookie survives a reload, so check for an existing login before showing
   // the form - otherwise a refresh mid-session looks like being logged out.
@@ -29,6 +30,13 @@ export default function App() {
 
   // Stable so GameScreen's effect does not re-fire on every render of App.
   const onRoomChange = useCallback((roomKey: string) => setCurrentRoom(roomKey), [])
+
+  // Focus input when returning from builder
+  useEffect(() => {
+    if (!builderOpen) {
+      focusInputRef.current?.()
+    }
+  }, [builderOpen])
 
   async function logout() {
     await api.logout().catch(() => undefined)
@@ -76,6 +84,7 @@ export default function App() {
                 setBuilderOpen(false)
                 setStage({ name: 'choosing', account: stage.account })
               }}
+              focusInputRef={focusInputRef}
             />
           </div>
 

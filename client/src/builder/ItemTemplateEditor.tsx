@@ -1,21 +1,22 @@
 import { useEffect, useState } from 'react'
-import { builderApi, type MobTemplate } from '../net/builderApi'
+import { builderApi, type ItemTemplate } from '../net/builderApi'
 
 interface Props {
   templateKey: string
-  onChanged: (template: MobTemplate) => void
+  onChanged: (template: ItemTemplate) => void
   onDeleted: (key: string) => void
 }
 
-export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) {
-  const [template, setTemplate] = useState<MobTemplate | null>(null)
+const ITEM_SLOTS = ['Head', 'Chest', 'Hands', 'Legs', 'Feet', 'MainHand', 'OffHand', 'Trinket']
+
+export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props) {
+  const [template, setTemplate] = useState<ItemTemplate | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [icon, setIcon] = useState('m')
-  const [level, setLevel] = useState(1)
-  const [baseHealth, setBaseHealth] = useState(40)
-  const [baseXp, setBaseXp] = useState(0)
-  const [baseGold, setBaseGold] = useState(0)
+  const [icon, setIcon] = useState('i')
+  const [slot, setSlot] = useState<string | null>(null)
+  const [weight, setWeight] = useState(0)
+  const [baseValue, setBaseValue] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -28,7 +29,7 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
     setError(null)
 
     void builderApi
-      .mobTemplate(templateKey)
+      .itemTemplate(templateKey)
       .then((loaded) => {
         if (cancelled) return
         apply(loaded)
@@ -42,15 +43,14 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
     }
   }, [templateKey])
 
-  function apply(loaded: MobTemplate) {
+  function apply(loaded: ItemTemplate) {
     setTemplate(loaded)
     setName(loaded.name)
     setDescription(loaded.description)
     setIcon(loaded.icon)
-    setLevel(loaded.level)
-    setBaseHealth(loaded.baseStats?.health ? Number(loaded.baseStats.health) : 40)
-    setBaseXp(loaded.baseXp)
-    setBaseGold(loaded.baseGold)
+    setSlot(loaded.slot)
+    setWeight(loaded.weight)
+    setBaseValue(loaded.baseValue)
     setDirty(false)
     setSuccess(null)
   }
@@ -61,14 +61,14 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
     setSuccess(null)
 
     try {
-      const updated = await builderApi.updateMobTemplate(templateKey, {
+      const updated = await builderApi.updateItemTemplate(templateKey, {
         name,
         description,
         icon,
-        level,
-        baseStats: { health: baseHealth },
-        baseXp,
-        baseGold,
+        slot,
+        weight,
+        baseValue,
+        baseStats: {},
       })
       apply(updated)
       onChanged(updated)
@@ -82,13 +82,13 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
   }
 
   async function deleteTemplate() {
-    if (!window.confirm(`Delete mob template "${templateKey}"? This cannot be undone.`)) return
+    if (!window.confirm(`Delete item template "${templateKey}"? This cannot be undone.`)) return
 
     setBusy(true)
     setError(null)
 
     try {
-      await builderApi.deleteMobTemplate(templateKey)
+      await builderApi.deleteItemTemplate(templateKey)
       onDeleted(templateKey)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Delete failed.')
@@ -101,10 +101,10 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
   if (!template) return <p className="dim">Loading…</p>
 
   return (
-    <div className="mob-editor">
+    <div className="item-editor">
       <header>
         <h2>{name || templateKey}</h2>
-        <code className="mob-key">{templateKey}</code>
+        <code className="item-key">{templateKey}</code>
       </header>
 
       {error && <p className="bad">{error}</p>}
@@ -141,7 +141,7 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
           <input
             value={icon}
             onChange={(e) => {
-              setIcon(e.target.value.slice(0, 1) || 'm')
+              setIcon(e.target.value.slice(0, 1) || 'i')
               setDirty(true)
             }}
             disabled={busy}
@@ -150,42 +150,33 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         </label>
 
         <label>
-          Level
-          <input
-            type="number"
-            value={level}
+          Slot
+          <select
+            value={slot || ''}
             onChange={(e) => {
-              setLevel(parseInt(e.target.value) || 0)
+              setSlot(e.target.value || null)
               setDirty(true)
             }}
             disabled={busy}
-            min="1"
-          />
-        </label>
-
-        <label>
-          Base Health
-          <input
-            type="number"
-            value={baseHealth}
-            onChange={(e) => {
-              setBaseHealth(parseInt(e.target.value) || 40)
-              setDirty(true)
-            }}
-            disabled={busy}
-            min="1"
-          />
+          >
+            <option value="">— None (ground item) —</option>
+            {ITEM_SLOTS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 
       <div className="field-row">
         <label>
-          Base XP
+          Weight (grams)
           <input
             type="number"
-            value={baseXp}
+            value={weight}
             onChange={(e) => {
-              setBaseXp(parseInt(e.target.value) || 0)
+              setWeight(parseInt(e.target.value) || 0)
               setDirty(true)
             }}
             disabled={busy}
@@ -194,12 +185,12 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         </label>
 
         <label>
-          Base Gold
+          Base Value
           <input
             type="number"
-            value={baseGold}
+            value={baseValue}
             onChange={(e) => {
-              setBaseGold(parseInt(e.target.value) || 0)
+              setBaseValue(parseInt(e.target.value) || 0)
               setDirty(true)
             }}
             disabled={busy}

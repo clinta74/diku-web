@@ -358,6 +358,10 @@ namespace DikuWeb.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("TemplateName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("RoomKey");
@@ -639,6 +643,9 @@ namespace DikuWeb.Persistence.Migrations
                     b.PrimitiveCollection<List<string>>("RoomKeys")
                         .IsRequired()
                         .HasColumnType("text[]");
+
+                    b.Property<bool>("Sentinel")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("TargetCount")
                         .HasColumnType("integer");

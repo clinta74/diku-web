@@ -4,6 +4,7 @@ using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Engine;
 using DikuWeb.Persistence;
+using DikuWeb.Persistence.Converters;
 using DikuWeb.Persistence.Seeding;
 using DikuWeb.Server;
 using DikuWeb.Server.Admin;
@@ -116,6 +117,12 @@ builder.Services
     });
 
 builder.Services.AddAuthorization(options => options.AddDikuWebPolicies());
+
+// Configure JSON serialization to handle enum string values for the builder API
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new TemplateKindConverter());
+});
 
 // The world builder (PLAN.md §7). Queries and writes are scoped because they own a DbContext;
 // the throttle is a singleton because it is per-account state that must outlive a request.

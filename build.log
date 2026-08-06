@@ -1,0 +1,15 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  DikuWeb.Domain -> E:\Projects\diku-web\src\DikuWeb.Domain\bin\Debug\net10.0\DikuWeb.Domain.dll
+  DikuWeb.Persistence -> E:\Projects\diku-web\src\DikuWeb.Persistence\bin\Debug\net10.0\DikuWeb.Persistence.dll
+  DikuWeb.Domain.Tests -> E:\Projects\diku-web\tests\DikuWeb.Domain.Tests\bin\Debug\net10.0\DikuWeb.Domain.Tests.dll
+  DikuWeb.Engine -> E:\Projects\diku-web\src\DikuWeb.Engine\bin\Debug\net10.0\DikuWeb.Engine.dll
+  DikuWeb.Engine.Tests -> E:\Projects\diku-web\tests\DikuWeb.Engine.Tests\bin\Debug\net10.0\DikuWeb.Engine.Tests.dll
+  DikuWeb.Server -> E:\Projects\diku-web\src\DikuWeb.Server\bin\Debug\net10.0\DikuWeb.Server.dll
+  DikuWeb.Server.Tests -> E:\Projects\diku-web\tests\DikuWeb.Server.Tests\bin\Debug\net10.0\DikuWeb.Server.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.98

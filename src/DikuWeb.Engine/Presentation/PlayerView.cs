@@ -124,7 +124,8 @@ public sealed class PlayerView(RoomLayoutService layout)
 
         foreach (var mob in mobs.OrderBy(m => m.TemplateKey))
         {
-            spans.Add(new TextSpan($"\n{mob.TemplateKey} is here.", "mob"));
+            var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+            spans.Add(new TextSpan($"\n{displayName} is here.", "mob"));
         }
 
         foreach (var item in items.OrderBy(i => i.TemplateKey))
@@ -173,7 +174,10 @@ public sealed class PlayerView(RoomLayoutService layout)
         // Add mobs
         occupantEntries.AddRange(mobs
             .OrderBy(m => m.TemplateKey)
-            .Select(m => new ContentEntry(m.TemplateKey, m.TemplateKey, m.TemplateKey.ToLowerInvariant())));
+            .Select(m => {
+                var displayName = string.IsNullOrEmpty(m.TemplateName) ? m.TemplateKey : m.TemplateName;
+                return new ContentEntry(m.TemplateKey, displayName, m.TemplateKey.ToLowerInvariant());
+            }));
 
         // Add items
         itemEntries.AddRange(items

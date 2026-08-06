@@ -1,8 +1,12 @@
+using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Combat;
+using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.Quests;
+using DikuWeb.Engine.Spawning;
 
 namespace DikuWeb.Engine.Commands;
 
@@ -13,7 +17,13 @@ public sealed class CommandRegistry
 {
     private readonly List<CommandDefinition> _commands;
 
-    public CommandRegistry(AbilityCache? abilityCache = null, QuestCache? questCache = null)
+    public CommandRegistry(
+        AbilityCache? abilityCache = null,
+        QuestCache? questCache = null,
+        IMobTemplateRepository? mobTemplates = null,
+        IItemTemplateRepository? itemTemplates = null,
+        MobSpawner? mobSpawner = null,
+        ItemSpawner? itemSpawner = null)
     {
         _commands = [];
 
@@ -76,7 +86,7 @@ public sealed class CommandRegistry
         RestCommands.Register(_commands);
         AbilityCommands.Register(_commands, abilityCache);
         QuestCommands.Register(_commands, questCache);
-        BuilderCommands.Register(_commands);
+        BuilderCommands.Register(_commands, mobTemplates, itemTemplates, mobSpawner, itemSpawner);
         AdminCommands.Register(_commands);
     }
 
@@ -111,6 +121,22 @@ public sealed class CommandRegistry
 
     private static void Move(CommandContext ctx, Direction direction)
     {
+        var character = ctx.Actor.Character;
+
+        // Can't move while in active combat
+        if (character.CombatState == CombatState.Fighting)
+        {
+            ctx.Reply("You can't leave while in combat! Try 'flee' to escape.", "bad");
+            return;
+        }
+
+        // Can't move while resting or sleeping
+        if (character.RestState != CharacterRestState.Stand)
+        {
+            ctx.Reply("You must stand up first.", "bad");
+            return;
+        }
+
         var room = ctx.World.FindRoom(ctx.Actor.RoomKey);
         var exit = room?.ExitTo(direction);
 

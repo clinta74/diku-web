@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
 
@@ -18,6 +19,7 @@ public sealed class MobSpawner
         Zone zone,
         global::DikuWeb.Domain.Worlds.World worldEntity,
         RoomKey roomKey,
+        bool sentinel = false,
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(template);
@@ -29,8 +31,9 @@ public sealed class MobSpawner
         var zoneMults = zone.Multipliers;
 
         // Resolve Health via Strength multiplier
+        var baseHealth = GetIntFromStats(template.BaseStats, "health", 40);
         var resolvedHealth = Multipliers.Resolve(
-            template.BaseStats.TryGetValue("health", out var h) ? (int)h : 40,
+            baseHealth,
             worldMults,
             zoneMults,
             MultiplierType.Strength);
@@ -53,6 +56,7 @@ public sealed class MobSpawner
         {
             Id = Guid.NewGuid(),
             TemplateKey = template.Key,
+            TemplateName = template.Name,
             Level = template.Level,
             RoomKey = roomKey.ToString(),
             ResolvedStats = new(template.BaseStats),
@@ -78,9 +82,29 @@ public sealed class MobSpawner
                 Stamina = 100,
                 StaminaMax = 100,
             },
-            State = [],
+            State = sentinel ? new() { ["sentinel"] = true } : [],
         };
 
         return Task.FromResult(mob);
+    }
+
+    private static int GetIntFromStats(Dictionary<string, object> stats, string key, int defaultValue)
+    {
+        if (!stats.TryGetValue(key, out var value))
+            return defaultValue;
+
+        return value switch
+        {
+            int i => i,
+            long l => (int)l,
+            decimal d => (int)d,
+            double d => (int)d,
+            JsonElement je => je.ValueKind switch
+            {
+                JsonValueKind.Number => je.GetInt32(),
+                _ => defaultValue
+            },
+            _ => defaultValue
+        };
     }
 }

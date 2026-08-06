@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   builderApi,
+  type ItemTemplate,
   type MobTemplate,
   type RoomDetail,
   type RoomFlagDefinition,
@@ -11,6 +12,7 @@ import {
 import { RoomEditor } from './RoomEditor'
 import { ZoneCanvas } from './ZoneCanvas'
 import { MobTemplateEditor } from './MobTemplateEditor'
+import { ItemTemplateEditor } from './ItemTemplateEditor'
 import { CreateTemplateDialog } from './CreateTemplateDialog'
 
 interface Props {
@@ -24,17 +26,19 @@ interface Props {
 }
 
 export function BuilderScreen({ occupiedRoom, onClose }: Props) {
-  const [mode, setMode] = useState<'world' | 'templates'>('world')
+  const [mode, setMode] = useState<'world' | 'mobs' | 'items'>('world')
   const [flagDefinitions, setFlagDefinitions] = useState<RoomFlagDefinition[]>([])
   const [worlds, setWorlds] = useState<WorldSummary[]>([])
   const [zones, setZones] = useState<ZoneSummary[]>([])
   const [rooms, setRooms] = useState<RoomDetail[]>([])
   const [mobTemplates, setMobTemplates] = useState<MobTemplate[]>([])
+  const [itemTemplates, setItemTemplates] = useState<ItemTemplate[]>([])
 
   const [worldKey, setWorldKey] = useState<string | null>(null)
   const [zoneKey, setZoneKey] = useState<string | null>(null)
   const [roomKey, setRoomKey] = useState<string | null>(null)
-  const [selectedTemplateKey, setSelectedTemplateKey] = useState<string | null>(null)
+  const [selectedMobTemplateKey, setSelectedMobTemplateKey] = useState<string | null>(null)
+  const [selectedItemTemplateKey, setSelectedItemTemplateKey] = useState<string | null>(null)
 
   const [validation, setValidation] = useState<ZoneValidation | null>(null)
   const [follow, setFollow] = useState(true)
@@ -53,6 +57,10 @@ export function BuilderScreen({ occupiedRoom, onClose }: Props) {
       .mobTemplates()
       .then(setMobTemplates)
       .catch(() => setMobTemplates([]))
+    void builderApi
+      .itemTemplates()
+      .then(setItemTemplates)
+      .catch(() => setItemTemplates([]))
   }, [])
 
   useEffect(() => {
@@ -114,17 +122,25 @@ export function BuilderScreen({ occupiedRoom, onClose }: Props) {
             className={mode === 'world' ? 'selected' : ''}
             onClick={() => {
               setMode('world')
-              setSelectedTemplateKey(null)
+              setSelectedMobTemplateKey(null)
+              setSelectedItemTemplateKey(null)
             }}
           >
             World
           </button>
           <button
             type="button"
-            className={mode === 'templates' ? 'selected' : ''}
-            onClick={() => setMode('templates')}
+            className={mode === 'mobs' ? 'selected' : ''}
+            onClick={() => setMode('mobs')}
           >
             Mobs
+          </button>
+          <button
+            type="button"
+            className={mode === 'items' ? 'selected' : ''}
+            onClick={() => setMode('items')}
+          >
+            Items
           </button>
         </div>
 
@@ -156,13 +172,22 @@ export function BuilderScreen({ occupiedRoom, onClose }: Props) {
               {occupiedRoom && <code className="dim"> {occupiedRoom}</code>}
             </label>
           </>
-        ) : (
+        ) : mode === 'mobs' ? (
           <MobTemplateTree
             mobTemplates={mobTemplates}
-            selectedKey={selectedTemplateKey}
-            onSelect={setSelectedTemplateKey}
+            selectedKey={selectedMobTemplateKey}
+            onSelect={setSelectedMobTemplateKey}
             onCreated={() => {
               void builderApi.mobTemplates().then(setMobTemplates)
+            }}
+          />
+        ) : (
+          <ItemTemplateTree
+            itemTemplates={itemTemplates}
+            selectedKey={selectedItemTemplateKey}
+            onSelect={setSelectedItemTemplateKey}
+            onCreated={() => {
+              void builderApi.itemTemplates().then(setItemTemplates)
             }}
           />
         )}
@@ -199,11 +224,11 @@ export function BuilderScreen({ occupiedRoom, onClose }: Props) {
               <p className="dim">Pick a room, or dig one from the room you are standing in.</p>
             )}
           </>
-        ) : (
+        ) : mode === 'mobs' ? (
           <>
-            {selectedTemplateKey ? (
+            {selectedMobTemplateKey ? (
               <MobTemplateEditor
-                templateKey={selectedTemplateKey}
+                templateKey={selectedMobTemplateKey}
                 onChanged={(updated) => {
                   const idx = mobTemplates.findIndex((t) => t.key === updated.key)
                   if (idx >= 0) {
@@ -214,11 +239,33 @@ export function BuilderScreen({ occupiedRoom, onClose }: Props) {
                 }}
                 onDeleted={(key) => {
                   setMobTemplates(mobTemplates.filter((t) => t.key !== key))
-                  setSelectedTemplateKey(null)
+                  setSelectedMobTemplateKey(null)
                 }}
               />
             ) : (
               <p className="dim">Select a mob template, or create a new one.</p>
+            )}
+          </>
+        ) : (
+          <>
+            {selectedItemTemplateKey ? (
+              <ItemTemplateEditor
+                templateKey={selectedItemTemplateKey}
+                onChanged={(updated) => {
+                  const idx = itemTemplates.findIndex((t) => t.key === updated.key)
+                  if (idx >= 0) {
+                    const next = [...itemTemplates]
+                    next[idx] = updated
+                    setItemTemplates(next)
+                  }
+                }}
+                onDeleted={(key) => {
+                  setItemTemplates(itemTemplates.filter((t) => t.key !== key))
+                  setSelectedItemTemplateKey(null)
+                }}
+              />
+            ) : (
+              <p className="dim">Select an item template, or create a new one.</p>
             )}
           </>
         )}
@@ -567,6 +614,87 @@ function MobTemplateTree({
                 >
                   {template.name || template.key}
                   <span className="dim"> · L{template.level}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <CreateTemplateDialog
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onCreate={createTemplate}
+      />
+    </>
+  )
+}
+
+function ItemTemplateTree({
+  itemTemplates,
+  selectedKey,
+  onSelect,
+  onCreated,
+}: {
+  itemTemplates: ItemTemplate[]
+  selectedKey: string | null
+  onSelect: (key: string) => void
+  onCreated: () => void
+}) {
+  const [filter, setFilter] = useState('')
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+
+  const visible = itemTemplates.filter(
+    (t) =>
+      !filter ||
+      t.key.includes(filter.toLowerCase()) ||
+      t.name.toLowerCase().includes(filter.toLowerCase()),
+  )
+
+  async function createTemplate(key: string) {
+    await builderApi.createItemTemplate(key, {
+      name: key,
+      description: '',
+      icon: 'i',
+      slot: null,
+      weight: 0,
+      baseValue: 0,
+      baseStats: {},
+    })
+    onCreated()
+    onSelect(key)
+  }
+
+  return (
+    <>
+      <div className="tree">
+
+        <div className="tree-section">
+          <div className="tree-head">
+            <h3>Item templates</h3>
+            <button type="button" className="link" onClick={() => setShowCreateDialog(true)}>
+              + new
+            </button>
+          </div>
+
+          <input
+            className="tree-filter"
+            value={filter}
+            placeholder="filter"
+            spellCheck={false}
+            onChange={(e) => setFilter(e.target.value)}
+          />
+
+          <ul className="item-list">
+            {visible.map((template) => (
+              <li key={template.key}>
+                <button
+                  type="button"
+                  className={template.key === selectedKey ? 'selected' : ''}
+                  onClick={() => onSelect(template.key)}
+                >
+                  {template.name || template.key}
+                  <span className="dim"> · {template.slot || 'ground'}</span>
                 </button>
               </li>
             ))}

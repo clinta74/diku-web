@@ -1,3 +1,5 @@
+using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Randomness;
 using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Commands;
@@ -39,7 +41,13 @@ public static class EngineServiceCollectionExtensions
         // Singletons because the world is a single shared object owned by one thread.
         services.AddSingleton<WorldState>();
         services.AddSingleton<CommandRegistry>(sp =>
-            new CommandRegistry(sp.GetService<AbilityCache>(), sp.GetService<QuestCache>()));
+            new CommandRegistry(
+                sp.GetService<AbilityCache>(),
+                sp.GetService<QuestCache>(),
+                sp.GetService<IMobTemplateRepository>(),
+                sp.GetService<IItemTemplateRepository>(),
+                sp.GetService<MobSpawner>(),
+                sp.GetService<ItemSpawner>()));
         services.AddSingleton<RoomLayoutService>();
         services.AddSingleton<PlayerView>();
         services.AddSingleton<WorldMutationApplier>();

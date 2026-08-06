@@ -102,6 +102,17 @@ export interface MobTemplate {
   behavior: Record<string, unknown>
 }
 
+export interface ItemTemplate {
+  key: string
+  name: string
+  description: string
+  icon: string
+  slot: string | null
+  weight: number
+  baseValue: number
+  baseStats: Record<string, unknown>
+}
+
 export interface Spawner {
   id: string
   zoneKey: string
@@ -110,6 +121,7 @@ export interface Spawner {
   roomKeys: string[]
   targetCount: number
   respawnSeconds: number
+  sentinel: boolean
 }
 
 const base = '/api/builder'
@@ -220,6 +232,25 @@ export const builderApi = {
 
   deleteMobTemplate: (key: string) =>
     request<void>(`${base}/mob-templates/${key}`, { method: 'DELETE' }),
+
+  itemTemplates: () => request<ItemTemplate[]>(`${base}/item-templates`),
+
+  itemTemplate: (key: string) => request<ItemTemplate>(`${base}/item-templates/${key}`),
+
+  createItemTemplate: (key: string, body: Partial<ItemTemplate>) =>
+    request<ItemTemplate>(`${base}/item-templates/${key}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateItemTemplate: (key: string, body: Partial<ItemTemplate>) =>
+    request<ItemTemplate>(`${base}/item-templates/${key}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  deleteItemTemplate: (key: string) =>
+    request<void>(`${base}/item-templates/${key}`, { method: 'DELETE' }),
 
   spawners: (zoneKey?: string) =>
     request<Spawner[]>(zoneKey ? `${base}/spawners?zone=${zoneKey}` : `${base}/spawners`),

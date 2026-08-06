@@ -12,6 +12,8 @@ interface Props {
   onRoomChange?: (roomKey: string) => void
   /** Shown only to builders; opens the builder alongside this session. */
   onOpenBuilder?: () => void
+  /** Ref to focus the command input from parent (used when closing builder). */
+  focusInputRef?: React.RefObject<(() => void) | null>
 }
 
 export function GameScreen({
@@ -20,6 +22,7 @@ export function GameScreen({
   onLeave,
   onRoomChange,
   onOpenBuilder,
+  focusInputRef,
 }: Props) {
   const [state, dispatch] = useReducer(gameReducer, initialGameState)
   const roomKey = state.room?.key ?? null
@@ -33,6 +36,9 @@ export function GameScreen({
   // Lets the contents list type a keyword into the input box without lifting the input's
   // value up here, which would re-render all five panels on every keystroke.
   const insertKeyword = useRef<((keyword: string) => void) | null>(null)
+
+  // Exposed so parent can focus input when returning from builder
+  const focusInput = useRef<(() => void) | null>(null)
 
   // Keyed by character, so a second tab on a different character opens its own stream
   // rather than evicting this one.
@@ -68,7 +74,7 @@ export function GameScreen({
         onKeyword={(keyword) => insertKeyword.current?.(keyword)}
       />
       <Scrollback lines={state.scrollback} />
-      <InputBar onSend={send} insertRef={insertKeyword} />
+      <InputBar onSend={send} insertRef={insertKeyword} focusRef={focusInputRef ?? focusInput} />
       <VitalsBar
         vitals={state.vitals}
         characterName={characterName}
@@ -178,9 +184,11 @@ function Scrollback({ lines }: { lines: { id: number; spans: TextSpan[] }[] }) {
 function InputBar({
   onSend,
   insertRef,
+  focusRef,
 }: {
   onSend: (input: string) => void
   insertRef: React.RefObject<((keyword: string) => void) | null>
+  focusRef: React.RefObject<(() => void) | null>
 }) {
   const [value, setValue] = useState('')
   const [history, setHistory] = useState<string[]>([])
@@ -197,6 +205,16 @@ function InputBar({
       ref.current = null
     }
   }, [insertRef])
+
+  useEffect(() => {
+    const ref = focusRef
+    ref.current = () => {
+      inputRef.current?.focus()
+    }
+    return () => {
+      ref.current = null
+    }
+  }, [focusRef])
 
   function submit() {
     const input = value.trim()

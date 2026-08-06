@@ -26,6 +26,9 @@ public sealed class Spawner
 
     /// <summary>Seconds to wait before respawning a dead mob or dropped item.</summary>
     public int RespawnSeconds { get; set; } = 30;
+
+    /// <summary>If true, mobs spawned by this spawner won't wander (sentinel behavior).</summary>
+    public bool Sentinel { get; set; }
 }
 
 /// <summary>What kind of thing a spawner creates.</summary>

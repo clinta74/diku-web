@@ -147,12 +147,35 @@ public sealed class GameLoop(
         {
             RegenSystem.Tick(world);
             EffectExpirySystem.Tick(world, pulse);
+
+            // Send updated vitals to all players after regeneration
+            foreach (var actor in world.AllPlayers)
+            {
+                PlayerView.SendVitals(actor);
+            }
         }
 
         if (combatSystem != null && GameTiming.RunsOn(pulse, CombatSystem.TickIntervalPulses))
         {
             // Fire and forget - combat runs on thread pool for template/item lookups
             _ = combatSystem.Tick(world, CancellationToken.None);
+
+            // Send updated vitals to all combatants after combat resolves
+            foreach (var combat in world.AllCombats.Where(c => c.Combatants.Count > 0))
+            {
+                foreach (var combatantId in combat.Combatants)
+                {
+                    if (combatantId.StartsWith("c_"))
+                    {
+                        var charId = Guid.Parse(combatantId.Substring(2));
+                        var actor = world.FindByCharacter(charId);
+                        if (actor != null)
+                        {
+                            PlayerView.SendVitals(actor);
+                        }
+                    }
+                }
+            }
         }
 
         if (pulse > 0 && GameTiming.RunsOn(pulse, GameTiming.AutosavePulses))

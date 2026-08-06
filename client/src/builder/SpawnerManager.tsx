@@ -11,10 +11,13 @@ export function SpawnerManager({ roomKey, zoneKey, onChanged }: Props) {
   const [spawners, setSpawners] = useState<Spawner[]>([])
   const [mobTemplates, setMobTemplates] = useState<MobTemplate[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<string>('')
   const [targetCount, setTargetCount] = useState(1)
   const [respawnSeconds, setRespawnSeconds] = useState(60)
+  const [sentinel, setSentinel] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   // Load spawners for this zone
   useEffect(() => {
@@ -43,6 +46,58 @@ export function SpawnerManager({ roomKey, zoneKey, onChanged }: Props) {
       .catch(() => setMobTemplates([]))
   }, [])
 
+  function startEdit(spawner: Spawner) {
+    setEditingId(spawner.id)
+    setSelectedTemplate(spawner.templateKey)
+    setTargetCount(spawner.targetCount)
+    setRespawnSeconds(spawner.respawnSeconds)
+    setSentinel(spawner.sentinel)
+    setError(null)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setSelectedTemplate('')
+    setTargetCount(1)
+    setRespawnSeconds(60)
+    setSentinel(false)
+  }
+
+  async function saveSpawner() {
+    if (!selectedTemplate) {
+      setError('Select a mob template')
+      return
+    }
+
+    if (!editingId) {
+      setError('No spawner selected for editing')
+      return
+    }
+
+    setBusy(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const updated = await builderApi.updateSpawner(editingId, {
+        templateKey: selectedTemplate,
+        templateKind: 'Mob',
+        targetCount,
+        respawnSeconds,
+        sentinel,
+      })
+      setSpawners(spawners.map((s) => (s.id === editingId ? updated : s)))
+      cancelEdit()
+      setSuccess('Saved!')
+      setTimeout(() => setSuccess(null), 2000)
+      onChanged()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not update spawner.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function addSpawner() {
     if (!selectedTemplate) {
       setError('Select a mob template')
@@ -60,11 +115,13 @@ export function SpawnerManager({ roomKey, zoneKey, onChanged }: Props) {
         roomKeys: [roomKey],
         targetCount,
         respawnSeconds,
+        sentinel,
       })
       setSpawners([...spawners, spawner])
       setSelectedTemplate('')
       setTargetCount(1)
       setRespawnSeconds(60)
+      setSentinel(false)
       onChanged()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create spawner.')
@@ -95,81 +152,173 @@ export function SpawnerManager({ roomKey, zoneKey, onChanged }: Props) {
       <h3>Spawners in this room</h3>
 
       {error && <p className="bad">{error}</p>}
+      {success && <p className="good">{success}</p>}
 
       {spawners.length === 0 ? (
         <p className="dim">No spawners in this room.</p>
       ) : (
         <ul className="spawner-list">
           {spawners.map((spawner) => (
-            <li key={spawner.id}>
+            <li key={spawner.id} className={editingId === spawner.id ? 'editing' : ''}>
               <div className="spawner-info">
                 <strong>{spawner.templateKey}</strong>
                 <span className="dim">
                   {spawner.targetCount}x, respawn {spawner.respawnSeconds}s
                 </span>
               </div>
-              <button
-                type="button"
-                className="bad"
-                onClick={() => void removeSpawner(spawner.id)}
-                disabled={busy}
-              >
-                ×
-              </button>
+              <div className="spawner-actions">
+                <button
+                  type="button"
+                  onClick={() => startEdit(spawner)}
+                  disabled={busy || editingId !== null}
+                  className="info"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="bad"
+                  onClick={() => void removeSpawner(spawner.id)}
+                  disabled={busy || editingId !== null}
+                >
+                  ×
+                </button>
+              </div>
             </li>
           ))}
         </ul>
       )}
 
-      <div className="spawner-form">
-        <label>
-          Mob template
-          <select
-            value={selectedTemplate}
-            onChange={(e) => setSelectedTemplate(e.target.value)}
-            disabled={busy}
+      {editingId && (
+        <div className="spawner-edit-form">
+          <h4>Editing spawner</h4>
+          <label>
+            Mob template
+            <select
+              value={selectedTemplate}
+              onChange={(e) => setSelectedTemplate(e.target.value)}
+              disabled={busy}
+            >
+              <option value="">— Select mob —</option>
+              {mobTemplates.map((template) => (
+                <option key={template.key} value={template.key}>
+                  {template.name || template.key}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Target count
+            <input
+              type="number"
+              value={targetCount}
+              onChange={(e) => setTargetCount(parseInt(e.target.value) || 1)}
+              disabled={busy}
+              min="1"
+            />
+          </label>
+
+          <label>
+            Respawn seconds
+            <input
+              type="number"
+              value={respawnSeconds}
+              onChange={(e) => setRespawnSeconds(parseInt(e.target.value) || 60)}
+              disabled={busy}
+              min="10"
+              step="10"
+            />
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              checked={sentinel}
+              onChange={(e) => setSentinel(e.target.checked)}
+              disabled={busy}
+            />
+            Sentinel (mobs don't wander)
+          </label>
+
+          <div className="spawner-edit-actions">
+            <button
+              type="button"
+              onClick={() => void saveSpawner()}
+              disabled={!selectedTemplate || busy}
+              className="good"
+            >
+              Save
+            </button>
+            <button type="button" onClick={cancelEdit} disabled={busy} className="bad">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!editingId && (
+        <div className="spawner-form">
+          <h4>Add new spawner</h4>
+          <label>
+            Mob template
+            <select
+              value={selectedTemplate}
+              onChange={(e) => setSelectedTemplate(e.target.value)}
+              disabled={busy}
+            >
+              <option value="">— Select mob —</option>
+              {mobTemplates.map((template) => (
+                <option key={template.key} value={template.key}>
+                  {template.name || template.key}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Target count
+            <input
+              type="number"
+              value={targetCount}
+              onChange={(e) => setTargetCount(parseInt(e.target.value) || 1)}
+              disabled={busy}
+              min="1"
+            />
+          </label>
+
+          <label>
+            Respawn seconds
+            <input
+              type="number"
+              value={respawnSeconds}
+              onChange={(e) => setRespawnSeconds(parseInt(e.target.value) || 60)}
+              disabled={busy}
+              min="10"
+              step="10"
+            />
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              checked={sentinel}
+              onChange={(e) => setSentinel(e.target.checked)}
+              disabled={busy}
+            />
+            Sentinel (mobs don't wander)
+          </label>
+
+          <button
+            type="button"
+            onClick={() => void addSpawner()}
+            disabled={!selectedTemplate || busy}
+            className="good"
           >
-            <option value="">— Select mob —</option>
-            {mobTemplates.map((template) => (
-              <option key={template.key} value={template.key}>
-                {template.name || template.key}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Target count
-          <input
-            type="number"
-            value={targetCount}
-            onChange={(e) => setTargetCount(parseInt(e.target.value) || 1)}
-            disabled={busy}
-            min="1"
-          />
-        </label>
-
-        <label>
-          Respawn seconds
-          <input
-            type="number"
-            value={respawnSeconds}
-            onChange={(e) => setRespawnSeconds(parseInt(e.target.value) || 60)}
-            disabled={busy}
-            min="10"
-            step="10"
-          />
-        </label>
-
-        <button
-          type="button"
-          onClick={() => void addSpawner()}
-          disabled={!selectedTemplate || busy}
-          className="good"
-        >
-          Add spawner
-        </button>
-      </div>
+            Add spawner
+          </button>
+        </div>
+      )}
     </div>
   )
 }

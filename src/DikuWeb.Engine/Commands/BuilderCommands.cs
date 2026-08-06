@@ -1,7 +1,10 @@
 using DikuWeb.Domain.Accounts;
+using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Protocol;
+using DikuWeb.Engine.Spawning;
 
 namespace DikuWeb.Engine.Commands;
 
@@ -17,8 +20,21 @@ namespace DikuWeb.Engine.Commands;
 /// </remarks>
 internal static class BuilderCommands
 {
-    public static void Register(List<CommandDefinition> commands)
+    private static IMobTemplateRepository? _mobTemplates;
+    private static IItemTemplateRepository? _itemTemplates;
+    private static MobSpawner? _mobSpawner;
+    private static ItemSpawner? _itemSpawner;
+
+    public static void Register(List<CommandDefinition> commands,
+        IMobTemplateRepository? mobTemplates = null,
+        IItemTemplateRepository? itemTemplates = null,
+        MobSpawner? mobSpawner = null,
+        ItemSpawner? itemSpawner = null)
     {
+        _mobTemplates = mobTemplates;
+        _itemTemplates = itemTemplates;
+        _mobSpawner = mobSpawner;
+        _itemSpawner = itemSpawner;
         // Full words, no prefixes. These are rare, destructive, and share their first letters
         // with movement - "d" must stay "down" forever.
         commands.Add(new CommandDefinition(
@@ -38,6 +54,9 @@ internal static class BuilderCommands
 
         commands.Add(new CommandDefinition(
             "goto", 4, "goto <room-key> - jump anywhere, no exits required (builder)", Goto, Requires: AccountRole.Builder));
+
+        commands.Add(new CommandDefinition(
+            "spawn", 5, "spawn <item|mob> <template-key> - create an item or mob here (builder)", Spawn, Requires: AccountRole.Builder));
     }
 
     private static void Dig(CommandContext ctx)
@@ -286,6 +305,146 @@ internal static class BuilderCommands
     /// Unknown-verb wording rather than "you are not a builder": a player has no business
     /// learning that these commands exist.
     /// </summary>
+    private static void Spawn(CommandContext ctx)
+    {
+        if (!RequireBuilder(ctx))
+        {
+            return;
+        }
+
+        var parts = ctx.Argument.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2)
+        {
+            ctx.Reply("Usage: spawn <item|mob> <template-key>", "bad");
+            return;
+        }
+
+        var type = parts[0].ToLowerInvariant();
+        var templateKey = parts[1];
+
+        if (type == "item")
+        {
+            SpawnItem(ctx, templateKey);
+        }
+        else if (type == "mob")
+        {
+            SpawnMob(ctx, templateKey);
+        }
+        else
+        {
+            ctx.Reply("Spawn what? Use 'item' or 'mob'.", "bad");
+        }
+    }
+
+    private static void SpawnItem(CommandContext ctx, string templateKey)
+    {
+        if (_itemTemplates == null || _itemSpawner == null)
+        {
+            ctx.Reply("Item spawning is not available.", "bad");
+            return;
+        }
+
+        var roomKey = ctx.Actor.RoomKey;
+        var room = ctx.World.FindRoom(roomKey);
+        if (room == null)
+        {
+            ctx.Reply("You are nowhere at all.", "bad");
+            return;
+        }
+
+        var zone = ctx.World.FindZone(room.ZoneKey);
+        var world = zone != null ? ctx.World.FindWorld(zone.WorldKey) : null;
+
+        if (zone == null || world == null)
+        {
+            ctx.Reply("Cannot determine zone/world context.", "bad");
+            return;
+        }
+
+        // Load template (this is sync, so we need to call async version differently)
+        // For now, we'll do this fire-and-forget since builder commands are typed manually
+        _ = SpawnItemAsync(ctx, templateKey, zone, world, roomKey);
+    }
+
+    private static async System.Threading.Tasks.Task SpawnItemAsync(CommandContext ctx, string templateKey,
+        Zone zone, global::DikuWeb.Domain.Worlds.World world, RoomKey roomKey)
+    {
+        try
+        {
+            var template = await _itemTemplates!.GetByKeyAsync(templateKey, System.Threading.CancellationToken.None);
+            if (template == null)
+            {
+                ctx.Reply($"Item template '{templateKey}' not found.", "bad");
+                return;
+            }
+
+            var item = await _itemSpawner!.SpawnAsync(template, zone, world, roomKey);
+            ctx.World.AddItem(item);
+
+            var displayName = $"{template.Icon} {template.Name}";
+            ctx.Reply($"Spawned: {displayName}");
+            ctx.Broadcast($"{ctx.Actor.Name} conjures {displayName}!", "arrival");
+        }
+        catch (Exception ex)
+        {
+            ctx.Reply($"Error spawning item: {ex.Message}", "bad");
+        }
+    }
+
+    private static void SpawnMob(CommandContext ctx, string templateKey)
+    {
+        if (_mobTemplates == null || _mobSpawner == null)
+        {
+            ctx.Reply("Mob spawning is not available.", "bad");
+            return;
+        }
+
+        var roomKey = ctx.Actor.RoomKey;
+        var room = ctx.World.FindRoom(roomKey);
+        if (room == null)
+        {
+            ctx.Reply("You are nowhere at all.", "bad");
+            return;
+        }
+
+        var zone = ctx.World.FindZone(room.ZoneKey);
+        var world = zone != null ? ctx.World.FindWorld(zone.WorldKey) : null;
+
+        if (zone == null || world == null)
+        {
+            ctx.Reply("Cannot determine zone/world context.", "bad");
+            return;
+        }
+
+        // Load template and spawn (fire-and-forget like above)
+        _ = SpawnMobAsync(ctx, templateKey, zone, world, roomKey);
+    }
+
+    private static async System.Threading.Tasks.Task SpawnMobAsync(CommandContext ctx, string templateKey,
+        Zone zone, global::DikuWeb.Domain.Worlds.World world, RoomKey roomKey)
+    {
+        try
+        {
+            var template = await _mobTemplates!.GetByKeyAsync(templateKey, System.Threading.CancellationToken.None);
+            if (template == null)
+            {
+                ctx.Reply($"Mob template '{templateKey}' not found.", "bad");
+                return;
+            }
+
+            var mob = await _mobSpawner!.SpawnAsync(template, zone, world, roomKey);
+            ctx.World.AddMob(mob);
+
+            var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
+            ctx.Reply($"Spawned: {template.Icon} {displayName} (level {template.Level})");
+            ctx.Broadcast($"{ctx.Actor.Name} conjures {displayName}!", "arrival");
+        }
+        catch (Exception ex)
+        {
+            ctx.Reply($"Error spawning mob: {ex.Message}", "bad");
+        }
+    }
+
     private static bool RequireBuilder(CommandContext ctx)
     {
         if (ctx.Actor.IsBuilder)
