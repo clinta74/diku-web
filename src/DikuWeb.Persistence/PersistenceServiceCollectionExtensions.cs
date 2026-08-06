@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace DikuWeb.Persistence;
 
@@ -15,12 +16,18 @@ public static class PersistenceServiceCollectionExtensions
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
+        // Create and configure the Npgsql data source
+        var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
+        // Enable dynamic JSON serialization for Dictionary<string, object> types (used in mob templates, etc)
+        dataSourceBuilder.EnableDynamicJson();
+        var dataSource = dataSourceBuilder.Build();
+
         // Pooled factory for all database access, including HTTP-scoped and background services.
         // Singleton repositories and the game loop use this to create DbContexts on demand.
         services.AddPooledDbContextFactory<DikuWebDbContext>(options =>
             options.UseNpgsql(
-                connectionString,
-                npgsql => npgsql.MigrationsAssembly(typeof(DikuWebDbContext).Assembly.GetName().Name)));
+                dataSource,
+                builder => builder.MigrationsAssembly(typeof(DikuWebDbContext).Assembly.GetName().Name)));
 
         return services;
     }

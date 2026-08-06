@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Npgsql;
 
 namespace DikuWeb.Persistence;
 
@@ -19,8 +20,14 @@ internal sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<D
             Environment.GetEnvironmentVariable("ConnectionStrings__DikuWeb")
             ?? FallbackConnectionString;
 
+        // Create and configure the Npgsql data source
+        var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+        // Enable dynamic JSON serialization for Dictionary<string, object> types (used in mob templates, etc)
+        dataSourceBuilder.EnableDynamicJson();
+        var dataSource = dataSourceBuilder.Build();
+
         var options = new DbContextOptionsBuilder<DikuWebDbContext>()
-            .UseNpgsql(connectionString)
+            .UseNpgsql(dataSource)
             .Options;
 
         return new DikuWebDbContext(options);
