@@ -2,6 +2,7 @@ using System.Diagnostics;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Commands;
+using DikuWeb.Engine.Quests;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
@@ -35,6 +36,8 @@ public sealed class GameLoop(
     ICharacterSaveQueue saveQueue,
     IAbilityRepository? abilityRepository,
     AbilityCache? abilityCache,
+    IQuestRepository? questRepository,
+    QuestCache? questCache,
     SpawnerSystem? spawnerSystem,
     MobAiSystem? mobAiSystem,
     CombatSystem? combatSystem,
@@ -58,6 +61,12 @@ public sealed class GameLoop(
         if (abilityRepository != null && abilityCache != null)
         {
             await abilityCache.LoadAsync(abilityRepository, stoppingToken);
+        }
+
+        // Load quest cache for synchronous lookups during quest commands
+        if (questRepository != null && questCache != null)
+        {
+            await questCache.LoadAsync(questRepository, stoppingToken);
         }
 
         EngineLog.LoopStarting(logger, world.RoomCount, GameTiming.PulseInterval.TotalMilliseconds);
@@ -294,6 +303,12 @@ public sealed class GameLoop(
             existing.Output = message.Output;
             existing.LinkDeadSincePulse = 0;
 
+            // Reload quests in case they changed while link-dead
+            if (message.Quests.Count > 0)
+            {
+                world.LoadCharacterQuests(existing.Character.Id, message.Quests);
+            }
+
             if (wasLinkDead)
             {
                 existing.SendSys("Reconnected.", SysKinds.Info);
@@ -329,6 +344,12 @@ public sealed class GameLoop(
         };
 
         world.Add(actor);
+
+        // Load character's quests from the message
+        if (message.Quests.Count > 0)
+        {
+            world.LoadCharacterQuests(character.Id, message.Quests);
+        }
 
         actor.SendSys($"Welcome to Aldenmoor, {actor.Name}.", SysKinds.Info);
         PlayerView.SendVitals(actor);

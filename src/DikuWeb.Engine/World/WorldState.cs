@@ -3,6 +3,7 @@ using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
+using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Randomness;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Abilities;
@@ -31,6 +32,7 @@ public sealed class WorldState(IRandomSource random)
     private readonly CastQueueService _castQueue = new();
     private readonly Dictionary<(Guid CharacterId, string AbilityKey), long> _abilityCooldowns = [];
     private readonly Dictionary<Guid, List<ActiveEffect>> _activeEffects = [];
+    private readonly Dictionary<Guid, Dictionary<string, CharacterQuest>> _questsByCharacter = [];
 
     public IRandomSource Random => _random;
 
@@ -484,4 +486,48 @@ public sealed class WorldState(IRandomSource random)
 
     /// <summary>Get a mob by ID.</summary>
     public Mob? GetMob(Guid mobId) => FindMob(mobId);
+
+    /// <summary>Load quests for a character from the repository result (called on EnterWorld).</summary>
+    public void LoadCharacterQuests(Guid characterId, IEnumerable<CharacterQuest> quests)
+    {
+        if (!_questsByCharacter.TryGetValue(characterId, out var questDict))
+        {
+            questDict = [];
+            _questsByCharacter[characterId] = questDict;
+        }
+
+        foreach (var quest in quests)
+        {
+            questDict[quest.QuestKey] = quest;
+        }
+    }
+
+    /// <summary>Get all quests for a character, grouped by status.</summary>
+    public IReadOnlyList<CharacterQuest> QuestsFor(Guid characterId) =>
+        _questsByCharacter.TryGetValue(characterId, out var quests) ? quests.Values.ToList() : [];
+
+    /// <summary>Get the state of a specific quest for a character, or null if not started.</summary>
+    public CharacterQuest? GetQuestState(Guid characterId, string questKey)
+    {
+        if (_questsByCharacter.TryGetValue(characterId, out var quests))
+        {
+            quests.TryGetValue(questKey, out var quest);
+            return quest;
+        }
+        return null;
+    }
+
+    /// <summary>Set or update the state of a quest for a character.</summary>
+    public void SetQuestState(Guid characterId, string questKey, CharacterQuest quest)
+    {
+        ArgumentNullException.ThrowIfNull(quest);
+
+        if (!_questsByCharacter.TryGetValue(characterId, out var quests))
+        {
+            quests = [];
+            _questsByCharacter[characterId] = quests;
+        }
+
+        quests[questKey] = quest;
+    }
 }

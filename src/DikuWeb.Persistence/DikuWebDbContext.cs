@@ -4,6 +4,7 @@ using DikuWeb.Domain.Building;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
+using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,10 @@ public sealed class DikuWebDbContext(DbContextOptions<DikuWebDbContext> options)
     public DbSet<Mob> Mobs => Set<Mob>();
 
     public DbSet<Spawner> Spawners => Set<Spawner>();
+
+    public DbSet<Quest> Quests => Set<Quest>();
+
+    public DbSet<CharacterQuest> CharacterQuests => Set<CharacterQuest>();
 
     public DbSet<ContentAudit> ContentAudits => Set<ContentAudit>();
 

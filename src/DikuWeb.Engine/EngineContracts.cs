@@ -3,6 +3,7 @@ using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
+using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 
@@ -82,6 +83,31 @@ public interface IAbilityRepository
     Task<Ability?> GetByKeyAsync(string key, CancellationToken ct);
     Task<IReadOnlyList<Ability>> GetAllAsync(CancellationToken ct);
 }
+
+public interface IQuestRepository
+{
+    Task<Quest?> GetByKeyAsync(string key, CancellationToken ct);
+    Task<IReadOnlyList<Quest>> GetAllAsync(CancellationToken ct);
+}
+
+public interface ICharacterQuestRepository
+{
+    Task<IReadOnlyList<CharacterQuest>> GetForCharacterAsync(Guid characterId, CancellationToken ct);
+    Task<CharacterQuest?> GetByKeyAsync(Guid characterId, string questKey, CancellationToken ct);
+}
+
+public interface ICharacterQuestSaveQueue
+{
+    void Enqueue(CharacterQuestSnapshot snapshot);
+}
+
+public sealed record CharacterQuestSnapshot(
+    Guid CharacterId,
+    string QuestKey,
+    DikuWeb.Domain.Quests.QuestStatus Status,
+    DateTimeOffset StartedAt,
+    DateTimeOffset? CompletedAt,
+    int TimesCompleted);
 
 /// <summary>An immutable copy of the persistable state of a character, taken on the game loop thread.</summary>
 public sealed record CharacterSnapshot(

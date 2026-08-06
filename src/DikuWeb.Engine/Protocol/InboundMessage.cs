@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Quests;
 using DikuWeb.Engine.Mutations;
 
 namespace DikuWeb.Engine.Protocol;
@@ -42,6 +43,12 @@ public sealed record EnterWorld : SessionMessage
     /// a database read on the loop thread is forbidden anyway (PLAN.md §2.1).
     /// </summary>
     public AccountRole Role { get; init; } = AccountRole.Player;
+
+    /// <summary>
+    /// Character's active and completed quests, loaded from the database by the Server.
+    /// Empty by default; the Server populates this if quest support is enabled.
+    /// </summary>
+    public IReadOnlyList<CharacterQuest> Quests { get; init; } = [];
 }
 
 public sealed record PlayerCommand : SessionMessage
