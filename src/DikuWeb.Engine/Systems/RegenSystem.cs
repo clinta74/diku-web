@@ -1,4 +1,5 @@
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Combat;
 using DikuWeb.Engine.World;
 
 namespace DikuWeb.Engine.Systems;
@@ -23,6 +24,11 @@ public static class RegenSystem
         foreach (var actor in world.AllPlayers)
         {
             var character = actor.Character;
+
+            // Skip regen while fighting (PLAN.md §4.5)
+            if (character.CombatState == CombatState.Fighting)
+                continue;
+
             var vitalityModifier = character.Attributes.VitalityModifier;
 
             var regenApplied = RegenCalculator.ApplyRegen(

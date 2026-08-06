@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Randomness;
 using DikuWeb.Domain.Worlds;
@@ -59,6 +60,12 @@ public sealed class MobAiSystem(
         if (ShouldWander(mob, template, room, pulse))
         {
             TryWander(world, roomKey, mob, room, template);
+        }
+
+        // Aggression: attack valid targets in the room
+        if (ShouldAggress(mob, template, roomKey, world))
+        {
+            TryAggress(world, roomKey, mob, template);
         }
     }
 
@@ -155,6 +162,57 @@ public sealed class MobAiSystem(
 
             SetMobStateLong(mob, "lastWanderPulse", clock.CurrentPulse);
             return;
+        }
+    }
+
+    private bool ShouldAggress(Mob mob, MobTemplate template, RoomKey roomKey, WorldState world)
+    {
+        // Check if mob is already in combat
+        if (mob.CombatState == CombatState.Fighting)
+            return false;
+
+        // Check if mob is aggressive in its behavior
+        if (!template.Behavior.TryGetValue("type", out var typeObj) || typeObj?.ToString() != "aggressive")
+            return false;
+
+        // Check if room is peaceful (forbids all combat)
+        if (world.IsFlagSet(roomKey, RoomFlags.Peaceful))
+            return false;
+
+        // At least one player must be in the room
+        return world.OccupantsOf(roomKey).Count > 0;
+    }
+
+    private void TryAggress(WorldState world, RoomKey roomKey, Mob mob, MobTemplate template)
+    {
+        // Find first valid player target
+        var occupants = world.OccupantsOf(roomKey).ToList();
+        var target = occupants.FirstOrDefault();
+        if (target == null)
+            return;
+
+        // Initiate combat
+        var targetId = $"c_{target.CharacterId}";
+        var mobId = $"m_{mob.Id}";
+
+        var combat = world.GetOrCreateCombat(roomKey);
+        combat.AddCombatant(mobId);
+        combat.AddCombatant(targetId);
+
+        // Seed hate list so GetTopHater works on first tick
+        combat.AddToHateList(mobId, targetId, 1);
+
+        mob.CombatState = CombatState.Fighting;
+        mob.CurrentTarget = targetId;
+
+        target.Character.CombatState = CombatState.Fighting;
+        // Note: Don't set target.Character.CurrentTarget — player must `kill` to fight back
+
+        target.SendText($"{template.Name} attacks you!", "combat");
+        foreach (var other in world.OccupantsOf(roomKey))
+        {
+            if (other.CharacterId != target.CharacterId)
+                other.SendText($"{template.Name} attacks {target.Name}!", "combat");
         }
     }
 

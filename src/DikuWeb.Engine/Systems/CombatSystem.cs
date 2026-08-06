@@ -2,6 +2,7 @@ using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.World;
 using DomainCombatSystem = DikuWeb.Domain.Combat.CombatSystem;
 
@@ -11,7 +12,7 @@ namespace DikuWeb.Engine.Systems;
 /// Combat tick system: 8 pulses = 2 seconds per round.
 /// Runs attack resolution, damage application, and combat cleanup.
 /// </summary>
-public sealed class CombatSystem
+public sealed class CombatSystem(EngineOptions options, IMobTemplateRepository? mobTemplates = null, IItemTemplateRepository? itemTemplates = null, ItemSpawner? itemSpawner = null)
 {
     public const int TickIntervalPulses = 8; // 2 seconds at 250 ms/pulse
 
@@ -35,17 +36,19 @@ public sealed class CombatSystem
                 ResolveAttack(world, combat, combatantId);
             }
 
-            // Remove dead combatants
+            // Handle death and remove dead combatants
             var deadCombatants = new List<string>();
             foreach (var combatantId in combat.Combatants)
             {
+                bool isDead = false;
                 if (combatantId.StartsWith("c_"))
                 {
                     var charId = Guid.Parse(combatantId.Substring(2));
                     var character = world.GetCharacter(charId);
                     if (character?.Vitals.Health <= 0)
                     {
-                        deadCombatants.Add(combatantId);
+                        isDead = true;
+                        HandleCharacterDeath(world, combat, character, combatantId);
                     }
                 }
                 else if (combatantId.StartsWith("m_"))
@@ -54,8 +57,13 @@ public sealed class CombatSystem
                     var mob = world.GetMob(mobId);
                     if (mob?.Vitals.Health <= 0)
                     {
-                        deadCombatants.Add(combatantId);
+                        isDead = true;
+                        HandleMobDeath(world, combat, mob, combatantId);
                     }
+                }
+                if (isDead)
+                {
+                    deadCombatants.Add(combatantId);
                 }
             }
 
@@ -283,6 +291,108 @@ public sealed class CombatSystem
     {
         // Combat is active if there are at least 2 combatants (allows PvP and PvE)
         return combat.Combatants.Count >= 2;
+    }
+
+    private void HandleCharacterDeath(WorldState world, Combat combat, Character character, string combatantId)
+    {
+        var actor = world.FindByCharacter(character.Id);
+        if (actor == null) return;
+
+        // Determine if this was a PvP kill
+        var killerType = CombatantType.Mob;
+        foreach (var other in combat.Combatants)
+        {
+            if (other == combatantId) continue;
+            if (other.StartsWith("c_"))
+            {
+                killerType = CombatantType.Player;
+                break;
+            }
+        }
+
+        bool isPvpDeath = killerType == CombatantType.Player;
+
+        // Apply XP loss (PLAN.md §4.12)
+        if (character.Level >= options.XpLossMinLevel && (!isPvpDeath || options.PvpCostsXp))
+        {
+            var xpBand = DikuWeb.Domain.Characters.XpProgression.XpForLevel(character.Level + 1) -
+                         DikuWeb.Domain.Characters.XpProgression.XpForLevel(character.Level);
+            var xpLoss = (long)Math.Round(xpBand * options.XpLossPercent);
+            var levelThreshold = DikuWeb.Domain.Characters.XpProgression.XpForLevel(character.Level);
+            character.Xp = Math.Max(levelThreshold, character.Xp - xpLoss);
+        }
+
+        // Resolve respawn location
+        var respawnRoom = character.RespawnRoomKey ?? options.StartingRoom;
+        if (world.FindRoom(respawnRoom) == null)
+            respawnRoom = options.StartingRoom;
+
+        // Move and reset vitals
+        world.Move(actor, respawnRoom);
+        character.Vitals.Health = Math.Max(1, (int)(character.Vitals.HealthMax * options.RespawnHealthPercent));
+        character.Vitals.Focus = 0;
+        character.Vitals.Stamina = 0;
+        character.CombatState = CombatState.Idle;
+        character.CurrentTarget = null;
+
+        // Narrate at death location and respawn location
+        var deathRoom = combat.RoomKey;
+        foreach (var occupant in world.OccupantsOf(deathRoom))
+        {
+            if (occupant.CharacterId != character.Id)
+                occupant.SendText($"{actor.Name} falls.", "death");
+        }
+        actor.SendText($"You died. Respawned at {respawnRoom}.", "death");
+        foreach (var occupant in world.OccupantsOf(respawnRoom))
+        {
+            if (occupant.CharacterId != character.Id)
+                occupant.SendText($"{actor.Name} appears.", "arrival");
+        }
+    }
+
+    private void HandleMobDeath(WorldState world, Combat combat, Mob mob, string combatantId)
+    {
+        // Find the top damager (killer)
+        var killerId = combat.GetTopHater(combatantId);
+        if (killerId == null) return;
+
+        // Extract killer's character if it's a player
+        Character? killerChar = null;
+        if (killerId.StartsWith("c_"))
+        {
+            var killCharId = Guid.Parse(killerId.Substring(2));
+            killerChar = world.GetCharacter(killCharId);
+        }
+
+        // Award XP to killer
+        if (killerChar != null)
+        {
+            killerChar.Xp += mob.ResolvedXp;
+            // Level up loop
+            while (DikuWeb.Domain.Characters.CharacterProgression.TryLevelUp(
+                killerChar.Level, killerChar.Xp, killerChar.Attributes, killerChar.Path, killerChar.Vitals) is var result && result != null)
+            {
+                killerChar.Level = result.NewLevel;
+                killerChar.Attributes = result.NewAttributes;
+                killerChar.Vitals = result.NewVitals;
+                var actor = world.FindByCharacter(killerChar.Id);
+                if (actor != null)
+                    actor.SendText($"You advance to level {result.NewLevel}!", "levelup");
+            }
+
+            // Award gold
+            killerChar.Gold += mob.ResolvedGold;
+        }
+
+        // Roll loot (basic: just roll against each entry's chance)
+        if (mobTemplates != null && itemTemplates != null && itemSpawner != null)
+        {
+            // Note: This would need async support; for MVP, skip loot rolling
+            // TODO: implement loot rolling via ItemSpawner
+        }
+
+        // Remove mob from world
+        world.RemoveMob(mob);
     }
 
     private void EndCombatFor(WorldState world, string combatantId)

@@ -16,6 +16,9 @@ public static class CombatCommands
 
         commands.Add(new CommandDefinition(
             "flee", 1, "flee (f) - attempt to escape combat", Flee));
+
+        commands.Add(new CommandDefinition(
+            "bind", 0, "bind (b) - set respawn point in this room", Bind));
     }
 
     private static void Kill(CommandContext ctx)
@@ -175,5 +178,21 @@ public static class CombatCommands
         character.CombatState = CombatState.Fleeing;
         ctx.Reply("You attempt to flee!");
         ctx.Broadcast($"{ctx.Actor.Name} attempts to flee!");
+    }
+
+    private static void Bind(CommandContext ctx)
+    {
+        var character = ctx.Actor.Character;
+
+        // Check if room allows binding
+        if (!ctx.World.IsFlagSet(character.RoomKey, RoomFlags.Respawn))
+        {
+            ctx.Reply("You cannot bind your soul in this place.");
+            return;
+        }
+
+        character.RespawnRoomKey = character.RoomKey;
+        ctx.Reply($"You bind your soul to this place: {character.RoomKey}");
+        ctx.Broadcast($"{ctx.Actor.Name} binds their soul here.");
     }
 }
