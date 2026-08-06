@@ -432,6 +432,12 @@ public sealed class GameLoop(
             return;
         }
 
+        // Refresh any rooms marked for update by the command handler
+        foreach (var roomKey in context.RoomsToRefresh)
+        {
+            view.RefreshRoom(world, roomKey);
+        }
+
         if (context.LeaveRequested is { } reason)
         {
             RemovePlayer(actor, reason);

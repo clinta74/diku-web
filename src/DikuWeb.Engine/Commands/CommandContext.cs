@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
@@ -45,7 +46,13 @@ public sealed class CommandContext
     /// <summary>Set by a handler to have the loop remove this player after the command.</summary>
     public LeaveReason? LeaveRequested { get; set; }
 
+    /// <summary>Rooms marked for refresh after command completes.</summary>
+    internal HashSet<RoomKey> RoomsToRefresh { get; } = [];
+
     public bool HasArgument => !string.IsNullOrWhiteSpace(Argument);
+
+    /// <summary>Mark a room to be refreshed for all occupants after this command completes.</summary>
+    public void MarkRoomForRefresh(RoomKey roomKey) => RoomsToRefresh.Add(roomKey);
 
     public void Reply(string text) => Actor.SendText(text);
 
