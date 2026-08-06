@@ -12,6 +12,7 @@ using DikuWeb.Server.Building;
 using DikuWeb.Server.Characters;
 using DikuWeb.Server.Game;
 using DikuWeb.Server.Infrastructure;
+using DikuWeb.Server.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
@@ -42,6 +43,8 @@ builder.Services.AddSingleton<IMobTemplateRepository, EfMobTemplateRepository>()
 builder.Services.AddSingleton<IItemTemplateRepository, EfItemTemplateRepository>();
 builder.Services.AddSingleton<ISpawnerRepository, EfSpawnerRepository>();
 builder.Services.AddSingleton<IAbilityRepository, EfAbilityRepository>();
+builder.Services.AddSingleton<IQuestRepository, EfQuestRepository>();
+builder.Services.AddSingleton<ICharacterQuestRepository, EfCharacterQuestRepository>();
 
 builder.Services.AddSingleton<EffectRegistry>();
 

@@ -4,6 +4,7 @@ using DikuWeb.Engine.Commands;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
+using DikuWeb.Engine.Quests;
 using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.Systems;
 using DikuWeb.Engine.Time;
@@ -53,9 +54,10 @@ public static class EngineServiceCollectionExtensions
         // Phase 4 systems (combat, progression)
         services.AddSingleton<CombatSystem>();
 
-        // Phase 5 systems (abilities)
+        // Phase 5 systems (abilities, quests)
         services.AddSingleton<AbilityCache>();
         services.AddSingleton<AbilitySystem>();
+        services.AddSingleton<QuestCache>();
 
         // Game loop - wired once all systems are available
         services.AddHostedService<GameLoop>();
