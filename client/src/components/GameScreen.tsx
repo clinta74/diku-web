@@ -163,8 +163,7 @@ function RoomPanel({
         {displayItems.map(({ entry, count }) => (
           <li key={entry.keyword}>
             <button type="button" onClick={() => onKeyword(entry.keyword)}>
-              <span className="glyph">{entry.icon}</span> {entry.keyword}
-              {entry.label !== entry.keyword && <> {entry.label}</>}
+              <span className="glyph">{entry.icon}</span> {entry.label}
               {count > 1 && <span className="dim"> ×{count}</span>}
             </button>
           </li>
