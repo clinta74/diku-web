@@ -91,7 +91,7 @@ public sealed class SpawnerSystem(
                 world.AddMob(mob);
 
                 // Narrate spawn to room occupants
-                var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+                var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
                 foreach (var occupant in world.OccupantsOf(room))
                 {
                     occupant.SendText($"{NarrationHelper.WithArticle(displayName)} appears.", "arrival");
@@ -135,6 +135,13 @@ public sealed class SpawnerSystem(
             var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
             var item = await itemSpawner.SpawnAsync(template, zone, worldEnt, room, ct);
             world.AddItem(item);
+
+            // Narrate spawn to room occupants
+            var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
+            foreach (var occupant in world.OccupantsOf(room))
+            {
+                occupant.SendText($"{NarrationHelper.WithArticle(displayName)} appears.", "arrival");
+            }
         }
     }
 }

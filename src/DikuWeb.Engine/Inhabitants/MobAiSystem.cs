@@ -139,11 +139,11 @@ public sealed class MobAiSystem(
             }
 
             // Valid destination found: move the mob
-            // Notify in source room
+            // Notify in source room with direction
             var fromOccupants = world.OccupantsOf(fromRoomKey);
             foreach (var player in fromOccupants)
             {
-                player.SendText($"{template.Name} leaves.", "movement");
+                player.SendText($"{template.Name} leaves {exit.Direction.ToLowerName()}.", "movement");
             }
 
             // Move the mob
@@ -153,7 +153,7 @@ public sealed class MobAiSystem(
             var toOccupants = world.OccupantsOf(exit.ToRoomKey);
             foreach (var player in toOccupants)
             {
-                player.SendText($"{template.Name} arrives.", "movement");
+                player.SendText($"{template.Name} arrives from the {exit.Direction.Opposite().ToLowerName()}.", "movement");
             }
 
             // Update map for both rooms
