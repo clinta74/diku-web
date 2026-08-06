@@ -499,10 +499,11 @@ public sealed class CombatSystem(
 
         // Narrate mob death to the room
         var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+        var deathProse = NarrationHelper.BuildSentence(displayName, "falls.");
         var mobRoomKey = RoomKey.Parse(mob.RoomKey);
         foreach (var occupant in world.OccupantsOf(mobRoomKey))
         {
-            occupant.SendText($"{NarrationHelper.WithArticle(displayName)} falls.", "death");
+            occupant.SendText(deathProse, "death");
         }
 
         // Remove mob from world
