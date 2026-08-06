@@ -70,7 +70,8 @@ public sealed class RoomLayoutService
                 isViewer ? "@" : actor.Icon,
                 x,
                 y,
-                isViewer ? "you" : actor.Name));
+                isViewer ? "you" : actor.Name,
+                "player"));
         }
 
         // Mobs, sorted by their ID for stability.
@@ -86,7 +87,7 @@ public sealed class RoomLayoutService
             var (x, y) = placeable[index];
             var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
             var icon = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey[0].ToString() : displayName[0].ToString();
-            entities.Add(new MapEntity(entityId, icon, x, y, displayName));
+            entities.Add(new MapEntity(entityId, icon, x, y, displayName, "mob"));
         }
 
         // Items, sorted by their ID for stability.
@@ -101,7 +102,7 @@ public sealed class RoomLayoutService
 
             var (x, y) = placeable[index];
             var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
-            entities.Add(new MapEntity(entityId, item.Icon, x, y, displayName));
+            entities.Add(new MapEntity(entityId, item.Icon, x, y, displayName, "item"));
         }
 
         return new MapPayload(width, height, terrain, entities);

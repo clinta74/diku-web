@@ -104,17 +104,21 @@ function MapPanel({ map }: { map: MapPayload | null }) {
     }
   }
 
+  const items = map.entities.filter((entity) => entity.type === 'item')
+
   return (
     <section className="panel map-panel">
       <h2>Room map</h2>
       <pre className="map">{rows.map((row) => row.join('')).join('\n')}</pre>
-      <ul className="legend">
-        {map.entities.map((entity) => (
-          <li key={entity.id}>
-            <span className="glyph">{entity.icon}</span> {entity.label}
-          </li>
-        ))}
-      </ul>
+      {items.length > 0 && (
+        <ul className="legend">
+          {items.map((entity) => (
+            <li key={entity.id}>
+              <span className="glyph">{entity.icon}</span> {entity.label}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }
@@ -132,6 +136,19 @@ function RoomPanel({
   contents: ContentEntry[]
   onKeyword: (keyword: string) => void
 }) {
+  // Group items by keyword and count duplicates
+  const grouped = new Map<string, { entry: ContentEntry; count: number }>()
+  for (const entry of contents) {
+    const existing = grouped.get(entry.keyword)
+    if (existing) {
+      existing.count += 1
+    } else {
+      grouped.set(entry.keyword, { entry, count: 1 })
+    }
+  }
+
+  const displayItems = Array.from(grouped.values())
+
   return (
     <section className="panel room-panel">
       <h1 className="room-title">{title}</h1>
@@ -142,11 +159,12 @@ function RoomPanel({
 
       <h2>Here</h2>
       <ul className="contents">
-        {contents.length === 0 && <li className="dim">Nobody else.</li>}
-        {contents.map((entry) => (
+        {displayItems.length === 0 && <li className="dim">Nobody else.</li>}
+        {displayItems.map(({ entry, count }) => (
           <li key={entry.keyword}>
             <button type="button" onClick={() => onKeyword(entry.keyword)}>
               <span className="glyph">{entry.icon}</span> {entry.label}
+              {count > 1 && <span className="dim"> ×{count}</span>}
             </button>
           </li>
         ))}

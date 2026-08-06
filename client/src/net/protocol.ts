@@ -25,6 +25,7 @@ export interface MapEntity {
   x: number
   y: number
   label: string
+  type?: 'mob' | 'player' | 'item'
 }
 
 export interface MapPayload {

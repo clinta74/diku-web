@@ -35,7 +35,7 @@ public sealed record RoomPayload(
     string Description,
     IReadOnlyList<string> Exits);
 
-public sealed record MapEntity(string Id, string Icon, int X, int Y, string Label);
+public sealed record MapEntity(string Id, string Icon, int X, int Y, string Label, string Type = "mob");
 
 public sealed record MapPayload(
     int W,
