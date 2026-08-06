@@ -320,8 +320,7 @@ public sealed class CommandRegistry
         }
 
         var items = ctx.World.ItemsIn(ctx.Actor.RoomKey);
-        var targetItem = items.FirstOrDefault(i =>
-            i.TemplateKey.Equals(ctx.Argument, StringComparison.OrdinalIgnoreCase));
+        var targetItem = FindItemByName(items, ctx.Argument);
 
         if (targetItem is null)
         {
@@ -331,8 +330,8 @@ public sealed class CommandRegistry
 
         ctx.World.PickUpItem(targetItem, ctx.Actor.CharacterId);
 
-        ctx.Reply($"You take the {ctx.Argument}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} takes the {ctx.Argument}.", "movement");
+        ctx.Reply($"You take the {targetItem.TemplateName}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} takes the {targetItem.TemplateName}.", "movement");
     }
 
     private static void Drop(CommandContext ctx)
@@ -344,8 +343,7 @@ public sealed class CommandRegistry
         }
 
         var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
-        var targetItem = inventory.FirstOrDefault(i =>
-            i.TemplateKey.Equals(ctx.Argument, StringComparison.OrdinalIgnoreCase));
+        var targetItem = FindItemByName(inventory, ctx.Argument);
 
         if (targetItem is null)
         {
@@ -355,8 +353,8 @@ public sealed class CommandRegistry
 
         ctx.World.DropItem(targetItem, ctx.Actor.RoomKey);
 
-        ctx.Reply($"You drop the {ctx.Argument}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} drops the {ctx.Argument}.", "movement");
+        ctx.Reply($"You drop the {targetItem.TemplateName}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} drops the {targetItem.TemplateName}.", "movement");
     }
 
     private static void Wear(CommandContext ctx)
@@ -368,8 +366,7 @@ public sealed class CommandRegistry
         }
 
         var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
-        var targetItem = inventory.FirstOrDefault(i =>
-            i.TemplateKey.Equals(ctx.Argument, StringComparison.OrdinalIgnoreCase));
+        var targetItem = FindItemByName(inventory, ctx.Argument);
 
         if (targetItem is null)
         {
@@ -379,7 +376,7 @@ public sealed class CommandRegistry
 
         if (targetItem.EquippedSlot is not null)
         {
-            ctx.Reply($"You're already wearing the {ctx.Argument}.", "bad");
+            ctx.Reply($"You're already wearing the {targetItem.TemplateName}.", "bad");
             return;
         }
 
@@ -388,8 +385,8 @@ public sealed class CommandRegistry
         var slot = ItemSlot.Chest; // Placeholder logic
         ctx.World.EquipItem(targetItem, slot);
 
-        ctx.Reply($"You wear the {ctx.Argument}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} wears the {ctx.Argument}.", "movement");
+        ctx.Reply($"You wear the {targetItem.TemplateName}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} wears the {targetItem.TemplateName}.", "movement");
     }
 
     private static void Wield(CommandContext ctx)
@@ -401,8 +398,7 @@ public sealed class CommandRegistry
         }
 
         var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
-        var targetItem = inventory.FirstOrDefault(i =>
-            i.TemplateKey.Equals(ctx.Argument, StringComparison.OrdinalIgnoreCase));
+        var targetItem = FindItemByName(inventory, ctx.Argument);
 
         if (targetItem is null)
         {
@@ -412,14 +408,14 @@ public sealed class CommandRegistry
 
         if (targetItem.EquippedSlot is not null)
         {
-            ctx.Reply($"You're already wielding the {ctx.Argument}.", "bad");
+            ctx.Reply($"You're already wielding the {targetItem.TemplateName}.", "bad");
             return;
         }
 
         ctx.World.EquipItem(targetItem, ItemSlot.MainHand);
 
-        ctx.Reply($"You wield the {ctx.Argument}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} wields the {ctx.Argument}.", "movement");
+        ctx.Reply($"You wield the {targetItem.TemplateName}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} wields the {targetItem.TemplateName}.", "movement");
     }
 
     private static void Remove(CommandContext ctx)
@@ -431,8 +427,7 @@ public sealed class CommandRegistry
         }
 
         var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
-        var targetItem = inventory.FirstOrDefault(i =>
-            i.TemplateKey.Equals(ctx.Argument, StringComparison.OrdinalIgnoreCase));
+        var targetItem = FindItemByName(inventory, ctx.Argument);
 
         if (targetItem is null)
         {
@@ -442,14 +437,14 @@ public sealed class CommandRegistry
 
         if (targetItem.EquippedSlot is null)
         {
-            ctx.Reply($"You're not wearing the {ctx.Argument}.", "bad");
+            ctx.Reply($"You're not wearing the {targetItem.TemplateName}.", "bad");
             return;
         }
 
         ctx.World.UnequipItem(targetItem);
 
-        ctx.Reply($"You remove the {ctx.Argument}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} removes the {ctx.Argument}.", "movement");
+        ctx.Reply($"You remove the {targetItem.TemplateName}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} removes the {targetItem.TemplateName}.", "movement");
     }
 
     private static void Give(CommandContext ctx)
@@ -471,8 +466,7 @@ public sealed class CommandRegistry
         var targetName = parts[1];
 
         var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
-        var targetItem = inventory.FirstOrDefault(i =>
-            i.TemplateKey.Equals(itemName, StringComparison.OrdinalIgnoreCase));
+        var targetItem = FindItemByName(inventory, itemName);
 
         if (targetItem is null)
         {
@@ -481,7 +475,7 @@ public sealed class CommandRegistry
         }
 
         // Check for NPC quest turn-in first (PLAN.md §5.2b)
-        if (QuestCommands.TryTurnInQuest(ctx, itemName, targetName))
+        if (QuestCommands.TryTurnInQuest(ctx, targetItem.TemplateKey, targetName))
         {
             return;
         }
@@ -501,9 +495,9 @@ public sealed class CommandRegistry
 
         ctx.World.PickUpItem(targetItem, targetPlayer.CharacterId);
 
-        ctx.Reply($"You give the {itemName} to {targetPlayer.Name}.", "good");
-        targetPlayer.SendText($"{ctx.Actor.Name} gives you the {itemName}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} gives the {itemName} to {targetPlayer.Name}.", "movement");
+        ctx.Reply($"You give the {targetItem.TemplateName} to {targetPlayer.Name}.", "good");
+        targetPlayer.SendText($"{ctx.Actor.Name} gives you the {targetItem.TemplateName}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} gives the {targetItem.TemplateName} to {targetPlayer.Name}.", "movement");
     }
 
     private static void Emote(CommandContext ctx)
@@ -582,6 +576,22 @@ public sealed class CommandRegistry
         }
 
         ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
+    }
+
+    private static ItemInstance? FindItemByName(IEnumerable<ItemInstance> items, string name)
+    {
+        var comparison = StringComparison.OrdinalIgnoreCase;
+
+        // Try matching by TemplateName first (display name)
+        var byName = items.FirstOrDefault(i =>
+            !string.IsNullOrEmpty(i.TemplateName) &&
+            i.TemplateName.Equals(name, comparison));
+
+        if (byName is not null)
+            return byName;
+
+        // Fall back to TemplateKey match (for backwards compatibility with key-based input)
+        return items.FirstOrDefault(i => i.TemplateKey.Equals(name, comparison));
     }
 
     private static bool IsDirection(string name) =>
