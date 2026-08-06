@@ -384,6 +384,7 @@ internal static class BuilderCommands
             var displayName = $"{template.Icon} {template.Name}";
             ctx.Reply($"Spawned: {displayName}");
             ctx.Broadcast($"{ctx.Actor.Name} conjures {displayName}!", "arrival");
+            ctx.View.RefreshRoom(ctx.World, roomKey);
         }
         catch (Exception ex)
         {
@@ -438,6 +439,7 @@ internal static class BuilderCommands
             var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
             ctx.Reply($"Spawned: {template.Icon} {displayName} (level {template.Level})");
             ctx.Broadcast($"{ctx.Actor.Name} conjures {displayName}!", "arrival");
+            ctx.View.RefreshRoom(ctx.World, roomKey);
         }
         catch (Exception ex)
         {
