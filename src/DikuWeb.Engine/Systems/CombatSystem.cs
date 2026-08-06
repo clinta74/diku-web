@@ -9,7 +9,7 @@ namespace DikuWeb.Engine.Systems;
 /// Combat tick system: 8 pulses = 2 seconds per round.
 /// Runs attack resolution, damage application, and combat cleanup.
 /// </summary>
-public static class CombatSystem
+public sealed class CombatSystem
 {
     public const int TickIntervalPulses = 8; // 2 seconds at 250 ms/pulse
 
@@ -17,7 +17,7 @@ public static class CombatSystem
     /// Process all active combats for one round.
     /// Returns the number of characters/mobs involved in combat this round.
     /// </summary>
-    public static int Tick(WorldState world)
+    public int Tick(WorldState world)
     {
         var combatCount = 0;
 
@@ -85,7 +85,7 @@ public static class CombatSystem
         return combatCount;
     }
 
-    private static void ResolveAttack(WorldState world, Combat combat, string attackerId)
+    private void ResolveAttack(WorldState world, Combat combat, string attackerId)
     {
         // Determine target
         string? targetId = null;
@@ -129,7 +129,7 @@ public static class CombatSystem
         }
     }
 
-    private static (AttackerStats?, DefenderStats?) GetCombatantPair(
+    private (AttackerStats?, DefenderStats?) GetCombatantPair(
         WorldState world,
         string attackerId,
         string targetId)
@@ -172,7 +172,7 @@ public static class CombatSystem
         return (attacker, defender);
     }
 
-    private static void ApplyDamage(WorldState world, string targetId, int damage)
+    private void ApplyDamage(WorldState world, string targetId, int damage)
     {
         if (targetId.StartsWith("c_"))
         {
@@ -194,7 +194,7 @@ public static class CombatSystem
         }
     }
 
-    private static bool IsCombatActive(Combat combat)
+    private bool IsCombatActive(Combat combat)
     {
         // Combat is active if there are combatants from more than one "side"
         // Simple heuristic: at least one player or one mob on each side
@@ -203,7 +203,7 @@ public static class CombatSystem
         return combat.Combatants.Count > 1 && hasPlayer && hasMob;
     }
 
-    private static void EndCombatFor(WorldState world, string combatantId)
+    private void EndCombatFor(WorldState world, string combatantId)
     {
         if (combatantId.StartsWith("c_"))
         {

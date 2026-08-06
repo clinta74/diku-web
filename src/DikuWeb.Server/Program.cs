@@ -36,11 +36,9 @@ builder.Services.AddDikuWebEngine(options =>
 
 // The Engine does not reference EF Core, so the Server supplies adapters.
 builder.Services.AddSingleton<IWorldSource, EfWorldSource>();
-
-// TODO: Phase 3 repositories (spawners, templates) - implement when Phase 3 starts
-// builder.Services.AddSingleton<IMobTemplateRepository, EfMobTemplateRepository>();
-// builder.Services.AddSingleton<IItemTemplateRepository, EfItemTemplateRepository>();
-// builder.Services.AddSingleton<ISpawnerRepository, EfSpawnerRepository>();
+builder.Services.AddSingleton<IMobTemplateRepository, EfMobTemplateRepository>();
+builder.Services.AddSingleton<IItemTemplateRepository, EfItemTemplateRepository>();
+builder.Services.AddSingleton<ISpawnerRepository, EfSpawnerRepository>();
 
 builder.Services.AddSingleton<CharacterSaveQueue>();
 builder.Services.AddSingleton<ICharacterSaveQueue>(sp => sp.GetRequiredService<CharacterSaveQueue>());

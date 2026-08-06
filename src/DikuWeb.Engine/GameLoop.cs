@@ -34,6 +34,7 @@ public sealed class GameLoop(
     ICharacterSaveQueue saveQueue,
     SpawnerSystem? spawnerSystem,
     MobAiSystem? mobAiSystem,
+    CombatSystem? combatSystem,
     EngineOptions options,
     ILogger<GameLoop> logger) : BackgroundService
 {
@@ -122,9 +123,9 @@ public sealed class GameLoop(
             RegenSystem.Tick(world);
         }
 
-        if (GameTiming.RunsOn(pulse, CombatSystem.TickIntervalPulses))
+        if (combatSystem != null && GameTiming.RunsOn(pulse, CombatSystem.TickIntervalPulses))
         {
-            CombatSystem.Tick(world);
+            combatSystem.Tick(world);
         }
 
         if (pulse > 0 && GameTiming.RunsOn(pulse, GameTiming.AutosavePulses))

@@ -4,6 +4,7 @@ using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Spawning;
+using DikuWeb.Engine.Systems;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,15 +43,17 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<LoopWorldEditor>();
         services.AddSingleton<GameGateway>();
 
-        // Phase 3 systems (spawners, mob AI) - added when Phase 3 starts with their dependencies
-        // services.AddSingleton<SpawnerSystem>();
-        // services.AddSingleton<MobSpawner>();
-        // services.AddSingleton<ItemSpawner>();
-        // services.AddSingleton<MobAiSystem>();
+        // Phase 3 systems (spawners, mob AI)
+        services.AddSingleton<MobSpawner>();
+        services.AddSingleton<ItemSpawner>();
+        services.AddSingleton<SpawnerSystem>();
+        services.AddSingleton<MobAiSystem>();
 
-        // Phase 1 game loop - registered when Phase 1 systems are available
-        // For Phase 4.1 (damage model only), commenting out to avoid DI issues with Phase 3 dependencies
-        // services.AddHostedService<GameLoop>();
+        // Phase 4 systems (combat, progression)
+        services.AddSingleton<CombatSystem>();
+
+        // Game loop - wired once all systems are available
+        services.AddHostedService<GameLoop>();
 
         return services;
     }
