@@ -181,7 +181,8 @@ public sealed class PlayerView(RoomLayoutService layout)
             .OrderBy(m => m.TemplateKey)
             .Select(m => {
                 var displayName = string.IsNullOrEmpty(m.TemplateName) ? m.TemplateKey : m.TemplateName;
-                return new ContentEntry(m.TemplateKey, displayName, m.TemplateKey.ToLowerInvariant());
+                var icon = displayName[0].ToString();
+                return new ContentEntry(icon, displayName, m.TemplateKey.ToLowerInvariant());
             }));
 
         // Add items
