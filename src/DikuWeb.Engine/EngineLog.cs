@@ -77,4 +77,8 @@ internal static partial class EngineLog
     [LoggerMessage(EventId = 2016, Level = LogLevel.Warning,
         Message = "Spawner {SpawnerId} template '{TemplateKey}' not found")]
     public static partial void SpawnerTemplateNotFound(ILogger logger, Guid spawnerId, string templateKey);
+
+    [LoggerMessage(EventId = 2017, Level = LogLevel.Information,
+        Message = "PvP kill: {Killer} killed {Victim} in {Room}")]
+    public static partial void PvpKill(ILogger logger, string killer, string victim, string room);
 }

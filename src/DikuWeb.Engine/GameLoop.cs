@@ -125,7 +125,8 @@ public sealed class GameLoop(
 
         if (combatSystem != null && GameTiming.RunsOn(pulse, CombatSystem.TickIntervalPulses))
         {
-            combatSystem.Tick(world);
+            // Fire and forget - combat runs on thread pool for template/item lookups
+            _ = combatSystem.Tick(world, CancellationToken.None);
         }
 
         if (pulse > 0 && GameTiming.RunsOn(pulse, GameTiming.AutosavePulses))

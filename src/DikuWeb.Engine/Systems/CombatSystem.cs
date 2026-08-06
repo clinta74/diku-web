@@ -5,6 +5,7 @@ using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.World;
 using DomainCombatSystem = DikuWeb.Domain.Combat.CombatSystem;
+using Microsoft.Extensions.Logging;
 
 namespace DikuWeb.Engine.Systems;
 
@@ -12,15 +13,19 @@ namespace DikuWeb.Engine.Systems;
 /// Combat tick system: 8 pulses = 2 seconds per round.
 /// Runs attack resolution, damage application, and combat cleanup.
 /// </summary>
-public sealed class CombatSystem(EngineOptions options, IMobTemplateRepository? mobTemplates = null, IItemTemplateRepository? itemTemplates = null, ItemSpawner? itemSpawner = null)
+public sealed class CombatSystem(
+    EngineOptions options,
+    IMobTemplateRepository? mobTemplates = null,
+    IItemTemplateRepository? itemTemplates = null,
+    ItemSpawner? itemSpawner = null,
+    ILogger<CombatSystem>? logger = null)
 {
     public const int TickIntervalPulses = 8; // 2 seconds at 250 ms/pulse
 
     /// <summary>
     /// Process all active combats for one round.
-    /// Returns the number of characters/mobs involved in combat this round.
     /// </summary>
-    public int Tick(WorldState world)
+    public async Task Tick(WorldState world, CancellationToken ct = default)
     {
         var combatCount = 0;
 
@@ -58,7 +63,7 @@ public sealed class CombatSystem(EngineOptions options, IMobTemplateRepository? 
                     if (mob?.Vitals.Health <= 0)
                     {
                         isDead = true;
-                        HandleMobDeath(world, combat, mob, combatantId);
+                        await HandleMobDeath(world, combat, mob, combatantId, ct);
                     }
                 }
                 if (isDead)
@@ -91,8 +96,6 @@ public sealed class CombatSystem(EngineOptions options, IMobTemplateRepository? 
         {
             combat.RoundNumber++;
         }
-
-        return combatCount;
     }
 
     private void ResolveAttack(WorldState world, Combat combat, string attackerId)
@@ -312,6 +315,20 @@ public sealed class CombatSystem(EngineOptions options, IMobTemplateRepository? 
 
         bool isPvpDeath = killerType == CombatantType.Player;
 
+        // Log PvP kill
+        if (isPvpDeath && logger != null)
+        {
+            string killerName = "Unknown";
+            if (combat.Combatants.FirstOrDefault(c => c != combatantId && c.StartsWith("c_")) is var killerId && killerId != null)
+            {
+                var killCharId = Guid.Parse(killerId.Substring(2));
+                var killerActor = world.FindByCharacter(killCharId);
+                if (killerActor != null)
+                    killerName = killerActor.Name;
+            }
+            EngineLog.PvpKill(logger, killerName, actor.Name, combat.RoomKey.ToString());
+        }
+
         // Apply XP loss (PLAN.md §4.12)
         if (character.Level >= options.XpLossMinLevel && (!isPvpDeath || options.PvpCostsXp))
         {
@@ -350,7 +367,7 @@ public sealed class CombatSystem(EngineOptions options, IMobTemplateRepository? 
         }
     }
 
-    private void HandleMobDeath(WorldState world, Combat combat, Mob mob, string combatantId)
+    private async Task HandleMobDeath(WorldState world, Combat combat, Mob mob, string combatantId, CancellationToken ct = default)
     {
         // Find the top damager (killer)
         var killerId = combat.GetTopHater(combatantId);
@@ -382,13 +399,61 @@ public sealed class CombatSystem(EngineOptions options, IMobTemplateRepository? 
 
             // Award gold
             killerChar.Gold += mob.ResolvedGold;
+
+            // Log PvP kill if killer is a player and target was a player (handled in HandleCharacterDeath)
         }
 
-        // Roll loot (basic: just roll against each entry's chance)
+        // Roll loot from mob's template
         if (mobTemplates != null && itemTemplates != null && itemSpawner != null)
         {
-            // Note: This would need async support; for MVP, skip loot rolling
-            // TODO: implement loot rolling via ItemSpawner
+            var roomKey = RoomKey.Parse(mob.RoomKey);
+            var room = world.FindRoom(roomKey);
+            if (room != null)
+            {
+                var zone = world.FindZone(room.ZoneKey);
+                if (zone != null)
+                {
+                    var worldEntity = world.FindWorld(zone.WorldKey);
+                    if (worldEntity != null)
+                    {
+                        var template = await mobTemplates.GetByKeyAsync(mob.TemplateKey, ct);
+                        if (template?.Loot != null)
+                        {
+                            foreach (var lootEntry in template.Loot)
+                            {
+                                // Extract itemTemplateKey and chance from the dict
+                                if (!lootEntry.TryGetValue("itemTemplateKey", out var itemKeyObj))
+                                    continue;
+                                var itemKey = itemKeyObj?.ToString();
+                                if (string.IsNullOrEmpty(itemKey))
+                                    continue;
+
+                                if (!lootEntry.TryGetValue("chance", out var chanceObj))
+                                    continue;
+                                double chance = chanceObj switch
+                                {
+                                    double d => d,
+                                    float f => f,
+                                    int i => i,
+                                    decimal dec => (double)dec,
+                                    _ => 0
+                                };
+
+                                // Roll against chance
+                                if (world.Random.NextDouble() < chance)
+                                {
+                                    var itemTemplate = await itemTemplates.GetByKeyAsync(itemKey, ct);
+                                    if (itemTemplate != null)
+                                    {
+                                        var item = await itemSpawner.SpawnAsync(itemTemplate, zone, worldEntity, roomKey, ct);
+                                        world.AddItem(item);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Remove mob from world
