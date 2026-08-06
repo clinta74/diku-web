@@ -15,12 +15,8 @@ public static class PersistenceServiceCollectionExtensions
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        services.AddDbContext<DikuWebDbContext>(options =>
-            options.UseNpgsql(
-                connectionString,
-                npgsql => npgsql.MigrationsAssembly(typeof(DikuWebDbContext).Assembly.GetName().Name)));
-
-        // Factory for spawning systems and other services that need to create their own DbContext.
+        // Pooled factory for all database access, including HTTP-scoped and background services.
+        // Singleton repositories and the game loop use this to create DbContexts on demand.
         services.AddPooledDbContextFactory<DikuWebDbContext>(options =>
             options.UseNpgsql(
                 connectionString,

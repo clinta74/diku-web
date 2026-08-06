@@ -161,8 +161,8 @@ ServerLog.DatabaseConfigured(logger, csb.Host ?? "(unset)", csb.Database ?? "(un
 // as their own step (PLAN.md §6).
 if (app.Environment.IsDevelopment())
 {
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<DikuWebDbContext>();
+    var factory = app.Services.GetRequiredService<IDbContextFactory<DikuWebDbContext>>();
+    await using var db = await factory.CreateDbContextAsync();
 
     ServerLog.ApplyingMigrations(logger);
     await db.Database.MigrateAsync();

@@ -8,12 +8,11 @@ namespace DikuWeb.Server.Infrastructure;
 /// Loads the world into memory once at boot. The Engine cannot reference EF Core, so this
 /// adapter lives in the Server (PLAN.md §2.2).
 /// </summary>
-public sealed class EfWorldSource(IServiceScopeFactory scopeFactory) : IWorldSource
+public sealed class EfWorldSource(IDbContextFactory<DikuWebDbContext> factory) : IWorldSource
 {
     public async Task<WorldData> LoadAsync(CancellationToken cancellationToken)
     {
-        using var scope = scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<DikuWebDbContext>();
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
 
         var worlds = await db.Worlds.AsNoTracking().ToListAsync(cancellationToken);
         var zones = await db.Zones.AsNoTracking().ToListAsync(cancellationToken);

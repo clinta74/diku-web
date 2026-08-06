@@ -57,7 +57,8 @@ internal static class PrincipalRevalidator
             return;
         }
 
-        var db = services.GetRequiredService<DikuWebDbContext>();
+        var factory = services.GetRequiredService<IDbContextFactory<DikuWebDbContext>>();
+        await using var db = await factory.CreateDbContextAsync(context.HttpContext.RequestAborted);
         var account = await db.Accounts.AsNoTracking()
             .FirstOrDefaultAsync(a => a.Id == accountId, context.HttpContext.RequestAborted);
 

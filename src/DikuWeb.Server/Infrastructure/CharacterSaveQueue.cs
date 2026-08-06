@@ -30,7 +30,7 @@ public sealed class CharacterSaveQueue : ICharacterSaveQueue
 /// </summary>
 public sealed class CharacterSaveWorker(
     CharacterSaveQueue queue,
-    IServiceScopeFactory scopeFactory,
+    IDbContextFactory<DikuWebDbContext> factory,
     ILogger<CharacterSaveWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -74,8 +74,7 @@ public sealed class CharacterSaveWorker(
         IEnumerable<CharacterSnapshot> snapshots,
         CancellationToken cancellationToken)
     {
-        using var scope = scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<DikuWebDbContext>();
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
 
         var saved = 0;
 
