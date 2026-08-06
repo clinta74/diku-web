@@ -1,7 +1,9 @@
+using System.Text.Json.Serialization;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Server.Infrastructure;
 
 namespace DikuWeb.Server.Building;
 
@@ -163,6 +165,7 @@ public sealed record SaveItemTemplateRequest(
     string? Name,
     string? Description,
     string? Icon,
+    [property: JsonConverter(typeof(NullableEnumConverter<ItemSlot>))]
     ItemSlot? Slot,
     int? Weight,
     int? BaseValue,

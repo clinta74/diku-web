@@ -78,6 +78,9 @@ public sealed class CommandRegistry
         _commands.Add(new CommandDefinition(
             "help", 1, "help - this list", Help));
 
+        _commands.Add(new CommandDefinition(
+            "stats", 5, "stats - show your damage, armor, and combat stats", Stats));
+
         // Full word required: quitting by fumbling a key would be a bad surprise.
         _commands.Add(new CommandDefinition(
             "quit", 4, "quit - save and leave the world", Quit));
@@ -247,18 +250,44 @@ public sealed class CommandRegistry
     private static void Inventory(CommandContext ctx)
     {
         var items = ctx.World.InventoryOf(ctx.Actor.CharacterId);
+        var equipped = items.Where(i => i.EquippedSlot is not null).ToList();
+        var unequipped = items.Where(i => i.EquippedSlot is null).ToList();
+
+        var spans = new List<TextSpan>();
+
+        if (equipped.Count > 0)
+        {
+            spans.Add(new TextSpan("You are wearing/wielding:", "heading"));
+            foreach (var item in equipped.OrderBy(i => i.EquippedSlot))
+            {
+                var slot = item.EquippedSlot?.ToString() ?? "Unknown";
+                var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
+                spans.Add(new TextSpan($"\n  [{slot}] {displayName}"));
+            }
+        }
+
+        if (unequipped.Count > 0)
+        {
+            if (equipped.Count > 0)
+            {
+                spans.Add(new TextSpan("\n\nYou are carrying:", "heading"));
+            }
+            else
+            {
+                spans.Add(new TextSpan("You are carrying:", "heading"));
+            }
+
+            foreach (var item in unequipped.OrderBy(i => i.TemplateKey))
+            {
+                var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
+                spans.Add(new TextSpan($"\n  {displayName}"));
+            }
+        }
 
         if (items.Count == 0)
         {
             ctx.Reply("You aren't carrying anything.", "dim");
             return;
-        }
-
-        var spans = new List<TextSpan> { new("You are carrying:", "heading") };
-        foreach (var item in items.OrderBy(i => i.TemplateKey))
-        {
-            var template = "unknown"; // In Phase 4, we'll look up the template name
-            spans.Add(new TextSpan($"\n  {template}"));
         }
 
         ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
@@ -486,6 +515,73 @@ public sealed class CommandRegistry
         }
 
         ctx.Broadcast($"{ctx.Actor.Name} {ctx.Argument}", "emote");
+    }
+
+    private static void Stats(CommandContext ctx)
+    {
+        var character = ctx.Actor.Character;
+        var items = ctx.World.InventoryOf(character.Id);
+        var equipped = items.Where(i => i.EquippedSlot is not null).ToList();
+
+        // Calculate damage multiplier from equipped items
+        var damageMultiplier = 1.0m;
+        var armorMultiplier = 1.0m;
+
+        foreach (var item in equipped.Where(i => i.EquippedSlot == ItemSlot.MainHand || i.EquippedSlot == ItemSlot.OffHand))
+        {
+            if (item.ResolvedStats.TryGetValue("damageMultiplier", out var dm) && decimal.TryParse(dm.ToString() ?? "1", out var dmVal))
+            {
+                damageMultiplier *= dmVal;
+            }
+        }
+
+        foreach (var item in equipped.Where(i => i.EquippedSlot != ItemSlot.MainHand && i.EquippedSlot != ItemSlot.OffHand))
+        {
+            if (item.ResolvedStats.TryGetValue("armorMultiplier", out var am) && decimal.TryParse(am.ToString() ?? "1", out var amVal))
+            {
+                armorMultiplier *= amVal;
+            }
+        }
+
+        // Calculate base damage range (simplified: min 1-3, max 5-15 based on level)
+        var minBase = Math.Max(1, character.Level / 2);
+        var maxBase = Math.Max(3, character.Level * 2);
+        var minDamage = (int)Math.Ceiling(minBase * damageMultiplier);
+        var maxDamage = (int)Math.Ceiling(maxBase * damageMultiplier);
+
+        // Calculate armor (simplified: base 0 + equipment bonuses)
+        var armor = (int)Math.Ceiling(10 * armorMultiplier);
+
+        var spans = new List<TextSpan>
+        {
+            new($"Combat Stats", "heading"),
+            new($"\nLevel: {character.Level}"),
+            new($"\nDamage Range: {minDamage}-{maxDamage}", "good"),
+            new($"\n  Base: {minBase}-{maxBase}, Multiplier: {damageMultiplier:F2}x"),
+            new($"\nArmor: {armor}", "good"),
+            new($"\n  Base: 10, Multiplier: {armorMultiplier:F2}x"),
+        };
+
+        if (equipped.Count > 0)
+        {
+            spans.Add(new TextSpan($"\n\nEquipped Bonuses:", "heading"));
+            foreach (var item in equipped.OrderBy(i => i.EquippedSlot))
+            {
+                var slot = item.EquippedSlot?.ToString() ?? "Unknown";
+                var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
+                var statsStr = string.Join(", ", item.ResolvedStats
+                    .Where(kv => kv.Key.Contains("Multiplier", StringComparison.OrdinalIgnoreCase))
+                    .Select(kv => $"{kv.Key}: {kv.Value}"));
+
+                spans.Add(new TextSpan($"\n  [{slot}] {displayName}"));
+                if (!string.IsNullOrEmpty(statsStr))
+                {
+                    spans.Add(new TextSpan($"\n    {statsStr}", "dim"));
+                }
+            }
+        }
+
+        ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
     }
 
     private static bool IsDirection(string name) =>

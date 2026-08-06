@@ -12,6 +12,12 @@ public sealed class ItemInstance
     /// <summary>Which template was this spawned from.</summary>
     public required string TemplateKey { get; init; }
 
+    /// <summary>Display name from template at spawn time (cached for consistency).</summary>
+    public string TemplateName { get; init; } = string.Empty;
+
+    /// <summary>Icon from template at spawn time (cached for map display).</summary>
+    public string Icon { get; init; } = "$";
+
     /// <summary>Stats after multiplier resolution: damage, armor, bonuses, etc.</summary>
     public Dictionary<string, object> ResolvedStats { get; set; } = new();
 

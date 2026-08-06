@@ -84,7 +84,9 @@ public sealed class RoomLayoutService
             }
 
             var (x, y) = placeable[index];
-            entities.Add(new MapEntity(entityId, mob.TemplateKey[0].ToString(), x, y, mob.TemplateKey));
+            var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+            var icon = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey[0].ToString() : displayName[0].ToString();
+            entities.Add(new MapEntity(entityId, icon, x, y, displayName));
         }
 
         // Items, sorted by their ID for stability.
@@ -98,10 +100,11 @@ public sealed class RoomLayoutService
             }
 
             var (x, y) = placeable[index];
-            entities.Add(new MapEntity(entityId, "$", x, y, item.TemplateKey));
+            var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
+            entities.Add(new MapEntity(entityId, item.Icon, x, y, displayName));
         }
 
-        return new MapPayload(width, height, terrain, legend, entities);
+        return new MapPayload(width, height, terrain, entities);
     }
 
     private static IReadOnlyList<string> ResolveTerrain(Room room)

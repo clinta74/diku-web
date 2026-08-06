@@ -41,14 +41,14 @@ public sealed record MapPayload(
     int W,
     int H,
     IReadOnlyList<string> Terrain,
-    IReadOnlyDictionary<string, string> Legend,
     IReadOnlyList<MapEntity> Entities);
 
 public sealed record ContentEntry(string Icon, string Label, string Keyword);
 
 public sealed record ContentsPayload(
     IReadOnlyList<ContentEntry> Occupants,
-    IReadOnlyList<ContentEntry> Items);
+    IReadOnlyList<ContentEntry> Items,
+    IReadOnlyDictionary<string, string>? Legend = null);
 
 public sealed record VitalsPayload(
     int Health,

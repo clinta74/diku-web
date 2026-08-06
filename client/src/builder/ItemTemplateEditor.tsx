@@ -8,6 +8,7 @@ interface Props {
 }
 
 const ITEM_SLOTS = ['Head', 'Chest', 'Hands', 'Legs', 'Feet', 'MainHand', 'OffHand', 'Trinket']
+const STAT_MULTIPLIERS = ['damageMultiplier', 'armorMultiplier', 'healthMultiplier', 'focusMultiplier', 'staminaMultiplier']
 
 export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props) {
   const [template, setTemplate] = useState<ItemTemplate | null>(null)
@@ -17,6 +18,7 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
   const [slot, setSlot] = useState<string | null>(null)
   const [weight, setWeight] = useState(0)
   const [baseValue, setBaseValue] = useState(0)
+  const [baseStats, setBaseStats] = useState<Record<string, number>>({})
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -51,6 +53,11 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
     setSlot(loaded.slot)
     setWeight(loaded.weight)
     setBaseValue(loaded.baseValue)
+    setBaseStats(
+      loaded.baseStats && typeof loaded.baseStats === 'object'
+        ? Object.fromEntries(Object.entries(loaded.baseStats).map(([k, v]) => [k, Number(v) || 0]))
+        : {}
+    )
     setDirty(false)
     setSuccess(null)
   }
@@ -68,7 +75,7 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         slot,
         weight,
         baseValue,
-        baseStats: {},
+        baseStats,
       })
       apply(updated)
       onChanged(updated)
@@ -198,6 +205,40 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
           />
         </label>
       </div>
+
+      <fieldset>
+        <legend>Stat Multipliers (when worn/wielded)</legend>
+        <p className="dim">
+          Enter multipliers as decimals: 1.0 = no change, 1.1 = +10%, 0.9 = -10%. Leave blank to remove.
+        </p>
+        {STAT_MULTIPLIERS.map((stat) => (
+          <label key={stat}>
+            {stat}
+            <input
+              type="number"
+              step="0.01"
+              value={baseStats[stat] || ''}
+              onChange={(e) => {
+                const val = e.target.value
+                if (val === '') {
+                  setBaseStats((prev) => {
+                    const next = { ...prev }
+                    delete next[stat]
+                    return next
+                  })
+                } else {
+                  setBaseStats((prev) => ({
+                    ...prev,
+                    [stat]: parseFloat(val) || 0,
+                  }))
+                }
+                setDirty(true)
+              }}
+              disabled={busy}
+            />
+          </label>
+        ))}
+      </fieldset>
 
       <div className="actions">
         <button onClick={() => void save()} disabled={!dirty || busy} className="good">

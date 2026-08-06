@@ -283,6 +283,53 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 return ContentAction.Delete;
             }
 
+            case UpsertItemTemplate c:
+            {
+                var entity = await db.ItemTemplates.FirstOrDefaultAsync(
+                    i => i.Key == c.Key,
+                    cancellationToken);
+
+                if (entity is null)
+                {
+                    db.ItemTemplates.Add(new Domain.Items.ItemTemplate
+                    {
+                        Key = c.Key,
+                        Name = c.Name,
+                        Description = c.Description,
+                        Icon = c.Icon,
+                        Slot = c.Slot,
+                        Weight = c.Weight,
+                        BaseValue = c.BaseValue,
+                        BaseStats = c.BaseStats,
+                    });
+
+                    return ContentAction.Create;
+                }
+
+                entity.Name = c.Name;
+                entity.Description = c.Description;
+                entity.Icon = c.Icon;
+                entity.Slot = c.Slot;
+                entity.Weight = c.Weight;
+                entity.BaseValue = c.BaseValue;
+                entity.BaseStats = c.BaseStats;
+                return ContentAction.Update;
+            }
+
+            case DeleteItemTemplate c:
+            {
+                var entity = await db.ItemTemplates.FirstOrDefaultAsync(
+                    i => i.Key == c.Key,
+                    cancellationToken);
+
+                if (entity is not null)
+                {
+                    db.ItemTemplates.Remove(entity);
+                }
+
+                return ContentAction.Delete;
+            }
+
             case UpsertSpawner c:
             {
                 var entity = await db.Spawners.FirstOrDefaultAsync(
@@ -433,6 +480,25 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                     ["from"] = entity.FromRoomKey.ToString(),
                     ["direction"] = entity.Direction.ToLowerName(),
                     ["to"] = entity.ToRoomKey.ToString(),
+                }.ToJsonString();
+            }
+
+            case UpsertItemTemplate or DeleteItemTemplate:
+            {
+                var key = change.EntityKey;
+                var entity = await db.ItemTemplates.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.Key == key, cancellationToken);
+
+                return entity is null ? null : new JsonObject
+                {
+                    ["key"] = entity.Key,
+                    ["name"] = entity.Name,
+                    ["description"] = entity.Description,
+                    ["icon"] = entity.Icon,
+                    ["slot"] = entity.Slot?.ToString(),
+                    ["weight"] = entity.Weight,
+                    ["baseValue"] = entity.BaseValue,
+                    ["baseStats"] = JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(entity.BaseStats)),
                 }.ToJsonString();
             }
 

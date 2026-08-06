@@ -57,6 +57,9 @@ builder.Services.AddSingleton<WorldWriteQueue>();
 builder.Services.AddSingleton<IWorldWriteQueue>(sp => sp.GetRequiredService<WorldWriteQueue>());
 builder.Services.AddHostedService<WorldWriteWorker>();
 
+// Shutdown handler: ensures all pending saves and mutations are flushed before server stops
+builder.Services.AddHostedService<ShutdownFlushService>();
+
 // Account administration (PLAN.md §7.7). Same shape: the loop enqueues, a worker does the
 // database work and sends the answer back through the loop.
 builder.Services.AddSingleton<AccountAdminQueue>();

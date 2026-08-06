@@ -44,13 +44,15 @@ public sealed class PlayerView(RoomLayoutService layout)
             EventTypes.Room,
             new RoomPayload(room.Key.ToString(), room.Title, room.Description, exits)));
 
+        var legend = room.HasGrid ? room.Legend : new Dictionary<string, string>(StringComparer.Ordinal) { ["."] = "floor" };
+
         actor.Send(new OutboundEvent(
             EventTypes.Map,
             _layout.BuildMap(room, occupants, mobs, items, actor)));
 
         actor.Send(new OutboundEvent(
             EventTypes.Contents,
-            BuildContents(occupants, mobs, items, actor)));
+            BuildContents(occupants, mobs, items, actor, legend)));
 
         SendProse(actor, room, occupants, mobs, items, exits, verbose);
     }
@@ -70,11 +72,12 @@ public sealed class PlayerView(RoomLayoutService layout)
         var mobs = world.MobsIn(roomKey);
         var items = world.ItemsIn(roomKey);
         var contents = BuildContentsFor(occupants, mobs, items);
+        var legend = room.HasGrid ? room.Legend : new Dictionary<string, string>(StringComparer.Ordinal) { ["."] = "floor" };
 
         foreach (var viewer in occupants)
         {
             viewer.Send(new OutboundEvent(EventTypes.Map, _layout.BuildMap(room, occupants, mobs, items, viewer)));
-            viewer.Send(new OutboundEvent(EventTypes.Contents, BuildContents(occupants, mobs, items, viewer, contents)));
+            viewer.Send(new OutboundEvent(EventTypes.Contents, BuildContents(occupants, mobs, items, viewer, legend, contents)));
         }
     }
 
@@ -130,7 +133,8 @@ public sealed class PlayerView(RoomLayoutService layout)
 
         foreach (var item in items.OrderBy(i => i.TemplateKey))
         {
-            spans.Add(new TextSpan($"\nYou see {item.TemplateKey} here.", "item"));
+            var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
+            spans.Add(new TextSpan($"\nYou see {displayName} here.", "item"));
         }
 
         actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
@@ -141,6 +145,7 @@ public sealed class PlayerView(RoomLayoutService layout)
         IReadOnlyList<Mob> mobs,
         IReadOnlyList<ItemInstance> items,
         PlayerActor viewer,
+        IReadOnlyDictionary<string, string>? legend = null,
         (List<ContentEntry> Occupants, List<ContentEntry> Items)? prebuilt = null)
     {
         var (occupantEntries, itemEntries) = prebuilt ?? BuildContentsFor(occupants, mobs, items);
@@ -152,7 +157,7 @@ public sealed class PlayerView(RoomLayoutService layout)
                 : e)
             .ToList();
 
-        return new ContentsPayload(adjusted, itemEntries);
+        return new ContentsPayload(adjusted, itemEntries, legend);
     }
 
     private static (List<ContentEntry> Occupants, List<ContentEntry> Items) BuildContentsFor(
@@ -182,7 +187,10 @@ public sealed class PlayerView(RoomLayoutService layout)
         // Add items
         itemEntries.AddRange(items
             .OrderBy(i => i.TemplateKey)
-            .Select(i => new ContentEntry("$", i.TemplateKey, i.TemplateKey.ToLowerInvariant())));
+            .Select(i => {
+                var displayName = string.IsNullOrEmpty(i.TemplateName) ? i.TemplateKey : i.TemplateName;
+                return new ContentEntry(i.Icon, displayName, i.TemplateKey.ToLowerInvariant());
+            }));
 
         return (occupantEntries, itemEntries);
     }

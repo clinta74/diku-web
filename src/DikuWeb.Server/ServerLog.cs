@@ -99,4 +99,10 @@ internal static partial class ServerLog
         Level = LogLevel.Error,
         Message = "Admin request {Request} failed; the worker continues")]
     public static partial void AdminRequestFailed(ILogger logger, string request, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1014,
+        Level = LogLevel.Information,
+        Message = "Server shutting down; flushing character and world mutation queues")]
+    public static partial void ShutdownFlushingQueues(ILogger logger);
 }

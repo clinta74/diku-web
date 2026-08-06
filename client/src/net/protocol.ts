@@ -31,7 +31,6 @@ export interface MapPayload {
   w: number
   h: number
   terrain: string[]
-  legend: Record<string, string>
   entities: MapEntity[]
 }
 
@@ -44,6 +43,7 @@ export interface ContentEntry {
 export interface ContentsPayload {
   occupants: ContentEntry[]
   items: ContentEntry[]
+  legend?: Record<string, string>
 }
 
 export interface VitalsPayload {

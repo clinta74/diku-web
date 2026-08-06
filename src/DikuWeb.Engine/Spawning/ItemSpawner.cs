@@ -39,6 +39,8 @@ public sealed class ItemSpawner
         {
             Id = Guid.NewGuid(),
             TemplateKey = template.Key,
+            TemplateName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name,
+            Icon = template.Icon,
             RoomKey = roomKey.ToString(),
             ResolvedStats = new(template.BaseStats),
             SpawnMultipliers = new()

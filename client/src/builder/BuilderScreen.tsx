@@ -568,9 +568,9 @@ function MobTemplateTree({
       t.name.toLowerCase().includes(filter.toLowerCase()),
   )
 
-  async function createTemplate(key: string) {
+  async function createTemplate(key: string, name: string) {
     await builderApi.createMobTemplate(key, {
-      name: key,
+      name,
       description: '',
       icon: 'm',
       level: 1,
@@ -651,9 +651,9 @@ function ItemTemplateTree({
       t.name.toLowerCase().includes(filter.toLowerCase()),
   )
 
-  async function createTemplate(key: string) {
+  async function createTemplate(key: string, name: string) {
     await builderApi.createItemTemplate(key, {
-      name: key,
+      name,
       description: '',
       icon: 'i',
       slot: null,

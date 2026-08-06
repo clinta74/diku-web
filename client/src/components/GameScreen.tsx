@@ -96,9 +96,6 @@ function MapPanel({ map }: { map: MapPayload | null }) {
     )
   }
 
-  const glyphs = new Map<string, string>()
-  for (const [glyph, tile] of Object.entries(map.legend)) glyphs.set(glyph, tile)
-
   // Overlay entities onto a mutable copy of the terrain rows.
   const rows = map.terrain.map((row) => row.split(''))
   for (const entity of map.entities) {

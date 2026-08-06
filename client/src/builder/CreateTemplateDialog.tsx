@@ -3,7 +3,7 @@ import { useState } from 'react'
 interface Props {
   isOpen: boolean
   onClose: () => void
-  onCreate: (key: string) => Promise<void>
+  onCreate: (key: string, name: string) => Promise<void>
 }
 
 export function CreateTemplateDialog({ isOpen, onClose, onCreate }: Props) {
@@ -30,7 +30,7 @@ export function CreateTemplateDialog({ isOpen, onClose, onCreate }: Props) {
     setError(null)
 
     try {
-      await onCreate(key.trim())
+      await onCreate(key.trim(), name.trim() || key.trim())
       reset()
       onClose()
     } catch (e) {

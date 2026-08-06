@@ -206,6 +206,14 @@ public sealed class CombatSystem(
         {
             ApplyDamage(world, targetId, round.Damage.DamageDealt);
 
+            // Send damage calculation breakdown to attacker (for debugging)
+            if (attackerActo is PlayerActor attackerPlayer)
+            {
+                var critMarker = round.Damage.IsCritical ? " [CRIT]" : "";
+                var damageBreakdown = $"[Debug] Damage: {round.Damage.DamageDealt} (roll: {round.Damage.NaturalRoll}){critMarker}";
+                attackerPlayer.SendText(damageBreakdown, "dim");
+            }
+
             // Add to hate list if target is a mob
             if (targetId.StartsWith("m_"))
             {
