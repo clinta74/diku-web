@@ -10,7 +10,7 @@ interface Props {
   onChanged: () => void
 }
 
-const CELL = 96
+const CELL = 150
 const BOX_W = 120
 const BOX_H = 80
 
@@ -119,8 +119,18 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
         >
           <svg className="edges" width={width * CELL} height={height * CELL}>
             {placed.flatMap((from) =>
-              from.room.exits.map((exit) => {
-                const to = placed.find((r) => r.room.key === exit.to)
+              from.room.exits
+                .map((exit) => {
+                  // Skip bidirectional UP/DOWN connections - only render from the DOWN direction
+                  if (exit.direction === 'up') {
+                    const toRoom = placed.find((r) => r.room.key === exit.to)
+                    if (toRoom) {
+                      const reverseExit = toRoom.room.exits.find((e) => e.to === from.room.key && e.direction === 'down')
+                      if (reverseExit) return null // Skip, will be rendered from DOWN direction
+                    }
+                  }
+
+                  const to = placed.find((r) => r.room.key === exit.to)
                 const isVertical = isVerticalExit(exit.direction)
                 const cx = from.x * CELL + BOX_W / 2
                 const cy = from.y * CELL + BOX_H / 2
@@ -194,7 +204,8 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
                     </text>
                   </g>
                 )
-              }),
+              })
+                .filter(Boolean)
             )}
           </svg>
 
