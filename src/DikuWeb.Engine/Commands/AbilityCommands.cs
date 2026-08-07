@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Entities;
 using DikuWeb.Engine.Abilities;
 
 namespace DikuWeb.Engine.Commands;
@@ -94,7 +95,7 @@ public static class AbilityCommands
                 .FirstOrDefault(p => string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase));
 
             if (targetActor != null)
-                targetId = $"c_{targetActor.CharacterId}";
+                targetId = EntityId.ForCharacter(targetActor.CharacterId);
         }
 
         // Enqueue cast
@@ -116,7 +117,7 @@ public static class AbilityCommands
         if (targetId != null)
         {
             var target = ctx.World.OthersIn(character.RoomKey, ctx.Actor)
-                .FirstOrDefault(p => $"c_{p.CharacterId}" == targetId);
+                .FirstOrDefault(p => EntityId.ForCharacter(p.CharacterId) == targetId);
             if (target != null)
             {
                 ctx.Broadcast($"{ctx.Actor.Name} casts {matchingKey} on {target.Name}!");

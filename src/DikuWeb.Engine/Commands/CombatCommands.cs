@@ -1,4 +1,5 @@
 using DikuWeb.Domain.Combat;
+using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
@@ -85,10 +86,10 @@ public static class CombatCommands
         // Enter combat
         if (targetActor != null)
         {
-            var targetId = $"c_{targetActor.CharacterId}";
+            var targetId = EntityId.ForCharacter(targetActor.CharacterId);
             character.CombatState = CombatState.Fighting;
             character.CurrentTarget = targetId;
-            combat.AddCombatant($"c_{character.Id}");
+            combat.AddCombatant(EntityId.ForCharacter(character.Id));
             combat.AddCombatant(targetId);
             combat.PlayerTargets[character.Id] = targetId;
 
@@ -99,10 +100,10 @@ public static class CombatCommands
         else if (targetMob != null)
         {
             var displayName = string.IsNullOrEmpty(targetMob.TemplateName) ? targetMob.TemplateKey : targetMob.TemplateName;
-            var targetId = $"m_{targetMob.Id}";
+            var targetId = EntityId.ForMob(targetMob.Id);
             character.CombatState = CombatState.Fighting;
             character.CurrentTarget = targetId;
-            combat.AddCombatant($"c_{character.Id}");
+            combat.AddCombatant(EntityId.ForCharacter(character.Id));
             combat.AddCombatant(targetId);
             combat.PlayerTargets[character.Id] = targetId;
 
@@ -183,7 +184,7 @@ public static class CombatCommands
         var combat = ctx.World.FindCombat(character.RoomKey);
         if (combat != null)
         {
-            var combatantId = $"c_{character.Id}";
+            var combatantId = EntityId.ForCharacter(character.Id);
             combat.RemoveCombatant(combatantId);
             character.CombatState = CombatState.Idle;
             character.CurrentTarget = null;

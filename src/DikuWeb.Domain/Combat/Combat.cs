@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Worlds;
 
 namespace DikuWeb.Domain.Combat;
@@ -39,7 +40,7 @@ public sealed class Combat
             Combatants.Add(entityId);
 
             // Initialize hate list for mobs
-            if (entityId.StartsWith("m_"))
+            if (EntityId.IsMob(entityId))
             {
                 HateLists[entityId] = [];
             }

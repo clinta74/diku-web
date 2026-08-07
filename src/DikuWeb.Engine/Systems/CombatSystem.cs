@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
+using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Narration;
@@ -50,9 +51,9 @@ public sealed class CombatSystem(
             foreach (var combatantId in combat.Combatants)
             {
                 bool isDead = false;
-                if (combatantId.StartsWith("c_"))
+                if (EntityId.IsCharacter(combatantId))
                 {
-                    var charId = Guid.Parse(combatantId.Substring(2));
+                    var charId = EntityId.ToGuid(combatantId);
                     var character = world.GetCharacter(charId);
                     if (character?.Vitals.Health <= 0)
                     {
@@ -60,9 +61,9 @@ public sealed class CombatSystem(
                         HandleCharacterDeath(world, combat, character, combatantId);
                     }
                 }
-                else if (combatantId.StartsWith("m_"))
+                else if (EntityId.IsMob(combatantId))
                 {
-                    var mobId = Guid.Parse(combatantId.Substring(2));
+                    var mobId = EntityId.ToGuid(combatantId);
                     var mob = world.GetMob(mobId);
                     if (mob?.Vitals.Health <= 0)
                     {
@@ -107,16 +108,16 @@ public sealed class CombatSystem(
         // Determine target
         string? targetId = null;
 
-        if (attackerId.StartsWith("c_"))
+        if (EntityId.IsCharacter(attackerId))
         {
             // Player: use their chosen target
-            var charId = Guid.Parse(attackerId.Substring(2));
+            var charId = EntityId.ToGuid(attackerId);
             if (combat.PlayerTargets.TryGetValue(charId, out var target))
             {
                 targetId = target;
             }
         }
-        else if (attackerId.StartsWith("m_"))
+        else if (EntityId.IsMob(attackerId))
         {
             // Mob: use top hater
             targetId = combat.GetTopHater(attackerId);
@@ -154,9 +155,9 @@ public sealed class CombatSystem(
                 attackerPlayer.SendText(validation.RefusalReason ?? "The attack is not allowed.", "bad");
             }
             combat.RemoveCombatant(attackerId);
-            if (attackerId.StartsWith("c_"))
+            if (EntityId.IsCharacter(attackerId))
             {
-                var charId = Guid.Parse(attackerId.Substring(2));
+                var charId = EntityId.ToGuid(attackerId);
                 var character = world.GetCharacter(charId);
                 if (character != null)
                 {
@@ -173,9 +174,9 @@ public sealed class CombatSystem(
             return;
 
         // Use Domain combat system to execute the round (includes narration)
-        int targetHealth = targetId.StartsWith("c_")
-            ? world.GetCharacter(Guid.Parse(targetId.Substring(2)))?.Vitals.Health ?? 0
-            : world.GetMob(Guid.Parse(targetId.Substring(2)))?.Vitals.Health ?? 0;
+        int targetHealth = EntityId.IsCharacter(targetId)
+            ? world.GetCharacter(EntityId.ToGuid(targetId))?.Vitals.Health ?? 0
+            : world.GetMob(EntityId.ToGuid(targetId))?.Vitals.Health ?? 0;
 
         var round = DomainCombatSystem.ExecuteRound(
             attackerType.Value,
@@ -211,12 +212,12 @@ public sealed class CombatSystem(
             var damageDealt = round.Damage.DamageDealt;
 
             // Get attacker's outgoing damage multiplier
-            var attackerIdGuid = Guid.Parse(attackerId.Substring(2));
+            var attackerIdGuid = EntityId.ToGuid(attackerId);
             var attackerEffects = world.GetActiveEffects(attackerIdGuid);
             var outgoingMultiplier = CalculateMultiplier(attackerEffects, e => e.OutgoingDamageMultiplier);
 
             // Get target's incoming damage multiplier
-            var targetIdGuid = Guid.Parse(targetId.Substring(2));
+            var targetIdGuid = EntityId.ToGuid(targetId);
             var targetEffects = world.GetActiveEffects(targetIdGuid);
             var incomingMultiplier = CalculateMultiplier(targetEffects, e => e.IncomingDamageMultiplier);
 
@@ -236,7 +237,7 @@ public sealed class CombatSystem(
             }
 
             // Add to hate list if target is a mob
-            if (targetId.StartsWith("m_"))
+            if (EntityId.IsMob(targetId))
             {
                 combat.AddToHateList(targetId, attackerId, round.Damage.DamageDealt);
             }
@@ -248,15 +249,15 @@ public sealed class CombatSystem(
     /// </summary>
     private RoomKey? GetCombatantRoom(WorldState world, string entityId)
     {
-        if (entityId.StartsWith("c_"))
+        if (EntityId.IsCharacter(entityId))
         {
-            var charId = Guid.Parse(entityId.Substring(2));
+            var charId = EntityId.ToGuid(entityId);
             var character = world.GetCharacter(charId);
             return character?.RoomKey;
         }
-        else if (entityId.StartsWith("m_"))
+        else if (EntityId.IsMob(entityId))
         {
-            var mobId = Guid.Parse(entityId.Substring(2));
+            var mobId = EntityId.ToGuid(entityId);
             var mob = world.GetMob(mobId);
             return mob != null ? RoomKey.Parse(mob.RoomKey) : null;
         }
@@ -265,16 +266,16 @@ public sealed class CombatSystem(
 
     private (CombatantType?, string, object?) ResolveCombatantInfo(WorldState world, string entityId)
     {
-        if (entityId.StartsWith("c_"))
+        if (EntityId.IsCharacter(entityId))
         {
-            var charId = Guid.Parse(entityId.Substring(2));
+            var charId = EntityId.ToGuid(entityId);
             var actor = world.FindByCharacter(charId);
             if (actor != null)
                 return (CombatantType.Player, actor.Name, actor);
         }
-        else if (entityId.StartsWith("m_"))
+        else if (EntityId.IsMob(entityId))
         {
-            var mobId = Guid.Parse(entityId.Substring(2));
+            var mobId = EntityId.ToGuid(entityId);
             var mob = world.FindMob(mobId);
             if (mob != null)
             {
@@ -294,32 +295,32 @@ public sealed class CombatSystem(
         DefenderStats? defender = null;
 
         // Resolve attacker
-        if (attackerId.StartsWith("c_"))
+        if (EntityId.IsCharacter(attackerId))
         {
-            var charId = Guid.Parse(attackerId.Substring(2));
+            var charId = EntityId.ToGuid(attackerId);
             var character = world.GetCharacter(charId);
             if (character != null)
                 attacker = ResolveCharacterAttacker(world, character);
         }
-        else if (attackerId.StartsWith("m_"))
+        else if (EntityId.IsMob(attackerId))
         {
-            var mobId = Guid.Parse(attackerId.Substring(2));
+            var mobId = EntityId.ToGuid(attackerId);
             var mob = world.GetMob(mobId);
             if (mob != null)
                 attacker = DamageCalculator.StatsFrom(mob);
         }
 
         // Resolve defender
-        if (targetId.StartsWith("c_"))
+        if (EntityId.IsCharacter(targetId))
         {
-            var charId = Guid.Parse(targetId.Substring(2));
+            var charId = EntityId.ToGuid(targetId);
             var character = world.GetCharacter(charId);
             if (character != null)
                 defender = ResolveCharacterDefender(world, character);
         }
-        else if (targetId.StartsWith("m_"))
+        else if (EntityId.IsMob(targetId))
         {
-            var mobId = Guid.Parse(targetId.Substring(2));
+            var mobId = EntityId.ToGuid(targetId);
             var mob = world.GetMob(mobId);
             if (mob != null)
                 defender = DamageCalculator.DefenderStatsFrom(mob);
@@ -372,18 +373,18 @@ public sealed class CombatSystem(
 
     private void ApplyDamage(WorldState world, string targetId, int damage)
     {
-        if (targetId.StartsWith("c_"))
+        if (EntityId.IsCharacter(targetId))
         {
-            var charId = Guid.Parse(targetId.Substring(2));
+            var charId = EntityId.ToGuid(targetId);
             var character = world.GetCharacter(charId);
             if (character != null)
             {
                 character.Vitals.Health = Math.Max(0, character.Vitals.Health - damage);
             }
         }
-        else if (targetId.StartsWith("m_"))
+        else if (EntityId.IsMob(targetId))
         {
-            var mobId = Guid.Parse(targetId.Substring(2));
+            var mobId = EntityId.ToGuid(targetId);
             var mob = world.GetMob(mobId);
             if (mob != null)
             {
@@ -408,7 +409,7 @@ public sealed class CombatSystem(
         foreach (var other in combat.Combatants)
         {
             if (other == combatantId) continue;
-            if (other.StartsWith("c_"))
+            if (EntityId.IsCharacter(other))
             {
                 killerType = CombatantType.Player;
                 break;
@@ -421,9 +422,9 @@ public sealed class CombatSystem(
         if (isPvpDeath && logger != null)
         {
             string killerName = "Unknown";
-            if (combat.Combatants.FirstOrDefault(c => c != combatantId && c.StartsWith("c_")) is var killerId && killerId != null)
+            if (combat.Combatants.FirstOrDefault(c => c != combatantId && EntityId.IsCharacter(c)) is var killerId && killerId != null)
             {
-                var killCharId = Guid.Parse(killerId.Substring(2));
+                var killCharId = EntityId.ToGuid(killerId);
                 var killerActor = world.FindByCharacter(killCharId);
                 if (killerActor != null)
                     killerName = killerActor.Name;
@@ -477,9 +478,9 @@ public sealed class CombatSystem(
 
         // Extract killer's character if it's a player
         Character? killerChar = null;
-        if (killerId.StartsWith("c_"))
+        if (EntityId.IsCharacter(killerId))
         {
-            var killCharId = Guid.Parse(killerId.Substring(2));
+            var killCharId = EntityId.ToGuid(killerId);
             killerChar = world.GetCharacter(killCharId);
         }
 
@@ -576,9 +577,9 @@ public sealed class CombatSystem(
 
     private void EndCombatFor(WorldState world, string combatantId)
     {
-        if (combatantId.StartsWith("c_"))
+        if (EntityId.IsCharacter(combatantId))
         {
-            var charId = Guid.Parse(combatantId.Substring(2));
+            var charId = EntityId.ToGuid(combatantId);
             var character = world.GetCharacter(charId);
             if (character != null)
             {
@@ -586,9 +587,9 @@ public sealed class CombatSystem(
                 character.CurrentTarget = null;
             }
         }
-        else if (combatantId.StartsWith("m_"))
+        else if (EntityId.IsMob(combatantId))
         {
-            var mobId = Guid.Parse(combatantId.Substring(2));
+            var mobId = EntityId.ToGuid(combatantId);
             var mob = world.GetMob(mobId);
             if (mob != null)
             {

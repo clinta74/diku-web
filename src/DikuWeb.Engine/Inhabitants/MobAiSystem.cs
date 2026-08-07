@@ -1,4 +1,5 @@
 using DikuWeb.Domain.Combat;
+using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Randomness;
@@ -195,8 +196,8 @@ public sealed class MobAiSystem(
             return;
 
         // Initiate combat
-        var targetId = $"c_{target.CharacterId}";
-        var mobId = $"m_{mob.Id}";
+        var targetId = EntityId.ForCharacter(target.CharacterId);
+        var mobId = EntityId.ForMob(mob.Id);
 
         var combat = world.GetOrCreateCombat(roomKey);
         combat.AddCombatant(mobId);

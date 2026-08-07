@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Entities;
 using DikuWeb.Engine.World;
 using Microsoft.Extensions.Logging;
 
@@ -16,9 +17,9 @@ public static class EffectExpirySystem
         foreach (var effect in expired)
         {
             // If the affected entity is a character in the world, narrate the expiry
-            if (effect.SourceEntityId.StartsWith("c_"))
+            if (EntityId.IsCharacter(effect.SourceEntityId))
             {
-                var charId = Guid.Parse(effect.SourceEntityId.Substring(2));
+                var charId = EntityId.ToGuid(effect.SourceEntityId);
                 var character = world.GetCharacter(charId);
                 if (character != null)
                 {

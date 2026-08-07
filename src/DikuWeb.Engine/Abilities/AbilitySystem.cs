@@ -1,6 +1,7 @@
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Presentation;
@@ -105,15 +106,13 @@ public sealed class AbilitySystem(
                 }
                 else if (ability.TargetingType == TargetingType.SingleTarget && !string.IsNullOrEmpty(cast.TargetId))
                 {
-                    if (cast.TargetId.StartsWith("c_"))
+                    if (EntityId.IsCharacter(cast.TargetId))
                     {
-                        var targetId = Guid.Parse(cast.TargetId.Substring(2));
-                        target = world.GetCharacter(targetId);
+                        target = world.GetCharacter(EntityId.ToGuid(cast.TargetId));
                     }
-                    else if (cast.TargetId.StartsWith("m_"))
+                    else if (EntityId.IsMob(cast.TargetId))
                     {
-                        var targetId = Guid.Parse(cast.TargetId.Substring(2));
-                        target = world.GetMob(targetId);
+                        target = world.GetMob(EntityId.ToGuid(cast.TargetId));
                     }
                 }
 

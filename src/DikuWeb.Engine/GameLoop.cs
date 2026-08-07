@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Commands;
@@ -183,9 +184,9 @@ public sealed class GameLoop(
             {
                 foreach (var combatantId in combat.Combatants)
                 {
-                    if (combatantId.StartsWith("c_"))
+                    if (EntityId.IsCharacter(combatantId))
                     {
-                        var charId = Guid.Parse(combatantId.Substring(2));
+                        var charId = EntityId.ToGuid(combatantId);
                         var actor = world.FindByCharacter(charId);
                         if (actor != null)
                         {
