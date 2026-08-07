@@ -76,15 +76,17 @@ public static class DamageCalculator
 
         // Calculate base damage
         var damageRolled = random.Next(attacker.MinDamage, attacker.MaxDamage + 1);
-        var totalDamage = damageRolled + attacker.BaseDamage;
 
-        // If crit, roll damage twice and take the better
+        // On a crit the dice are rolled twice and summed, with the flat modifier added once -
+        // the behaviour AttackResult documents. Taking the better of the two rolls instead, as
+        // this did, moves the average so little that a natural 20 was indistinguishable from an
+        // ordinary hit at low weapon dice.
         if (isCrit)
         {
-            var critDamage = random.Next(attacker.MinDamage, attacker.MaxDamage + 1);
-            var critTotal = critDamage + attacker.BaseDamage;
-            totalDamage = Math.Max(totalDamage, critTotal);
+            damageRolled += random.Next(attacker.MinDamage, attacker.MaxDamage + 1);
         }
+
+        var totalDamage = damageRolled + attacker.BaseDamage;
 
         // Apply armor reduction: (damage - flatReduction) * (1 - percentReduction)
         var afterFlat = totalDamage - defender.ArmorFlat;

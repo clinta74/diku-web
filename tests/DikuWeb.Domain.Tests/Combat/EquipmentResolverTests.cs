@@ -305,4 +305,148 @@ public sealed class EquipmentResolverTests
         // Clamp to 0-95% range
         Assert.Equal(0m, stats.ArmorPercent);
     }
+
+    // =========================================================================
+    // damageMultiplier - the only damage stat the builder UI can author today
+    // =========================================================================
+
+    [Fact]
+    public void ResolveAttackerStats_damage_multiplier_scales_the_unarmed_dice()
+    {
+        // The reported bug. A weapon authored in the builder carries damageMultiplier and
+        // nothing else, so the resolver found no damageMin/damageMax, fell back to 1-2, and
+        // ignored the multiplier entirely - leaving a 4x sword contributing nothing at all.
+        var sword = new ItemInstance
+        {
+            TemplateKey = "long-sword",
+            EquippedSlot = ItemSlot.MainHand,
+            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", 4 } },
+        };
+
+        var stats = EquipmentResolver.ResolveAttackerStats(
+            level: 1,
+            mightModifier: 2,
+            equipped: new[] { sword });
+
+        // Unarmed 1-2 scaled by 4.
+        Assert.Equal(4, stats.MinDamage);
+        Assert.Equal(8, stats.MaxDamage);
+
+        // The multiplier scales dice only - Might is not multiplied by the weapon.
+        Assert.Equal(2, stats.BaseDamage);
+    }
+
+    [Fact]
+    public void ResolveAttackerStats_damage_multiplier_scales_declared_dice()
+    {
+        var axe = new ItemInstance
+        {
+            TemplateKey = "great-axe",
+            EquippedSlot = ItemSlot.MainHand,
+            ResolvedStats = new Dictionary<string, object>
+            {
+                { "damageMin", 3 },
+                { "damageMax", 8 },
+                { "damageMultiplier", 1.5m },
+            },
+        };
+
+        var stats = EquipmentResolver.ResolveAttackerStats(
+            level: 1,
+            mightModifier: 0,
+            equipped: new[] { axe });
+
+        // Ceiling, so a fractional multiplier never rounds a die face down.
+        Assert.Equal(5, stats.MinDamage);
+        Assert.Equal(12, stats.MaxDamage);
+    }
+
+    [Fact]
+    public void ResolveAttackerStats_both_hands_compound_their_multipliers()
+    {
+        var main = new ItemInstance
+        {
+            TemplateKey = "sword",
+            EquippedSlot = ItemSlot.MainHand,
+            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", 2 } },
+        };
+
+        var off = new ItemInstance
+        {
+            TemplateKey = "dagger",
+            EquippedSlot = ItemSlot.OffHand,
+            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", 3 } },
+        };
+
+        var stats = EquipmentResolver.ResolveAttackerStats(
+            level: 1,
+            mightModifier: 0,
+            equipped: new[] { main, off });
+
+        // 1-2 scaled by 2 x 3.
+        Assert.Equal(6, stats.MinDamage);
+        Assert.Equal(12, stats.MaxDamage);
+    }
+
+    [Fact]
+    public void ResolveAttackerStats_reads_a_multiplier_stored_as_a_string()
+    {
+        // jsonb round-trips can hand these back as strings or JsonElements rather than numbers,
+        // and a multiplier that silently fails to parse is exactly the kind of thing that looks
+        // like a balance problem rather than a bug.
+        var sword = new ItemInstance
+        {
+            TemplateKey = "long-sword",
+            EquippedSlot = ItemSlot.MainHand,
+            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", "4" } },
+        };
+
+        var stats = EquipmentResolver.ResolveAttackerStats(
+            level: 1,
+            mightModifier: 0,
+            equipped: new[] { sword });
+
+        Assert.Equal(4, stats.MinDamage);
+        Assert.Equal(8, stats.MaxDamage);
+    }
+
+    [Fact]
+    public void ResolveAttackerStats_ignores_a_multiplier_on_armour()
+    {
+        var boots = new ItemInstance
+        {
+            TemplateKey = "boots",
+            EquippedSlot = ItemSlot.Feet,
+            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", 10 } },
+        };
+
+        var stats = EquipmentResolver.ResolveAttackerStats(
+            level: 1,
+            mightModifier: 0,
+            equipped: new[] { boots });
+
+        Assert.Equal(1, stats.MinDamage);
+        Assert.Equal(2, stats.MaxDamage);
+    }
+
+    [Fact]
+    public void ResolveDefenderStats_armor_multiplier_scales_declared_flat_armour()
+    {
+        var mail = new ItemInstance
+        {
+            TemplateKey = "chain-mail",
+            EquippedSlot = ItemSlot.Chest,
+            ResolvedStats = new Dictionary<string, object>
+            {
+                { "armorFlat", 4 },
+                { "armorMultiplier", 2 },
+            },
+        };
+
+        var stats = EquipmentResolver.ResolveDefenderStats(
+            agilityModifier: 0,
+            equippedArmor: new[] { mail });
+
+        Assert.Equal(8, stats.ArmorFlat);
+    }
 }

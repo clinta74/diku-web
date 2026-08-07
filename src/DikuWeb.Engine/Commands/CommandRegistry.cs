@@ -533,43 +533,31 @@ public sealed class CommandRegistry
         var items = ctx.World.InventoryOf(character.Id);
         var equipped = items.Where(i => i.EquippedSlot is not null).ToList();
 
-        // Calculate damage multiplier from equipped items
-        var damageMultiplier = 1.0m;
-        var armorMultiplier = 1.0m;
+        // Read through the same resolver combat uses. This screen used to derive its numbers
+        // from level with its own formula, so it reported a damage range the game would never
+        // roll - the reason a sword could show 4-12 here while landing 3s in a fight.
+        var attack = EquipmentResolver.ResolveAttackerStats(
+            character.Level,
+            character.Attributes.MightModifier,
+            equipped);
 
-        foreach (var item in equipped.Where(i => i.EquippedSlot == ItemSlot.MainHand || i.EquippedSlot == ItemSlot.OffHand))
-        {
-            if (item.ResolvedStats.TryGetValue("damageMultiplier", out var dm) && decimal.TryParse(dm.ToString() ?? "1", out var dmVal))
-            {
-                damageMultiplier *= dmVal;
-            }
-        }
+        var defense = EquipmentResolver.ResolveDefenderStats(
+            character.Attributes.AgilityModifier,
+            equipped);
 
-        foreach (var item in equipped.Where(i => i.EquippedSlot != ItemSlot.MainHand && i.EquippedSlot != ItemSlot.OffHand))
-        {
-            if (item.ResolvedStats.TryGetValue("armorMultiplier", out var am) && decimal.TryParse(am.ToString() ?? "1", out var amVal))
-            {
-                armorMultiplier *= amVal;
-            }
-        }
-
-        // Calculate base damage range (simplified: min 1-3, max 5-15 based on level)
-        var minBase = Math.Max(1, character.Level / 2);
-        var maxBase = Math.Max(3, character.Level * 2);
-        var minDamage = (int)Math.Ceiling(minBase * damageMultiplier);
-        var maxDamage = (int)Math.Ceiling(maxBase * damageMultiplier);
-
-        // Calculate armor (simplified: base 0 + equipment bonuses)
-        var armor = (int)Math.Ceiling(10 * armorMultiplier);
+        // What the dice actually produce, modifier included, before the target's armour.
+        var minDamage = attack.MinDamage + attack.BaseDamage;
+        var maxDamage = attack.MaxDamage + attack.BaseDamage;
 
         var spans = new List<TextSpan>
         {
             new($"Combat Stats", "heading"),
             new($"\nLevel: {character.Level}"),
             new($"\nDamage Range: {minDamage}-{maxDamage}", "good"),
-            new($"\n  Base: {minBase}-{maxBase}, Multiplier: {damageMultiplier:F2}x"),
-            new($"\nArmor: {armor}", "good"),
-            new($"\n  Base: 10, Multiplier: {armorMultiplier:F2}x"),
+            new($"\n  Dice: {attack.MinDamage}-{attack.MaxDamage}, Might bonus: {attack.BaseDamage:+#;-#;+0}"),
+            new($"\nAttack Rating: {attack.AttackRating}", "good"),
+            new($"\nDefense: {10 + defense.DefenseRating}", "good"),
+            new($"\n  Armour: {defense.ArmorFlat} flat, {defense.ArmorPercent:P0} reduction"),
         };
 
         if (equipped.Count > 0)

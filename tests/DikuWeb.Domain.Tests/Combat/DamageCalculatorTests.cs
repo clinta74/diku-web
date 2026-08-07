@@ -182,12 +182,19 @@ public class DamageCalculatorTests
         var attacker = new AttackerStats(AttackRating: 10, BaseDamage: 10, MinDamage: 1, MaxDamage: 6);
         var defender = new DefenderStats(DefenseRating: 0, ArmorFlat: 0, ArmorPercent: 0.5m);
 
-        var random = new SeededRandomSource(15);
-        var result = DamageCalculator.CalculateDamage(attacker, defender, random);
+        var unarmoured = new DefenderStats(DefenseRating: 0, ArmorFlat: 0, ArmorPercent: 0m);
 
-        Assert.True(result.Hit);
-        // baseDamage=10, min roll=1, total=11. After 50% reduction: 11 * 0.5 = 5.5 → 5
-        Assert.True(result.DamageDealt <= 6); // max roll + base would be 6+10=16, halved=8
+        // Same seed both times, so the dice are identical and the only difference is the armour.
+        // Asserting a fixed number here instead would just be re-deriving the formula, and would
+        // have to be rewritten again the next time crits or dice change.
+        var withArmour = DamageCalculator.CalculateDamage(attacker, defender, new SeededRandomSource(15));
+        var without = DamageCalculator.CalculateDamage(attacker, unarmoured, new SeededRandomSource(15));
+
+        Assert.True(withArmour.Hit);
+        Assert.True(without.Hit);
+        Assert.True(
+            withArmour.DamageDealt < without.DamageDealt,
+            $"50% armour should reduce damage: {withArmour.DamageDealt} vs {without.DamageDealt}");
     }
 
     [Fact]
@@ -292,7 +299,39 @@ public class DamageCalculatorTests
 
         // Should see varied damage rolls across the range
         Assert.True(damageValues.Count > 1, "Damage should vary across runs");
-        Assert.All(damageValues, d => Assert.True(d >= 1 && d <= 6, "Damage in weapon range"));
+
+        // A crit sums two dice, so the reachable ceiling is two maximum faces rather than one.
+        Assert.All(damageValues, d => Assert.True(d >= 1 && d <= 12, $"Damage {d} outside 1-12"));
+    }
+
+    [Fact]
+    public void Critical_hits_sum_both_dice_rather_than_taking_the_better()
+    {
+        // Fixed dice make the rule visible without depending on a seed: with a 4-4 weapon and no
+        // modifier, a crit must deal 8. Taking the better of two rolls would deal 4, which is
+        // indistinguishable from an ordinary hit - the reason a natural 20 landed for 3 damage.
+        var attacker = new AttackerStats(AttackRating: 50, BaseDamage: 0, MinDamage: 4, MaxDamage: 4);
+        var defender = new DefenderStats(DefenseRating: 0, ArmorFlat: 0, ArmorPercent: 0m);
+
+        var result = DamageCalculator.CalculateDamage(attacker, defender, new SeededRandomSource(15));
+
+        Assert.True(result.Hit);
+        Assert.True(result.IsCritical, "AttackRating 50 vs defence 10 always beats it by 10+");
+        Assert.Equal(8, result.DamageDealt);
+    }
+
+    [Fact]
+    public void The_flat_modifier_is_added_once_on_a_crit_not_twice()
+    {
+        // The other half of the documented rule: dice twice, modifier once. A 4-4 weapon with
+        // +3 Might crits for 4 + 4 + 3, not 4 + 3 + 4 + 3.
+        var attacker = new AttackerStats(AttackRating: 50, BaseDamage: 3, MinDamage: 4, MaxDamage: 4);
+        var defender = new DefenderStats(DefenseRating: 0, ArmorFlat: 0, ArmorPercent: 0m);
+
+        var result = DamageCalculator.CalculateDamage(attacker, defender, new SeededRandomSource(15));
+
+        Assert.True(result.IsCritical);
+        Assert.Equal(11, result.DamageDealt);
     }
 
     // =========================================================================
@@ -388,14 +427,15 @@ public class DamageCalculatorTests
     [Fact]
     public void Negative_base_damage_reduced_by_roll()
     {
-        var attacker = new AttackerStats(AttackRating: 10, BaseDamage: -2, MinDamage: 1, MaxDamage: 6);
+        // Fixed 1-1 dice so the clamp is what is being tested rather than the roll: a normal hit
+        // gives 1 - 2 = -1 and a crit gives 1 + 1 - 2 = 0. Both must floor at 1.
+        var attacker = new AttackerStats(AttackRating: 10, BaseDamage: -2, MinDamage: 1, MaxDamage: 1);
         var defender = new DefenderStats(DefenseRating: 0, ArmorFlat: 0, ArmorPercent: 0);
 
         var random = new SeededRandomSource(15);
         var result = DamageCalculator.CalculateDamage(attacker, defender, random);
 
         Assert.True(result.Hit);
-        // min roll 1 + base -2 = -1, then clamped to 1
         Assert.Equal(1, result.DamageDealt);
     }
 
