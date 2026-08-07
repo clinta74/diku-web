@@ -4,6 +4,7 @@ using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Abilities;
+using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.Quests;
 using DikuWeb.Engine.Spawning;
@@ -21,11 +22,13 @@ public sealed class CommandRegistry
         AbilityCache? abilityCache = null,
         QuestCache? questCache = null,
         ItemTemplateCache? itemTemplateCache = null,
+        MobTemplateCache? mobTemplateCache = null,
         IMobTemplateRepository? mobTemplates = null,
         IItemTemplateRepository? itemTemplates = null,
         MobSpawner? mobSpawner = null,
         ItemSpawner? itemSpawner = null,
-        ICharacterQuestSaveQueue? questSaveQueue = null)
+        ICharacterQuestSaveQueue? questSaveQueue = null,
+        EngineOptions? options = null)
     {
         _commands = [];
 
@@ -91,6 +94,7 @@ public sealed class CommandRegistry
         RestCommands.Register(_commands);
         AbilityCommands.Register(_commands, abilityCache);
         QuestCommands.Register(_commands, questCache, itemTemplateCache, questSaveQueue);
+        ShopCommands.Register(_commands, mobTemplateCache, itemTemplateCache, options);
         StatusCommands.Register(_commands);
         BuilderCommands.Register(_commands, mobTemplates, itemTemplates, mobSpawner, itemSpawner);
         AdminCommands.Register(_commands);

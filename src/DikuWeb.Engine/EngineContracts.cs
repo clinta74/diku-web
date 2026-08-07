@@ -178,4 +178,7 @@ public sealed class EngineOptions
     public int XpLossMinLevel { get; set; } = 5;
     public double RespawnHealthPercent { get; set; } = 0.25;
     public bool PvpCostsXp { get; set; } = false;
+
+    /// <summary>Shop sellback percentage (PLAN.md §5.2c).</summary>
+    public decimal? ShopSellbackPercent { get; set; } = 0.5m;
 }

@@ -45,11 +45,13 @@ public static class EngineServiceCollectionExtensions
                 sp.GetService<AbilityCache>(),
                 sp.GetService<QuestCache>(),
                 sp.GetService<ItemTemplateCache>(),
+                sp.GetService<MobTemplateCache>(),
                 sp.GetService<IMobTemplateRepository>(),
                 sp.GetService<IItemTemplateRepository>(),
                 sp.GetService<MobSpawner>(),
                 sp.GetService<ItemSpawner>(),
-                sp.GetService<ICharacterQuestSaveQueue>()));
+                sp.GetService<ICharacterQuestSaveQueue>(),
+                sp.GetService<EngineOptions>()));
         services.AddSingleton<RoomLayoutService>();
         services.AddSingleton<PlayerView>();
         services.AddSingleton<WorldMutationApplier>();
@@ -70,6 +72,7 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<AbilitySystem>();
         services.AddSingleton<QuestCache>();
         services.AddSingleton<ItemTemplateCache>();
+        services.AddSingleton<MobTemplateCache>();
 
         // Game loop - wired once all systems are available
         services.AddHostedService<GameLoop>();
