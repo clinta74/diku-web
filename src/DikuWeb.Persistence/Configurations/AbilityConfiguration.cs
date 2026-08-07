@@ -1,4 +1,4 @@
-using DikuWeb.Domain.Abilities;
+﻿using DikuWeb.Domain.Abilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,6 +8,8 @@ internal sealed class AbilityConfiguration : IEntityTypeConfiguration<Ability>
 {
     public void Configure(EntityTypeBuilder<Ability> builder)
     {
+        builder.ToTable("abilities");
+
         builder.HasKey(e => e.Key);
         builder.Property(e => e.Key).HasColumnName("key").ValueGeneratedNever();
 
@@ -21,6 +23,6 @@ internal sealed class AbilityConfiguration : IEntityTypeConfiguration<Ability>
         builder.Property(e => e.EffectKey).HasColumnName("effect_key");
         builder.Property(e => e.EffectParams).HasColumnName("effect_params").HasColumnType("jsonb");
 
-        builder.HasIndex(e => e.TargetingType);
+        builder.HasIndex(e => e.TargetingType).HasDatabaseName("ix_abilities_targeting_type");
     }
 }

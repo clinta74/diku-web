@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DikuWeb.Persistence.Migrations
 {
     [DbContext(typeof(DikuWebDbContext))]
-    [Migration("20260807132425_InitialCreate")]
+    [Migration("20260807140817_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -79,7 +79,7 @@ namespace DikuWeb.Persistence.Migrations
                     b.HasIndex("TargetingType")
                         .HasDatabaseName("ix_abilities_targeting_type");
 
-                    b.ToTable("abilities");
+                    b.ToTable("abilities", (string)null);
                 });
 
             modelBuilder.Entity("DikuWeb.Domain.Accounts.Account", b =>
@@ -404,7 +404,7 @@ namespace DikuWeb.Persistence.Migrations
                     b.HasIndex("RoomKey")
                         .HasDatabaseName("ix_mobs_room_key");
 
-                    b.ToTable("mobs");
+                    b.ToTable("mobs", (string)null);
                 });
 
             modelBuilder.Entity("DikuWeb.Domain.Inhabitants.MobTemplate", b =>
@@ -462,7 +462,7 @@ namespace DikuWeb.Persistence.Migrations
                     b.HasKey("Key")
                         .HasName("pk_mob_templates");
 
-                    b.ToTable("mob_templates");
+                    b.ToTable("mob_templates", (string)null);
                 });
 
             modelBuilder.Entity("DikuWeb.Domain.Items.ItemInstance", b =>
@@ -535,7 +535,7 @@ namespace DikuWeb.Persistence.Migrations
                     b.HasIndex("RoomKey")
                         .HasDatabaseName("ix_item_instances_room_key");
 
-                    b.ToTable("item_instances", t =>
+                    b.ToTable("item_instances", null, t =>
                         {
                             t.HasCheckConstraint("ck_item_instance_location", "(num_nonnulls(owner_character_id, container_item_id, room_key) = 1)");
                         });
@@ -582,7 +582,7 @@ namespace DikuWeb.Persistence.Migrations
                     b.HasKey("Key")
                         .HasName("pk_item_templates");
 
-                    b.ToTable("item_templates");
+                    b.ToTable("item_templates", (string)null);
                 });
 
             modelBuilder.Entity("DikuWeb.Domain.Quests.CharacterQuest", b =>
@@ -760,7 +760,7 @@ namespace DikuWeb.Persistence.Migrations
                     b.HasIndex("ZoneKey")
                         .HasDatabaseName("ix_spawners_zone_key");
 
-                    b.ToTable("spawners");
+                    b.ToTable("spawners", (string)null);
                 });
 
             modelBuilder.Entity("DikuWeb.Domain.Worlds.Room", b =>

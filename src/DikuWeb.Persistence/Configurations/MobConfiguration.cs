@@ -1,4 +1,4 @@
-using DikuWeb.Domain.Inhabitants;
+﻿using DikuWeb.Domain.Inhabitants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,6 +8,8 @@ internal sealed class MobConfiguration : IEntityTypeConfiguration<Mob>
 {
     public void Configure(EntityTypeBuilder<Mob> builder)
     {
+        builder.ToTable("mobs");
+
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).HasColumnName("id");
 
@@ -35,6 +37,6 @@ internal sealed class MobConfiguration : IEntityTypeConfiguration<Mob>
         builder.Property(e => e.CurrentTarget).HasColumnName("current_target");
         builder.Property(e => e.State).HasColumnName("state").HasColumnType("jsonb");
 
-        builder.HasIndex(e => e.RoomKey);
+        builder.HasIndex(e => e.RoomKey).HasDatabaseName("ix_mobs_room_key");
     }
 }

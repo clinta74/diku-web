@@ -1,4 +1,4 @@
-using DikuWeb.Domain.Spawning;
+﻿using DikuWeb.Domain.Spawning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,6 +8,8 @@ internal sealed class SpawnerConfiguration : IEntityTypeConfiguration<Spawner>
 {
     public void Configure(EntityTypeBuilder<Spawner> builder)
     {
+        builder.ToTable("spawners");
+
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).HasColumnName("id");
 
@@ -19,6 +21,6 @@ internal sealed class SpawnerConfiguration : IEntityTypeConfiguration<Spawner>
         builder.Property(e => e.RespawnSeconds).HasColumnName("respawn_seconds");
         builder.Property(e => e.Sentinel).HasColumnName("sentinel");
 
-        builder.HasIndex(e => e.ZoneKey);
+        builder.HasIndex(e => e.ZoneKey).HasDatabaseName("ix_spawners_zone_key");
     }
 }

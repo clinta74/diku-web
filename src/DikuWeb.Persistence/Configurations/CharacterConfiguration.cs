@@ -1,4 +1,4 @@
-using DikuWeb.Domain.Characters;
+﻿using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
@@ -58,6 +58,7 @@ internal sealed class CharacterConfiguration : IEntityTypeConfiguration<Characte
             .HasMaxLength(RoomKey.MaxLength);
 
         builder.Property(c => c.Gold).HasColumnName("gold").IsRequired();
+        builder.Property(c => c.RestState).HasColumnName("rest_state").HasConversion<int>().IsRequired();
         builder.Property(c => c.CombatState).HasColumnName("combat_state").HasConversion<int>().IsRequired();
         builder.Property(c => c.CurrentTarget).HasColumnName("current_target").HasMaxLength(64);
 

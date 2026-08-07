@@ -1,4 +1,4 @@
-using DikuWeb.Domain.Inhabitants;
+﻿using DikuWeb.Domain.Inhabitants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,6 +8,8 @@ internal sealed class MobTemplateConfiguration : IEntityTypeConfiguration<MobTem
 {
     public void Configure(EntityTypeBuilder<MobTemplate> builder)
     {
+        builder.ToTable("mob_templates");
+
         builder.HasKey(e => e.Key);
         builder.Property(e => e.Key).HasColumnName("key").ValueGeneratedNever();
 

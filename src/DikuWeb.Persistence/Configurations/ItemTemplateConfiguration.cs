@@ -1,4 +1,4 @@
-using DikuWeb.Domain.Items;
+﻿using DikuWeb.Domain.Items;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,6 +8,8 @@ internal sealed class ItemTemplateConfiguration : IEntityTypeConfiguration<ItemT
 {
     public void Configure(EntityTypeBuilder<ItemTemplate> builder)
     {
+        builder.ToTable("item_templates");
+
         builder.HasKey(e => e.Key);
         builder.Property(e => e.Key).HasColumnName("key").ValueGeneratedNever();
 
