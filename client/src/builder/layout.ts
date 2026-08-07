@@ -39,114 +39,95 @@ export const stepY = (direction: string) => {
 /**
  * Places a zone's rooms on the builder canvas based on exit topology (PLAN.md §7.2).
  *
- * Multi-pass layout with collision resolution:
- * 1. Initial BFS places rooms 1 cell in exit direction
- * 2. Subsequent passes increase step distance where collisions occur
- * 3. Each pass allows complex topologies to spread out properly
- *
- * Ensures rooms with multiple branching exits have space to avoid overlap
- * and allows vertical (up/down) rooms to force horizontal shifts where needed.
+ * Single-pass BFS from anchor room with collision-driven spacing:
+ * - Each exit places the next room in the exit direction
+ * - Collision avoidance nudges rooms east when needed
+ * - Naturally handles UP/DOWN as diagonal moves that don't collapse cycles
+ * - Preserves accurate spatial relationships between connected rooms
  *
  * Results in:
  * - North: up, South: down, East: right, West: left
  * - Up: upper-left diagonal, Down: lower-right diagonal
- * - Complex topologies spread to avoid collision
+ * - Complex branching handled through collision nudging, not re-layout
  * - Unreachable rooms placed at the bottom
  */
 export function layoutZone(rooms: RoomDetail[]): PlacedRoom[] {
   const byKey = new Map(rooms.map((r) => [r.key, r]))
-  let placed = new Map<string, { x: number; y: number }>()
+  const placed = new Map<string, { x: number; y: number }>()
+  const taken = new Set<string>()
 
-  function doLayoutPass(stepMultiplier: number) {
-    const newPlaced = new Map<string, { x: number; y: number }>()
-    const newTaken = new Set<string>()
+  function claim(key: string, x: number, y: number) {
+    let cx = x
+    let cy = y
 
-    function claim(key: string, x: number, y: number) {
-      let cx = x
-      let cy = y
+    // Shift entire map if we go negative
+    if (cx < 0 || cy < 0) {
+      const minX = Math.min(0, cx, ...[...placed.values()].map((p) => p.x))
+      const minY = Math.min(0, cy, ...[...placed.values()].map((p) => p.y))
 
-      // Shift if negative
-      if (cx < 0 || cy < 0) {
-        const minX = Math.min(0, cx, ...[...newPlaced.values()].map((p) => p.x))
-        const minY = Math.min(0, cy, ...[...newPlaced.values()].map((p) => p.y))
-
-        if (minX < 0 || minY < 0) {
-          const shifted = new Map<string, { x: number; y: number }>()
-          for (const [k, pos] of newPlaced) {
-            shifted.set(k, { x: pos.x - minX, y: pos.y - minY })
-          }
-          newPlaced.clear()
-          for (const [k, pos] of shifted) {
-            newPlaced.set(k, pos)
-          }
-          newTaken.clear()
-          for (const pos of newPlaced.values()) {
-            newTaken.add(`${pos.x},${pos.y}`)
-          }
+      if (minX < 0 || minY < 0) {
+        const shifted = new Map<string, { x: number; y: number }>()
+        for (const [k, pos] of placed) {
+          shifted.set(k, { x: pos.x - minX, y: pos.y - minY })
         }
-
-        cx = cx - minX
-        cy = cy - minY
+        placed.clear()
+        for (const [k, pos] of shifted) {
+          placed.set(k, pos)
+        }
+        taken.clear()
+        for (const pos of placed.values()) {
+          taken.add(`${pos.x},${pos.y}`)
+        }
       }
 
-      // Collision avoidance: nudge east
-      while (newTaken.has(`${cx},${cy}`)) cx++
-
-      newPlaced.set(key, { x: cx, y: cy })
-      newTaken.add(`${cx},${cy}`)
+      cx = cx - minX
+      cy = cy - minY
     }
 
-    // Anchor explicit positions
-    for (const room of rooms) {
-      if (room.editorX !== null && room.editorY !== null) {
-        claim(room.key, room.editorX, room.editorY)
-      }
-    }
+    // Collision avoidance: nudge east if needed
+    while (taken.has(`${cx},${cy}`)) cx++
 
-    const queue = [...newPlaced.keys()]
-
-    // Anchor first room if nothing is explicit
-    if (queue.length === 0 && rooms.length > 0) {
-      claim(rooms[0].key, 3, 3)
-      queue.push(rooms[0].key)
-    }
-
-    // BFS: position rooms by exit direction
-    while (queue.length > 0) {
-      const key = queue.shift()!
-      const room = byKey.get(key)
-      const at = newPlaced.get(key)
-      if (!room || !at) continue
-
-      for (const exit of room.exits) {
-        if (newPlaced.has(exit.to) || !byKey.has(exit.to)) continue
-
-        const dx = stepX(exit.direction) * stepMultiplier
-        const dy = stepY(exit.direction) * stepMultiplier
-        claim(exit.to, at.x + dx, at.y + dy)
-        queue.push(exit.to)
-      }
-    }
-
-    placed = newPlaced
+    placed.set(key, { x: cx, y: cy })
+    taken.add(`${cx},${cy}`)
   }
 
-  // Pass 1: initial placement at 1x distance
-  doLayoutPass(1)
+  // Start with rooms that have explicit coordinates
+  for (const room of rooms) {
+    if (room.editorX !== null && room.editorY !== null) {
+      claim(room.key, room.editorX, room.editorY)
+    }
+  }
 
-  // Pass 2: spread rooms at 1.5x to resolve collisions and branching conflicts
-  doLayoutPass(1.5)
+  const queue = [...placed.keys()]
 
-  // Pass 3: final spread at 2x for complex topologies with many branches
-  doLayoutPass(2)
+  // No explicit coordinates: anchor on first room and grow from exits
+  if (queue.length === 0 && rooms.length > 0) {
+    claim(rooms[0].key, 3, 3)
+    queue.push(rooms[0].key)
+  }
 
-  // Place orphaned rooms
+  // BFS walk: position rooms based on exit directions
+  while (queue.length > 0) {
+    const key = queue.shift()!
+    const room = byKey.get(key)
+    const at = placed.get(key)
+    if (!room || !at) continue
+
+    for (const exit of room.exits) {
+      // Skip already placed or non-existent targets
+      if (placed.has(exit.to) || !byKey.has(exit.to)) continue
+
+      const nextX = at.x + stepX(exit.direction)
+      const nextY = at.y + stepY(exit.direction)
+
+      claim(exit.to, nextX, nextY)
+      queue.push(exit.to)
+    }
+  }
+
+  // Orphaned rooms (disconnected from graph) go in a row at the bottom
   let spare = 0
   const floor = placed.size === 0 ? 0 : Math.max(...[...placed.values()].map((p) => p.y)) + 3
-  const taken = new Set<string>()
-  for (const pos of placed.values()) {
-    taken.add(`${pos.x},${pos.y}`)
-  }
 
   for (const room of rooms) {
     if (!placed.has(room.key)) {
