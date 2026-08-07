@@ -9,8 +9,14 @@ internal sealed class ItemTemplateConfiguration : IEntityTypeConfiguration<ItemT
     public void Configure(EntityTypeBuilder<ItemTemplate> builder)
     {
         builder.HasKey(e => e.Key);
-        builder.Property(e => e.Key).ValueGeneratedNever();
+        builder.Property(e => e.Key).HasColumnName("key").ValueGeneratedNever();
 
-        builder.Property(e => e.BaseStats).HasColumnType("jsonb");
+        builder.Property(e => e.Name).HasColumnName("name");
+        builder.Property(e => e.Description).HasColumnName("description");
+        builder.Property(e => e.Icon).HasColumnName("icon");
+        builder.Property(e => e.Slot).HasColumnName("slot");
+        builder.Property(e => e.Weight).HasColumnName("weight");
+        builder.Property(e => e.BaseValue).HasColumnName("base_value");
+        builder.Property(e => e.BaseStats).HasColumnName("base_stats").HasColumnType("jsonb");
     }
 }

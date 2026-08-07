@@ -380,6 +380,7 @@ internal static class BuilderCommands
 
             var item = await _itemSpawner!.SpawnAsync(template, zone, world, roomKey);
             ctx.World.AddItem(item);
+            ctx.ItemSaveQueue?.Enqueue(item);
 
             var displayName = $"{template.Icon} {template.Name}";
             ctx.Reply($"Spawned: {displayName}");

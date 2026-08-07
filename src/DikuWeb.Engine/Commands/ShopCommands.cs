@@ -171,6 +171,7 @@ public static class ShopCommands
 
         ctx.World.AddItem(instance);
         ctx.World.PickUpItem(instance, character.Id);
+        ctx.ItemSaveQueue?.Enqueue(instance);
 
         // Deduct gold
         character.Gold -= price;

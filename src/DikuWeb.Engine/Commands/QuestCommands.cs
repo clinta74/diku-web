@@ -381,6 +381,7 @@ private static void Quests(CommandContext ctx)
 
                         ctx.World.AddItem(instance);
                         ctx.World.PickUpItem(instance, character.Id);
+                        ctx.ItemSaveQueue?.Enqueue(instance);
                         ctx.Reply($"You receive {matchingQuest.RewardItemCount} x {itemTemplate.Name}.", "reward");
                     }
                 }
