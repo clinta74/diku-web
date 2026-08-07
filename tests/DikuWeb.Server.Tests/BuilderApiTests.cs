@@ -12,6 +12,7 @@ namespace DikuWeb.Server.Tests;
 /// and a real PostgreSQL. Every write here goes enqueue → loop applies → persist → notify.
 /// </summary>
 [Collection(PostgresCollection.Name)]
+[Trait("Category", "EndToEnd")]
 public sealed class BuilderApiTests(PostgresFixture postgres)
 {
     private DikuWebAppFactory NewFactory() => new(postgres.ConnectionString);

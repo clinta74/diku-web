@@ -11,6 +11,7 @@ namespace DikuWeb.Server.Tests;
 /// Nothing is stubbed, so these exercise the pulse cadence and the SSE framing as shipped.
 /// </summary>
 [Collection(PostgresCollection.Name)]
+[Trait("Category", "EndToEnd")]
 public sealed class GameFlowTests(PostgresFixture postgres)
 {
     /// <summary>Generous: the loop drains commands on a 250 ms pulse and CI is slower.</summary>

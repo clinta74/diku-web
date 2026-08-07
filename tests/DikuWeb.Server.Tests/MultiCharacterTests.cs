@@ -11,6 +11,7 @@ namespace DikuWeb.Server.Tests;
 /// than by account, so each gets its own stream, scrollback, and link-dead window.
 /// </summary>
 [Collection(PostgresCollection.Name)]
+[Trait("Category", "EndToEnd")]
 public sealed class MultiCharacterTests(PostgresFixture postgres)
 {
     private static readonly TimeSpan EventTimeout = TimeSpan.FromSeconds(10);

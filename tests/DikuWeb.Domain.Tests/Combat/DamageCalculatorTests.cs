@@ -1,4 +1,5 @@
 using DikuWeb.Domain.Combat;
+using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Randomness;
 
 namespace DikuWeb.Domain.Tests.Combat;
@@ -451,4 +452,134 @@ public class DamageCalculatorTests
         Assert.True(result.Hit);
         Assert.True(result.DamageDealt > 1000);
     }
+
+    // =========================================================================
+    // Mob stats - template values when present, level-derived when absent
+    // =========================================================================
+
+    [Fact]
+    public void Mob_with_no_combat_stats_falls_back_to_level_derived_values()
+    {
+        // A template that declares only flavour stats must behave exactly as before, so
+        // existing content is not silently rebalanced by templates gaining precedence.
+        var mob = NewMob(level: 9, stats: new() { { "health", 40 } });
+
+        var stats = DamageCalculator.StatsFrom(mob);
+
+        Assert.Equal(4, stats.AttackRating);  // level / 2
+        Assert.Equal(3, stats.BaseDamage);    // level / 3
+        Assert.Equal(1, stats.MinDamage);
+        Assert.Equal(4, stats.MaxDamage);
+    }
+
+    [Fact]
+    public void Mob_damage_range_string_from_the_template_is_used()
+    {
+        // The shape MobTemplate documents: { "damage": "4-7" }. It was carried through spawning
+        // into ResolvedStats and then ignored entirely.
+        var mob = NewMob(level: 9, stats: new() { { "damage", "4-7" } });
+
+        var stats = DamageCalculator.StatsFrom(mob);
+
+        Assert.Equal(4, stats.MinDamage);
+        Assert.Equal(7, stats.MaxDamage);
+
+        // Untouched by the template, so still level-derived.
+        Assert.Equal(4, stats.AttackRating);
+        Assert.Equal(3, stats.BaseDamage);
+    }
+
+    [Fact]
+    public void Mob_damage_written_as_a_single_number_is_fixed_damage()
+    {
+        var mob = NewMob(level: 1, stats: new() { { "damage", 6 } });
+
+        var stats = DamageCalculator.StatsFrom(mob);
+
+        Assert.Equal(6, stats.MinDamage);
+        Assert.Equal(6, stats.MaxDamage);
+    }
+
+    [Fact]
+    public void Mob_explicit_damage_bounds_win_over_the_range_string()
+    {
+        var mob = NewMob(level: 1, stats: new()
+        {
+            { "damage", "4-7" },
+            { "damageMax", 20 },
+        });
+
+        var stats = DamageCalculator.StatsFrom(mob);
+
+        Assert.Equal(4, stats.MinDamage);
+        Assert.Equal(20, stats.MaxDamage);
+    }
+
+    [Fact]
+    public void Mob_damage_multiplier_scales_the_level_derived_baseline()
+    {
+        // Spawn multipliers land in ResolvedStats, so a zone can make its mobs hit harder
+        // without every template restating its dice.
+        var mob = NewMob(level: 1, stats: new() { { "damageMultiplier", 3 } });
+
+        var stats = DamageCalculator.StatsFrom(mob);
+
+        Assert.Equal(3, stats.MinDamage);   // 1 x 3
+        Assert.Equal(12, stats.MaxDamage);  // 4 x 3
+    }
+
+    [Fact]
+    public void Mob_attack_rating_and_defence_come_from_the_template_when_declared()
+    {
+        var mob = NewMob(level: 4, stats: new()
+        {
+            { "attackRating", 15 },
+            { "defense", 12 },
+            { "armorFlat", 3 },
+            { "armorPercent", 0.25m },
+        });
+
+        var attack = DamageCalculator.StatsFrom(mob);
+        var defence = DamageCalculator.DefenderStatsFrom(mob);
+
+        Assert.Equal(15, attack.AttackRating);
+        Assert.Equal(12, defence.DefenseRating);
+        Assert.Equal(3, defence.ArmorFlat);
+        Assert.Equal(0.25m, defence.ArmorPercent);
+    }
+
+    [Fact]
+    public void Mob_armour_percent_is_clamped_so_a_mob_cannot_be_authored_immune()
+    {
+        var mob = NewMob(level: 1, stats: new() { { "armorPercent", 5m } });
+
+        var defence = DamageCalculator.DefenderStatsFrom(mob);
+
+        Assert.Equal(0.95m, defence.ArmorPercent);
+    }
+
+    [Fact]
+    public void Mob_damage_bounds_written_backwards_do_not_break_the_roll()
+    {
+        // random.Next(min, max + 1) throws when max < min, which would fault the combat tick
+        // for every player fighting that mob rather than just looking wrong.
+        var mob = NewMob(level: 1, stats: new() { { "damageMin", 9 }, { "damageMax", 2 } });
+
+        var stats = DamageCalculator.StatsFrom(mob);
+        var result = DamageCalculator.CalculateDamage(
+            stats,
+            new DefenderStats(DefenseRating: 0, ArmorFlat: 0, ArmorPercent: 0m),
+            new SeededRandomSource(15));
+
+        Assert.True(stats.MaxDamage >= stats.MinDamage);
+        Assert.True(result.DamageDealt >= 1);
+    }
+
+    private static Mob NewMob(int level, Dictionary<string, object> stats) => new()
+    {
+        TemplateKey = "kobold-sentry",
+        RoomKey = "aldenmoor.millbrook.north-gate",
+        Level = level,
+        ResolvedStats = stats,
+    };
 }

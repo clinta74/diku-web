@@ -15,6 +15,7 @@ namespace DikuWeb.Server.Tests;
 /// is that a demotion or a ban reaches a session that is already signed in.
 /// </summary>
 [Collection(PostgresCollection.Name)]
+[Trait("Category", "EndToEnd")]
 public sealed class AdminApiTests(PostgresFixture postgres)
 {
     private DikuWebAppFactory NewFactory() => new(postgres.ConnectionString);

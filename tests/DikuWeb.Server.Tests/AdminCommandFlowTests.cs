@@ -18,6 +18,7 @@ namespace DikuWeb.Server.Tests;
 /// <c>promote</c> gets silence whether it worked, failed, or named nobody.
 /// </summary>
 [Collection(PostgresCollection.Name)]
+[Trait("Category", "EndToEnd")]
 public sealed class AdminCommandFlowTests(PostgresFixture postgres)
 {
     private static readonly TimeSpan EventTimeout = TimeSpan.FromSeconds(10);

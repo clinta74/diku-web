@@ -12,6 +12,7 @@ namespace DikuWeb.Server.Tests;
 /// live-immediate over draft/publish, so it needs a test against the real stream.
 /// </summary>
 [Collection(PostgresCollection.Name)]
+[Trait("Category", "EndToEnd")]
 public sealed class LiveEditTests(PostgresFixture postgres)
 {
     private static readonly TimeSpan EventTimeout = TimeSpan.FromSeconds(10);

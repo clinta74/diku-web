@@ -11,6 +11,7 @@ namespace DikuWeb.Server.Tests;
 /// Exercises mob spawning, combat system, loot tables, XP, leveling, and respawn.
 /// </summary>
 [Collection(PostgresCollection.Name)]
+[Trait("Category", "EndToEnd")]
 public sealed class CombatAndSpawningE2eTests(PostgresFixture postgres)
 {
     private static readonly TimeSpan EventTimeout = TimeSpan.FromSeconds(10);

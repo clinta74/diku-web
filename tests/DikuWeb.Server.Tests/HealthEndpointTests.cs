@@ -5,6 +5,7 @@ using DikuWeb.Server.Tests.Infrastructure;
 namespace DikuWeb.Server.Tests;
 
 [Collection(PostgresCollection.Name)]
+[Trait("Category", "EndToEnd")]
 public sealed class HealthEndpointTests(PostgresFixture postgres)
 {
     [Fact]

@@ -1,4 +1,3 @@
-using System.Globalization;
 using DikuWeb.Domain.Items;
 
 namespace DikuWeb.Domain.Combat;
@@ -225,30 +224,9 @@ public static class EquipmentResolver
         slot is ItemSlot.Head or ItemSlot.Chest or ItemSlot.Hands or
                 ItemSlot.Legs or ItemSlot.Feet or ItemSlot.OffHand;
 
-    // Stats arrive from jsonb, so a number can surface as int, long, decimal, double, string,
-    // or JsonElement depending on how it was written and read back. Parsing via the invariant
-    // string form handles every one of those without the call sites caring which it got.
-    private static bool TryReadInt(ItemInstance item, string key, out int value)
-    {
-        value = 0;
+    private static bool TryReadInt(ItemInstance item, string key, out int value) =>
+        StatReader.TryReadInt(item.ResolvedStats, key, out value);
 
-        return item.ResolvedStats.TryGetValue(key, out var raw) &&
-               int.TryParse(
-                   Convert.ToString(raw, CultureInfo.InvariantCulture),
-                   NumberStyles.Integer,
-                   CultureInfo.InvariantCulture,
-                   out value);
-    }
-
-    private static bool TryReadDecimal(ItemInstance item, string key, out decimal value)
-    {
-        value = 0m;
-
-        return item.ResolvedStats.TryGetValue(key, out var raw) &&
-               decimal.TryParse(
-                   Convert.ToString(raw, CultureInfo.InvariantCulture),
-                   NumberStyles.Number,
-                   CultureInfo.InvariantCulture,
-                   out value);
-    }
+    private static bool TryReadDecimal(ItemInstance item, string key, out decimal value) =>
+        StatReader.TryReadDecimal(item.ResolvedStats, key, out value);
 }

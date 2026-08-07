@@ -115,17 +115,70 @@ public static class DamageCalculator
     }
 
     /// <summary>
-    /// Build attacker stats from a mob.
-    /// Mobs use level-based attack rating and damage (no attributes).
+    /// Build attacker stats from a mob, preferring what its template declares and falling back
+    /// to level-derived defaults for anything it leaves out.
     /// </summary>
+    /// <remarks>
+    /// Every value here used to be level-derived unconditionally, so a template's own combat
+    /// stats were carried all the way through spawning into <see cref="Mob.ResolvedStats"/> -
+    /// multipliers and all - and then ignored.
+    ///
+    /// Damage dice may be written either as <c>damageMin</c>/<c>damageMax</c>, matching the
+    /// vocabulary weapons use, or as the range string MobTemplate documents (<c>"damage": "4-7"</c>).
+    /// A <c>damageMultiplier</c> scales whichever dice are in play, exactly as it does for a
+    /// weapon, so the level-derived baseline is still worth scaling for a template that declares
+    /// nothing else.
+    /// </remarks>
     public static AttackerStats StatsFrom(Mob mob)
     {
-        var attackRating = mob.Level / 2;
+        ArgumentNullException.ThrowIfNull(mob);
+
+        var stats = mob.ResolvedStats;
+
+        // Level-derived defaults, unchanged from before, used wherever the template is silent.
+        var attackRating = StatReader.TryReadInt(stats, "attackRating", out var rating)
+            ? rating
+            : mob.Level / 2;
+
+        var baseDamage = StatReader.TryReadInt(stats, "baseDamage", out var flat)
+            ? flat
+            : mob.Level / 3;
+
+        var minDamage = 1;
+        var maxDamage = 4;
+
+        if (StatReader.TryReadRange(stats, "damage", out var rangeMin, out var rangeMax))
+        {
+            minDamage = rangeMin;
+            maxDamage = rangeMax;
+        }
+
+        // Explicit bounds win over the range string, and either bound may be set alone.
+        if (StatReader.TryReadInt(stats, "damageMin", out var declaredMin))
+        {
+            minDamage = declaredMin;
+        }
+
+        if (StatReader.TryReadInt(stats, "damageMax", out var declaredMax))
+        {
+            maxDamage = declaredMax;
+        }
+
+        if (StatReader.TryReadDecimal(stats, "damageMultiplier", out var multiplier) && multiplier > 0m)
+        {
+            // Ceiling, so a multiplier can never round a die face down to nothing.
+            minDamage = (int)Math.Ceiling(minDamage * multiplier);
+            maxDamage = (int)Math.Ceiling(maxDamage * multiplier);
+        }
+
+        // A template declaring max below min would otherwise make the roll throw.
+        maxDamage = Math.Max(minDamage, maxDamage);
+
         return new AttackerStats(
             AttackRating: attackRating,
-            BaseDamage: mob.Level / 3, // Level-scaled damage
-            MinDamage: 1,
-            MaxDamage: 4);
+            BaseDamage: baseDamage,
+            MinDamage: minDamage,
+            MaxDamage: maxDamage);
     }
 
     /// <summary>
@@ -141,14 +194,32 @@ public static class DamageCalculator
     }
 
     /// <summary>
-    /// Build defender stats from a mob.
-    /// Mobs have flat defense scaling with level.
+    /// Build defender stats from a mob, preferring what its template declares and falling back
+    /// to level-derived defence for anything it leaves out.
     /// </summary>
     public static DefenderStats DefenderStatsFrom(Mob mob)
     {
+        ArgumentNullException.ThrowIfNull(mob);
+
+        var stats = mob.ResolvedStats;
+
+        var defense = StatReader.TryReadInt(stats, "defense", out var declared)
+            ? declared
+            : mob.Level / 4;
+
+        StatReader.TryReadInt(stats, "armorFlat", out var armorFlat);
+        StatReader.TryReadDecimal(stats, "armorPercent", out var armorPercent);
+
+        if (StatReader.TryReadDecimal(stats, "armorMultiplier", out var multiplier) && multiplier > 0m)
+        {
+            armorFlat = (int)Math.Ceiling(armorFlat * multiplier);
+        }
+
         return new DefenderStats(
-            DefenseRating: mob.Level / 4,
-            ArmorFlat: 0,
-            ArmorPercent: 0m);
+            DefenseRating: defense,
+            ArmorFlat: armorFlat,
+
+            // Same 0-95% clamp equipment uses, so a mob cannot be authored immune.
+            ArmorPercent: Math.Clamp(armorPercent, 0m, 0.95m));
     }
 }

@@ -5,6 +5,7 @@ using DikuWeb.Server.Tests.Infrastructure;
 namespace DikuWeb.Server.Tests;
 
 [Collection(PostgresCollection.Name)]
+[Trait("Category", "EndToEnd")]
 public sealed class AuthFlowTests(PostgresFixture postgres)
 {
     private static string Unique(string prefix) => $"{prefix}{Guid.NewGuid():N}"[..16];
