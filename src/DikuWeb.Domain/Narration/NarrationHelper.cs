@@ -7,7 +7,21 @@ namespace DikuWeb.Domain.Narration;
 public static class NarrationHelper
 {
     /// <summary>
+    /// Whether a name is a proper name, and so takes no article and keeps its capital
+    /// wherever it appears: "Grimble hits you", never "a grimble hits you".
+    /// </summary>
+    /// <remarks>
+    /// The signal is the builder's own capitalization. Templates are authored in the case
+    /// they should read in ("large rat", "long sword", "Grimble"), so no extra flag is
+    /// needed - and a builder who wants the proper-name treatment gets it by typing a
+    /// capital, which is what they would do anyway.
+    /// </remarks>
+    public static bool IsProperName(string name) =>
+        !string.IsNullOrEmpty(name) && char.IsUpper(name[0]);
+
+    /// <summary>
     /// Names a thing as a noun phrase with its indefinite article: "a rat", "an orc".
+    /// Proper names are returned untouched: "Grimble".
     /// </summary>
     /// <param name="name">The name to add an article to (e.g., "rat", "orc").</param>
     /// <param name="capitalize">
@@ -18,11 +32,23 @@ public static class NarrationHelper
     /// <returns>The name with a proper article prefix.</returns>
     public static string WithArticle(string name, bool capitalize = false)
     {
-        if (string.IsNullOrEmpty(name))
+        if (string.IsNullOrEmpty(name) || IsProperName(name))
             return name;
 
         var result = $"{GetArticle(name)} {name}";
         return capitalize ? Capitalize(result) : result;
+    }
+
+    /// <summary>
+    /// Names a specific, already-established thing: "the long sword". Proper names are
+    /// returned untouched, because "you drop the Grimble" is not English.
+    /// </summary>
+    public static string WithDefiniteArticle(string name, bool capitalize = false)
+    {
+        if (string.IsNullOrEmpty(name) || IsProperName(name))
+            return name;
+
+        return capitalize ? $"The {name}" : $"the {name}";
     }
 
     /// <summary>Upper-cases the first character, leaving the rest of the text alone.</summary>
@@ -40,12 +66,9 @@ public static class NarrationHelper
         if (string.IsNullOrEmpty(template))
             return template;
 
-        var result = template;
-        var processed = new HashSet<string>();
-
         // Process tokens in order of appearance, handling {type:key} syntax
         var tokenPattern = new System.Text.RegularExpressions.Regex(@"\{(\w+):(\w+)\}|\{(\w+)\}");
-        result = tokenPattern.Replace(result, match =>
+        var result = tokenPattern.Replace(template, match =>
         {
             string tokenKey;
             string tokenType = "default";
@@ -64,8 +87,6 @@ public static class NarrationHelper
 
             if (!tokens.TryGetValue(tokenKey, out var value))
                 return match.Value;
-
-            processed.Add(tokenKey);
 
             return tokenType switch
             {

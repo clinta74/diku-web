@@ -1,5 +1,6 @@
-using DikuWeb.Domain.Characters;
+﻿using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Spawning;
@@ -176,8 +177,10 @@ public static class ShopCommands
         // Deduct gold
         character.Gold -= price;
 
-        ctx.Reply($"You buy {itemTemplate.Name} for {price} gold.", "success");
-        ctx.Broadcast($"{character.Name} buys something from {shopkeeperTemplate.Name}.", "activity");
+        ctx.Reply($"You buy {NarrationHelper.WithArticle(itemTemplate.Name)} for {price} gold.", "success");
+        ctx.Broadcast(
+            $"{character.Name} buys something from {NarrationHelper.WithArticle(shopkeeperTemplate.Name)}.",
+            "activity");
     }
 
     private static void Sell(CommandContext ctx)
@@ -229,7 +232,8 @@ public static class ShopCommands
         if (itemToSell.State.TryGetValue("questItem", out var questItemFlag) &&
             questItemFlag is bool isQuestItem && isQuestItem)
         {
-            ctx.Reply($"{shopkeeperTemplate?.Name ?? "The shopkeeper"} refuses to buy a quest item.");
+            ctx.Reply(
+                $"{NarrationHelper.WithArticle(shopkeeperTemplate?.Name ?? "shopkeeper", capitalize: true)} refuses to buy a quest item.");
             return;
         }
 
@@ -244,7 +248,11 @@ public static class ShopCommands
         ctx.ItemSaveQueue?.EnqueueDelete(itemToSell.Id);
         character.Gold += sellPrice;
 
-        ctx.Reply($"You sell {itemToSell.TemplateName} for {sellPrice} gold.", "success");
-        ctx.Broadcast($"{character.Name} sells something to {shopkeeperTemplate?.Name ?? "a shopkeeper"}.", "activity");
+        ctx.Reply(
+            $"You sell {NarrationHelper.WithDefiniteArticle(itemToSell.TemplateName)} for {sellPrice} gold.",
+            "success");
+        ctx.Broadcast(
+            $"{character.Name} sells something to {NarrationHelper.WithArticle(shopkeeperTemplate?.Name ?? "shopkeeper")}.",
+            "activity");
     }
 }

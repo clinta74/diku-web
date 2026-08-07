@@ -1,6 +1,7 @@
-using DikuWeb.Domain.Accounts;
+﻿using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
+using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Protocol;
@@ -382,9 +383,8 @@ internal static class BuilderCommands
             ctx.World.AddItem(item);
             ctx.ItemSaveQueue?.Enqueue(item);
 
-            var displayName = $"{template.Icon} {template.Name}";
-            ctx.Reply($"Spawned: {displayName}");
-            ctx.Broadcast($"{ctx.Actor.Name} conjures {displayName}!", "arrival");
+            ctx.Reply($"Spawned: {template.Icon} {template.Name}");
+            ctx.Broadcast($"{ctx.Actor.Name} conjures {NarrationHelper.WithArticle(template.Name)}!", "arrival");
             ctx.View.RefreshRoom(ctx.World, roomKey);
         }
         catch (Exception ex)
@@ -439,7 +439,7 @@ internal static class BuilderCommands
 
             var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
             ctx.Reply($"Spawned: {template.Icon} {displayName} (level {template.Level})");
-            ctx.Broadcast($"{ctx.Actor.Name} conjures {displayName}!", "arrival");
+            ctx.Broadcast($"{ctx.Actor.Name} conjures {NarrationHelper.WithArticle(displayName)}!", "arrival");
             ctx.View.RefreshRoom(ctx.World, roomKey);
         }
         catch (Exception ex)

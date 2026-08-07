@@ -30,11 +30,38 @@ public sealed class NarrationHelperTests
     }
 
     [Fact]
-    public void WithArticle_leaves_the_rest_of_the_name_alone()
+    public void WithArticle_leaves_a_proper_name_alone()
     {
-        // Only the first character is touched, so an intentional capital survives.
-        Assert.Equal("a Millbrook guard", NarrationHelper.WithArticle("Millbrook guard"));
-        Assert.Equal("A Millbrook guard", NarrationHelper.WithArticle("Millbrook guard", capitalize: true));
+        // A capitalized template name is the builder saying "this is a name, not a kind of
+        // thing". "A Grimble hits you" would be wrong in every position.
+        Assert.Equal("Grimble", NarrationHelper.WithArticle("Grimble"));
+        Assert.Equal("Grimble", NarrationHelper.WithArticle("Grimble", capitalize: true));
+        Assert.Equal("Excalibur", NarrationHelper.WithArticle("Excalibur"));
+    }
+
+    [Theory]
+    [InlineData("Grimble", true)]
+    [InlineData("Excalibur", true)]
+    [InlineData("large rat", false)]
+    [InlineData("long sword", false)]
+    [InlineData("", false)]
+    public void IsProperName_reads_the_builders_capitalization(string name, bool expected) =>
+        Assert.Equal(expected, NarrationHelper.IsProperName(name));
+
+    [Fact]
+    public void WithDefiniteArticle_names_an_established_thing()
+    {
+        Assert.Equal("the long sword", NarrationHelper.WithDefiniteArticle("long sword"));
+        Assert.Equal("The long sword", NarrationHelper.WithDefiniteArticle("long sword", capitalize: true));
+    }
+
+    [Fact]
+    public void WithDefiniteArticle_leaves_a_proper_name_alone()
+    {
+        // "You drop the Excalibur." is not English.
+        Assert.Equal("Excalibur", NarrationHelper.WithDefiniteArticle("Excalibur"));
+        Assert.Equal("Excalibur", NarrationHelper.WithDefiniteArticle("Excalibur", capitalize: true));
+        Assert.Equal("You drop Excalibur.", $"You drop {NarrationHelper.WithDefiniteArticle("Excalibur")}.");
     }
 
     [Theory]
@@ -48,6 +75,13 @@ public sealed class NarrationHelperTests
     {
         Assert.Equal("A rat is here.", NarrationHelper.BuildSentence("rat", "is here."));
         Assert.Equal("An orc appears.", NarrationHelper.BuildSentence("orc", "appears."));
+    }
+
+    [Fact]
+    public void BuildSentence_gives_a_proper_name_no_article()
+    {
+        Assert.Equal("Grimble is here.", NarrationHelper.BuildSentence("Grimble", "is here."));
+        Assert.Equal("Grimble leaves north.", NarrationHelper.BuildSentence("Grimble", "leaves north"));
     }
 
     [Fact]

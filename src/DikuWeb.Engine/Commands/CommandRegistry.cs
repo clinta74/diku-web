@@ -1,7 +1,8 @@
-using DikuWeb.Domain.Characters;
+﻿using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
+using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Inhabitants;
@@ -338,8 +339,8 @@ public sealed class CommandRegistry
         ctx.World.PickUpItem(targetItem, ctx.Actor.CharacterId);
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
-        ctx.Reply($"You take the {targetItem.TemplateName}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} takes the {targetItem.TemplateName}.", "movement");
+        ctx.Reply($"You take {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} takes {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "movement");
         ctx.MarkRoomForRefresh(ctx.Actor.RoomKey);
     }
 
@@ -363,8 +364,8 @@ public sealed class CommandRegistry
         ctx.World.DropItem(targetItem, ctx.Actor.RoomKey);
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
-        ctx.Reply($"You drop the {targetItem.TemplateName}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} drops the {targetItem.TemplateName}.", "movement");
+        ctx.Reply($"You drop {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} drops {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "movement");
         ctx.MarkRoomForRefresh(ctx.Actor.RoomKey);
     }
 
@@ -387,7 +388,7 @@ public sealed class CommandRegistry
 
         if (targetItem.EquippedSlot is not null)
         {
-            ctx.Reply($"You're already wearing the {targetItem.TemplateName}.", "bad");
+            ctx.Reply($"You're already wearing {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "bad");
             return;
         }
 
@@ -397,8 +398,8 @@ public sealed class CommandRegistry
         ctx.World.EquipItem(targetItem, slot);
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
-        ctx.Reply($"You wear the {targetItem.TemplateName}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} wears the {targetItem.TemplateName}.", "movement");
+        ctx.Reply($"You wear {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} wears {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "movement");
     }
 
     private static void Wield(CommandContext ctx)
@@ -420,15 +421,15 @@ public sealed class CommandRegistry
 
         if (targetItem.EquippedSlot is not null)
         {
-            ctx.Reply($"You're already wielding the {targetItem.TemplateName}.", "bad");
+            ctx.Reply($"You're already wielding {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "bad");
             return;
         }
 
         ctx.World.EquipItem(targetItem, ItemSlot.MainHand);
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
-        ctx.Reply($"You wield the {targetItem.TemplateName}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} wields the {targetItem.TemplateName}.", "movement");
+        ctx.Reply($"You wield {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} wields {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "movement");
     }
 
     private static void Remove(CommandContext ctx)
@@ -450,15 +451,15 @@ public sealed class CommandRegistry
 
         if (targetItem.EquippedSlot is null)
         {
-            ctx.Reply($"You're not wearing the {targetItem.TemplateName}.", "bad");
+            ctx.Reply($"You're not wearing {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "bad");
             return;
         }
 
         ctx.World.UnequipItem(targetItem);
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
-        ctx.Reply($"You remove the {targetItem.TemplateName}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} removes the {targetItem.TemplateName}.", "movement");
+        ctx.Reply($"You remove {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} removes {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "movement");
     }
 
     private static void Give(CommandContext ctx)
@@ -510,9 +511,9 @@ public sealed class CommandRegistry
         ctx.World.PickUpItem(targetItem, targetPlayer.CharacterId);
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
-        ctx.Reply($"You give the {targetItem.TemplateName} to {targetPlayer.Name}.", "good");
-        targetPlayer.SendText($"{ctx.Actor.Name} gives you the {targetItem.TemplateName}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} gives the {targetItem.TemplateName} to {targetPlayer.Name}.", "movement");
+        ctx.Reply($"You give {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)} to {targetPlayer.Name}.", "good");
+        targetPlayer.SendText($"{ctx.Actor.Name} gives you {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} gives {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)} to {targetPlayer.Name}.", "movement");
         ctx.MarkRoomForRefresh(ctx.Actor.RoomKey);
     }
 
