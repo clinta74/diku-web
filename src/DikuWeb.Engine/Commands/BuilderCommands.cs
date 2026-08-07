@@ -379,7 +379,7 @@ internal static class BuilderCommands
                 return;
             }
 
-            var item = await _itemSpawner!.SpawnAsync(template, zone, world, roomKey);
+            var item = _itemSpawner!.Spawn(template, zone, world, roomKey);
             ctx.World.AddItem(item);
             ctx.ItemSaveQueue?.Enqueue(item);
 
@@ -434,7 +434,7 @@ internal static class BuilderCommands
                 return;
             }
 
-            var mob = await _mobSpawner!.SpawnAsync(template, zone, world, roomKey);
+            var mob = _mobSpawner!.Spawn(template, zone, world, roomKey);
             ctx.World.AddMob(mob);
 
             var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;

@@ -14,13 +14,16 @@ public sealed class MobSpawner
     /// Spawns a new mob with multiplier-resolved stats. Called during spawner sweep
     /// to fill population targets.
     /// </summary>
-    public Task<Mob> SpawnAsync(
+    /// <remarks>
+    /// Synchronous on purpose, for the same reason as <see cref="ItemSpawner.Spawn"/>:
+    /// nothing here awaits, so a Task only obscured that.
+    /// </remarks>
+    public Mob Spawn(
         MobTemplate template,
         Zone zone,
         global::DikuWeb.Domain.Worlds.World worldEntity,
         RoomKey roomKey,
         bool sentinel = false,
-        CancellationToken ct = default,
         Guid? spawnerId = null)
     {
         ArgumentNullException.ThrowIfNull(template);
@@ -87,7 +90,7 @@ public sealed class MobSpawner
             State = sentinel ? new() { ["sentinel"] = true } : [],
         };
 
-        return Task.FromResult(mob);
+        return mob;
     }
 
     private static int GetIntFromStats(Dictionary<string, object> stats, string key, int defaultValue)

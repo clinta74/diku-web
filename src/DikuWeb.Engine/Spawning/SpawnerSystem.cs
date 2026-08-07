@@ -87,7 +87,7 @@ public sealed class SpawnerSystem(
             for (int i = currentCount; i < spawner.TargetCount; i++)
             {
                 var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
-                var mob = await mobSpawner.SpawnAsync(template, zone, worldEnt, room, spawner.Sentinel, ct, spawner.Id);
+                var mob = mobSpawner.Spawn(template, zone, worldEnt, room, spawner.Sentinel, spawner.Id);
                 world.AddMob(mob);
 
                 // Narrate spawn to room occupants
@@ -134,7 +134,7 @@ public sealed class SpawnerSystem(
         for (int i = currentCount; i < spawner.TargetCount; i++)
         {
             var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
-            var item = await itemSpawner.SpawnAsync(template, zone, worldEnt, room, ct, spawner.Id);
+            var item = itemSpawner.Spawn(template, zone, worldEnt, room, spawner.Id);
             world.AddItem(item);
 
             // Narrate spawn to room occupants

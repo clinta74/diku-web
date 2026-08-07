@@ -13,12 +13,16 @@ public sealed class ItemSpawner
     /// Spawns a new item with multiplier-resolved stats. Called during spawner sweep
     /// to fill population targets.
     /// </summary>
-    public Task<ItemInstance> SpawnAsync(
+    /// <remarks>
+    /// Synchronous on purpose: this is arithmetic over values the caller already holds.
+    /// It was once Task-returning without ever awaiting anything, which bought no
+    /// concurrency and cost two call sites a blocking .Result.
+    /// </remarks>
+    public ItemInstance Spawn(
         ItemTemplate template,
         Zone zone,
         global::DikuWeb.Domain.Worlds.World worldEntity,
         RoomKey roomKey,
-        CancellationToken ct = default,
         Guid? spawnerId = null)
     {
         ArgumentNullException.ThrowIfNull(template);
@@ -60,6 +64,6 @@ public sealed class ItemSpawner
             State = [],
         };
 
-        return Task.FromResult(item);
+        return item;
     }
 }

@@ -364,7 +364,7 @@ private static void Quests(CommandContext ctx)
                 if (zone is not null && world is not null)
                 {
                     var spawner = new DikuWeb.Engine.Spawning.ItemSpawner();
-                    var rewardItem = spawner.SpawnAsync(itemTemplate, zone, world, character.RoomKey).Result;
+                    var rewardItem = spawner.Spawn(itemTemplate, zone, world, character.RoomKey);
 
                     for (int i = 0; i < matchingQuest.RewardItemCount; i++)
                     {

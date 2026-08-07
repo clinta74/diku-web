@@ -548,7 +548,7 @@ public sealed class CombatSystem(
                                     var itemTemplate = await itemTemplates.GetByKeyAsync(itemKey, ct);
                                     if (itemTemplate != null)
                                     {
-                                        var item = await itemSpawner.SpawnAsync(itemTemplate, zone, worldEntity, roomKey, ct);
+                                        var item = itemSpawner.Spawn(itemTemplate, zone, worldEntity, roomKey);
                                         world.AddItem(item);
                                     }
                                 }

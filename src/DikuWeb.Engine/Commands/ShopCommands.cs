@@ -154,7 +154,7 @@ public static class ShopCommands
         }
 
         var spawner = new ItemSpawner();
-        var spawnedItem = spawner.SpawnAsync(itemTemplate, zone, world, character.RoomKey).Result;
+        var spawnedItem = spawner.Spawn(itemTemplate, zone, world, character.RoomKey);
 
         // Create item instance and add to inventory
         var instance = new DikuWeb.Domain.Items.ItemInstance
