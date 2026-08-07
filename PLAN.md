@@ -14,12 +14,15 @@ numbers rather than a new set of hand-authored content.
 Play is **PvE by default**; player-versus-player is opt-in per room, through the same extensible
 room-flag registry that carries every other room property (§4.10).
 
-Status: **Phases 0–4 complete. Phase 5.1a-d (ability system) complete.** Register, create a character, walk a seeded zone, talk. Build new
-geography and author content (templates, spawners) through the browser with no SQL. Hand out builder
-access from inside the game. Objects and mobs fully implemented with multiplier scaling; inventory,
-equipment, and item/mob systems working end-to-end. Mob AI brings the world alive (emotes, wandering).
-Full combat: kill, loot, level up; XP penalties and respawning work; mobs are aggressive. Ability
-system with cost, cooldown, cast time, targeting, and extensible effects. Next: Phase 5.2+ (buffs, quests, shops, communication).
+Status: **Phases 0–4 complete. Phase 5.1 (abilities) and 5.2a–c (buffs, quests, shops) complete.**
+Register, create a character, walk a seeded zone, talk. Build new geography and author content
+(templates, spawners, quests) through the browser with no SQL. Hand out builder access from inside
+the game. Objects and mobs fully implemented with multiplier scaling; inventory, equipment, and
+item/mob systems working end-to-end. Mob AI brings the world alive (emotes, wandering). Full combat:
+kill, loot, level up; XP penalties and respawning work; mobs are aggressive. Abilities with cost,
+cooldown, cast time, targeting, and extensible effects, including timed buffs and debuffs. Quests
+run the full talk → collect → give → reward loop with prerequisite chains. Shops buy and sell.
+Next: **Phase 5.2d — close the gaps listed below**, then 5.3 (communication).
 
 ---
 
@@ -1366,6 +1369,14 @@ Notes from the build:
 - [x] XP awards with zone `xp` multiplier, leveling, point spend
 - [x] Regen tied to Vitality and rest state (`sleep`, `rest`, `stand`)
 - [x] Aggressive mobs, assist behavior, target selection
+- [x] `EquipmentResolver` wired into `CombatSystem` and the `stats` screen, so equipment
+      multipliers reach the damage roll instead of decorating the character sheet
+- [x] Mob damage: template stats win where declared, level-derived fallback where not
+- [ ] **Builder-authored armour still does nothing.** `armorMultiplier` scales only the flat
+      armour a piece already declares, and the item editor offers no way to declare it — the
+      multiplier list is the whole vocabulary. Damage got a baseline (unarmed 1–2) for the
+      multiplier to act on; armour has no safe equivalent, because a flat baseline of 10 would
+      reduce nearly every hit in the game to 1. Needs a design decision, not a patch.
 
 ### Phase 5 — Depth
 
@@ -1380,37 +1391,90 @@ Notes from the build:
 - [x] Cooldown tracking per (CharacterId, AbilityKey)
 - [x] In-memory caching at game loop startup
 
-#### 5.2+ — Remaining depth features
-- [ ] Abilities reuse the §4.11 gate: AoE filters **per target**, pets and charmed mobs inherit
-      their owner's permissions, `noRecall` refuses teleports out
-- [ ] Per-Path ability trees (**resolve Q3** on respec)
-- [ ] Buffs/debuffs with duration, stacking, expiry on the 60 s tick
-- [ ] Shops, currency, `buy` / `sell` / `list` — priced through `itemValue`
-- [ ] **Quest engine (§4.9):** `quests` + `character_quests`, Active/Completed only
-- [ ] `talk <npc>`: starts a quest when prerequisites are met, state-dependent dialogue
-- [ ] `give` hook: completes a quest on a strict match, otherwise the NPC refuses and keeps nothing
-- [ ] Rewards through the quest zone's `xp` and `gold` multipliers
-- [ ] `questItem` flag: not sellable, not destroyable, still droppable
-- [ ] Prerequisite chains — the mechanism storylines are built from
-- [ ] `quests` journal and `quest <name>` detail
-- [ ] Builder: quest editor, storyline graph, `/reachability` and cycle detection
-- [ ] Dormant-quest handling when a referenced mob or item is deleted (§7.4)
-- [ ] Communication: `tell`, channels, `group`/party, party XP split
+#### 5.2a — Buffs and debuffs ✅ **complete**
+- [x] `ActiveEffect` with duration, `Refresh`/`Stack`/`Ignore` stacking rules, and max stacks
+- [x] `BuffEffect` / `DebuffEffect` behind `IBuffEffect`, resolved through `EffectRegistry`
+- [x] Outgoing and incoming damage multipliers read by `CombatSystem` each round
+- [x] `EffectExpirySystem` sweeps expired effects off the pulse; effects are in-memory only
+      and reset on restart, matching cooldowns and combat state
+- [x] `buffs` command lists what is active and when it ends
+
+#### 5.2b — Quest engine ✅ **complete**
+- [x] `quests` + `character_quests` tables, Active/Completed only, composite key
+- [x] String keys for mobs and items rather than FKs, so a quest can be authored before its
+      content exists (§7.4)
+- [x] `talk <npc>`: offers when prerequisites are met, state-dependent dialogue for
+      offer / in-progress / complete / turn-in
+- [x] `give` hook: strict match on item and count, otherwise the NPC refuses and keeps nothing
+- [x] Prerequisite chains, enforced on offer — the mechanism storylines are built from
+- [x] Repeatable quests with a `TimesCompleted` counter
+- [x] `quests` journal and `quest <name>` detail
+- [x] `CharacterQuestSaveQueue` so progress survives restart
+- [x] Builder: quest editor (`QuestEditor.tsx`), quest CRUD API, storyline graph with cycle
+      detection (`GET /zones/{zoneKey}/storyline`)
+
+#### 5.2c — Shops and currency ✅ **complete**
+- [x] `buy` / `sell` / `list` against a mob flagged `shopkeeper`
+- [x] Priced through `itemValue`; sellback at a configurable percentage
+- [x] Gold on the character, persisted through `CharacterSaveQueue`
+
+#### 5.2d — Gaps in the above, found by audit ⚠️ **not done**
+These are the parts of 5.2 that were checked off in spirit but are not in the code. Each one
+fails quietly, which is why they need to be listed rather than assumed.
+
+- [ ] **Quest rewards ignore zone multipliers.** `QuestCommands` does `character.Xp += RewardXp`
+      and `character.Gold += RewardGold` with the raw authored values. Combat already awards
+      `mob.ResolvedXp`, so quests are the one XP source that escapes the §4.4 difficulty dial.
+- [ ] **`/reachability` cannot fail.** The endpoint exists and the builder calls it, but its
+      check is `reachable = !string.IsNullOrEmpty(quest.RequiredItemKey)` *inside* a branch
+      guarded by the same condition, so it is tautologically true and never warns. It must walk
+      loot tables and spawners as §10 requires. As written it is worse than absent: it gives the
+      builder a green light on an unfinishable quest.
+- [ ] **`questItem` is read but never written.** `ShopCommands` refuses to buy an item carrying
+      the flag, and nothing anywhere sets it — not quest rewards, not the item template editor.
+      Needs an authoring path, plus the "not destroyable, still droppable" half of the rule.
+- [ ] **Dormant-quest handling is absent.** Deleting a mob or item a quest references leaves the
+      quest pointing at nothing; §7.4 requires the quest go dormant and `character_quests` rows
+      survive. No code path and no test.
+- [ ] **`TargetingType.Aoe` never resolves a target.** `AbilitySystem` handles `Self` and
+      `SingleTarget`; an AoE cast falls through with `target = null` and silently does nothing.
+      The §4.11 per-target filter has nothing to filter yet.
+- [ ] Shops have **no test coverage at all** — no unit, engine, or server test names them.
+
+#### 5.2e — Deferred from the original 5.2 list
+- [ ] Pets and charmed mobs inherit their owner's §4.11 permissions (no pet system yet)
+- [ ] `noRecall` refuses teleports out — the flag is registered with no reader, and there is
+      no teleport or recall command for it to refuse
+- [ ] Path respec (**Q3 still open**) — the only open question in the document
+
+#### 5.3 — Communication and travel
+- [ ] `tell`, channels, `group`/party, party XP split
 - [ ] A second world reachable by portal, with its own world-level multipliers
 
 ### Phase 6 — Operations
-- [ ] Admin commands: `goto`, `teleport`, `stat`, `set`, `mute`, `kick`, `ban`
+
+Partly done ahead of schedule — the deployment pipeline landed alongside Phase 5.
+
+- [ ] Admin commands: `teleport`, `stat`, `set`, `mute`, `kick`, `ban`
+      (`goto` shipped with Phase 2; `promote` / `demote` / `whois` with Phase 2a)
 - [ ] Rate limiting per session; command flood protection; builder API throttling
+      (only `DigThrottle` exists, covering the `dig` endpoint alone)
 - [ ] OpenTelemetry: pulse duration p50/p99, sessions, commands/s, queue depths
+      — nothing is instrumented; the slow-pulse watchdog logs but does not measure
 - [ ] Scheduled `pg_dump` backups + a rehearsed restore drill
 - [ ] World export/import (JSON) for moving content between environments
 - [ ] Deployment pipeline:
-      - [ ] Dockerfile (multi-stage: publish layer, runtime layer)
+      - [x] Dockerfile (multi-stage: publish layer, runtime layer, `dumb-init` entrypoint)
       - [ ] Init container / migration service (run `dotnet ef database update` before app launch)
-      - [ ] Health checks gate readiness; `/health/ready` includes database check
-      - [ ] Reverse proxy with SSE buffering off (`X-Accel-Buffering: no`)
-      - [ ] Deployment automation (Kubernetes manifests, Docker Compose prod variant, or similar)
+            — `docker-compose.prod.yml` runs postgres, web, and client with no migration step,
+            and `Program.cs` migrates on startup **only** outside production, deliberately
+      - [x] Health checks gate readiness; `/health/ready` includes database check
+      - [x] Reverse proxy with SSE buffering off — `proxy_buffering off` in `client/nginx.conf`,
+            `X-Accel-Buffering: no` set on the stream response
+      - [x] Deployment automation: `docker-compose.prod.yml`, per-environment deploy configs,
+            and a GitHub Actions image build/push to ghcr.io
       - [ ] Runbook: rollback procedure if migration fails, monitoring dashboard, incident response
+            — `DOCKER.md` and `DEPLOY_NO_ENV.md` cover setup, not recovery
 
 ---
 
@@ -1478,13 +1542,23 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 
 ## 12. Next step
 
-**Phase 3 — objects, inhabitants, and multipliers.** Unblocked; the builder now exists to author
-them with, and roles can be handed out without touching the database.
+**Phase 5.2d — close the gaps in what 5.2 already claims to do.** Buffs, quests, and shops all
+work end to end, so the temptation is to move on to communication. Do 5.2d first, because every
+item on it is a *silent* failure rather than a missing feature, and silent failures get harder to
+find as content accumulates on top of them.
 
-Two things Phase 2 leaves in place for it. The **mutation path generalises**: item and mob
-templates and spawners are more `WorldChange` primitives and more writer arms, not a second
-editing mechanism. And the **flag registry is already the extension point** — `noMob` is
-registered and waiting for the mob AI that reads it, and `pvp`/`respawn` are waiting for Phase 4,
-which will add two reads rather than retrofitting a flag system into shipped combat code.
+Two are worth doing first, in this order:
 
-Q3 (Path respec) is the only open question left, and nothing before Phase 5 depends on it.
+1. **`/reachability`, because it currently lies.** Its check is tautologically true, so it tells
+   the builder an unfinishable quest is fine. §10 names this as the failure that "fails silently
+   in play: the quest reads correctly and the player just wanders." An endpoint that always
+   returns clean is worse than no endpoint, because it is trusted.
+2. **Quest reward multipliers**, because quests are now the one XP source that escapes §4.4.
+   Every quest authored before this is fixed will need its numbers revisited afterward, so the
+   cost of deferring it grows with the content.
+
+The rest of 5.2d — `questItem` authoring, dormant quests, AoE resolution, shop tests — can follow
+in any order. Shops shipping with zero tests is the one to be uncomfortable about: it is the only
+system in the codebase handling player currency and nothing asserts it balances.
+
+Q3 (Path respec) is still the only open question in the document, and only 5.2e depends on it.
