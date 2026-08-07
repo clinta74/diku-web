@@ -5,6 +5,7 @@ using DikuWeb.Engine;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Persistence;
 using DikuWeb.Server.Auth;
+using DikuWeb.Server.Infrastructure;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 
@@ -310,11 +311,14 @@ public static class GameEndpoints
     /// Explicitly removes a character from the world and frees its slot against the
     /// per-account cap, rather than waiting out the 90 s link-dead window.
     /// </summary>
-    private static IResult Leave(
+    private static async Task<IResult> Leave(
         Guid characterId,
         HttpContext http,
         SessionRegistry sessions,
-        GameGateway gateway)
+        GameGateway gateway,
+        ICharacterSaveQueue characterQueue,
+        IItemSaveQueue itemQueue,
+        CancellationToken cancellationToken)
     {
         if (!http.TryGetAccountId(out var accountId))
         {
@@ -334,6 +338,23 @@ public static class GameEndpoints
         });
 
         sessions.Close(characterId);
+
+        // Flush pending saves before returning, with a 5-second timeout
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
+
+        try
+        {
+            await Task.WhenAll(
+                characterQueue.FlushAsync(linked.Token),
+                itemQueue.FlushAsync(linked.Token)
+            );
+        }
+        catch (OperationCanceledException)
+        {
+            // Timeout is acceptable - we tried our best but don't want to hang the logout
+        }
+
         return Results.NoContent();
     }
 

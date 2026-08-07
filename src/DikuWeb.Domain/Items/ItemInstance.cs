@@ -12,6 +12,9 @@ public sealed class ItemInstance
     /// <summary>Which template was this spawned from.</summary>
     public required string TemplateKey { get; init; }
 
+    /// <summary>Which spawner created this item (for proper population tracking).</summary>
+    public Guid? SpawnerId { get; init; }
+
     /// <summary>Display name from template at spawn time (cached for consistency).</summary>
     public string TemplateName { get; init; } = string.Empty;
 

@@ -95,6 +95,7 @@ export interface MobTemplate {
   description: string
   icon: string
   level: number
+  wanderIntervalPulses: number
   baseStats: Record<string, unknown>
   baseXp: number
   baseGold: number

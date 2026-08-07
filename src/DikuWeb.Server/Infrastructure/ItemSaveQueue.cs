@@ -14,16 +14,26 @@ namespace DikuWeb.Server.Infrastructure;
 /// </summary>
 public sealed class ItemSaveQueue : IItemSaveQueue
 {
-    private readonly Channel<ItemInstance> _channel =
-        Channel.CreateUnbounded<ItemInstance>(new UnboundedChannelOptions
+    private readonly Channel<(ItemInstance?, TaskCompletionSource?)> _channel =
+        Channel.CreateUnbounded<(ItemInstance?, TaskCompletionSource?)>(new UnboundedChannelOptions
         {
             SingleReader = true,
             SingleWriter = true,
         });
 
-    public ChannelReader<ItemInstance> Reader => _channel.Reader;
+    public ChannelReader<(ItemInstance?, TaskCompletionSource?)> Reader => _channel.Reader;
 
-    public void Enqueue(ItemInstance item) => _channel.Writer.TryWrite(item);
+    public void Enqueue(ItemInstance item) => _channel.Writer.TryWrite((item, null));
+
+    public async Task FlushAsync(CancellationToken cancellationToken)
+    {
+        var tcs = new TaskCompletionSource();
+        if (!_channel.Writer.TryWrite((null, tcs)))
+        {
+            tcs.SetException(new InvalidOperationException("Item save queue is closed"));
+        }
+        await tcs.Task.ConfigureAwait(false);
+    }
 
     public void Complete() => _channel.Writer.TryComplete();
 }
@@ -41,29 +51,71 @@ public sealed class ItemSaveQueueWorker(
     {
         try
         {
-            await foreach (var item in queue.Reader.ReadAllAsync(stoppingToken))
+            await foreach (var (item, flushMarker) in queue.Reader.ReadAllAsync(stoppingToken))
             {
-                // Coalesce anything already queued for the same item: during shutdown or
-                // a busy time the same id can appear several times, and only the last
-                // matters.
-                var batch = new Dictionary<Guid, ItemInstance> { [item.Id] = item };
+                if (flushMarker is not null)
+                {
+                    // Flush marker: drain any pending saves then complete the marker
+                    try
+                    {
+                        await SaveBatchAsync([], stoppingToken);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        ServerLog.ItemSaveQueueError(logger, ex);
+                    }
+                    finally
+                    {
+                        flushMarker.SetResult();
+                    }
+                }
+                else if (item is not null)
+                {
+                    // Coalesce anything already queued for the same item: during shutdown or
+                    // a busy time the same id can appear several times, and only the last
+                    // matters.
+                    var batch = new Dictionary<Guid, ItemInstance> { [item.Id] = item };
 
-                while (queue.Reader.TryRead(out var extra))
-                {
-                    batch[extra.Id] = extra;
-                }
+                    while (queue.Reader.TryRead(out var extra))
+                    {
+                        if (extra.Item2 is not null)
+                        {
+                            // Another flush marker came in, handle pending saves first then queue it for later
+                            if (batch.Count > 0)
+                            {
+                                try
+                                {
+                                    await SaveBatchAsync(batch.Values, stoppingToken);
+                                }
+                                catch (Exception ex) when (ex is not OperationCanceledException)
+                                {
+                                    ServerLog.ItemSaveQueueError(logger, ex);
+                                }
+                                batch.Clear();
+                            }
+                            extra.Item2.SetResult();
+                        }
+                        else if (extra.Item1 is not null)
+                        {
+                            batch[extra.Item1.Id] = extra.Item1;
+                        }
+                    }
 
-                try
-                {
-                    await SaveBatchAsync(batch.Values, stoppingToken);
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    ServerLog.ItemSaveQueueError(logger, ex);
+                    if (batch.Count > 0)
+                    {
+                        try
+                        {
+                            await SaveBatchAsync(batch.Values, stoppingToken);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw;
+                        }
+                        catch (Exception ex)
+                        {
+                            ServerLog.ItemSaveQueueError(logger, ex);
+                        }
+                    }
                 }
             }
         }

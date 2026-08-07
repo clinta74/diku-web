@@ -195,6 +195,7 @@ public sealed record UpsertMobTemplate(
     string Description,
     string Icon,
     int Level,
+    int WanderIntervalPulses,
     Dictionary<string, object> BaseStats,
     int BaseXp,
     int BaseGold,

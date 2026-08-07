@@ -18,7 +18,8 @@ public sealed class ItemSpawner
         Zone zone,
         global::DikuWeb.Domain.Worlds.World worldEntity,
         RoomKey roomKey,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        Guid? spawnerId = null)
     {
         ArgumentNullException.ThrowIfNull(template);
         ArgumentNullException.ThrowIfNull(zone);
@@ -39,6 +40,7 @@ public sealed class ItemSpawner
         {
             Id = Guid.NewGuid(),
             TemplateKey = template.Key,
+            SpawnerId = spawnerId,
             TemplateName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name,
             Icon = template.Icon,
             RoomKey = roomKey.ToString(),

@@ -8,6 +8,7 @@ namespace DikuWeb.Server.Infrastructure;
 /// </summary>
 public sealed class ShutdownFlushService(
     CharacterSaveQueue characterQueue,
+    ItemSaveQueue itemQueue,
     WorldWriteQueue worldQueue,
     ILogger<ShutdownFlushService> logger) : BackgroundService
 {
@@ -22,9 +23,10 @@ public sealed class ShutdownFlushService(
     {
         ServerLog.ShutdownFlushingQueues(logger);
 
-        // Signal both queues to complete - this tells the workers to finish
+        // Signal all queues to complete - this tells the workers to finish
         // processing any remaining items and then exit.
         characterQueue.Complete();
+        itemQueue.Complete();
         worldQueue.Complete();
 
         // Give the workers a reasonable time to drain their queues.

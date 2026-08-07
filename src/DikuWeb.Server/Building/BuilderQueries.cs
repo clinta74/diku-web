@@ -197,7 +197,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
     {
         var templates = await db.MobTemplates.AsNoTracking().OrderBy(t => t.Key).ToListAsync(cancellationToken);
         return [.. templates.Select(t => new MobTemplateResponse(
-            t.Key, t.Name, t.Description, t.Icon, t.Level,
+            t.Key, t.Name, t.Description, t.Icon, t.Level, t.WanderIntervalPulses,
             new Dictionary<string, object>(t.BaseStats),
             t.BaseXp, t.BaseGold,
             new Dictionary<string, object>(t.Behavior),
@@ -215,7 +215,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             return null;
         }
         return new MobTemplateResponse(
-            template.Key, template.Name, template.Description, template.Icon, template.Level,
+            template.Key, template.Name, template.Description, template.Icon, template.Level, template.WanderIntervalPulses,
             new Dictionary<string, object>(template.BaseStats),
             template.BaseXp, template.BaseGold,
             new Dictionary<string, object>(template.Behavior),

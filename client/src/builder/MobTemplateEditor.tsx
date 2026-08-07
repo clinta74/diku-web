@@ -13,6 +13,7 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
   const [description, setDescription] = useState('')
   const [icon, setIcon] = useState('m')
   const [level, setLevel] = useState(1)
+  const [wanderIntervalPulses, setWanderIntervalPulses] = useState(24)
   const [baseHealth, setBaseHealth] = useState(40)
   const [baseXp, setBaseXp] = useState(0)
   const [baseGold, setBaseGold] = useState(0)
@@ -48,6 +49,7 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
     setDescription(loaded.description)
     setIcon(loaded.icon)
     setLevel(loaded.level)
+    setWanderIntervalPulses(loaded.wanderIntervalPulses ?? 24)
     setBaseHealth(loaded.baseStats?.health ? Number(loaded.baseStats.health) : 40)
     setBaseXp(loaded.baseXp)
     setBaseGold(loaded.baseGold)
@@ -66,6 +68,7 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         description,
         icon,
         level,
+        wanderIntervalPulses,
         baseStats: { health: baseHealth },
         baseXp,
         baseGold,
@@ -160,6 +163,21 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
             }}
             disabled={busy}
             min="1"
+          />
+        </label>
+
+        <label>
+          Wander Speed (pulses)
+          <input
+            type="number"
+            value={wanderIntervalPulses}
+            onChange={(e) => {
+              setWanderIntervalPulses(parseInt(e.target.value) || 24)
+              setDirty(true)
+            }}
+            disabled={busy}
+            min="1"
+            title="Lower = faster movement. 24 pulses = 6 seconds (default)"
           />
         </label>
 

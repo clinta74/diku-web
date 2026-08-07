@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Randomness;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Presentation;
@@ -20,7 +21,6 @@ public sealed class MobAiSystem(
     PlayerView view)
 {
     private const int EmoteIntervalPulses = 16;  // Every 4 seconds
-    private const int WanderIntervalPulses = 24; // Every 6 seconds
 
     public async Task RunAsync(WorldState world, CancellationToken ct)
     {
@@ -115,7 +115,7 @@ public sealed class MobAiSystem(
         }
 
         var lastWanderPulse = GetMobStateLong(mob, "lastWanderPulse");
-        return pulse - lastWanderPulse >= WanderIntervalPulses;
+        return pulse - lastWanderPulse >= template.WanderIntervalPulses;
     }
 
     private void TryWander(WorldState world, RoomKey fromRoomKey, Mob mob, Room room, MobTemplate template)
@@ -139,8 +139,8 @@ public sealed class MobAiSystem(
             }
 
             // Valid destination found: move the mob
-            var leaveProse = $"{template.Name} leaves {exit.Direction.ToLowerName()}.";
-            var arriveProse = $"{template.Name} arrives from the {exit.Direction.Opposite().ToLowerName()}.";
+            var leaveProse = NarrationHelper.BuildSentence(template.Name, $"leaves {exit.Direction.ToLowerName()}");
+            var arriveProse = NarrationHelper.BuildSentence(template.Name, $"arrives from the {exit.Direction.Opposite().ToLowerName()}");
 
             // Notify in source room with direction
             var fromOccupants = world.OccupantsOf(fromRoomKey);

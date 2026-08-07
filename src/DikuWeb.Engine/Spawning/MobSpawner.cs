@@ -20,7 +20,8 @@ public sealed class MobSpawner
         global::DikuWeb.Domain.Worlds.World worldEntity,
         RoomKey roomKey,
         bool sentinel = false,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        Guid? spawnerId = null)
     {
         ArgumentNullException.ThrowIfNull(template);
         ArgumentNullException.ThrowIfNull(zone);
@@ -56,6 +57,7 @@ public sealed class MobSpawner
         {
             Id = Guid.NewGuid(),
             TemplateKey = template.Key,
+            SpawnerId = spawnerId,
             TemplateName = template.Name,
             Level = template.Level,
             RoomKey = roomKey.ToString(),

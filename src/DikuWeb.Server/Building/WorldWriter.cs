@@ -247,6 +247,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         Description = c.Description,
                         Icon = c.Icon,
                         Level = c.Level,
+                        WanderIntervalPulses = c.WanderIntervalPulses,
                         BaseStats = c.BaseStats,
                         BaseXp = c.BaseXp,
                         BaseGold = c.BaseGold,
@@ -261,6 +262,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 entity.Description = c.Description;
                 entity.Icon = c.Icon;
                 entity.Level = c.Level;
+                entity.WanderIntervalPulses = c.WanderIntervalPulses;
                 entity.BaseStats = c.BaseStats;
                 entity.BaseXp = c.BaseXp;
                 entity.BaseGold = c.BaseGold;

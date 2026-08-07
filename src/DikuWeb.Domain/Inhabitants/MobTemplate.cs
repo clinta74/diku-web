@@ -19,6 +19,9 @@ public sealed class MobTemplate
     /// <summary>Base level before any adjustments.</summary>
     public int Level { get; set; } = 1;
 
+    /// <summary>How often this mob wanders between rooms, in pulses (0.25 second units). Default 24 = 6 seconds.</summary>
+    public int WanderIntervalPulses { get; set; } = 24;
+
     /// <summary>
     /// Base stats: health, damage (as dice string), attributes.
     /// Persisted as jsonb object. Example: { "health": 40, "damage": "4-7", "might": 12, "agility": 10 }

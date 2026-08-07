@@ -27,12 +27,14 @@ public sealed record WorldData(
 public interface ICharacterSaveQueue
 {
     void Enqueue(CharacterSnapshot snapshot);
+    Task FlushAsync(CancellationToken cancellationToken);
 }
 
 /// <summary>Where the game loop hands off items to be saved.</summary>
 public interface IItemSaveQueue
 {
     void Enqueue(ItemInstance item);
+    Task FlushAsync(CancellationToken cancellationToken);
 }
 
 /// <summary>Where in-game builder commands hand off their writes.</summary>

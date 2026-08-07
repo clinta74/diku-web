@@ -79,7 +79,7 @@ public sealed class SpawnerSystem(
             }
 
             var roomKeys = spawner.RoomKeys.Select(RoomKey.Parse).ToList();
-            var currentCount = roomKeys.Sum(room => world.MobsIn(room).Count);
+            var currentCount = roomKeys.Sum(room => world.MobsIn(room).Count(m => m.SpawnerId == spawner.Id));
 
             logger.LogDebug("Spawner {id} ({template}): {currentCount}/{target} in {roomCount} rooms",
                 spawner.Id, spawner.TemplateKey, currentCount, spawner.TargetCount, roomKeys.Count);
@@ -87,7 +87,7 @@ public sealed class SpawnerSystem(
             for (int i = currentCount; i < spawner.TargetCount; i++)
             {
                 var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
-                var mob = await mobSpawner.SpawnAsync(template, zone, worldEnt, room, spawner.Sentinel, ct);
+                var mob = await mobSpawner.SpawnAsync(template, zone, worldEnt, room, spawner.Sentinel, ct, spawner.Id);
                 world.AddMob(mob);
 
                 // Narrate spawn to room occupants
@@ -129,12 +129,12 @@ public sealed class SpawnerSystem(
         }
 
         var roomKeys = spawner.RoomKeys.Select(RoomKey.Parse).ToList();
-        var currentCount = roomKeys.Sum(room => world.ItemsIn(room).Count);
+        var currentCount = roomKeys.Sum(room => world.ItemsIn(room).Count(i => i.SpawnerId == spawner.Id));
 
         for (int i = currentCount; i < spawner.TargetCount; i++)
         {
             var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
-            var item = await itemSpawner.SpawnAsync(template, zone, worldEnt, room, ct);
+            var item = await itemSpawner.SpawnAsync(template, zone, worldEnt, room, ct, spawner.Id);
             world.AddItem(item);
 
             // Narrate spawn to room occupants

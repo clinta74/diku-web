@@ -350,6 +350,9 @@ namespace DikuWeb.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
+                    b.Property<Guid?>("SpawnerId")
+                        .HasColumnType("uuid");
+
                     b.Property<Dictionary<string, object>>("State")
                         .IsRequired()
                         .HasColumnType("jsonb");
@@ -407,6 +410,9 @@ namespace DikuWeb.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("WanderIntervalPulses")
+                        .HasColumnType("integer");
+
                     b.HasKey("Key");
 
                     b.ToTable("MobTemplates");
@@ -447,6 +453,9 @@ namespace DikuWeb.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("spawn_multipliers");
+
+                    b.Property<Guid?>("SpawnerId")
+                        .HasColumnType("uuid");
 
                     b.Property<Dictionary<string, object>>("State")
                         .IsRequired()

@@ -11,16 +11,26 @@ namespace DikuWeb.Server.Infrastructure;
 /// </summary>
 public sealed class CharacterSaveQueue : ICharacterSaveQueue
 {
-    private readonly Channel<CharacterSnapshot> _channel =
-        Channel.CreateUnbounded<CharacterSnapshot>(new UnboundedChannelOptions
+    private readonly Channel<(CharacterSnapshot?, TaskCompletionSource?)> _channel =
+        Channel.CreateUnbounded<(CharacterSnapshot?, TaskCompletionSource?)>(new UnboundedChannelOptions
         {
             SingleReader = true,
             SingleWriter = true,
         });
 
-    public ChannelReader<CharacterSnapshot> Reader => _channel.Reader;
+    public ChannelReader<(CharacterSnapshot?, TaskCompletionSource?)> Reader => _channel.Reader;
 
-    public void Enqueue(CharacterSnapshot snapshot) => _channel.Writer.TryWrite(snapshot);
+    public void Enqueue(CharacterSnapshot snapshot) => _channel.Writer.TryWrite((snapshot, null));
+
+    public async Task FlushAsync(CancellationToken cancellationToken)
+    {
+        var tcs = new TaskCompletionSource();
+        if (!_channel.Writer.TryWrite((null, tcs)))
+        {
+            tcs.SetException(new InvalidOperationException("Character save queue is closed"));
+        }
+        await tcs.Task.ConfigureAwait(false);
+    }
 
     public void Complete() => _channel.Writer.TryComplete();
 }
@@ -41,26 +51,67 @@ public sealed class CharacterSaveWorker(
         // through disposal. Normal shutdown must not look like a fault.
         try
         {
-            await foreach (var snapshot in queue.Reader.ReadAllAsync(stoppingToken))
+            await foreach (var (snapshot, flushMarker) in queue.Reader.ReadAllAsync(stoppingToken))
             {
-                // Coalesce anything already queued for the same character: during shutdown or
-                // a busy autosave the same id can appear several times, and only the last
-                // matters.
-                var batch = new Dictionary<Guid, CharacterSnapshot> { [snapshot.Id] = snapshot };
-
-                while (queue.Reader.TryRead(out var extra))
+                if (flushMarker is not null)
                 {
-                    batch[extra.Id] = extra;
+                    // Flush marker: drain any pending saves then complete the marker
+                    try
+                    {
+                        await SaveBatchAsync([], stoppingToken);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        ServerLog.CharacterSaveFailed(logger, 0, ex);
+                    }
+                    finally
+                    {
+                        flushMarker.SetResult();
+                    }
                 }
+                else if (snapshot is not null)
+                {
+                    // Coalesce anything already queued for the same character: during shutdown or
+                    // a busy autosave the same id can appear several times, and only the last
+                    // matters.
+                    var batch = new Dictionary<Guid, CharacterSnapshot> { [snapshot.Id] = snapshot };
 
-                try
-                {
-                    await SaveBatchAsync(batch.Values, stoppingToken);
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    // A failed save must not kill the worker, or every later save is lost too.
-                    ServerLog.CharacterSaveFailed(logger, batch.Count, ex);
+                    while (queue.Reader.TryRead(out var extra))
+                    {
+                        if (extra.Item2 is not null)
+                        {
+                            // Another flush marker came in, handle pending saves first then queue it for later
+                            if (batch.Count > 0)
+                            {
+                                try
+                                {
+                                    await SaveBatchAsync(batch.Values, stoppingToken);
+                                }
+                                catch (Exception ex) when (ex is not OperationCanceledException)
+                                {
+                                    ServerLog.CharacterSaveFailed(logger, batch.Count, ex);
+                                }
+                                batch.Clear();
+                            }
+                            extra.Item2.SetResult();
+                        }
+                        else if (extra.Item1 is not null)
+                        {
+                            batch[extra.Item1.Id] = extra.Item1;
+                        }
+                    }
+
+                    if (batch.Count > 0)
+                    {
+                        try
+                        {
+                            await SaveBatchAsync(batch.Values, stoppingToken);
+                        }
+                        catch (Exception ex) when (ex is not OperationCanceledException)
+                        {
+                            ServerLog.CharacterSaveFailed(logger, batch.Count, ex);
+                        }
+                    }
                 }
             }
         }
