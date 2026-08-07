@@ -16,10 +16,14 @@ public static class XpProgression
     public static long XpForLevel(int level)
     {
         if (level < MinLevel || level > MaxLevel)
+        {
             throw new ArgumentOutOfRangeException(nameof(level), $"Level must be {MinLevel}–{MaxLevel}.");
+        }
 
         if (level == MinLevel)
+        {
             return 0;
+        }
 
         // Quadratic curve: 1000 * level * (level - 1) / 2
         // This gives: L2=1000, L3=3000, L4=6000, L5=10000, ... L50=1,225,000
@@ -32,7 +36,9 @@ public static class XpProgression
     public static int LevelForXp(long xp)
     {
         if (xp < 0)
+        {
             return MinLevel;
+        }
 
         // Binary search to find the highest level where XpForLevel(level) <= xp
         var level = MaxLevel;

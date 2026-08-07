@@ -33,7 +33,9 @@ public static class NarrationHelper
     public static string WithArticle(string name, bool capitalize = false)
     {
         if (string.IsNullOrEmpty(name) || IsProperName(name))
+        {
             return name;
+        }
 
         var result = $"{GetArticle(name)} {name}";
         return capitalize ? Capitalize(result) : result;
@@ -46,7 +48,9 @@ public static class NarrationHelper
     public static string WithDefiniteArticle(string name, bool capitalize = false)
     {
         if (string.IsNullOrEmpty(name) || IsProperName(name))
+        {
             return name;
+        }
 
         return capitalize ? $"The {name}" : $"the {name}";
     }
@@ -64,7 +68,9 @@ public static class NarrationHelper
     public static string FormatProse(string template, Dictionary<string, string> tokens)
     {
         if (string.IsNullOrEmpty(template))
+        {
             return template;
+        }
 
         // Process tokens in order of appearance, handling {type:key} syntax
         var tokenPattern = new System.Text.RegularExpressions.Regex(@"\{(\w+):(\w+)\}|\{(\w+)\}");
@@ -86,7 +92,9 @@ public static class NarrationHelper
             }
 
             if (!tokens.TryGetValue(tokenKey, out var value))
+            {
                 return match.Value;
+            }
 
             return tokenType switch
             {
@@ -119,7 +127,10 @@ public static class NarrationHelper
     public static string GetArticle(string name)
     {
         if (string.IsNullOrEmpty(name))
+        {
             return "a";
+        }
+
         var firstChar = char.ToLowerInvariant(name[0]);
         return "aeiou".Contains(firstChar) ? "an" : "a";
     }

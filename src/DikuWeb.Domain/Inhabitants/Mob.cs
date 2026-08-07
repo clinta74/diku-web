@@ -1,8 +1,8 @@
-namespace DikuWeb.Domain.Inhabitants;
-
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Worlds;
+
+namespace DikuWeb.Domain.Inhabitants;
 
 /// <summary>
 /// PLAN.md §4.8: A runtime instance of a MobTemplate with multiplier-resolved stats.

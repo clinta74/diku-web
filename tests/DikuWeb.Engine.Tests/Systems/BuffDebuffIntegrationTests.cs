@@ -4,8 +4,8 @@ using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Abilities;
-using DikuWeb.Engine.Time;
 using DikuWeb.Engine.Tests.Infrastructure;
+using DikuWeb.Engine.Time;
 
 namespace DikuWeb.Engine.Tests.Systems;
 

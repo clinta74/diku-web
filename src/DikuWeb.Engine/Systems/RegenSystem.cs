@@ -27,7 +27,9 @@ public static class RegenSystem
 
             // Skip regen while fighting (PLAN.md §4.5)
             if (character.CombatState == CombatState.Fighting)
+            {
                 continue;
+            }
 
             var vitalityModifier = character.Attributes.VitalityModifier;
 

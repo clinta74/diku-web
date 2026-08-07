@@ -593,7 +593,9 @@ public sealed class CommandRegistry
             i.TemplateName.Equals(name, comparison));
 
         if (byName is not null)
+        {
             return byName;
+        }
 
         // Fall back to TemplateKey match (for backwards compatibility with key-based input)
         return items.FirstOrDefault(i => i.TemplateKey.Equals(name, comparison));

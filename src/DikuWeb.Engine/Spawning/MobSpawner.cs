@@ -96,7 +96,9 @@ public sealed class MobSpawner
     private static int GetIntFromStats(Dictionary<string, object> stats, string key, int defaultValue)
     {
         if (!stats.TryGetValue(key, out var value))
+        {
             return defaultValue;
+        }
 
         return value switch
         {

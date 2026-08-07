@@ -95,7 +95,9 @@ public static class AbilityCommands
                 .FirstOrDefault(p => string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase));
 
             if (targetActor != null)
+            {
                 targetId = EntityId.ForCharacter(targetActor.CharacterId);
+            }
         }
 
         // Enqueue cast

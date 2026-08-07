@@ -52,26 +52,36 @@ public sealed class AbilitySystem(
     {
         var caster = world.GetCharacter(cast.CharacterId);
         if (caster == null)
+        {
             return;
+        }
 
         var actor = world.FindByCharacter(caster.Id);
         if (actor == null)
+        {
             return;
+        }
 
         if (logger != null)
+        {
             EngineLog.AbilityResolving(logger, actor.Name, cast.AbilityKey);
+        }
 
         // Resolve ability from cache
         var ability = cache?.Get(cast.AbilityKey);
         if (ability == null)
+        {
             return;
+        }
 
         // Narrate cast
         actor.SendText($"Your {ability.Name} takes effect!", "ability");
         foreach (var occupant in world.OccupantsOf(caster.RoomKey))
         {
             if (occupant.CharacterId != caster.Id)
+            {
                 occupant.SendText($"{actor.Name}'s {ability.Name} takes effect!", "ability");
+            }
         }
 
         // Deduct cost
@@ -136,15 +146,21 @@ public sealed class AbilitySystem(
     {
         var caster = world.GetCharacter(cast.CharacterId);
         if (caster == null)
+        {
             return true; // Character gone = interrupt
+        }
 
         // If caster enters combat while casting, interrupt
         if (caster.CombatState == DikuWeb.Domain.Combat.CombatState.Fighting)
+        {
             return true;
+        }
 
         // If caster moved rooms, interrupt
         if (caster.RoomKey.ToString() != cast.StartingRoomKey)
+        {
             return true;
+        }
 
         return false;
     }
@@ -153,14 +169,20 @@ public sealed class AbilitySystem(
     {
         var caster = world.GetCharacter(cast.CharacterId);
         if (caster == null)
+        {
             return;
+        }
 
         var actor = world.FindByCharacter(caster.Id);
         if (actor == null)
+        {
             return;
+        }
 
         actor.SendText($"Your {cast.AbilityKey} was interrupted.", "ability");
         if (logger != null)
+        {
             EngineLog.AbilityCastInterrupted(logger, actor.Name, cast.AbilityKey);
+        }
     }
 }

@@ -25,7 +25,9 @@ public static class CharacterProgression
 
         // Not enough XP for the next level yet
         if (newLevel <= currentLevel)
+        {
             return null;
+        }
 
         // Cap at max level
         newLevel = Math.Min(newLevel, XpProgression.MaxLevel);
@@ -68,7 +70,9 @@ public static class CharacterProgression
         long xpAwarded)
     {
         if (xpAwarded < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(xpAwarded), "XP awarded must be non-negative.");
+        }
 
         var newXp = character.Xp + xpAwarded;
         return TryLevelUp(character.Level, newXp, character.Attributes, character.Path, character.Vitals);

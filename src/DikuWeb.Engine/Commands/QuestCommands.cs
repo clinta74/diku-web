@@ -221,9 +221,14 @@ private static void Quests(CommandContext ctx)
 
         ctx.Reply($"=== {questDef.Name} ===");
         if (!string.IsNullOrEmpty(questDef.Description))
+        {
             ctx.Reply(questDef.Description);
+        }
+
         if (!string.IsNullOrEmpty(questDef.Summary))
+        {
             ctx.Reply($"Objective: {questDef.Summary}");
+        }
 
         // Show progress
         if (questState.Status == QuestStatus.Active)
@@ -240,23 +245,35 @@ private static void Quests(CommandContext ctx)
         // Show rewards
         ctx.Reply("Rewards:");
         if (questDef.RewardXp > 0)
+        {
             ctx.Reply($"  {questDef.RewardXp} experience");
+        }
+
         if (questDef.RewardGold > 0)
+        {
             ctx.Reply($"  {questDef.RewardGold} gold");
+        }
+
         if (!string.IsNullOrEmpty(questDef.RewardItemKey))
+        {
             ctx.Reply($"  {questDef.RewardItemCount} x {questDef.RewardItemKey}");
+        }
     }
 
     private static bool CheckPrerequisites(WorldState world, Guid characterId, Quest quest)
     {
         if (quest.PrerequisiteQuestKeys.Count == 0)
+        {
             return true;
+        }
 
         foreach (var prereqKey in quest.PrerequisiteQuestKeys)
         {
             var prereqState = world.GetQuestState(characterId, prereqKey);
             if (prereqState?.Status != QuestStatus.Completed)
+            {
                 return false;
+            }
         }
 
         return true;
@@ -269,7 +286,9 @@ private static void Quests(CommandContext ctx)
     public static bool TryTurnInQuest(CommandContext ctx, string itemName, string npcName)
     {
         if (_questCache is null || !_questCache.IsLoaded)
+        {
             return false;
+        }
 
         var character = ctx.Actor.Character;
 
@@ -278,13 +297,17 @@ private static void Quests(CommandContext ctx)
             .FirstOrDefault(m => m.TemplateKey.EndsWith(npcName, StringComparison.OrdinalIgnoreCase));
 
         if (targetMob is null)
+        {
             return false;
+        }
 
         // Find quests that can be turned in to this mob
         var turnInQuests = _questCache.GetByTurninMobKey(targetMob.TemplateKey);
 
         if (turnInQuests.Count == 0)
+        {
             return false;
+        }
 
         // Find a quest the character has that matches this item and NPC
         Quest? matchingQuest = null;
@@ -300,7 +323,9 @@ private static void Quests(CommandContext ctx)
         }
 
         if (matchingQuest is null)
+        {
             return false;
+        }
 
         // Count items in inventory that match the quest requirement
         var inventory = ctx.World.InventoryOf(character.Id);
@@ -348,9 +373,14 @@ private static void Quests(CommandContext ctx)
         character.Gold += matchingQuest.RewardGold;
 
         if (matchingQuest.RewardXp > 0)
+        {
             ctx.Reply($"You gain {matchingQuest.RewardXp} experience points.", "reward");
+        }
+
         if (matchingQuest.RewardGold > 0)
+        {
             ctx.Reply($"You gain {matchingQuest.RewardGold} gold.", "reward");
+        }
 
         // Award items
         if (!string.IsNullOrEmpty(matchingQuest.RewardItemKey) && _itemTemplateCache is not null)

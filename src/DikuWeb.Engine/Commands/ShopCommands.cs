@@ -72,7 +72,9 @@ public static class ShopCommands
         {
             var itemTemplate = _itemTemplateCache?.Get(itemKey);
             if (itemTemplate is null)
+            {
                 continue;
+            }
 
             var price = (long)itemTemplate.BaseValue;
             ctx.Reply($"{itemTemplate.Icon} {itemTemplate.Name}: {price} gold");

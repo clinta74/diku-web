@@ -8,8 +8,8 @@ using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.World;
-using DomainCombatSystem = DikuWeb.Domain.Combat.CombatSystem;
 using Microsoft.Extensions.Logging;
+using DomainCombatSystem = DikuWeb.Domain.Combat.CombatSystem;
 
 namespace DikuWeb.Engine.Systems;
 
@@ -124,7 +124,9 @@ public sealed class CombatSystem(
         }
 
         if (string.IsNullOrEmpty(targetId) || targetId == attackerId)
+        {
             return;
+        }
 
         // Validate both combatants are in the same room
         var attackerRoom = GetCombatantRoom(world, attackerId);
@@ -140,7 +142,9 @@ public sealed class CombatSystem(
         var (attackerType, attackerName, attackerActo) = ResolveCombatantInfo(world, attackerId);
         var (targetType, targetName, targetActor) = ResolveCombatantInfo(world, targetId);
         if (attackerType == null || targetType == null)
+        {
             return;
+        }
 
         // Check target validity (peaceful, pvp, etc.)
         var peaceful = world.IsFlagSet(combat.RoomKey, RoomFlags.Peaceful);
@@ -171,7 +175,9 @@ public sealed class CombatSystem(
         // Get combatants' stats
         var (attacker, defender) = GetCombatantPair(world, attackerId, targetId);
         if (attacker == null || defender == null)
+        {
             return;
+        }
 
         // Use Domain combat system to execute the round (includes narration)
         var targetHealth = EntityId.IsCharacter(targetId)
@@ -191,10 +197,14 @@ public sealed class CombatSystem(
 
         // Send narration
         if (attackerActo is PlayerActor player)
+        {
             player.SendText(round.AttackerNarration, "combat");
+        }
 
         if (targetActor is PlayerActor targetPlayer)
+        {
             targetPlayer.SendText(round.TargetNarration, "combat");
+        }
 
         foreach (var occupant in world.OccupantsOf(combat.RoomKey))
         {
@@ -271,7 +281,9 @@ public sealed class CombatSystem(
             var charId = EntityId.ToGuid(entityId);
             var actor = world.FindByCharacter(charId);
             if (actor != null)
+            {
                 return (CombatantType.Player, actor.Name, actor);
+            }
         }
         else if (EntityId.IsMob(entityId))
         {
@@ -300,14 +312,18 @@ public sealed class CombatSystem(
             var charId = EntityId.ToGuid(attackerId);
             var character = world.GetCharacter(charId);
             if (character != null)
+            {
                 attacker = ResolveCharacterAttacker(world, character);
+            }
         }
         else if (EntityId.IsMob(attackerId))
         {
             var mobId = EntityId.ToGuid(attackerId);
             var mob = world.GetMob(mobId);
             if (mob != null)
+            {
                 attacker = DamageCalculator.StatsFrom(mob);
+            }
         }
 
         // Resolve defender
@@ -316,14 +332,18 @@ public sealed class CombatSystem(
             var charId = EntityId.ToGuid(targetId);
             var character = world.GetCharacter(charId);
             if (character != null)
+            {
                 defender = ResolveCharacterDefender(world, character);
+            }
         }
         else if (EntityId.IsMob(targetId))
         {
             var mobId = EntityId.ToGuid(targetId);
             var mob = world.GetMob(mobId);
             if (mob != null)
+            {
                 defender = DamageCalculator.DefenderStatsFrom(mob);
+            }
         }
 
         return (attacker, defender);
@@ -402,13 +422,20 @@ public sealed class CombatSystem(
     private void HandleCharacterDeath(WorldState world, Combat combat, Character character, string combatantId)
     {
         var actor = world.FindByCharacter(character.Id);
-        if (actor == null) return;
+        if (actor == null)
+        {
+            return;
+        }
 
         // Determine if this was a PvP kill
         var killerType = CombatantType.Mob;
         foreach (var other in combat.Combatants)
         {
-            if (other == combatantId) continue;
+            if (other == combatantId)
+            {
+                continue;
+            }
+
             if (EntityId.IsCharacter(other))
             {
                 killerType = CombatantType.Player;
@@ -427,7 +454,9 @@ public sealed class CombatSystem(
                 var killCharId = EntityId.ToGuid(killerId);
                 var killerActor = world.FindByCharacter(killCharId);
                 if (killerActor != null)
+                {
                     killerName = killerActor.Name;
+                }
             }
             EngineLog.PvpKill(logger, killerName, actor.Name, combat.RoomKey.ToString());
         }
@@ -445,7 +474,9 @@ public sealed class CombatSystem(
         // Resolve respawn location
         var respawnRoom = character.RespawnRoomKey ?? options.StartingRoom;
         if (world.FindRoom(respawnRoom) == null)
+        {
             respawnRoom = options.StartingRoom;
+        }
 
         // Move and reset vitals
         world.Move(actor, respawnRoom);
@@ -460,13 +491,17 @@ public sealed class CombatSystem(
         foreach (var occupant in world.OccupantsOf(deathRoom))
         {
             if (occupant.CharacterId != character.Id)
+            {
                 occupant.SendText($"{actor.Name} falls.", "death");
+            }
         }
         actor.SendText($"You died. Respawned at {respawnRoom}.", "death");
         foreach (var occupant in world.OccupantsOf(respawnRoom))
         {
             if (occupant.CharacterId != character.Id)
+            {
                 occupant.SendText($"{actor.Name} appears.", "arrival");
+            }
         }
     }
 
@@ -474,7 +509,10 @@ public sealed class CombatSystem(
     {
         // Find the top damager (killer)
         var killerId = combat.GetTopHater(combatantId);
-        if (killerId == null) return;
+        if (killerId == null)
+        {
+            return;
+        }
 
         // Extract killer's character if it's a player
         Character? killerChar = null;
@@ -497,7 +535,9 @@ public sealed class CombatSystem(
                 killerChar.Vitals = result.NewVitals;
                 var actor = world.FindByCharacter(killerChar.Id);
                 if (actor != null)
+                {
                     actor.SendText($"You advance to level {result.NewLevel}!", "levelup");
+                }
             }
 
             // Award gold
@@ -526,13 +566,21 @@ public sealed class CombatSystem(
                             {
                                 // Extract itemTemplateKey and chance from the dict
                                 if (!lootEntry.TryGetValue("itemTemplateKey", out var itemKeyObj))
+                                {
                                     continue;
+                                }
+
                                 var itemKey = itemKeyObj?.ToString();
                                 if (string.IsNullOrEmpty(itemKey))
+                                {
                                     continue;
+                                }
 
                                 if (!lootEntry.TryGetValue("chance", out var chanceObj))
+                                {
                                     continue;
+                                }
+
                                 double chance = chanceObj switch
                                 {
                                     double d => d,

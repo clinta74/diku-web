@@ -81,7 +81,11 @@ public sealed class Combat
     {
         if (HateLists.TryGetValue(mobId, out var hateList))
         {
-            if (hateList.Count == 0) return null;
+            if (hateList.Count == 0)
+            {
+                return null;
+            }
+
             return hateList.OrderByDescending(kvp => kvp.Value).First().Key;
         }
         return null;

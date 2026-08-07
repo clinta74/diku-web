@@ -173,15 +173,21 @@ public sealed class MobAiSystem(
     {
         // Check if mob is already in combat
         if (mob.CombatState == CombatState.Fighting)
+        {
             return false;
+        }
 
         // Check if mob is aggressive in its behavior
         if (!template.Behavior.TryGetValue("type", out var typeObj) || typeObj?.ToString() != "aggressive")
+        {
             return false;
+        }
 
         // Check if room is peaceful (forbids all combat)
         if (world.IsFlagSet(roomKey, RoomFlags.Peaceful))
+        {
             return false;
+        }
 
         // At least one player must be in the room
         return world.OccupantsOf(roomKey).Count > 0;
@@ -193,7 +199,9 @@ public sealed class MobAiSystem(
         var occupants = world.OccupantsOf(roomKey).ToList();
         var target = occupants.FirstOrDefault();
         if (target == null)
+        {
             return;
+        }
 
         // Initiate combat
         var targetId = EntityId.ForCharacter(target.CharacterId);
@@ -216,7 +224,9 @@ public sealed class MobAiSystem(
         foreach (var other in world.OccupantsOf(roomKey))
         {
             if (other.CharacterId != target.CharacterId)
+            {
                 other.SendText($"{template.Name} attacks {target.Name}!", "combat");
+            }
         }
     }
 
