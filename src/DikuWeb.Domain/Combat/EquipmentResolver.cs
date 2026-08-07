@@ -1,3 +1,4 @@
+using System.Globalization;
 using DikuWeb.Domain.Items;
 
 namespace DikuWeb.Domain.Combat;
@@ -13,54 +14,135 @@ namespace DikuWeb.Domain.Combat;
 /// </summary>
 public static class EquipmentResolver
 {
+    /// <summary>Weapon dice used when nothing in the main hand declares its own.</summary>
+    private const int UnarmedMinDamage = 1;
+
+    private const int UnarmedMaxDamage = 2;
+
     /// <summary>
-    /// Resolves attacker stats from character level, attributes, and equipped weapon.
+    /// Resolves attacker stats for a single main-hand weapon. Convenience overload for callers
+    /// that have no off-hand to consider.
     /// </summary>
+    public static AttackerStats ResolveAttackerStats(
+        int level,
+        int mightModifier,
+        ItemInstance? equippedMainHand) =>
+        // The item is main hand by virtue of being passed here, whatever its EquippedSlot says -
+        // callers using this overload are naming the hand, not asking us to search for it.
+        Resolve(
+            level,
+            mightModifier,
+            equippedMainHand,
+            equippedMainHand is null ? [] : [equippedMainHand]);
+
+    /// <summary>
+    /// Resolves attacker stats from character level, attributes, and everything equipped.
+    /// </summary>
+    /// <remarks>
+    /// Weapon damage has two shapes and both are honoured. A weapon may declare explicit dice
+    /// (<c>damageMin</c>/<c>damageMax</c>), and it may declare a <c>damageMultiplier</c> that
+    /// scales whatever dice are in play. The multiplier is the only damage stat the builder UI
+    /// offers today, so it is what most authored weapons carry; scaling the unarmed baseline is
+    /// what lets such a weapon matter at all.
+    ///
+    /// The multiplier scales the dice only, not the flat modifier - a strong character does not
+    /// get their Might doubled by picking up a better sword.
+    /// </remarks>
     /// <param name="level">Character level (used to derive base attackRating).</param>
     /// <param name="mightModifier">Might attribute modifier (d20 formula: (value-10)/2 rounded down).</param>
-    /// <param name="equippedMainHand">Equipped main-hand weapon, or null for unarmed.</param>
+    /// <param name="equipped">Every equipped item; hands are selected from it.</param>
     /// <returns>AttackerStats with all bonuses applied.</returns>
     public static AttackerStats ResolveAttackerStats(
         int level,
         int mightModifier,
-        ItemInstance? equippedMainHand)
+        IEnumerable<ItemInstance> equipped)
+    {
+        ArgumentNullException.ThrowIfNull(equipped);
+
+        var held = equipped.Where(i => i?.ResolvedStats is not null).ToList();
+
+        return Resolve(
+            level,
+            mightModifier,
+            held.FirstOrDefault(i => i.EquippedSlot == ItemSlot.MainHand),
+            held);
+    }
+
+    private static AttackerStats Resolve(
+        int level,
+        int mightModifier,
+        ItemInstance? mainHand,
+        IReadOnlyList<ItemInstance> held)
     {
         // Base attack rating: half level + Might modifier (PLAN.md §4.6)
         int baseAttackRating = (level / 2) + mightModifier;
 
+        if (mainHand?.ResolvedStats is null)
+        {
+            mainHand = null;
+        }
+
         // Weapon bonus and damage
         int weaponBonus = 0;
         int baseDamage = mightModifier;
-        int minDamage = 1;
-        int maxDamage = 2;
+        int minDamage = UnarmedMinDamage;
+        int maxDamage = UnarmedMaxDamage;
 
-        if (equippedMainHand?.ResolvedStats is not null)
+        if (mainHand is not null)
         {
-            // Extract weapon bonus and dice from equipped weapon
-            if (equippedMainHand.ResolvedStats.TryGetValue("bonus", out var bonusObj) &&
-                int.TryParse(bonusObj?.ToString(), out var bonus))
+            if (TryReadInt(mainHand, "bonus", out var bonus))
             {
                 weaponBonus = bonus;
             }
 
-            if (equippedMainHand.ResolvedStats.TryGetValue("damageMin", out var minObj) &&
-                int.TryParse(minObj?.ToString(), out var min))
+            if (TryReadInt(mainHand, "damageMin", out var min))
             {
                 minDamage = min;
             }
 
-            if (equippedMainHand.ResolvedStats.TryGetValue("damageMax", out var maxObj) &&
-                int.TryParse(maxObj?.ToString(), out var max))
+            if (TryReadInt(mainHand, "damageMax", out var max))
             {
                 maxDamage = max;
             }
 
-            if (equippedMainHand.ResolvedStats.TryGetValue("baseDamage", out var damageObj) &&
-                int.TryParse(damageObj?.ToString(), out var damage))
+            if (TryReadInt(mainHand, "baseDamage", out var damage))
             {
                 baseDamage += damage;
             }
         }
+
+        // Both hands contribute their multiplier, so a paired weapon set compounds. The named
+        // main hand counts even if its slot is unset, which is how the single-item overload
+        // behaves; ReferenceEquals keeps it from being counted twice when it is also in the list.
+        var damageMultiplier = 1m;
+
+        var multiplierSources = held.Where(i =>
+            i.EquippedSlot == ItemSlot.MainHand || i.EquippedSlot == ItemSlot.OffHand);
+
+        if (mainHand is not null && mainHand.EquippedSlot != ItemSlot.MainHand)
+        {
+            multiplierSources = multiplierSources
+                .Where(i => !ReferenceEquals(i, mainHand))
+                .Append(mainHand);
+        }
+
+        foreach (var item in multiplierSources)
+        {
+            if (TryReadDecimal(item, "damageMultiplier", out var multiplier) && multiplier > 0m)
+            {
+                damageMultiplier *= multiplier;
+            }
+        }
+
+        if (damageMultiplier != 1m)
+        {
+            // Ceiling so a multiplier can never round a die face down to nothing.
+            minDamage = (int)Math.Ceiling(minDamage * damageMultiplier);
+            maxDamage = (int)Math.Ceiling(maxDamage * damageMultiplier);
+        }
+
+        // A weapon authored with max below min would otherwise make the roll throw.
+        maxDamage = Math.Max(minDamage, maxDamage);
 
         return new AttackerStats(
             AttackRating: baseAttackRating + weaponBonus,
@@ -91,6 +173,8 @@ public static class EquipmentResolver
             .Where(i => i.EquippedSlot.HasValue && IsArmorSlot(i.EquippedSlot.Value))
             .ToList();
 
+        var armorMultiplier = 1m;
+
         foreach (var armor in armorItems)
         {
             if (armor?.ResolvedStats is null)
@@ -98,23 +182,34 @@ public static class EquipmentResolver
                 continue;
             }
 
-            if (armor.ResolvedStats.TryGetValue("armorFlat", out var flatObj) &&
-                int.TryParse(flatObj?.ToString(), out var flat))
+            if (TryReadInt(armor, "armorFlat", out var flat))
             {
                 armorFlat += flat;
             }
 
-            if (armor.ResolvedStats.TryGetValue("armorPercent", out var percentObj) &&
-                decimal.TryParse(percentObj?.ToString(), out var percent))
+            if (TryReadDecimal(armor, "armorPercent", out var percent))
             {
                 armorPercent += percent;
             }
 
-            if (armor.ResolvedStats.TryGetValue("defense", out var defObj) &&
-                int.TryParse(defObj?.ToString(), out var def))
+            if (TryReadInt(armor, "defense", out var def))
             {
                 armorDefense += def;
             }
+
+            if (TryReadDecimal(armor, "armorMultiplier", out var multiplier) && multiplier > 0m)
+            {
+                armorMultiplier *= multiplier;
+            }
+        }
+
+        // Scales the flat reduction the pieces actually declare. Deliberately not applied to a
+        // baseline the way damage scales the unarmed dice: an unarmoured character has no flat
+        // reduction to scale, and inventing one here would subtract from every incoming hit in
+        // the game.
+        if (armorMultiplier != 1m)
+        {
+            armorFlat = (int)Math.Ceiling(armorFlat * armorMultiplier);
         }
 
         // Clamp percent armor to reasonable bounds (0-95%)
@@ -129,4 +224,31 @@ public static class EquipmentResolver
     private static bool IsArmorSlot(ItemSlot slot) =>
         slot is ItemSlot.Head or ItemSlot.Chest or ItemSlot.Hands or
                 ItemSlot.Legs or ItemSlot.Feet or ItemSlot.OffHand;
+
+    // Stats arrive from jsonb, so a number can surface as int, long, decimal, double, string,
+    // or JsonElement depending on how it was written and read back. Parsing via the invariant
+    // string form handles every one of those without the call sites caring which it got.
+    private static bool TryReadInt(ItemInstance item, string key, out int value)
+    {
+        value = 0;
+
+        return item.ResolvedStats.TryGetValue(key, out var raw) &&
+               int.TryParse(
+                   Convert.ToString(raw, CultureInfo.InvariantCulture),
+                   NumberStyles.Integer,
+                   CultureInfo.InvariantCulture,
+                   out value);
+    }
+
+    private static bool TryReadDecimal(ItemInstance item, string key, out decimal value)
+    {
+        value = 0m;
+
+        return item.ResolvedStats.TryGetValue(key, out var raw) &&
+               decimal.TryParse(
+                   Convert.ToString(raw, CultureInfo.InvariantCulture),
+                   NumberStyles.Number,
+                   CultureInfo.InvariantCulture,
+                   out value);
+    }
 }

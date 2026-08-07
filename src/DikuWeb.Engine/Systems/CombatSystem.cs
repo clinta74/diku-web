@@ -1,6 +1,7 @@
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Presentation;
@@ -298,7 +299,7 @@ public sealed class CombatSystem(
             var charId = Guid.Parse(attackerId.Substring(2));
             var character = world.GetCharacter(charId);
             if (character != null)
-                attacker = DamageCalculator.StatsFrom(character);
+                attacker = ResolveCharacterAttacker(world, character);
         }
         else if (attackerId.StartsWith("m_"))
         {
@@ -314,7 +315,7 @@ public sealed class CombatSystem(
             var charId = Guid.Parse(targetId.Substring(2));
             var character = world.GetCharacter(charId);
             if (character != null)
-                defender = DamageCalculator.DefenderStatsFrom(character);
+                defender = ResolveCharacterDefender(world, character);
         }
         else if (targetId.StartsWith("m_"))
         {
@@ -326,6 +327,29 @@ public sealed class CombatSystem(
 
         return (attacker, defender);
     }
+
+    /// <summary>
+    /// Builds a player's attack stats from what they are actually wearing.
+    /// </summary>
+    /// <remarks>
+    /// This is the seam that was missing. Combat used DamageCalculator.StatsFrom, which takes
+    /// only the character and hardcodes 1-4 dice, so every weapon in the game was decorative -
+    /// EquipmentResolver existed and was well covered by unit tests, but nothing on the combat
+    /// path had ever called it, which is why a green suite never noticed.
+    /// </remarks>
+    private static AttackerStats ResolveCharacterAttacker(WorldState world, Character character) =>
+        EquipmentResolver.ResolveAttackerStats(
+            character.Level,
+            character.Attributes.MightModifier,
+            EquippedOf(world, character));
+
+    private static DefenderStats ResolveCharacterDefender(WorldState world, Character character) =>
+        EquipmentResolver.ResolveDefenderStats(
+            character.Attributes.AgilityModifier,
+            EquippedOf(world, character));
+
+    private static List<ItemInstance> EquippedOf(WorldState world, Character character) =>
+        [.. world.InventoryOf(character.Id).Where(i => i.EquippedSlot is not null)];
 
     private decimal CalculateMultiplier(IReadOnlyList<DikuWeb.Domain.Abilities.Effects.ActiveEffect> effects, Func<DikuWeb.Domain.Abilities.Effects.ActiveEffect, decimal> selector)
     {
