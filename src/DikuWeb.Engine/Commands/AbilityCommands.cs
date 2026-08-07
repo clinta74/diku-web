@@ -83,7 +83,7 @@ public static class AbilityCommands
 
         if (currentResource < ability.CostValue)
         {
-            ctx.Reply($"Not enough {ability.CostType.ToString().ToLower()} (need {ability.CostValue}, have {currentResource}).");
+            ctx.Reply($"Not enough {ability.CostType.ToString().ToLowerInvariant()} (need {ability.CostValue}, have {currentResource}).");
             return;
         }
 

@@ -27,7 +27,7 @@ public static class AbilityValidator
         var currentResource = GetResource(caster, ability.CostType);
         if (currentResource < cost)
         {
-            return Refuse($"Not enough {ability.CostType.ToString().ToLower()} (need {cost}, have {currentResource}).");
+            return Refuse($"Not enough {ability.CostType.ToString().ToLowerInvariant()} (need {cost}, have {currentResource}).");
         }
 
         // Check targeting
