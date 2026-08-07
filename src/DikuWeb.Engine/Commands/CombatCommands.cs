@@ -106,7 +106,7 @@ public static class CombatCommands
             combat.AddCombatant(targetId);
             combat.PlayerTargets[character.Id] = targetId;
 
-            ctx.Reply($"You begin attacking {NarrationHelper.WithArticle(displayName, capitalize: false)}!");
+            ctx.Reply($"You begin attacking {NarrationHelper.WithArticle(displayName)}!");
             ctx.Broadcast($"{actor.Name} attacks {NarrationHelper.WithArticle(displayName)}!");
             targetMob.CombatState = CombatState.Fighting;
         }

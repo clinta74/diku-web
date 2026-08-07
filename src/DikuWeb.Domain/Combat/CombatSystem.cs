@@ -94,9 +94,10 @@ public static class CombatSystem
         CombatantType attacker,
         CombatantType target)
     {
-        // Add article prefix for mobs in third-person narration
+        // Add article prefix for mobs in third-person narration. The attacker always opens
+        // its sentence and the target never does, which is why they capitalize differently.
         var attackerDisplay = attacker == CombatantType.Mob ? NarrationHelper.WithArticle(attackerName, capitalize: true) : attackerName;
-        var targetDisplay = target == CombatantType.Mob ? NarrationHelper.WithArticle(targetName, capitalize: false) : targetName;
+        var targetDisplay = target == CombatantType.Mob ? NarrationHelper.WithArticle(targetName) : targetName;
 
         if (!damage.Hit)
         {

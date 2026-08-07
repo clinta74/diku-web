@@ -136,8 +136,7 @@ public sealed class PlayerView(RoomLayoutService layout)
         foreach (var item in items.OrderBy(i => i.TemplateKey))
         {
             var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
-            var prose = NarrationHelper.BuildSentence(displayName, "is here.");
-            spans.Add(new TextSpan($"\nYou see {prose}", "item"));
+            spans.Add(new TextSpan($"\nYou see {NarrationHelper.WithArticle(displayName)}.", "item"));
         }
 
         actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));

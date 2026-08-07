@@ -7,22 +7,27 @@ namespace DikuWeb.Domain.Narration;
 public static class NarrationHelper
 {
     /// <summary>
-    /// Adds proper article (A/An) to a name for third-person narration.
-    /// Used for mob combat and death messages.
+    /// Names a thing as a noun phrase with its indefinite article: "a rat", "an orc".
     /// </summary>
     /// <param name="name">The name to add an article to (e.g., "rat", "orc").</param>
-    /// <param name="capitalize">If true, capitalize the article (e.g., "A rat" vs "a rat").</param>
+    /// <param name="capitalize">
+    /// Only when the phrase opens a sentence. This defaults to false because most call sites
+    /// embed the phrase mid-sentence ("You see a rat."), and a capital there reads as a
+    /// stray proper noun. Callers that start a sentence must say so explicitly.
+    /// </param>
     /// <returns>The name with a proper article prefix.</returns>
-    public static string WithArticle(string name, bool capitalize = true)
+    public static string WithArticle(string name, bool capitalize = false)
     {
         if (string.IsNullOrEmpty(name))
             return name;
 
-        var firstChar = char.ToLowerInvariant(name[0]);
-        var article = "aeiou".Contains(firstChar) ? "an" : "a";
-        var result = $"{article} {name}";
-        return capitalize ? char.ToUpper(result[0]) + result.Substring(1) : result;
+        var result = $"{GetArticle(name)} {name}";
+        return capitalize ? Capitalize(result) : result;
     }
+
+    /// <summary>Upper-cases the first character, leaving the rest of the text alone.</summary>
+    public static string Capitalize(string text) =>
+        string.IsNullOrEmpty(text) ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     /// <summary>
     /// Formats a prose message with proper articles, capitalization, and entity handling.
@@ -64,36 +69,29 @@ public static class NarrationHelper
 
             return tokenType switch
             {
-                "entity" => WithArticle(value, capitalize: false), // Add article, no cap (will capitalize at sentence start)
+                "entity" => WithArticle(value),                     // Add article; the whole line is capitalized below
                 "player" => value,                                   // Player names: no article, kept as-is
                 "direction" => value.ToLowerInvariant(),            // Directions: lowercase
                 _ => value,                                          // Default: pass through
             };
         });
 
-        // Capitalize first letter
-        if (!string.IsNullOrEmpty(result))
-        {
-            result = char.ToUpper(result[0]) + result.Substring(1);
-        }
-
-        return result;
+        return Capitalize(result);
     }
 
     /// <summary>
-    /// Builds a properly formatted prose sentence from a template and entity.
-    /// Convenience method for single-entity narration.
+    /// Builds a whole sentence about one entity: article, capital, and a full stop.
     /// Example: BuildSentence("rat", "is here") → "A rat is here."
+    /// Only for text that stands alone - embedding the result inside another sentence
+    /// re-introduces the capital. Use <see cref="WithArticle"/> for that.
     /// </summary>
     public static string BuildSentence(string entityName, string predicate)
     {
-        var article = GetArticle(entityName);
-        var result = $"{article} {entityName} {predicate}";
-        if (!string.IsNullOrEmpty(result))
-        {
-            result = char.ToUpper(result[0]) + result.Substring(1);
-        }
-        return result;
+        var sentence = Capitalize($"{WithArticle(entityName)} {predicate}".Trim());
+
+        // Callers pass predicates both ways ("is here." and "leaves north"), so terminate
+        // here rather than leaving half the world's narration without a full stop.
+        return EndsSentence(sentence) ? sentence : sentence + ".";
     }
 
     /// <summary>Gets the appropriate article for a name (a or an).</summary>
@@ -104,4 +102,7 @@ public static class NarrationHelper
         var firstChar = char.ToLowerInvariant(name[0]);
         return "aeiou".Contains(firstChar) ? "an" : "a";
     }
+
+    private static bool EndsSentence(string text) =>
+        text.Length > 0 && text[^1] is '.' or '!' or '?';
 }
