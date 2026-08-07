@@ -182,10 +182,12 @@ ServerLog.Starting(logger, app.Environment.EnvironmentName);
 var csb = new NpgsqlConnectionStringBuilder(connectionString);
 ServerLog.DatabaseConfigured(logger, csb.Host ?? "(unset)", csb.Database ?? "(unset)");
 
-// Migrating on startup is a development convenience only. In production, concurrent
-// instances racing to migrate is a real hazard, so deploys apply migrations explicitly
-// as their own step (PLAN.md §6).
-if (app.Environment.IsDevelopment())
+// Migrate on startup in every environment. The game loop is single-writer by design (§2.1)
+// with no backplane to share world state, so this process cannot be scaled horizontally
+// anyway - there is no second instance to race with. EF also takes an exclusive advisory
+// lock for the duration, so even an accidental second instance waits rather than colliding.
+// The tradeoff accepted here: a bad migration fails the deploy at startup rather than at a
+// separate gate, so rollback is "deploy the previous image", not "stop the migration job".
 {
     var factory = app.Services.GetRequiredService<IDbContextFactory<DikuWebDbContext>>();
     await using var db = await factory.CreateDbContextAsync();
@@ -193,13 +195,17 @@ if (app.Environment.IsDevelopment())
     ServerLog.ApplyingMigrations(logger);
     await db.Database.MigrateAsync();
 
-    if (await StarterWorldSeeder.SeedAsync(db))
+    // Seeding stays development-only: it writes starter content, which is a fixture, not schema.
+    if (app.Environment.IsDevelopment())
     {
-        ServerLog.SeededStarterWorld(logger, StarterWorldSeeder.StartingRoom.ToString());
-    }
-    else
-    {
-        ServerLog.SeedSkipped(logger);
+        if (await StarterWorldSeeder.SeedAsync(db))
+        {
+            ServerLog.SeededStarterWorld(logger, StarterWorldSeeder.StartingRoom.ToString());
+        }
+        else
+        {
+            ServerLog.SeedSkipped(logger);
+        }
     }
 }
 

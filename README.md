@@ -28,13 +28,10 @@ items, mobs, or combat yet; those are Phases 3 and 4.
 cp .env.example .env          # defaults are fine for local work
 docker compose up -d
 
-# 2. Schema
-dotnet ef database update --project src/DikuWeb.Persistence --startup-project src/DikuWeb.Persistence
-
-# 3. Server
+# 2. Server - applies migrations and seeds the starter world on startup
 dotnet run --project src/DikuWeb.Server --urls http://localhost:5180
 
-# 4. Client (separate terminal)
+# 3. Client (separate terminal)
 cd client
 npm install
 npm run dev
@@ -241,7 +238,11 @@ Domain references nothing — that isolation is what keeps the rules unit-testab
   performance requirement on the game loop, not a style preference — see PLAN.md §2.4.
 - **No `Random.Shared`, no `DateTimeOffset.UtcNow` in Domain or Engine.** Use `IRandomSource`
   and `IGameClock`, or the game loop stops being replayable (PLAN.md §9).
-- **Migrations are explicit.** Never `EnsureCreated`.
+- **Migrations are explicit and applied at startup.** Never `EnsureCreated`. The loop is
+  single-writer with no backplane, so there is no second instance to race with (PLAN.md §6.1).
+- **Database identifiers are snake_case**, enforced by `SnakeCaseNaming` rather than by review.
+  Add an entity and its table and columns are converted for you; an explicit `HasColumnName`
+  still wins.
 
 ## Troubleshooting
 

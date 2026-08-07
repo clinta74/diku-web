@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DikuWeb.Persistence.Migrations
 {
     [DbContext(typeof(DikuWebDbContext))]
-    [Migration("20260807022822_StandardizeColumnNamingToSnakeCase")]
-    partial class StandardizeColumnNamingToSnakeCase
+    [Migration("20260807132425_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -73,11 +73,13 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("targeting_type");
 
-                    b.HasKey("Key");
+                    b.HasKey("Key")
+                        .HasName("pk_abilities");
 
-                    b.HasIndex("TargetingType");
+                    b.HasIndex("TargetingType")
+                        .HasDatabaseName("ix_abilities_targeting_type");
 
-                    b.ToTable("Abilities");
+                    b.ToTable("abilities");
                 });
 
             modelBuilder.Entity("DikuWeb.Domain.Accounts.Account", b =>
@@ -129,7 +131,8 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("citext")
                         .HasColumnName("username");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_accounts");
 
                     b.HasIndex("Email")
                         .IsUnique()
@@ -183,7 +186,8 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("target_account_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_admin_audit");
 
                     b.HasIndex("TargetAccountId", "At")
                         .IsDescending(false, true)
@@ -234,7 +238,8 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("entity_kind");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_content_audit");
 
                     b.HasIndex("EntityKind", "EntityKey", "At")
                         .IsDescending(false, false, true)
@@ -306,7 +311,8 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnName("respawn_room_key");
 
                     b.Property<int>("RestState")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("rest_state");
 
                     b.Property<string>("RoomKey")
                         .IsRequired()
@@ -318,7 +324,8 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("xp");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_characters");
 
                     b.HasIndex("AccountId")
                         .HasDatabaseName("ix_characters_account_id");
@@ -391,11 +398,13 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("template_name");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_mobs");
 
-                    b.HasIndex("RoomKey");
+                    b.HasIndex("RoomKey")
+                        .HasDatabaseName("ix_mobs_room_key");
 
-                    b.ToTable("Mobs");
+                    b.ToTable("mobs");
                 });
 
             modelBuilder.Entity("DikuWeb.Domain.Inhabitants.MobTemplate", b =>
@@ -450,16 +459,18 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("wander_interval_pulses");
 
-                    b.HasKey("Key");
+                    b.HasKey("Key")
+                        .HasName("pk_mob_templates");
 
-                    b.ToTable("MobTemplates");
+                    b.ToTable("mob_templates");
                 });
 
             modelBuilder.Entity("DikuWeb.Domain.Items.ItemInstance", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid?>("ContainerItemId")
                         .HasColumnType("uuid")
@@ -471,7 +482,8 @@ namespace DikuWeb.Persistence.Migrations
 
                     b.Property<string>("Icon")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("icon");
 
                     b.Property<Guid?>("OwnerCharacterId")
                         .HasColumnType("uuid")
@@ -492,30 +504,38 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnName("spawn_multipliers");
 
                     b.Property<Guid?>("SpawnerId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("spawner_id");
 
                     b.Property<Dictionary<string, object>>("State")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("jsonb")
+                        .HasColumnName("state");
 
                     b.Property<string>("TemplateKey")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("template_key");
 
                     b.Property<string>("TemplateName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("template_name");
 
                     b.Property<int>("Value")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("value");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_item_instances");
 
-                    b.HasIndex("OwnerCharacterId");
+                    b.HasIndex("OwnerCharacterId")
+                        .HasDatabaseName("ix_item_instances_owner_character_id");
 
-                    b.HasIndex("RoomKey");
+                    b.HasIndex("RoomKey")
+                        .HasDatabaseName("ix_item_instances_room_key");
 
-                    b.ToTable("ItemInstances", t =>
+                    b.ToTable("item_instances", t =>
                         {
                             t.HasCheckConstraint("ck_item_instance_location", "(num_nonnulls(owner_character_id, container_item_id, room_key) = 1)");
                         });
@@ -559,9 +579,10 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("weight");
 
-                    b.HasKey("Key");
+                    b.HasKey("Key")
+                        .HasName("pk_item_templates");
 
-                    b.ToTable("ItemTemplates");
+                    b.ToTable("item_templates");
                 });
 
             modelBuilder.Entity("DikuWeb.Domain.Quests.CharacterQuest", b =>
@@ -591,7 +612,8 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("times_completed");
 
-                    b.HasKey("CharacterId", "QuestKey");
+                    b.HasKey("CharacterId", "QuestKey")
+                        .HasName("pk_character_quests");
 
                     b.HasIndex("CharacterId")
                         .HasDatabaseName("ix_character_quests_character_id");
@@ -682,7 +704,8 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("zone_key");
 
-                    b.HasKey("Key");
+                    b.HasKey("Key")
+                        .HasName("pk_quests");
 
                     b.HasIndex("GiverMobKey")
                         .HasDatabaseName("ix_quests_giver_mob_key");
@@ -731,11 +754,13 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("zone_key");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_spawners");
 
-                    b.HasIndex("ZoneKey");
+                    b.HasIndex("ZoneKey")
+                        .HasDatabaseName("ix_spawners_zone_key");
 
-                    b.ToTable("Spawners");
+                    b.ToTable("spawners");
                 });
 
             modelBuilder.Entity("DikuWeb.Domain.Worlds.Room", b =>
@@ -785,7 +810,8 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("zone_key");
 
-                    b.HasKey("Key");
+                    b.HasKey("Key")
+                        .HasName("pk_rooms");
 
                     b.HasIndex("ZoneKey")
                         .HasDatabaseName("ix_rooms_zone_key");
@@ -811,7 +837,8 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("to_room_key");
 
-                    b.HasKey("FromRoomKey", "Direction");
+                    b.HasKey("FromRoomKey", "Direction")
+                        .HasName("pk_room_exits");
 
                     b.HasIndex("ToRoomKey")
                         .HasDatabaseName("ix_room_exits_to_room_key");
@@ -851,7 +878,8 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("sort_order");
 
-                    b.HasKey("Key");
+                    b.HasKey("Key")
+                        .HasName("pk_worlds");
 
                     b.ToTable("worlds", (string)null);
                 });
@@ -898,7 +926,8 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("character varying(32)")
                         .HasColumnName("world_key");
 
-                    b.HasKey("Key");
+                    b.HasKey("Key")
+                        .HasName("pk_zones");
 
                     b.HasIndex("WorldKey")
                         .HasDatabaseName("ix_zones_world_key");
@@ -912,7 +941,8 @@ namespace DikuWeb.Persistence.Migrations
                         .WithMany("Characters")
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_characters_accounts_account_id");
 
                     b.OwnsOne("DikuWeb.Domain.Characters.AttributeSet", "Attributes", b1 =>
                         {
@@ -938,7 +968,8 @@ namespace DikuWeb.Persistence.Migrations
                                 .HasColumnType("jsonb");
 
                             b1.WithOwner()
-                                .HasForeignKey("CharacterId");
+                                .HasForeignKey("CharacterId")
+                                .HasConstraintName("fk_characters_characters_character_id");
                         });
 
                     b.OwnsOne("DikuWeb.Domain.Characters.Vitals", "Vitals", b1 =>
@@ -966,7 +997,8 @@ namespace DikuWeb.Persistence.Migrations
                                 .HasColumnType("jsonb");
 
                             b1.WithOwner()
-                                .HasForeignKey("CharacterId");
+                                .HasForeignKey("CharacterId")
+                                .HasConstraintName("fk_characters_characters_character_id");
                         });
 
                     b.Navigation("Account");
@@ -983,7 +1015,8 @@ namespace DikuWeb.Persistence.Migrations
                     b.OwnsOne("DikuWeb.Domain.Characters.Vitals", "Vitals", b1 =>
                         {
                             b1.Property<Guid>("MobId")
-                                .HasColumnType("uuid");
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
 
                             b1.Property<int>("Focus")
                                 .HasColumnType("integer")
@@ -1009,12 +1042,14 @@ namespace DikuWeb.Persistence.Migrations
                                 .HasColumnType("integer")
                                 .HasColumnName("vitals_stamina_max");
 
-                            b1.HasKey("MobId");
+                            b1.HasKey("MobId")
+                                .HasName("pk_mobs");
 
-                            b1.ToTable("Mobs");
+                            b1.ToTable("mobs");
 
                             b1.WithOwner()
-                                .HasForeignKey("MobId");
+                                .HasForeignKey("MobId")
+                                .HasConstraintName("fk_mobs_mobs_id");
                         });
 
                     b.Navigation("Vitals")
@@ -1027,7 +1062,8 @@ namespace DikuWeb.Persistence.Migrations
                         .WithMany("Rooms")
                         .HasForeignKey("ZoneKey")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_rooms_zones_zone_key");
 
                     b.Navigation("Zone");
                 });
@@ -1038,7 +1074,8 @@ namespace DikuWeb.Persistence.Migrations
                         .WithMany("Exits")
                         .HasForeignKey("FromRoomKey")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_room_exits_rooms_from_room_key");
 
                     b.Navigation("FromRoom");
                 });
@@ -1049,7 +1086,8 @@ namespace DikuWeb.Persistence.Migrations
                         .WithMany("Zones")
                         .HasForeignKey("WorldKey")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_zones_worlds_world_key");
 
                     b.Navigation("World");
                 });

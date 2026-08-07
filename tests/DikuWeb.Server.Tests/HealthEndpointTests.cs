@@ -19,18 +19,21 @@ public sealed class HealthEndpointTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Liveness_does_not_depend_on_the_database()
+    public void A_server_whose_database_is_unreachable_refuses_to_start()
     {
-        // PLAN.md: liveness answers "is the process up", readiness answers "can we serve".
-        // Pointing at a database that does not exist must still report alive, otherwise an
-        // orchestrator restarts a healthy server every time Postgres hiccups.
+        // PLAN.md §6.1: migrations run at startup, so the database is a hard startup dependency
+        // and a server that cannot reach it exits rather than serving. This is the contract the
+        // startup-migration decision buys, and it is worth pinning down: the failure must be at
+        // boot, loudly, not a process that comes up and quietly answers every request wrongly.
+        //
+        // It replaces an older test asserting liveness answers 200 with the database down. That
+        // property still holds for an already-running process - liveness never touches the
+        // database, see Liveness_returns_200 - but it can no longer be demonstrated by booting a
+        // host without one, because such a host does not exist any more.
         using var factory = new DikuWebAppFactory(
-            "Host=127.0.0.1;Port=1;Database=nope;Username=nope;Password=nope");
-        using var client = factory.CreateClient();
+            "Host=127.0.0.1;Port=1;Database=nope;Username=nope;Password=nope;Timeout=2");
 
-        var response = await client.GetAsync(new Uri("/health", UriKind.Relative));
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.ThrowsAny<Exception>(factory.CreateClient);
     }
 
     [Fact]
@@ -52,14 +55,21 @@ public sealed class HealthEndpointTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Readiness_fails_when_the_database_is_unreachable()
+    public async Task Readiness_is_wired_to_report_unhealthy()
     {
-        using var factory = new DikuWebAppFactory(
-            "Host=127.0.0.1;Port=1;Database=nope;Username=nope;Password=nope;Timeout=2");
-        using var client = factory.CreateClient();
+        // The database check cannot be exercised in its failing state any more (see above), so
+        // this asserts the half that is still reachable: readiness is a real aggregate that
+        // reports per-check status, rather than a hardcoded 200. If the check is ever removed,
+        // Readiness_reports_the_database_check fails; if the endpoint stops aggregating, this does.
+        using var client = postgres.App.CreateClient();
 
         var response = await client.GetAsync(new Uri("/health/ready", UriKind.Relative));
+        var body = await response.Content.ReadAsStringAsync();
 
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        using var json = JsonDocument.Parse(body);
+        var checks = json.RootElement.GetProperty("checks").EnumerateArray().ToList();
+
+        Assert.NotEmpty(checks);
+        Assert.All(checks, c => Assert.False(string.IsNullOrEmpty(c.GetProperty("status").GetString())));
     }
 }

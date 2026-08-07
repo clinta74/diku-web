@@ -876,44 +876,46 @@ Notes:
   because it gives an entity its key before insert, so relationships can be wired up in memory
   and EF does not need a `RETURNING` round-trip to learn the id it just created.
 - Passwords: ASP.NET Core `PasswordHasher<T>` (PBKDF2) minimum; Argon2id preferred.
-- Migrations via EF Core, checked in, applied explicitly on deploy — never `EnsureCreated`.
+- Migrations via EF Core, checked in, applied at startup — never `EnsureCreated` (§6.1).
+- Identifiers are snake_case throughout, enforced by convention rather than by review (§6.1).
 
-### 6.1 Production deployment and migrations
+### 6.1 Deployment and migrations
 
-**Development convenience:** On startup, `Program.cs` auto-migrates if `ASPNETCORE_ENVIRONMENT == Development`.
-This is safe because only one instance runs locally.
+**Migrations run at startup, in every environment.** `Program.cs` calls `MigrateAsync` before the
+game loop starts, and the deploy has no separate migration step.
 
-**Production:** Migrations run as a separate pre-deployment step, before any app instances boot.
-This avoids the race condition of multiple instances attempting concurrent migrations.
+This is a deliberate reversal of the usual advice, and it rests on a property of this design
+rather than on convenience. The game loop is **single-writer with no backplane** (§2.1): world
+state lives in one process's memory, and nothing shares it. The app therefore cannot be scaled
+horizontally at all, so the "multiple instances race to migrate" hazard has no way to occur —
+there is never a second instance. Belt and braces: EF takes an exclusive advisory lock for the
+duration of `MigrateAsync`, so an accidental second instance waits rather than collides.
 
-**Migration process:**
+If a backplane is ever added and the loop is sharded across processes (§10, last row), this
+decision has to be revisited **at the same time** — it is the same change, not a follow-up.
 
-1. **Build phase**: Compile the app and bundle the EF Core migrations (checked into source).
-2. **Migration phase**: Single-instance, single-threaded, runs before any app starts:
-   ```bash
-   dotnet ef database update --project DikuWeb.Persistence \
-     --startup-project DikuWeb.Server \
-     --configuration Release
-   ```
-   Idempotent: running it twice is safe. EF tracks applied migrations in the `__EFMigrationsHistory` table.
-3. **App phase**: Launch all app instances (containers, processes, replicas) after migrations succeed.
-   Each instance is read-only for the database until Phase 6's read-write separation (if needed).
+**What this trades away.** A bad migration now fails the deploy at container start rather than at
+a gate before it. Rollback is *deploy the previous image*, not *stop the migration job*. Accepted
+because the failure mode is loud: the container exits, the orchestrator does not route traffic,
+and `/health/ready` (§3.2) fails on the database check regardless.
 
-**Container deployment strategy** (when deploying to Kubernetes, Docker Compose on prod, etc.):
+**Migrations are still explicit and checked in.** Never `EnsureCreated`. The schema is described by
+the migration history, not inferred from the model at runtime.
 
-- **Init container** (Kubernetes) or **migration service** (Docker Compose): runs the migration command,
-  waits for success, then exits. Orchestrator does not start app containers until the init container succeeds.
-- **Health check gates startup:** The `/health/ready` endpoint (§3.2) includes a database check, so even
-  if an instance somehow starts before migration completes, it reports not-ready and orchestrators do not
-  route traffic to it.
+**Naming is a convention, not a habit.** `SnakeCaseNaming` rewrites every table, column, key,
+index, and constraint EF generates to snake_case, filling in only what a configuration did not
+name explicitly. Postgres folds unquoted identifiers to lower case, so a PascalCase table is one
+that must be quoted forever in every hand-written query — and a mixed schema is worse than either
+convention. Making it a convention rather than ~100 `HasColumnName` calls means a new entity
+cannot drift back.
+
+**Seeding stays development-only.** The starter world is a fixture, not schema.
 
 **What if migration fails?**
 
-- Rollback manually: `dotnet ef database update --to-migration <previous-migration>`, fix the issue, retry.
-- EF's transaction isolation means a failed migration leaves the database unchanged (all migrations run
-  inside a transaction by default in Postgres).
-- Do not ship an app instance that depends on a migration that failed — the `/health/ready` check will
-  reject it, and the fix is to resolve the migration, not to deploy around it.
+- The app does not start. Fix the migration and redeploy; do not deploy around it.
+- Postgres runs each migration in a transaction, so a failed one leaves the database unchanged.
+- To step back deliberately: `dotnet ef database update --to-migration <previous>`.
 
 ---
 
@@ -1465,9 +1467,8 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 - [ ] World export/import (JSON) for moving content between environments
 - [ ] Deployment pipeline:
       - [x] Dockerfile (multi-stage: publish layer, runtime layer, `dumb-init` entrypoint)
-      - [ ] Init container / migration service (run `dotnet ef database update` before app launch)
-            — `docker-compose.prod.yml` runs postgres, web, and client with no migration step,
-            and `Program.cs` migrates on startup **only** outside production, deliberately
+      - [x] Migration strategy settled: applied at startup rather than by an init container,
+            because a single-writer loop with no backplane cannot run two instances (§6.1)
       - [x] Health checks gate readiness; `/health/ready` includes database check
       - [x] Reverse proxy with SSE buffering off — `proxy_buffering off` in `client/nginx.conf`,
             `X-Accel-Buffering: no` set on the stream response

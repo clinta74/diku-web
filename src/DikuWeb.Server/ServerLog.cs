@@ -35,7 +35,7 @@ internal static partial class ServerLog
     [LoggerMessage(
         EventId = 1003,
         Level = LogLevel.Information,
-        Message = "Applying database migrations (development only)")]
+        Message = "Applying database migrations")]
     public static partial void ApplyingMigrations(ILogger logger);
 
     [LoggerMessage(

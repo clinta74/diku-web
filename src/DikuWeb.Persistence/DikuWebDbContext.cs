@@ -57,6 +57,9 @@ public sealed class DikuWebDbContext(DbContextOptions<DikuWebDbContext> options)
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DikuWebDbContext).Assembly);
 
+        // After the configurations, so an explicit HasColumnName still wins.
+        SnakeCaseNaming.ApplyTo(modelBuilder);
+
         base.OnModelCreating(modelBuilder);
     }
 }
