@@ -316,7 +316,7 @@ private static void Quests(CommandContext ctx)
 
         // Remove the required items, in storage as well as in the world - otherwise the turn-in
         // is undone by a restart and the quest can be handed in again with the same items.
-        for (int i = 0; i < matchingQuest.RequiredCount; i++)
+        for (var i = 0; i < matchingQuest.RequiredCount; i++)
         {
             ctx.World.RemoveItem(matchingItems[i]);
             ctx.ItemSaveQueue?.EnqueueDelete(matchingItems[i].Id);
@@ -366,7 +366,7 @@ private static void Quests(CommandContext ctx)
                     var spawner = new DikuWeb.Engine.Spawning.ItemSpawner();
                     var rewardItem = spawner.Spawn(itemTemplate, zone, world, character.RoomKey);
 
-                    for (int i = 0; i < matchingQuest.RewardItemCount; i++)
+                    for (var i = 0; i < matchingQuest.RewardItemCount; i++)
                     {
                         var instance = new DikuWeb.Domain.Items.ItemInstance
                         {

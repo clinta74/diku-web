@@ -33,7 +33,7 @@ public static class CharacterProgression
         // Apply Path-based stat growth for each level gained
         var newAttributes = attributes;
         var growth = PathGrowth.For(path);
-        for (int i = 0; i < newLevel - currentLevel; i++)
+        for (var i = 0; i < newLevel - currentLevel; i++)
         {
             growth.ApplyTo(ref newAttributes);
         }

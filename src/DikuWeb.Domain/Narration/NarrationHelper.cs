@@ -71,7 +71,7 @@ public static class NarrationHelper
         var result = tokenPattern.Replace(template, match =>
         {
             string tokenKey;
-            string tokenType = "default";
+            var tokenType = "default";
 
             if (match.Groups[1].Success)
             {

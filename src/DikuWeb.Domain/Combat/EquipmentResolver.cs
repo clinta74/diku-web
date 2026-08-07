@@ -74,7 +74,7 @@ public static class EquipmentResolver
         IReadOnlyList<ItemInstance> held)
     {
         // Base attack rating: half level + Might modifier (PLAN.md §4.6)
-        int baseAttackRating = (level / 2) + mightModifier;
+        var baseAttackRating = (level / 2) + mightModifier;
 
         if (mainHand?.ResolvedStats is null)
         {
@@ -82,10 +82,10 @@ public static class EquipmentResolver
         }
 
         // Weapon bonus and damage
-        int weaponBonus = 0;
-        int baseDamage = mightModifier;
-        int minDamage = UnarmedMinDamage;
-        int maxDamage = UnarmedMaxDamage;
+        var weaponBonus = 0;
+        var baseDamage = mightModifier;
+        var minDamage = UnarmedMinDamage;
+        var maxDamage = UnarmedMaxDamage;
 
         if (mainHand is not null)
         {
@@ -163,9 +163,9 @@ public static class EquipmentResolver
     {
         // Base defense: 10 + Agility modifier (PLAN.md §4.6)
         // Note: base of 10 is baked into the formula; we only add modifier and armor
-        int armorDefense = agilityModifier;
-        int armorFlat = 0;
-        decimal armorPercent = 0m;
+        var armorDefense = agilityModifier;
+        var armorFlat = 0;
+        var armorPercent = 0m;
 
         // Accumulate armor from armor-slot items only
         var armorItems = equippedArmor

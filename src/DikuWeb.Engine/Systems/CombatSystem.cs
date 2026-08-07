@@ -50,7 +50,7 @@ public sealed class CombatSystem(
             var deadCombatants = new List<string>();
             foreach (var combatantId in combat.Combatants)
             {
-                bool isDead = false;
+                var isDead = false;
                 if (EntityId.IsCharacter(combatantId))
                 {
                     var charId = EntityId.ToGuid(combatantId);
@@ -143,8 +143,8 @@ public sealed class CombatSystem(
             return;
 
         // Check target validity (peaceful, pvp, etc.)
-        bool peaceful = world.IsFlagSet(combat.RoomKey, RoomFlags.Peaceful);
-        bool pvp = world.IsFlagSet(combat.RoomKey, RoomFlags.Pvp);
+        var peaceful = world.IsFlagSet(combat.RoomKey, RoomFlags.Peaceful);
+        var pvp = world.IsFlagSet(combat.RoomKey, RoomFlags.Pvp);
         var validation = TargetValidator.ValidateTarget(attackerType.Value, targetType.Value, targetName, peaceful, pvp);
 
         if (!validation.IsAllowed)
@@ -174,7 +174,7 @@ public sealed class CombatSystem(
             return;
 
         // Use Domain combat system to execute the round (includes narration)
-        int targetHealth = EntityId.IsCharacter(targetId)
+        var targetHealth = EntityId.IsCharacter(targetId)
             ? world.GetCharacter(EntityId.ToGuid(targetId))?.Vitals.Health ?? 0
             : world.GetMob(EntityId.ToGuid(targetId))?.Vitals.Health ?? 0;
 
@@ -416,12 +416,12 @@ public sealed class CombatSystem(
             }
         }
 
-        bool isPvpDeath = killerType == CombatantType.Player;
+        var isPvpDeath = killerType == CombatantType.Player;
 
         // Log PvP kill
         if (isPvpDeath && logger != null)
         {
-            string killerName = "Unknown";
+            var killerName = "Unknown";
             if (combat.Combatants.FirstOrDefault(c => c != combatantId && EntityId.IsCharacter(c)) is var killerId && killerId != null)
             {
                 var killCharId = EntityId.ToGuid(killerId);

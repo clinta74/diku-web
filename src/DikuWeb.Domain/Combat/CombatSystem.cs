@@ -70,7 +70,7 @@ public static class CombatSystem
             attackerName, targetName, damage, attacker, target);
 
         // Check if target is defeated (would drop to 0 or below health).
-        bool isDefeated = targetCurrentHealth - damage.DamageDealt <= 0;
+        var isDefeated = targetCurrentHealth - damage.DamageDealt <= 0;
 
         return new CombatRound(
             AttackerId: attackerName,
@@ -108,8 +108,8 @@ public static class CombatSystem
                 RoomText: $"{attackerDisplay} misses {targetDisplay}.");
         }
 
-        string critMarker = damage.IsCritical ? " **CRITICAL**" : string.Empty;
-        string damageText = $"{damage.DamageDealt} damage{critMarker}";
+        var critMarker = damage.IsCritical ? " **CRITICAL**" : string.Empty;
+        var damageText = $"{damage.DamageDealt} damage{critMarker}";
 
         var attackerNarration = $"You hit {targetDisplay} for {damageText}.";
         var targetNarration = $"{attackerDisplay} hits you for {damageText}.";

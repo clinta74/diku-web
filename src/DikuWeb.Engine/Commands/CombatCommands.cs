@@ -56,8 +56,8 @@ public static class CombatCommands
         }
 
         // Validate target before entering combat
-        bool peaceful = ctx.World.IsFlagSet(character.RoomKey, RoomFlags.Peaceful);
-        bool pvp = ctx.World.IsFlagSet(character.RoomKey, RoomFlags.Pvp);
+        var peaceful = ctx.World.IsFlagSet(character.RoomKey, RoomFlags.Peaceful);
+        var pvp = ctx.World.IsFlagSet(character.RoomKey, RoomFlags.Pvp);
 
         if (targetActor != null)
         {

@@ -84,7 +84,7 @@ public sealed class SpawnerSystem(
             EngineLog.SpawnerPopulation(
                 logger, spawner.Id, spawner.TemplateKey, currentCount, spawner.TargetCount, roomKeys.Count);
 
-            for (int i = currentCount; i < spawner.TargetCount; i++)
+            for (var i = currentCount; i < spawner.TargetCount; i++)
             {
                 var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
                 var mob = mobSpawner.Spawn(template, zone, worldEnt, room, spawner.Sentinel, spawner.Id);
@@ -131,7 +131,7 @@ public sealed class SpawnerSystem(
         var roomKeys = spawner.RoomKeys.Select(RoomKey.Parse).ToList();
         var currentCount = roomKeys.Sum(room => world.ItemsIn(room).Count(i => i.SpawnerId == spawner.Id));
 
-        for (int i = currentCount; i < spawner.TargetCount; i++)
+        for (var i = currentCount; i < spawner.TargetCount; i++)
         {
             var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
             var item = itemSpawner.Spawn(template, zone, worldEnt, room, spawner.Id);

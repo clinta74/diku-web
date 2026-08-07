@@ -35,8 +35,8 @@ public static class XpProgression
             return MinLevel;
 
         // Binary search to find the highest level where XpForLevel(level) <= xp
-        int level = MaxLevel;
-        for (int i = MaxLevel; i >= MinLevel; i--)
+        var level = MaxLevel;
+        for (var i = MaxLevel; i >= MinLevel; i--)
         {
             if (XpForLevel(i) <= xp)
             {
