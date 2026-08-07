@@ -61,7 +61,7 @@ public sealed class CharacterQuestSaveWorker(
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    logger.LogError(ex, "Error saving quest state; will retry on next batch");
+                    ServerLog.QuestSaveQueueError(logger, ex);
                 }
             }
         }

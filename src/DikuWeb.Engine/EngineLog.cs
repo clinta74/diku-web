@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Worlds;
 using Microsoft.Extensions.Logging;
 
 namespace DikuWeb.Engine;
@@ -93,4 +94,35 @@ internal static partial class EngineLog
     [LoggerMessage(EventId = 2020, Level = LogLevel.Information,
         Message = "{Character}'s {Ability} was interrupted")]
     public static partial void AbilityCastInterrupted(ILogger logger, string character, string ability);
+
+    [LoggerMessage(EventId = 2021, Level = LogLevel.Debug,
+        Message = "Spawner sweep starting over {SpawnerCount} spawner(s)")]
+    public static partial void SpawnerSweepStarting(ILogger logger, int spawnerCount);
+
+    [LoggerMessage(EventId = 2022, Level = LogLevel.Error,
+        Message = "Spawner sweep threw; the next sweep runs as scheduled")]
+    public static partial void SpawnerSweepFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(EventId = 2023, Level = LogLevel.Debug,
+        Message = "Spawner {SpawnerId}: zone '{ZoneKey}' not found")]
+    public static partial void SpawnerZoneNotFound(ILogger logger, Guid spawnerId, string zoneKey);
+
+    [LoggerMessage(EventId = 2024, Level = LogLevel.Debug,
+        Message = "Spawner {SpawnerId}: world '{WorldKey}' not found")]
+    public static partial void SpawnerWorldNotFound(ILogger logger, Guid spawnerId, string worldKey);
+
+    [LoggerMessage(EventId = 2025, Level = LogLevel.Debug,
+        Message = "Spawner {SpawnerId} ('{TemplateKey}'): {CurrentCount}/{TargetCount} across {RoomCount} room(s)")]
+    public static partial void SpawnerPopulation(
+        ILogger logger, Guid spawnerId, string templateKey, int currentCount, int targetCount, int roomCount);
+
+    // RoomKey is passed as itself rather than pre-formatted: the generator emits its IsEnabled
+    // check before touching arguments, so at the default level this costs nothing at all.
+    [LoggerMessage(EventId = 2026, Level = LogLevel.Debug,
+        Message = "Spawner {SpawnerId}: spawned '{TemplateKey}' in {Room}")]
+    public static partial void SpawnerSpawned(ILogger logger, Guid spawnerId, string templateKey, RoomKey room);
+
+    [LoggerMessage(EventId = 2027, Level = LogLevel.Error,
+        Message = "Spawner {SpawnerId} threw while spawning mobs; the sweep continues")]
+    public static partial void MobSpawnerFailed(ILogger logger, Guid spawnerId, Exception exception);
 }

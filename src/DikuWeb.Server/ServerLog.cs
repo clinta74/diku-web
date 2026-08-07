@@ -137,4 +137,10 @@ internal static partial class ServerLog
         Level = LogLevel.Information,
         Message = "Item save queue worker stopped")]
     public static partial void ItemSaveQueueStopped(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 1018,
+        Level = LogLevel.Error,
+        Message = "Failed to save a batch of quest state; the worker retries on the next batch")]
+    public static partial void QuestSaveQueueError(ILogger logger, Exception exception);
 }

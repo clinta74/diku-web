@@ -28,7 +28,7 @@ public sealed class SpawnerSystem(
         try
         {
             var allSpawners = await spawners.GetAllAsync(ct);
-            logger.LogDebug("SpawnerSystem running: {spawnerCount} spawners", allSpawners.Count);
+            EngineLog.SpawnerSweepStarting(logger, allSpawners.Count);
 
             foreach (var spawner in allSpawners)
             {
@@ -37,7 +37,7 @@ public sealed class SpawnerSystem(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "SpawnerSystem failed");
+            EngineLog.SpawnerSweepFailed(logger, ex);
         }
     }
 
@@ -67,22 +67,22 @@ public sealed class SpawnerSystem(
             var zone = world.FindZone(spawner.ZoneKey);
             if (zone is null)
             {
-                logger.LogDebug("Spawner {id}: zone {zoneKey} not found", spawner.Id, spawner.ZoneKey);
+                EngineLog.SpawnerZoneNotFound(logger, spawner.Id, spawner.ZoneKey);
                 return;
             }
 
             var worldEnt = world.FindWorld(zone.WorldKey);
             if (worldEnt is null)
             {
-                logger.LogDebug("Spawner {id}: world {worldKey} not found", spawner.Id, zone.WorldKey);
+                EngineLog.SpawnerWorldNotFound(logger, spawner.Id, zone.WorldKey);
                 return;
             }
 
             var roomKeys = spawner.RoomKeys.Select(RoomKey.Parse).ToList();
             var currentCount = roomKeys.Sum(room => world.MobsIn(room).Count(m => m.SpawnerId == spawner.Id));
 
-            logger.LogDebug("Spawner {id} ({template}): {currentCount}/{target} in {roomCount} rooms",
-                spawner.Id, spawner.TemplateKey, currentCount, spawner.TargetCount, roomKeys.Count);
+            EngineLog.SpawnerPopulation(
+                logger, spawner.Id, spawner.TemplateKey, currentCount, spawner.TargetCount, roomKeys.Count);
 
             for (int i = currentCount; i < spawner.TargetCount; i++)
             {
@@ -98,12 +98,12 @@ public sealed class SpawnerSystem(
                     occupant.SendText(prose, "arrival");
                 }
 
-                logger.LogDebug("Spawner {id}: spawned {template} in room {room}", spawner.Id, spawner.TemplateKey, room);
+                EngineLog.SpawnerSpawned(logger, spawner.Id, spawner.TemplateKey, room);
             }
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "ProcessMobSpawnerAsync failed for spawner {id}", spawner.Id);
+            EngineLog.MobSpawnerFailed(logger, spawner.Id, ex);
         }
     }
 
