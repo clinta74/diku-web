@@ -3,6 +3,7 @@ using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.World;
 using Microsoft.Extensions.Logging;
 
@@ -19,7 +20,8 @@ public sealed class SpawnerSystem(
     IItemTemplateRepository itemTemplates,
     MobSpawner mobSpawner,
     ItemSpawner itemSpawner,
-    ILogger<SpawnerSystem> logger)
+    ILogger<SpawnerSystem> logger,
+    PlayerView? view = null)
 {
     public async Task RunAsync(WorldState world, CancellationToken ct)
     {
@@ -84,11 +86,14 @@ public sealed class SpawnerSystem(
             EngineLog.SpawnerPopulation(
                 logger, spawner.Id, spawner.TemplateKey, currentCount, spawner.TargetCount, roomKeys.Count);
 
+            var touched = new HashSet<RoomKey>();
+
             for (var i = currentCount; i < spawner.TargetCount; i++)
             {
                 var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
                 var mob = mobSpawner.Spawn(template, zone, worldEnt, room, spawner.Sentinel, spawner.Id);
                 world.AddMob(mob);
+                touched.Add(room);
 
                 // Narrate spawn to room occupants
                 var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
@@ -99,6 +104,14 @@ public sealed class SpawnerSystem(
                 }
 
                 EngineLog.SpawnerSpawned(logger, spawner.Id, spawner.TemplateKey, room);
+            }
+
+            // The prose alone leaves the map and contents panels stale - the rat is announced
+            // but invisible until the player moves. Refresh once per room rather than once per
+            // mob, so a spawner filling three slots in one room sends one update, not three.
+            foreach (var room in touched)
+            {
+                view?.RefreshRoom(world, room);
             }
         }
         catch (Exception ex)
@@ -131,11 +144,14 @@ public sealed class SpawnerSystem(
         var roomKeys = spawner.RoomKeys.Select(RoomKey.Parse).ToList();
         var currentCount = roomKeys.Sum(room => world.ItemsIn(room).Count(i => i.SpawnerId == spawner.Id));
 
+        var touched = new HashSet<RoomKey>();
+
         for (var i = currentCount; i < spawner.TargetCount; i++)
         {
             var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
             var item = itemSpawner.Spawn(template, zone, worldEnt, room, spawner.Id);
             world.AddItem(item);
+            touched.Add(room);
 
             // Narrate spawn to room occupants
             var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
@@ -144,6 +160,13 @@ public sealed class SpawnerSystem(
             {
                 occupant.SendText(prose, "arrival");
             }
+        }
+
+        // Same as mobs: without this the item is announced but missing from the map and the
+        // room contents until something else forces a redraw.
+        foreach (var room in touched)
+        {
+            view?.RefreshRoom(world, room);
         }
     }
 }

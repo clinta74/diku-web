@@ -447,6 +447,7 @@ public sealed class GameLoop(
             Editor = loopEditor,
             AdminQueue = adminQueue,
             ItemSaveQueue = itemSaveQueue,
+            ItemTemplates = itemTemplateCache,
             Verb = verb,
             Argument = argument,
         };

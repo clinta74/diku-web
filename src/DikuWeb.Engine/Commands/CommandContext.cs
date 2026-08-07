@@ -2,6 +2,7 @@ using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
+using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.World;
 
 namespace DikuWeb.Engine.Commands;
@@ -33,6 +34,12 @@ public sealed class CommandContext
 
     /// <summary>Where items are handed off to be persisted. Null if item saving is not available.</summary>
     public IItemSaveQueue? ItemSaveQueue { get; init; }
+
+    /// <summary>
+    /// Item templates, for handlers that need an item's declared slot or description - an
+    /// <see cref="Domain.Items.ItemInstance"/> caches only its key. Null if unavailable.
+    /// </summary>
+    public ItemTemplateCache? ItemTemplates { get; init; }
 
     /// <summary>Applies a content edit and queues it for persistence.</summary>
     public MutationResult Edit(WorldChange change) =>

@@ -2,10 +2,12 @@ using System.Threading.Channels;
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Domain.Items;
 using DikuWeb.Engine.Commands;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
+using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.World;
 
 namespace DikuWeb.Engine.Tests.Infrastructure;
@@ -46,7 +48,7 @@ internal sealed class WorldHarness
     {
         var random = new DikuWeb.Domain.Randomness.SeededRandomSource(42);
         World = new WorldState(random);
-        Commands = new CommandRegistry();
+        Commands = new CommandRegistry(itemTemplateCache: ItemTemplates);
         View = new PlayerView(new RoomLayoutService());
         Options = new EngineOptions { StartingRoom = RoomKey.Parse("test.zone.west") };
         Applier = new WorldMutationApplier(World, View, Options);
@@ -56,6 +58,11 @@ internal sealed class WorldHarness
     }
 
     public WorldState World { get; }
+
+    /// <summary>Item templates the registry resolves slots and descriptions from.</summary>
+    public ItemTemplateCache ItemTemplates { get; } = new();
+
+    private readonly FakeItemTemplateRepository _itemTemplateRepo = new();
 
     public CommandRegistry Commands { get; }
 
@@ -191,12 +198,57 @@ internal sealed class WorldHarness
             View = View,
             Editor = Editor,
             AdminQueue = Admin,
+            ItemTemplates = ItemTemplates,
             Verb = verb,
             Argument = argument,
         };
 
         definition.Handler(context);
         return context;
+    }
+
+    /// <summary>Registers an item template (so its slot and description resolve) and returns it.</summary>
+    public ItemTemplate DefineItem(string key, string name, ItemSlot? slot, string description = "")
+    {
+        var template = new ItemTemplate
+        {
+            Key = key,
+            Name = name,
+            Icon = "$",
+            Slot = slot,
+            Description = description,
+        };
+
+        _itemTemplateRepo.Add(template);
+        ItemTemplates.LoadAsync(_itemTemplateRepo, CancellationToken.None).GetAwaiter().GetResult();
+        return template;
+    }
+
+    /// <summary>Puts an instance of a template into a character's inventory and returns it.</summary>
+    public ItemInstance GiveItem(PlayerActor actor, ItemTemplate template)
+    {
+        var item = new ItemInstance
+        {
+            TemplateKey = template.Key,
+            TemplateName = template.Name,
+            OwnerCharacterId = actor.CharacterId,
+        };
+
+        World.LoadCharacterItems(actor.CharacterId, [item]);
+        return item;
+    }
+
+    private sealed class FakeItemTemplateRepository : IItemTemplateRepository
+    {
+        private readonly Dictionary<string, ItemTemplate> _templates = [];
+
+        public void Add(ItemTemplate template) => _templates[template.Key] = template;
+
+        public Task<ItemTemplate?> GetByKeyAsync(string key, CancellationToken ct) =>
+            Task.FromResult(_templates.GetValueOrDefault(key));
+
+        public Task<IReadOnlyList<ItemTemplate>> GetAllAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<ItemTemplate>>([.. _templates.Values]);
     }
 
     /// <summary>Everything queued for this player since the last drain.</summary>

@@ -309,8 +309,50 @@ public sealed class CommandRegistry
             return;
         }
 
-        ctx.Reply($"You examine the {ctx.Argument}.", "dim");
+        // Look in hand first, then on the ground - "examine" is most often aimed at something
+        // you are already holding.
+        var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
+        var targetItem = FindItemByName(inventory, ctx.Argument)
+            ?? FindItemByName(ctx.World.ItemsIn(ctx.Actor.RoomKey), ctx.Argument);
+
+        if (targetItem is null)
+        {
+            ctx.Reply($"You don't see any {ctx.Argument} here.", "bad");
+            return;
+        }
+
+        var template = ctx.ItemTemplates?.Get(targetItem.TemplateKey);
+        var article = NarrationHelper.WithDefiniteArticle(targetItem.TemplateName);
+
+        var spans = new List<TextSpan>
+        {
+            new($"You examine {article}.", "heading"),
+        };
+
+        var description = template?.Description;
+        if (!string.IsNullOrWhiteSpace(description))
+        {
+            spans.Add(new TextSpan($"\n{description}"));
+        }
+
+        spans.Add(new TextSpan($"\n{UsageProse(template?.Slot)}", "dim"));
+
+        ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
     }
+
+    /// <summary>Prose telling a player, in-world, how (or whether) an item can be equipped.</summary>
+    private static string UsageProse(ItemSlot? slot) => slot switch
+    {
+        ItemSlot.Head => "It looks made to be worn on your head.",
+        ItemSlot.Chest => "It looks made to be worn over your chest.",
+        ItemSlot.Hands => "It looks made to be worn on your hands.",
+        ItemSlot.Legs => "It looks made to guard your legs.",
+        ItemSlot.Feet => "It looks made to be worn on your feet.",
+        ItemSlot.MainHand => "It has the balance of something meant for your main hand — you could wield it.",
+        ItemSlot.OffHand => "It sits ready for your off hand — you could wield it.",
+        ItemSlot.Trinket => "It looks like it would make a fine trinket.",
+        _ => "It isn't something you can wear or wield.",
+    };
 
     private static void Get(CommandContext ctx)
     {
@@ -392,14 +434,27 @@ public sealed class CommandRegistry
             return;
         }
 
-        // Determine slot from item configuration
-        // For now, just use a default body slot if no slot specified in item
-        var slot = ItemSlot.Chest; // Placeholder logic
-        ctx.World.EquipItem(targetItem, slot);
-        ctx.ItemSaveQueue?.Enqueue(targetItem);
+        var article = NarrationHelper.WithDefiniteArticle(targetItem.TemplateName);
+        var slot = SlotFor(ctx, targetItem);
 
-        ctx.Reply($"You wear {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} wears {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "movement");
+        if (slot is null)
+        {
+            ctx.Reply($"You can't wear {article} — it isn't something you can equip.", "bad");
+            return;
+        }
+
+        // "wear" is for armour and trinkets; hands are wielded, not worn. Sending someone to the
+        // right verb is friendlier than silently jamming a sword onto their chest.
+        if (IsHandSlot(slot.Value))
+        {
+            ctx.Reply($"You can't wear {article} — try wielding it instead.", "bad");
+            return;
+        }
+
+        if (!TryEquip(ctx, targetItem, slot.Value, "wear", "wears"))
+        {
+            return;
+        }
     }
 
     private static void Wield(CommandContext ctx)
@@ -425,12 +480,75 @@ public sealed class CommandRegistry
             return;
         }
 
-        ctx.World.EquipItem(targetItem, ItemSlot.MainHand);
-        ctx.ItemSaveQueue?.Enqueue(targetItem);
+        var article = NarrationHelper.WithDefiniteArticle(targetItem.TemplateName);
+        var slot = SlotFor(ctx, targetItem);
 
-        ctx.Reply($"You wield {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} wields {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "movement");
+        if (slot is null)
+        {
+            ctx.Reply($"You can't wield {article} — it isn't something you can equip.", "bad");
+            return;
+        }
+
+        // The mirror of Wear: only hand slots are wielded; armour is worn.
+        if (!IsHandSlot(slot.Value))
+        {
+            ctx.Reply($"You can't wield {article} — try wearing it instead.", "bad");
+            return;
+        }
+
+        if (!TryEquip(ctx, targetItem, slot.Value, "wield", "wields"))
+        {
+            return;
+        }
     }
+
+    /// <summary>
+    /// The slot an item declares on its template, or null if it is not equippable. Resolved from
+    /// the template cache because an <see cref="ItemInstance"/> only caches its key.
+    /// </summary>
+    private static ItemSlot? SlotFor(CommandContext ctx, ItemInstance item) =>
+        ctx.ItemTemplates?.Get(item.TemplateKey)?.Slot;
+
+    private static bool IsHandSlot(ItemSlot slot) =>
+        slot is ItemSlot.MainHand or ItemSlot.OffHand;
+
+    /// <summary>
+    /// Equips into the item's own slot, refusing if that slot is already filled. Returns false
+    /// (having replied) when the slot is taken, so callers can bail without repeating the check.
+    /// </summary>
+    private static bool TryEquip(
+        CommandContext ctx,
+        ItemInstance item,
+        ItemSlot slot,
+        string selfVerb,
+        string othersVerb)
+    {
+        var occupant = ctx.World.InventoryOf(ctx.Actor.CharacterId)
+            .FirstOrDefault(i => i.EquippedSlot == slot);
+
+        if (occupant is not null)
+        {
+            var occupantName = NarrationHelper.WithDefiniteArticle(occupant.TemplateName);
+            ctx.Reply($"You're already using your {SlotName(slot)} for {occupantName}.", "bad");
+            return false;
+        }
+
+        var article = NarrationHelper.WithDefiniteArticle(item.TemplateName);
+        ctx.World.EquipItem(item, slot);
+        ctx.ItemSaveQueue?.Enqueue(item);
+
+        ctx.Reply($"You {selfVerb} {article}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} {othersVerb} {article}.", "movement");
+        return true;
+    }
+
+    /// <summary>A human-readable name for a slot, for prose like "your main hand".</summary>
+    private static string SlotName(ItemSlot slot) => slot switch
+    {
+        ItemSlot.MainHand => "main hand",
+        ItemSlot.OffHand => "off hand",
+        _ => slot.ToString().ToLowerInvariant(),
+    };
 
     private static void Remove(CommandContext ctx)
     {
