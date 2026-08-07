@@ -48,7 +48,8 @@ public static class EngineServiceCollectionExtensions
                 sp.GetService<IMobTemplateRepository>(),
                 sp.GetService<IItemTemplateRepository>(),
                 sp.GetService<MobSpawner>(),
-                sp.GetService<ItemSpawner>()));
+                sp.GetService<ItemSpawner>(),
+                sp.GetService<ICharacterQuestSaveQueue>()));
         services.AddSingleton<RoomLayoutService>();
         services.AddSingleton<PlayerView>();
         services.AddSingleton<WorldMutationApplier>();

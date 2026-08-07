@@ -10,11 +10,13 @@ public static class QuestCommands
 {
     private static QuestCache? _questCache;
     private static DikuWeb.Engine.Spawning.ItemTemplateCache? _itemTemplateCache;
+    private static ICharacterQuestSaveQueue? _questSaveQueue;
 
-    public static void Register(List<CommandDefinition> commands, QuestCache? questCache, DikuWeb.Engine.Spawning.ItemTemplateCache? itemTemplateCache = null)
+    public static void Register(List<CommandDefinition> commands, QuestCache? questCache, DikuWeb.Engine.Spawning.ItemTemplateCache? itemTemplateCache = null, ICharacterQuestSaveQueue? questSaveQueue = null)
     {
         _questCache = questCache;
         _itemTemplateCache = itemTemplateCache;
+        _questSaveQueue = questSaveQueue;
 
         commands.Add(new CommandDefinition(
             "talk", 1, "talk <npc> (t) - speak with an NPC about quests", Talk));
@@ -88,6 +90,10 @@ public static class QuestCommands
                     StartedAt = DateTimeOffset.UtcNow
                 };
                 ctx.World.SetQuestState(character.Id, quest.Key, newQuestState);
+
+                // Persist the state change
+                _questSaveQueue?.Enqueue(new CharacterQuestSnapshot(
+                    character.Id, quest.Key, QuestStatus.Active, DateTimeOffset.UtcNow, null, 0));
             }
             else if (questState?.Status == QuestStatus.Active)
             {
@@ -122,6 +128,10 @@ public static class QuestCommands
                     StartedAt = DateTimeOffset.UtcNow
                 };
                 ctx.World.SetQuestState(character.Id, quest.Key, resetQuestState);
+
+                // Persist the state change
+                _questSaveQueue?.Enqueue(new CharacterQuestSnapshot(
+                    character.Id, quest.Key, QuestStatus.Active, DateTimeOffset.UtcNow, null, questState.TimesCompleted));
             }
             else if (!prerequisitesMet)
             {
@@ -318,6 +328,11 @@ private static void Quests(CommandContext ctx)
             completedQuestState.CompletedAt = DateTimeOffset.UtcNow;
             completedQuestState.TimesCompleted++;
             ctx.World.SetQuestState(character.Id, matchingQuest.Key, completedQuestState);
+
+            // Persist the state change
+            _questSaveQueue?.Enqueue(new CharacterQuestSnapshot(
+                character.Id, matchingQuest.Key, QuestStatus.Completed, completedQuestState.StartedAt,
+                DateTimeOffset.UtcNow, completedQuestState.TimesCompleted));
         }
 
         // Narrate turn-in
