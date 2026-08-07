@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace DikuWeb.Server.Tests.Infrastructure;
 
@@ -10,6 +11,16 @@ namespace DikuWeb.Server.Tests.Infrastructure;
 /// </summary>
 public sealed class DikuWebAppFactory(string connectionString) : WebApplicationFactory<Program>
 {
+    /// <summary>
+    /// Small on purpose. Each test builds its own host, and a host's pool is not torn down the
+    /// instant the factory is disposed, so several pools briefly overlap. Npgsql defaults to
+    /// 100 connections per pool and the server's own cap is only applied on the
+    /// DatabaseConnection:* configuration path, which tests do not use - so without this the
+    /// overlap exhausted Postgres and tests failed with "53300: sorry, too many clients
+    /// already". A single-threaded test needs a handful of connections at most.
+    /// </summary>
+    private const int TestMaxPoolSize = 8;
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -17,7 +28,7 @@ public sealed class DikuWebAppFactory(string connectionString) : WebApplicationF
         // "Testing" rather than "Development" so appsettings.Development.json - which points
         // at the docker-compose database - cannot leak into a test run.
         builder.UseEnvironment("Testing");
-        builder.UseSetting("ConnectionStrings:DikuWeb", connectionString);
+        builder.UseSetting("ConnectionStrings:DikuWeb", CapPool(connectionString));
 
         // Revalidate the principal on every authenticated request rather than once a minute
         // (PLAN.md §7.7). A test that promoted somebody and then immediately checked their
@@ -42,4 +53,15 @@ public sealed class DikuWebAppFactory(string connectionString) : WebApplicationF
             logging.AddDebug();
         });
     }
+
+    private static string CapPool(string raw) =>
+        new NpgsqlConnectionStringBuilder(raw)
+        {
+            MaxPoolSize = TestMaxPoolSize,
+
+            // Hand connections back promptly rather than parking them for the default five
+            // minutes, so a finished test's pool stops holding slots the next one needs.
+            ConnectionIdleLifetime = 5,
+            ConnectionPruningInterval = 1,
+        }.ConnectionString;
 }

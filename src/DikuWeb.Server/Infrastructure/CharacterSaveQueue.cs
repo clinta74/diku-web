@@ -5,31 +5,50 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DikuWeb.Server.Infrastructure;
 
+/// <summary>One unit of work for the character save queue.</summary>
+public abstract record CharacterSaveJob;
+
+public sealed record SaveCharacterJob(CharacterSnapshot Snapshot) : CharacterSaveJob;
+
+/// <summary>A caller waiting for everything enqueued before it to be durable.</summary>
+public sealed record FlushCharactersJob(TaskCompletionSource Completion) : CharacterSaveJob;
+
 /// <summary>
 /// The write side of the persistence hand-off. The game loop calls
 /// <see cref="Enqueue"/> and moves on; nothing here blocks it.
 /// </summary>
 public sealed class CharacterSaveQueue : ICharacterSaveQueue
 {
-    private readonly Channel<(CharacterSnapshot?, TaskCompletionSource?)> _channel =
-        Channel.CreateUnbounded<(CharacterSnapshot?, TaskCompletionSource?)>(new UnboundedChannelOptions
+    private readonly Channel<CharacterSaveJob> _channel =
+        Channel.CreateUnbounded<CharacterSaveJob>(new UnboundedChannelOptions
         {
             SingleReader = true,
-            SingleWriter = true,
+
+            // Snapshots come from the loop, but a flush marker comes from whichever request
+            // thread is logging a player out, so writes are not single-writer.
+            SingleWriter = false,
         });
 
-    public ChannelReader<(CharacterSnapshot?, TaskCompletionSource?)> Reader => _channel.Reader;
+    public ChannelReader<CharacterSaveJob> Reader => _channel.Reader;
 
-    public void Enqueue(CharacterSnapshot snapshot) => _channel.Writer.TryWrite((snapshot, null));
+    public void Enqueue(CharacterSnapshot snapshot) =>
+        _channel.Writer.TryWrite(new SaveCharacterJob(snapshot));
 
-    public async Task FlushAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Completes once every snapshot enqueued before this call has been written. Returns
+    /// immediately if the queue is already closed - a caller waiting on a drained queue would
+    /// wait forever, and a logout during shutdown must not hang or throw.
+    /// </summary>
+    public Task FlushAsync(CancellationToken cancellationToken)
     {
-        var tcs = new TaskCompletionSource();
-        if (!_channel.Writer.TryWrite((null, tcs)))
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        if (!_channel.Writer.TryWrite(new FlushCharactersJob(completion)))
         {
-            tcs.SetException(new InvalidOperationException("Character save queue is closed"));
+            return Task.CompletedTask;
         }
-        await tcs.Task.ConfigureAwait(false);
+
+        return completion.Task.WaitAsync(cancellationToken);
     }
 
     public void Complete() => _channel.Writer.TryComplete();
@@ -51,66 +70,38 @@ public sealed class CharacterSaveWorker(
         // through disposal. Normal shutdown must not look like a fault.
         try
         {
-            await foreach (var (snapshot, flushMarker) in queue.Reader.ReadAllAsync(stoppingToken))
+            await foreach (var job in queue.Reader.ReadAllAsync(stoppingToken))
             {
-                if (flushMarker is not null)
+                // Coalesce by character id: during shutdown or a busy autosave the same id can
+                // appear several times, and only the last snapshot matters.
+                var batch = new Dictionary<Guid, CharacterSnapshot>();
+                var waiters = new List<TaskCompletionSource>();
+
+                Absorb(job, batch, waiters);
+
+                while (queue.Reader.TryRead(out var extra))
                 {
-                    // Flush marker: drain any pending saves then complete the marker
-                    try
-                    {
-                        await SaveBatchAsync([], stoppingToken);
-                    }
-                    catch (Exception ex) when (ex is not OperationCanceledException)
-                    {
-                        ServerLog.CharacterSaveFailed(logger, 0, ex);
-                    }
-                    finally
-                    {
-                        flushMarker.SetResult();
-                    }
+                    Absorb(extra, batch, waiters);
                 }
-                else if (snapshot is not null)
+
+                try
                 {
-                    // Coalesce anything already queued for the same character: during shutdown or
-                    // a busy autosave the same id can appear several times, and only the last
-                    // matters.
-                    var batch = new Dictionary<Guid, CharacterSnapshot> { [snapshot.Id] = snapshot };
-
-                    while (queue.Reader.TryRead(out var extra))
+                    await SaveBatchAsync(batch.Values, stoppingToken);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    // A failed save must not kill the worker, or every later save is lost too.
+                    ServerLog.CharacterSaveFailed(logger, batch.Count, ex);
+                }
+                finally
+                {
+                    // Signal only after the batch is written, so FlushAsync means "durable".
+                    // Draining first is the whole point: completing the marker while snapshots
+                    // were still queued behind it let a logout return before the character's
+                    // own final save had landed.
+                    foreach (var waiter in waiters)
                     {
-                        if (extra.Item2 is not null)
-                        {
-                            // Another flush marker came in, handle pending saves first then queue it for later
-                            if (batch.Count > 0)
-                            {
-                                try
-                                {
-                                    await SaveBatchAsync(batch.Values, stoppingToken);
-                                }
-                                catch (Exception ex) when (ex is not OperationCanceledException)
-                                {
-                                    ServerLog.CharacterSaveFailed(logger, batch.Count, ex);
-                                }
-                                batch.Clear();
-                            }
-                            extra.Item2.SetResult();
-                        }
-                        else if (extra.Item1 is not null)
-                        {
-                            batch[extra.Item1.Id] = extra.Item1;
-                        }
-                    }
-
-                    if (batch.Count > 0)
-                    {
-                        try
-                        {
-                            await SaveBatchAsync(batch.Values, stoppingToken);
-                        }
-                        catch (Exception ex) when (ex is not OperationCanceledException)
-                        {
-                            ServerLog.CharacterSaveFailed(logger, batch.Count, ex);
-                        }
+                        waiter.TrySetResult();
                     }
                 }
             }
@@ -118,6 +109,32 @@ public sealed class CharacterSaveWorker(
         catch (OperationCanceledException)
         {
             // Normal shutdown.
+        }
+
+        // Anything still waiting would otherwise block on a queue that will never drain.
+        while (queue.Reader.TryRead(out var leftover))
+        {
+            if (leftover is FlushCharactersJob flush)
+            {
+                flush.Completion.TrySetResult();
+            }
+        }
+    }
+
+    private static void Absorb(
+        CharacterSaveJob job,
+        Dictionary<Guid, CharacterSnapshot> batch,
+        List<TaskCompletionSource> waiters)
+    {
+        switch (job)
+        {
+            case SaveCharacterJob save:
+                batch[save.Snapshot.Id] = save.Snapshot;
+                break;
+
+            case FlushCharactersJob flush:
+                waiters.Add(flush.Completion);
+                break;
         }
     }
 
@@ -147,6 +164,13 @@ public sealed class CharacterSaveWorker(
             tracked.Xp = snapshot.Xp;
             tracked.Attributes = snapshot.Attributes;
             tracked.Vitals = snapshot.Vitals;
+
+            // Both of these are captured by CharacterSnapshot.From and were being dropped on
+            // the floor here, so gold earned from kills and sales, and any bind point set with
+            // `bind`, did not survive a restart.
+            tracked.Gold = snapshot.Gold;
+            tracked.RespawnRoomKey = snapshot.RespawnRoomKey;
+
             tracked.LastPlayedAt = snapshot.LastPlayedAt;
             tracked.PlaytimeSeconds = snapshot.PlaytimeSeconds;
             saved++;

@@ -30,10 +30,17 @@ public interface ICharacterSaveQueue
     Task FlushAsync(CancellationToken cancellationToken);
 }
 
-/// <summary>Where the game loop hands off items to be saved.</summary>
+/// <summary>Where the game loop hands off items to be saved or destroyed.</summary>
 public interface IItemSaveQueue
 {
     void Enqueue(ItemInstance item);
+
+    /// <summary>
+    /// Removes an item from storage. Takes an id rather than the instance because callers
+    /// reach this point after the item has already left the world.
+    /// </summary>
+    void EnqueueDelete(Guid itemId);
+
     Task FlushAsync(CancellationToken cancellationToken);
 }
 
