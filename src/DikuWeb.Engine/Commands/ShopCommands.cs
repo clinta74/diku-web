@@ -171,6 +171,7 @@ public static class ShopCommands
 
         ctx.World.AddItem(instance);
         ctx.World.PickUpItem(instance, character.Id);
+        ctx.ItemSaveQueue?.Enqueue(instance);
 
         // Deduct gold
         character.Gold -= price;
@@ -236,8 +237,11 @@ public static class ShopCommands
         var sellbackPercent = _options.ShopSellbackPercent ?? 0.5m;
         var sellPrice = (long)(itemToSell.Value * sellbackPercent);
 
-        // Remove item and credit gold
+        // Remove item and credit gold. The delete has to reach storage too, or the row
+        // outlives the sale still pointing at its former owner and the item comes back in
+        // the player's inventory on restart.
         ctx.World.RemoveItem(itemToSell);
+        ctx.ItemSaveQueue?.EnqueueDelete(itemToSell.Id);
         character.Gold += sellPrice;
 
         ctx.Reply($"You sell {itemToSell.TemplateName} for {sellPrice} gold.", "success");

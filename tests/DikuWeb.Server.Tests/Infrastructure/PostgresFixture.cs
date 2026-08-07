@@ -17,6 +17,12 @@ public sealed class PostgresFixture : IAsyncLifetime
         .WithDatabase("dikuweb_test")
         .WithUsername("dikuweb_test")
         .WithPassword("dikuweb_test")
+
+        // Postgres defaults to 100, which a run that boots a host per test can brush against
+        // while a finished test's pool is still winding down. The per-host pool is capped in
+        // DikuWebAppFactory; this is the headroom behind it, and costs nothing in a container
+        // that lives for one test run.
+        .WithCommand("-c", "max_connections=300")
         .Build();
 
     private Npgsql.NpgsqlDataSource? _dataSource;

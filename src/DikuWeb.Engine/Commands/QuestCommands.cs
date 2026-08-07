@@ -314,10 +314,12 @@ private static void Quests(CommandContext ctx)
             return true;
         }
 
-        // Remove the required items
+        // Remove the required items, in storage as well as in the world - otherwise the turn-in
+        // is undone by a restart and the quest can be handed in again with the same items.
         for (int i = 0; i < matchingQuest.RequiredCount; i++)
         {
             ctx.World.RemoveItem(matchingItems[i]);
+            ctx.ItemSaveQueue?.EnqueueDelete(matchingItems[i].Id);
         }
 
         // Mark quest as completed
@@ -381,6 +383,7 @@ private static void Quests(CommandContext ctx)
 
                         ctx.World.AddItem(instance);
                         ctx.World.PickUpItem(instance, character.Id);
+                        ctx.ItemSaveQueue?.Enqueue(instance);
                         ctx.Reply($"You receive {matchingQuest.RewardItemCount} x {itemTemplate.Name}.", "reward");
                     }
                 }
