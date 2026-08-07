@@ -23,8 +23,6 @@ public sealed class AdminCommandFlowTests(PostgresFixture postgres)
 {
     private static readonly TimeSpan EventTimeout = TimeSpan.FromSeconds(10);
 
-    private DikuWebAppFactory NewFactory() => new(postgres.ConnectionString);
-
     private static HttpClient NewClient(WebApplicationFactory<Program> factory) =>
         factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
 
@@ -62,7 +60,7 @@ public sealed class AdminCommandFlowTests(PostgresFixture postgres)
     [Fact]
     public async Task Promoting_from_the_command_line_changes_the_row_and_reports_back()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         using var target = NewClient(factory);
 
@@ -88,7 +86,7 @@ public sealed class AdminCommandFlowTests(PostgresFixture postgres)
     [Fact]
     public async Task Promoting_somebody_who_does_not_exist_says_so()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
 
         var (_, characterId, stream) = await PlayAsync(factory, admin, AccountRole.Admin);
@@ -105,7 +103,7 @@ public sealed class AdminCommandFlowTests(PostgresFixture postgres)
     [Fact]
     public async Task An_admin_cannot_demote_themselves_from_the_command_line_either()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
 
         var (username, characterId, stream) = await PlayAsync(factory, admin, AccountRole.Admin);
@@ -128,7 +126,7 @@ public sealed class AdminCommandFlowTests(PostgresFixture postgres)
     [Fact]
     public async Task Whois_answers_with_the_account_and_its_characters()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         using var target = NewClient(factory);
 
@@ -156,7 +154,7 @@ public sealed class AdminCommandFlowTests(PostgresFixture postgres)
     {
         // PlayerActor.Role is a copy taken at EnterWorld, so without SetActorRole the promotion
         // would not reach somebody already playing.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         using var target = NewClient(factory);
 
@@ -194,7 +192,7 @@ public sealed class AdminCommandFlowTests(PostgresFixture postgres)
     public async Task A_demoted_builder_loses_the_verbs_without_relogging()
     {
         // The direction that actually matters for security.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         using var target = NewClient(factory);
 
@@ -225,7 +223,7 @@ public sealed class AdminCommandFlowTests(PostgresFixture postgres)
     [Fact]
     public async Task A_builder_typing_promote_gets_an_unknown_verb_and_nothing_happens()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var builder = NewClient(factory);
         using var target = NewClient(factory);
 
@@ -252,7 +250,7 @@ public sealed class AdminCommandFlowTests(PostgresFixture postgres)
     {
         // The in-game verbs and the HTTP surface must agree - a builder who can dig from the
         // command line but gets a 403 from the panel would be a confusing half-promotion.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         using var target = NewClient(factory);
 

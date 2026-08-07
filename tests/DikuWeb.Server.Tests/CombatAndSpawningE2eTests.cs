@@ -16,8 +16,6 @@ public sealed class CombatAndSpawningE2eTests(PostgresFixture postgres)
 {
     private static readonly TimeSpan EventTimeout = TimeSpan.FromSeconds(10);
 
-    private DikuWebAppFactory NewFactory() => new(postgres.ConnectionString);
-
     private static HttpClient NewClient(WebApplicationFactory<Program> factory) =>
         factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
 
@@ -63,7 +61,7 @@ public sealed class CombatAndSpawningE2eTests(PostgresFixture postgres)
     [Fact]
     public async Task Mobs_spawn_into_the_world()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Spawn"));
@@ -92,7 +90,7 @@ public sealed class CombatAndSpawningE2eTests(PostgresFixture postgres)
     [Fact]
     public async Task Combat_system_works_end_to_end()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Slayer"));
@@ -148,7 +146,7 @@ public sealed class CombatAndSpawningE2eTests(PostgresFixture postgres)
     [Fact]
     public async Task Mob_death_produces_loot_and_xp()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Hunter"));
@@ -208,7 +206,7 @@ public sealed class CombatAndSpawningE2eTests(PostgresFixture postgres)
     [Fact]
     public async Task Character_can_bind_respawn_point()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Bound"));
@@ -246,7 +244,7 @@ public sealed class CombatAndSpawningE2eTests(PostgresFixture postgres)
     [Fact]
     public async Task Character_can_flee_combat()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Runner"));
@@ -288,7 +286,7 @@ public sealed class CombatAndSpawningE2eTests(PostgresFixture postgres)
     [Fact]
     public async Task Players_can_interact_in_multi_player_scenarios()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var player1 = NewClient(factory);
         using var player2 = NewClient(factory);
 

@@ -10,15 +10,13 @@ public sealed class AuthFlowTests(PostgresFixture postgres)
 {
     private static string Unique(string prefix) => $"{prefix}{Guid.NewGuid():N}"[..16];
 
-    private HttpClient NewClient()
-    {
-        var factory = new DikuWebAppFactory(postgres.ConnectionString);
-        // Cookies are the whole auth mechanism here, so the handler must keep them.
-        return factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+    private HttpClient NewClient() =>
+        // Cookies are the whole auth mechanism here, so the handler must keep them. A fresh
+        // client per call is what keeps sessions apart; the host behind them is shared.
+        postgres.App.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
         {
             HandleCookies = true,
         });
-    }
 
     [Fact]
     public async Task Register_signs_the_new_account_in()
@@ -121,8 +119,7 @@ public sealed class AuthFlowTests(PostgresFixture postgres)
     {
         // Cookie auth defaults to a 302 toward a login page, which reaches a fetch() caller
         // as a confusing 200 full of HTML. Program.cs overrides that; this locks it in.
-        using var factory = new DikuWebAppFactory(postgres.ConnectionString);
-        using var client = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        using var client = postgres.App.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false,
         });

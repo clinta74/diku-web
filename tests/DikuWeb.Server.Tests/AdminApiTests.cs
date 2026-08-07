@@ -18,8 +18,6 @@ namespace DikuWeb.Server.Tests;
 [Trait("Category", "EndToEnd")]
 public sealed class AdminApiTests(PostgresFixture postgres)
 {
-    private DikuWebAppFactory NewFactory() => new(postgres.ConnectionString);
-
     private static HttpClient NewClient(WebApplicationFactory<Program> factory) =>
         factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
 
@@ -40,7 +38,7 @@ public sealed class AdminApiTests(PostgresFixture postgres)
     [Fact]
     public async Task The_admin_api_is_closed_to_anonymous_callers()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var response = await client.GetAsync(new Uri("/api/admin/accounts", UriKind.Relative));
@@ -53,7 +51,7 @@ public sealed class AdminApiTests(PostgresFixture postgres)
     {
         // Builders edit the world; they do not hand out access to it. If they could, the role
         // would be self-propagating and the boundary would mean nothing.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -72,7 +70,7 @@ public sealed class AdminApiTests(PostgresFixture postgres)
     [Fact]
     public async Task An_admin_can_promote_somebody_to_builder()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         using var target = NewClient(factory);
 
@@ -89,7 +87,7 @@ public sealed class AdminApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Promoting_writes_an_admin_audit_row_naming_who_did_it()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         using var target = NewClient(factory);
 
@@ -117,7 +115,7 @@ public sealed class AdminApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Promoting_somebody_who_does_not_exist_is_a_404()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         await RegisterAdminAsync(factory, admin);
 
@@ -130,7 +128,7 @@ public sealed class AdminApiTests(PostgresFixture postgres)
     [Fact]
     public async Task An_unknown_role_is_rejected()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         using var target = NewClient(factory);
 
@@ -148,7 +146,7 @@ public sealed class AdminApiTests(PostgresFixture postgres)
     {
         // There is no recovery from an installation with zero admins except the SQL that §7.7
         // exists to eliminate.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         var username = await RegisterAdminAsync(factory, admin);
 
@@ -166,7 +164,7 @@ public sealed class AdminApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Searching_finds_accounts_by_partial_name()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         using var target = NewClient(factory);
 
@@ -190,7 +188,7 @@ public sealed class AdminApiTests(PostgresFixture postgres)
     {
         // The role is a cookie claim written at sign-in. Without revalidation the freshly
         // promoted builder would keep a cookie saying Player and find the builder closed.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         using var target = NewClient(factory);
 
@@ -210,7 +208,7 @@ public sealed class AdminApiTests(PostgresFixture postgres)
     [Fact]
     public async Task A_demotion_revokes_builder_access_without_waiting_for_the_cookie_to_expire()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var admin = NewClient(factory);
         using var target = NewClient(factory);
 
@@ -232,7 +230,7 @@ public sealed class AdminApiTests(PostgresFixture postgres)
     {
         // Before revalidation, is_banned was read at login and never again - so banning a
         // connected player did nothing at all until they chose to reconnect.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var username = await BuilderClient.RegisterAsync(client);
@@ -258,7 +256,7 @@ public sealed class AdminApiTests(PostgresFixture postgres)
     [Fact]
     public async Task An_account_deleted_under_a_live_session_stops_being_a_credential()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var username = await BuilderClient.RegisterAsync(client);

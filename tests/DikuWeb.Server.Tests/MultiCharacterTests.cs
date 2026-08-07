@@ -16,8 +16,6 @@ public sealed class MultiCharacterTests(PostgresFixture postgres)
 {
     private static readonly TimeSpan EventTimeout = TimeSpan.FromSeconds(10);
 
-    private DikuWebAppFactory NewFactory() => new(postgres.ConnectionString);
-
     private static HttpClient NewClient(WebApplicationFactory<Program> factory) =>
         factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
 
@@ -61,7 +59,7 @@ public sealed class MultiCharacterTests(PostgresFixture postgres)
     [Fact]
     public async Task One_account_can_hold_two_characters_in_the_world_at_once()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await RegisterAsync(client);
 
@@ -82,7 +80,7 @@ public sealed class MultiCharacterTests(PostgresFixture postgres)
     {
         // The regression this whole change exists to prevent: entering a second character
         // used to evict the first, because sessions were keyed by account.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await RegisterAsync(client);
 
@@ -107,7 +105,7 @@ public sealed class MultiCharacterTests(PostgresFixture postgres)
     [Fact]
     public async Task Two_characters_on_one_account_can_see_and_hear_each_other()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await RegisterAsync(client);
 
@@ -131,7 +129,7 @@ public sealed class MultiCharacterTests(PostgresFixture postgres)
     [Fact]
     public async Task Commands_are_routed_to_the_named_character_only()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await RegisterAsync(client);
 
@@ -161,7 +159,7 @@ public sealed class MultiCharacterTests(PostgresFixture postgres)
     [Fact]
     public async Task A_character_on_another_account_cannot_be_streamed()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var owner = NewClient(factory);
         using var intruder = NewClient(factory);
 
@@ -185,7 +183,7 @@ public sealed class MultiCharacterTests(PostgresFixture postgres)
     [Fact]
     public async Task Sessions_listing_shows_only_this_accounts_characters()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var mine = NewClient(factory);
         using var theirs = NewClient(factory);
 
@@ -209,7 +207,7 @@ public sealed class MultiCharacterTests(PostgresFixture postgres)
     {
         // Each character holds an open SSE connection and a ring buffer, so an uncapped
         // account could exhaust server resources by looping over its character list.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await RegisterAsync(client);
 
@@ -234,7 +232,7 @@ public sealed class MultiCharacterTests(PostgresFixture postgres)
     [Fact]
     public async Task Leaving_frees_a_slot_against_the_cap()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await RegisterAsync(client);
 
@@ -263,7 +261,7 @@ public sealed class MultiCharacterTests(PostgresFixture postgres)
     {
         // A reconnect is not a new presence. Counting it against the cap would lock a player
         // out of their own character after a few flaky connections.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await RegisterAsync(client);
 

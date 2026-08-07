@@ -26,8 +26,32 @@ public sealed class PostgresFixture : IAsyncLifetime
         .Build();
 
     private Npgsql.NpgsqlDataSource? _dataSource;
+    private DikuWebAppFactory? _app;
 
     public string ConnectionString => _container.GetConnectionString();
+
+    /// <summary>
+    /// One server host shared by the whole collection.
+    /// </summary>
+    /// <remarks>
+    /// Booting a host per test cost about a second each and dominated the run - roughly ninety
+    /// seconds of the suite was startup rather than assertions. Sharing is safe because the
+    /// tests were already written for a shared database: accounts, characters, worlds, and
+    /// zones all come from <see cref="BuilderClient.UniqueName"/>, so nothing collides over a
+    /// key. Per-account state such as the dig throttle and the session cap is likewise isolated
+    /// by the unique account each test registers.
+    ///
+    /// What is genuinely shared is the in-memory world. Characters entered by earlier tests
+    /// stay put for the link-dead grace window, so the starting room is not empty and an
+    /// assertion that a player is *alone* there cannot hold. Assert that the viewer is present
+    /// instead - that is what such a test means, and it holds either way.
+    ///
+    /// Do not dispose this from a test. Tests that need a differently configured host - the
+    /// readiness checks, which point at a database that is deliberately unreachable - still
+    /// construct their own.
+    /// </remarks>
+    public DikuWebAppFactory App =>
+        _app ?? throw new InvalidOperationException("The fixture has not been initialized yet.");
 
     public async Task InitializeAsync()
     {
@@ -50,9 +74,22 @@ public sealed class PostgresFixture : IAsyncLifetime
         // seed here. Without a world the game loop would load zero rooms and every entry
         // would land in a room that does not exist.
         await StarterWorldSeeder.SeedAsync(db);
+
+        // Built after seeding: the host loads the world into memory at startup, so a host
+        // created before the starter world exists would come up with zero rooms.
+        _app = new DikuWebAppFactory(ConnectionString);
+
+        // WebApplicationFactory builds its host lazily on first use. Doing it here means the
+        // one-off startup cost lands in fixture setup rather than being blamed on whichever
+        // test happened to run first.
+        _ = _app.Services;
     }
 
-    public async Task DisposeAsync() => await _container.DisposeAsync();
+    public async Task DisposeAsync()
+    {
+        _app?.Dispose();
+        await _container.DisposeAsync();
+    }
 
     public DikuWebDbContext CreateDbContext()
     {

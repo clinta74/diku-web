@@ -15,8 +15,6 @@ namespace DikuWeb.Server.Tests;
 [Trait("Category", "EndToEnd")]
 public sealed class BuilderApiTests(PostgresFixture postgres)
 {
-    private DikuWebAppFactory NewFactory() => new(postgres.ConnectionString);
-
     private static HttpClient NewClient(WebApplicationFactory<Program> factory) =>
         factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
 
@@ -27,7 +25,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task The_builder_api_is_closed_to_anonymous_callers()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var response = await client.GetAsync(new Uri("/api/builder/worlds", UriKind.Relative));
@@ -40,7 +38,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     {
         // A logged-in player must get 403, not 401: 401 would tell the client to try logging
         // in again, which cannot possibly help.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterAsync(client);
 
@@ -54,7 +52,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task A_moderator_is_not_a_builder()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var username = await BuilderClient.RegisterAsync(client);
@@ -69,7 +67,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task An_admin_can_do_everything_a_builder_can()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var username = await BuilderClient.RegisterAsync(client);
@@ -89,7 +87,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     public async Task A_zone_can_be_built_end_to_end_with_no_sql()
     {
         // The Phase 2 acceptance criterion in miniature.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -112,7 +110,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Creating_something_that_already_exists_is_a_conflict()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -128,7 +126,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task A_patch_leaves_unmentioned_fields_alone()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -147,7 +145,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task A_room_key_that_does_not_match_its_zone_is_rejected()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -162,7 +160,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task A_malformed_room_key_is_rejected_before_it_reaches_the_loop()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -181,7 +179,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     {
         // Live editing has no publish gate to defer the link to, so this must be allowed -
         // and the response must say plainly that the target is not there yet.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -202,7 +200,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Linking_two_existing_rooms_creates_the_reciprocal_by_default()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -227,7 +225,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Dig_creates_a_room_and_returns_it()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -250,7 +248,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Dig_materializes_a_dangling_exit_rather_than_creating_a_second_room()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -275,7 +273,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Digging_where_a_room_already_is_conflicts()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -298,7 +296,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     public async Task Dig_is_rate_limited()
     {
         // A held-down key would otherwise carve forty rooms (PLAN.md §7.6).
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -317,7 +315,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Unfinished_rooms_are_the_zone_build_list_and_editing_clears_them()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -348,7 +346,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Renaming_a_room_rewrites_the_exits_that_pointed_at_it()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -379,7 +377,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task The_flag_registry_is_served_so_the_editor_can_render_itself()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -395,7 +393,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task A_zone_flag_is_inherited_by_its_rooms_and_says_so()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -423,7 +421,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task A_room_can_override_its_zones_flag()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -453,7 +451,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task An_unrecognised_flag_key_is_dropped_rather_than_stored()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -479,7 +477,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Validation_reports_dangling_exits_without_having_blocked_the_save()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -502,7 +500,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Validation_names_the_rooms_that_became_pvp_by_inheritance()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -530,7 +528,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Every_write_leaves_an_audit_row_with_before_and_after()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
@@ -559,7 +557,7 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     [Fact]
     public async Task Deleting_leaves_the_audit_row_behind()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 

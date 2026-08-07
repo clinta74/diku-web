@@ -17,8 +17,6 @@ public sealed class LiveEditTests(PostgresFixture postgres)
 {
     private static readonly TimeSpan EventTimeout = TimeSpan.FromSeconds(10);
 
-    private DikuWebAppFactory NewFactory() => new(postgres.ConnectionString);
-
     private static HttpClient NewClient(WebApplicationFactory<Program> factory) =>
         factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
 
@@ -49,7 +47,7 @@ public sealed class LiveEditTests(PostgresFixture postgres)
     [Fact]
     public async Task Retitling_a_room_reaches_the_player_standing_in_it()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var player = NewClient(factory);
         using var builder = NewClient(factory);
 
@@ -86,7 +84,7 @@ public sealed class LiveEditTests(PostgresFixture postgres)
     {
         // The one destructive edit gated on being empty (PLAN.md §7.4), asserted against a
         // genuinely occupied zone rather than a unit-test fixture.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var player = NewClient(factory);
         using var builder = NewClient(factory);
 
@@ -110,7 +108,7 @@ public sealed class LiveEditTests(PostgresFixture postgres)
     [Fact]
     public async Task A_builder_walking_into_a_dangling_exit_is_offered_the_dig()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var username = await BuilderClient.RegisterAsync(client);
@@ -140,7 +138,7 @@ public sealed class LiveEditTests(PostgresFixture postgres)
     [Fact]
     public async Task An_in_game_dig_is_persisted_by_the_write_worker()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var username = await BuilderClient.RegisterAsync(client);

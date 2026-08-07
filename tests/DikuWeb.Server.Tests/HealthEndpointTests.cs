@@ -11,8 +11,7 @@ public sealed class HealthEndpointTests(PostgresFixture postgres)
     [Fact]
     public async Task Liveness_returns_200()
     {
-        using var factory = new DikuWebAppFactory(postgres.ConnectionString);
-        using var client = factory.CreateClient();
+        using var client = postgres.App.CreateClient();
 
         var response = await client.GetAsync(new Uri("/health", UriKind.Relative));
 
@@ -37,8 +36,7 @@ public sealed class HealthEndpointTests(PostgresFixture postgres)
     [Fact]
     public async Task Readiness_reports_the_database_check()
     {
-        using var factory = new DikuWebAppFactory(postgres.ConnectionString);
-        using var client = factory.CreateClient();
+        using var client = postgres.App.CreateClient();
 
         var response = await client.GetAsync(new Uri("/health/ready", UriKind.Relative));
         var body = await response.Content.ReadAsStringAsync();

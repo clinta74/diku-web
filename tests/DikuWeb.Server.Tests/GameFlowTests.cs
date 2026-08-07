@@ -17,8 +17,6 @@ public sealed class GameFlowTests(PostgresFixture postgres)
     /// <summary>Generous: the loop drains commands on a 250 ms pulse and CI is slower.</summary>
     private static readonly TimeSpan EventTimeout = TimeSpan.FromSeconds(10);
 
-    private DikuWebAppFactory NewFactory() => new(postgres.ConnectionString);
-
     private static HttpClient NewClient(WebApplicationFactory<Program> factory) =>
         factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
 
@@ -66,7 +64,7 @@ public sealed class GameFlowTests(PostgresFixture postgres)
     [Fact]
     public async Task Entering_the_world_streams_the_opening_panels()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Kael"));
@@ -85,14 +83,19 @@ public sealed class GameFlowTests(PostgresFixture postgres)
 
         var map = frames.First(f => f.EventType == "map");
         Assert.True(map.Json.GetProperty("w").GetInt32() > 0);
-        Assert.Equal(1, map.Json.GetProperty("entities").GetArrayLength());
+
+        // The viewer draws as "you". Asserting they are the *only* entity would be asserting
+        // that no other test left a character standing in the starting room, which is not what
+        // this test is about and is not true once the host is shared across the collection.
+        var entities = map.Json.GetProperty("entities").EnumerateArray().ToList();
+        Assert.Contains(entities, e => e.GetProperty("label").GetString() == "you");
     }
 
     [Fact]
     public async Task Event_ids_are_monotonic()
     {
         // Last-Event-ID replay depends on this ordering being reliable (PLAN.md §3.4).
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Mono"));
@@ -113,7 +116,7 @@ public sealed class GameFlowTests(PostgresFixture postgres)
     {
         // PLAN.md §3.3: the POST answers 202 with an empty body so there is exactly one
         // ordered output channel and the scrollback can never interleave wrongly.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Walk"));
@@ -146,7 +149,7 @@ public sealed class GameFlowTests(PostgresFixture postgres)
     [Fact]
     public async Task A_dangling_or_missing_exit_fails_closed()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Wall"));
@@ -168,7 +171,7 @@ public sealed class GameFlowTests(PostgresFixture postgres)
     public async Task Two_players_in_a_room_see_each_other()
     {
         // The Phase 1 acceptance criterion in miniature.
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var kael = NewClient(factory);
         using var mira = NewClient(factory);
 
@@ -196,7 +199,7 @@ public sealed class GameFlowTests(PostgresFixture postgres)
     [Fact]
     public async Task Commands_are_rejected_before_entering_the_world()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Idle"));
@@ -209,7 +212,7 @@ public sealed class GameFlowTests(PostgresFixture postgres)
     [Fact]
     public async Task Opening_a_stream_before_entering_is_a_conflict()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var client = NewClient(factory);
 
         var characterId = await CreatePlayerAsync(client, UniqueName("Prem"));
@@ -222,7 +225,7 @@ public sealed class GameFlowTests(PostgresFixture postgres)
     [Fact]
     public async Task A_character_belonging_to_another_account_cannot_be_entered()
     {
-        using var factory = NewFactory();
+        var factory = postgres.App;
         using var owner = NewClient(factory);
         using var intruder = NewClient(factory);
 
