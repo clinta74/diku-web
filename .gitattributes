@@ -1,0 +1,14 @@
+# Line endings are LF in the repository and in the working tree, on every platform.
+# The server is built and run on Linux (Dockerfile, deploy.sh), and everything committed
+# here has been LF from the first commit; declaring it stops a contributor's core.autocrlf
+# from deciding otherwise and turning a one-line edit into a whole-file rewrite.
+* text=auto eol=lf
+
+# Binary files must not be touched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

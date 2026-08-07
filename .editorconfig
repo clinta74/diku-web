@@ -2,7 +2,7 @@ root = true
 
 [*]
 charset = utf-8
-end_of_line = crlf
+end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
@@ -26,18 +26,37 @@ dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
 
 # --- language style ---
-csharp_style_namespace_declarations = file_scoped:warning
+#
+# Severity here is what the build enforces: Directory.Build.props sets
+# EnforceCodeStyleInBuild, and warnings are errors. So `warning` means "the build fails",
+# and it is reserved for rules the codebase fully satisfies today. A rule set to `warning`
+# with outstanding violations would fail the build on the next unrelated edit.
+#
+# `suggestion` means "the editor offers it, the build ignores it" - used for the rules that
+# are a judgment call at the call site rather than a property worth guaranteeing.
+
+# Braces are the one rule here that is about correctness rather than taste: the unbraced
+# two-line form silently excludes a statement added beneath it.
 csharp_prefer_braces = true:warning
+csharp_style_namespace_declarations = file_scoped:warning
+
+csharp_style_expression_bodied_properties = true:warning
+csharp_style_prefer_primary_constructors = true:warning
+
+# Left advisory. `var` is enforced everywhere it reads well, but explicit types still earn
+# their place - a switch expression whose arms are double, float, int and decimal is
+# converted by the declared type, and saying `double` there is clearer than inferring it.
 csharp_style_var_for_built_in_types = true:suggestion
 csharp_style_var_when_type_is_apparent = true:suggestion
+
+# Left advisory. Both have real violations today (22 methods, 34 collections) and both are
+# formatting preferences rather than guarantees; promote them once the code agrees.
 csharp_style_expression_bodied_methods = when_on_single_line:suggestion
-csharp_style_expression_bodied_properties = true:suggestion
-csharp_style_prefer_primary_constructors = true:suggestion
 dotnet_style_prefer_collection_expression = true:suggestion
 
 # --- null handling ---
-csharp_style_throw_expression = true:suggestion
-csharp_style_conditional_delegate_call = true:suggestion
+csharp_style_throw_expression = true:warning
+csharp_style_conditional_delegate_call = true:warning
 
 # --- naming: private fields are _camelCase ---
 dotnet_naming_rule.private_fields_underscore.symbols = private_fields
@@ -54,3 +73,9 @@ dotnet_naming_style.underscore_camel.capitalization = camel_case
 # so the usual PascalCase rule is switched off here rather than fought with pragmas.
 [tests/**/*.cs]
 dotnet_naming_rule.methods_pascal_case.severity = none
+
+# EF writes these and rewrites them on every `migrations add`, in its own style: block-scoped
+# namespaces, its own using order. Style-policing them means either losing that edit each
+# time or hand-patching generated output, so they are declared generated and left alone.
+[src/DikuWeb.Persistence/Migrations/*.cs]
+generated_code = true

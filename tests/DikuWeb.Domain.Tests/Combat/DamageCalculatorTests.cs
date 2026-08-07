@@ -64,7 +64,7 @@ public class DamageCalculatorTests
         var defender = new DefenderStats(DefenseRating: 5, ArmorFlat: 0, ArmorPercent: 0);
 
         // Brute force find a seed that rolls 20
-        for (int seed = 0; seed < 1000; seed++)
+        for (var seed = 0; seed < 1000; seed++)
         {
             var random = new SeededRandomSource(seed);
             if (random.Next(1, 21) == 20)
@@ -86,8 +86,8 @@ public class DamageCalculatorTests
         var defender = new DefenderStats(DefenseRating: 5, ArmorFlat: 0, ArmorPercent: 0);
 
         // Find a seed that rolls just barely beats (not crit)
-        bool foundNonCritHit = false;
-        for (int seed = 0; seed < 1000; seed++)
+        var foundNonCritHit = false;
+        for (var seed = 0; seed < 1000; seed++)
         {
             var random = new SeededRandomSource(seed);
             var roll = random.Next(1, 21);
@@ -103,8 +103,8 @@ public class DamageCalculatorTests
         Assert.True(foundNonCritHit, "Could not find seed for non-crit hit");
 
         // Find a seed that rolls high enough to beat by 10+
-        bool foundCritHit = false;
-        for (int seed = 0; seed < 1000; seed++)
+        var foundCritHit = false;
+        for (var seed = 0; seed < 1000; seed++)
         {
             var random = new SeededRandomSource(seed);
             var roll = random.Next(1, 21);
@@ -127,7 +127,7 @@ public class DamageCalculatorTests
         var defender = new DefenderStats(DefenseRating: 0, ArmorFlat: 0, ArmorPercent: 0);
 
         // Find a seed that produces natural 20 (guaranteed crit)
-        for (int seed = 0; seed < 1000; seed++)
+        for (var seed = 0; seed < 1000; seed++)
         {
             var random = new SeededRandomSource(seed);
             if (random.Next(1, 21) == 20)
@@ -288,7 +288,7 @@ public class DamageCalculatorTests
         var damageValues = new HashSet<int>();
 
         // Run multiple times with different seeds
-        for (int i = 1; i <= 100; i++)
+        for (var i = 1; i <= 100; i++)
         {
             var random = new SeededRandomSource(i * 17); // different seeds
             var result = DamageCalculator.CalculateDamage(attacker, defender, random);
@@ -359,7 +359,7 @@ public class DamageCalculatorTests
         var defender = new DefenderStats(DefenseRating: 0, ArmorFlat: 0, ArmorPercent: 0);
 
         var rolls = new HashSet<int>();
-        for (int seed = 0; seed < 1000; seed++)
+        for (var seed = 0; seed < 1000; seed++)
         {
             var random = new SeededRandomSource(seed);
             var result = DamageCalculator.CalculateDamage(attacker, defender, random);
@@ -398,7 +398,7 @@ public class DamageCalculatorTests
 
         var results = new HashSet<int>();
 
-        for (int seed = 1; seed <= 20; seed++)
+        for (var seed = 1; seed <= 20; seed++)
         {
             var result = DamageCalculator.CalculateDamage(attacker, defender, new SeededRandomSource(seed));
             results.Add(result.NaturalRoll);

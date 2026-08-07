@@ -11,6 +11,14 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
 
+    <!--
+      Without this, the IDE* rules in .editorconfig only ever appear as editor squiggles: the
+      build ignores them no matter what severity they carry. That is how 66 unbraced guard
+      clauses accumulated under a csharp_prefer_braces = true:warning setting. With it, the
+      severities in .editorconfig are what the build enforces, and warnings are already errors.
+    -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
     <!-- Deterministic builds so CI output matches local output. -->
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>

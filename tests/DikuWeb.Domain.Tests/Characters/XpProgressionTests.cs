@@ -87,7 +87,7 @@ public sealed class XpProgressionTests
     [Fact]
     public void LevelForXp_thresholds_are_monotonic()
     {
-        for (int level = 1; level < 50; level++)
+        for (var level = 1; level < 50; level++)
         {
             var xp1 = XpProgression.XpForLevel(level);
             var xp2 = XpProgression.XpForLevel(level + 1);
@@ -98,7 +98,7 @@ public sealed class XpProgressionTests
     [Fact]
     public void XpForLevel_and_LevelForXp_are_inverse()
     {
-        for (int level = 1; level <= 50; level++)
+        for (var level = 1; level <= 50; level++)
         {
             var xp = XpProgression.XpForLevel(level);
             Assert.Equal(level, XpProgression.LevelForXp(xp));

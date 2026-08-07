@@ -169,7 +169,7 @@ public sealed class CombatAndSpawningE2eTests(PostgresFixture postgres)
 
         // Keep attacking until something interesting happens (mob dies, XP gained, or loot)
         var allFrames = new List<SseFrame>();
-        for (int round = 0; round < 20; round++)
+        for (var round = 0; round < 20; round++)
         {
             await client.PostAsJsonAsync($"/api/game/{characterId}/command",
                 new { input = "kill" });
@@ -191,7 +191,7 @@ public sealed class CombatAndSpawningE2eTests(PostgresFixture postgres)
         }
 
         // At minimum, we should see some combat activity
-        bool hasCombatActivity = allFrames.HasText("attack") || allFrames.HasText("hit") ||
+        var hasCombatActivity = allFrames.HasText("attack") || allFrames.HasText("hit") ||
                                 allFrames.HasText("damage") || allFrames.HasText("die");
 
         // If combat is working, we should see activity
