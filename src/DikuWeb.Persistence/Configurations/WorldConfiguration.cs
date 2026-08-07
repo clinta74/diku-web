@@ -21,7 +21,7 @@ internal sealed class WorldConfiguration : IEntityTypeConfiguration<World>
         builder.Property(w => w.Multipliers)
             .HasColumnName("multipliers")
             .HasColumnType("jsonb")
-            .HasConversion(new MultiplicersConverter())
+            .HasConversion(new MultipliersConverter())
             .IsRequired();
 
         builder.Property(w => w.Flags)
@@ -57,7 +57,7 @@ internal sealed class ZoneConfiguration : IEntityTypeConfiguration<Zone>
         builder.Property(z => z.Multipliers)
             .HasColumnName("multipliers")
             .HasColumnType("jsonb")
-            .HasConversion(new MultiplicersConverter())
+            .HasConversion(new MultipliersConverter())
             .IsRequired();
 
         builder.Property(z => z.Flags)

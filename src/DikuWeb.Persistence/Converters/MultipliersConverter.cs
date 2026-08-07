@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DikuWeb.Persistence.Converters;
 
-internal sealed class MultiplicersConverter : ValueConverter<Multipliers, string>
+internal sealed class MultipliersConverter : ValueConverter<Multipliers, string>
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = false };
 
-    public MultiplicersConverter()
+    public MultipliersConverter()
         : base(
             m => Serialize(m),
             json => Deserialize(json))
@@ -30,12 +30,22 @@ internal sealed class MultiplicersConverter : ValueConverter<Multipliers, string
             },
             JsonOptions);
 
+    /// <summary>
+    /// Reads each multiplier independently so a column written before a multiplier existed
+    /// still loads, with the missing ones defaulting to 1.0. A column that is not a JSON
+    /// object at all falls back wholesale, which is the same result as an empty one.
+    /// </summary>
     private static Multipliers Deserialize(string json)
     {
         try
         {
-            var doc = JsonDocument.Parse(json);
+            using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
+
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                return new Multipliers();
+            }
 
             return new Multipliers
             {
@@ -49,7 +59,7 @@ internal sealed class MultiplicersConverter : ValueConverter<Multipliers, string
                 SpawnDensity = GetDecimal(root, "SpawnDensity", 1.0m),
             };
         }
-        catch
+        catch (JsonException)
         {
             return new Multipliers();
         }
