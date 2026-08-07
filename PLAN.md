@@ -894,10 +894,23 @@ duration of `MigrateAsync`, so an accidental second instance waits rather than c
 If a backplane is ever added and the loop is sharded across processes (§10, last row), this
 decision has to be revisited **at the same time** — it is the same change, not a follow-up.
 
+**Startup tolerates a database that is not up yet.** `StartupMigrator` retries transient failures
+with exponential backoff (1 s doubling to 10 s) for a budget of 60 s, configurable via
+`Database:MigrationRetryBudgetSeconds`; zero disables the wait. Failing fast is right, but failing
+on the *first* connection attempt is not — a Postgres accepting TCP while still finishing recovery
+would otherwise cost a container restart, and Kubernetes escalates CrashLoopBackOff to five-minute
+delays, so a ten-second hiccup becomes five minutes of downtime. Transience is Npgsql's own
+classification, so a wrong password still fails in about a second rather than after a minute.
+
 **What this trades away.** A bad migration now fails the deploy at container start rather than at
 a gate before it. Rollback is *deploy the previous image*, not *stop the migration job*. Accepted
 because the failure mode is loud: the container exits, the orchestrator does not route traffic,
 and `/health/ready` (§3.2) fails on the database check regardless.
+
+The rejected alternative was to start anyway and report not-ready until the database appears. That
+is right for a stateless service and wrong here: `GameLoop` loads the entire world from Postgres as
+its first act, so there is no degraded mode to serve from — "up but not ready" would just be "down,
+with a process running".
 
 **Migrations are still explicit and checked in.** Never `EnsureCreated`. The schema is described by
 the migration history, not inferred from the model at runtime.

@@ -193,7 +193,17 @@ ServerLog.DatabaseConfigured(logger, csb.Host ?? "(unset)", csb.Database ?? "(un
     await using var db = await factory.CreateDbContextAsync();
 
     ServerLog.ApplyingMigrations(logger);
-    await db.Database.MigrateAsync();
+
+    // Zero disables the wait entirely, which is what the tests that point at an unreachable
+    // database use so they still fail in a second rather than sixty.
+    var retryBudget = TimeSpan.FromSeconds(
+        app.Configuration.GetValue("Database:MigrationRetryBudgetSeconds", 60d));
+
+    await StartupMigrator.RunAsync(
+        db.Database.MigrateAsync,
+        StartupMigrator.RetryPolicy.For(retryBudget),
+        logger,
+        TimeProvider.System);
 
     // Seeding stays development-only: it writes starter content, which is a fixture, not schema.
     if (app.Environment.IsDevelopment())

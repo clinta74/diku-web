@@ -39,6 +39,20 @@ internal static partial class ServerLog
     public static partial void ApplyingMigrations(ILogger logger);
 
     [LoggerMessage(
+        EventId = 1010,
+        Level = LogLevel.Warning,
+        Message = "Database not reachable yet, retrying in {DelaySeconds:0.#}s ({SecondsLeft:0}s of budget left): {Reason}")]
+    public static partial void WaitingForDatabase(
+        ILogger logger, double delaySeconds, double secondsLeft, string reason);
+
+    [LoggerMessage(
+        EventId = 1011,
+        Level = LogLevel.Information,
+        Message = "Database reachable after {AttemptCount} attempts over {ElapsedSeconds:0.#}s")]
+    public static partial void DatabaseReachedAfterRetries(
+        ILogger logger, int attemptCount, double elapsedSeconds);
+
+    [LoggerMessage(
         EventId = 1004,
         Level = LogLevel.Information,
         Message = "Seeded the starter world; players begin at {StartingRoom}")]

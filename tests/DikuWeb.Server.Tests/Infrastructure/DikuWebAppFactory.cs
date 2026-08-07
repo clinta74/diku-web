@@ -36,6 +36,11 @@ public sealed class DikuWebAppFactory(string connectionString) : WebApplicationF
         // for the wrong reason if revalidation were removed entirely.
         builder.UseSetting("Auth:RevalidationIntervalSeconds", "0");
 
+        // No wait for the database. Production spends up to a minute riding out a Postgres that
+        // is still coming up; a test pointed at an unreachable host should fail in a second, and
+        // a test pointed at a live container has nothing to wait for.
+        builder.UseSetting("Database:MigrationRetryBudgetSeconds", "0");
+
         builder.ConfigureLogging(logging =>
         {
             // Drop the host's default providers, the Windows Event Log one in particular.
