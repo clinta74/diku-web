@@ -39,6 +39,8 @@ public sealed class GameLoop(
     AbilityCache? abilityCache,
     IQuestRepository? questRepository,
     QuestCache? questCache,
+    IItemTemplateRepository? itemTemplateRepository,
+    ItemTemplateCache? itemTemplateCache,
     SpawnerSystem? spawnerSystem,
     MobAiSystem? mobAiSystem,
     CombatSystem? combatSystem,
@@ -68,6 +70,12 @@ public sealed class GameLoop(
         if (questRepository != null && questCache != null)
         {
             await questCache.LoadAsync(questRepository, stoppingToken);
+        }
+
+        // Load item template cache for synchronous lookups during quest rewards
+        if (itemTemplateRepository != null && itemTemplateCache != null)
+        {
+            await itemTemplateCache.LoadAsync(itemTemplateRepository, stoppingToken);
         }
 
         EngineLog.LoopStarting(logger, world.RoomCount, GameTiming.PulseInterval.TotalMilliseconds);

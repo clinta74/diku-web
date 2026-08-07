@@ -53,6 +53,8 @@ public sealed class WorldMutationApplier(WorldState world, PlayerView view, Engi
             DeleteItemTemplate change => ApplyDeleteItemTemplate(change),
             UpsertSpawner change => ApplyUpsertSpawner(change),
             DeleteSpawner change => ApplyDeleteSpawner(change),
+            UpsertQuest change => ApplyUpsertQuest(change),
+            DeleteQuest change => ApplyDeleteQuest(change),
             _ => MutationResult.Fail(MutationError.Invalid, "Unsupported change."),
         };
     }
@@ -724,5 +726,15 @@ public sealed class WorldMutationApplier(WorldState world, PlayerView view, Engi
         MutationResult.Ok([change]);
 
     private MutationResult ApplyDeleteSpawner(DeleteSpawner change) =>
+        MutationResult.Ok([change]);
+
+    // -----------------------------------------------------------------------
+    // Quests (Phase 5.2b)
+    // -----------------------------------------------------------------------
+
+    private MutationResult ApplyUpsertQuest(UpsertQuest change) =>
+        MutationResult.Ok([change]);
+
+    private MutationResult ApplyDeleteQuest(DeleteQuest change) =>
         MutationResult.Ok([change]);
 }

@@ -256,3 +256,34 @@ public sealed record DeleteSpawner(Guid Id) : WorldChange
 
     public override string EntityKey => Id.ToString();
 }
+
+public sealed record UpsertQuest(
+    string Key,
+    string? ZoneKey,
+    string Name,
+    string Summary,
+    string Description,
+    string GiverMobKey,
+    string TurninMobKey,
+    string? RequiredItemKey,
+    int RequiredCount,
+    int RewardXp,
+    int RewardGold,
+    string? RewardItemKey,
+    int RewardItemCount,
+    List<string> PrerequisiteQuestKeys,
+    bool IsRepeatable,
+    Dictionary<string, string> Dialogue,
+    int SortOrder) : WorldChange
+{
+    public override string EntityKind => "quest";
+
+    public override string EntityKey => Key;
+}
+
+public sealed record DeleteQuest(string Key) : WorldChange
+{
+    public override string EntityKind => "quest";
+
+    public override string EntityKey => Key;
+}

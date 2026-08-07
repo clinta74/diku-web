@@ -279,6 +279,52 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             new List<string>(spawner.RoomKeys), spawner.TargetCount, spawner.RespawnSeconds, spawner.Sentinel);
     }
 
+    public async Task<IReadOnlyList<QuestResponse>> QuestsAsync(CancellationToken cancellationToken)
+    {
+        var quests = await db.Quests.AsNoTracking()
+            .OrderBy(q => q.SortOrder).ThenBy(q => q.Key)
+            .ToListAsync(cancellationToken);
+
+        return [.. quests.Select(q => new QuestResponse(
+            q.Key, q.ZoneKey, q.Name, q.Summary, q.Description,
+            q.GiverMobKey, q.TurninMobKey, q.RequiredItemKey, q.RequiredCount,
+            q.RewardXp, q.RewardGold, q.RewardItemKey, q.RewardItemCount,
+            q.PrerequisiteQuestKeys, q.IsRepeatable, q.Dialogue, q.SortOrder))];
+    }
+
+    public async Task<IReadOnlyList<QuestResponse>> QuestsByZoneAsync(
+        string zoneKey,
+        CancellationToken cancellationToken)
+    {
+        var quests = await db.Quests.AsNoTracking()
+            .Where(q => q.ZoneKey == zoneKey)
+            .OrderBy(q => q.SortOrder).ThenBy(q => q.Key)
+            .ToListAsync(cancellationToken);
+
+        return [.. quests.Select(q => new QuestResponse(
+            q.Key, q.ZoneKey, q.Name, q.Summary, q.Description,
+            q.GiverMobKey, q.TurninMobKey, q.RequiredItemKey, q.RequiredCount,
+            q.RewardXp, q.RewardGold, q.RewardItemKey, q.RewardItemCount,
+            q.PrerequisiteQuestKeys, q.IsRepeatable, q.Dialogue, q.SortOrder))];
+    }
+
+    public async Task<QuestResponse?> QuestAsync(string key, CancellationToken cancellationToken)
+    {
+        var quest = await db.Quests.AsNoTracking()
+            .FirstOrDefaultAsync(q => q.Key == key, cancellationToken);
+
+        if (quest is null)
+        {
+            return null;
+        }
+
+        return new QuestResponse(
+            quest.Key, quest.ZoneKey, quest.Name, quest.Summary, quest.Description,
+            quest.GiverMobKey, quest.TurninMobKey, quest.RequiredItemKey, quest.RequiredCount,
+            quest.RewardXp, quest.RewardGold, quest.RewardItemKey, quest.RewardItemCount,
+            quest.PrerequisiteQuestKeys, quest.IsRepeatable, quest.Dialogue, quest.SortOrder);
+    }
+
     /// <summary>
     /// Multiplier preview for a zone: shows how templates resolve with current multipliers.
     /// Used for difficulty tuning (PLAN.md §7.5).

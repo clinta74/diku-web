@@ -522,18 +522,88 @@ input:focus {
 
 /* --- Zone canvas ------------------------------------------------- */
 
-.zone-canvas-wrap {
-  margin-bottom: 1rem;
+/* --- Zone Canvas (Builder Map) -------------------------------------------------- */
+
+.zone-canvas-container {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--panel);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.zone-canvas-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.error-msg {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background-color: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 4px;
+  color: var(--bad);
+  font-size: 0.9rem;
+}
+
+.link-status {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.link-icon {
+  font-size: 1.1rem;
+}
+
+.cancel-link {
+  margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid rgba(220, 38, 38, 0.4);
+  border-radius: 3px;
+  color: var(--bad);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: bold;
+  transition: all 0.15s ease;
+}
+
+.cancel-link:hover {
+  background: rgba(220, 38, 38, 0.3);
+  border-color: var(--bad);
+}
+
+.zone-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  height: 28rem;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--bg) 0%, var(--panel) 100%);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
 }
 
 .zone-canvas {
-  position: relative;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  /* Wide zones scroll inside the canvas rather than pushing the page sideways. */
-  overflow: auto;
-  max-height: 22rem;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: transparent;
 }
 
 .zone-canvas .edges {
@@ -545,12 +615,46 @@ input:focus {
 .edge {
   stroke: var(--border);
   stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke 0.15s ease;
 }
 
-/* A link with nothing on the far side. Legal, and drawn as an obvious stub. */
+.edge:hover {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
 .edge.dangling {
   stroke: var(--bad);
-  stroke-dasharray: 3 3;
+  stroke-dasharray: 4 4;
+  opacity: 0.6;
+}
+
+.edge.vertical-exit {
+  stroke: var(--speech);
+  stroke-dasharray: 5 2;
+  opacity: 0.8;
+}
+
+.edge.vertical-stub {
+  fill: none;
+  stroke: var(--bad);
+  stroke-width: 1.5;
+  opacity: 0.6;
+}
+
+.direction-label {
+  fill: var(--text);
+  font-weight: bold;
+  pointer-events: none;
+  user-select: none;
+}
+
+.direction-indicator {
+  fill: var(--panel);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  opacity: 0.7;
 }
 
 .room-box {
@@ -559,9 +663,9 @@ input:focus {
   flex-direction: column;
   justify-content: center;
   gap: 0.15rem;
-  padding: 0.3rem;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  padding: 0.4rem;
+  border: 2px solid var(--border);
+  border-radius: 6px;
   background: var(--bg);
   color: var(--text);
   font: inherit;
@@ -569,37 +673,94 @@ input:focus {
   text-align: left;
   cursor: grab;
   overflow: hidden;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.room-box:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
 }
 
 .room-box.selected {
   border-color: var(--accent);
   color: var(--accent);
+  background: linear-gradient(135deg, var(--bg) 0%, rgba(59, 130, 246, 0.05) 100%);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .room-box.occupied {
-  box-shadow: 0 0 0 2px var(--speech);
+  border-color: var(--speech);
+  box-shadow: 0 0 0 3px var(--speech), 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Still a stub: hatched, so the build to-do list is visible at a glance (PLAN.md §7.6). */
+.room-box.occupied.selected {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 0 0 6px var(--speech), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
 .room-box.unfinished {
   background: repeating-linear-gradient(
     45deg,
     var(--bg),
     var(--bg) 4px,
-    var(--panel) 4px,
-    var(--panel) 8px
+    rgba(220, 38, 38, 0.1) 4px,
+    rgba(220, 38, 38, 0.1) 8px
   );
+  opacity: 0.85;
 }
 
 .room-box-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .room-box-key {
   color: var(--dim);
-  font-size: 0.85em;
+  font-size: 0.8em;
+  letter-spacing: 0.02em;
+}
+
+.vertical-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+
+.zone-canvas-controls {
+  padding: 0.75rem 1rem;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.canvas-help {
+  margin: 0;
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--dim);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: bold;
 }
 
 /* --- Room editor -------------------------------------------------- */

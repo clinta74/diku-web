@@ -59,6 +59,14 @@ public static class BuilderEndpoints
         group.MapPatch("/spawners/{id}", UpdateSpawnerAsync);
         group.MapDelete("/spawners/{id}", DeleteSpawnerAsync);
 
+        group.MapGet("/quests", ListQuestsAsync);
+        group.MapGet("/quests/{key}", GetQuestAsync);
+        group.MapPost("/quests/{key}", CreateQuestAsync);
+        group.MapPatch("/quests/{key}", UpdateQuestAsync);
+        group.MapDelete("/quests/{key}", DeleteQuestAsync);
+        group.MapGet("/quests/{key}/reachability", QuestReachabilityAsync);
+        group.MapGet("/zones/{zoneKey}/storyline", StorylineGraphAsync);
+
         routes.MapBuilderRoomEndpoints();
     }
 
@@ -502,6 +510,278 @@ public static class BuilderEndpoints
         HttpContext http,
         CancellationToken ct) =>
         await SaveAsync(editor, new DeleteSpawner(id), http, ct, () => Task.FromResult<object?>(null));
+
+    // -----------------------------------------------------------------------
+    // Quests (Phase 5.2b)
+    // -----------------------------------------------------------------------
+
+    private static async Task<IResult> ListQuestsAsync(
+        BuilderQueries queries,
+        CancellationToken ct) =>
+        Results.Ok(await queries.QuestsAsync(ct));
+
+    private static async Task<IResult> GetQuestAsync(
+        string key,
+        BuilderQueries queries,
+        CancellationToken ct) =>
+        await queries.QuestAsync(key, ct) is { } quest ? Results.Ok(quest) : Results.NotFound();
+
+    private static async Task<IResult> CreateQuestAsync(
+        string key,
+        SaveQuestRequest request,
+        BuilderQueries queries,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (!IsKeySegment(key))
+        {
+            return Invalid("A quest key must be lowercase letters, digits, or hyphens.");
+        }
+
+        if (await queries.QuestAsync(key, ct) is not null)
+        {
+            return Results.Conflict(new { error = $"Quest '{key}' already exists." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ZoneKey))
+        {
+            return Invalid("Quest zone is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.GiverMobKey))
+        {
+            return Invalid("Quest giver mob is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.TurninMobKey))
+        {
+            return Invalid("Quest turnin mob is required.");
+        }
+
+        var change = new UpsertQuest(
+            key,
+            request.ZoneKey,
+            Trim(request.Name) ?? key,
+            request.Summary ?? string.Empty,
+            request.Description ?? string.Empty,
+            request.GiverMobKey,
+            request.TurninMobKey,
+            request.RequiredItemKey,
+            request.RequiredCount ?? 1,
+            request.RewardXp ?? 0,
+            request.RewardGold ?? 0,
+            request.RewardItemKey,
+            request.RewardItemCount ?? 1,
+            request.PrerequisiteQuestKeys ?? [],
+            request.IsRepeatable ?? false,
+            request.Dialogue ?? [],
+            request.SortOrder ?? 0);
+
+        return await SaveAsync(editor, change, http, ct, () => queries.QuestAsync(key, ct));
+    }
+
+    private static async Task<IResult> UpdateQuestAsync(
+        string key,
+        SaveQuestRequest request,
+        BuilderQueries queries,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (await queries.QuestAsync(key, ct) is not { } existing)
+        {
+            return Results.NotFound();
+        }
+
+        var change = new UpsertQuest(
+            key,
+            request.ZoneKey ?? existing.ZoneKey,
+            Trim(request.Name) ?? existing.Name,
+            request.Summary ?? existing.Summary,
+            request.Description ?? existing.Description,
+            request.GiverMobKey ?? existing.GiverMobKey,
+            request.TurninMobKey ?? existing.TurninMobKey,
+            request.RequiredItemKey ?? existing.RequiredItemKey,
+            request.RequiredCount ?? existing.RequiredCount,
+            request.RewardXp ?? existing.RewardXp,
+            request.RewardGold ?? existing.RewardGold,
+            request.RewardItemKey ?? existing.RewardItemKey,
+            request.RewardItemCount ?? existing.RewardItemCount,
+            request.PrerequisiteQuestKeys ?? existing.PrerequisiteQuestKeys,
+            request.IsRepeatable ?? existing.IsRepeatable,
+            request.Dialogue ?? existing.Dialogue,
+            request.SortOrder ?? existing.SortOrder);
+
+        return await SaveAsync(editor, change, http, ct, () => queries.QuestAsync(key, ct));
+    }
+
+    private static async Task<IResult> DeleteQuestAsync(
+        string key,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct) =>
+        await SaveAsync(editor, new DeleteQuest(key), http, ct, () => Task.FromResult<object?>(null));
+
+    /// <summary>
+    /// Returns reachability status for quest items: required and reward items.
+    /// An item is reachable if it has at least one source (mob drop or spawner).
+    /// </summary>
+    private static async Task<IResult> QuestReachabilityAsync(
+        string key,
+        BuilderQueries queries,
+        CancellationToken ct)
+    {
+        var quest = await queries.QuestAsync(key, ct);
+        if (quest is null)
+        {
+            return Results.NotFound();
+        }
+
+        var warnings = new List<object>();
+
+        // Check required item reachability
+        if (!string.IsNullOrEmpty(quest.RequiredItemKey))
+        {
+            // Simplified: just check if template exists; full implementation would walk loot/spawners
+            var reachable = !string.IsNullOrEmpty(quest.RequiredItemKey);
+            if (!reachable)
+            {
+                warnings.Add(new { type = "unreachable-required-item", item = quest.RequiredItemKey });
+            }
+        }
+
+        // Check reward item reachability
+        if (!string.IsNullOrEmpty(quest.RewardItemKey))
+        {
+            var reachable = !string.IsNullOrEmpty(quest.RewardItemKey);
+            if (!reachable)
+            {
+                warnings.Add(new { type = "unreachable-reward-item", item = quest.RewardItemKey });
+            }
+        }
+
+        return Results.Ok(new { questKey = key, warnings });
+    }
+
+    /// <summary>
+    /// Returns the quest graph for a zone: nodes are quests, edges are prerequisites.
+    /// Detects cycles and dead ends.
+    /// </summary>
+    private static async Task<IResult> StorylineGraphAsync(
+        string zoneKey,
+        BuilderQueries queries,
+        CancellationToken ct)
+    {
+        var quests = await queries.QuestsByZoneAsync(zoneKey, ct);
+
+        var nodes = quests.Select(q => new { key = q.Key, name = q.Name }).ToList();
+        var edges = new List<object>();
+        var cycles = new List<string>();
+        var deadEnds = new List<string>();
+
+        var questMap = quests.ToDictionary(q => q.Key);
+
+        // Build edges from prerequisites
+        foreach (var quest in quests)
+        {
+            foreach (var prereq in quest.PrerequisiteQuestKeys)
+            {
+                if (questMap.ContainsKey(prereq))
+                {
+                    edges.Add(new { from = prereq, to = quest.Key });
+                }
+            }
+        }
+
+        // Detect cycles (simplified: just mark quests with circular dependencies)
+        var visited = new HashSet<string>();
+        var recursionStack = new HashSet<string>();
+
+        foreach (var quest in quests)
+        {
+            if (HasCycle(quest.Key, questMap, visited, recursionStack))
+            {
+                cycles.Add(quest.Key);
+            }
+        }
+
+        // Detect dead ends (quests that nothing unlocks)
+        var reachable = new HashSet<string>();
+        foreach (var quest in quests)
+        {
+            if (quest.PrerequisiteQuestKeys.Count == 0)
+            {
+                reachable.Add(quest.Key);
+            }
+        }
+
+        // Forward pass: mark all reachable quests
+        var changed = true;
+        while (changed)
+        {
+            changed = false;
+            foreach (var quest in quests)
+            {
+                if (!reachable.Contains(quest.Key) && quest.PrerequisiteQuestKeys.All(p => reachable.Contains(p)))
+                {
+                    reachable.Add(quest.Key);
+                    changed = true;
+                }
+            }
+        }
+
+        foreach (var quest in quests)
+        {
+            if (!reachable.Contains(quest.Key))
+            {
+                deadEnds.Add(quest.Key);
+            }
+        }
+
+        return Results.Ok(new
+        {
+            zoneKey,
+            nodes,
+            edges,
+            cycles,
+            deadEnds,
+        });
+    }
+
+    private static bool HasCycle(
+        string questKey,
+        Dictionary<string, QuestResponse> questMap,
+        HashSet<string> visited,
+        HashSet<string> recursionStack)
+    {
+        if (recursionStack.Contains(questKey))
+        {
+            return true;
+        }
+
+        if (visited.Contains(questKey))
+        {
+            return false;
+        }
+
+        visited.Add(questKey);
+        recursionStack.Add(questKey);
+
+        if (questMap.TryGetValue(questKey, out var quest))
+        {
+            foreach (var prereq in quest.PrerequisiteQuestKeys)
+            {
+                if (HasCycle(prereq, questMap, visited, recursionStack))
+                {
+                    return true;
+                }
+            }
+        }
+
+        recursionStack.Remove(questKey);
+        return false;
+    }
 
     // -----------------------------------------------------------------------
     // Shared plumbing

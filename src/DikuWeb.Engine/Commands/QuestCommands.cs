@@ -9,10 +9,12 @@ namespace DikuWeb.Engine.Commands;
 public static class QuestCommands
 {
     private static QuestCache? _questCache;
+    private static DikuWeb.Engine.Spawning.ItemTemplateCache? _itemTemplateCache;
 
-    public static void Register(List<CommandDefinition> commands, QuestCache? questCache)
+    public static void Register(List<CommandDefinition> commands, QuestCache? questCache, DikuWeb.Engine.Spawning.ItemTemplateCache? itemTemplateCache = null)
     {
         _questCache = questCache;
+        _itemTemplateCache = itemTemplateCache;
 
         commands.Add(new CommandDefinition(
             "talk", 1, "talk <npc> (t) - speak with an NPC about quests", Talk));
@@ -332,6 +334,43 @@ private static void Quests(CommandContext ctx)
             ctx.Reply($"You gain {matchingQuest.RewardXp} experience points.", "reward");
         if (matchingQuest.RewardGold > 0)
             ctx.Reply($"You gain {matchingQuest.RewardGold} gold.", "reward");
+
+        // Award items
+        if (!string.IsNullOrEmpty(matchingQuest.RewardItemKey) && _itemTemplateCache is not null)
+        {
+            var itemTemplate = _itemTemplateCache.Get(matchingQuest.RewardItemKey);
+            if (itemTemplate is not null)
+            {
+                var zone = ctx.World.FindZone(matchingQuest.ZoneKey);
+                var world = zone is not null ? ctx.World.FindWorld(zone.WorldKey) : null;
+
+                if (zone is not null && world is not null)
+                {
+                    var spawner = new DikuWeb.Engine.Spawning.ItemSpawner();
+                    var rewardItem = spawner.SpawnAsync(itemTemplate, zone, world, character.RoomKey).Result;
+
+                    for (int i = 0; i < matchingQuest.RewardItemCount; i++)
+                    {
+                        var instance = new DikuWeb.Domain.Items.ItemInstance
+                        {
+                            Id = Guid.NewGuid(),
+                            TemplateKey = itemTemplate.Key,
+                            TemplateName = itemTemplate.Name,
+                            Icon = itemTemplate.Icon,
+                            RoomKey = character.RoomKey.ToString(),
+                            ResolvedStats = new(itemTemplate.BaseStats),
+                            SpawnMultipliers = rewardItem.SpawnMultipliers,
+                            Value = rewardItem.Value,
+                            State = [],
+                        };
+
+                        ctx.World.AddItem(instance);
+                        ctx.World.PickUpItem(instance, character.Id);
+                        ctx.Reply($"You receive {matchingQuest.RewardItemCount} x {itemTemplate.Name}.", "reward");
+                    }
+                }
+            }
+        }
 
         // Handle level up
         while (DikuWeb.Domain.Characters.CharacterProgression.TryLevelUp(

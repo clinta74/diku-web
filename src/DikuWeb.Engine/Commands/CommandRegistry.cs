@@ -20,6 +20,7 @@ public sealed class CommandRegistry
     public CommandRegistry(
         AbilityCache? abilityCache = null,
         QuestCache? questCache = null,
+        ItemTemplateCache? itemTemplateCache = null,
         IMobTemplateRepository? mobTemplates = null,
         IItemTemplateRepository? itemTemplates = null,
         MobSpawner? mobSpawner = null,
@@ -88,7 +89,7 @@ public sealed class CommandRegistry
         CombatCommands.Register(_commands);
         RestCommands.Register(_commands);
         AbilityCommands.Register(_commands, abilityCache);
-        QuestCommands.Register(_commands, questCache);
+        QuestCommands.Register(_commands, questCache, itemTemplateCache);
         StatusCommands.Register(_commands);
         BuilderCommands.Register(_commands, mobTemplates, itemTemplates, mobSpawner, itemSpawner);
         AdminCommands.Register(_commands);

@@ -124,6 +124,26 @@ export interface Spawner {
   sentinel: boolean
 }
 
+export interface Quest {
+  key: string
+  zoneKey: string
+  name: string
+  summary: string
+  description: string
+  giverMobKey: string
+  turninMobKey: string
+  requiredItemKey: string | null
+  requiredCount: number
+  rewardXp: number
+  rewardGold: number
+  rewardItemKey: string | null
+  rewardItemCount: number
+  prerequisiteQuestKeys: string[]
+  isRepeatable: boolean
+  dialogue: Record<string, string>
+  sortOrder: number
+}
+
 const base = '/api/builder'
 
 export const builderApi = {
@@ -271,6 +291,39 @@ export const builderApi = {
 
   deleteSpawner: (id: string) =>
     request<void>(`${base}/spawners/${id}`, { method: 'DELETE' }),
+
+  quests: () => request<Quest[]>(`${base}/quests`),
+
+  quest: (key: string) => request<Quest>(`${base}/quests/${key}`),
+
+  createQuest: (key: string, body: Partial<Quest>) =>
+    request<Quest>(`${base}/quests/${key}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateQuest: (key: string, body: Partial<Quest>) =>
+    request<Quest>(`${base}/quests/${key}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  deleteQuest: (key: string) =>
+    request<void>(`${base}/quests/${key}`, { method: 'DELETE' }),
+
+  questReachability: (key: string) =>
+    request<{ questKey: string; warnings: Array<{ type: string; item?: string }> }>(
+      `${base}/quests/${key}/reachability`,
+    ),
+
+  storyline: (zoneKey: string) =>
+    request<{
+      zoneKey: string
+      nodes: Array<{ key: string; name: string }>
+      edges: Array<{ from: string; to: string }>
+      cycles: string[]
+      deadEnds: string[]
+    }>(`${base}/zones/${zoneKey}/storyline`),
 }
 
 export const DIRECTIONS = ['north', 'east', 'south', 'west', 'up', 'down'] as const

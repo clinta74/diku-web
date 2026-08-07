@@ -44,6 +44,7 @@ public static class EngineServiceCollectionExtensions
             new CommandRegistry(
                 sp.GetService<AbilityCache>(),
                 sp.GetService<QuestCache>(),
+                sp.GetService<ItemTemplateCache>(),
                 sp.GetService<IMobTemplateRepository>(),
                 sp.GetService<IItemTemplateRepository>(),
                 sp.GetService<MobSpawner>(),
@@ -67,6 +68,7 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<AbilityCache>();
         services.AddSingleton<AbilitySystem>();
         services.AddSingleton<QuestCache>();
+        services.AddSingleton<ItemTemplateCache>();
 
         // Game loop - wired once all systems are available
         services.AddHostedService<GameLoop>();

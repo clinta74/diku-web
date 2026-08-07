@@ -21,6 +21,12 @@ internal sealed class EfMobTemplateRepository(IDbContextFactory<DikuWebDbContext
         await using var context = await factory.CreateDbContextAsync(ct);
         return await context.MobTemplates.AsNoTracking().FirstOrDefaultAsync(t => t.Key == key, ct);
     }
+
+    public async Task<IReadOnlyList<MobTemplate>> GetAllAsync(CancellationToken ct)
+    {
+        await using var context = await factory.CreateDbContextAsync(ct);
+        return await context.MobTemplates.AsNoTracking().ToListAsync(ct);
+    }
 }
 
 internal sealed class EfItemTemplateRepository(IDbContextFactory<DikuWebDbContext> factory) : IItemTemplateRepository
@@ -31,6 +37,12 @@ internal sealed class EfItemTemplateRepository(IDbContextFactory<DikuWebDbContex
 
         await using var context = await factory.CreateDbContextAsync(ct);
         return await context.ItemTemplates.AsNoTracking().FirstOrDefaultAsync(t => t.Key == key, ct);
+    }
+
+    public async Task<IReadOnlyList<ItemTemplate>> GetAllAsync(CancellationToken ct)
+    {
+        await using var context = await factory.CreateDbContextAsync(ct);
+        return await context.ItemTemplates.AsNoTracking().ToListAsync(ct);
     }
 }
 

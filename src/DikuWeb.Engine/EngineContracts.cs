@@ -72,11 +72,13 @@ public sealed record LookupAccountRequest : AccountAdminRequest
 public interface IMobTemplateRepository
 {
     Task<MobTemplate?> GetByKeyAsync(string key, CancellationToken ct);
+    Task<IReadOnlyList<MobTemplate>> GetAllAsync(CancellationToken ct);
 }
 
 public interface IItemTemplateRepository
 {
     Task<ItemTemplate?> GetByKeyAsync(string key, CancellationToken ct);
+    Task<IReadOnlyList<ItemTemplate>> GetAllAsync(CancellationToken ct);
 }
 
 public interface ISpawnerRepository

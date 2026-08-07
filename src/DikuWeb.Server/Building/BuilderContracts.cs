@@ -190,6 +190,43 @@ public sealed record SaveSpawnerRequest(
     int? RespawnSeconds,
     bool? Sentinel);
 
+public sealed record QuestResponse(
+    string Key,
+    string ZoneKey,
+    string Name,
+    string Summary,
+    string Description,
+    string GiverMobKey,
+    string TurninMobKey,
+    string? RequiredItemKey,
+    int RequiredCount,
+    int RewardXp,
+    int RewardGold,
+    string? RewardItemKey,
+    int RewardItemCount,
+    List<string> PrerequisiteQuestKeys,
+    bool IsRepeatable,
+    Dictionary<string, string> Dialogue,
+    int SortOrder);
+
+public sealed record SaveQuestRequest(
+    string? ZoneKey,
+    string? Name,
+    string? Summary,
+    string? Description,
+    string? GiverMobKey,
+    string? TurninMobKey,
+    string? RequiredItemKey,
+    int? RequiredCount,
+    int? RewardXp,
+    int? RewardGold,
+    string? RewardItemKey,
+    int? RewardItemCount,
+    List<string>? PrerequisiteQuestKeys,
+    bool? IsRepeatable,
+    Dictionary<string, string>? Dialogue,
+    int? SortOrder);
+
 /// <summary>
 /// Multiplier preview for a zone: shows how templates resolve with current multipliers.
 /// Used for difficulty tuning in the builder UI.

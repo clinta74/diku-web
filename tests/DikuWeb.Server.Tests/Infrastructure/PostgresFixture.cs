@@ -19,6 +19,8 @@ public sealed class PostgresFixture : IAsyncLifetime
         .WithPassword("dikuweb_test")
         .Build();
 
+    private Npgsql.NpgsqlDataSource? _dataSource;
+
     public string ConnectionString => _container.GetConnectionString();
 
     public async Task InitializeAsync()
@@ -27,8 +29,12 @@ public sealed class PostgresFixture : IAsyncLifetime
 
         // Migrations, never EnsureCreated (PLAN.md §6). This also means the test run
         // fails if a migration is broken, which is the point.
+        var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(ConnectionString);
+        dataSourceBuilder.EnableDynamicJson();
+        _dataSource = dataSourceBuilder.Build();
+
         var options = new DbContextOptionsBuilder<DikuWebDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(_dataSource)
             .Options;
 
         await using var db = new DikuWebDbContext(options);
@@ -44,8 +50,10 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     public DikuWebDbContext CreateDbContext()
     {
+        ArgumentNullException.ThrowIfNull(_dataSource);
+
         var options = new DbContextOptionsBuilder<DikuWebDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(_dataSource)
             .Options;
 
         return new DikuWebDbContext(options);
