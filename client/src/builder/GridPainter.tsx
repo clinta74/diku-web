@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { NumberInput } from '../ui/NumberInput'
 
 interface Props {
   grid: string[]
@@ -122,23 +123,11 @@ export function GridPainter({ grid, legend, onChange }: Props) {
       <div className="grid-size">
         <label>
           w
-          <input
-            type="number"
-            min={1}
-            max={40}
-            value={width}
-            onChange={(e) => resize(Number(e.target.value), height)}
-          />
+          <NumberInput min={1} max={40} value={width} onChange={(w) => resize(w, height)} />
         </label>
         <label>
           h
-          <input
-            type="number"
-            min={1}
-            max={20}
-            value={height}
-            onChange={(e) => resize(width, Number(e.target.value))}
-          />
+          <NumberInput min={1} max={20} value={height} onChange={(h) => resize(width, h)} />
         </label>
         <button type="button" className="link" onClick={() => onChange([], {})}>
           clear art

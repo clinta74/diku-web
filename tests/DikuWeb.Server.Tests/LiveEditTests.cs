@@ -80,6 +80,86 @@ public sealed class LiveEditTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task A_builders_save_reaches_another_builders_change_feed()
+    {
+        // The builder-side counterpart to the player stream test above: a second builder's panel
+        // learns of an edit it did not make, so its tree and canvas can refresh (PLAN §2).
+        var factory = postgres.App;
+        using var editor = NewClient(factory);
+        using var watcher = NewClient(factory);
+
+        await BuilderClient.RegisterBuilderAsync(factory, editor);
+        await BuilderClient.RegisterBuilderAsync(factory, watcher);
+
+        // The subscription is registered before the handler flushes its headers, so opening the
+        // stream here guarantees the edit below is not missed.
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/builder/stream");
+        var response = await watcher.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        response.EnsureSuccessStatusCode();
+        await using var stream = new SseStream(await response.Content.ReadAsStreamAsync());
+
+        var save = await editor.PatchAsJsonAsync(
+            "/api/builder/rooms/aldenmoor.millbrook.north-gate",
+            new { title = "The Watched Gate" });
+        Assert.Equal(HttpStatusCode.OK, save.StatusCode);
+
+        var frames = await stream.ReadUntilAsync(
+            f => f.Any(x => x.EventType == "entity-changed"
+                && x.Json.GetProperty("kind").GetString() == "room"
+                && x.Json.GetProperty("key").GetString() == "aldenmoor.millbrook.north-gate"),
+            EventTimeout);
+
+        Assert.Contains(
+            frames,
+            f => f.EventType == "entity-changed"
+                && f.Json.GetProperty("key").GetString() == "aldenmoor.millbrook.north-gate");
+
+        // Put the shared starter world back.
+        await editor.PatchAsJsonAsync(
+            "/api/builder/rooms/aldenmoor.millbrook.north-gate",
+            new { title = "The North Gate" });
+    }
+
+    [Fact]
+    public async Task The_builder_feed_does_not_disturb_the_player_stream()
+    {
+        // The new feed must be additive: a retitle still reaches a player over the game stream,
+        // exactly as before, with a builder feed also listening.
+        var factory = postgres.App;
+        using var player = NewClient(factory);
+        using var watcher = NewClient(factory);
+        using var builder = NewClient(factory);
+
+        var (_, playerStream) = await PlayAsync(player);
+        await using var _ = playerStream;
+
+        await BuilderClient.RegisterBuilderAsync(factory, watcher);
+        await BuilderClient.RegisterBuilderAsync(factory, builder);
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/builder/stream");
+        var feedResponse = await watcher.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        await using var feed = new SseStream(await feedResponse.Content.ReadAsStreamAsync());
+
+        await builder.PatchAsJsonAsync(
+            "/api/builder/rooms/aldenmoor.millbrook.north-gate",
+            new { title = "The Doubly Watched Gate" });
+
+        var frames = await playerStream.ReadUntilAsync(
+            f => f.Any(x => x.EventType == "room"
+                && x.Json.GetProperty("title").GetString() == "The Doubly Watched Gate"),
+            EventTimeout);
+
+        Assert.Contains(
+            frames,
+            f => f.EventType == "room"
+                && f.Json.GetProperty("title").GetString() == "The Doubly Watched Gate");
+
+        await builder.PatchAsJsonAsync(
+            "/api/builder/rooms/aldenmoor.millbrook.north-gate",
+            new { title = "The North Gate" });
+    }
+
+    [Fact]
     public async Task A_zone_containing_a_player_cannot_be_deleted()
     {
         // The one destructive edit gated on being empty (PLAN.md §7.4), asserted against a

@@ -33,6 +33,8 @@ public static class BuilderRoomEndpoints
 
         group.MapPut("/{key}/exits/{direction}", SetExitAsync);
         group.MapDelete("/{key}/exits/{direction}", RemoveExitAsync);
+
+        group.MapPut("/{key}/flags/{flag}", SetFlagAsync);
     }
 
     // -----------------------------------------------------------------------
@@ -293,6 +295,43 @@ public static class BuilderRoomEndpoints
             http,
             ct,
             () => queries.RoomAsync(from, ct));
+    }
+
+    // -----------------------------------------------------------------------
+    // Flags
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Sets one flag on one room, leaving its siblings alone.
+    /// </summary>
+    /// <remarks>
+    /// PATCHing the room replaces the whole flag set, so two builders editing one zone erase
+    /// each other's flags. This carries a single key, which is also exactly what the three-state
+    /// control in the editor means: on, off, or absent so the zone or world decides.
+    ///
+    /// The flag name is not checked here on purpose - the applier already refuses unknown keys
+    /// against the same registry the in-game <c>rflag</c> verb uses, and one authority beats two.
+    /// </remarks>
+    private static async Task<IResult> SetFlagAsync(
+        string key,
+        string flag,
+        SetRoomFlagRequest request,
+        WorldEditor editor,
+        BuilderQueries queries,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (!RoomKey.TryParse(key, out var roomKey))
+        {
+            return BuilderEndpoints.Invalid("A room key must be 'world.zone.room'.");
+        }
+
+        return await BuilderEndpoints.SaveAsync(
+            editor,
+            new SetRoomFlag(roomKey, flag, request.Value),
+            http,
+            ct,
+            () => queries.RoomAsync(roomKey, ct));
     }
 
     // -----------------------------------------------------------------------

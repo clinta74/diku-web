@@ -1,0 +1,329 @@
+/* ------------------------------------------------------------------ */
+/* Shared UI primitives (Radix wrappers). Tokens only - no new colours. */
+/* ------------------------------------------------------------------ */
+
+/* --- Dialogs (Modal, ConfirmDialog) ------------------------------- */
+
+.dlg-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  animation: dlg-fade 120ms ease-out;
+}
+
+.dlg {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(30rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  animation: dlg-rise 120ms ease-out;
+}
+
+.dlg:focus {
+  outline: none;
+}
+
+.dlg-title {
+  margin: 0 0 0.35rem;
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.dlg-desc {
+  margin: 0 0 0.9rem;
+  color: var(--dim);
+  font-size: 0.85em;
+}
+
+.dlg-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dlg-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+}
+
+.dlg-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  border: none;
+  padding: 0 0.35rem;
+  color: var(--dim);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.dlg-close:hover {
+  color: var(--text);
+}
+
+@keyframes dlg-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dlg-rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%);
+  }
+}
+
+/* --- Form controls (Textarea, Select, NumberInput) ---------------- */
+
+.textarea {
+  font: inherit;
+  color: inherit;
+  background: #0b0e13;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.45rem 0.6rem;
+  width: 100%;
+  resize: vertical;
+  min-height: 2.4rem;
+  line-height: 1.45;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.number-input {
+  /* Inherits the base input look; declared so intent is obvious at call sites. */
+  width: 100%;
+}
+
+/* No spinner arrows anywhere - number fields are text fields with a filter. */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  appearance: textfield;
+}
+
+.select-wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.select {
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  background: #0b0e13;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.45rem 2rem 0.45rem 0.6rem;
+  width: 100%;
+  cursor: pointer;
+}
+
+.select:hover {
+  border-color: var(--accent);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.select-chevron {
+  position: absolute;
+  top: 50%;
+  right: 0.6rem;
+  transform: translateY(-50%);
+  color: var(--dim);
+  font-size: 0.7rem;
+  pointer-events: none;
+}
+
+.select-wrap-disabled {
+  opacity: 0.5;
+}
+
+/* The option list itself is OS-drawn; give it sane colours where the browser honours them. */
+.select option {
+  background: var(--panel);
+  color: var(--text);
+}
+
+/* --- Field -------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.field-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+}
+
+.field-hint {
+  color: var(--dim);
+  font-size: 0.8em;
+}
+
+.field-error {
+  color: var(--bad);
+  font-size: 0.8em;
+}
+
+/* --- Tabs --------------------------------------------------------- */
+
+.tabbar {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 0.4rem 0.7rem;
+  color: var(--dim);
+  background: transparent;
+}
+
+.tab:hover {
+  color: var(--text);
+  border-color: transparent;
+}
+
+.tab[data-state='active'] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab-count {
+  margin-left: 0.35rem;
+  color: var(--bad);
+  font-size: 0.8em;
+}
+
+/* --- Toast -------------------------------------------------------- */
+
+.toast-viewport {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(22rem, calc(100vw - 2rem));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  z-index: 60;
+  outline: none;
+}
+
+.toast {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: toast-in 140ms ease-out;
+}
+
+.toast-good {
+  border-left-color: var(--good);
+}
+
+.toast-bad {
+  border-left-color: var(--bad);
+}
+
+.toast-title {
+  font-size: 0.85em;
+}
+
+.toast[data-state='closed'] {
+  animation: toast-out 120ms ease-in;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(0.5rem);
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* --- Overflow menu ------------------------------------------------ */
+
+.overflow-trigger {
+  border: none;
+  padding: 0.1rem 0.5rem;
+  color: var(--dim);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.overflow-trigger:hover {
+  color: var(--text);
+}
+
+.menu {
+  min-width: 9rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  z-index: 60;
+}
+
+.menu-item {
+  padding: 0.35rem 0.55rem;
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.9em;
+  cursor: pointer;
+  outline: none;
+}
+
+.menu-item[data-highlighted] {
+  background: var(--bg);
+  color: var(--accent);
+}
+
+.menu-item-danger {
+  color: var(--bad);
+}
+
+.menu-item-danger[data-highlighted] {
+  background: var(--bg);
+  color: var(--bad);
+}

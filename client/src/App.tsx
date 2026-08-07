@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
 import { AuthScreen, CharacterScreen } from './components/AuthScreen'
 import { GameScreen } from './components/GameScreen'
-import { BuilderScreen } from './builder/BuilderScreen'
+import { BuilderShell } from './builder/BuilderShell'
+import { WorldTab } from './builder/world/WorldTab'
+import { MobsTab } from './builder/mobs/MobsTab'
+import { ItemsTab } from './builder/items/ItemsTab'
 import { api, type Account, type Character } from './net/api'
 import './App.css'
 
@@ -15,9 +19,12 @@ const BUILDER_ROLES = ['Builder', 'Admin']
 
 export default function App() {
   const [stage, setStage] = useState<Stage>({ name: 'loading' })
-  const [builderOpen, setBuilderOpen] = useState(false)
   const [currentRoom, setCurrentRoom] = useState<string | null>(null)
+  const [follow, setFollow] = useState(true)
   const focusInputRef = useRef<(() => void) | null>(null)
+  const navigate = useNavigate()
+  const location = useLocation()
+  const inBuilder = location.pathname.startsWith('/builder')
 
   // The session cookie survives a reload, so check for an existing login before showing
   // the form - otherwise a refresh mid-session looks like being logged out.
@@ -31,16 +38,16 @@ export default function App() {
   // Stable so GameScreen's effect does not re-fire on every render of App.
   const onRoomChange = useCallback((roomKey: string) => setCurrentRoom(roomKey), [])
 
-  // Focus input when returning from builder
+  // Focus the game input when returning from the builder.
   useEffect(() => {
-    if (!builderOpen) {
+    if (!inBuilder) {
       focusInputRef.current?.()
     }
-  }, [builderOpen])
+  }, [inBuilder])
 
   async function logout() {
     await api.logout().catch(() => undefined)
-    setBuilderOpen(false)
+    navigate('/')
     setStage({ name: 'anonymous' })
   }
 
@@ -70,27 +77,48 @@ export default function App() {
         <>
           {/* Hidden rather than unmounted while the builder is open. Unmounting would close
               the SSE stream, mark the character link-dead, and reconnect on the way back -
-              and follow mode depends on that stream staying live to know where you are. */}
-          <div className={builderOpen ? 'workspace hidden' : 'workspace'}>
+              and follow mode depends on that stream staying live to know where you are.
+              GameScreen sits OUTSIDE <Routes> for the same reason: route changes must not
+              remount it. */}
+          <div className={inBuilder ? 'workspace hidden' : 'workspace'}>
             <GameScreen
               characterId={stage.character.id}
               characterName={stage.character.name}
               onRoomChange={onRoomChange}
-              onOpenBuilder={canBuild ? () => setBuilderOpen(true) : undefined}
+              onOpenBuilder={canBuild ? () => navigate('/builder') : undefined}
               onLeave={() => {
                 // Frees the slot against the per-account cap straight away rather than waiting
                 // out the 90 s link-dead window.
                 void api.leave(stage.character.id).catch(() => undefined)
-                setBuilderOpen(false)
+                navigate('/')
                 setStage({ name: 'choosing', account: stage.account })
               }}
               focusInputRef={focusInputRef}
             />
           </div>
 
-          {builderOpen && canBuild && (
-            <BuilderScreen occupiedRoom={currentRoom} onClose={() => setBuilderOpen(false)} />
-          )}
+          <Routes>
+            <Route
+              path="/builder"
+              element={
+                canBuild ? (
+                  <BuilderShell
+                    occupiedRoom={currentRoom}
+                    follow={follow}
+                    onFollowChange={setFollow}
+                    onClose={() => navigate('/')}
+                  />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            >
+              <Route index element={<Navigate to="world" replace />} />
+              <Route path="world/:world?/:zone?/:room?/:section?" element={<WorldTab />} />
+              <Route path="mobs/:templateKey?" element={<MobsTab />} />
+              <Route path="items/:templateKey?" element={<ItemsTab />} />
+            </Route>
+          </Routes>
         </>
       )
     }

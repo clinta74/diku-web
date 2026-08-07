@@ -24,6 +24,7 @@ public sealed class WorldEditor(
     GameGateway gateway,
     WorldWriter writer,
     IWorldSource worldSource,
+    BuilderChangeFeed feed,
     ILogger<WorldEditor> logger)
 {
     public async Task<EditOutcome> ApplyAsync(
@@ -43,6 +44,16 @@ public sealed class WorldEditor(
         try
         {
             await writer.WriteAsync(result.Applied, accountId, cancellationToken);
+
+            // Only after the write is durable - a feed fired before this could announce an edit
+            // that the catch below then rolls back. Notify per affected primitive so a rename,
+            // which touches several rooms, refreshes all of them.
+            foreach (var applied in result.Applied)
+            {
+                feed.Publish(new BuilderChange(
+                    applied.EntityKind, applied.EntityKey, ActionOf(applied), accountId));
+            }
+
             return new EditOutcome(EditStatus.Saved, result);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -52,6 +63,10 @@ public sealed class WorldEditor(
             return new EditOutcome(EditStatus.NotSaved, result);
         }
     }
+
+    /// <summary>Whether a primitive removes its entity, for the feed's advisory action field.</summary>
+    internal static string ActionOf(WorldChange change) =>
+        change.GetType().Name.StartsWith("Delete", StringComparison.Ordinal) ? "delete" : "update";
 
     /// <summary>
     /// Reloads the world from the database and hands it to the loop, putting memory back in

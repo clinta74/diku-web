@@ -59,8 +59,41 @@ describe('zone canvas layout', () => {
       room('second'),
     ])
 
-    expect(at(placed, 'first')).toEqual({ x: 1, y: 1 })
-    expect(at(placed, 'second')).toEqual({ x: 1, y: 2 })
+    // The anchor sits at (3,3) so up/down diagonals have room to grow in either direction
+    // without the whole map having to shift.
+    expect(at(placed, 'first')).toEqual({ x: 3, y: 3 })
+    expect(at(placed, 'second')).toEqual({ x: 3, y: 4 })
+  })
+
+  it('sends up down-right and down up-left (quadrants IV and II)', () => {
+    // The convention a builder asked for: walking up lands the new room below-right of the
+    // one you left, walking down lands it above-left.
+    const placed = layoutZone([
+      room('centre', [
+        { direction: 'up', to: 'w.z.above' },
+        { direction: 'down', to: 'w.z.below' },
+      ], { x: 5, y: 5 }),
+      room('above'),
+      room('below'),
+    ])
+
+    expect(at(placed, 'above')).toEqual({ x: 6, y: 6 })
+    expect(at(placed, 'below')).toEqual({ x: 4, y: 4 })
+  })
+
+  it('nudges a colliding room off the cell its direction wanted', () => {
+    // 'a' and 'b' both point east into 'c' and 'd' from the same column; the second placement
+    // collides and is nudged east. Position is therefore NOT authoritative for direction -
+    // which is why shift-click linking must ask rather than infer from coordinates.
+    const placed = layoutZone([
+      room('a', [{ direction: 'east', to: 'w.z.shared' }], { x: 1, y: 1 }),
+      room('b', [{ direction: 'east', to: 'w.z.shared2' }], { x: 1, y: 2 }),
+      room('shared'),
+      room('shared2'),
+    ])
+
+    const cells = placed.map((p) => `${p.x},${p.y}`)
+    expect(new Set(cells).size).toBe(4)
   })
 
   it('never puts two rooms on the same cell', () => {
@@ -109,7 +142,7 @@ describe('zone canvas layout', () => {
     ])
 
     expect(placed).toHaveLength(1)
-    expect(at(placed, 'a')).toEqual({ x: 1, y: 1 })
+    expect(at(placed, 'a')).toEqual({ x: 3, y: 3 })
   })
 
   it('keeps every coordinate on the canvas', () => {

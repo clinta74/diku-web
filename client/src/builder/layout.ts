@@ -13,9 +13,9 @@ export const stepX = (direction: string) => {
     case 'west':
       return -1
     case 'up':
-      return -1 // Up goes to upper-left
+      return 1 // Up lands the new room down-right (quadrant IV)
     case 'down':
-      return 1 // Down goes to lower-right
+      return -1 // Down lands the new room up-left (quadrant II)
     default:
       return 0
   }
@@ -28,9 +28,9 @@ export const stepY = (direction: string) => {
     case 'south':
       return 1
     case 'up':
-      return -1 // Up goes to upper-left
+      return 1 // Up lands the new room down-right (quadrant IV)
     case 'down':
-      return 1 // Down goes to lower-right
+      return -1 // Down lands the new room up-left (quadrant II)
     default:
       return 0
   }
@@ -47,7 +47,7 @@ export const stepY = (direction: string) => {
  *
  * Results in:
  * - North: up, South: down, East: right, West: left
- * - Up: upper-left diagonal, Down: lower-right diagonal
+ * - Up: lower-right diagonal (quadrant IV), Down: upper-left diagonal (quadrant II)
  * - Complex branching handled through collision nudging, not re-layout
  * - Unreachable rooms placed at the bottom
  */

@@ -227,6 +227,17 @@ export const builderApi = {
   removeExit: (key: string, direction: string) =>
     request<RoomDetail>(`${base}/rooms/${key}/exits/${direction}`, { method: 'DELETE' }),
 
+  /**
+   * Sets one flag without sending the whole map. `null` clears the key so the zone or world
+   * decides again. Narrow by design: a full-object room PATCH replaces every flag, which
+   * quietly discards whatever another builder changed in the meantime (PLAN §1).
+   */
+  setRoomFlag: (key: string, flag: string, value: boolean | null) =>
+    request<RoomDetail>(`${base}/rooms/${key}/flags/${flag}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value }),
+    }),
+
   validate: (zoneKey: string) => request<ZoneValidation>(`${base}/zones/${zoneKey}/validate`),
 
   unfinished: (zoneKey: string) =>
@@ -293,6 +304,8 @@ export const builderApi = {
   deleteSpawner: (id: string) =>
     request<void>(`${base}/spawners/${id}`, { method: 'DELETE' }),
 
+  // Quest writes cannot succeed yet: WorldWriter has no UpsertQuest arm and 500s. These are
+  // kept for when server persistence lands; there is no quest UI in the meantime (PLAN §9.3).
   quests: () => request<Quest[]>(`${base}/quests`),
 
   quest: (key: string) => request<Quest>(`${base}/quests/${key}`),

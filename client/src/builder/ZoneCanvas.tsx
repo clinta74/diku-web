@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState } from 'react'
-import { builderApi, OPPOSITE, type RoomDetail } from '../net/builderApi'
-import { layoutZone, stepX, stepY } from './layout'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { type RoomDetail } from '../net/builderApi'
+import { layoutZone, stepX, stepY, type PlacedRoom } from './layout'
+import { LinkRoomsDialog } from './dialogs/LinkRoomsDialog'
 
 interface Props {
   rooms: RoomDetail[]
@@ -13,85 +14,129 @@ interface Props {
 const CELL = 150
 const BOX_W = 120
 const BOX_H = 80
+const PAN_STEP = CELL
 
 /**
- * Automatic room layout based on exit topology (PLAN.md §7.2).
- * Rooms position themselves based on exit directions:
- * - North: up, South: down, East: right, West: left
- * - Up: upper-left, Down: lower-right
+ * The zone map. Rooms auto-layout from their exit topology (see layout.ts); this draws the
+ * boxes and the edges between them, and lets a builder pan and link.
  *
- * Click rooms to select. Shift-click to link (creates the exit).
- * Drag canvas to pan, scroll to zoom.
+ * Panning is Ctrl-drag (or the arrow controls), never a plain drag - a plain drag used to
+ * start whenever a click missed a box, which fought with selecting. There is no zoom.
  */
 export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: Props) {
   const [linkFrom, setLinkFrom] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [offsetX, setOffsetX] = useState(0)
-  const [offsetY, setOffsetY] = useState(0)
+  const [linkTo, setLinkTo] = useState<{ from: string; to: string; direction: string } | null>(null)
+  const [offset, setOffset] = useState({ x: 24, y: 24 })
   const [panning, setPanning] = useState(false)
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const [ctrlHeld, setCtrlHeld] = useState(false)
+  const panStart = useRef({ x: 0, y: 0 })
   const surface = useRef<HTMLDivElement>(null)
-  const container = useRef<HTMLDivElement>(null)
 
   const placed = useMemo(() => layoutZone(rooms), [rooms])
+  const byKey = useMemo(() => new Map(placed.map((p) => [p.room.key, p])), [placed])
 
-  const width = Math.max(...placed.map((r) => r.x), 4) + 2
-  const height = Math.max(...placed.map((r) => r.y), 3) + 2
+  const width = (Math.max(...placed.map((r) => r.x), 4) + 2) * CELL
+  const height = (Math.max(...placed.map((r) => r.y), 3) + 2) * CELL
 
-  function link(fromKey: string, toKey: string) {
-    const from = placed.find((r) => r.room.key === fromKey)
-    const to = placed.find((r) => r.room.key === toKey)
-    if (!from || !to || fromKey === toKey) return
-
-    // Direction is determined by the layout position (exit direction already defined the position)
-    const dx = to.x - from.x
-    const dy = to.y - from.y
-
-    let direction = 'north'
-    if (Math.abs(dx) > Math.abs(dy)) {
-      direction = dx > 0 ? 'east' : 'west'
-    } else if (dy > 0) {
-      direction = 'south'
-    } else if (dy < 0) {
-      direction = 'north'
+  // Track the modifier so the cursor can advertise that Ctrl pans, without a drag in progress.
+  useEffect(() => {
+    const sync = (e: KeyboardEvent) => setCtrlHeld(e.ctrlKey || e.metaKey)
+    window.addEventListener('keydown', sync)
+    window.addEventListener('keyup', sync)
+    return () => {
+      window.removeEventListener('keydown', sync)
+      window.removeEventListener('keyup', sync)
     }
+  }, [])
 
-    // Check for vertical direction
-    if (dx === -1 && dy === -1) direction = 'up'
-    if (dx === 1 && dy === 1) direction = 'down'
+  // Keep at least a margin of the map on screen, so it can never be dragged fully out of view.
+  function clamp(x: number, y: number) {
+    const rect = surface.current?.getBoundingClientRect()
+    const vw = rect?.width ?? 600
+    const vh = rect?.height ?? 400
+    const margin = 80
+    return {
+      x: Math.max(margin - width, Math.min(vw - margin, x)),
+      y: Math.max(margin - height, Math.min(vh - margin, y)),
+    }
+  }
 
-    void builderApi
-      .setExit(fromKey, direction, toKey)
-      .then(onChanged)
-      .catch((e) => setError(e instanceof Error ? e.message : 'Could not link those rooms.'))
+  function nudge(dx: number, dy: number) {
+    setOffset((o) => clamp(o.x + dx, o.y + dy))
+  }
+
+  function recenter() {
+    const target = selected ? byKey.get(selected) : null
+    const rect = surface.current?.getBoundingClientRect()
+    const viewW = rect?.width ?? 600
+    const viewH = rect?.height ?? 400
+
+    if (target) {
+      // Centre the selected room in the viewport.
+      setOffset(
+        clamp(viewW / 2 - (target.x * CELL + BOX_W / 2), viewH / 2 - (target.y * CELL + BOX_H / 2)),
+      )
+    } else {
+      setOffset({ x: 24, y: 24 })
+    }
   }
 
   const handlePanStart = (e: React.MouseEvent) => {
+    if (!(e.ctrlKey || e.metaKey)) return
     if ((e.target as HTMLElement).closest('.room-box')) return
+    e.preventDefault()
     setPanning(true)
-    setPanStart({ x: e.clientX - offsetX, y: e.clientY - offsetY })
+    panStart.current = { x: e.clientX - offset.x, y: e.clientY - offset.y }
   }
 
   const handlePan = (e: React.MouseEvent) => {
     if (!panning) return
-    setOffsetX(e.clientX - panStart.x)
-    setOffsetY(e.clientY - panStart.y)
+    setOffset(clamp(e.clientX - panStart.current.x, e.clientY - panStart.current.y))
   }
 
-  const handlePanEnd = () => {
-    setPanning(false)
+  const endPan = () => setPanning(false)
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowLeft':
+        nudge(PAN_STEP, 0)
+        break
+      case 'ArrowRight':
+        nudge(-PAN_STEP, 0)
+        break
+      case 'ArrowUp':
+        nudge(0, PAN_STEP)
+        break
+      case 'ArrowDown':
+        nudge(0, -PAN_STEP)
+        break
+      default:
+        return
+    }
+    e.preventDefault()
   }
 
-  const isVerticalExit = (direction: string) => direction === 'up' || direction === 'down'
+  function clickRoom(key: string) {
+    if (linkFrom && linkFrom !== key) {
+      const from = byKey.get(linkFrom)
+      const to = byKey.get(key)
+      const direction = from && to ? guessDirection(from, to) : 'north'
+      setLinkTo({ from: linkFrom, to: key, direction })
+      setLinkFrom(null)
+      return
+    }
+    onSelect(key)
+  }
+
+  const cursor = panning ? 'grabbing' : ctrlHeld ? 'grab' : 'default'
 
   return (
     <div className="zone-canvas-container">
       <div className="zone-canvas-header">
-        {error && <p className="error-msg">{error}</p>}
         {linkFrom && (
           <p className="link-status">
             <span className="link-icon">🔗</span>
-            Linking from <code>{linkFrom}</code> — click a room to complete the link or{' '}
+            Linking from <code>{linkFrom}</code> — click a room to choose the direction, or{' '}
             <button type="button" className="cancel-link" onClick={() => setLinkFrom(null)}>
               cancel
             </button>
@@ -101,112 +146,21 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
 
       <div
         className="zone-canvas-wrapper"
-        ref={container}
+        ref={surface}
+        tabIndex={0}
         onMouseDown={handlePanStart}
         onMouseMove={handlePan}
-        onMouseUp={handlePanEnd}
-        onMouseLeave={handlePanEnd}
-        style={{ cursor: panning ? 'grabbing' : 'grab' }}
+        onMouseUp={endPan}
+        onMouseLeave={endPan}
+        onKeyDown={handleKeyDown}
+        style={{ cursor }}
       >
         <div
           className="zone-canvas"
-          ref={surface}
-          style={{
-            width: width * CELL,
-            height: height * CELL,
-            transform: `translate(${offsetX}px, ${offsetY}px)`,
-          }}
+          style={{ width, height, transform: `translate(${offset.x}px, ${offset.y}px)` }}
         >
-          <svg className="edges" width={width * CELL} height={height * CELL}>
-            {placed.flatMap((from) =>
-              from.room.exits
-                .map((exit) => {
-                  // Skip bidirectional UP/DOWN connections - only render from the DOWN direction
-                  if (exit.direction === 'up') {
-                    const toRoom = placed.find((r) => r.room.key === exit.to)
-                    if (toRoom) {
-                      const reverseExit = toRoom.room.exits.find((e) => e.to === from.room.key && e.direction === 'down')
-                      if (reverseExit) return null // Skip, will be rendered from DOWN direction
-                    }
-                  }
-
-                  const to = placed.find((r) => r.room.key === exit.to)
-                const isVertical = isVerticalExit(exit.direction)
-                const cx = from.x * CELL + BOX_W / 2
-                const cy = from.y * CELL + BOX_H / 2
-
-                if (!to) {
-                  // Dangling exit - show as stub
-                  if (isVertical) {
-                    const radius = 12
-                    return (
-                      <g key={`${from.room.key}-${exit.direction}`}>
-                        <circle cx={cx} cy={cy} r={radius} className="edge vertical-stub" />
-                        <circle cx={cx} cy={cy} r={radius - 4} className="edge vertical-stub" />
-                        <text x={cx} y={cy + 2} className="direction-label" textAnchor="middle" fontSize="8">
-                          {exit.direction[0].toUpperCase()}
-                        </text>
-                      </g>
-                    )
-                  }
-
-                  return (
-                    <line
-                      key={`${from.room.key}-${exit.direction}`}
-                      className="edge dangling"
-                      x1={cx}
-                      y1={cy}
-                      x2={cx + stubX(exit.direction)}
-                      y2={cy + stubY(exit.direction)}
-                    />
-                  )
-                }
-
-                // Normal exit to another room
-                const toCx = to.x * CELL + BOX_W / 2
-                const toCy = to.y * CELL + BOX_H / 2
-
-                if (isVertical) {
-                  // Vertical exits: curved path
-                  const controlX = cx + (exit.direction === 'up' ? -15 : 15)
-                  const label = exit.direction === 'up' ? '⬆' : '⬇'
-
-                  return (
-                    <g key={`${from.room.key}-${exit.direction}`}>
-                      <path
-                        d={`M ${cx} ${cy} Q ${controlX} ${(cy + toCy) / 2} ${toCx} ${toCy}`}
-                        className="edge vertical-exit"
-                        fill="none"
-                        strokeWidth="2"
-                      />
-                      <text x={controlX} y={(cy + toCy) / 2 - 8} className="direction-label" textAnchor="middle" fontSize="10">
-                        {label}
-                      </text>
-                    </g>
-                  )
-                }
-
-                // Horizontal exits: straight lines with cardinal direction labels
-                const label =
-                  exit.direction === 'north'
-                    ? '↑'
-                    : exit.direction === 'south'
-                      ? '↓'
-                      : exit.direction === 'east'
-                        ? '→'
-                        : '←'
-                return (
-                  <g key={`${from.room.key}-${exit.direction}`}>
-                    <line className="edge" x1={cx} y1={cy} x2={toCx} y2={toCy} />
-                    <circle cx={(cx + toCx) / 2} cy={(cy + toCy) / 2} r="5" className="direction-indicator" />
-                    <text x={(cx + toCx) / 2} y={(cy + toCy) / 2 + 2} className="direction-label" textAnchor="middle" fontSize="9">
-                      {label}
-                    </text>
-                  </g>
-                )
-              })
-                .filter(Boolean)
-            )}
+          <svg className="edges" width={width} height={height}>
+            <Edges placed={placed} byKey={byKey} />
           </svg>
 
           {placed.map(({ room, x, y }) => {
@@ -225,26 +179,12 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
                 title={`${room.key}${unfinished ? ' (unfinished)' : ''}`}
                 onMouseDown={(event) => {
                   event.stopPropagation()
-                  if (event.shiftKey) {
-                    setLinkFrom(room.key)
-                  }
+                  if (event.shiftKey) setLinkFrom(room.key)
                 }}
-                onClick={() => {
-                  if (linkFrom && linkFrom !== room.key) {
-                    link(linkFrom, room.key)
-                    setLinkFrom(null)
-                    return
-                  }
-                  onSelect(room.key)
-                }}
+                onClick={() => clickRoom(room.key)}
               >
                 <span className="room-box-title">{room.title}</span>
                 <span className="room-box-key">{room.key.split('.').pop()}</span>
-                {room.exits.some((e) => isVerticalExit(e.direction)) && (
-                  <span className="vertical-indicator" title="Has vertical exits">
-                    ⬍
-                  </span>
-                )}
               </button>
             )
           })}
@@ -252,16 +192,157 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
       </div>
 
       <div className="zone-canvas-controls">
+        <div className="pan-pad" role="group" aria-label="Pan the map">
+          <button type="button" onClick={() => nudge(0, PAN_STEP)} aria-label="Pan up">
+            ↑
+          </button>
+          <button type="button" onClick={() => nudge(PAN_STEP, 0)} aria-label="Pan left">
+            ←
+          </button>
+          <button type="button" onClick={recenter}>
+            Recenter
+          </button>
+          <button type="button" onClick={() => nudge(-PAN_STEP, 0)} aria-label="Pan right">
+            →
+          </button>
+          <button type="button" onClick={() => nudge(0, -PAN_STEP)} aria-label="Pan down">
+            ↓
+          </button>
+        </div>
         <p className="canvas-help">
           <span className="help-icon">?</span>
-          <strong>Map auto-layouts</strong> by exit directions • <strong>Drag canvas to pan</strong> • <strong>Shift-click</strong> to link rooms
+          <strong>Ctrl-drag</strong> or the arrows to pan • <strong>Shift-click</strong> two rooms to link
         </p>
       </div>
+
+      {linkTo && (
+        <LinkRoomsDialog
+          open
+          onOpenChange={(open) => !open && setLinkTo(null)}
+          fromKey={linkTo.from}
+          toKey={linkTo.to}
+          guessedDirection={linkTo.direction}
+          onLinked={onChanged}
+        />
+      )}
     </div>
   )
 }
 
-const stubX = (direction: string) => stepX(direction) * 28
-const stubY = (direction: string) => stepY(direction) * 28
+/** The best-guess direction from two placements, offered to the link dialog as a default. */
+function guessDirection(from: PlacedRoom, to: PlacedRoom): string {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  if (dx === 1 && dy === 1) return 'up'
+  if (dx === -1 && dy === -1) return 'down'
+  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? 'east' : 'west'
+  return dy > 0 ? 'south' : 'north'
+}
 
-export { OPPOSITE }
+const isVertical = (direction: string) => direction === 'up' || direction === 'down'
+
+/** Clamp the endpoint of a centre-to-centre line to the source box's border. */
+function clipToBox(cx: number, cy: number, towardX: number, towardY: number) {
+  const dx = towardX - cx
+  const dy = towardY - cy
+  if (dx === 0 && dy === 0) return { x: cx, y: cy }
+  const hw = BOX_W / 2
+  const hh = BOX_H / 2
+  const t = Math.min(
+    dx === 0 ? Infinity : hw / Math.abs(dx),
+    dy === 0 ? Infinity : hh / Math.abs(dy),
+  )
+  return { x: cx + dx * t, y: cy + dy * t }
+}
+
+function Edges({
+  placed,
+  byKey,
+}: {
+  placed: PlacedRoom[]
+  byKey: Map<string, PlacedRoom>
+}) {
+  const drawn = new Set<string>()
+  const elements: React.ReactNode[] = []
+
+  for (const from of placed) {
+    const cx = from.x * CELL + BOX_W / 2
+    const cy = from.y * CELL + BOX_H / 2
+
+    for (const exit of from.room.exits) {
+      const to = byKey.get(exit.to)
+
+      // Dangling exit: no room to connect to. Draw a stub offset out of the box, like a
+      // signpost, never on top of the room itself.
+      if (!to) {
+        const ox = cx + stepX(exit.direction) * 34
+        const oy = cy + stepY(exit.direction) * 34
+        elements.push(
+          <g key={`${from.room.key}-${exit.direction}-stub`}>
+            <line className="edge dangling" x1={cx} y1={cy} x2={ox} y2={oy} />
+            <text className="direction-label" x={ox} y={oy + 3} textAnchor="middle" fontSize="9">
+              {exit.direction[0].toUpperCase()}
+            </text>
+          </g>,
+        )
+        continue
+      }
+
+      // One connector per unordered pair - a north/south pair is one line, not two stacked.
+      const pairKey = [from.room.key, to.room.key].sort().join('|')
+      if (drawn.has(pairKey)) continue
+      drawn.add(pairKey)
+
+      const toCx = to.x * CELL + BOX_W / 2
+      const toCy = to.y * CELL + BOX_H / 2
+      const a = clipToBox(cx, cy, toCx, toCy)
+      const b = clipToBox(toCx, toCy, cx, cy)
+      const oneWay = !to.room.exits.some((e) => e.to === from.room.key)
+      const midX = (a.x + b.x) / 2
+      const midY = (a.y + b.y) / 2
+
+      if (isVertical(exit.direction)) {
+        // Bow the path perpendicular to the run so a vertical link reads as vertical without
+        // having to read the label.
+        const dx = b.x - a.x
+        const dy = b.y - a.y
+        const len = Math.hypot(dx, dy) || 1
+        const px = (-dy / len) * 26
+        const py = (dx / len) * 26
+        elements.push(
+          <g key={pairKey}>
+            <path
+              className="edge vertical-exit"
+              d={`M ${a.x} ${a.y} Q ${midX + px} ${midY + py} ${b.x} ${b.y}`}
+              fill="none"
+            />
+            <text
+              className="direction-label"
+              x={midX + px}
+              y={midY + py + 3}
+              textAnchor="middle"
+              fontSize="11"
+            >
+              {exit.direction === 'up' ? '⬆' : '⬇'}
+            </text>
+          </g>,
+        )
+        continue
+      }
+
+      const label =
+        exit.direction === 'north' ? '↑' : exit.direction === 'south' ? '↓' : exit.direction === 'east' ? '→' : '←'
+      elements.push(
+        <g key={pairKey}>
+          <line className={oneWay ? 'edge one-way' : 'edge'} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
+          <circle className="direction-indicator" cx={midX} cy={midY} r="7" />
+          <text className="direction-label" x={midX} y={midY + 3} textAnchor="middle" fontSize="9">
+            {label}
+          </text>
+        </g>,
+      )
+    }
+  }
+
+  return <>{elements}</>
+}

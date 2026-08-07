@@ -37,6 +37,7 @@ public sealed class WorldWriteQueue : IWorldWriteQueue
 public sealed class WorldWriteWorker(
     WorldWriteQueue queue,
     IServiceScopeFactory scopeFactory,
+    BuilderChangeFeed feed,
     ILogger<WorldWriteWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -57,6 +58,14 @@ public sealed class WorldWriteWorker(
                     var writer = scope.ServiceProvider.GetRequiredService<WorldWriter>();
 
                     await writer.WriteAsync(job.Changes, job.AccountId, stoppingToken);
+
+                    // In-game builder verbs notify the feed too, so an edit typed at the prompt
+                    // updates any open builder panel just like an edit made through the API.
+                    foreach (var change in job.Changes)
+                    {
+                        feed.Publish(new BuilderChange(
+                            change.EntityKind, change.EntityKey, WorldEditor.ActionOf(change), job.AccountId));
+                    }
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {

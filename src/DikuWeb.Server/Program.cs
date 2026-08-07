@@ -141,6 +141,7 @@ builder.Services.AddScoped<BuilderQueries>();
 builder.Services.AddScoped<WorldWriter>();
 builder.Services.AddScoped<WorldEditor>();
 builder.Services.AddSingleton<DigThrottle>();
+builder.Services.AddSingleton<BuilderChangeFeed>();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<DikuWebDbContext>("database", tags: ["ready"]);

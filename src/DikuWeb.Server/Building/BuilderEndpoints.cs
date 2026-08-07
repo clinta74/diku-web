@@ -1,7 +1,9 @@
+using System.Text.Json;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Server.Auth;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace DikuWeb.Server.Building;
 
@@ -41,6 +43,9 @@ public static class BuilderEndpoints
 
         group.MapGet("/audit", AuditAsync);
 
+        // Live edit feed: a second builder's saved change lands here so open panels refresh.
+        group.MapGet("/stream", StreamChangesAsync);
+
         group.MapGet("/mob-templates", ListMobTemplatesAsync);
         group.MapGet("/mob-templates/{key}", GetMobTemplateAsync);
         group.MapPost("/mob-templates/{key}", CreateMobTemplateAsync);
@@ -68,6 +73,83 @@ public static class BuilderEndpoints
         group.MapGet("/zones/{zoneKey}/storyline", StorylineGraphAsync);
 
         routes.MapBuilderRoomEndpoints();
+    }
+
+    // -----------------------------------------------------------------------
+    // Change feed
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// A long-lived SSE stream of persisted edits (PLAN §2). Modelled on the game stream, minus
+    /// the per-character session: any authorised builder may listen and every subscriber sees
+    /// every edit. Auth is the cookie, since EventSource cannot set headers.
+    /// </summary>
+    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(20);
+
+    private static async Task StreamChangesAsync(
+        HttpContext http,
+        BuilderChangeFeed feed,
+        CancellationToken ct)
+    {
+        var response = http.Response;
+        response.Headers.ContentType = "text/event-stream";
+        response.Headers.CacheControl = "no-cache";
+        response.Headers.Connection = "keep-alive";
+
+        // Covers nginx (header) and Kestrel (DisableBuffering) - otherwise events sit buffered
+        // and the stream looks dead.
+        response.Headers["X-Accel-Buffering"] = "no";
+        http.Features.Get<IHttpResponseBodyFeature>()?.DisableBuffering();
+
+        using var subscription = feed.Subscribe(out var reader);
+
+        try
+        {
+            await response.WriteAsync("retry: 3000\n\n", ct);
+            await response.Body.FlushAsync(ct);
+
+            while (!ct.IsCancellationRequested)
+            {
+                // Wake at least every heartbeat so an idle stream stays alive through proxies.
+                using var wait = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                wait.CancelAfter(HeartbeatInterval);
+
+                bool hasData;
+                try
+                {
+                    hasData = await reader.WaitToReadAsync(wait.Token);
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                {
+                    await response.WriteAsync(": ping\n\n", ct);
+                    await response.Body.FlushAsync(ct);
+                    continue;
+                }
+
+                if (!hasData)
+                {
+                    break;
+                }
+
+                while (reader.TryRead(out var change))
+                {
+                    var json = JsonSerializer.Serialize(new
+                    {
+                        kind = change.Kind,
+                        key = change.Key,
+                        action = change.Action,
+                        byAccountId = change.ByAccountId,
+                    });
+                    await response.WriteAsync($"event: entity-changed\ndata: {json}\n\n", ct);
+                }
+
+                await response.Body.FlushAsync(ct);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The client went away. Expected; the subscription is disposed by the using above.
+        }
     }
 
     // -----------------------------------------------------------------------

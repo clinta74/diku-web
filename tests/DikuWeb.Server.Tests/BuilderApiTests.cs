@@ -470,6 +470,136 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
         Assert.False(room.GetProperty("flags").TryGetProperty("notARealFlag", out _));
     }
 
+    [Fact]
+    public async Task Setting_one_flag_leaves_its_siblings_alone()
+    {
+        // The whole point of the per-flag endpoint: two builders editing one zone must not
+        // erase each other. Patching the room replaces the entire set; this must not.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var roomKey = await BuilderClient.NewRoomAsync(client, zoneKey, "gate");
+
+        var first = await client.PutAsJsonAsync(
+            $"/api/builder/rooms/{roomKey}/flags/dark", new { value = true });
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var second = await client.PutAsJsonAsync(
+            $"/api/builder/rooms/{roomKey}/flags/indoors", new { value = true });
+
+        var room = await BuilderClient.JsonAsync(second);
+
+        // Both survive - the second write did not clobber the first.
+        Assert.True(room.GetProperty("flags").GetProperty("dark").GetBoolean());
+        Assert.True(room.GetProperty("flags").GetProperty("indoors").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Clearing_a_flag_removes_the_key_so_inheritance_resumes()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var roomKey = await BuilderClient.NewRoomAsync(client, zoneKey, "gate");
+
+        await client.PutAsJsonAsync($"/api/builder/rooms/{roomKey}/flags/dark", new { value = false });
+
+        // A null value clears the key entirely rather than storing "off".
+        var room = await BuilderClient.JsonAsync(
+            await client.PutAsJsonAsync(
+                $"/api/builder/rooms/{roomKey}/flags/dark", new { value = (bool?)null }));
+
+        Assert.False(room.GetProperty("flags").TryGetProperty("dark", out _));
+    }
+
+    [Fact]
+    public async Task An_unknown_flag_name_is_refused_by_the_per_flag_endpoint()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var roomKey = await BuilderClient.NewRoomAsync(client, zoneKey, "gate");
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/builder/rooms/{roomKey}/flags/notARealFlag", new { value = true });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // -----------------------------------------------------------------------
+    // Templates - the round-trip defects (no coverage existed before)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task An_item_templates_slot_survives_as_a_name_not_a_number()
+    {
+        // The response record serialised Slot as an int while the client reads a string, so a
+        // slot could not survive a load-edit-save round trip - and Head, being 0, read as unset.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var key = BuilderClient.UniqueName("i").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/item-templates/{key}", new
+        {
+            name = "A plumed helm",
+            slot = "Head",
+        })).EnsureSuccessStatusCode();
+
+        var template = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/item-templates/{key}", UriKind.Relative)));
+
+        var slot = template.GetProperty("slot");
+        Assert.Equal(JsonValueKind.String, slot.ValueKind);
+        Assert.Equal("Head", slot.GetString());
+    }
+
+    [Fact]
+    public async Task Patching_a_mob_templates_name_leaves_its_loot_and_behavior_intact()
+    {
+        // The editor sent a fresh baseStats object and never sent loot/behavior, so a name-only
+        // save from the panel wiped content authored elsewhere. A field-scoped PATCH must not.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var key = BuilderClient.UniqueName("m").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/mob-templates/{key}", new
+        {
+            name = "A warden",
+            level = 5,
+            baseStats = new Dictionary<string, object> { ["health"] = 40, ["strength"] = 12 },
+            loot = new[]
+            {
+                new Dictionary<string, object> { ["itemKey"] = "rusted-blade", ["chance"] = 0.15 },
+            },
+            behavior = new Dictionary<string, object> { ["aggressive"] = true },
+        })).EnsureSuccessStatusCode();
+
+        (await client.PatchAsJsonAsync($"/api/builder/mob-templates/{key}", new
+        {
+            name = "A grizzled warden",
+        })).EnsureSuccessStatusCode();
+
+        var template = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/mob-templates/{key}", UriKind.Relative)));
+
+        Assert.Equal("A grizzled warden", template.GetProperty("name").GetString());
+        Assert.Equal(12, template.GetProperty("baseStats").GetProperty("strength").GetInt32());
+        Assert.True(template.GetProperty("behavior").GetProperty("aggressive").GetBoolean());
+        Assert.Equal(
+            "rusted-blade",
+            template.GetProperty("loot")[0].GetProperty("itemKey").GetString());
+    }
+
     // -----------------------------------------------------------------------
     // Validation (PLAN.md §7.4) - advisory, never blocking
     // -----------------------------------------------------------------------
