@@ -3,6 +3,7 @@ using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Inhabitants;
 
 namespace DikuWeb.Engine.Commands;
 
@@ -71,6 +72,23 @@ public static class CombatCommands
         }
         else if (targetMob != null)
         {
+            // A non-combatant is refused before the room rules are consulted: an NPC is
+            // unattackable everywhere, not merely in peaceful rooms. Quest givers, turn-ins, and
+            // shopkeepers are all NPCs, and killing one strands whoever was mid-quest until the
+            // spawner comes back around (PLAN.md §7.4).
+            var mobTemplate = ctx.MobTemplates?.Get(targetMob.TemplateKey);
+            if (MobBehavior.IsNonCombatant(mobTemplate?.Behavior))
+            {
+                var name = string.IsNullOrEmpty(targetMob.TemplateName)
+                    ? targetMob.TemplateKey
+                    : targetMob.TemplateName;
+
+                ctx.Reply(
+                    $"{NarrationHelper.WithDefiniteArticle(name, capitalize: true)} is not someone you can fight.",
+                    "bad");
+                return;
+            }
+
             var validation = TargetValidator.ValidateTarget(
                 CombatantType.Player, CombatantType.Mob, targetMob.TemplateKey, peaceful, pvp);
             if (!validation.IsAllowed)

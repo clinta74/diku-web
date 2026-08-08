@@ -393,6 +393,11 @@ input:focus {
   color: var(--dim);
 }
 
+/* Gold is the one number in the identity line a player watches change, so it is not dimmed. */
+.gold {
+  color: var(--warn, #d8a657);
+}
+
 .status {
   margin-left: auto;
 }

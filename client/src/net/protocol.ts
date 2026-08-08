@@ -57,6 +57,7 @@ export interface VitalsPayload {
   level: number
   xp: number
   path: string
+  gold: number
 }
 
 export interface SysPayload {

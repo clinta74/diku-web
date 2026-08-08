@@ -21,17 +21,19 @@ public sealed class CommandRegistry
 {
     private readonly List<CommandDefinition> _commands;
 
+    /// <remarks>
+    /// The quest and template caches, the quest save queue, and <c>EngineOptions</c> used to be
+    /// taken here so <see cref="ShopCommands"/> and <see cref="QuestCommands"/> could stash them
+    /// in statics. They now travel on the <see cref="CommandContext"/> with every command, so the
+    /// registry no longer needs any of them - which is also what stopped one registry's caches
+    /// from serving another's world.
+    /// </remarks>
     public CommandRegistry(
         AbilityCache? abilityCache = null,
-        QuestCache? questCache = null,
-        ItemTemplateCache? itemTemplateCache = null,
-        MobTemplateCache? mobTemplateCache = null,
         IMobTemplateRepository? mobTemplates = null,
         IItemTemplateRepository? itemTemplates = null,
         MobSpawner? mobSpawner = null,
         ItemSpawner? itemSpawner = null,
-        ICharacterQuestSaveQueue? questSaveQueue = null,
-        EngineOptions? options = null,
         IGameClock? clock = null)
     {
         _commands = [];
@@ -69,6 +71,10 @@ public sealed class CommandRegistry
         _commands.Add(new CommandDefinition(
             "drop", 1, "drop <item> - put down an item from your inventory", Drop));
 
+        // Full word required, for the same reason quit demands all four: nothing comes back.
+        _commands.Add(new CommandDefinition(
+            "destroy", 7, "destroy <item> - permanently destroy an item you're carrying", Destroy));
+
         _commands.Add(new CommandDefinition(
             "wear", 1, "wear <item> - equip an item on your body", Wear));
 
@@ -97,8 +103,8 @@ public sealed class CommandRegistry
         CombatCommands.Register(_commands);
         RestCommands.Register(_commands);
         AbilityCommands.Register(_commands, abilityCache, clock);
-        QuestCommands.Register(_commands, questCache, itemTemplateCache, questSaveQueue);
-        ShopCommands.Register(_commands, mobTemplateCache, itemTemplateCache, options);
+        QuestCommands.Register(_commands);
+        ShopCommands.Register(_commands);
         StatusCommands.Register(_commands);
         BuilderCommands.Register(_commands, mobTemplates, itemTemplates, mobSpawner, itemSpawner);
         AdminCommands.Register(_commands);
@@ -412,6 +418,55 @@ public sealed class CommandRegistry
         ctx.Reply($"You drop {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
         ctx.Broadcast($"{ctx.Actor.Name} drops {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "movement");
         ctx.MarkRoomForRefresh(ctx.Actor.RoomKey);
+    }
+
+    /// <summary>
+    /// Takes an item out of the world for good.
+    /// </summary>
+    /// <remarks>
+    /// Drop leaves something to pick back up; this does not. The two losses a player would most
+    /// regret are refused outright rather than merely warned about - what they are wearing, which
+    /// they can only have destroyed by mistyping, and a quest item, which would strand the quest
+    /// with no way to re-earn it. The shopkeeper refuses quest items on the same grounds.
+    /// </remarks>
+    private static void Destroy(CommandContext ctx)
+    {
+        if (!ctx.HasArgument)
+        {
+            ctx.Reply("Destroy what?", "bad");
+            return;
+        }
+
+        var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
+        var targetItem = FindItemByName(inventory, ctx.Argument);
+
+        if (targetItem is null)
+        {
+            ctx.Reply($"You don't have {ctx.Argument}.", "bad");
+            return;
+        }
+
+        var article = NarrationHelper.WithDefiniteArticle(targetItem.TemplateName);
+
+        if (targetItem.EquippedSlot is not null)
+        {
+            ctx.Reply($"You'll have to remove {article} first.", "bad");
+            return;
+        }
+
+        if (ItemState.IsQuestItem(targetItem))
+        {
+            ctx.Reply($"Something stays your hand: {article} is bound to a quest.", "bad");
+            return;
+        }
+
+        // Out of the world and out of storage. Forgetting it in memory alone would hand it back
+        // on the next load, still owned by the player who destroyed it.
+        ctx.World.RemoveItem(targetItem);
+        ctx.ItemSaveQueue?.EnqueueDelete(targetItem.Id);
+
+        ctx.Reply($"You destroy {article}. It is gone for good.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} destroys {article}.", "movement");
     }
 
     private static void Wear(CommandContext ctx)
@@ -742,6 +797,7 @@ public sealed class CommandRegistry
         {
             new($"Combat Stats", "heading"),
             new($"\nLevel: {character.Level}"),
+            new($"\nGold: {character.Gold:N0}"),
             new($"\nDamage Range: {minDamage}-{maxDamage}", "good"),
             new($"\n  Dice: {attack.MinDamage}-{attack.MaxDamage}, Might bonus: {attack.BaseDamage:+#;-#;+0}"),
             new($"\n  Speed: one swing every {mainDelay * 0.25:0.##}s"),

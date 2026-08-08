@@ -123,7 +123,8 @@ public sealed class PlayerView(RoomLayoutService layout)
             v.Health, v.HealthMax,
             v.Focus, v.FocusMax,
             v.Stamina, v.StaminaMax,
-            c.Level, c.Xp, c.Path.ToString());
+            c.Level, c.Xp, c.Path.ToString(),
+            c.Gold);
     }
 
     private static void SendProse(

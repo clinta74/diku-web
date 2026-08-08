@@ -1,4 +1,5 @@
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Quests;
@@ -6,18 +7,18 @@ using DikuWeb.Engine.World;
 
 namespace DikuWeb.Engine.Commands;
 
+/// <summary>
+/// Talking to quest givers, the journal, and turn-in (PLAN.md §4.9, §5.2b).
+/// </summary>
+/// <remarks>
+/// The cache and save queue come from the <see cref="CommandContext"/> rather than from statics
+/// captured at registration, for the reason set out on <see cref="ShopCommands"/>: a static made
+/// the last-constructed registry the one every other registry read from.
+/// </remarks>
 public static class QuestCommands
 {
-    private static QuestCache? _questCache;
-    private static DikuWeb.Engine.Spawning.ItemTemplateCache? _itemTemplateCache;
-    private static ICharacterQuestSaveQueue? _questSaveQueue;
-
-    public static void Register(List<CommandDefinition> commands, QuestCache? questCache, DikuWeb.Engine.Spawning.ItemTemplateCache? itemTemplateCache = null, ICharacterQuestSaveQueue? questSaveQueue = null)
+    public static void Register(List<CommandDefinition> commands)
     {
-        _questCache = questCache;
-        _itemTemplateCache = itemTemplateCache;
-        _questSaveQueue = questSaveQueue;
-
         commands.Add(new CommandDefinition(
             "talk", 1, "talk <npc> (t) - speak with an NPC about quests", Talk));
 
@@ -30,7 +31,7 @@ public static class QuestCommands
 
     private static void Talk(CommandContext ctx)
     {
-        if (_questCache is null || !_questCache.IsLoaded)
+        if (ctx.Quests is null || !ctx.Quests.IsLoaded)
         {
             ctx.Reply("Quests are not available.");
             return;
@@ -56,7 +57,7 @@ public static class QuestCommands
         }
 
         // Find quests offered by this mob
-        var offeredQuests = _questCache.GetByGiverMobKey(targetMob.TemplateKey);
+        var offeredQuests = ctx.Quests.GetByGiverMobKey(targetMob.TemplateKey);
 
         if (offeredQuests.Count == 0)
         {
@@ -92,7 +93,7 @@ public static class QuestCommands
                 ctx.World.SetQuestState(character.Id, quest.Key, newQuestState);
 
                 // Persist the state change
-                _questSaveQueue?.Enqueue(new CharacterQuestSnapshot(
+                ctx.QuestSaveQueue?.Enqueue(new CharacterQuestSnapshot(
                     character.Id, quest.Key, QuestStatus.Active, DateTimeOffset.UtcNow, null, 0));
             }
             else if (questState?.Status == QuestStatus.Active)
@@ -130,7 +131,7 @@ public static class QuestCommands
                 ctx.World.SetQuestState(character.Id, quest.Key, resetQuestState);
 
                 // Persist the state change
-                _questSaveQueue?.Enqueue(new CharacterQuestSnapshot(
+                ctx.QuestSaveQueue?.Enqueue(new CharacterQuestSnapshot(
                     character.Id, quest.Key, QuestStatus.Active, DateTimeOffset.UtcNow, null, questState.TimesCompleted));
             }
             else if (!prerequisitesMet)
@@ -152,7 +153,7 @@ public static class QuestCommands
         }
     }
 
-private static void Quests(CommandContext ctx)
+    private static void Quests(CommandContext ctx)
     {
         var character = ctx.Actor.Character;
         var questList = ctx.World.QuestsFor(character.Id);
@@ -173,7 +174,7 @@ private static void Quests(CommandContext ctx)
             ctx.Reply("Active:");
             foreach (var quest in active)
             {
-                var questDef = _questCache?.Get(quest.QuestKey);
+                var questDef = ctx.Quests?.Get(quest.QuestKey);
                 var summary = questDef?.Summary ?? "Unknown quest";
                 ctx.Reply($"  {questDef?.Name ?? quest.QuestKey}: {summary}");
             }
@@ -184,7 +185,7 @@ private static void Quests(CommandContext ctx)
             ctx.Reply("Completed:");
             foreach (var quest in completed)
             {
-                var questDef = _questCache?.Get(quest.QuestKey);
+                var questDef = ctx.Quests?.Get(quest.QuestKey);
                 ctx.Reply($"  {questDef?.Name ?? quest.QuestKey}");
             }
         }
@@ -204,7 +205,7 @@ private static void Quests(CommandContext ctx)
 
         // Find quest by name or partial name match
         var questState = questList.FirstOrDefault(q =>
-            _questCache?.Get(q.QuestKey)?.Name.Contains(questName, StringComparison.OrdinalIgnoreCase) == true);
+            ctx.Quests?.Get(q.QuestKey)?.Name.Contains(questName, StringComparison.OrdinalIgnoreCase) == true);
 
         if (questState is null)
         {
@@ -212,7 +213,7 @@ private static void Quests(CommandContext ctx)
             return;
         }
 
-        var questDef = _questCache?.Get(questState.QuestKey);
+        var questDef = ctx.Quests?.Get(questState.QuestKey);
         if (questDef is null)
         {
             ctx.Reply("Quest information is unavailable.");
@@ -285,7 +286,7 @@ private static void Quests(CommandContext ctx)
     /// </summary>
     public static bool TryTurnInQuest(CommandContext ctx, string itemName, string npcName)
     {
-        if (_questCache is null || !_questCache.IsLoaded)
+        if (ctx.Quests is null || !ctx.Quests.IsLoaded)
         {
             return false;
         }
@@ -302,7 +303,7 @@ private static void Quests(CommandContext ctx)
         }
 
         // Find quests that can be turned in to this mob
-        var turnInQuests = _questCache.GetByTurninMobKey(targetMob.TemplateKey);
+        var turnInQuests = ctx.Quests.GetByTurninMobKey(targetMob.TemplateKey);
 
         if (turnInQuests.Count == 0)
         {
@@ -357,7 +358,7 @@ private static void Quests(CommandContext ctx)
             ctx.World.SetQuestState(character.Id, matchingQuest.Key, completedQuestState);
 
             // Persist the state change
-            _questSaveQueue?.Enqueue(new CharacterQuestSnapshot(
+            ctx.QuestSaveQueue?.Enqueue(new CharacterQuestSnapshot(
                 character.Id, matchingQuest.Key, QuestStatus.Completed, completedQuestState.StartedAt,
                 DateTimeOffset.UtcNow, completedQuestState.TimesCompleted));
         }
@@ -368,57 +369,7 @@ private static void Quests(CommandContext ctx)
             : $"Excellent work! You've completed {matchingQuest.Name}.";
         ctx.Reply(turninReady);
 
-        // Award XP and gold
-        character.Xp += matchingQuest.RewardXp;
-        character.Gold += matchingQuest.RewardGold;
-
-        if (matchingQuest.RewardXp > 0)
-        {
-            ctx.Reply($"You gain {matchingQuest.RewardXp} experience points.", "reward");
-        }
-
-        if (matchingQuest.RewardGold > 0)
-        {
-            ctx.Reply($"You gain {matchingQuest.RewardGold} gold.", "reward");
-        }
-
-        // Award items
-        if (!string.IsNullOrEmpty(matchingQuest.RewardItemKey) && _itemTemplateCache is not null)
-        {
-            var itemTemplate = _itemTemplateCache.Get(matchingQuest.RewardItemKey);
-            if (itemTemplate is not null)
-            {
-                var zone = ctx.World.FindZone(matchingQuest.ZoneKey);
-                var world = zone is not null ? ctx.World.FindWorld(zone.WorldKey) : null;
-
-                if (zone is not null && world is not null)
-                {
-                    var spawner = new DikuWeb.Engine.Spawning.ItemSpawner();
-                    var rewardItem = spawner.Spawn(itemTemplate, zone, world, character.RoomKey);
-
-                    for (var i = 0; i < matchingQuest.RewardItemCount; i++)
-                    {
-                        var instance = new DikuWeb.Domain.Items.ItemInstance
-                        {
-                            Id = Guid.NewGuid(),
-                            TemplateKey = itemTemplate.Key,
-                            TemplateName = itemTemplate.Name,
-                            Icon = itemTemplate.Icon,
-                            RoomKey = character.RoomKey.ToString(),
-                            ResolvedStats = new(itemTemplate.BaseStats),
-                            SpawnMultipliers = rewardItem.SpawnMultipliers,
-                            Value = rewardItem.Value,
-                            State = [],
-                        };
-
-                        ctx.World.AddItem(instance);
-                        ctx.World.PickUpItem(instance, character.Id);
-                        ctx.ItemSaveQueue?.Enqueue(instance);
-                        ctx.Reply($"You receive {matchingQuest.RewardItemCount} x {itemTemplate.Name}.", "reward");
-                    }
-                }
-            }
-        }
+        AwardRewards(ctx, matchingQuest, character);
 
         // Handle level up
         while (DikuWeb.Domain.Characters.CharacterProgression.TryLevelUp(
@@ -431,5 +382,116 @@ private static void Quests(CommandContext ctx)
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Pays out a completed quest: XP, gold, and reward items, all through the zone's
+    /// difficulty dial.
+    /// </summary>
+    /// <remarks>
+    /// Rewards used to be paid raw while combat awarded <c>mob.ResolvedXp</c>, so the same zone
+    /// multipliers that made a mob worth triple left the quest beside it worth exactly its
+    /// authored number. §7.5 calls multipliers "the reason the whole feature exists"; a reward
+    /// path that ignores them makes quests the one thing the dial does not move.
+    /// </remarks>
+    private static void AwardRewards(CommandContext ctx, Quest quest, Character character)
+    {
+        var zone = ctx.World.FindZone(quest.ZoneKey);
+        var world = zone is not null ? ctx.World.FindWorld(zone.WorldKey) : null;
+
+        // A quest whose zone or world is missing is a content bug, not a reason to pay nothing.
+        // Falling back to the authored numbers keeps the player whole while the builder fixes it;
+        // silently awarding zero is what this did before, and it looked like a balance decision.
+        var worldMultipliers = world?.Multipliers;
+        var zoneMultipliers = zone?.Multipliers;
+
+        var xp = Resolve(quest.RewardXp, MultiplierType.Xp);
+        var gold = Resolve(quest.RewardGold, MultiplierType.Gold);
+
+        character.Xp += xp;
+        character.Gold += gold;
+
+        if (xp > 0)
+        {
+            ctx.Reply($"You gain {xp} experience points.", "reward");
+        }
+
+        if (gold > 0)
+        {
+            ctx.Reply($"You gain {gold} gold.", "reward");
+        }
+
+        AwardRewardItems(ctx, quest, character, zone, world);
+        return;
+
+        int Resolve(int amount, MultiplierType type) =>
+            worldMultipliers is null || zoneMultipliers is null
+                ? amount
+                : Multipliers.Resolve(amount, worldMultipliers, zoneMultipliers, type);
+    }
+
+    /// <summary>Hands over the quest's reward item, if it has one.</summary>
+    private static void AwardRewardItems(
+        CommandContext ctx,
+        Quest quest,
+        Character character,
+        Zone? zone,
+        DikuWeb.Domain.Worlds.World? world)
+    {
+        if (string.IsNullOrEmpty(quest.RewardItemKey) || quest.RewardItemCount <= 0)
+        {
+            return;
+        }
+
+        // Each failure below says so rather than returning quietly. A reward that does not
+        // arrive and does not explain itself reads to a player as the quest being broken, and
+        // to a builder as nothing at all.
+        var itemTemplate = ctx.ItemTemplates?.Get(quest.RewardItemKey);
+        if (itemTemplate is null)
+        {
+            ctx.Reply(
+                $"({quest.RewardItemKey} was promised, but no such item exists any more. Tell a builder.)",
+                "bad");
+            return;
+        }
+
+        if (zone is null || world is null)
+        {
+            ctx.Reply(
+                $"({itemTemplate.Name} was promised, but its zone is missing. Tell a builder.)",
+                "bad");
+            return;
+        }
+
+        var spawner = new DikuWeb.Engine.Spawning.ItemSpawner();
+        var rewardItem = spawner.Spawn(itemTemplate, zone, world, character.RoomKey);
+
+        for (var i = 0; i < quest.RewardItemCount; i++)
+        {
+            var instance = new DikuWeb.Domain.Items.ItemInstance
+            {
+                Id = Guid.NewGuid(),
+                TemplateKey = itemTemplate.Key,
+                TemplateName = itemTemplate.Name,
+                Icon = itemTemplate.Icon,
+                RoomKey = character.RoomKey.ToString(),
+                ResolvedStats = new(itemTemplate.BaseStats),
+                SpawnMultipliers = rewardItem.SpawnMultipliers,
+                Value = rewardItem.Value,
+                State = [],
+            };
+
+            ctx.World.AddItem(instance);
+            ctx.World.PickUpItem(instance, character.Id);
+            ctx.ItemSaveQueue?.Enqueue(instance);
+        }
+
+        // Once, after the loop. This sat inside it, so a count of three announced three times
+        // that the player had received three.
+        var received = quest.RewardItemCount == 1
+            ? NarrationHelper.WithArticle(itemTemplate.Name)
+            : $"{quest.RewardItemCount} x {itemTemplate.Name}";
+
+        ctx.Reply($"You receive {received}.", "reward");
     }
 }

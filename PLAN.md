@@ -14,15 +14,26 @@ numbers rather than a new set of hand-authored content.
 Play is **PvE by default**; player-versus-player is opt-in per room, through the same extensible
 room-flag registry that carries every other room property (§4.10).
 
-Status: **Phases 0–4 complete. Phase 5.1 (abilities) and 5.2a–c (buffs, quests, shops) complete.**
-Register, create a character, walk a seeded zone, talk. Build new geography and author content
-(templates, spawners, quests) through the browser with no SQL. Hand out builder access from inside
-the game. Objects and mobs fully implemented with multiplier scaling; inventory, equipment, and
-item/mob systems working end-to-end. Mob AI brings the world alive (emotes, wandering). Full combat:
-kill, loot, level up; XP penalties and respawning work; mobs are aggressive. Abilities with cost,
-cooldown, cast time, targeting, and extensible effects, including timed buffs and debuffs. Quests
-run the full talk → collect → give → reward loop with prerequisite chains. Shops buy and sell.
-Next: **Phase 5.2d — close the gaps listed below**, then 5.3 (communication).
+Status: **The game engine is feature-complete through Phase 5.2. The builder is not.**
+
+*Playing* works end to end: register, create a character, walk a seeded zone, talk. Inventory,
+equipment, and items work; mob AI emotes and wanders; combat kills, loots, and levels, with XP
+penalties and respawn; abilities carry cost, cooldown, cast time, targeting, and effects including
+timed buffs and debuffs. Quests run the full talk → collect → give → reward loop with prerequisite
+chains and zone-scaled rewards. Shops buy and sell. Builder access is granted from inside the game.
+
+*Authoring* is where the work is. Geography, templates, spawners, quests, and mob behavior can all
+be built in the browser — but **zone and world multipliers cannot be set from the builder at all**,
+which is the one dial §7.5 calls "the reason the whole feature exists". There is no world editor,
+the zone panel is two hardcoded buttons, item spawners have no authoring path, and editing an item
+template silently zeroes any dice-string stat.
+
+Next: **the builder catch-up listed under Phases 2 and 3**, then finish 5.2d, then 5.3.
+
+A note on reading the checkboxes below: several were checked off for work that was designed but
+not built, or built but dead on arrival. Where an audit has since disproved one it has been
+un-checked and annotated rather than deleted, because the pattern matters — **a box here means
+"someone believed this was done", and only a test or a read of the code means it is.**
 
 ---
 
@@ -1255,8 +1266,11 @@ Notes from the build:
   occupants used to omit the extras from the map entirely — present in the room and the contents
   list, invisible on the grid. Overlapping icons are the better failure.
 
-### Phase 2 — World builder: geography ✅ **complete**
+### Phase 2 — World builder: geography ⚠️ **geography complete; world and zone properties are not**
 *Done when: a new zone can be built end to end in the browser, with no SQL and no seeder edits.*
+
+Rooms, exits, flags, and the canvas are done and hold up. What is missing is a level up: the
+**containers** those rooms live in — worlds and zones — have almost no editor.
 
 - [x] Roles (player / builder / moderator / admin) + authorization policies **(moved up from Ops)**
 - [x] `WorldMutation` path: enqueue → loop applies → persist → notify occupants
@@ -1269,7 +1283,16 @@ Notes from the build:
 - [x] Graceful degradation for every broken state in §7.4 — with tests for each row
 - [x] Advisory `/validate`: dangling exits, orphan rooms, unreachable areas, unknown flag keys,
       rooms that are PvP only by inheritance
-- [x] Builder UI: world tree, world editor, zone editor, room editor
+- [x] Builder UI: world tree, room editor (full), zone panel (flags only)
+- [ ] **There is no world editor.** No `WorldPanel`; a world's name, description, sort order, and
+      flags cannot be edited from the browser at all.
+- [ ] **World and zone delete are unreachable.** Both routes exist and both `builderApi`
+      functions exist; neither function has a single caller, so a mistyped world or zone is
+      permanent from the browser's point of view.
+- [ ] **The zone panel is two hardcoded buttons.** `ZonePanel.tsx` renders `pvp` and `peaceful`
+      literally rather than from the flag registry the room editor already reads, so a newly
+      registered zone flag is invisible. Name, description, and level range are not editable.
+      Each toggle is a whole-map write — there is no per-flag zone primitive.
 - [x] ASCII grid painter with legend management
 - [x] Zone canvas: auto-layout from the exit graph, drag to arrange, drag to link
 - [x] Live push of edits to players standing in an edited room
@@ -1356,20 +1379,39 @@ Notes from the build:
 - **A demoted builder is told, not silently stripped.** Verbs that stop working with no
   explanation read as the game breaking rather than as a decision somebody made.
 
-### Phase 3 — Objects, inhabitants, and multipliers ✅ **complete**
+### Phase 3 — Objects, inhabitants, and multipliers ⚠️ **the engine is done; the dial is not authorable**
 *Done when: a zone's difficulty is a slider, and the same kobold is trivial in one zone and lethal in another.*
 
+The engine half is complete and correct. The **slider is missing**: a builder cannot set a
+multiplier from the browser, which is the half the phase goal is written about.
+
 - [x] Item templates + instances (weight and capacity limits deferred)
-- [x] `get`, `drop`, `give`, `inventory`, `examine`; `put` for containers deferred
+- [x] `get`, `drop`, `give`, `inventory`, `examine`, `destroy`; `put` for containers deferred
 - [x] Equipment slots: `wear`, `wield`, `remove` (containers with depth limit deferred)
 - [x] Mob templates, spawners, population maintenance
 - [x] **Multiplier resolution at spawn time** (§4.4), `spawn_multipliers` recorded per instance
-- [x] World + zone multiplier storage and `world × zone` composition
+- [x] World + zone multiplier storage and `world × zone` composition **in the engine and schema**
 - [x] Builder: mob template, item template, and spawner editors (CRUD endpoints)
-- [x] Builder: multiplier preview panel with live stat resolution (`/api/builder/zones/{key}/preview`)
+- [x] Builder: mob **behavior** editor — disposition, idle emotes, shopkeeper and stock
 - [x] Mob AI v1: idle emotes, room-to-room wandering, `sentinel` flag, fire-and-forget system tick
 - [x] Ground items and mobs appear on the map with their icons
 - [x] `emote` command for expressive actions
+- [ ] **Multipliers cannot be saved from the builder.** `UpsertWorld` / `UpsertZone` carry no
+      `Multipliers` field, and `WorldWriter` mentions the word nowhere, so the value is
+      seed-and-SQL only. §7.5 calls multipliers "the reason the whole feature exists". Needs the
+      full slice: contract → primitive → applier → writer → UI.
+- [ ] **The multiplier preview panel does not exist.** *(Was checked off; it is not built.)*
+      `GET /zones/{key}/preview` and `BuilderQueries.PreviewAsync` are implemented and correct,
+      but `client/src` contains no reference to `preview` — no API function, no panel. The
+      endpoint is unreachable.
+- [ ] **Item spawners cannot be created.** `SpawnerDialog` hardcodes `templateKind: 'Mob'` and is
+      only ever handed `mobTemplates`, so half the spawning system has no authoring path.
+- [ ] **Multi-room spawners cannot be edited.** Create hardcodes `roomKeys: [roomKey]`; update
+      omits `roomKeys` entirely, so the room set can never change after creation.
+- [ ] **Editing an item template corrupts its stats.** `ItemTemplateEditor` loads `baseStats`
+      through `Number(v) || 0`, so a `"1d6"` damage string — which the domain explicitly permits —
+      silently becomes `0` when any unrelated field is saved.
+- [ ] Loot table and `baseStats` editors for mob templates (only `health` has a field today)
 - [ ] Builder: *Respawn zone* button to apply live multiplier edits to existing mobs (deferred nice-to-have)
 
 ### Phase 4 — Combat and progression ✅ **complete**
@@ -1443,29 +1485,42 @@ Notes from the build:
 - [x] `buy` / `sell` / `list` against a mob flagged `shopkeeper`
 - [x] Priced through `itemValue`; sellback at a configurable percentage
 - [x] Gold on the character, persisted through `CharacterSaveQueue`
+- [x] Shopkeepers and their stock are authorable in the builder (`MobBehaviorEditor.tsx`), with
+      the stock picked from real item templates rather than typed as keys
+- [x] Shop coverage: `ShopCommandTests` (engine) exercises list / buy / sell against behavior in
+      the shape storage returns it
 
-#### 5.2d — Gaps in the above, found by audit ⚠️ **not done**
+#### 5.2d — Gaps in the above, found by audit ⚠️ **partly done**
 These are the parts of 5.2 that were checked off in spirit but are not in the code. Each one
 fails quietly, which is why they need to be listed rather than assumed.
 
-- [ ] **Quest rewards ignore zone multipliers.** `QuestCommands` does `character.Xp += RewardXp`
-      and `character.Gold += RewardGold` with the raw authored values. Combat already awards
-      `mob.ResolvedXp`, so quests are the one XP source that escapes the §4.4 difficulty dial.
-- [ ] **`/reachability` cannot fail.** The endpoint exists and the builder calls it, but its
-      check is `reachable = !string.IsNullOrEmpty(quest.RequiredItemKey)` *inside* a branch
-      guarded by the same condition, so it is tautologically true and never warns. It must walk
-      loot tables and spawners as §10 requires. As written it is worse than absent: it gives the
-      builder a green light on an unfinishable quest.
+- [x] **The behavior bag was unreadable.** `Behavior` is `Dictionary<string, object>` stored as
+      jsonb, so every value arrives as a `JsonElement`. `ShopCommands` tested `is bool` and
+      `is List<object>`, and `MobAiSystem` tested `is List<object>` — all false for any template
+      that had round-tripped, which is every template outside a unit test. **Shopkeeper
+      detection, shop stock, and idle emotes were dead in the running game**; only aggression
+      survived, by luck. Now read through `JsonBag` / `MobBehavior`, the counterpart to
+      `StatReader` for the non-numeric bags.
+- [x] **`buy` could never complete.** It looked its zone up with `RoomKey.Zone` (the bare
+      segment) where `FindZone` wants the qualified `world.zone`, so every purchase fell through
+      to "the shop is temporarily unavailable".
+- [x] **Quest rewards ignore zone multipliers.** Now resolved through `Multipliers.Resolve` the
+      way combat resolves `mob.ResolvedXp`. Two adjacent bugs fixed with it: the reward-item
+      `Reply` sat inside the spawn loop (a count of 3 announced itself three times), and a
+      missing template or zone dropped the reward in silence.
+- [x] **`/reachability` cannot fail.** Rewritten to walk loot tables, item spawners, and other
+      quests' rewards, and to check giver/turn-in mobs exist and are spawned.
+- [x] **Non-combatant mobs.** `type: "npc"` mobs can neither attack nor be attacked, so a quest
+      giver or shopkeeper cannot be killed into a soft-lock (§7.4). Authorable in the builder.
 - [ ] **`questItem` is read but never written.** `ShopCommands` refuses to buy an item carrying
-      the flag, and nothing anywhere sets it — not quest rewards, not the item template editor.
-      Needs an authoring path, plus the "not destroyable, still droppable" half of the rule.
+      the flag and `destroy` refuses to destroy one — both now read it correctly — but nothing
+      sets it. Still needs an authoring path on the item template editor and on quest rewards.
 - [ ] **Dormant-quest handling is absent.** Deleting a mob or item a quest references leaves the
       quest pointing at nothing; §7.4 requires the quest go dormant and `character_quests` rows
       survive. No code path and no test.
 - [ ] **`TargetingType.Aoe` never resolves a target.** `AbilitySystem` handles `Self` and
       `SingleTarget`; an AoE cast falls through with `target = null` and silently does nothing.
       The §4.11 per-target filter has nothing to filter yet.
-- [ ] Shops have **no test coverage at all** — no unit, engine, or server test names them.
 
 #### 5.2e — Deferred from the original 5.2 list
 - [ ] Pets and charmed mobs inherit their owner's §4.11 permissions (no pet system yet)
@@ -1567,23 +1622,39 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 
 ## 12. Next step
 
-**Phase 5.2d — close the gaps in what 5.2 already claims to do.** Buffs, quests, and shops all
-work end to end, so the temptation is to move on to communication. Do 5.2d first, because every
-item on it is a *silent* failure rather than a missing feature, and silent failures get harder to
-find as content accumulates on top of them.
+**Multipliers end to end, because the dial the design is built around cannot be turned.**
 
-Two are worth doing first, in this order:
+Every zone in the game is stuck on its seeded numbers. The resolution engine is correct and
+tested, the preview endpoint is written and correct — and neither is reachable from the browser,
+because `UpsertWorld` / `UpsertZone` carry no `Multipliers` field. That is a vertical slice, in
+order: contract → primitive → applier → writer → `builderApi.ts` → UI. The §7.5 preview table
+comes free once the client can call the endpoint that already exists.
 
-1. **`/reachability`, because it currently lies.** Its check is tautologically true, so it tells
-   the builder an unfinishable quest is fine. §10 names this as the failure that "fails silently
-   in play: the quest reads correctly and the player just wanders." An endpoint that always
-   returns clean is worse than no endpoint, because it is trusted.
-2. **Quest reward multipliers**, because quests are now the one XP source that escapes §4.4.
-   Every quest authored before this is fixed will need its numbers revisited afterward, so the
-   cost of deferring it grows with the content.
+Then, roughly in cost order:
 
-The rest of 5.2d — `questItem` authoring, dormant quests, AoE resolution, shop tests — can follow
-in any order. Shops shipping with zero tests is the one to be uncomfortable about: it is the only
-system in the codebase handling player currency and nothing asserts it balances.
+1. **Item `baseStats` corruption** (Phase 3) — a one-line load fix. It is destroying authored
+   content *today*, every time somebody edits an item's name, and the damage is silent.
+2. **`questItem` authoring** (5.2d) — both readers are correct now, but nothing writes the flag,
+   so neither the shop rule nor the `destroy` rule has ever fired in play. A toggle on the item
+   editor plus a write on quest reward spawning.
+3. **World and zone editors** (Phase 2) — a world has no editor at all, and the zone panel should
+   render the flag registry the way the room editor already does.
+4. **Item and multi-room spawners** (Phase 3) — half the spawning system has no authoring path.
+5. **Dormant quests** (5.2d) — deleting a referenced mob strands the quest; §7.4 requires the
+   giver stop offering it while in-progress rows survive.
+6. **`TargetingType.Aoe`** (5.2d) — resolves no target and silently does nothing.
+
+Only then 5.3 (communication) and Phase 6 (ops), which are green-field rather than catch-up.
+
+**Two lessons from the audits, worth carrying forward:**
+
+- **A free-form jsonb bag must be read through a reader that accepts the shape storage returns.**
+  `Behavior` and item `State` come back as `JsonElement`; code that pattern-matched the C# shape
+  was false for every value that had round-tripped, which silently killed three features at once.
+  `JsonBag`, `ItemState`, and `StatReader` exist for this. A test that hand-builds the bag in C#
+  proves nothing about the running game — author it through `WorldHarness.AsPersisted`.
+- **An endpoint with no caller is not a feature, and a checkbox is not evidence.** Reachability,
+  the multiplier preview, world delete, and `/respawn` were all written, checked off, and never
+  wired to anything. Before checking a box, name the test or the call site.
 
 Q3 (Path respec) is still the only open question in the document, and only 5.2e depends on it.

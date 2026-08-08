@@ -40,6 +40,7 @@ public sealed class GameLoop(
     AbilityCache? abilityCache,
     IQuestRepository? questRepository,
     QuestCache? questCache,
+    ICharacterQuestSaveQueue? questSaveQueue,
     IItemTemplateRepository? itemTemplateRepository,
     ItemTemplateCache? itemTemplateCache,
     IMobTemplateRepository? mobTemplateRepository,
@@ -430,6 +431,10 @@ public sealed class GameLoop(
             AdminQueue = adminQueue,
             ItemSaveQueue = itemSaveQueue,
             ItemTemplates = itemTemplateCache,
+            MobTemplates = mobTemplateCache,
+            Options = options,
+            Quests = questCache,
+            QuestSaveQueue = questSaveQueue,
             Verb = verb,
             Argument = argument,
         };

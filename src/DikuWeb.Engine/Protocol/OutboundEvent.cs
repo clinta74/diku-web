@@ -59,7 +59,8 @@ public sealed record VitalsPayload(
     int StaminaMax,
     int Level,
     long Xp,
-    string Path);
+    string Path,
+    long Gold);
 
 /// <summary>Connection notices, link-dead warnings, forced logout.</summary>
 public sealed record SysPayload(string Message, string Kind);

@@ -197,7 +197,8 @@
 }
 
 .multiplier-set,
-.attack-list {
+.attack-list,
+.behavior-editor {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.75rem;
@@ -207,21 +208,52 @@
 }
 
 /* Each attack is a row; the remove button sits with the fields rather than below them. */
-.attack-list .field-row {
+.attack-list .field-row,
+.behavior-editor .field-row {
   align-items: flex-end;
 }
 
-.attack-list > button {
+.attack-list > button,
+.emote-list > button {
   align-self: flex-start;
 }
 
 .multiplier-set legend,
-.attack-list legend {
+.attack-list legend,
+.behavior-editor legend {
   padding: 0 0.4rem;
   color: var(--dim);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+/* --- Mob behavior -------------------------------------------------- */
+
+.emote-list,
+.shop-stock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* The shop stock is a list of already-chosen items, so each row is a label plus its remove
+   button rather than an editable field - the picker below the list is what adds one. */
+.shop-stock .stock-row {
+  flex: 1;
+  align-self: center;
+}
+
+/* A checkbox reads as a control with a label beside it, not above it like the text fields. */
+.field-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.field-check input[type='checkbox'] {
+  width: auto;
+  flex: none;
 }
 
 /* --- Spawner list ------------------------------------------------- */

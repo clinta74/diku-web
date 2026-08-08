@@ -33,6 +33,11 @@ public sealed class MobTemplateCache
     {
         ArgumentNullException.ThrowIfNull(template);
         _templates[template.Key] = template;
+
+        // A cache holding templates is loaded, whoever put them there. Without this a world
+        // whose first mob template is created by a builder - rather than read at startup - keeps
+        // reporting itself unloaded, and every shop in it stays "not available" for good.
+        IsLoaded = true;
     }
 
     public void Remove(string key)

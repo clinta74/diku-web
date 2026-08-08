@@ -11,6 +11,8 @@ using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
+using DikuWeb.Engine.Quests;
+using DikuWeb.Domain.Quests;
 using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.Systems;
 using DikuWeb.Engine.Time;
@@ -44,6 +46,33 @@ internal sealed class RecordingAdminQueue : IAccountAdminQueue
 }
 
 /// <summary>
+/// Captures item persistence instead of touching a database. Removing an item has to reach
+/// storage as well as the in-memory world, and only this records whether it did.
+/// </summary>
+internal sealed class RecordingItemSaveQueue : IItemSaveQueue
+{
+    public List<ItemInstance> Saved { get; } = [];
+
+    public List<Guid> Deleted { get; } = [];
+
+    public void Enqueue(ItemInstance item) => Saved.Add(item);
+
+    public void EnqueueDelete(Guid itemId) => Deleted.Add(itemId);
+
+    public Task FlushAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
+
+/// <summary>Captures quest progress instead of writing it, so a test can assert what was saved.</summary>
+internal sealed class RecordingQuestSaveQueue : ICharacterQuestSaveQueue
+{
+    public List<CharacterQuestSnapshot> Saved { get; } = [];
+
+    public void Enqueue(CharacterQuestSnapshot snapshot) => Saved.Add(snapshot);
+
+    public Task FlushAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
+
+/// <summary>
 /// Wires the real WorldState, CommandRegistry, and PlayerView without the hosted service, so
 /// command behaviour can be asserted synchronously. No timers, no sleeping, no database.
 /// </summary>
@@ -55,7 +84,7 @@ internal sealed class WorldHarness
     {
         var random = new DikuWeb.Domain.Randomness.SeededRandomSource(42);
         World = new WorldState(random);
-        Commands = new CommandRegistry(itemTemplateCache: ItemTemplates, clock: Clock);
+        Commands = new CommandRegistry(clock: Clock);
         View = new PlayerView(new RoomLayoutService());
         Options = new EngineOptions { StartingRoom = RoomKey.Parse("test.zone.west") };
         Applier = new WorldMutationApplier(World, View, Options);
@@ -96,6 +125,18 @@ internal sealed class WorldHarness
     /// <summary>Item templates the registry resolves slots and descriptions from.</summary>
     public ItemTemplateCache ItemTemplates { get; } = new();
 
+    /// <summary>
+    /// Quests the command layer reads. Populated by <see cref="DefineQuest"/>.
+    /// </summary>
+    /// <remarks>
+    /// This used to be left null, so <c>Talk</c> and <c>TryTurnInQuest</c> returned on their
+    /// first line and every quest test passed without reaching the code it named (PLAN §12).
+    /// </remarks>
+    public QuestCache Quests { get; } = new();
+
+    /// <summary>Quest progress the commands handed off to be persisted.</summary>
+    public RecordingQuestSaveQueue QuestSaves { get; } = new();
+
     private readonly FakeItemTemplateRepository _itemTemplateRepo = new();
 
     public CommandRegistry Commands { get; }
@@ -111,6 +152,9 @@ internal sealed class WorldHarness
     public LoopWorldEditor Editor { get; }
 
     public RecordingAdminQueue Admin { get; }
+
+    /// <summary>What the commands under test handed off to be persisted or deleted.</summary>
+    public RecordingItemSaveQueue ItemSaves { get; } = new();
 
     /// <summary>Applies a builder edit exactly as the loop would, minus persistence.</summary>
     public MutationResult Mutate(WorldChange change) => Applier.Apply(change);
@@ -243,7 +287,12 @@ internal sealed class WorldHarness
             View = View,
             Editor = Editor,
             AdminQueue = Admin,
+            ItemSaveQueue = ItemSaves,
             ItemTemplates = ItemTemplates,
+            MobTemplates = MobTemplates,
+            Options = Options,
+            Quests = Quests,
+            QuestSaveQueue = QuestSaves,
             Verb = verb,
             Argument = argument,
         };
@@ -252,8 +301,79 @@ internal sealed class WorldHarness
         return context;
     }
 
+    /// <summary>
+    /// Puts a free-form bag through the same JSON round trip Postgres and the builder API put it
+    /// through, so its values arrive as <c>JsonElement</c> rather than as the C# types they were
+    /// written as.
+    /// </summary>
+    /// <remarks>
+    /// A bag built inline in a test is the one shape the running game never sees. Shops and mob
+    /// emotes were both dead in production while their hand-built test doubles passed, because
+    /// the code pattern-matched <c>is bool</c> and <c>is List&lt;object&gt;</c>. Any test that
+    /// asserts on behavior or item state should author it through here.
+    /// </remarks>
+    public static Dictionary<string, object> AsPersisted(Dictionary<string, object> bag)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(bag);
+        return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json)!;
+    }
+
+    /// <summary>
+    /// Registers a quest in the cache the command layer reads, and returns it.
+    /// </summary>
+    /// <remarks>
+    /// Defaults to the harness's own zone, because a quest whose zone is not loaded cannot
+    /// resolve its rewards through any multiplier and would quietly pay its authored numbers.
+    /// </remarks>
+    public Quest DefineQuest(
+        string key,
+        string giverMobKey,
+        string? turninMobKey = null,
+        string? requiredItemKey = null,
+        int requiredCount = 1,
+        int rewardXp = 0,
+        int rewardGold = 0,
+        string? rewardItemKey = null,
+        int rewardItemCount = 1,
+        bool repeatable = false,
+        string zoneKey = "test.zone",
+        Dictionary<string, string>? dialogue = null)
+    {
+        var quest = new Quest
+        {
+            Key = key,
+            Name = key,
+            ZoneKey = zoneKey,
+            GiverMobKey = giverMobKey,
+            TurninMobKey = turninMobKey ?? giverMobKey,
+            RequiredItemKey = requiredItemKey,
+            RequiredCount = requiredCount,
+            RewardXp = rewardXp,
+            RewardGold = rewardGold,
+            RewardItemKey = rewardItemKey,
+            RewardItemCount = rewardItemCount,
+            IsRepeatable = repeatable,
+            Dialogue = dialogue ?? [],
+        };
+
+        Quests.Put(quest);
+        return quest;
+    }
+
+    /// <summary>Sets this zone's difficulty dial, so reward and spawn resolution have something to scale by.</summary>
+    public void SetZoneMultipliers(Action<Multipliers> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        configure(Zone.Multipliers);
+    }
+
     /// <summary>Registers an item template (so its slot and description resolve) and returns it.</summary>
-    public ItemTemplate DefineItem(string key, string name, ItemSlot? slot, string description = "")
+    public ItemTemplate DefineItem(
+        string key,
+        string name,
+        ItemSlot? slot,
+        string description = "",
+        int value = 0)
     {
         var template = new ItemTemplate
         {
@@ -262,6 +382,7 @@ internal sealed class WorldHarness
             Icon = "$",
             Slot = slot,
             Description = description,
+            BaseValue = value,
         };
 
         _itemTemplateRepo.Add(template);
@@ -309,7 +430,10 @@ internal sealed class WorldHarness
     }
 
     /// <summary>Puts an instance of a template into a character's inventory and returns it.</summary>
-    public ItemInstance GiveItem(PlayerActor actor, ItemTemplate template)
+    public ItemInstance GiveItem(
+        PlayerActor actor,
+        ItemTemplate template,
+        Dictionary<string, object>? state = null)
     {
         var item = new ItemInstance
         {
@@ -317,6 +441,8 @@ internal sealed class WorldHarness
             TemplateName = template.Name,
             OwnerCharacterId = actor.CharacterId,
             ResolvedStats = new Dictionary<string, object>(template.BaseStats),
+            Value = template.BaseValue,
+            State = state ?? [],
         };
 
         World.LoadCharacterItems(actor.CharacterId, [.. World.InventoryOf(actor.CharacterId), item]);
@@ -341,7 +467,8 @@ internal sealed class WorldHarness
         int health = 100,
         string name = "rat",
         int damageMin = 1,
-        int damageMax = 1)
+        int damageMax = 1,
+        Dictionary<string, object>? behavior = null)
     {
         MobTemplates.Put(new MobTemplate
         {
@@ -349,6 +476,7 @@ internal sealed class WorldHarness
             Name = name,
             Icon = "r",
             Attacks = [.. attacks ?? []],
+            Behavior = behavior ?? [],
         });
 
         var mob = new Mob

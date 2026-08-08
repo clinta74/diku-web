@@ -39,6 +39,9 @@ public sealed class ItemTemplateCache
     {
         ArgumentNullException.ThrowIfNull(template);
         _itemTemplates[template.Key] = template;
+
+        // A cache holding templates is loaded, whoever put them there. See MobTemplateCache.Put.
+        IsLoaded = true;
     }
 
     public void Remove(string key)

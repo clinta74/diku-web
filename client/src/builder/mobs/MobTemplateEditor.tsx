@@ -6,6 +6,9 @@ import { NumberInput } from '../../ui/NumberInput'
 import { OverflowMenu } from '../../ui/OverflowMenu'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { useToast } from '../../ui/Toast'
+import { useBuilderData } from '../BuilderData'
+import { MobBehaviorEditor } from './MobBehaviorEditor'
+import { readBehavior, writeBehavior, type BehaviorDraft } from './behavior'
 
 interface Props {
   templateKey: string
@@ -15,6 +18,7 @@ interface Props {
 
 export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) {
   const toast = useToast()
+  const { itemTemplates } = useBuilderData()
   const [template, setTemplate] = useState<MobTemplate | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -25,6 +29,7 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
   const [baseXp, setBaseXp] = useState(0)
   const [baseGold, setBaseGold] = useState(0)
   const [attacks, setAttacks] = useState<MobAttack[]>([])
+  const [behavior, setBehavior] = useState<BehaviorDraft>(readBehavior(undefined))
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -48,6 +53,7 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         setBaseXp(loaded.baseXp)
         setBaseGold(loaded.baseGold)
         setAttacks(loaded.attacks ?? [])
+        setBehavior(readBehavior(loaded.behavior))
         setDirty(false)
       })
       .catch((e) => {
@@ -75,7 +81,9 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         baseXp,
         baseGold,
         loot: template.loot,
-        behavior: template.behavior,
+        // Folded into the stored bag rather than replacing it, so keys this form does not
+        // render survive the save.
+        behavior: writeBehavior(template.behavior, behavior),
         attacks,
       })
       setTemplate(updated)
@@ -175,6 +183,15 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
           <NumberInput min={0} value={baseGold} onChange={change(setBaseGold)} />
         </Field>
       </div>
+
+      <MobBehaviorEditor
+        draft={behavior}
+        itemTemplates={itemTemplates}
+        onChange={(next) => {
+          setBehavior(next)
+          setDirty(true)
+        }}
+      />
 
       <fieldset className="attack-list">
         <legend>Attacks</legend>

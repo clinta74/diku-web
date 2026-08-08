@@ -1,5 +1,7 @@
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
+using DikuWeb.Engine.Quests;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.Spawning;
@@ -40,6 +42,22 @@ public sealed class CommandContext
     /// <see cref="Domain.Items.ItemInstance"/> caches only its key. Null if unavailable.
     /// </summary>
     public ItemTemplateCache? ItemTemplates { get; init; }
+
+    /// <summary>
+    /// Mob templates, for handlers that need a mob's behavior - a <see cref="Domain.Inhabitants.Mob"/>
+    /// caches only its key. Null if unavailable, which is why callers treat a missing template as
+    /// "no special behavior" rather than refusing.
+    /// </summary>
+    public MobTemplateCache? MobTemplates { get; init; }
+
+    /// <summary>Engine tuning the handlers read, such as the shop sellback rate.</summary>
+    public EngineOptions? Options { get; init; }
+
+    /// <summary>Quest definitions the command layer reads. Null if quests are unavailable.</summary>
+    public QuestCache? Quests { get; init; }
+
+    /// <summary>Where quest progress is handed off to be persisted.</summary>
+    public ICharacterQuestSaveQueue? QuestSaveQueue { get; init; }
 
     /// <summary>Applies a content edit and queues it for persistence.</summary>
     public MutationResult Edit(WorldChange change) =>

@@ -44,15 +44,10 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<CommandRegistry>(sp =>
             new CommandRegistry(
                 sp.GetService<AbilityCache>(),
-                sp.GetService<QuestCache>(),
-                sp.GetService<ItemTemplateCache>(),
-                sp.GetService<MobTemplateCache>(),
                 sp.GetService<IMobTemplateRepository>(),
                 sp.GetService<IItemTemplateRepository>(),
                 sp.GetService<MobSpawner>(),
                 sp.GetService<ItemSpawner>(),
-                sp.GetService<ICharacterQuestSaveQueue>(),
-                sp.GetService<EngineOptions>(),
                 sp.GetService<IGameClock>()));
         services.AddSingleton<RoomLayoutService>();
         services.AddSingleton<PlayerView>();

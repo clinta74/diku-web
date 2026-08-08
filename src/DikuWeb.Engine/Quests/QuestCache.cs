@@ -64,6 +64,11 @@ public sealed class QuestCache
         _questsByKey[quest.Key] = quest;
         Index(_questsByGiverMobKey, quest.GiverMobKey, quest);
         Index(_questsByTurninMobKey, quest.TurninMobKey, quest);
+
+        // A cache holding quests is loaded, whoever put them there. Without this, a world whose
+        // first quest is authored by a builder rather than read at startup keeps reporting itself
+        // unloaded, and `talk` answers "Quests are not available" for good.
+        IsLoaded = true;
     }
 
     /// <summary>Removes one quest and drops it from both indexes.</summary>

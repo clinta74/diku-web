@@ -311,6 +311,8 @@ function VitalsBar({
           <Meter label="ST" value={vitals.stamina} max={vitals.staminaMax} tone="stamina" />
           <span className="identity">
             {characterName} · {vitals.path} · level {vitals.level} · {vitals.xp.toLocaleString()} xp
+            {' · '}
+            <span className="gold">{vitals.gold.toLocaleString()} gold</span>
           </span>
         </>
       ) : (

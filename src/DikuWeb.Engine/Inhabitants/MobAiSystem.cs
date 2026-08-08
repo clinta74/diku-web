@@ -72,7 +72,7 @@ public sealed class MobAiSystem(
 
     private bool ShouldEmote(Mob mob, long pulse, MobTemplate template)
     {
-        if (!template.Behavior.TryGetValue("emotes", out var emotesObj) || emotesObj is not List<object> emotes || emotes.Count == 0)
+        if (MobBehavior.EmotesOf(template.Behavior).Count == 0)
         {
             return false;
         }
@@ -83,13 +83,13 @@ public sealed class MobAiSystem(
 
     private void EmitEmote(WorldState world, RoomKey roomKey, Mob mob, MobTemplate template)
     {
-        if (!template.Behavior.TryGetValue("emotes", out var emotesObj) || emotesObj is not List<object> emotes || emotes.Count == 0)
+        var emotes = MobBehavior.EmotesOf(template.Behavior);
+        if (emotes.Count == 0)
         {
             return;
         }
 
-        var emoteIdx = random.Next(0, emotes.Count);
-        var emote = emotes[emoteIdx].ToString() ?? "emotes mysteriously";
+        var emote = emotes[random.Next(0, emotes.Count)];
 
         // Notify occupants
         var occupants = world.OccupantsOf(roomKey);
@@ -177,8 +177,9 @@ public sealed class MobAiSystem(
             return false;
         }
 
-        // Check if mob is aggressive in its behavior
-        if (!template.Behavior.TryGetValue("type", out var typeObj) || typeObj?.ToString() != "aggressive")
+        // Only an aggressive mob starts fights. This also covers the NPC case, which is the
+        // point: a shopkeeper must not open combat with the customer.
+        if (!MobBehavior.IsAggressive(template.Behavior))
         {
             return false;
         }

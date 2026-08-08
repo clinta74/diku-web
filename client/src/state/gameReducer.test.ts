@@ -65,7 +65,7 @@ describe('gameReducer', () => {
         type: 'vitals',
         data: {
           health: 42, healthMax: 60, focus: 20, focusMax: 20,
-          stamina: 88, staminaMax: 100, level: 7, xp: 12480, path: 'Warden',
+          stamina: 88, staminaMax: 100, level: 7, xp: 12480, path: 'Warden', gold: 340,
         },
       },
     )
