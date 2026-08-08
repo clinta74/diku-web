@@ -662,7 +662,6 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnName("required_count");
 
                     b.Property<string>("RequiredItemKey")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("required_item_key");
 

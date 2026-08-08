@@ -28,6 +28,25 @@ public sealed class ItemTemplateCache
         IsLoaded = true;
     }
 
+    /// <summary>
+    /// Inserts or replaces one template, so a builder's save is live without a restart.
+    /// </summary>
+    /// <remarks>
+    /// Shops and quest rewards read this cache while the spawner sweep reads the repository
+    /// directly, so without this a saved edit changed what spawned but not what it sold for.
+    /// </remarks>
+    public void Put(ItemTemplate template)
+    {
+        ArgumentNullException.ThrowIfNull(template);
+        _itemTemplates[template.Key] = template;
+    }
+
+    public void Remove(string key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        _itemTemplates.Remove(key);
+    }
+
     /// <summary>Get an item template by its key.</summary>
     public ItemTemplate? Get(string key)
     {

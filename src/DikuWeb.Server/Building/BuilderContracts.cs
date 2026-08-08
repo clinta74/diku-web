@@ -226,6 +226,22 @@ public sealed record QuestResponse(
     Dictionary<string, string> Dialogue,
     int SortOrder);
 
+/// <summary>
+/// One thing that would stop a quest being finishable. Advisory only, like every other builder
+/// check - an unfinishable quest is still saveable, it just should not be a surprise.
+/// </summary>
+/// <param name="Kind">Machine-readable discriminator, e.g. "unreachable-required-item".</param>
+/// <param name="Message">A sentence a builder can act on.</param>
+public sealed record ReachabilityWarning(
+    string Kind,
+    string Message,
+    string? ItemKey = null,
+    string? MobKey = null);
+
+public sealed record QuestReachability(
+    string QuestKey,
+    IReadOnlyList<ReachabilityWarning> Warnings);
+
 public sealed record SaveQuestRequest(
     string? ZoneKey,
     string? Name,

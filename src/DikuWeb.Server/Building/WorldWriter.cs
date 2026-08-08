@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using DikuWeb.Domain.Building;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Mutations;
@@ -385,9 +386,77 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 return ContentAction.Delete;
             }
 
+            case UpsertQuest c:
+            {
+                var entity = await db.Quests.FirstOrDefaultAsync(
+                    q => q.Key == c.Key,
+                    cancellationToken);
+
+                if (entity is null)
+                {
+                    db.Quests.Add(new Quest
+                    {
+                        Key = c.Key,
+                        // The endpoint refuses a create without a zone and falls back to the
+                        // existing value on update, so this is never actually empty here.
+                        ZoneKey = c.ZoneKey ?? string.Empty,
+                        Name = c.Name,
+                        Summary = c.Summary,
+                        Description = c.Description,
+                        GiverMobKey = c.GiverMobKey,
+                        TurninMobKey = c.TurninMobKey,
+                        RequiredItemKey = c.RequiredItemKey,
+                        RequiredCount = c.RequiredCount,
+                        RewardXp = c.RewardXp,
+                        RewardGold = c.RewardGold,
+                        RewardItemKey = c.RewardItemKey,
+                        RewardItemCount = c.RewardItemCount,
+                        PrerequisiteQuestKeys = new List<string>(c.PrerequisiteQuestKeys),
+                        IsRepeatable = c.IsRepeatable,
+                        Dialogue = new Dictionary<string, string>(c.Dialogue, StringComparer.Ordinal),
+                        SortOrder = c.SortOrder,
+                    });
+
+                    return ContentAction.Create;
+                }
+
+                entity.Name = c.Name;
+                entity.Summary = c.Summary;
+                entity.Description = c.Description;
+                entity.GiverMobKey = c.GiverMobKey;
+                entity.TurninMobKey = c.TurninMobKey;
+                entity.RequiredItemKey = c.RequiredItemKey;
+                entity.RequiredCount = c.RequiredCount;
+                entity.RewardXp = c.RewardXp;
+                entity.RewardGold = c.RewardGold;
+                entity.RewardItemKey = c.RewardItemKey;
+                entity.RewardItemCount = c.RewardItemCount;
+                entity.PrerequisiteQuestKeys = new List<string>(c.PrerequisiteQuestKeys);
+                entity.IsRepeatable = c.IsRepeatable;
+                entity.Dialogue = new Dictionary<string, string>(c.Dialogue, StringComparer.Ordinal);
+                entity.SortOrder = c.SortOrder;
+                return ContentAction.Update;
+            }
+
+            case DeleteQuest c:
+            {
+                var entity = await db.Quests.FirstOrDefaultAsync(
+                    q => q.Key == c.Key,
+                    cancellationToken);
+
+                if (entity is not null)
+                {
+                    db.Quests.Remove(entity);
+                }
+
+                return ContentAction.Delete;
+            }
+
             default:
-                // Requests are normalised into primitives by the loop before they get here, so
-                // this is unreachable unless a new primitive was added without a writer arm.
+                // Every primitive the loop can produce needs an arm above. Quests reached
+                // production without one, so a builder's quest save applied to memory, threw
+                // here, and was rolled back by a full world reload - reported as a 500 with no
+                // hint that the primitive was simply unhandled. Add the arm with the primitive.
                 throw new InvalidOperationException(
                     $"{change.GetType().Name} is not a persistable primitive.");
         }
@@ -501,6 +570,35 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                     ["weight"] = entity.Weight,
                     ["baseValue"] = entity.BaseValue,
                     ["baseStats"] = JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(entity.BaseStats)),
+                }.ToJsonString();
+            }
+
+            case UpsertQuest or DeleteQuest:
+            {
+                var key = change.EntityKey;
+                var entity = await db.Quests.AsNoTracking()
+                    .FirstOrDefaultAsync(q => q.Key == key, cancellationToken);
+
+                return entity is null ? null : new JsonObject
+                {
+                    ["key"] = entity.Key,
+                    ["zoneKey"] = entity.ZoneKey,
+                    ["name"] = entity.Name,
+                    ["summary"] = entity.Summary,
+                    ["description"] = entity.Description,
+                    ["giverMobKey"] = entity.GiverMobKey,
+                    ["turninMobKey"] = entity.TurninMobKey,
+                    ["requiredItemKey"] = entity.RequiredItemKey,
+                    ["requiredCount"] = entity.RequiredCount,
+                    ["rewardXp"] = entity.RewardXp,
+                    ["rewardGold"] = entity.RewardGold,
+                    ["rewardItemKey"] = entity.RewardItemKey,
+                    ["rewardItemCount"] = entity.RewardItemCount,
+                    ["prerequisiteQuestKeys"] =
+                        new JsonArray([.. entity.PrerequisiteQuestKeys.Select(k => (JsonNode?)k)]),
+                    ["isRepeatable"] = entity.IsRepeatable,
+                    ["dialogue"] = ToJson(entity.Dialogue),
+                    ["sortOrder"] = entity.SortOrder,
                 }.ToJsonString();
             }
 

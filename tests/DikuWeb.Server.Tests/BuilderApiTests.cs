@@ -533,6 +533,421 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     }
 
     // -----------------------------------------------------------------------
+    // Quests - authoring was impossible; WorldWriter had no arm and every save 500'd
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task A_quest_can_be_authored_and_read_back()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var key = BuilderClient.UniqueName("q").ToLowerInvariant();
+
+        var created = await client.PostAsJsonAsync($"/api/builder/quests/{key}", new
+        {
+            zoneKey,
+            name = "The Lost Ledger",
+            summary = "Find the ledger.",
+            giverMobKey = "kaelen",
+            turninMobKey = "captain",
+            requiredItemKey = "ledger",
+            requiredCount = 1,
+            rewardXp = 50,
+            rewardGold = 10,
+            dialogue = new Dictionary<string, string> { ["giverOffer"] = "Find it?" },
+        });
+
+        // Before the writer arm existed this was a 500 with the edit rolled back.
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+
+        var quest = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/quests/{key}", UriKind.Relative)));
+
+        Assert.Equal("The Lost Ledger", quest.GetProperty("name").GetString());
+        Assert.Equal("kaelen", quest.GetProperty("giverMobKey").GetString());
+        Assert.Equal("captain", quest.GetProperty("turninMobKey").GetString());
+        Assert.Equal(50, quest.GetProperty("rewardXp").GetInt32());
+        Assert.Equal("Find it?", quest.GetProperty("dialogue").GetProperty("giverOffer").GetString());
+    }
+
+    [Fact]
+    public async Task A_quest_with_no_required_item_can_be_saved()
+    {
+        // required_item_key was NOT NULL although the domain property is nullable and its own
+        // doc comment says a quest may have no item requirement.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var key = BuilderClient.UniqueName("q").ToLowerInvariant();
+
+        var created = await client.PostAsJsonAsync($"/api/builder/quests/{key}", new
+        {
+            zoneKey,
+            name = "A Word With You",
+            giverMobKey = "kaelen",
+            turninMobKey = "kaelen",
+            requiredItemKey = (string?)null,
+        });
+
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+
+        var quest = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/quests/{key}", UriKind.Relative)));
+
+        Assert.Equal(JsonValueKind.Null, quest.GetProperty("requiredItemKey").ValueKind);
+    }
+
+    [Fact]
+    public async Task Patching_a_quest_leaves_unmentioned_fields_alone()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var key = BuilderClient.UniqueName("q").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/quests/{key}", new
+        {
+            zoneKey,
+            name = "The Lost Ledger",
+            giverMobKey = "kaelen",
+            turninMobKey = "captain",
+            rewardXp = 50,
+            prerequisiteQuestKeys = new[] { "aldenmoor.first-errand" },
+        })).EnsureSuccessStatusCode();
+
+        (await client.PatchAsJsonAsync($"/api/builder/quests/{key}", new
+        {
+            name = "The Recovered Ledger",
+        })).EnsureSuccessStatusCode();
+
+        var quest = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/quests/{key}", UriKind.Relative)));
+
+        Assert.Equal("The Recovered Ledger", quest.GetProperty("name").GetString());
+        Assert.Equal(50, quest.GetProperty("rewardXp").GetInt32());
+        Assert.Equal(
+            "aldenmoor.first-errand",
+            quest.GetProperty("prerequisiteQuestKeys")[0].GetString());
+    }
+
+    [Fact]
+    public async Task A_quest_can_be_deleted()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var key = BuilderClient.UniqueName("q").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/quests/{key}", new
+        {
+            zoneKey,
+            name = "Temporary",
+            giverMobKey = "kaelen",
+            turninMobKey = "kaelen",
+        })).EnsureSuccessStatusCode();
+
+        var deleted = await client.DeleteAsync(
+            new Uri($"/api/builder/quests/{key}", UriKind.Relative));
+
+        Assert.Equal(HttpStatusCode.OK, deleted.StatusCode);
+
+        var gone = await client.GetAsync(new Uri($"/api/builder/quests/{key}", UriKind.Relative));
+        Assert.Equal(HttpStatusCode.NotFound, gone.StatusCode);
+    }
+
+    [Fact]
+    public async Task Authoring_a_quest_writes_an_audit_row()
+    {
+        // CaptureAsync had no quest arm, so audits would have been blank before/after.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var key = BuilderClient.UniqueName("q").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/quests/{key}", new
+        {
+            zoneKey,
+            name = "Audited",
+            giverMobKey = "kaelen",
+            turninMobKey = "kaelen",
+        })).EnsureSuccessStatusCode();
+
+        var audit = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/audit?kind=quest&key={key}", UriKind.Relative)));
+
+        Assert.NotEmpty(audit.EnumerateArray());
+    }
+
+    // -----------------------------------------------------------------------
+    // Quest reachability - the check that used to be tautologically true
+    // -----------------------------------------------------------------------
+
+    /// <summary>Creates a quest wired to the given mob and item keys, returning its key.</summary>
+    private static async Task<string> NewQuestAsync(
+        HttpClient client,
+        string zoneKey,
+        string giver,
+        string? requiredItem)
+    {
+        var key = BuilderClient.UniqueName("q").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/quests/{key}", new
+        {
+            zoneKey,
+            name = "Reachability",
+            giverMobKey = giver,
+            turninMobKey = giver,
+            requiredItemKey = requiredItem,
+        })).EnsureSuccessStatusCode();
+
+        return key;
+    }
+
+    private static async Task<string[]> WarningKindsAsync(HttpClient client, string questKey)
+    {
+        var report = await BuilderClient.JsonAsync(await client.GetAsync(
+            new Uri($"/api/builder/quests/{questKey}/reachability", UriKind.Relative)));
+
+        return [.. report.GetProperty("warnings").EnumerateArray()
+            .Select(w => w.GetProperty("kind").GetString() ?? string.Empty)];
+    }
+
+    [Fact]
+    public async Task Reachability_warns_when_nothing_produces_the_required_item()
+    {
+        // The old check compared a value against the branch it was already inside, so it was
+        // always true and every quest came back clean - a green light on an unfinishable quest.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var mob = BuilderClient.UniqueName("m").ToLowerInvariant();
+        var item = BuilderClient.UniqueName("i").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/mob-templates/{mob}", new { name = "A guard" }))
+            .EnsureSuccessStatusCode();
+        (await client.PostAsJsonAsync($"/api/builder/item-templates/{item}", new { name = "A ledger" }))
+            .EnsureSuccessStatusCode();
+
+        var questKey = await NewQuestAsync(client, zoneKey, mob, item);
+
+        Assert.Contains("unreachable-required-item", await WarningKindsAsync(client, questKey));
+    }
+
+    [Fact]
+    public async Task Reachability_is_satisfied_by_a_loot_table_entry()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var roomKey = await BuilderClient.NewRoomAsync(client, zoneKey, "lair");
+        var mob = BuilderClient.UniqueName("m").ToLowerInvariant();
+        var item = BuilderClient.UniqueName("i").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/item-templates/{item}", new { name = "A ledger" }))
+            .EnsureSuccessStatusCode();
+
+        (await client.PostAsJsonAsync($"/api/builder/mob-templates/{mob}", new
+        {
+            name = "A guard",
+            loot = new[]
+            {
+                new Dictionary<string, object> { ["itemTemplateKey"] = item, ["chance"] = 0.5 },
+            },
+        })).EnsureSuccessStatusCode();
+
+        // The mob must actually be placed, or its loot is unreachable too.
+        (await client.PostAsJsonAsync("/api/builder/spawners", new
+        {
+            zoneKey,
+            templateKey = mob,
+            templateKind = "Mob",
+            roomKeys = new[] { roomKey },
+            targetCount = 1,
+            respawnSeconds = 60,
+        })).EnsureSuccessStatusCode();
+
+        var questKey = await NewQuestAsync(client, zoneKey, mob, item);
+
+        Assert.Empty(await WarningKindsAsync(client, questKey));
+    }
+
+    [Fact]
+    public async Task Reachability_warns_when_the_only_dropper_is_never_spawned()
+    {
+        // Loot on a mob no spawner places is loot nobody can reach - the subtler half of the
+        // same bug, and invisible in the editor.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var mob = BuilderClient.UniqueName("m").ToLowerInvariant();
+        var item = BuilderClient.UniqueName("i").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/item-templates/{item}", new { name = "A ledger" }))
+            .EnsureSuccessStatusCode();
+
+        (await client.PostAsJsonAsync($"/api/builder/mob-templates/{mob}", new
+        {
+            name = "A guard",
+            loot = new[]
+            {
+                new Dictionary<string, object> { ["itemTemplateKey"] = item, ["chance"] = 0.5 },
+            },
+        })).EnsureSuccessStatusCode();
+
+        var questKey = await NewQuestAsync(client, zoneKey, mob, item);
+        var kinds = await WarningKindsAsync(client, questKey);
+
+        Assert.Contains("unspawned-required-item-source", kinds);
+        Assert.Contains("unspawned-giver-mob", kinds);
+    }
+
+    [Fact]
+    public async Task Reachability_warns_when_the_giver_mob_does_not_exist()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var questKey = await NewQuestAsync(client, zoneKey, "no-such-mob", requiredItem: null);
+
+        Assert.Contains("missing-giver-mob", await WarningKindsAsync(client, questKey));
+    }
+
+    // -----------------------------------------------------------------------
+    // Storyline graph
+    // -----------------------------------------------------------------------
+
+    private static async Task<string> NewChainedQuestAsync(
+        HttpClient client,
+        string zoneKey,
+        string[] prerequisites,
+        string? key = null)
+    {
+        key ??= BuilderClient.UniqueName("q").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/quests/{key}", new
+        {
+            zoneKey,
+            name = key,
+            giverMobKey = "kaelen",
+            turninMobKey = "kaelen",
+            prerequisiteQuestKeys = prerequisites,
+        })).EnsureSuccessStatusCode();
+
+        return key;
+    }
+
+    [Fact]
+    public async Task A_cross_zone_prerequisite_is_an_edge_not_an_unreachable_quest()
+    {
+        // Prerequisites are plain keys and chains legitimately cross zones. Resolving them
+        // within one zone dropped the edge and then blamed the dependent quest for it.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (worldKey, firstZone) = await BuilderClient.NewZoneAsync(client);
+        var secondZone = $"{worldKey}.second";
+
+        (await client.PostAsJsonAsync($"/api/builder/zones/{secondZone}", new
+        {
+            worldKey,
+            name = "Second Zone",
+        })).EnsureSuccessStatusCode();
+
+        var opener = await NewChainedQuestAsync(client, firstZone, []);
+        var sequel = await NewChainedQuestAsync(client, secondZone, [opener]);
+
+        var graph = await BuilderClient.JsonAsync(await client.GetAsync(
+            new Uri($"/api/builder/zones/{secondZone}/storyline", UriKind.Relative)));
+
+        Assert.Empty(graph.GetProperty("unreachable").EnumerateArray());
+
+        Assert.Contains(
+            graph.GetProperty("edges").EnumerateArray(),
+            e => e.GetProperty("from").GetString() == opener
+                && e.GetProperty("to").GetString() == sequel);
+
+        // The out-of-zone prerequisite is drawn, flagged so the UI can show it differently.
+        Assert.Contains(
+            graph.GetProperty("nodes").EnumerateArray(),
+            n => n.GetProperty("key").GetString() == opener && n.GetProperty("external").GetBoolean());
+    }
+
+    [Fact]
+    public async Task A_prerequisite_cycle_is_reported_without_dragging_in_healthy_quests()
+    {
+        // The old detector shared state across roots, so once it found one cycle every quest
+        // examined afterwards was reported as cyclic too.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+
+        var left = BuilderClient.UniqueName("q").ToLowerInvariant();
+        var right = BuilderClient.UniqueName("q").ToLowerInvariant();
+
+        await NewChainedQuestAsync(client, zoneKey, [], left);
+        await NewChainedQuestAsync(client, zoneKey, [left], right);
+
+        // Close the loop, and add a quest that has nothing to do with it.
+        (await client.PatchAsJsonAsync($"/api/builder/quests/{left}", new
+        {
+            prerequisiteQuestKeys = new[] { right },
+        })).EnsureSuccessStatusCode();
+
+        var healthy = await NewChainedQuestAsync(client, zoneKey, []);
+
+        var graph = await BuilderClient.JsonAsync(await client.GetAsync(
+            new Uri($"/api/builder/zones/{zoneKey}/storyline", UriKind.Relative)));
+
+        var cycles = graph.GetProperty("cycles").EnumerateArray()
+            .Select(c => c.GetString()).ToList();
+
+        Assert.Contains(left, cycles);
+        Assert.Contains(right, cycles);
+        Assert.DoesNotContain(healthy, cycles);
+    }
+
+    [Fact]
+    public async Task A_prerequisite_naming_no_quest_is_reported_separately()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var orphan = await NewChainedQuestAsync(client, zoneKey, ["nothing.named-this"]);
+
+        var graph = await BuilderClient.JsonAsync(await client.GetAsync(
+            new Uri($"/api/builder/zones/{zoneKey}/storyline", UriKind.Relative)));
+
+        Assert.Contains(
+            graph.GetProperty("missingPrerequisites").EnumerateArray(),
+            m => m.GetProperty("quest").GetString() == orphan
+                && m.GetProperty("missing").GetString() == "nothing.named-this");
+    }
+
+    // -----------------------------------------------------------------------
     // Templates - the round-trip defects (no coverage existed before)
     // -----------------------------------------------------------------------
 

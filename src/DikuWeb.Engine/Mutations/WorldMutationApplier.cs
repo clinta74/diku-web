@@ -1,6 +1,12 @@
+using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
+using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
+using DikuWeb.Engine.Quests;
+using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.World;
 
 namespace DikuWeb.Engine.Mutations;
@@ -21,7 +27,13 @@ namespace DikuWeb.Engine.Mutations;
 /// and map events to anyone standing in an edited one) happen here too, because they must be
 /// ordered with the edit itself.
 /// </remarks>
-public sealed class WorldMutationApplier(WorldState world, PlayerView view, EngineOptions options)
+public sealed class WorldMutationApplier(
+    WorldState world,
+    PlayerView view,
+    EngineOptions options,
+    QuestCache? questCache = null,
+    MobTemplateCache? mobTemplateCache = null,
+    ItemTemplateCache? itemTemplateCache = null)
 {
     private const string UnfinishedTitle = "An Unfinished Room";
 
@@ -710,17 +722,60 @@ public sealed class WorldMutationApplier(WorldState world, PlayerView view, Engi
     // Templates and Spawners (Phase 3)
     // -----------------------------------------------------------------------
 
-    private MutationResult ApplyUpsertMobTemplate(UpsertMobTemplate change) =>
-        MutationResult.Ok([change]);
+    // Templates and quests live in side caches rather than in WorldState, but they are still
+    // in-memory world data, so the applier maintains them exactly as it maintains rooms - on the
+    // loop thread, under the single-writer rule. Without this a builder's save reached the
+    // spawner sweep (which reads repositories) but not shops or quest dialogue (which read these
+    // caches) until the next restart, contradicting the "live immediate" decision in PLAN.md §1.
 
-    private MutationResult ApplyDeleteMobTemplate(DeleteMobTemplate change) =>
-        MutationResult.Ok([change]);
+    private MutationResult ApplyUpsertMobTemplate(UpsertMobTemplate change)
+    {
+        mobTemplateCache?.Put(new MobTemplate
+        {
+            Key = change.Key,
+            Name = change.Name,
+            Description = change.Description,
+            Icon = change.Icon,
+            Level = change.Level,
+            WanderIntervalPulses = change.WanderIntervalPulses,
+            BaseStats = new Dictionary<string, object>(change.BaseStats, StringComparer.Ordinal),
+            BaseXp = change.BaseXp,
+            BaseGold = change.BaseGold,
+            Behavior = new Dictionary<string, object>(change.Behavior, StringComparer.Ordinal),
+            Loot = [.. change.Loot],
+        });
 
-    private MutationResult ApplyUpsertItemTemplate(UpsertItemTemplate change) =>
-        MutationResult.Ok([change]);
+        return MutationResult.Ok([change]);
+    }
 
-    private MutationResult ApplyDeleteItemTemplate(DeleteItemTemplate change) =>
-        MutationResult.Ok([change]);
+    private MutationResult ApplyDeleteMobTemplate(DeleteMobTemplate change)
+    {
+        mobTemplateCache?.Remove(change.Key);
+        return MutationResult.Ok([change]);
+    }
+
+    private MutationResult ApplyUpsertItemTemplate(UpsertItemTemplate change)
+    {
+        itemTemplateCache?.Put(new ItemTemplate
+        {
+            Key = change.Key,
+            Name = change.Name,
+            Description = change.Description,
+            Icon = change.Icon,
+            Slot = change.Slot,
+            Weight = change.Weight,
+            BaseValue = change.BaseValue,
+            BaseStats = new Dictionary<string, object>(change.BaseStats, StringComparer.Ordinal),
+        });
+
+        return MutationResult.Ok([change]);
+    }
+
+    private MutationResult ApplyDeleteItemTemplate(DeleteItemTemplate change)
+    {
+        itemTemplateCache?.Remove(change.Key);
+        return MutationResult.Ok([change]);
+    }
 
     private MutationResult ApplyUpsertSpawner(UpsertSpawner change) =>
         MutationResult.Ok([change]);
@@ -732,9 +787,35 @@ public sealed class WorldMutationApplier(WorldState world, PlayerView view, Engi
     // Quests (Phase 5.2b)
     // -----------------------------------------------------------------------
 
-    private MutationResult ApplyUpsertQuest(UpsertQuest change) =>
-        MutationResult.Ok([change]);
+    private MutationResult ApplyUpsertQuest(UpsertQuest change)
+    {
+        questCache?.Put(new Quest
+        {
+            Key = change.Key,
+            ZoneKey = change.ZoneKey ?? string.Empty,
+            Name = change.Name,
+            Summary = change.Summary,
+            Description = change.Description,
+            GiverMobKey = change.GiverMobKey,
+            TurninMobKey = change.TurninMobKey,
+            RequiredItemKey = change.RequiredItemKey,
+            RequiredCount = change.RequiredCount,
+            RewardXp = change.RewardXp,
+            RewardGold = change.RewardGold,
+            RewardItemKey = change.RewardItemKey,
+            RewardItemCount = change.RewardItemCount,
+            PrerequisiteQuestKeys = [.. change.PrerequisiteQuestKeys],
+            IsRepeatable = change.IsRepeatable,
+            Dialogue = new Dictionary<string, string>(change.Dialogue, StringComparer.Ordinal),
+            SortOrder = change.SortOrder,
+        });
 
-    private MutationResult ApplyDeleteQuest(DeleteQuest change) =>
-        MutationResult.Ok([change]);
+        return MutationResult.Ok([change]);
+    }
+
+    private MutationResult ApplyDeleteQuest(DeleteQuest change)
+    {
+        questCache?.Remove(change.Key);
+        return MutationResult.Ok([change]);
+    }
 }

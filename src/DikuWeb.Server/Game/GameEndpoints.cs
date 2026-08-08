@@ -95,6 +95,16 @@ public static class GameEndpoints
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
+        // Quest progress, for the same reason as items: the loop cannot query a database
+        // (PLAN.md §2.1), so anything it needs has to arrive on the EnterWorld message. Omitting
+        // this is why every login previously started with an empty journal - progress was
+        // written by CharacterQuestSaveQueue and then never read back, so a completed
+        // non-repeatable quest could be turned in again indefinitely.
+        var quests = await db.CharacterQuests
+            .Where(q => q.CharacterId == characterId)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
         var accepted = gateway.TrySubmit(new EnterWorld
         {
             SessionId = session.Id,
@@ -102,6 +112,7 @@ public static class GameEndpoints
             Role = role,
             Output = session.Events.Writer,
             Items = items,
+            Quests = quests,
         });
 
         if (!accepted)

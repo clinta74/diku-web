@@ -38,9 +38,11 @@ public sealed class QuestConfiguration : IEntityTypeConfiguration<Quest>
             .HasColumnName("turnin_mob_key")
             .IsRequired();
 
+        // Deliberately nullable: a quest may be pure dialogue with no fetch objective, which the
+        // domain property (string?) has always allowed. Marking it required here made such a
+        // quest unsaveable.
         builder.Property(q => q.RequiredItemKey)
-            .HasColumnName("required_item_key")
-            .IsRequired();
+            .HasColumnName("required_item_key");
 
         builder.Property(q => q.RequiredCount)
             .HasColumnName("required_count");

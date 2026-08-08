@@ -47,6 +47,66 @@ public sealed class QuestCache
         IsLoaded = true;
     }
 
+    /// <summary>
+    /// Inserts or replaces one quest, keeping the giver and turn-in indexes consistent.
+    /// </summary>
+    /// <remarks>
+    /// Called when a builder saves a quest, so the edit is live without a restart (PLAN.md §1,
+    /// "live immediate"). Removing first is what makes a *changed* giver or turn-in correct: the
+    /// old key's index list must not keep pointing at this quest.
+    /// </remarks>
+    public void Put(Quest quest)
+    {
+        ArgumentNullException.ThrowIfNull(quest);
+
+        Remove(quest.Key);
+
+        _questsByKey[quest.Key] = quest;
+        Index(_questsByGiverMobKey, quest.GiverMobKey, quest);
+        Index(_questsByTurninMobKey, quest.TurninMobKey, quest);
+    }
+
+    /// <summary>Removes one quest and drops it from both indexes.</summary>
+    public void Remove(string key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+
+        if (!_questsByKey.Remove(key, out var existing))
+        {
+            return;
+        }
+
+        Deindex(_questsByGiverMobKey, existing.GiverMobKey, key);
+        Deindex(_questsByTurninMobKey, existing.TurninMobKey, key);
+    }
+
+    private static void Index(Dictionary<string, List<Quest>> index, string mobKey, Quest quest)
+    {
+        if (!index.TryGetValue(mobKey, out var list))
+        {
+            list = [];
+            index[mobKey] = list;
+        }
+
+        list.Add(quest);
+    }
+
+    private static void Deindex(Dictionary<string, List<Quest>> index, string mobKey, string questKey)
+    {
+        if (!index.TryGetValue(mobKey, out var list))
+        {
+            return;
+        }
+
+        list.RemoveAll(q => q.Key == questKey);
+
+        // Drop the empty bucket so a renamed giver does not leave a growing tail of empty lists.
+        if (list.Count == 0)
+        {
+            index.Remove(mobKey);
+        }
+    }
+
     /// <summary>Get a quest by its key.</summary>
     public Quest? Get(string key)
     {

@@ -243,7 +243,7 @@ public sealed class CombatSystem(
             {
                 var critMarker = round.Damage.IsCritical ? " [CRIT]" : "";
                 var damageBreakdown = $"[Debug] Damage: {round.Damage.DamageDealt} (roll: {round.Damage.NaturalRoll}){critMarker}";
-                attackerPlayer.SendText(damageBreakdown, "dim");
+                // attackerPlayer.SendText(damageBreakdown, "dim");
             }
 
             // Add to hate list if target is a mob

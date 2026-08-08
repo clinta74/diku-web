@@ -722,149 +722,300 @@ public static class BuilderEndpoints
             return Results.NotFound();
         }
 
-        var warnings = new List<object>();
+        var mobs = await queries.MobTemplatesAsync(ct);
+        var spawners = await queries.SpawnersAsync(null, ct);
+        var quests = await queries.QuestsAsync(ct);
+        var warnings = new List<ReachabilityWarning>();
 
-        // Check required item reachability
+        var spawnedMobs = spawners
+            .Where(s => s.TemplateKind == TemplateKind.Mob)
+            .Select(s => s.TemplateKey)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // A quest nobody can start or hand in is as broken as one whose item does not drop, and
+        // fails just as quietly - the NPC simply never appears.
+        CheckMob(quest.GiverMobKey, "giver", "offer this quest");
+        CheckMob(quest.TurninMobKey, "turnin", "accept the turn-in");
+
         if (!string.IsNullOrEmpty(quest.RequiredItemKey))
         {
-            // Simplified: just check if template exists; full implementation would walk loot/spawners
-            var reachable = !string.IsNullOrEmpty(quest.RequiredItemKey);
-            if (!reachable)
-            {
-                warnings.Add(new { type = "unreachable-required-item", item = quest.RequiredItemKey });
-            }
+            await CheckItemAsync(quest.RequiredItemKey, "required");
         }
 
-        // Check reward item reachability
         if (!string.IsNullOrEmpty(quest.RewardItemKey))
         {
-            var reachable = !string.IsNullOrEmpty(quest.RewardItemKey);
-            if (!reachable)
+            await CheckItemAsync(quest.RewardItemKey, "reward");
+        }
+
+        return Results.Ok(new QuestReachability(key, warnings));
+
+        void CheckMob(string mobKey, string role, string action)
+        {
+            if (string.IsNullOrEmpty(mobKey))
             {
-                warnings.Add(new { type = "unreachable-reward-item", item = quest.RewardItemKey });
+                return;
+            }
+
+            if (!mobs.Any(m => string.Equals(m.Key, mobKey, StringComparison.OrdinalIgnoreCase)))
+            {
+                warnings.Add(new ReachabilityWarning(
+                    $"missing-{role}-mob",
+                    $"No mob template '{mobKey}', so nothing can {action}.",
+                    MobKey: mobKey));
+                return;
+            }
+
+            if (!spawnedMobs.Contains(mobKey))
+            {
+                warnings.Add(new ReachabilityWarning(
+                    $"unspawned-{role}-mob",
+                    $"'{mobKey}' exists but no spawner places it, so it will never {action}.",
+                    MobKey: mobKey));
             }
         }
 
-        return Results.Ok(new { questKey = key, warnings });
+        // §10: prove the item has at least one source rather than assuming it. An unobtainable
+        // quest item is the classic silent quest bug - the editor reads fine and the player just
+        // wanders - so this walks loot tables, spawners, and other quests' rewards.
+        async Task CheckItemAsync(string itemKey, string role)
+        {
+            if (await queries.ItemTemplateAsync(itemKey, ct) is null)
+            {
+                warnings.Add(new ReachabilityWarning(
+                    $"missing-{role}-item",
+                    $"No item template '{itemKey}'.",
+                    ItemKey: itemKey));
+                return;
+            }
+
+            // A reward is granted directly by the turn-in, so it needs no world source.
+            if (role == "reward")
+            {
+                return;
+            }
+
+            var droppers = mobs
+                .Where(m => DropsItem(m, itemKey))
+                .Select(m => m.Key)
+                .ToList();
+
+            var spawnsIt = spawners.Any(s =>
+                s.TemplateKind == TemplateKind.Item
+                && string.Equals(s.TemplateKey, itemKey, StringComparison.OrdinalIgnoreCase));
+
+            var rewardedBy = quests.Any(q =>
+                !string.Equals(q.Key, key, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(q.RewardItemKey, itemKey, StringComparison.OrdinalIgnoreCase));
+
+            if (droppers.Count == 0 && !spawnsIt && !rewardedBy)
+            {
+                warnings.Add(new ReachabilityWarning(
+                    $"unreachable-{role}-item",
+                    $"Nothing drops, spawns, or rewards '{itemKey}', so the quest cannot be finished.",
+                    ItemKey: itemKey));
+                return;
+            }
+
+            // Loot on a mob no spawner places is loot nobody can reach.
+            if (!spawnsIt && !rewardedBy && droppers.All(m => !spawnedMobs.Contains(m)))
+            {
+                warnings.Add(new ReachabilityWarning(
+                    $"unspawned-{role}-item-source",
+                    $"'{itemKey}' only drops from {string.Join(", ", droppers)}, which no spawner places.",
+                    ItemKey: itemKey));
+            }
+        }
     }
 
     /// <summary>
-    /// Returns the quest graph for a zone: nodes are quests, edges are prerequisites.
-    /// Detects cycles and dead ends.
+    /// Whether a mob's loot table lists an item with a non-zero chance. Mirrors how CombatSystem
+    /// reads the same jsonb: an "itemTemplateKey" and a "chance" per entry.
     /// </summary>
+    private static bool DropsItem(MobTemplateResponse mob, string itemKey)
+    {
+        foreach (var entry in mob.Loot)
+        {
+            if (!entry.TryGetValue("itemTemplateKey", out var keyValue))
+            {
+                continue;
+            }
+
+            if (!string.Equals(keyValue?.ToString(), itemKey, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            // A zero chance is a table entry that can never fire, so it is not a source.
+            if (!entry.TryGetValue("chance", out var chanceValue))
+            {
+                return true;
+            }
+
+            return !double.TryParse(
+                chanceValue?.ToString(),
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var chance) || chance > 0;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// The quest graph for a zone: nodes are quests, edges are prerequisites, plus the two ways
+    /// a chain can be broken - a cycle (§7.4: every quest in it is unstartable) and a quest whose
+    /// prerequisites can never all be met.
+    /// </summary>
+    /// <remarks>
+    /// Resolution spans every zone even though only this zone's quests are drawn. Prerequisites
+    /// are plain keys and chains legitimately cross zones, so scoping the lookup to one zone
+    /// dropped those edges and then reported the dependent quest as unreachable - a warning about
+    /// a chain that was in fact fine.
+    /// </remarks>
     private static async Task<IResult> StorylineGraphAsync(
         string zoneKey,
         BuilderQueries queries,
         CancellationToken ct)
     {
-        var quests = await queries.QuestsByZoneAsync(zoneKey, ct);
+        var all = (await queries.QuestsAsync(ct)).ToDictionary(q => q.Key, StringComparer.Ordinal);
+        var inZone = all.Values
+            .Where(q => string.Equals(q.ZoneKey, zoneKey, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(q => q.SortOrder)
+            .ToList();
 
-        var nodes = quests.Select(q => new { key = q.Key, name = q.Name }).ToList();
-        var edges = new List<object>();
-        var cycles = new List<string>();
-        var deadEnds = new List<string>();
-
-        var questMap = quests.ToDictionary(q => q.Key);
-
-        // Build edges from prerequisites
-        foreach (var quest in quests)
+        // Prerequisites outside the zone are drawn too, marked external, so a cross-zone chain
+        // is visible rather than looking like a quest with no way in.
+        var shown = new HashSet<string>(inZone.Select(q => q.Key), StringComparer.Ordinal);
+        foreach (var quest in inZone)
         {
-            foreach (var prereq in quest.PrerequisiteQuestKeys)
+            foreach (var prereq in quest.PrerequisiteQuestKeys.Where(all.ContainsKey))
             {
-                if (questMap.ContainsKey(prereq))
-                {
-                    edges.Add(new { from = prereq, to = quest.Key });
-                }
+                shown.Add(prereq);
             }
         }
 
-        // Detect cycles (simplified: just mark quests with circular dependencies)
-        var visited = new HashSet<string>();
-        var recursionStack = new HashSet<string>();
-
-        foreach (var quest in quests)
-        {
-            if (HasCycle(quest.Key, questMap, visited, recursionStack))
+        var nodes = shown
+            .Select(k => all[k])
+            .Select(q => new
             {
-                cycles.Add(quest.Key);
-            }
-        }
+                key = q.Key,
+                name = q.Name,
+                zoneKey = q.ZoneKey,
+                external = !string.Equals(q.ZoneKey, zoneKey, StringComparison.OrdinalIgnoreCase),
+            })
+            .ToList();
 
-        // Detect dead ends (quests that nothing unlocks)
-        var reachable = new HashSet<string>();
-        foreach (var quest in quests)
-        {
-            if (quest.PrerequisiteQuestKeys.Count == 0)
-            {
-                reachable.Add(quest.Key);
-            }
-        }
+        var edges = inZone
+            .SelectMany(q => q.PrerequisiteQuestKeys
+                .Where(all.ContainsKey)
+                .Select(p => new { from = p, to = q.Key }))
+            .ToList();
 
-        // Forward pass: mark all reachable quests
-        var changed = true;
-        while (changed)
+        // A prerequisite naming a quest that does not exist can never be satisfied, which is a
+        // different failure from a cycle and worth saying so.
+        var missingPrerequisites = inZone
+            .SelectMany(q => q.PrerequisiteQuestKeys
+                .Where(p => !all.ContainsKey(p))
+                .Select(p => new { quest = q.Key, missing = p }))
+            .ToList();
+
+        var onCycle = FindCycleMembers(all);
+
+        // Reachable = every prerequisite is itself reachable. Runs over the whole graph so an
+        // external prerequisite resolves properly, then reports only this zone's quests.
+        var reachable = new HashSet<string>(
+            all.Values.Where(q => q.PrerequisiteQuestKeys.Count == 0).Select(q => q.Key),
+            StringComparer.Ordinal);
+
+        bool changed;
+        do
         {
             changed = false;
-            foreach (var quest in quests)
+            foreach (var quest in all.Values)
             {
-                if (!reachable.Contains(quest.Key) && quest.PrerequisiteQuestKeys.All(p => reachable.Contains(p)))
+                if (reachable.Contains(quest.Key))
+                {
+                    continue;
+                }
+
+                if (quest.PrerequisiteQuestKeys.All(reachable.Contains))
                 {
                     reachable.Add(quest.Key);
                     changed = true;
                 }
             }
         }
-
-        foreach (var quest in quests)
-        {
-            if (!reachable.Contains(quest.Key))
-            {
-                deadEnds.Add(quest.Key);
-            }
-        }
+        while (changed);
 
         return Results.Ok(new
         {
             zoneKey,
             nodes,
             edges,
-            cycles,
-            deadEnds,
+            cycles = inZone.Where(q => onCycle.Contains(q.Key)).Select(q => q.Key).ToList(),
+            unreachable = inZone.Where(q => !reachable.Contains(q.Key)).Select(q => q.Key).ToList(),
+            missingPrerequisites,
         });
     }
 
-    private static bool HasCycle(
-        string questKey,
-        Dictionary<string, QuestResponse> questMap,
-        HashSet<string> visited,
-        HashSet<string> recursionStack)
+    /// <summary>
+    /// Every quest that sits on a prerequisite cycle, found in one pass.
+    /// </summary>
+    /// <remarks>
+    /// The previous version shared one visited set across restarts while only clearing its
+    /// recursion stack on the non-cycle path, so once any cycle was found the stack stayed dirty
+    /// and later quests were reported as cyclic when they were not. Here the colour map is what
+    /// carries across roots, and the stack is always unwound, so each node is classified once.
+    /// </remarks>
+    private static HashSet<string> FindCycleMembers(Dictionary<string, QuestResponse> all)
     {
-        if (recursionStack.Contains(questKey))
-        {
-            return true;
-        }
+        const int InProgress = 1;
+        const int Done = 2;
 
-        if (visited.Contains(questKey))
-        {
-            return false;
-        }
+        var state = new Dictionary<string, int>(StringComparer.Ordinal);
+        var onCycle = new HashSet<string>(StringComparer.Ordinal);
+        var path = new List<string>();
 
-        visited.Add(questKey);
-        recursionStack.Add(questKey);
-
-        if (questMap.TryGetValue(questKey, out var quest))
+        void Visit(string key)
         {
+            if (!all.TryGetValue(key, out var quest))
+            {
+                return;
+            }
+
+            if (state.TryGetValue(key, out var colour))
+            {
+                if (colour == InProgress)
+                {
+                    // Everything from the earlier visit to the top of the path is in the cycle.
+                    var start = path.LastIndexOf(key);
+                    for (var i = start; i >= 0 && i < path.Count; i++)
+                    {
+                        onCycle.Add(path[i]);
+                    }
+                }
+
+                return;
+            }
+
+            state[key] = InProgress;
+            path.Add(key);
+
             foreach (var prereq in quest.PrerequisiteQuestKeys)
             {
-                if (HasCycle(prereq, questMap, visited, recursionStack))
-                {
-                    return true;
-                }
+                Visit(prereq);
             }
+
+            path.RemoveAt(path.Count - 1);
+            state[key] = Done;
         }
 
-        recursionStack.Remove(questKey);
-        return false;
+        foreach (var key in all.Keys)
+        {
+            Visit(key);
+        }
+
+        return onCycle;
     }
 
     // -----------------------------------------------------------------------
