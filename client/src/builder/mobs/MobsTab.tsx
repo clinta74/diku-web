@@ -35,6 +35,7 @@ export function MobsTab() {
               baseGold: 0,
               loot: [],
               behavior: {},
+              attacks: [],
             })
             await refreshMobTemplates()
             navigate(toMobsPath(key))

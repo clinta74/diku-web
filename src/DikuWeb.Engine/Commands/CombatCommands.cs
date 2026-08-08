@@ -107,6 +107,12 @@ public static class CombatCommands
             combat.AddCombatant(targetId);
             combat.PlayerTargets[character.Id] = targetId;
 
+            // Seed hate so the mob fights back from the moment it is attacked rather than from
+            // the moment it is first hurt. It picks its target by top hater, and with weapons
+            // now swinging on their own clocks a slow opener would otherwise leave it standing
+            // there. This mirrors what MobAiSystem does when a mob starts the fight itself.
+            combat.AddToHateList(targetId, EntityId.ForCharacter(character.Id), 1);
+
             ctx.Reply($"You begin attacking {NarrationHelper.WithArticle(displayName)}!");
             ctx.Broadcast($"{actor.Name} attacks {NarrationHelper.WithArticle(displayName)}!");
             targetMob.CombatState = CombatState.Fighting;
@@ -185,9 +191,28 @@ public static class CombatCommands
         if (combat != null)
         {
             var combatantId = EntityId.ForCharacter(character.Id);
+
+            // RemoveCombatant also purges this character from every mob's hate list. Without
+            // that, a fled player stayed the mob's top hater and kept being hit while reading
+            // that they had escaped.
             combat.RemoveCombatant(combatantId);
             character.CombatState = CombatState.Idle;
             character.CurrentTarget = null;
+
+            // A fight of one is no fight. Leave the mobs idle rather than stuck Fighting, which
+            // would keep them from ever engaging anyone again.
+            if (combat.Combatants.Count < 2)
+            {
+                foreach (var remaining in combat.Combatants.Where(EntityId.IsMob))
+                {
+                    var mob = ctx.World.GetMob(EntityId.ToGuid(remaining));
+                    if (mob != null)
+                    {
+                        mob.CombatState = CombatState.Idle;
+                        mob.CurrentTarget = null;
+                    }
+                }
+            }
 
             ctx.Reply("You manage to escape!");
             ctx.Broadcast($"{ctx.Actor.Name} flees from combat!");

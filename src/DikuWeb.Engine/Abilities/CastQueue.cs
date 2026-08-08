@@ -48,5 +48,27 @@ public sealed class CastQueueService
     public IReadOnlyList<CastJob> GetPendingForCharacter(Guid characterId) =>
         _pending.Where(x => x.CharacterId == characterId).ToList();
 
+    /// <summary>
+    /// Whether this character is mid-cast right now. Combat asks every pulse, so it answers
+    /// without allocating the way <see cref="GetPendingForCharacter"/> does.
+    /// </summary>
+    public bool IsCasting(Guid characterId) =>
+        _pending.Any(x => x.CharacterId == characterId);
+
+    /// <summary>
+    /// Drops every cast this character has in flight and returns them, so the caller can narrate
+    /// what was lost. Used when a blow breaks concentration.
+    /// </summary>
+    public IReadOnlyList<CastJob> CancelFor(Guid characterId)
+    {
+        var cancelled = _pending.Where(x => x.CharacterId == characterId).ToList();
+        _pending.RemoveAll(x => x.CharacterId == characterId);
+        return cancelled;
+    }
+
+    /// <summary>The one wording for a broken cast, shared by every path that can break one.</summary>
+    public static string InterruptedText(string abilityKey) =>
+        $"Your {abilityKey} was interrupted.";
+
     public void Clear() => _pending.Clear();
 }

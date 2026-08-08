@@ -196,7 +196,8 @@
   width: 100%;
 }
 
-.multiplier-set {
+.multiplier-set,
+.attack-list {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.75rem;
@@ -205,7 +206,17 @@
   gap: 0.6rem;
 }
 
-.multiplier-set legend {
+/* Each attack is a row; the remove button sits with the fields rather than below them. */
+.attack-list .field-row {
+  align-items: flex-end;
+}
+
+.attack-list > button {
+  align-self: flex-start;
+}
+
+.multiplier-set legend,
+.attack-list legend {
   padding: 0 0.4rem;
   color: var(--dim);
   font-size: 0.72rem;

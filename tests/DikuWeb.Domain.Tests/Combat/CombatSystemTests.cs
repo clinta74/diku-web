@@ -30,6 +30,7 @@ public sealed class CombatSystemTests
             defender,
             targetCurrentHealth: 50,
             validation,
+            "hit",
             random);
 
         Assert.True(result.Damage.Hit);
@@ -64,6 +65,7 @@ public sealed class CombatSystemTests
             defender,
             targetCurrentHealth: 50,
             validation,
+            "hit",
             random);
 
         Assert.False(result.Damage.Hit);
@@ -97,6 +99,7 @@ public sealed class CombatSystemTests
             defender,
             targetCurrentHealth: 50,
             validation,
+            "hit",
             random);
 
         // This seed should produce a high roll that hits and likely crits.
@@ -132,6 +135,7 @@ public sealed class CombatSystemTests
             defender,
             targetCurrentHealth: 10,
             validation,
+            "hit",
             random);
 
         // With high attack rating and low defense, should hit and deal damage.
@@ -164,6 +168,7 @@ public sealed class CombatSystemTests
             defender,
             targetCurrentHealth: 50,
             validation,
+            "hit",
             random);
 
         // Target has 50 health; even if it hits with low damage and heavy armor, target survives.
@@ -195,6 +200,7 @@ public sealed class CombatSystemTests
             defender,
             targetCurrentHealth: 50,
             validation,
+            "hit",
             random);
 
         Assert.False(result.Damage.Hit);
@@ -228,6 +234,7 @@ public sealed class CombatSystemTests
             defender,
             targetCurrentHealth: 50,
             validation,
+            "hit",
             random);
 
         if (result.Damage.Hit)
@@ -262,6 +269,7 @@ public sealed class CombatSystemTests
             defender,
             targetCurrentHealth: 50,
             validation,
+            "hit",
             random);
 
         // All three narrations should exist and differ.
@@ -303,6 +311,7 @@ public sealed class CombatSystemTests
             defender,
             targetCurrentHealth: 50,
             validation,
+            "hit",
             random);
 
         // Mob can attack player everywhere except peaceful (validation passed).
@@ -336,6 +345,7 @@ public sealed class CombatSystemTests
                 defender,
                 targetCurrentHealth: 50,
                 validation,
+                "hit",
                 random));
 
         Assert.Contains("attackerName", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -367,6 +377,7 @@ public sealed class CombatSystemTests
                 defender,
                 targetCurrentHealth: 50,
                 validation,
+                "hit",
                 random));
 
         Assert.Contains("targetName", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -397,6 +408,7 @@ public sealed class CombatSystemTests
             defender,
             targetCurrentHealth: 30,
             validation,
+            "hit",
             random);
 
         // Verify CombatRound has all expected fields populated.

@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Entities;
@@ -5,6 +6,8 @@ using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Abilities;
+using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.World;
@@ -14,115 +17,181 @@ using DomainCombatSystem = DikuWeb.Domain.Combat.CombatSystem;
 namespace DikuWeb.Engine.Systems;
 
 /// <summary>
-/// Combat tick system: 8 pulses = 2 seconds per round.
-/// Runs attack resolution, damage application, and combat cleanup.
+/// Combat runs every pulse, and every combatant swings on its own clock: a player's from the
+/// weapons they wield, a mob's from each entry in its template's attack list.
 /// </summary>
+/// <remarks>
+/// It ticks every pulse rather than every eighth because that is the finest grain the loop has,
+/// and a shared eight-pulse round cannot express "this dagger is faster than that maul". The work
+/// per pulse is bounded by readiness checks, not by attacks: most pulses nothing is due.
+///
+/// It is synchronous on purpose. The previous version was async and launched fire-and-forget from
+/// the loop, so mob death - awarding XP, spawning loot, removing the mob - ran on a thread-pool
+/// thread while the loop kept mutating the same dictionaries. <see cref="WorldState"/> is
+/// single-writer by contract, so that was a race, not a style choice. Template lookups now come
+/// from the caches the applier keeps live, which removes the last reason to await.
+/// </remarks>
 public sealed class CombatSystem(
     EngineOptions options,
     PlayerView? view = null,
-    IMobTemplateRepository? mobTemplates = null,
-    IItemTemplateRepository? itemTemplates = null,
+    ItemTemplateCache? itemTemplates = null,
+    MobTemplateCache? mobTemplates = null,
     ItemSpawner? itemSpawner = null,
     ILogger<CombatSystem>? logger = null)
 {
-    public const int TickIntervalPulses = 8; // 2 seconds at 250 ms/pulse
+    /// <summary>Combat is evaluated every pulse; per-attack delays do the pacing.</summary>
+    public const int TickIntervalPulses = 1;
 
     /// <summary>
-    /// Process all active combats for one round.
+    /// True when the template caches were supplied. Without them every weapon swings at the
+    /// default speed and every mob narrates "hit" - a balance-shaped bug rather than a crash,
+    /// which is why the DI wiring is asserted in tests rather than trusted.
     /// </summary>
-    public async Task Tick(WorldState world, CancellationToken ct = default)
+    internal bool HasTemplateCaches => itemTemplates is not null && mobTemplates is not null;
+
+    /// <summary>
+    /// Resolve every fight for one pulse: swings that have come due, deaths they caused, and
+    /// fights that are over.
+    /// </summary>
+    public void Tick(WorldState world, long currentPulse)
     {
-        var combatCount = 0;
+        ArgumentNullException.ThrowIfNull(world);
 
-        // Get all rooms with active combats
-        var roomsWithCombat = world.AllCombats.Where(c => c.Combatants.Count > 0).ToList();
+        List<Combat>? active = null;
+        List<RoomKey>? finished = null;
 
-        foreach (var combat in roomsWithCombat)
+        foreach (var combat in world.AllCombats)
         {
-            // Process each combatant's attack
-            var combatantsThisRound = new List<string>(combat.Combatants);
-            foreach (var combatantId in combatantsThisRound)
+            if (combat.Combatants.Count == 0)
             {
-                ResolveAttack(world, combat, combatantId);
+                (finished ??= []).Add(combat.RoomKey);
             }
-
-            // Handle death and remove dead combatants
-            var deadCombatants = new List<string>();
-            foreach (var combatantId in combat.Combatants)
+            else
             {
-                var isDead = false;
-                if (EntityId.IsCharacter(combatantId))
-                {
-                    var charId = EntityId.ToGuid(combatantId);
-                    var character = world.GetCharacter(charId);
-                    if (character?.Vitals.Health <= 0)
-                    {
-                        isDead = true;
-                        HandleCharacterDeath(world, combat, character, combatantId);
-                    }
-                }
-                else if (EntityId.IsMob(combatantId))
-                {
-                    var mobId = EntityId.ToGuid(combatantId);
-                    var mob = world.GetMob(mobId);
-                    if (mob?.Vitals.Health <= 0)
-                    {
-                        isDead = true;
-                        await HandleMobDeath(world, combat, mob, combatantId, ct);
-                    }
-                }
-                if (isDead)
-                {
-                    deadCombatants.Add(combatantId);
-                }
+                (active ??= []).Add(combat);
             }
-
-            foreach (var deadId in deadCombatants)
-            {
-                combat.RemoveCombatant(deadId);
-            }
-
-            // Check if combat should end (only one side left)
-            if (!IsCombatActive(combat))
-            {
-                // End combat for all remaining combatants
-                foreach (var combatantId in combat.Combatants)
-                {
-                    EndCombatFor(world, combatantId);
-                }
-                combat.Combatants.Clear();
-            }
-
-            combatCount += combat.Combatants.Count;
         }
 
-        // Increment round numbers
-        foreach (var combat in roomsWithCombat.Where(c => c.Combatants.Count > 0))
+        if (active is not null)
         {
-            combat.RoundNumber++;
+            // One pass over world items for the whole tick. Readiness is checked per attack per
+            // pulse, and resolving equipment inside that check would mean scanning every item in
+            // the world several times a second per fighter.
+            var equipment = EquipmentInCombat(world, active);
+
+            foreach (var combat in active)
+            {
+                foreach (var combatantId in combat.Combatants.ToList())
+                {
+                    // A death or a departure earlier in this same pulse may already have taken
+                    // this combatant out of the fight.
+                    if (!combat.Combatants.Contains(combatantId))
+                    {
+                        continue;
+                    }
+
+                    combat.MarkEngaged(combatantId, currentPulse);
+                    RunCombatant(world, combat, combatantId, currentPulse, equipment);
+                }
+
+                if (!IsCombatActive(combat))
+                {
+                    foreach (var combatantId in combat.Combatants)
+                    {
+                        EndCombatFor(world, combatantId);
+                    }
+
+                    combat.Combatants.Clear();
+                    (finished ??= []).Add(combat.RoomKey);
+                }
+
+                combat.RoundNumber++;
+            }
+        }
+
+        // Reclaim the empties. Nothing used to, so a room that had ever seen a fight was walked
+        // on every tick for the life of the process.
+        if (finished is not null)
+        {
+            foreach (var roomKey in finished)
+            {
+                world.EndCombat(roomKey);
+            }
         }
     }
 
-    private void ResolveAttack(WorldState world, Combat combat, string attackerId)
+    /// <summary>
+    /// Everything equipped by the characters currently in a fight, keyed by owner.
+    /// </summary>
+    private static Dictionary<Guid, List<ItemInstance>> EquipmentInCombat(
+        WorldState world,
+        List<Combat> active)
     {
-        // Determine target
-        string? targetId = null;
+        var owners = new HashSet<Guid>();
 
-        if (EntityId.IsCharacter(attackerId))
+        foreach (var combat in active)
         {
-            // Player: use their chosen target
-            var charId = EntityId.ToGuid(attackerId);
-            if (combat.PlayerTargets.TryGetValue(charId, out var target))
+            foreach (var combatantId in combat.Combatants)
             {
-                targetId = target;
+                if (EntityId.IsCharacter(combatantId))
+                {
+                    owners.Add(EntityId.ToGuid(combatantId));
+                }
             }
         }
-        else if (EntityId.IsMob(attackerId))
+
+        var equipment = new Dictionary<Guid, List<ItemInstance>>();
+
+        if (owners.Count == 0)
         {
-            // Mob: use top hater
-            targetId = combat.GetTopHater(attackerId);
+            return equipment;
         }
 
+        foreach (var item in world.AllItems)
+        {
+            if (item.EquippedSlot is null ||
+                item.OwnerCharacterId is not { } owner ||
+                !owners.Contains(owner))
+            {
+                continue;
+            }
+
+            if (!equipment.TryGetValue(owner, out var held))
+            {
+                held = [];
+                equipment[owner] = held;
+            }
+
+            held.Add(item);
+        }
+
+        return equipment;
+    }
+
+    /// <summary>Runs whichever of one combatant's attacks have come due this pulse.</summary>
+    private void RunCombatant(
+        WorldState world,
+        Combat combat,
+        string attackerId,
+        long currentPulse,
+        Dictionary<Guid, List<ItemInstance>> equipment)
+    {
+        // The dead do not swing. Deaths are resolved the instant the blow lands, so by the time
+        // a killed combatant would have acted it is already out of the fight - this is the
+        // second line of defence, not the first.
+        if (!IsAlive(world, attackerId))
+        {
+            return;
+        }
+
+        // A character committed to a spell is not also swinging a sword.
+        if (EntityId.IsCharacter(attackerId) &&
+            world.CastQueue.IsCasting(EntityId.ToGuid(attackerId)))
+        {
+            return;
+        }
+
+        var targetId = ResolveTargetOf(combat, attackerId);
         if (string.IsNullOrEmpty(targetId) || targetId == attackerId)
         {
             return;
@@ -138,148 +207,362 @@ public sealed class CombatSystem(
             return;
         }
 
-        // Resolve attacker and target names/types for narration and validation
-        var (attackerType, attackerName, attackerActo) = ResolveCombatantInfo(world, attackerId);
+        var (attackerType, attackerName, attackerActor) = ResolveCombatantInfo(world, attackerId);
         var (targetType, targetName, targetActor) = ResolveCombatantInfo(world, targetId);
-        if (attackerType == null || targetType == null)
+        if (attackerType is null || targetType is null)
         {
             return;
         }
 
-        // Check target validity (peaceful, pvp, etc.)
+        // Whether the fight is allowed at all is re-checked every tick, so clearing `pvp` on a
+        // room ends a duel already under way (PLAN.md §4.11).
         var peaceful = world.IsFlagSet(combat.RoomKey, RoomFlags.Peaceful);
         var pvp = world.IsFlagSet(combat.RoomKey, RoomFlags.Pvp);
-        var validation = TargetValidator.ValidateTarget(attackerType.Value, targetType.Value, targetName, peaceful, pvp);
+        var validation = TargetValidator.ValidateTarget(
+            attackerType.Value, targetType.Value, targetName, peaceful, pvp);
 
         if (!validation.IsAllowed)
         {
-            // Refusal: send to attacker if player, end their engagement
-            if (attackerActo is PlayerActor attackerPlayer)
+            if (attackerActor is PlayerActor refusedPlayer)
             {
-                attackerPlayer.SendText(validation.RefusalReason ?? "The attack is not allowed.", "bad");
+                refusedPlayer.SendText(validation.RefusalReason ?? "The attack is not allowed.", "bad");
             }
+
             combat.RemoveCombatant(attackerId);
-            if (EntityId.IsCharacter(attackerId))
+
+            if (EntityId.IsCharacter(attackerId) &&
+                world.GetCharacter(EntityId.ToGuid(attackerId)) is { } refused)
             {
-                var charId = EntityId.ToGuid(attackerId);
-                var character = world.GetCharacter(charId);
-                if (character != null)
-                {
-                    character.CombatState = CombatState.Idle;
-                    character.CurrentTarget = null;
-                }
+                refused.CombatState = CombatState.Idle;
+                refused.CurrentTarget = null;
             }
+
             return;
         }
 
-        // Get combatants' stats
-        var (attacker, defender) = GetCombatantPair(world, attackerId, targetId);
-        if (attacker == null || defender == null)
-        {
-            return;
-        }
-
-        // Use Domain combat system to execute the round (includes narration)
-        var targetHealth = EntityId.IsCharacter(targetId)
-            ? world.GetCharacter(EntityId.ToGuid(targetId))?.Vitals.Health ?? 0
-            : world.GetMob(EntityId.ToGuid(targetId))?.Vitals.Health ?? 0;
-
-        var round = DomainCombatSystem.ExecuteRound(
+        var strike = new StrikeContext(
+            combat,
+            attackerId,
+            targetId,
             attackerType.Value,
             attackerName,
-            attacker,
+            attackerActor,
             targetType.Value,
             targetName,
-            defender,
-            targetHealth,
+            targetActor,
             validation,
-            world.Random);
+            currentPulse);
 
-        // Send narration
-        if (attackerActo is PlayerActor player)
+        if (EntityId.IsCharacter(attackerId))
         {
-            player.SendText(round.AttackerNarration, "combat");
+            RunHandAttacks(world, strike, equipment);
+        }
+        else
+        {
+            RunMobAttacks(world, strike);
+        }
+    }
+
+    /// <summary>
+    /// Swings the main hand, then the off hand. Order matters: without ambidexterity the off
+    /// hand is gated on the main hand having swung, and it reads the stamp the main hand just
+    /// wrote, which is what makes the pair land together.
+    /// </summary>
+    private void RunHandAttacks(
+        WorldState world,
+        StrikeContext strike,
+        Dictionary<Guid, List<ItemInstance>> equipment)
+    {
+        var character = world.GetCharacter(EntityId.ToGuid(strike.AttackerId));
+        if (character is null)
+        {
+            return;
         }
 
-        if (targetActor is PlayerActor targetPlayer)
-        {
-            targetPlayer.SendText(round.TargetNarration, "combat");
-        }
+        var held = equipment.TryGetValue(character.Id, out var equipped)
+            ? equipped
+            : (IReadOnlyList<ItemInstance>)[];
 
-        foreach (var occupant in world.OccupantsOf(combat.RoomKey))
+        var combat = strike.Combat;
+        var pulse = strike.Pulse;
+
+        var main = WeaponResolver.ForHand(
+            InSlot(held, ItemSlot.MainHand), LookupWeapon, isMainHand: true);
+
+        if (main.CanSwing && IsDue(combat, strike.AttackerId, AttackSlot.MainHand, pulse, main.DelayPulses))
         {
-            if (occupant.CharacterId != (attackerActo as PlayerActor)?.CharacterId &&
-                occupant.CharacterId != (targetActor as PlayerActor)?.CharacterId)
+            var stats = EquipmentResolver.ResolveAttackerStatsForHand(
+                character.Level, character.Attributes.MightModifier, held, ItemSlot.MainHand);
+
+            if (Strike(world, strike, AttackSlot.MainHand, stats, main.Verb))
             {
-                occupant.SendText(round.RoomNarration, "combat");
+                return;
             }
         }
 
-        // Apply damage if hit
-        if (round.Damage.Hit)
+        var offHandItem = InSlot(held, ItemSlot.OffHand);
+        var off = WeaponResolver.ForHand(offHandItem, LookupWeapon, isMainHand: false);
+
+        if (!off.CanSwing || !CanStrikeWithOffHand(character))
         {
-            // Apply buff/debuff damage multipliers
-            var damageDealt = round.Damage.DamageDealt;
+            return;
+        }
 
-            // Get attacker's outgoing damage multiplier
-            var attackerIdGuid = EntityId.ToGuid(attackerId);
-            var attackerEffects = world.GetActiveEffects(attackerIdGuid);
-            var outgoingMultiplier = CalculateMultiplier(attackerEffects, e => e.OutgoingDamageMultiplier);
+        var lastOff = combat.LastSwing(strike.AttackerId, AttackSlot.OffHand);
+        var basis = lastOff ?? combat.EngagedAt(strike.AttackerId);
 
-            // Get target's incoming damage multiplier
-            var targetIdGuid = EntityId.ToGuid(targetId);
-            var targetEffects = world.GetActiveEffects(targetIdGuid);
-            var incomingMultiplier = CalculateMultiplier(targetEffects, e => e.IncomingDamageMultiplier);
+        if (pulse - basis < off.DelayPulses)
+        {
+            return;
+        }
 
-            // Apply both multipliers
-            var totalMultiplier = outgoingMultiplier * incomingMultiplier;
-            damageDealt = (int)Math.Round(damageDealt * totalMultiplier, MidpointRounding.AwayFromZero);
-            damageDealt = Math.Max(0, damageDealt);
-
-            ApplyDamage(world, targetId, damageDealt);
-
-            // Send damage calculation breakdown to attacker (for debugging)
-            if (attackerActo is PlayerActor attackerPlayer)
+        // Ambidexterity is what frees the off hand from the main hand's rhythm. Untrained, it
+        // may only follow a main-hand blow, so the two land together at the main hand's cadence.
+        if (!AbilityProgression.KnowsPassive(character.Path, character.Level, PassiveKeys.Ambidextrous))
+        {
+            var lastMain = combat.LastSwing(strike.AttackerId, AttackSlot.MainHand);
+            if (lastMain is not { } mainSwing || (lastOff is { } offSwing && mainSwing <= offSwing))
             {
-                var critMarker = round.Damage.IsCritical ? " [CRIT]" : "";
-                var damageBreakdown = $"[Debug] Damage: {round.Damage.DamageDealt} (roll: {round.Damage.NaturalRoll}){critMarker}";
-                // attackerPlayer.SendText(damageBreakdown, "dim");
+                return;
+            }
+        }
+
+        var offStats = EquipmentResolver.ResolveAttackerStatsForHand(
+            character.Level, character.Attributes.MightModifier, held, ItemSlot.OffHand);
+
+        Strike(world, strike, AttackSlot.OffHand, offStats, off.Verb);
+    }
+
+    /// <summary>Every entry in the mob's attack list runs its own clock, coupled to nothing.</summary>
+    private void RunMobAttacks(WorldState world, StrikeContext strike)
+    {
+        var mob = world.GetMob(EntityId.ToGuid(strike.AttackerId));
+        if (mob is null)
+        {
+            return;
+        }
+
+        var attacks = MobAttackResolver.Resolve(mobTemplates?.Get(mob.TemplateKey));
+        var baseStats = DamageCalculator.StatsFrom(mob);
+
+        for (var index = 0; index < attacks.Count; index++)
+        {
+            var attack = attacks[index];
+            var slot = AttackSlot.Mob(index);
+
+            if (!IsDue(strike.Combat, strike.AttackerId, slot, strike.Pulse, attack.DelayPulses))
+            {
+                continue;
             }
 
-            // Add to hate list if target is a mob
-            if (EntityId.IsMob(targetId))
+            if (Strike(world, strike, slot, Scale(baseStats, attack.DamageMultiplier), attack.Verb))
             {
-                combat.AddToHateList(targetId, attackerId, round.Damage.DamageDealt);
+                return;
             }
         }
     }
 
     /// <summary>
-    /// Resolves a combatant's type, name, and actor reference for display and narration.
+    /// Resolves one swing: narration, damage, hate, and the target's death if it caused one.
     /// </summary>
-    private RoomKey? GetCombatantRoom(WorldState world, string entityId)
+    /// <returns>True when the fight is over for this attacker - the target died or left.</returns>
+    private bool Strike(
+        WorldState world,
+        StrikeContext strike,
+        AttackSlot slot,
+        AttackerStats attackerStats,
+        string verb)
     {
-        if (EntityId.IsCharacter(entityId))
+        if (!IsAlive(world, strike.TargetId))
         {
-            var charId = EntityId.ToGuid(entityId);
-            var character = world.GetCharacter(charId);
-            return character?.RoomKey;
+            return true;
         }
-        else if (EntityId.IsMob(entityId))
+
+        var defenderStats = ResolveDefenderStats(world, strike.TargetId);
+        if (defenderStats is null)
         {
-            var mobId = EntityId.ToGuid(entityId);
-            var mob = world.GetMob(mobId);
-            return mob != null ? RoomKey.Parse(mob.RoomKey) : null;
+            return true;
         }
+
+        strike.Combat.RecordSwing(strike.AttackerId, slot, strike.Pulse);
+
+        var targetHealth = HealthOf(world, strike.TargetId) ?? 0;
+
+        var round = DomainCombatSystem.ExecuteRound(
+            strike.AttackerType,
+            strike.AttackerName,
+            attackerStats,
+            strike.TargetType,
+            strike.TargetName,
+            defenderStats,
+            targetHealth,
+            strike.Validation,
+            verb,
+            world.Random);
+
+        if (strike.AttackerActor is PlayerActor attackerPlayer)
+        {
+            attackerPlayer.SendText(round.AttackerNarration, "combat");
+        }
+
+        if (strike.TargetActor is PlayerActor targetPlayer)
+        {
+            targetPlayer.SendText(round.TargetNarration, "combat");
+        }
+
+        foreach (var occupant in world.OccupantsOf(strike.Combat.RoomKey))
+        {
+            if (occupant.CharacterId != (strike.AttackerActor as PlayerActor)?.CharacterId &&
+                occupant.CharacterId != (strike.TargetActor as PlayerActor)?.CharacterId)
+            {
+                occupant.SendText(round.RoomNarration, "combat");
+            }
+        }
+
+        if (!round.Damage.Hit)
+        {
+            return false;
+        }
+
+        // Buff and debuff multipliers apply after the roll, so a shout of fury and a curse of
+        // weakness compose rather than one overwriting the other.
+        var attackerEffects = world.GetActiveEffects(EntityId.ToGuid(strike.AttackerId));
+        var targetEffects = world.GetActiveEffects(EntityId.ToGuid(strike.TargetId));
+        var totalMultiplier =
+            CalculateMultiplier(attackerEffects, e => e.OutgoingDamageMultiplier) *
+            CalculateMultiplier(targetEffects, e => e.IncomingDamageMultiplier);
+
+        var damageDealt = Math.Max(
+            0,
+            (int)Math.Round(round.Damage.DamageDealt * totalMultiplier, MidpointRounding.AwayFromZero));
+
+        ApplyDamage(world, strike.TargetId, damageDealt);
+
+        if (EntityId.IsMob(strike.TargetId))
+        {
+            strike.Combat.AddToHateList(strike.TargetId, strike.AttackerId, round.Damage.DamageDealt);
+        }
+
+        if (HealthOf(world, strike.TargetId) > 0)
+        {
+            return false;
+        }
+
+        // The blow that kills ends the exchange here and now. Sweeping for deaths after every
+        // combatant had acted is what let a mob killed by the player's swing hit back before
+        // falling.
+        HandleDeath(world, strike.Combat, strike.TargetId);
+        return true;
+    }
+
+    /// <summary>Whether this attack's delay has elapsed since it last swung, or since engaging.</summary>
+    private static bool IsDue(Combat combat, string attackerId, AttackSlot slot, long pulse, int delayPulses) =>
+        pulse - (combat.LastSwing(attackerId, slot) ?? combat.EngagedAt(attackerId)) >= delayPulses;
+
+    /// <summary>
+    /// Whether this character has been taught to fight with a second weapon. Untrained, an
+    /// off-hand weapon is carried, not swung - so an Adept may hold a blade there and it simply
+    /// never strikes.
+    /// </summary>
+    private static bool CanStrikeWithOffHand(Character character) =>
+        AbilityProgression.KnowsPassive(character.Path, character.Level, PassiveKeys.DualWield);
+
+    private static ItemInstance? InSlot(IReadOnlyList<ItemInstance> held, ItemSlot slot)
+    {
+        foreach (var item in held)
+        {
+            if (item.EquippedSlot == slot)
+            {
+                return item;
+            }
+        }
+
         return null;
     }
 
-    private (CombatantType?, string, object?) ResolveCombatantInfo(WorldState world, string entityId)
+    /// <summary>
+    /// Speed and verb come from the template, read fresh on every readiness check, so a builder
+    /// retuning a weapon changes a fight already under way - and so does swapping weapons.
+    /// </summary>
+    private (int? DelayPulses, string? Verb) LookupWeapon(string templateKey)
+    {
+        var template = itemTemplates?.Get(templateKey);
+        return (template?.AttackDelayPulses, template?.AttackVerb);
+    }
+
+    /// <summary>
+    /// Scales an attack's dice against the mob's own damage. A multiplier rather than its own
+    /// dice keeps zone and world multipliers in play, so a hard bite stays hard relative to
+    /// wherever the mob spawned.
+    /// </summary>
+    private static AttackerStats Scale(AttackerStats stats, decimal? multiplier)
+    {
+        if (multiplier is not { } scale || scale <= 0m || scale == 1m)
+        {
+            return stats;
+        }
+
+        // Ceiling, so a multiplier can never round a die face down to nothing.
+        return stats with
+        {
+            MinDamage = (int)Math.Ceiling(stats.MinDamage * scale),
+            MaxDamage = (int)Math.Ceiling(Math.Max(stats.MinDamage, stats.MaxDamage) * scale),
+        };
+    }
+
+    private static string? ResolveTargetOf(Combat combat, string attackerId)
+    {
+        if (EntityId.IsCharacter(attackerId))
+        {
+            // Player: use their chosen target
+            return combat.PlayerTargets.TryGetValue(EntityId.ToGuid(attackerId), out var target)
+                ? target
+                : null;
+        }
+
+        // Mob: use top hater
+        return EntityId.IsMob(attackerId) ? combat.GetTopHater(attackerId) : null;
+    }
+
+    private static bool IsAlive(WorldState world, string entityId) =>
+        HealthOf(world, entityId) is > 0;
+
+    private static int? HealthOf(WorldState world, string entityId)
     {
         if (EntityId.IsCharacter(entityId))
         {
-            var charId = EntityId.ToGuid(entityId);
-            var actor = world.FindByCharacter(charId);
+            return world.GetCharacter(EntityId.ToGuid(entityId))?.Vitals.Health;
+        }
+
+        return EntityId.IsMob(entityId)
+            ? world.GetMob(EntityId.ToGuid(entityId))?.Vitals.Health
+            : null;
+    }
+
+    private static RoomKey? GetCombatantRoom(WorldState world, string entityId)
+    {
+        if (EntityId.IsCharacter(entityId))
+        {
+            return world.GetCharacter(EntityId.ToGuid(entityId))?.RoomKey;
+        }
+
+        if (EntityId.IsMob(entityId))
+        {
+            var mob = world.GetMob(EntityId.ToGuid(entityId));
+            return mob != null ? RoomKey.Parse(mob.RoomKey) : null;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Resolves a combatant's type, name, and actor reference for display and narration.
+    /// </summary>
+    private static (CombatantType?, string, object?) ResolveCombatantInfo(WorldState world, string entityId)
+    {
+        if (EntityId.IsCharacter(entityId))
+        {
+            var actor = world.FindByCharacter(EntityId.ToGuid(entityId));
             if (actor != null)
             {
                 return (CombatantType.Player, actor.Name, actor);
@@ -287,92 +570,43 @@ public sealed class CombatSystem(
         }
         else if (EntityId.IsMob(entityId))
         {
-            var mobId = EntityId.ToGuid(entityId);
-            var mob = world.FindMob(mobId);
+            var mob = world.FindMob(EntityId.ToGuid(entityId));
             if (mob != null)
             {
-                var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
-                return (CombatantType.Mob, displayName, mob);
+                return (CombatantType.Mob, DisplayNameOf(mob), mob);
             }
         }
+
         return (null, "", null);
     }
 
-    private (AttackerStats?, DefenderStats?) GetCombatantPair(
-        WorldState world,
-        string attackerId,
-        string targetId)
+    private static string DisplayNameOf(Mob mob) =>
+        string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+
+    private static DefenderStats? ResolveDefenderStats(WorldState world, string targetId)
     {
-        AttackerStats? attacker = null;
-        DefenderStats? defender = null;
-
-        // Resolve attacker
-        if (EntityId.IsCharacter(attackerId))
-        {
-            var charId = EntityId.ToGuid(attackerId);
-            var character = world.GetCharacter(charId);
-            if (character != null)
-            {
-                attacker = ResolveCharacterAttacker(world, character);
-            }
-        }
-        else if (EntityId.IsMob(attackerId))
-        {
-            var mobId = EntityId.ToGuid(attackerId);
-            var mob = world.GetMob(mobId);
-            if (mob != null)
-            {
-                attacker = DamageCalculator.StatsFrom(mob);
-            }
-        }
-
-        // Resolve defender
         if (EntityId.IsCharacter(targetId))
         {
-            var charId = EntityId.ToGuid(targetId);
-            var character = world.GetCharacter(charId);
-            if (character != null)
-            {
-                defender = ResolveCharacterDefender(world, character);
-            }
-        }
-        else if (EntityId.IsMob(targetId))
-        {
-            var mobId = EntityId.ToGuid(targetId);
-            var mob = world.GetMob(mobId);
-            if (mob != null)
-            {
-                defender = DamageCalculator.DefenderStatsFrom(mob);
-            }
+            var character = world.GetCharacter(EntityId.ToGuid(targetId));
+            return character is null
+                ? null
+                : EquipmentResolver.ResolveDefenderStats(
+                    character.Attributes.AgilityModifier,
+                    [.. world.InventoryOf(character.Id).Where(i => i.EquippedSlot is not null)]);
         }
 
-        return (attacker, defender);
+        if (EntityId.IsMob(targetId))
+        {
+            var mob = world.GetMob(EntityId.ToGuid(targetId));
+            return mob is null ? null : DamageCalculator.DefenderStatsFrom(mob);
+        }
+
+        return null;
     }
 
-    /// <summary>
-    /// Builds a player's attack stats from what they are actually wearing.
-    /// </summary>
-    /// <remarks>
-    /// This is the seam that was missing. Combat used DamageCalculator.StatsFrom, which takes
-    /// only the character and hardcodes 1-4 dice, so every weapon in the game was decorative -
-    /// EquipmentResolver existed and was well covered by unit tests, but nothing on the combat
-    /// path had ever called it, which is why a green suite never noticed.
-    /// </remarks>
-    private static AttackerStats ResolveCharacterAttacker(WorldState world, Character character) =>
-        EquipmentResolver.ResolveAttackerStats(
-            character.Level,
-            character.Attributes.MightModifier,
-            EquippedOf(world, character));
-
-    private static DefenderStats ResolveCharacterDefender(WorldState world, Character character) =>
-        EquipmentResolver.ResolveDefenderStats(
-            character.Attributes.AgilityModifier,
-            EquippedOf(world, character));
-
-    private static List<ItemInstance> EquippedOf(WorldState world, Character character) =>
-        [.. world.InventoryOf(character.Id).Where(i => i.EquippedSlot is not null)];
-
-    private decimal CalculateMultiplier(IReadOnlyList<DikuWeb.Domain.Abilities.Effects.ActiveEffect> effects, Func<DikuWeb.Domain.Abilities.Effects.ActiveEffect, decimal> selector)
+    private static decimal CalculateMultiplier(
+        IReadOnlyList<DikuWeb.Domain.Abilities.Effects.ActiveEffect> effects,
+        Func<DikuWeb.Domain.Abilities.Effects.ActiveEffect, decimal> selector)
     {
         var multiplier = 1.0m;
 
@@ -400,12 +634,16 @@ public sealed class CombatSystem(
             if (character != null)
             {
                 character.Vitals.Health = Math.Max(0, character.Vitals.Health - damage);
+
+                if (damage > 0)
+                {
+                    BreakConcentration(world, charId);
+                }
             }
         }
         else if (EntityId.IsMob(targetId))
         {
-            var mobId = EntityId.ToGuid(targetId);
-            var mob = world.GetMob(mobId);
+            var mob = world.GetMob(EntityId.ToGuid(targetId));
             if (mob != null)
             {
                 mob.Vitals.Health = Math.Max(0, mob.Vitals.Health - damage);
@@ -413,10 +651,59 @@ public sealed class CombatSystem(
         }
     }
 
-    private bool IsCombatActive(Combat combat)
+    /// <summary>
+    /// A blow breaks a cast. This is the only thing that interrupts a spell in a fight now -
+    /// merely being in combat no longer does, or nobody could cast in one.
+    /// </summary>
+    private void BreakConcentration(WorldState world, Guid characterId)
     {
+        var cancelled = world.CastQueue.CancelFor(characterId);
+        if (cancelled.Count == 0)
+        {
+            return;
+        }
+
+        var actor = world.FindByCharacter(characterId);
+        if (actor is null)
+        {
+            return;
+        }
+
+        foreach (var cast in cancelled)
+        {
+            actor.SendText(CastQueueService.InterruptedText(cast.AbilityKey), "ability");
+            if (logger != null)
+            {
+                EngineLog.AbilityCastInterrupted(logger, actor.Name, cast.AbilityKey);
+            }
+        }
+    }
+
+    private static bool IsCombatActive(Combat combat) =>
         // Combat is active if there are at least 2 combatants (allows PvP and PvE)
-        return combat.Combatants.Count >= 2;
+        combat.Combatants.Count >= 2;
+
+    private void HandleDeath(WorldState world, Combat combat, string entityId)
+    {
+        if (EntityId.IsCharacter(entityId))
+        {
+            var character = world.GetCharacter(EntityId.ToGuid(entityId));
+            if (character != null)
+            {
+                HandleCharacterDeath(world, combat, character, entityId);
+            }
+        }
+        else if (EntityId.IsMob(entityId))
+        {
+            var mob = world.GetMob(EntityId.ToGuid(entityId));
+            if (mob != null)
+            {
+                HandleMobDeath(world, combat, mob, entityId);
+            }
+        }
+
+        // After the handler, which still needs the hate list to name a killer.
+        combat.RemoveCombatant(entityId);
     }
 
     private void HandleCharacterDeath(WorldState world, Combat combat, Character character, string combatantId)
@@ -464,10 +751,10 @@ public sealed class CombatSystem(
         // Apply XP loss (PLAN.md §4.12)
         if (character.Level >= options.XpLossMinLevel && (!isPvpDeath || options.PvpCostsXp))
         {
-            var xpBand = DikuWeb.Domain.Characters.XpProgression.XpForLevel(character.Level + 1) -
-                         DikuWeb.Domain.Characters.XpProgression.XpForLevel(character.Level);
+            var xpBand = XpProgression.XpForLevel(character.Level + 1) -
+                         XpProgression.XpForLevel(character.Level);
             var xpLoss = (long)Math.Round(xpBand * options.XpLossPercent);
-            var levelThreshold = DikuWeb.Domain.Characters.XpProgression.XpForLevel(character.Level);
+            var levelThreshold = XpProgression.XpForLevel(character.Level);
             character.Xp = Math.Max(levelThreshold, character.Xp - xpLoss);
         }
 
@@ -505,29 +792,25 @@ public sealed class CombatSystem(
         }
     }
 
-    private async Task HandleMobDeath(WorldState world, Combat combat, Mob mob, string combatantId, CancellationToken ct = default)
+    private void HandleMobDeath(WorldState world, Combat combat, Mob mob, string combatantId)
     {
         // Find the top damager (killer)
         var killerId = combat.GetTopHater(combatantId);
-        if (killerId == null)
-        {
-            return;
-        }
 
         // Extract killer's character if it's a player
         Character? killerChar = null;
-        if (EntityId.IsCharacter(killerId))
+        if (killerId != null && EntityId.IsCharacter(killerId))
         {
-            var killCharId = EntityId.ToGuid(killerId);
-            killerChar = world.GetCharacter(killCharId);
+            killerChar = world.GetCharacter(EntityId.ToGuid(killerId));
         }
 
         // Award XP to killer
         if (killerChar != null)
         {
             killerChar.Xp += mob.ResolvedXp;
+
             // Level up loop
-            while (DikuWeb.Domain.Characters.CharacterProgression.TryLevelUp(
+            while (CharacterProgression.TryLevelUp(
                 killerChar.Level, killerChar.Xp, killerChar.Attributes, killerChar.Path, killerChar.Vitals) is var result && result != null)
             {
                 killerChar.Level = result.NewLevel;
@@ -542,75 +825,13 @@ public sealed class CombatSystem(
 
             // Award gold
             killerChar.Gold += mob.ResolvedGold;
-
-            // Log PvP kill if killer is a player and target was a player (handled in HandleCharacterDeath)
         }
 
-        // Roll loot from mob's template
-        if (mobTemplates != null && itemTemplates != null && itemSpawner != null)
-        {
-            var roomKey = RoomKey.Parse(mob.RoomKey);
-            var room = world.FindRoom(roomKey);
-            if (room != null)
-            {
-                var zone = world.FindZone(room.ZoneKey);
-                if (zone != null)
-                {
-                    var worldEntity = world.FindWorld(zone.WorldKey);
-                    if (worldEntity != null)
-                    {
-                        var template = await mobTemplates.GetByKeyAsync(mob.TemplateKey, ct);
-                        if (template?.Loot != null)
-                        {
-                            foreach (var lootEntry in template.Loot)
-                            {
-                                // Extract itemTemplateKey and chance from the dict
-                                if (!lootEntry.TryGetValue("itemTemplateKey", out var itemKeyObj))
-                                {
-                                    continue;
-                                }
-
-                                var itemKey = itemKeyObj?.ToString();
-                                if (string.IsNullOrEmpty(itemKey))
-                                {
-                                    continue;
-                                }
-
-                                if (!lootEntry.TryGetValue("chance", out var chanceObj))
-                                {
-                                    continue;
-                                }
-
-                                double chance = chanceObj switch
-                                {
-                                    double d => d,
-                                    float f => f,
-                                    int i => i,
-                                    decimal dec => (double)dec,
-                                    _ => 0
-                                };
-
-                                // Roll against chance
-                                if (world.Random.NextDouble() < chance)
-                                {
-                                    var itemTemplate = await itemTemplates.GetByKeyAsync(itemKey, ct);
-                                    if (itemTemplate != null)
-                                    {
-                                        var item = itemSpawner.Spawn(itemTemplate, zone, worldEntity, roomKey);
-                                        world.AddItem(item);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        var mobRoomKey = RoomKey.Parse(mob.RoomKey);
+        RollLoot(world, mob, mobRoomKey);
 
         // Narrate mob death to the room
-        var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
-        var deathProse = NarrationHelper.BuildSentence(displayName, "falls.");
-        var mobRoomKey = RoomKey.Parse(mob.RoomKey);
+        var deathProse = NarrationHelper.BuildSentence(DisplayNameOf(mob), "falls.");
         foreach (var occupant in world.OccupantsOf(mobRoomKey))
         {
             occupant.SendText(deathProse, "death");
@@ -623,12 +844,76 @@ public sealed class CombatSystem(
         view?.RefreshRoom(world, mobRoomKey);
     }
 
-    private void EndCombatFor(WorldState world, string combatantId)
+    /// <summary>
+    /// Rolls the dead mob's loot table onto the floor. Reads the template caches rather than the
+    /// repositories, which is what lets this run on the loop thread - and means a builder's edit
+    /// to a loot table takes effect without a restart.
+    /// </summary>
+    private void RollLoot(WorldState world, Mob mob, RoomKey roomKey)
+    {
+        if (mobTemplates is null || itemTemplates is null || itemSpawner is null)
+        {
+            return;
+        }
+
+        if (world.FindRoom(roomKey) is not { } room ||
+            world.FindZone(room.ZoneKey) is not { } zone ||
+            world.FindWorld(zone.WorldKey) is not { } worldEntity)
+        {
+            return;
+        }
+
+        if (mobTemplates.Get(mob.TemplateKey)?.Loot is not { } loot)
+        {
+            return;
+        }
+
+        foreach (var lootEntry in loot)
+        {
+            if (!lootEntry.TryGetValue("itemTemplateKey", out var itemKeyObj))
+            {
+                continue;
+            }
+
+            var itemKey = itemKeyObj?.ToString();
+            if (string.IsNullOrEmpty(itemKey))
+            {
+                continue;
+            }
+
+            if (!lootEntry.TryGetValue("chance", out var chanceObj))
+            {
+                continue;
+            }
+
+            double chance = chanceObj switch
+            {
+                double d => d,
+                float f => f,
+                int i => i,
+                decimal dec => (double)dec,
+                System.Text.Json.JsonElement json when json.ValueKind == System.Text.Json.JsonValueKind.Number => json.GetDouble(),
+                string s when double.TryParse(s, System.Globalization.CultureInfo.InvariantCulture, out var parsed) => parsed,
+                _ => 0
+            };
+
+            if (world.Random.NextDouble() >= chance)
+            {
+                continue;
+            }
+
+            if (itemTemplates.Get(itemKey) is { } itemTemplate)
+            {
+                world.AddItem(itemSpawner.Spawn(itemTemplate, zone, worldEntity, roomKey));
+            }
+        }
+    }
+
+    private static void EndCombatFor(WorldState world, string combatantId)
     {
         if (EntityId.IsCharacter(combatantId))
         {
-            var charId = EntityId.ToGuid(combatantId);
-            var character = world.GetCharacter(charId);
+            var character = world.GetCharacter(EntityId.ToGuid(combatantId));
             if (character != null)
             {
                 character.CombatState = CombatState.Idle;
@@ -637,8 +922,7 @@ public sealed class CombatSystem(
         }
         else if (EntityId.IsMob(combatantId))
         {
-            var mobId = EntityId.ToGuid(combatantId);
-            var mob = world.GetMob(mobId);
+            var mob = world.GetMob(EntityId.ToGuid(combatantId));
             if (mob != null)
             {
                 mob.CombatState = CombatState.Idle;
@@ -646,4 +930,18 @@ public sealed class CombatSystem(
             }
         }
     }
+
+    /// <summary>Everything one exchange needs, resolved once rather than per swing.</summary>
+    private sealed record StrikeContext(
+        Combat Combat,
+        string AttackerId,
+        string TargetId,
+        CombatantType AttackerType,
+        string AttackerName,
+        object? AttackerActor,
+        CombatantType TargetType,
+        string TargetName,
+        object? TargetActor,
+        TargetValidationResult Validation,
+        long Pulse);
 }

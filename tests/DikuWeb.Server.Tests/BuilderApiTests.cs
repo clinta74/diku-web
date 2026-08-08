@@ -1015,6 +1015,114 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
             template.GetProperty("loot")[0].GetProperty("itemKey").GetString());
     }
 
+    [Fact]
+    public async Task A_weapons_verb_survives_a_round_trip_as_a_string()
+    {
+        // The direct analogue of the slot defect above, and the reason speed and verb are
+        // columns rather than baseStats keys: the item editor coerces every base stat with
+        // Number(v) || 0, which would turn "slash" into 0 on load.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var key = BuilderClient.UniqueName("i").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/item-templates/{key}", new
+        {
+            name = "A curved sabre",
+            slot = "MainHand",
+            attackDelayPulses = 6,
+            attackVerb = "slash",
+        })).EnsureSuccessStatusCode();
+
+        var template = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/item-templates/{key}", UriKind.Relative)));
+
+        var verb = template.GetProperty("attackVerb");
+        Assert.Equal(JsonValueKind.String, verb.ValueKind);
+        Assert.Equal("slash", verb.GetString());
+        Assert.Equal(6, template.GetProperty("attackDelayPulses").GetInt32());
+    }
+
+    [Fact]
+    public async Task An_attack_delay_below_the_floor_is_refused()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var key = BuilderClient.UniqueName("i").ToLowerInvariant();
+
+        var tooFast = await client.PostAsJsonAsync($"/api/builder/item-templates/{key}", new
+        {
+            name = "An impossible blade",
+            attackDelayPulses = 3,
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, tooFast.StatusCode);
+
+        // The engine would clamp it anyway, but a builder tuning a number the game ignores is
+        // worse than being told no.
+        (await client.PostAsJsonAsync($"/api/builder/item-templates/{key}", new
+        {
+            name = "A quick blade",
+            attackDelayPulses = 4,
+        })).EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task A_mob_attack_delay_below_the_floor_is_refused()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var key = BuilderClient.UniqueName("m").ToLowerInvariant();
+
+        var tooFast = await client.PostAsJsonAsync($"/api/builder/mob-templates/{key}", new
+        {
+            name = "A blur",
+            attacks = new[] { new { verb = "bite", delayPulses = 2 } },
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, tooFast.StatusCode);
+    }
+
+    [Fact]
+    public async Task Patching_a_mob_templates_name_leaves_its_attacks_intact()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var key = BuilderClient.UniqueName("m").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/mob-templates/{key}", new
+        {
+            name = "A wolf",
+            attacks = new[]
+            {
+                new { verb = "bite", delayPulses = 4, damageMultiplier = (double?)1.5 },
+                new { verb = "claw", delayPulses = 6, damageMultiplier = (double?)null },
+            },
+        })).EnsureSuccessStatusCode();
+
+        (await client.PatchAsJsonAsync($"/api/builder/mob-templates/{key}", new
+        {
+            name = "A dire wolf",
+        })).EnsureSuccessStatusCode();
+
+        var template = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/mob-templates/{key}", UriKind.Relative)));
+
+        var attacks = template.GetProperty("attacks");
+        Assert.Equal(2, attacks.GetArrayLength());
+        Assert.Equal("bite", attacks[0].GetProperty("verb").GetString());
+        Assert.Equal(4, attacks[0].GetProperty("delayPulses").GetInt32());
+        Assert.Equal(1.5, attacks[0].GetProperty("damageMultiplier").GetDouble());
+        Assert.Equal("claw", attacks[1].GetProperty("verb").GetString());
+    }
+
     // -----------------------------------------------------------------------
     // Validation (PLAN.md §7.4) - advisory, never blocking
     // -----------------------------------------------------------------------

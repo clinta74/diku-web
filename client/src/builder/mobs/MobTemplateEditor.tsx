@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { builderApi, type MobTemplate } from '../../net/builderApi'
+import { builderApi, type MobAttack, type MobTemplate } from '../../net/builderApi'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
 import { NumberInput } from '../../ui/NumberInput'
@@ -24,6 +24,7 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
   const [baseHealth, setBaseHealth] = useState(40)
   const [baseXp, setBaseXp] = useState(0)
   const [baseGold, setBaseGold] = useState(0)
+  const [attacks, setAttacks] = useState<MobAttack[]>([])
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -46,6 +47,7 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         setBaseHealth(loaded.baseStats?.health ? Number(loaded.baseStats.health) : 40)
         setBaseXp(loaded.baseXp)
         setBaseGold(loaded.baseGold)
+        setAttacks(loaded.attacks ?? [])
         setDirty(false)
       })
       .catch((e) => {
@@ -74,6 +76,7 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         baseGold,
         loot: template.loot,
         behavior: template.behavior,
+        attacks,
       })
       setTemplate(updated)
       setDirty(false)
@@ -102,6 +105,21 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
 
   const change = <T,>(setter: (v: T) => void) => (v: T) => {
     setter(v)
+    setDirty(true)
+  }
+
+  function editAttack(index: number, patch: Partial<MobAttack>) {
+    setAttacks((current) => current.map((a, i) => (i === index ? { ...a, ...patch } : a)))
+    setDirty(true)
+  }
+
+  function addAttack() {
+    setAttacks((current) => [...current, { verb: 'hit', delayPulses: 8, damageMultiplier: null }])
+    setDirty(true)
+  }
+
+  function removeAttack(index: number) {
+    setAttacks((current) => current.filter((_, i) => i !== index))
     setDirty(true)
   }
 
@@ -157,6 +175,52 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
           <NumberInput min={0} value={baseGold} onChange={change(setBaseGold)} />
         </Field>
       </div>
+
+      <fieldset className="attack-list">
+        <legend>Attacks</legend>
+        <p className="dim">
+          Each attack runs on its own timer, so two attacks means two independent swings. Leave
+          the list empty and this mob hits once every 8 pulses.
+        </p>
+
+        {attacks.map((attack, index) => (
+          <div className="field-row" key={index}>
+            <Field label="Message" hint="Base form: bite, claw, gore.">
+              <input
+                value={attack.verb}
+                onChange={(e) => editAttack(index, { verb: e.target.value })}
+              />
+            </Field>
+            <Field label="Delay (pulses)" hint="Minimum 4 ≈ 1s.">
+              <NumberInput
+                min={4}
+                value={attack.delayPulses}
+                onChange={(v) => editAttack(index, { delayPulses: v })}
+              />
+            </Field>
+            <Field label="Damage ×" hint="Blank = same as the mob's damage.">
+              <input
+                type="text"
+                inputMode="decimal"
+                value={attack.damageMultiplier ?? ''}
+                onChange={(e) => {
+                  const raw = e.target.value.trim()
+                  editAttack(index, {
+                    damageMultiplier: raw === '' || Number.isNaN(Number(raw)) ? null : Number(raw),
+                  })
+                }}
+              />
+            </Field>
+            <button type="button" className="danger" onClick={() => removeAttack(index)}>
+              Remove
+            </button>
+          </div>
+        ))}
+
+        <button type="button" onClick={addAttack}>
+          Add attack
+        </button>
+      </fieldset>
 
       <div className="row">
         <button type="button" className="primary" disabled={!dirty || busy} onClick={() => void save()}>

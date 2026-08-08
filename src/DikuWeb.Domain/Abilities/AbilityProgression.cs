@@ -52,4 +52,43 @@ public static class AbilityProgression
     /// </summary>
     public static bool Knows(CharacterPath path, int level, string abilityKey) =>
         GetKnownAbilitiesForLevel(path, level).Contains(abilityKey);
+
+    /// <summary>
+    /// Passives a Path grants by level. Deliberately a separate list from the castable abilities:
+    /// a passive has no ability row, no cost, and nothing to target, so letting one into
+    /// <see cref="GetAbilitiesForPath"/> would put a key in front of <c>cast</c> that can never
+    /// resolve.
+    /// </summary>
+    /// <remarks>
+    /// Only the two martial Paths learn to fight with a second weapon. An Adept or Channeler may
+    /// still put a blade in their off hand; it simply never strikes.
+    /// </remarks>
+    public static IReadOnlyList<(int UnlockLevel, string PassiveKey)> GetPassivesForPath(CharacterPath path) =>
+        path switch
+        {
+            CharacterPath.Warden => [
+                (5, PassiveKeys.DualWield),
+                (15, PassiveKeys.Ambidextrous),
+            ],
+            CharacterPath.Shade => [
+                (3, PassiveKeys.DualWield),
+                (10, PassiveKeys.Ambidextrous),
+            ],
+            _ => [],
+        };
+
+    /// <summary>
+    /// Get the passives a character currently has (at or below their level).
+    /// </summary>
+    public static IReadOnlyList<string> GetKnownPassivesForLevel(CharacterPath path, int level) =>
+        GetPassivesForPath(path)
+            .Where(x => x.UnlockLevel <= level)
+            .Select(x => x.PassiveKey)
+            .ToList();
+
+    /// <summary>
+    /// Check if a character has a specific passive.
+    /// </summary>
+    public static bool KnowsPassive(CharacterPath path, int level, string passiveKey) =>
+        GetPassivesForPath(path).Any(x => x.UnlockLevel <= level && x.PassiveKey == passiveKey);
 }

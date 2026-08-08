@@ -123,6 +123,62 @@ public static class NarrationHelper
         return EndsSentence(sentence) ? sentence : sentence + ".";
     }
 
+    /// <summary>
+    /// Conjugates an authored attack verb for third person: "slash" → "slashes", "parry" →
+    /// "parries", "bite" → "bites". A blank verb becomes "hits", so a weapon that declares
+    /// nothing narrates exactly as the game did before weapons had verbs.
+    /// </summary>
+    /// <remarks>
+    /// Verbs are authored in the base form, and only the first word is conjugated so a phrase
+    /// like "chops at" reads "chops at" rather than "chops ats". There is no way to detect a
+    /// verb someone typed already-conjugated - "hits" becomes "hitses" and the engine cannot
+    /// know better - which is why the builder field says base form.
+    /// </remarks>
+    public static string ThirdPerson(string verb)
+    {
+        if (string.IsNullOrWhiteSpace(verb))
+        {
+            return "hits";
+        }
+
+        var trimmed = verb.Trim();
+
+        // Only the head verb inflects; anything after the first space is a particle or object.
+        var split = trimmed.IndexOf(' ');
+        var head = split < 0 ? trimmed : trimmed[..split];
+        var tail = split < 0 ? string.Empty : trimmed[split..];
+
+        return Inflect(head) + tail;
+    }
+
+    private static string Inflect(string word)
+    {
+        if (word.Length == 0)
+        {
+            return word;
+        }
+
+        var lower = word.ToLowerInvariant();
+        var last = lower[^1];
+        var previous = word.Length > 1 ? lower[^2] : 'a';
+        var previousIsVowel = "aeiou".Contains(previous);
+
+        // parry → parries, but slay → slays: only a consonant before the y takes the -ies form.
+        if (last == 'y' && !previousIsVowel)
+        {
+            return word[..^1] + "ies";
+        }
+
+        // Sibilants and a consonant-final o need the extra syllable: slashes, crushes, boxes, goes.
+        var needsEs =
+            last is 's' or 'x' or 'z' ||
+            lower.EndsWith("ch", StringComparison.Ordinal) ||
+            lower.EndsWith("sh", StringComparison.Ordinal) ||
+            (last == 'o' && !previousIsVowel);
+
+        return needsEs ? word + "es" : word + "s";
+    }
+
     /// <summary>Gets the appropriate article for a name (a or an).</summary>
     public static string GetArticle(string name)
     {

@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -201,7 +202,8 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             new Dictionary<string, object>(t.BaseStats),
             t.BaseXp, t.BaseGold,
             new Dictionary<string, object>(t.Behavior),
-            new List<Dictionary<string, object>>(t.Loot)))];
+            new List<Dictionary<string, object>>(t.Loot),
+            new List<MobAttack>(t.Attacks)))];
     }
 
     public async Task<MobTemplateResponse?> MobTemplateAsync(
@@ -219,7 +221,8 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             new Dictionary<string, object>(template.BaseStats),
             template.BaseXp, template.BaseGold,
             new Dictionary<string, object>(template.Behavior),
-            new List<Dictionary<string, object>>(template.Loot));
+            new List<Dictionary<string, object>>(template.Loot),
+            new List<MobAttack>(template.Attacks));
     }
 
     public async Task<IReadOnlyList<ItemTemplateResponse>> ItemTemplatesAsync(
@@ -228,7 +231,8 @@ public sealed class BuilderQueries(DikuWebDbContext db)
         var templates = await db.ItemTemplates.AsNoTracking().OrderBy(t => t.Key).ToListAsync(cancellationToken);
         return [.. templates.Select(t => new ItemTemplateResponse(
             t.Key, t.Name, t.Description, t.Icon, t.Slot, t.Weight, t.BaseValue,
-            new Dictionary<string, object>(t.BaseStats)))];
+            new Dictionary<string, object>(t.BaseStats),
+            t.AttackDelayPulses, t.AttackVerb))];
     }
 
     public async Task<ItemTemplateResponse?> ItemTemplateAsync(
@@ -244,7 +248,8 @@ public sealed class BuilderQueries(DikuWebDbContext db)
         return new ItemTemplateResponse(
             template.Key, template.Name, template.Description, template.Icon, template.Slot,
             template.Weight, template.BaseValue,
-            new Dictionary<string, object>(template.BaseStats));
+            new Dictionary<string, object>(template.BaseStats),
+            template.AttackDelayPulses, template.AttackVerb);
     }
 
     public async Task<IReadOnlyList<SpawnerResponse>> SpawnersAsync(

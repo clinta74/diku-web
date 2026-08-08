@@ -150,7 +150,8 @@ public sealed record MobTemplateResponse(
     int BaseXp,
     int BaseGold,
     Dictionary<string, object> Behavior,
-    List<Dictionary<string, object>> Loot);
+    List<Dictionary<string, object>> Loot,
+    List<MobAttack> Attacks);
 
 public sealed record SaveMobTemplateRequest(
     string? Name,
@@ -162,7 +163,8 @@ public sealed record SaveMobTemplateRequest(
     int? BaseXp,
     int? BaseGold,
     Dictionary<string, object>? Behavior,
-    List<Dictionary<string, object>>? Loot);
+    List<Dictionary<string, object>>? Loot,
+    List<MobAttack>? Attacks);
 
 public sealed record ItemTemplateResponse(
     string Key,
@@ -176,7 +178,9 @@ public sealed record ItemTemplateResponse(
     ItemSlot? Slot,
     int Weight,
     int BaseValue,
-    Dictionary<string, object> BaseStats);
+    Dictionary<string, object> BaseStats,
+    int? AttackDelayPulses,
+    string? AttackVerb);
 
 public sealed record SaveItemTemplateRequest(
     string? Name,
@@ -186,7 +190,9 @@ public sealed record SaveItemTemplateRequest(
     ItemSlot? Slot,
     int? Weight,
     int? BaseValue,
-    Dictionary<string, object>? BaseStats);
+    Dictionary<string, object>? BaseStats,
+    int? AttackDelayPulses,
+    string? AttackVerb);
 
 public sealed record SpawnerResponse(
     Guid Id,

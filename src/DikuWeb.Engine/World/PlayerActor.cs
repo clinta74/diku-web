@@ -38,6 +38,13 @@ public sealed class PlayerActor
     /// <summary>Pulse at which the link dropped, used to expire the grace window.</summary>
     public long LinkDeadSincePulse { get; set; }
 
+    /// <summary>
+    /// The last vitals frame this player actually received, so the loop can skip sending an
+    /// identical one. Cleared on rebind: a reconnecting client has no state to compare against
+    /// and must be told everything.
+    /// </summary>
+    public VitalsPayload? LastSentVitals { get; set; }
+
     public Guid CharacterId => Character.Id;
 
     public string Name => Character.Name;

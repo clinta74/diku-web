@@ -156,11 +156,17 @@ One **pulse** = 250 ms. Systems run on pulse multiples:
 | System | Every | Real time |
 |---|---|---|
 | Command + mutation drain | 1 pulse | 250 ms |
-| Combat round | 8 pulses | 2 s |
+| Combat readiness check | 1 pulse | 250 ms |
 | Mob AI / wander | 16 pulses | 4 s |
 | Spawn sweep | 60 pulses | 15 s |
 | Regen + affect expiry | 240 pulses | 60 s |
 | Autosave (staggered) | 1200 pulses | 5 min |
+
+Combat has no shared round. Every combatant carries its own attack clocks — a player's from the
+weapons in each hand, a mob's one per entry in its template's attack list — so the system is
+evaluated every pulse and each attack fires when its own delay has elapsed. Delays are authored
+in whole pulses with a floor of 4 (1 s); silence means 8 pulses, which is the single shared round
+this replaced.
 
 Time comes from an injected `IGameClock`; tests substitute a manual clock and step pulses by
 hand, so a "ten minutes of combat" test runs in milliseconds. All randomness comes from an
@@ -1369,7 +1375,7 @@ Notes from the build:
 ### Phase 4 — Combat and progression ✅ **complete**
 *Done when: you can kill something, loot its corpse, and level up — and the multipliers visibly matter.*
 
-- [x] Combat state machine on the 2 s round system
+- [x] Combat state machine, since rebuilt onto per-combatant attack clocks (§2.3)
 - [x] `kill`, `flee`, `consider`, auto-attack continuation
 - [x] Damage model per §4.6, injectable RNG, full unit coverage of the formula
 - [x] **Target validation gate (§4.11), separate from the damage formula:** `peaceful` forbids all
@@ -1387,6 +1393,11 @@ Notes from the build:
 - [x] `EquipmentResolver` wired into `CombatSystem` and the `stats` screen, so equipment
       multipliers reach the damage roll instead of decorating the character sheet
 - [x] Mob damage: template stats win where declared, level-derived fallback where not
+- [x] **Per-combatant attack timing.** Weapons carry an authored delay and verb; the off hand
+      needs the `dual-wield` passive (Shade 3, Warden 5) to strike at all and `ambidextrous`
+      (Shade 10, Warden 15) to strike on its own beat; mob templates carry an array of attacks,
+      each on its own clock. A dead combatant no longer swings, and a cast in progress silences
+      the swings that would otherwise interrupt it
 - [ ] **Builder-authored armour still does nothing.** `armorMultiplier` scales only the flat
       armour a piece already declares, and the item editor offers no way to declare it — the
       multiplier list is the whole vocabulary. Damage got a baseline (unarmed 1–2) for the

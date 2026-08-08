@@ -254,6 +254,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         BaseGold = c.BaseGold,
                         Behavior = c.Behavior,
                         Loot = c.Loot,
+                        Attacks = c.Attacks,
                     });
 
                     return ContentAction.Create;
@@ -269,6 +270,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 entity.BaseGold = c.BaseGold;
                 entity.Behavior = c.Behavior;
                 entity.Loot = c.Loot;
+                entity.Attacks = c.Attacks;
                 return ContentAction.Update;
             }
 
@@ -304,6 +306,8 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         Weight = c.Weight,
                         BaseValue = c.BaseValue,
                         BaseStats = c.BaseStats,
+                        AttackDelayPulses = c.AttackDelayPulses,
+                        AttackVerb = c.AttackVerb,
                     });
 
                     return ContentAction.Create;
@@ -316,6 +320,8 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 entity.Weight = c.Weight;
                 entity.BaseValue = c.BaseValue;
                 entity.BaseStats = c.BaseStats;
+                entity.AttackDelayPulses = c.AttackDelayPulses;
+                entity.AttackVerb = c.AttackVerb;
                 return ContentAction.Update;
             }
 
@@ -570,6 +576,8 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                     ["weight"] = entity.Weight,
                     ["baseValue"] = entity.BaseValue,
                     ["baseStats"] = JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(entity.BaseStats)),
+                    ["attackDelayPulses"] = entity.AttackDelayPulses,
+                    ["attackVerb"] = entity.AttackVerb,
                 }.ToJsonString();
             }
 

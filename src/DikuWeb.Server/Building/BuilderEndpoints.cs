@@ -1,4 +1,6 @@
 using System.Text.Json;
+using DikuWeb.Domain.Combat;
+using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Mutations;
@@ -373,6 +375,11 @@ public static class BuilderEndpoints
             return Results.Conflict(new { error = $"Mob template '{key}' already exists." });
         }
 
+        if (ValidateAttacks(request.Attacks) is { } refusal)
+        {
+            return refusal;
+        }
+
         var change = new UpsertMobTemplate(
             key,
             Trim(request.Name) ?? key,
@@ -384,7 +391,8 @@ public static class BuilderEndpoints
             request.BaseXp ?? 0,
             request.BaseGold ?? 0,
             request.Behavior ?? new Dictionary<string, object>(),
-            request.Loot ?? new List<Dictionary<string, object>>());
+            request.Loot ?? new List<Dictionary<string, object>>(),
+            NormalizeAttacks(request.Attacks) ?? new List<MobAttack>());
 
         return await SaveAsync(editor, change, http, ct, () => queries.MobTemplateAsync(key, ct));
     }
@@ -402,6 +410,11 @@ public static class BuilderEndpoints
             return Results.NotFound();
         }
 
+        if (ValidateAttacks(request.Attacks) is { } refusal)
+        {
+            return refusal;
+        }
+
         var change = new UpsertMobTemplate(
             key,
             Trim(request.Name) ?? existing.Name,
@@ -413,7 +426,8 @@ public static class BuilderEndpoints
             request.BaseXp ?? existing.BaseXp,
             request.BaseGold ?? existing.BaseGold,
             request.Behavior ?? existing.Behavior,
-            request.Loot ?? existing.Loot);
+            request.Loot ?? existing.Loot,
+            NormalizeAttacks(request.Attacks) ?? existing.Attacks);
 
         return await SaveAsync(editor, change, http, ct, () => queries.MobTemplateAsync(key, ct));
     }
@@ -458,6 +472,11 @@ public static class BuilderEndpoints
             return Results.Conflict(new { error = $"Item template '{key}' already exists." });
         }
 
+        if (ValidateWeapon(request.AttackDelayPulses, request.AttackVerb) is { } refusal)
+        {
+            return refusal;
+        }
+
         var change = new UpsertItemTemplate(
             key,
             Trim(request.Name) ?? key,
@@ -466,7 +485,9 @@ public static class BuilderEndpoints
             request.Slot,
             request.Weight ?? 1,
             request.BaseValue ?? 0,
-            request.BaseStats ?? new Dictionary<string, object>());
+            request.BaseStats ?? new Dictionary<string, object>(),
+            request.AttackDelayPulses,
+            Trim(request.AttackVerb));
 
         return await SaveAsync(editor, change, http, ct, () => queries.ItemTemplateAsync(key, ct));
     }
@@ -484,6 +505,11 @@ public static class BuilderEndpoints
             return Results.NotFound();
         }
 
+        if (ValidateWeapon(request.AttackDelayPulses, request.AttackVerb) is { } refusal)
+        {
+            return refusal;
+        }
+
         var change = new UpsertItemTemplate(
             key,
             Trim(request.Name) ?? existing.Name,
@@ -492,7 +518,9 @@ public static class BuilderEndpoints
             request.Slot ?? existing.Slot,
             request.Weight ?? existing.Weight,
             request.BaseValue ?? existing.BaseValue,
-            request.BaseStats ?? existing.BaseStats);
+            request.BaseStats ?? existing.BaseStats,
+            request.AttackDelayPulses ?? existing.AttackDelayPulses,
+            Trim(request.AttackVerb) ?? existing.AttackVerb);
 
         return await SaveAsync(editor, change, http, ct, () => queries.ItemTemplateAsync(key, ct));
     }
@@ -1092,4 +1120,93 @@ public static class BuilderEndpoints
         && value[0] != '-'
         && value[^1] != '-'
         && value.All(c => c is >= 'a' and <= 'z' or >= '0' and <= '9' or '-');
+
+    /// <summary>Longest attack verb worth allowing - past this the combat log stops reading as prose.</summary>
+    private const int MaxAttackVerbLength = 24;
+
+    /// <summary>
+    /// Refuses a weapon nobody could balance around. The engine clamps a too-fast delay anyway,
+    /// but silently honouring a save that says 1 and running at 4 would leave a builder tuning a
+    /// number the game ignores.
+    /// </summary>
+    private static IResult? ValidateWeapon(int? delayPulses, string? verb)
+    {
+        if (delayPulses is { } delay && delay < AttackTiming.MinDelayPulses)
+        {
+            return Invalid(
+                $"An attack delay must be at least {AttackTiming.MinDelayPulses} pulses (1.0 second).");
+        }
+
+        return ValidateVerb(verb, "An attack verb");
+    }
+
+    private static IResult? ValidateVerb(string? verb, string subject)
+    {
+        if (verb is null)
+        {
+            return null;
+        }
+
+        var trimmed = verb.Trim();
+
+        if (trimmed.Length > MaxAttackVerbLength)
+        {
+            return Invalid($"{subject} must be {MaxAttackVerbLength} characters or fewer.");
+        }
+
+        if (trimmed.Any(char.IsDigit))
+        {
+            return Invalid($"{subject} is a word, not a number - try \"slash\" or \"crush\".");
+        }
+
+        return null;
+    }
+
+    private static IResult? ValidateAttacks(List<MobAttack>? attacks)
+    {
+        if (attacks is null)
+        {
+            return null;
+        }
+
+        foreach (var attack in attacks)
+        {
+            if (attack is null)
+            {
+                continue;
+            }
+
+            if (attack.DelayPulses < AttackTiming.MinDelayPulses)
+            {
+                return Invalid(
+                    $"An attack delay must be at least {AttackTiming.MinDelayPulses} pulses (1.0 second).");
+            }
+
+            if (attack.DamageMultiplier is <= 0m)
+            {
+                return Invalid("An attack's damage multiplier must be greater than zero.");
+            }
+
+            if (ValidateVerb(attack.Verb, "An attack message") is { } refusal)
+            {
+                return refusal;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Tidies an authored attack list. A blank verb defaults rather than being refused - the
+    /// builder's row starts empty and there is no reason to make someone type "hit" to save.
+    /// </summary>
+    private static List<MobAttack>? NormalizeAttacks(List<MobAttack>? attacks) =>
+        attacks is null
+            ? null
+            : [.. attacks.Where(a => a is not null).Select(a => new MobAttack
+            {
+                Verb = AttackTiming.VerbOr(a.Verb),
+                DelayPulses = AttackTiming.Clamp(a.DelayPulses),
+                DamageMultiplier = a.DamageMultiplier,
+            })];
 }

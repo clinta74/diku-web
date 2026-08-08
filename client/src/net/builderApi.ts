@@ -89,6 +89,16 @@ export interface AuditEntry {
   at: string
 }
 
+/** One of a mob's attacks. Each entry runs on its own timer. */
+export interface MobAttack {
+  /** Base-form verb: "bite" narrates "A wolf bites you". */
+  verb: string
+  /** Pulses between swings of this attack. Minimum 4 (1 second). */
+  delayPulses: number
+  /** Scales this attack against the mob's damage. Null means 1.0. */
+  damageMultiplier: number | null
+}
+
 export interface MobTemplate {
   key: string
   name: string
@@ -101,6 +111,7 @@ export interface MobTemplate {
   baseGold: number
   loot: Array<Record<string, unknown>>
   behavior: Record<string, unknown>
+  attacks: MobAttack[]
 }
 
 export interface ItemTemplate {
@@ -112,6 +123,10 @@ export interface ItemTemplate {
   weight: number
   baseValue: number
   baseStats: Record<string, unknown>
+  /** Pulses between swings when wielded. Null means no declared speed. */
+  attackDelayPulses: number | null
+  /** Base-form verb describing how it strikes: "slash", "crush". */
+  attackVerb: string | null
 }
 
 export interface Spawner {

@@ -361,8 +361,14 @@ public sealed class EquipmentResolverTests
         Assert.Equal(12, stats.MaxDamage);
     }
 
+    /// <summary>
+    /// Each hand rolls its own weapon and nothing else. The hands used to compound their
+    /// multipliers into one swing, which was right while there was only one swing; now that the
+    /// off hand strikes on its own timer, folding its multiplier into the main-hand blow as well
+    /// would count the same dagger twice.
+    /// </summary>
     [Fact]
-    public void ResolveAttackerStats_both_hands_compound_their_multipliers()
+    public void ResolveAttackerStatsForHand_reads_only_that_hands_weapon()
     {
         var main = new ItemInstance
         {
@@ -378,14 +384,38 @@ public sealed class EquipmentResolverTests
             ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", 3 } },
         };
 
-        var stats = EquipmentResolver.ResolveAttackerStats(
-            level: 1,
-            mightModifier: 0,
-            equipped: new[] { main, off });
+        var mainHand = EquipmentResolver.ResolveAttackerStatsForHand(
+            level: 1, mightModifier: 0, equipped: new[] { main, off }, hand: ItemSlot.MainHand);
 
-        // 1-2 scaled by 2 x 3.
-        Assert.Equal(6, stats.MinDamage);
-        Assert.Equal(12, stats.MaxDamage);
+        // 1-2 scaled by 2 only. The dagger's 3 belongs to the dagger's own swing.
+        Assert.Equal(2, mainHand.MinDamage);
+        Assert.Equal(4, mainHand.MaxDamage);
+
+        var offHand = EquipmentResolver.ResolveAttackerStatsForHand(
+            level: 1, mightModifier: 0, equipped: new[] { main, off }, hand: ItemSlot.OffHand);
+
+        // 1-2 scaled by 3.
+        Assert.Equal(3, offHand.MinDamage);
+        Assert.Equal(6, offHand.MaxDamage);
+    }
+
+    [Fact]
+    public void ResolveAttackerStats_defaults_to_the_main_hand()
+    {
+        var main = new ItemInstance
+        {
+            TemplateKey = "sword",
+            EquippedSlot = ItemSlot.MainHand,
+            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", 2 } },
+        };
+
+        var byDefault = EquipmentResolver.ResolveAttackerStats(
+            level: 1, mightModifier: 0, equipped: new[] { main });
+
+        var named = EquipmentResolver.ResolveAttackerStatsForHand(
+            level: 1, mightModifier: 0, equipped: new[] { main }, hand: ItemSlot.MainHand);
+
+        Assert.Equal(named, byDefault);
     }
 
     [Fact]

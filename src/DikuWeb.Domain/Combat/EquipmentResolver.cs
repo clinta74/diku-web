@@ -35,7 +35,8 @@ public static class EquipmentResolver
             equippedMainHand is null ? [] : [equippedMainHand]);
 
     /// <summary>
-    /// Resolves attacker stats from character level, attributes, and everything equipped.
+    /// Resolves the main hand's attacker stats from character level, attributes, and everything
+    /// equipped. Shorthand for <see cref="ResolveAttackerStatsForHand"/> with the main hand.
     /// </summary>
     /// <remarks>
     /// Weapon damage has two shapes and both are honoured. A weapon may declare explicit dice
@@ -54,17 +55,35 @@ public static class EquipmentResolver
     public static AttackerStats ResolveAttackerStats(
         int level,
         int mightModifier,
-        IEnumerable<ItemInstance> equipped)
+        IEnumerable<ItemInstance> equipped) =>
+        ResolveAttackerStatsForHand(level, mightModifier, equipped, ItemSlot.MainHand);
+
+    /// <summary>
+    /// Resolves the stats one named hand swings with, from that hand's weapon alone.
+    /// </summary>
+    /// <remarks>
+    /// Each hand is its own attack on its own timer, so each must be its own set of stats. The
+    /// earlier shape folded both hands' multipliers into a single swing, which was right while
+    /// there was only one swing to fold them into - kept now, a dual-wielder would get the
+    /// off-hand multiplier on the main-hand blow *and* a whole extra attack.
+    ///
+    /// The hands differ in what an empty one means: an empty main hand is a fist and rolls the
+    /// unarmed dice, an empty off hand does not attack and never reaches here.
+    /// </remarks>
+    /// <param name="hand">Which hand to resolve. Anything but a hand slot resolves as unarmed.</param>
+    public static AttackerStats ResolveAttackerStatsForHand(
+        int level,
+        int mightModifier,
+        IEnumerable<ItemInstance> equipped,
+        ItemSlot hand)
     {
         ArgumentNullException.ThrowIfNull(equipped);
 
-        var held = equipped.Where(i => i?.ResolvedStats is not null).ToList();
+        var weapon = equipped
+            .Where(i => i?.ResolvedStats is not null)
+            .FirstOrDefault(i => i.EquippedSlot == hand);
 
-        return Resolve(
-            level,
-            mightModifier,
-            held.FirstOrDefault(i => i.EquippedSlot == ItemSlot.MainHand),
-            held);
+        return Resolve(level, mightModifier, weapon, weapon is null ? [] : [weapon]);
     }
 
     private static AttackerStats Resolve(
@@ -110,9 +129,10 @@ public static class EquipmentResolver
             }
         }
 
-        // Both hands contribute their multiplier, so a paired weapon set compounds. The named
-        // main hand counts even if its slot is unset, which is how the single-item overload
-        // behaves; ReferenceEquals keeps it from being counted twice when it is also in the list.
+        // Only this hand's weapon contributes its multiplier - the other hand is resolving its
+        // own swing separately. The named weapon counts even if its slot is unset, which is how
+        // the single-item overload behaves; ReferenceEquals keeps it from being counted twice
+        // when it is also in the list.
         var damageMultiplier = 1m;
 
         var multiplierSources = held.Where(i =>

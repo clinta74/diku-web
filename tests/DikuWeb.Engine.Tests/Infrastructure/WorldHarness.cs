@@ -1,14 +1,21 @@
 using System.Threading.Channels;
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Combat;
+using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Domain.Items;
+using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Commands;
+using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.Spawning;
+using DikuWeb.Engine.Systems;
+using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
+using EngineCombatSystem = DikuWeb.Engine.Systems.CombatSystem;
 
 namespace DikuWeb.Engine.Tests.Infrastructure;
 
@@ -48,16 +55,43 @@ internal sealed class WorldHarness
     {
         var random = new DikuWeb.Domain.Randomness.SeededRandomSource(42);
         World = new WorldState(random);
-        Commands = new CommandRegistry(itemTemplateCache: ItemTemplates);
+        Commands = new CommandRegistry(itemTemplateCache: ItemTemplates, clock: Clock);
         View = new PlayerView(new RoomLayoutService());
         Options = new EngineOptions { StartingRoom = RoomKey.Parse("test.zone.west") };
         Applier = new WorldMutationApplier(World, View, Options);
         Writes = new RecordingWriteQueue();
         Editor = new LoopWorldEditor(Applier, Writes);
         Admin = new RecordingAdminQueue();
+        Combat = new EngineCombatSystem(Options, View, ItemTemplates, MobTemplates);
+        Abilities = new AbilitySystem(Clock);
     }
 
     public WorldState World { get; }
+
+    /// <summary>Time under the test's control, so per-attack timing is exact rather than raced.</summary>
+    public ManualGameClock Clock { get; } = new();
+
+    /// <summary>Mob templates combat reads attack lists from.</summary>
+    public MobTemplateCache MobTemplates { get; } = new();
+
+    public EngineCombatSystem Combat { get; }
+
+    public AbilitySystem Abilities { get; }
+
+    /// <summary>
+    /// Advances time the way <c>GameLoop.Pulse</c> does: one pulse at a time, abilities before
+    /// combat. Stepping in single pulses matters - batching would quantise attack timing in the
+    /// harness rather than in the game, and hide exactly the bugs these tests exist to catch.
+    /// </summary>
+    public void Pump(int pulses = 1)
+    {
+        for (var i = 0; i < pulses; i++)
+        {
+            Abilities.Tick(World);
+            Combat.Tick(World, Clock.CurrentPulse);
+            Clock.AdvancePulses(1);
+        }
+    }
 
     /// <summary>Item templates the registry resolves slots and descriptions from.</summary>
     public ItemTemplateCache ItemTemplates { get; } = new();
@@ -156,13 +190,21 @@ internal sealed class WorldHarness
         });
     }
 
-    public PlayerActor AddPlayer(string name, RoomKey at, AccountRole role = AccountRole.Player)
+    public PlayerActor AddPlayer(
+        string name,
+        RoomKey at,
+        AccountRole role = AccountRole.Player,
+        CharacterPath path = CharacterPath.Warden,
+        int level = 1)
     {
         var channel = Channel.CreateUnbounded<OutboundEvent>();
 
+        var character = NewCharacter(name, at, path);
+        character.Level = level;
+
         var actor = new PlayerActor
         {
-            Character = NewCharacter(name, at),
+            Character = character,
             Role = role,
             SessionId = Guid.CreateVersion7(),
             Output = channel.Writer,
@@ -173,13 +215,16 @@ internal sealed class WorldHarness
         return actor;
     }
 
-    public static Character NewCharacter(string name, RoomKey at) => new()
+    public static Character NewCharacter(
+        string name,
+        RoomKey at,
+        CharacterPath path = CharacterPath.Warden) => new()
     {
         AccountId = Guid.CreateVersion7(),
         Name = name,
-        Path = CharacterPath.Warden,
+        Path = path,
         Attributes = AttributeSet.Baseline,
-        Vitals = Vitals.StartingFor(CharacterPath.Warden),
+        Vitals = Vitals.StartingFor(path),
         RoomKey = at,
         CreatedAt = DateTimeOffset.UnixEpoch,
     };
@@ -224,6 +269,45 @@ internal sealed class WorldHarness
         return template;
     }
 
+    /// <summary>
+    /// Registers a weapon template with a speed and a verb. A null delay is the "declares no
+    /// speed" case: a default-speed main hand, and an off-hand item that never strikes.
+    /// </summary>
+    /// <param name="attackBonus">
+    /// Defaults absurdly high so a timing test never has to care whether a swing connected -
+    /// the question under test is which pulse it happened on.
+    /// </param>
+    public ItemTemplate DefineWeapon(
+        string key,
+        string name,
+        ItemSlot slot,
+        int? delayPulses,
+        string? verb = null,
+        int damageMin = 1,
+        int damageMax = 1,
+        int attackBonus = 100)
+    {
+        var template = new ItemTemplate
+        {
+            Key = key,
+            Name = name,
+            Icon = "/",
+            Slot = slot,
+            AttackDelayPulses = delayPulses,
+            AttackVerb = verb,
+            BaseStats = new Dictionary<string, object>
+            {
+                ["damageMin"] = damageMin,
+                ["damageMax"] = damageMax,
+                ["bonus"] = attackBonus,
+            },
+        };
+
+        _itemTemplateRepo.Add(template);
+        ItemTemplates.LoadAsync(_itemTemplateRepo, CancellationToken.None).GetAwaiter().GetResult();
+        return template;
+    }
+
     /// <summary>Puts an instance of a template into a character's inventory and returns it.</summary>
     public ItemInstance GiveItem(PlayerActor actor, ItemTemplate template)
     {
@@ -232,10 +316,67 @@ internal sealed class WorldHarness
             TemplateKey = template.Key,
             TemplateName = template.Name,
             OwnerCharacterId = actor.CharacterId,
+            ResolvedStats = new Dictionary<string, object>(template.BaseStats),
         };
 
-        World.LoadCharacterItems(actor.CharacterId, [item]);
+        World.LoadCharacterItems(actor.CharacterId, [.. World.InventoryOf(actor.CharacterId), item]);
         return item;
+    }
+
+    /// <summary>Gives the character an instance of the template already equipped in that slot.</summary>
+    public ItemInstance Equip(PlayerActor actor, ItemTemplate template, ItemSlot slot)
+    {
+        var item = GiveItem(actor, template);
+        item.EquippedSlot = slot;
+        return item;
+    }
+
+    /// <summary>
+    /// Registers a mob template and puts one instance of it in a room, ready to fight.
+    /// </summary>
+    public Mob AddMob(
+        string templateKey,
+        RoomKey at,
+        IEnumerable<MobAttack>? attacks = null,
+        int health = 100,
+        string name = "rat",
+        int damageMin = 1,
+        int damageMax = 1)
+    {
+        MobTemplates.Put(new MobTemplate
+        {
+            Key = templateKey,
+            Name = name,
+            Icon = "r",
+            Attacks = [.. attacks ?? []],
+        });
+
+        var mob = new Mob
+        {
+            TemplateKey = templateKey,
+            TemplateName = name,
+            RoomKey = at.ToString(),
+            Level = 1,
+            Vitals = new Vitals
+            {
+                Health = health,
+                HealthMax = health,
+                Focus = 0,
+                FocusMax = 0,
+                Stamina = 0,
+                StaminaMax = 0,
+            },
+            ResolvedStats = new Dictionary<string, object>
+            {
+                ["damageMin"] = damageMin,
+                ["damageMax"] = damageMax,
+                // As with DefineWeapon: connect every time, so the assertion is about timing.
+                ["attackRating"] = 100,
+            },
+        };
+
+        World.AddMob(mob);
+        return mob;
     }
 
     private sealed class FakeItemTemplateRepository : IItemTemplateRepository

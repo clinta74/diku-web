@@ -743,6 +743,7 @@ public sealed class WorldMutationApplier(
             BaseGold = change.BaseGold,
             Behavior = new Dictionary<string, object>(change.Behavior, StringComparer.Ordinal),
             Loot = [.. change.Loot],
+            Attacks = [.. change.Attacks],
         });
 
         return MutationResult.Ok([change]);
@@ -766,6 +767,8 @@ public sealed class WorldMutationApplier(
             Weight = change.Weight,
             BaseValue = change.BaseValue,
             BaseStats = new Dictionary<string, object>(change.BaseStats, StringComparer.Ordinal),
+            AttackDelayPulses = change.AttackDelayPulses,
+            AttackVerb = change.AttackVerb,
         });
 
         return MutationResult.Ok([change]);

@@ -86,16 +86,44 @@ public sealed class PlayerView(RoomLayoutService layout)
     {
         ArgumentNullException.ThrowIfNull(actor);
 
+        var payload = VitalsOf(actor);
+        actor.LastSentVitals = payload;
+        actor.Send(new OutboundEvent(EventTypes.Vitals, payload));
+    }
+
+    /// <summary>
+    /// Sends vitals only when they differ from the last frame this player received.
+    /// </summary>
+    /// <remarks>
+    /// Combat resolves every pulse, so an unconditional push would be four frames a second per
+    /// fighter. Comparing the payload rather than tracking a dirty flag means damage, healing,
+    /// regeneration, experience and levelling are all covered by construction - there is no
+    /// mutation site that can forget to mark itself.
+    /// </remarks>
+    public static void SendVitalsIfChanged(PlayerActor actor)
+    {
+        ArgumentNullException.ThrowIfNull(actor);
+
+        var payload = VitalsOf(actor);
+        if (payload == actor.LastSentVitals)
+        {
+            return;
+        }
+
+        actor.LastSentVitals = payload;
+        actor.Send(new OutboundEvent(EventTypes.Vitals, payload));
+    }
+
+    private static VitalsPayload VitalsOf(PlayerActor actor)
+    {
         var c = actor.Character;
         var v = c.Vitals;
 
-        actor.Send(new OutboundEvent(
-            EventTypes.Vitals,
-            new VitalsPayload(
-                v.Health, v.HealthMax,
-                v.Focus, v.FocusMax,
-                v.Stamina, v.StaminaMax,
-                c.Level, c.Xp, c.Path.ToString())));
+        return new VitalsPayload(
+            v.Health, v.HealthMax,
+            v.Focus, v.FocusMax,
+            v.Stamina, v.StaminaMax,
+            c.Level, c.Xp, c.Path.ToString());
     }
 
     private static void SendProse(

@@ -23,5 +23,6 @@ internal sealed class MobTemplateConfiguration : IEntityTypeConfiguration<MobTem
         builder.Property(e => e.BaseGold).HasColumnName("base_gold");
         builder.Property(e => e.Behavior).HasColumnName("behavior").HasColumnType("jsonb");
         builder.Property(e => e.Loot).HasColumnName("loot").HasColumnType("jsonb");
+        builder.Property(e => e.Attacks).HasColumnName("attacks").HasColumnType("jsonb");
     }
 }

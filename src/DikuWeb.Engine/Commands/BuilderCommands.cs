@@ -1,4 +1,5 @@
 ﻿using DikuWeb.Domain.Accounts;
+using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Narration;
@@ -58,7 +59,11 @@ internal static class BuilderCommands
 
         commands.Add(new CommandDefinition(
             "spawn", 5, "spawn <item|mob> <template-key> - create an item or mob here (builder)", Spawn, Requires: AccountRole.Builder));
+
+        commands.Add(new CommandDefinition(
+            "despawn", 5, "despawn <item|mob> <template-key> - remove an item or mob here (builder)", Despawn, Requires: AccountRole.Builder));
     }
+
 
     private static void Dig(CommandContext ctx)
     {
@@ -446,6 +451,135 @@ internal static class BuilderCommands
         {
             ctx.Reply($"Error spawning mob: {ex.Message}", "bad");
         }
+    }
+
+    private static void Despawn(CommandContext ctx)
+    {
+        if (!RequireBuilder(ctx))
+        {
+            return;
+        }
+
+        var parts = ctx.Argument.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2)
+        {
+            ctx.Reply("Usage: despawn <item|mob> <template-key>", "bad");
+            return;
+        }
+
+        var type = parts[0].ToLowerInvariant();
+        var templateKey = parts[1];
+
+        if (type == "item")
+        {
+            DespawnItem(ctx, templateKey);
+        }
+        else if (type == "mob")
+        {
+            DespawnMob(ctx, templateKey);
+        }
+        else
+        {
+            ctx.Reply("Despawn what? Use 'item' or 'mob'.", "bad");
+        }
+    }
+
+    /// <summary>
+    /// Removes one instance of a template from the floor of this room.
+    /// </summary>
+    /// <remarks>
+    /// Ground items only, and the owner check says so out loud rather than trusting that
+    /// <see cref="World.WorldState.ItemsIn"/> happens to exclude carried ones. A builder tidying
+    /// up scenery must never be able to reach into a player's pack, and "despawn item
+    /// rusty-dagger" is exactly what someone would type while a player beside them is carrying
+    /// one - unlike a spawn, that mistake is not undoable.
+    ///
+    /// One at a time, because a room with six of something is usually six deliberate placements.
+    /// </remarks>
+    private static void DespawnItem(CommandContext ctx, string templateKey)
+    {
+        var roomKey = ctx.Actor.RoomKey;
+
+        var onTheFloor = ctx.World.ItemsIn(roomKey)
+            .Where(i => i.OwnerCharacterId is null && i.ContainerItemId is null)
+            .Where(i => i.TemplateKey.Equals(templateKey, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (onTheFloor.Count == 0)
+        {
+            var carried = ctx.World.OccupantsOf(roomKey)
+                .SelectMany(o => ctx.World.InventoryOf(o.CharacterId))
+                .Any(i => i.TemplateKey.Equals(templateKey, StringComparison.OrdinalIgnoreCase));
+
+            ctx.Reply(
+                carried
+                    ? $"No '{templateKey}' is lying here - the only one in this room is being carried, and despawn does not reach into packs."
+                    : $"There is no '{templateKey}' lying here.",
+                "bad");
+            return;
+        }
+
+        var target = onTheFloor[0];
+        var displayName = string.IsNullOrEmpty(target.TemplateName) ? target.TemplateKey : target.TemplateName;
+
+        ctx.World.RemoveItem(target);
+
+        // The instance is a row of its own, so forgetting it in memory alone would resurrect it
+        // on the next load.
+        ctx.ItemSaveQueue?.EnqueueDelete(target.Id);
+
+        var remaining = onTheFloor.Count - 1;
+        ctx.Reply(
+            remaining > 0
+                ? $"Despawned: {displayName}. {remaining} still here."
+                : $"Despawned: {displayName}.");
+        ctx.Broadcast(
+            $"{ctx.Actor.Name} banishes {NarrationHelper.WithDefiniteArticle(displayName)}.",
+            "movement");
+        ctx.View.RefreshRoom(ctx.World, roomKey);
+    }
+
+    /// <summary>
+    /// Removes one mob of a template from this room.
+    /// </summary>
+    /// <remarks>
+    /// A mob under a spawner's population target will simply be replaced on the next sweep -
+    /// that is the spawner working, not this failing. Despawning is for the one you conjured by
+    /// hand, or the one standing somewhere it should not be.
+    /// </remarks>
+    private static void DespawnMob(CommandContext ctx, string templateKey)
+    {
+        var roomKey = ctx.Actor.RoomKey;
+
+        var here = ctx.World.MobsIn(roomKey)
+            .Where(m => m.TemplateKey.Equals(templateKey, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (here.Count == 0)
+        {
+            ctx.Reply($"There is no '{templateKey}' here.", "bad");
+            return;
+        }
+
+        var target = here[0];
+        var displayName = string.IsNullOrEmpty(target.TemplateName) ? target.TemplateKey : target.TemplateName;
+
+        // Take it out of any fight first. A combatant that vanishes from the world but not from
+        // the combat leaves the fight two-sided forever, so whoever was swinging at it would
+        // stay stuck in combat with nothing to hit.
+        ctx.World.FindCombat(roomKey)?.RemoveCombatant(EntityId.ForMob(target.Id));
+
+        ctx.World.RemoveMob(target);
+
+        var remaining = here.Count - 1;
+        ctx.Reply(
+            remaining > 0
+                ? $"Despawned: {displayName}. {remaining} still here."
+                : $"Despawned: {displayName}.");
+        ctx.Broadcast(
+            $"{ctx.Actor.Name} banishes {NarrationHelper.WithDefiniteArticle(displayName)}.",
+            "death");
+        ctx.View.RefreshRoom(ctx.World, roomKey);
     }
 
     private static bool RequireBuilder(CommandContext ctx)

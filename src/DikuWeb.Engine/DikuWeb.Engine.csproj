@@ -12,4 +12,13 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <!--
+    So the tests can assert that optional collaborators were actually supplied by the container.
+    A missing template cache degrades combat silently rather than throwing, which is exactly the
+    kind of regression only a container-resolution test can catch.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="DikuWeb.Engine.Tests" />
+  </ItemGroup>
+
 </Project>

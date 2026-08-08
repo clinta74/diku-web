@@ -23,6 +23,10 @@ public static class CombatSystem
     /// <param name="targetStats">Target's combat stats.</param>
     /// <param name="targetCurrentHealth">Target's current health before the attack.</param>
     /// <param name="targetValidation">Whether the target is a valid combat target in this room.</param>
+    /// <param name="attackVerb">
+    /// Base-form verb for this swing: the wielded weapon's, or the mob attack's. Required rather
+    /// than defaulted, because a caller that forgot it would narrate wrong forever in silence.
+    /// </param>
     /// <param name="random">Randomness source for d20 rolls.</param>
     /// <returns>
     /// A CombatRound describing what happened: hit/miss, damage, narration. The Engine layer
@@ -37,6 +41,7 @@ public static class CombatSystem
         DefenderStats targetStats,
         int targetCurrentHealth,
         TargetValidationResult targetValidation,
+        string attackVerb,
         IRandomSource random)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(attackerName);
@@ -67,7 +72,7 @@ public static class CombatSystem
 
         // Build narration based on hit/miss/crit.
         var (attackerText, targetText, roomText) = BuildNarration(
-            attackerName, targetName, damage, attacker, target);
+            attackerName, targetName, damage, attacker, target, attackVerb);
 
         // Check if target is defeated (would drop to 0 or below health).
         var isDefeated = targetCurrentHealth - damage.DamageDealt <= 0;
@@ -92,7 +97,8 @@ public static class CombatSystem
         string targetName,
         DamageResult damage,
         CombatantType attacker,
-        CombatantType target)
+        CombatantType target,
+        string attackVerb)
     {
         // Add article prefix for mobs in third-person narration. The attacker always opens
         // its sentence and the target never does, which is why they capitalize differently.
@@ -111,9 +117,14 @@ public static class CombatSystem
         var critMarker = damage.IsCritical ? " **CRITICAL**" : string.Empty;
         var damageText = $"{damage.DamageDealt} damage{critMarker}";
 
-        var attackerNarration = $"You hit {targetDisplay} for {damageText}.";
-        var targetNarration = $"{attackerDisplay} hits you for {damageText}.";
-        var roomNarration = $"{attackerDisplay} hits {targetDisplay} for {damageText}.";
+        // The weapon names the blow. Second person takes the base form the builder authored,
+        // third person is conjugated, so "slash" reads "You slash" and "A rat slashes".
+        var verb = AttackTiming.VerbOr(attackVerb);
+        var verbThirdPerson = NarrationHelper.ThirdPerson(verb);
+
+        var attackerNarration = $"You {verb} {targetDisplay} for {damageText}.";
+        var targetNarration = $"{attackerDisplay} {verbThirdPerson} you for {damageText}.";
+        var roomNarration = $"{attackerDisplay} {verbThirdPerson} {targetDisplay} for {damageText}.";
 
         return (attackerNarration, targetNarration, roomNarration);
     }

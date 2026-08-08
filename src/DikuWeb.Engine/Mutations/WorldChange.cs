@@ -200,7 +200,8 @@ public sealed record UpsertMobTemplate(
     int BaseXp,
     int BaseGold,
     Dictionary<string, object> Behavior,
-    List<Dictionary<string, object>> Loot) : WorldChange
+    List<Dictionary<string, object>> Loot,
+    List<MobAttack> Attacks) : WorldChange
 {
     public override string EntityKind => "mob-template";
 
@@ -222,7 +223,9 @@ public sealed record UpsertItemTemplate(
     ItemSlot? Slot,
     int Weight,
     int BaseValue,
-    Dictionary<string, object> BaseStats) : WorldChange
+    Dictionary<string, object> BaseStats,
+    int? AttackDelayPulses,
+    string? AttackVerb) : WorldChange
 {
     public override string EntityKind => "item-template";
 

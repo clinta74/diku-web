@@ -46,4 +46,11 @@ public sealed class MobTemplate
     /// Persisted as jsonb.
     /// </summary>
     public List<Dictionary<string, object>> Loot { get; set; } = new();
+
+    /// <summary>
+    /// What this mob attacks with. Each entry runs its own timer, so a mob with two attacks
+    /// swings both on their own cadences. Empty means one default attack every 8 pulses, which
+    /// is what every mob did before attacks were authorable. Persisted as jsonb.
+    /// </summary>
+    public List<MobAttack> Attacks { get; set; } = new();
 }

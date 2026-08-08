@@ -2,6 +2,7 @@ using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Entities;
 using DikuWeb.Engine.Abilities;
+using DikuWeb.Engine.Time;
 
 namespace DikuWeb.Engine.Commands;
 
@@ -10,17 +11,20 @@ namespace DikuWeb.Engine.Commands;
 /// </summary>
 public static class AbilityCommands
 {
-    public static void Register(List<CommandDefinition> commands, AbilityCache? abilityCache = null)
+    public static void Register(
+        List<CommandDefinition> commands,
+        AbilityCache? abilityCache = null,
+        IGameClock? clock = null)
     {
         commands.Add(new CommandDefinition(
             "cast", 1, "cast <ability> [target] (c) - cast an ability",
-            ctx => Cast(ctx, abilityCache)));
+            ctx => Cast(ctx, abilityCache, clock)));
 
         commands.Add(new CommandDefinition(
             "abilities", 0, "abilities (ab) - list your known abilities", ListAbilities));
     }
 
-    private static void Cast(CommandContext ctx, AbilityCache? cache)
+    private static void Cast(CommandContext ctx, AbilityCache? cache, IGameClock? clock)
     {
         if (!ctx.HasArgument)
         {
@@ -63,7 +67,7 @@ public static class AbilityCommands
 
         // Check cooldown
         var lastCastPulse = ctx.World.GetAbilityCooldown(character.Id, matchingKey);
-        var currentPulse = 0L; // TODO: inject game clock to get current pulse
+        var currentPulse = clock?.CurrentPulse ?? 0L;
         var cooldownRemaining = (lastCastPulse + ability.CooldownPulses) - currentPulse;
         if (cooldownRemaining > 0)
         {
@@ -106,7 +110,9 @@ public static class AbilityCommands
             CharacterId = character.Id,
             AbilityKey = matchingKey,
             TargetId = targetId,
-            ResolveAtPulse = 0, // Instant (would be currentPulse + ability.CastTimePulses otherwise)
+            // A cast time finally means something. While this is pending the caster's weapons
+            // are silent, and a blow that lands will break it.
+            ResolveAtPulse = currentPulse + (ability.CastTimePulses ?? 0),
             StartingRoomKey = character.RoomKey.ToString(),
         };
 
@@ -136,17 +142,32 @@ public static class AbilityCommands
     {
         var character = ctx.Actor.Character;
         var knownAbilities = AbilityProgression.GetKnownAbilitiesForLevel(character.Path, character.Level);
+        var knownPassives = AbilityProgression.GetKnownPassivesForLevel(character.Path, character.Level);
 
-        if (!knownAbilities.Any())
+        if (knownAbilities.Count == 0 && knownPassives.Count == 0)
         {
             ctx.Reply("You don't know any abilities yet.");
             return;
         }
 
-        ctx.Reply($"Your abilities ({character.Path}):");
-        foreach (var key in knownAbilities)
+        if (knownAbilities.Count > 0)
         {
-            ctx.Reply($"  • {key}");
+            ctx.Reply($"Your abilities ({character.Path}):");
+            foreach (var key in knownAbilities)
+            {
+                ctx.Reply($"  • {key}");
+            }
+        }
+
+        // Passives are never cast, so they are listed apart from the things `cast` accepts -
+        // running them together would read as a spell that refuses to work.
+        if (knownPassives.Count > 0)
+        {
+            ctx.Reply("Passives:");
+            foreach (var key in knownPassives)
+            {
+                ctx.Reply($"  • {PassiveKeys.NameOf(key)} — {PassiveKeys.DescriptionOf(key)}");
+            }
         }
     }
 }

@@ -150,11 +150,10 @@ public sealed class AbilitySystem(
             return true; // Character gone = interrupt
         }
 
-        // If caster enters combat while casting, interrupt
-        if (caster.CombatState == DikuWeb.Domain.Combat.CombatState.Fighting)
-        {
-            return true;
-        }
+        // Being in a fight is deliberately not an interrupt. It used to be, which made casting
+        // in combat impossible - and made "melee pauses while you cast" unreachable, since a
+        // fighting character could never be mid-cast. What breaks concentration is being hit,
+        // and CombatSystem cancels the cast when damage lands.
 
         // If caster moved rooms, interrupt
         if (caster.RoomKey.ToString() != cast.StartingRoomKey)
@@ -179,7 +178,7 @@ public sealed class AbilitySystem(
             return;
         }
 
-        actor.SendText($"Your {cast.AbilityKey} was interrupted.", "ability");
+        actor.SendText(CastQueueService.InterruptedText(cast.AbilityKey), "ability");
         if (logger != null)
         {
             EngineLog.AbilityCastInterrupted(logger, actor.Name, cast.AbilityKey);

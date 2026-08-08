@@ -20,5 +20,7 @@ internal sealed class ItemTemplateConfiguration : IEntityTypeConfiguration<ItemT
         builder.Property(e => e.Weight).HasColumnName("weight");
         builder.Property(e => e.BaseValue).HasColumnName("base_value");
         builder.Property(e => e.BaseStats).HasColumnName("base_stats").HasColumnType("jsonb");
+        builder.Property(e => e.AttackDelayPulses).HasColumnName("attack_delay_pulses");
+        builder.Property(e => e.AttackVerb).HasColumnName("attack_verb");
     }
 }

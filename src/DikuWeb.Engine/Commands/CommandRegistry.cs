@@ -1,4 +1,5 @@
-﻿using DikuWeb.Domain.Characters;
+﻿using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
@@ -9,6 +10,7 @@ using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.Quests;
 using DikuWeb.Engine.Spawning;
+using DikuWeb.Engine.Time;
 
 namespace DikuWeb.Engine.Commands;
 
@@ -29,7 +31,8 @@ public sealed class CommandRegistry
         MobSpawner? mobSpawner = null,
         ItemSpawner? itemSpawner = null,
         ICharacterQuestSaveQueue? questSaveQueue = null,
-        EngineOptions? options = null)
+        EngineOptions? options = null,
+        IGameClock? clock = null)
     {
         _commands = [];
 
@@ -93,7 +96,7 @@ public sealed class CommandRegistry
 
         CombatCommands.Register(_commands);
         RestCommands.Register(_commands);
-        AbilityCommands.Register(_commands, abilityCache);
+        AbilityCommands.Register(_commands, abilityCache, clock);
         QuestCommands.Register(_commands, questCache, itemTemplateCache, questSaveQueue);
         ShopCommands.Register(_commands, mobTemplateCache, itemTemplateCache, options);
         StatusCommands.Register(_commands);
@@ -500,6 +503,68 @@ public sealed class CommandRegistry
         {
             return;
         }
+
+        // Striking with a second weapon is trained, not innate. Say so, or an untrained
+        // character reads their off hand doing nothing as a bug.
+        if (slot.Value == ItemSlot.OffHand && !CanStrikeWithOffHand(ctx.Actor.Character))
+        {
+            ctx.Reply(
+                $"You settle {article} into your off hand, though you've not the training to strike with it.",
+                "dim");
+        }
+    }
+
+    private static bool CanStrikeWithOffHand(Character character) =>
+        AbilityProgression.KnowsPassive(character.Path, character.Level, PassiveKeys.DualWield);
+
+    /// <summary>
+    /// Reports the off hand only when there is something to report, and is honest when it is
+    /// carrying rather than fighting - a weapon that shows a damage range it will never roll is
+    /// exactly the kind of lie the stats screen was rewritten to stop telling.
+    /// </summary>
+    private static void AppendOffHand(
+        CommandContext ctx,
+        List<TextSpan> spans,
+        Character character,
+        IReadOnlyList<ItemInstance> equipped)
+    {
+        var offHand = equipped.FirstOrDefault(i => i.EquippedSlot == ItemSlot.OffHand);
+        if (offHand is null)
+        {
+            return;
+        }
+
+        var displayName = string.IsNullOrEmpty(offHand.TemplateName) ? offHand.TemplateKey : offHand.TemplateName;
+        var template = ctx.ItemTemplates?.Get(offHand.TemplateKey);
+
+        spans.Add(new TextSpan($"\n\nOff Hand: {displayName}", "heading"));
+
+        if (template?.AttackDelayPulses is null)
+        {
+            spans.Add(new TextSpan("\n  Not a weapon — it never strikes.", "dim"));
+            return;
+        }
+
+        if (!CanStrikeWithOffHand(character))
+        {
+            spans.Add(new TextSpan("\n  Carried only — you've not the training to strike with it.", "dim"));
+            return;
+        }
+
+        var offAttack = EquipmentResolver.ResolveAttackerStatsForHand(
+            character.Level, character.Attributes.MightModifier, equipped, ItemSlot.OffHand);
+        var delay = AttackTiming.Clamp(template.AttackDelayPulses);
+        var independent = AbilityProgression.KnowsPassive(
+            character.Path, character.Level, PassiveKeys.Ambidextrous);
+
+        spans.Add(new TextSpan(
+            $"\n  Damage Range: {offAttack.MinDamage + offAttack.BaseDamage}-{offAttack.MaxDamage + offAttack.BaseDamage}"));
+        spans.Add(new TextSpan($"\n  Speed: one swing every {delay * 0.25:0.##}s"));
+        spans.Add(new TextSpan(
+            independent
+                ? "\n  Ambidextrous — strikes on its own timing."
+                : "\n  Follows your main hand.",
+            "dim"));
     }
 
     /// <summary>
@@ -655,10 +720,11 @@ public sealed class CommandRegistry
         // Read through the same resolver combat uses. This screen used to derive its numbers
         // from level with its own formula, so it reported a damage range the game would never
         // roll - the reason a sword could show 4-12 here while landing 3s in a fight.
-        var attack = EquipmentResolver.ResolveAttackerStats(
+        var attack = EquipmentResolver.ResolveAttackerStatsForHand(
             character.Level,
             character.Attributes.MightModifier,
-            equipped);
+            equipped,
+            ItemSlot.MainHand);
 
         var defense = EquipmentResolver.ResolveDefenderStats(
             character.Attributes.AgilityModifier,
@@ -668,16 +734,23 @@ public sealed class CommandRegistry
         var minDamage = attack.MinDamage + attack.BaseDamage;
         var maxDamage = attack.MaxDamage + attack.BaseDamage;
 
+        var mainHand = equipped.FirstOrDefault(i => i.EquippedSlot == ItemSlot.MainHand);
+        var mainDelay = AttackTiming.Clamp(
+            mainHand is null ? null : ctx.ItemTemplates?.Get(mainHand.TemplateKey)?.AttackDelayPulses);
+
         var spans = new List<TextSpan>
         {
             new($"Combat Stats", "heading"),
             new($"\nLevel: {character.Level}"),
             new($"\nDamage Range: {minDamage}-{maxDamage}", "good"),
             new($"\n  Dice: {attack.MinDamage}-{attack.MaxDamage}, Might bonus: {attack.BaseDamage:+#;-#;+0}"),
+            new($"\n  Speed: one swing every {mainDelay * 0.25:0.##}s"),
             new($"\nAttack Rating: {attack.AttackRating}", "good"),
             new($"\nDefense: {10 + defense.DefenseRating}", "good"),
             new($"\n  Armour: {defense.ArmorFlat} flat, {defense.ArmorPercent:P0} reduction"),
         };
+
+        AppendOffHand(ctx, spans, character, equipped);
 
         if (equipped.Count > 0)
         {

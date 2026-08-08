@@ -81,15 +81,22 @@ public sealed class CacheLivenessTests
         var (applier, _, mobs, _) = NewApplier();
 
         applier.Apply(new UpsertMobTemplate(
-            "rat", "a rat", "", "r", 1, 24, [], 0, 0, [], []));
+            "rat", "a rat", "", "r", 1, 24, [], 0, 0, [], [], []));
 
         Assert.Equal("a rat", mobs.Get("rat")?.Name);
 
         applier.Apply(new UpsertMobTemplate(
-            "rat", "a dire rat", "", "r", 3, 24, [], 0, 0, [], []));
+            "rat", "a dire rat", "", "r", 3, 24, [], 0, 0, [], [],
+            [new MobAttack { Verb = "bite", DelayPulses = 6 }]));
 
         Assert.Equal("a dire rat", mobs.Get("rat")?.Name);
         Assert.Equal(3, mobs.Get("rat")?.Level);
+
+        // Combat reads attacks from this cache, so an edit that stopped here would persist a new
+        // cadence the running fight never saw.
+        var attack = Assert.Single(mobs.Get("rat")?.Attacks ?? []);
+        Assert.Equal("bite", attack.Verb);
+        Assert.Equal(6, attack.DelayPulses);
 
         applier.Apply(new DeleteMobTemplate("rat"));
         Assert.Null(mobs.Get("rat"));
@@ -101,15 +108,20 @@ public sealed class CacheLivenessTests
         var (applier, _, _, items) = NewApplier();
 
         applier.Apply(new UpsertItemTemplate(
-            "blade", "a blade", "", "/", ItemSlot.MainHand, 10, 25, []));
+            "blade", "a blade", "", "/", ItemSlot.MainHand, 10, 25, [], 8, "slash"));
 
         Assert.Equal(25, items.Get("blade")?.BaseValue);
+        Assert.Equal(8, items.Get("blade")?.AttackDelayPulses);
+        Assert.Equal("slash", items.Get("blade")?.AttackVerb);
 
         // The shop price is the reason this matters: it reads the cache, not the repository.
+        // So does weapon speed - combat resolves the delay through this same cache every pulse.
         applier.Apply(new UpsertItemTemplate(
-            "blade", "a blade", "", "/", ItemSlot.MainHand, 10, 99, []));
+            "blade", "a blade", "", "/", ItemSlot.MainHand, 10, 99, [], 4, "cleave"));
 
         Assert.Equal(99, items.Get("blade")?.BaseValue);
+        Assert.Equal(4, items.Get("blade")?.AttackDelayPulses);
+        Assert.Equal("cleave", items.Get("blade")?.AttackVerb);
 
         applier.Apply(new DeleteItemTemplate("blade"));
         Assert.Null(items.Get("blade"));

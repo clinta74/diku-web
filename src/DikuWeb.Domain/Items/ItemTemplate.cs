@@ -31,6 +31,24 @@ public sealed class ItemTemplate
     /// Persisted as jsonb object (free-form, validated by game logic only).
     /// </summary>
     public Dictionary<string, object> BaseStats { get; set; } = new();
+
+    /// <summary>
+    /// Pulses between swings when this is wielded. Null means it declares no speed: in the main
+    /// hand that is the 8-pulse default, and in the off hand it means the item is not a weapon at
+    /// all and never strikes - which is what keeps shields from punching.
+    /// </summary>
+    /// <remarks>
+    /// A column rather than a <see cref="BaseStats"/> key on purpose. The builder coerces every
+    /// base stat to a number, which would destroy a verb, and a floor of 4 needs the server to be
+    /// able to refuse a save.
+    /// </remarks>
+    public int? AttackDelayPulses { get; set; }
+
+    /// <summary>
+    /// Base-form verb describing how this weapon strikes: "slash" for a sword, "crush" for a club.
+    /// Null narrates as "hit". See <see cref="Narration.NarrationHelper.ThirdPerson"/>.
+    /// </summary>
+    public string? AttackVerb { get; set; }
 }
 
 /// <summary>Equippable item slots.</summary>

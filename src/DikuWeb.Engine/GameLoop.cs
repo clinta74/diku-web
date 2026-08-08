@@ -161,40 +161,22 @@ public sealed class GameLoop(
             abilitySystem.Tick(world);
         }
 
+        // Combat runs every pulse and synchronously, on this thread: each combatant swings on
+        // its own weapon's clock, and the world is single-writer. Casts resolve first, so a
+        // spell that lands this pulse frees the caster's swings on the same one.
+        combatSystem?.Tick(world, pulse);
+
         if (GameTiming.RunsOn(pulse, GameTiming.RegenPulses))
         {
             RegenSystem.Tick(world);
             EffectExpirySystem.Tick(world, pulse);
-
-            // Send updated vitals to all players after regeneration
-            foreach (var actor in world.AllPlayers)
-            {
-                PlayerView.SendVitals(actor);
-            }
         }
 
-        if (combatSystem != null && GameTiming.RunsOn(pulse, CombatSystem.TickIntervalPulses))
+        // One comparison per player per pulse, and a frame only when something actually moved.
+        // Pushing unconditionally after combat would mean four frames a second per fighter.
+        foreach (var actor in world.AllPlayers)
         {
-            // Fire and forget - combat runs on thread pool for template/item lookups
-            // PlayerView is passed for room refreshes after mob death or loot spawning
-            _ = combatSystem.Tick(world, CancellationToken.None);
-
-            // Send updated vitals to all combatants after combat resolves
-            foreach (var combat in world.AllCombats.Where(c => c.Combatants.Count > 0))
-            {
-                foreach (var combatantId in combat.Combatants)
-                {
-                    if (EntityId.IsCharacter(combatantId))
-                    {
-                        var charId = EntityId.ToGuid(combatantId);
-                        var actor = world.FindByCharacter(charId);
-                        if (actor != null)
-                        {
-                            PlayerView.SendVitals(actor);
-                        }
-                    }
-                }
-            }
+            PlayerView.SendVitalsIfChanged(actor);
         }
 
         if (pulse > 0 && GameTiming.RunsOn(pulse, GameTiming.AutosavePulses))

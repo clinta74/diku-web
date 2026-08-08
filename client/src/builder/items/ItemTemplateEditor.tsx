@@ -33,6 +33,10 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
   const [weight, setWeight] = useState(0)
   const [baseValue, setBaseValue] = useState(0)
   const [baseStats, setBaseStats] = useState<Record<string, number>>({})
+  // Weapon speed and verb are columns, not base stats: the coercion below would turn a verb
+  // into 0, and a delay below the floor has to be refusable by the server.
+  const [attackDelayPulses, setAttackDelayPulses] = useState<number | null>(null)
+  const [attackVerb, setAttackVerb] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -60,6 +64,8 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
               )
             : {},
         )
+        setAttackDelayPulses(loaded.attackDelayPulses ?? null)
+        setAttackVerb(loaded.attackVerb ?? '')
         setDirty(false)
       })
       .catch((e) => {
@@ -82,6 +88,8 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         weight,
         baseValue,
         baseStats,
+        attackDelayPulses,
+        attackVerb: attackVerb.trim() === '' ? null : attackVerb.trim(),
       })
       setTemplate(updated)
       setSlot(updated.slot)
@@ -203,6 +211,38 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
           />
         </Field>
       </div>
+
+      <fieldset className="multiplier-set">
+        <legend>As a weapon</legend>
+        <p className="dim detail">
+          Blank speed means this is not a weapon: in a main hand it swings at the default 8
+          pulses, in an off hand it never strikes at all.
+        </p>
+        <div className="field-row">
+          <Field label="Attack delay (pulses)" hint="Minimum 4 ≈ 1s. Lower = faster.">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={attackDelayPulses ?? ''}
+              onChange={(e) => {
+                const raw = e.target.value.trim()
+                setAttackDelayPulses(raw === '' || Number.isNaN(Number(raw)) ? null : Number(raw))
+                touch()
+              }}
+            />
+          </Field>
+          <Field label="Attack verb" hint="Base form: slash, crush, stab.">
+            <input
+              value={attackVerb}
+              maxLength={24}
+              onChange={(e) => {
+                setAttackVerb(e.target.value)
+                touch()
+              }}
+            />
+          </Field>
+        </div>
+      </fieldset>
 
       <fieldset className="multiplier-set">
         <legend>Stat multipliers (when worn/wielded)</legend>

@@ -12,6 +12,7 @@ using DikuWeb.Engine.Systems;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace DikuWeb.Engine;
 
@@ -51,7 +52,8 @@ public static class EngineServiceCollectionExtensions
                 sp.GetService<MobSpawner>(),
                 sp.GetService<ItemSpawner>(),
                 sp.GetService<ICharacterQuestSaveQueue>(),
-                sp.GetService<EngineOptions>()));
+                sp.GetService<EngineOptions>(),
+                sp.GetService<IGameClock>()));
         services.AddSingleton<RoomLayoutService>();
         services.AddSingleton<PlayerView>();
         services.AddSingleton<WorldMutationApplier>();
@@ -64,8 +66,18 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<SpawnerSystem>();
         services.AddSingleton<MobAiSystem>();
 
-        // Phase 4 systems (combat, progression)
-        services.AddSingleton<CombatSystem>();
+        // Phase 4 systems (combat, progression). Constructed explicitly rather than by
+        // convention: the template caches are optional parameters, and a container that quietly
+        // failed to supply them would leave every weapon at the default speed and every mob
+        // narrating "hit" - a balance-shaped bug with no exception to notice.
+        services.AddSingleton<CombatSystem>(sp =>
+            new CombatSystem(
+                sp.GetRequiredService<EngineOptions>(),
+                sp.GetService<PlayerView>(),
+                sp.GetService<ItemTemplateCache>(),
+                sp.GetService<MobTemplateCache>(),
+                sp.GetService<ItemSpawner>(),
+                sp.GetService<ILogger<CombatSystem>>()));
 
         // Phase 5 systems (abilities, quests)
         services.AddSingleton<AbilityCache>();

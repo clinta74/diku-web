@@ -33,6 +33,8 @@ export function ItemsTab() {
               weight: 0,
               baseValue: 0,
               baseStats: {},
+              attackDelayPulses: null,
+              attackVerb: null,
             })
             await refreshItemTemplates()
             navigate(toItemsPath(key))
