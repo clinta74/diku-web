@@ -1,4 +1,4 @@
-using DikuWeb.Domain.Characters;
+﻿using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
@@ -303,7 +303,7 @@ public sealed class CombatTimingTests
         fight.Harness.World.CastQueue.Enqueue(new CastJob
         {
             CharacterId = fight.Player.CharacterId,
-            AbilityKey = "warden.slash",
+            AbilityKey = "warden.kick",
             ResolveAtPulse = 9,
             StartingRoomKey = West.ToString(),
         });
@@ -323,7 +323,7 @@ public sealed class CombatTimingTests
         fight.Harness.World.CastQueue.Enqueue(new CastJob
         {
             CharacterId = fight.Player.CharacterId,
-            AbilityKey = "warden.slash",
+            AbilityKey = "warden.kick",
             ResolveAtPulse = 20,
             StartingRoomKey = West.ToString(),
         });
@@ -345,7 +345,7 @@ public sealed class CombatTimingTests
         fight.Harness.World.CastQueue.Enqueue(new CastJob
         {
             CharacterId = fight.Player.CharacterId,
-            AbilityKey = "warden.slash",
+            AbilityKey = "warden.kick",
             ResolveAtPulse = 20,
             StartingRoomKey = West.ToString(),
         });

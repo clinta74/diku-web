@@ -231,31 +231,24 @@ public sealed class MobAiSystem(
         }
     }
 
-    private long GetMobStateLong(Mob mob, string key)
-    {
-        if (mob.State.TryGetValue(key, out var val))
-        {
-            return val switch
-            {
-                long l => l,
-                int i => i,
-                _ => 0,
-            };
-        }
-        return 0;
-    }
+    /// <summary>
+    /// Reads a pulse counter out of the mob's state bag.
+    /// </summary>
+    /// <remarks>
+    /// Through <see cref="JsonBag"/> rather than by pattern-matching <c>is long</c>. Nothing reads
+    /// or writes the <c>mobs</c> table today, so the bag only ever holds the native types this
+    /// file put there - but the table and the <c>DbSet&lt;Mob&gt;</c> both exist, and the day mob
+    /// persistence lands every value comes back as a <c>JsonElement</c>. At that point a type
+    /// check would silently return 0 here and false below, and the emote timers and the sentinel
+    /// flag would go quiet with nothing to show for it. That has already happened three times to
+    /// the other bags; this is the same trap, disarmed early.
+    /// </remarks>
+    private static long GetMobStateLong(Mob mob, string key) =>
+        JsonBag.Int64(mob.State, key);
 
-    private void SetMobStateLong(Mob mob, string key, long value)
-    {
+    private static void SetMobStateLong(Mob mob, string key, long value) =>
         mob.State[key] = value;
-    }
 
-    private bool GetMobStateBool(Mob mob, string key)
-    {
-        if (mob.State.TryGetValue(key, out var val))
-        {
-            return val is true or "true" or 1;
-        }
-        return false;
-    }
+    private static bool GetMobStateBool(Mob mob, string key) =>
+        JsonBag.Boolean(mob.State, key);
 }

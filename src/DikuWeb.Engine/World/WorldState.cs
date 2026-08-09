@@ -39,12 +39,19 @@ public sealed class WorldState(IRandomSource random)
     public CastQueueService CastQueue => _castQueue;
 
     /// <summary>Get the last pulse when an ability was cast (for cooldown checking).</summary>
-    public long GetAbilityCooldown(Guid characterId, string abilityKey)
-    {
-        var key = (characterId, abilityKey);
-        _abilityCooldowns.TryGetValue(key, out var lastPulse);
-        return lastPulse;
-    }
+    /// <summary>
+    /// The pulse an ability was last cast on, or null if this character has never cast it.
+    /// </summary>
+    /// <remarks>
+    /// Null rather than 0. Zero is a real pulse - the one the server starts on - so returning it
+    /// for "never cast" made every ability read as freshly used at boot, and the whole spellbook
+    /// was refused for its own cooldown duration after every restart. It also made a cast at
+    /// pulse 0 untestable, which is why nothing had noticed.
+    /// </remarks>
+    public long? GetAbilityCooldown(Guid characterId, string abilityKey) =>
+        _abilityCooldowns.TryGetValue((characterId, abilityKey), out var lastPulse)
+            ? lastPulse
+            : null;
 
     /// <summary>Set the last pulse when an ability was cast.</summary>
     public void SetAbilityCooldown(Guid characterId, string abilityKey, long pulse)

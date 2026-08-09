@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine;
 using DikuWeb.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -415,12 +416,18 @@ public sealed class BuilderQueries(DikuWebDbContext db)
     {
         var resolved = new Dictionary<string, int>(StringComparer.Ordinal);
 
-        // Health: use Strength multiplier
-        if (template.BaseStats.TryGetValue("health", out var health))
+        // Health: use Strength multiplier.
+        //
+        // Read through JsonBag, not by pattern-matching the runtime type. BaseStats is jsonb, so
+        // every value arrives as a JsonElement - `health is int` was false for every template
+        // that had ever been saved, and the preview reported 40 health for all of them.
+        if (template.BaseStats.ContainsKey("health"))
         {
-            var healthVal = health is int h ? h : (health is long l ? (int)l : 40);
             resolved["health"] = DikuWeb.Domain.Worlds.Multipliers.Resolve(
-                healthVal, worldMults, zoneMults, DikuWeb.Domain.Worlds.MultiplierType.Strength);
+                JsonBag.Int32(template.BaseStats, "health", 40),
+                worldMults,
+                zoneMults,
+                DikuWeb.Domain.Worlds.MultiplierType.Strength);
         }
 
         // XP: use Xp multiplier

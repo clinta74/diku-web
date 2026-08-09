@@ -74,6 +74,20 @@ public static class QuestCommands
             // Check prerequisites
             var prerequisitesMet = CheckPrerequisites(ctx.World, character.Id, quest);
 
+            // A quest whose content has been deleted is dormant: it stops being offered, and
+            // anyone already holding it is told so rather than left hunting for an item that no
+            // longer exists (PLAN.md §7.4).
+            if (IsDormant(ctx, quest))
+            {
+                if (questState?.Status == QuestStatus.Active)
+                {
+                    narrations.Add(
+                        $"About {quest.Name} — that business is closed for now. Hold on to what you have.");
+                }
+
+                continue;
+            }
+
             if (questState is null && prerequisitesMet)
             {
                 // No quest row and prerequisites are met - offer the quest
@@ -153,6 +167,41 @@ public static class QuestCommands
         }
     }
 
+    /// <summary>
+    /// Whether this quest points at content that no longer exists.
+    /// </summary>
+    /// <remarks>
+    /// Derived rather than stored, and deliberately not a <c>QuestStatus.Unavailable</c>. The
+    /// state is entirely a function of what content exists right now, so deriving it means a
+    /// builder who deletes a mob by mistake and puts it back has every stranded quest working
+    /// again with no repair pass - and a stored status would need one, plus a migration, plus a
+    /// rule for when to flip it back.
+    ///
+    /// What §7.4 actually requires is that <c>character_quests</c> rows survive and that the
+    /// giver stops offering it. Both are true here, and no player row is ever written.
+    ///
+    /// Keys are not foreign keys on purpose (§7.4: a builder wires a quest before creating what
+    /// it references), so "missing" is normal and temporary rather than corrupt.
+    /// </remarks>
+    private static bool IsDormant(CommandContext ctx, Quest quest)
+    {
+        if (ctx.MobTemplates is null)
+        {
+            return false;
+        }
+
+        if (ctx.MobTemplates.Get(quest.GiverMobKey) is null ||
+            ctx.MobTemplates.Get(quest.TurninMobKey) is null)
+        {
+            return true;
+        }
+
+        // The required item only makes a quest dormant if it is named at all - a quest with no
+        // fetch step is legitimate, which is why RequiredItemKey is nullable.
+        return !string.IsNullOrEmpty(quest.RequiredItemKey) &&
+               ctx.ItemTemplates?.Get(quest.RequiredItemKey) is null;
+    }
+
     private static void Quests(CommandContext ctx)
     {
         var character = ctx.Actor.Character;
@@ -176,7 +225,14 @@ public static class QuestCommands
             {
                 var questDef = ctx.Quests?.Get(quest.QuestKey);
                 var summary = questDef?.Summary ?? "Unknown quest";
-                ctx.Reply($"  {questDef?.Name ?? quest.QuestKey}: {summary}");
+
+                // A dormant quest is still yours and still in the journal - it just cannot be
+                // progressed until the content comes back. Saying so beats leaving a player
+                // hunting for an item that no longer exists (PLAN.md §7.4).
+                var dormant = questDef is not null && IsDormant(ctx, questDef);
+                var suffix = dormant ? " (unavailable — content missing)" : string.Empty;
+
+                ctx.Reply($"  {questDef?.Name ?? quest.QuestKey}: {summary}{suffix}");
             }
         }
 

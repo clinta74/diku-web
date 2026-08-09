@@ -3,9 +3,16 @@ using DikuWeb.Domain.Randomness;
 namespace DikuWeb.Domain.Abilities.Effects;
 
 /// <summary>
-/// A debuff effect that increases incoming damage for the target.
+/// A debuff on the target: it can make them take more damage, deal less, or both.
 /// Implements IBuffEffect to create ongoing ActiveEffect state.
 /// </summary>
+/// <remarks>
+/// <c>outgoingMultiplier</c> was hardcoded to 1.0, so the only debuff this could express was
+/// vulnerability - raising incoming damage. That left "weaken" unable to actually weaken
+/// anything, and an ability author reaching for it would set <c>incomingMultiplier</c> below 1.0
+/// and *protect* the target instead. Both directions are readable now, and each ability says
+/// which one it means.
+/// </remarks>
 public sealed class DebuffEffect : IBuffEffect
 {
     public string EffectKey => "debuff.weaken";
@@ -28,16 +35,24 @@ public sealed class DebuffEffect : IBuffEffect
         ArgumentNullException.ThrowIfNull(parameters);
 
         var incomingMultiplier = 1.0m;
+        var outgoingMultiplier = 1.0m;
         var durationPulses = 240L;
         var maxStacks = 1;
         var stackingRule = EffectStackingRule.Refresh;
         var name = "weakness";
 
-        // Parse parameters
+        // Parse parameters. Above 1.0 on incoming means the target takes more; below 1.0 on
+        // outgoing means it deals less. Either alone is a debuff; both together is a strong one.
         if (parameters.TryGetValue("incomingMultiplier", out var inStr) &&
             decimal.TryParse(inStr, out var inMult))
         {
             incomingMultiplier = inMult;
+        }
+
+        if (parameters.TryGetValue("outgoingMultiplier", out var outStr) &&
+            decimal.TryParse(outStr, out var outMult))
+        {
+            outgoingMultiplier = outMult;
         }
 
         if (parameters.TryGetValue("durationPulses", out var durStr) &&
@@ -74,7 +89,7 @@ public sealed class DebuffEffect : IBuffEffect
             EffectKey = EffectKey,
             Name = name,
             SourceEntityId = sourceId,
-            OutgoingDamageMultiplier = 1.0m,
+            OutgoingDamageMultiplier = outgoingMultiplier,
             IncomingDamageMultiplier = incomingMultiplier,
             ExpiresAtPulse = currentPulse + durationPulses,
             Stacks = 1,

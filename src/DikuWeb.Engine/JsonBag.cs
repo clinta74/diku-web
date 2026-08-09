@@ -42,6 +42,28 @@ public static class JsonBag
         };
     }
 
+    /// <summary>
+    /// Reads a whole number, falling back when the key is absent or is not one.
+    /// </summary>
+    /// <remarks>
+    /// Parses the text rather than pattern-matching the runtime type, which is what makes it
+    /// work for a <see cref="JsonElement"/>. A reader written as <c>value is int</c> is false for
+    /// every value that came out of jsonb, and silently returns its fallback - so a mob template
+    /// with 250 health reads as whatever number the call site happened to pick as a default.
+    /// </remarks>
+    public static int Int32(IReadOnlyDictionary<string, object>? bag, string key, int fallback = 0) =>
+        Text(bag, key) is { } text &&
+        int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : fallback;
+
+    /// <summary>Reads a 64-bit whole number, falling back when the key is absent or is not one.</summary>
+    public static long Int64(IReadOnlyDictionary<string, object>? bag, string key, long fallback = 0) =>
+        Text(bag, key) is { } text &&
+        long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : fallback;
+
     /// <summary>Reads a string, or null when the key is absent, null, or blank.</summary>
     public static string? Text(IReadOnlyDictionary<string, object>? bag, string key)
     {

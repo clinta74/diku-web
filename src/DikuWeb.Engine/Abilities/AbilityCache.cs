@@ -26,6 +26,17 @@ public sealed class AbilityCache
         IsLoaded = true;
     }
 
+    /// <summary>
+    /// Inserts or replaces one ability, so a reconcile or a test can populate the cache without
+    /// a repository. Marks the cache loaded, for the reason given on <c>MobTemplateCache.Put</c>.
+    /// </summary>
+    public void Put(DikuWeb.Domain.Abilities.Ability ability)
+    {
+        ArgumentNullException.ThrowIfNull(ability);
+        _abilities[ability.Key] = ability;
+        IsLoaded = true;
+    }
+
     /// <summary>Get an ability by its key.</summary>
     public DikuWeb.Domain.Abilities.Ability? Get(string key)
     {

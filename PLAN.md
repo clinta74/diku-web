@@ -14,7 +14,7 @@ numbers rather than a new set of hand-authored content.
 Play is **PvE by default**; player-versus-player is opt-in per room, through the same extensible
 room-flag registry that carries every other room property (§4.10).
 
-Status: **Phases 0–4 and 5.1 complete; 5.2 complete but for dormant quests and AoE.**
+Status: **Phases 0–4 and 5.1 complete; 5.2 complete but for AoE targeting.**
 
 *Playing* works end to end: register, create a character, walk a seeded zone, talk. Inventory,
 equipment, and items work; mob AI emotes and wanders; combat kills, loots, and levels, with XP
@@ -1411,7 +1411,16 @@ multiplier from the browser, which is the half the phase goal is written about.
       this room, and "Remove" deleted the whole thing while the confirmation said it would stop
       filling "this room" — tidying one room could empty twenty. It now removes this room from
       the set, and only deletes outright when this was the last room.
+- [x] **The multiplier preview reported 40 health for everything.** `ResolveMobStats` read
+      `BaseStats["health"]` as `value is int`, false for every jsonb-loaded template, so it fell
+      through to its 40 fallback. A builder tuning the Strength dial was watching a number that
+      was not their mob's. Now read through `JsonBag.Int32`.
 - [ ] Loot table and `baseStats` editors for mob templates (only `health` has a field today)
+- [x] **`Mob.State` reads through `JsonBag`.** It pattern-matched `is long` / `is true`, which is
+      correct only while nothing reads or writes the `mobs` table. The schema and the
+      `DbSet<Mob>` both exist, so the day mob persistence lands the sentinel flag and the emote
+      timers would have gone quiet with no error — the same trap that had already cost three
+      features. Disarmed before it fires rather than after.
 - [ ] Builder: *Respawn zone* button to apply live multiplier edits to existing mobs (deferred nice-to-have)
 
 ### Phase 4 — Combat and progression ✅ **complete**
@@ -1458,6 +1467,17 @@ multiplier from the browser, which is the half the phase goal is written about.
       in no progression, so all of 5.2a's buffs and debuffs were **unlearnable**.
 - [x] Ability rows **reconcile on every startup**, not once at seed time, so an existing database
       receives abilities added later. Seeding bailed whenever a world already existed.
+- [x] **Parry is a passive**, not a castable self-heal (Warden 4, Shade 8). It rolls after the
+      attack roll and before narration, so it only spends itself on a blow that would have landed.
+      Mobs never parry — the chance comes from Path and level, which a mob has neither of.
+- [x] **Debuffs were inverted.** `debuff.weaken` sets `IncomingDamageMultiplier`, which scales
+      damage the target *takes*; every weaken was authored below 1.0 and so made its target
+      25–45% **harder** to kill. `DebuffEffect` now also reads `outgoingMultiplier` — hardcoded
+      to 1.0 before, so the effect could not express "deals less damage" at all.
+- [x] **Ability rows reconcile in all three directions** — added, updated, and *purged*. The
+      catalogue is authoritative, which is safe because abilities are the one content type with
+      no builder UI and no foreign keys pointing at them. Without the purge, a renamed ability
+      (`warden.slash` → `warden.kick`) left the old row in the table forever.
 - [ ] Only four effect executors exist (`damage.physical`, `heal.restore`, `buff.damage-up`,
       `debuff.weaken`), so Paths differ in cost and cadence rather than in kind. A stun, an
       interrupt, or a snare needs a new executor — not a new ability row.
@@ -1532,12 +1552,29 @@ fails quietly, which is why they need to be listed rather than assumed.
       been correct and both dead, so neither rule had ever fired in play. Two call sites that
       hand-built an `ItemInstance` from a spawned one now use the spawned instance directly;
       they would otherwise have dropped the stamp.
-- [ ] **Dormant-quest handling is absent.** Deleting a mob or item a quest references leaves the
-      quest pointing at nothing; §7.4 requires the quest go dormant and `character_quests` rows
-      survive. No code path and no test.
+- [x] **Dormant quests.** A quest whose giver, turn-in, or required item no longer exists stops
+      being offered, and an in-progress copy stays in the journal marked *unavailable*. Dormancy
+      is **derived, not stored** — no `QuestStatus.Unavailable`, no migration, and restoring the
+      content revives the quest with no repair pass. No player row is ever written.
+- [x] **`cast` could not target a mob.** Target resolution searched players only, so every
+      offensive ability resolved to no target against the things you actually fight — and because
+      cost and cooldown are spent *before* the target is resolved, it charged in full, started the
+      cooldown, and narrated "takes effect!". Now matches mobs through `NameMatch`, falls back to
+      the current combat target for harmful abilities and to self for helpful ones, and refuses
+      before charging when nothing matches.
+- [x] **Every ability was on cooldown at boot.** `GetAbilityCooldown` returned `0` for "never
+      cast", which is a real pulse — so for the first `CooldownPulses` of server uptime the whole
+      spellbook was refused. Returns `long?` now.
+- [x] **The Channeler could not heal anyone.** Every supportive ability on the support Path was
+      `TargetingType.Self`. They are `SingleTarget` now, and a helpful ability cast with no target
+      named still lands on the caster.
 - [ ] **`TargetingType.Aoe` never resolves a target.** `AbilitySystem` handles `Self` and
       `SingleTarget`; an AoE cast falls through with `target = null` and silently does nothing.
-      The §4.11 per-target filter has nothing to filter yet.
+      Nothing declares it, so the failure is unreachable rather than live, and a catalogue test
+      now fails the build if anything does — delete that test as part of implementing it. §4.11
+      sets the bar: the filter runs per target, so a cast in a mixed room hits the mobs and skips
+      the players. Note that **party membership does not exist yet** (5.3), so "never targets a
+      party member" cannot be honoured until it does.
 
 #### 5.2e — Deferred from the original 5.2 list
 - [ ] Pets and charmed mobs inherit their owner's §4.11 permissions (no pet system yet)
@@ -1639,23 +1676,30 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 
 ## 12. Next step
 
-**The builder catch-up is done.** Multipliers, world and zone editors, item and multi-room
-spawners, `questItem`, the `baseStats` corruption, and ability progression all landed. What is
-left is smaller and mostly green-field:
+**The builder catch-up and the correctness pass are both done.** Multipliers, world and zone
+editors, spawners, `questItem`, `baseStats`, ability progression, dormant quests, and the cast
+targeting bugs have all landed. What is left is mostly additive:
 
-1. **Dormant quests** (5.2d) — deleting a referenced mob strands the quest; §7.4 requires the
-   giver stop offering it while in-progress rows survive, marked unavailable. The largest
-   remaining correctness gap.
-2. **`TargetingType.Aoe`** (5.2d) — `AbilitySystem` handles `Self` and `SingleTarget`; an AoE
-   cast leaves `target = null` and the guard below skips the effect, so it silently does nothing.
-3. **A fifth effect executor.** Paths currently differ in cost and cadence because only four
-   effects exist. A stun, interrupt, snare, or damage-over-time is what would make them differ
-   in *kind* — and it is the unlock for real combat depth.
-4. **Per-flag world and zone primitives** (Phase 2) — flag edits at those scopes are still
+1. **A fifth effect executor.** Paths differ in cost and cadence because only four effects exist
+   (`damage.physical`, `heal.restore`, `buff.damage-up`, `debuff.weaken`). A stun, interrupt,
+   snare, or damage-over-time is what would make them differ in *kind* — and it is the unlock for
+   both real combat depth and a `kick` that does something a `bash` does not.
+2. **`TargetingType.Aoe`** — worth doing once an ability wants it, and it needs parties (5.3) to
+   honour §4.11 in full. A build-breaking guard is in place until then.
+3. **Per-flag world and zone primitives** (Phase 2) — flag edits at those scopes are still
    whole-map writes.
-5. **Loot table and `baseStats` editors** for mob templates (Phase 3).
+4. **Loot table and `baseStats` editors** for mob templates (Phase 3).
+5. **Builder-authored armour** (Phase 4) — needs a design decision, not a patch.
 
 Then 5.3 (communication) and Phase 6 (ops).
+
+**Not yet in any phase, from playtesting:**
+
+- Command-line autocomplete for item and mob names; `spawn` should complete against real keys.
+- An explicit per-template alias list. Matching is derived from the name now, which covers the
+  common case — but nothing reaches a named wolf called "Fang" whose key is `grey-wolf`.
+- `examine` and `stats` are builder-aware; the other inspection commands (`look`, `inventory`,
+  `consider`) are not.
 
 **Two lessons from the audits, worth carrying forward:**
 

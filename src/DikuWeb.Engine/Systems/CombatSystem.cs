@@ -400,6 +400,15 @@ public sealed class CombatSystem(
             verb,
             world.Random);
 
+        // Parry is checked after the roll and before the narration, so it only ever spends
+        // itself on a blow that was going to land - and the exchange is narrated once, as a
+        // parry, rather than as a hit that is then quietly undone.
+        if (round.Damage.Hit && TryParry(world, strike, out var parryNarration))
+        {
+            NarrateToRoom(world, strike, parryNarration);
+            return false;
+        }
+
         if (strike.AttackerActor is PlayerActor attackerPlayer)
         {
             attackerPlayer.SendText(round.AttackerNarration, "combat");
@@ -453,6 +462,49 @@ public sealed class CombatSystem(
         // falling.
         HandleDeath(world, strike.Combat, strike.TargetId);
         return true;
+    }
+
+    /// <summary>
+    /// Rolls the defender's parry against a blow that would otherwise have landed.
+    /// </summary>
+    /// <remarks>
+    /// Only characters parry: the chance comes from Path and level, and a mob has neither. That
+    /// is deliberate rather than an oversight - parrying is a trained skill the two martial Paths
+    /// learn, and giving it to mobs would make every fight longer without making any of them more
+    /// interesting.
+    /// </remarks>
+    private static bool TryParry(WorldState world, StrikeContext strike, out string narration)
+    {
+        narration = string.Empty;
+
+        if (!EntityId.IsCharacter(strike.TargetId))
+        {
+            return false;
+        }
+
+        var defender = world.GetCharacter(EntityId.ToGuid(strike.TargetId));
+        if (defender is null)
+        {
+            return false;
+        }
+
+        var chance = AbilityProgression.ParryChance(defender.Path, defender.Level);
+        if (chance <= 0 || !world.Random.Chance(chance))
+        {
+            return false;
+        }
+
+        narration = $"{strike.TargetName} parries {strike.AttackerName}'s attack.";
+        return true;
+    }
+
+    /// <summary>Sends one line to both combatants and everyone watching.</summary>
+    private static void NarrateToRoom(WorldState world, StrikeContext strike, string line)
+    {
+        foreach (var occupant in world.OccupantsOf(strike.Combat.RoomKey))
+        {
+            occupant.SendText(line, "combat");
+        }
     }
 
     /// <summary>Whether this attack's delay has elapsed since it last swung, or since engaging.</summary>

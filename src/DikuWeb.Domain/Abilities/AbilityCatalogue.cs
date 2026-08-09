@@ -62,8 +62,31 @@ public static class AbilityCatalogue
             ["name"] = name,
         };
 
-    /// <summary>A weakening debuff on the target. <c>DebuffEffect</c> reads incoming, not outgoing.</summary>
-    private static Dictionary<string, string> Debuff(string incoming, string duration, string name) =>
+    /// <summary>
+    /// Takes the fight out of the target: it deals <paramref name="outgoing"/> of its usual
+    /// damage. <b>Below 1.0</b> - 0.7 means it hits for 70% of what it would have.
+    /// </summary>
+    /// <remarks>
+    /// The direction is the whole of the danger here. These multipliers are applied as-is, so a
+    /// value on the wrong side of 1.0 silently helps whoever it was cast at - which is exactly
+    /// what happened when these were first written against <c>incomingMultiplier</c>: every
+    /// "weaken" in the game made its target take 25-45% *less* damage.
+    /// </remarks>
+    private static Dictionary<string, string> Weaken(string outgoing, string duration, string name) =>
+        new(StringComparer.Ordinal)
+        {
+            ["outgoingMultiplier"] = outgoing,
+            ["durationPulses"] = duration,
+            ["maxStacks"] = "1",
+            ["stackingRule"] = "Refresh",
+            ["name"] = name,
+        };
+
+    /// <summary>
+    /// Opens the target up: it takes <paramref name="incoming"/> of the damage it otherwise
+    /// would. <b>Above 1.0</b> - 1.3 means everything lands for 30% more.
+    /// </summary>
+    private static Dictionary<string, string> Vulnerable(string incoming, string duration, string name) =>
         new(StringComparer.Ordinal)
         {
             ["incomingMultiplier"] = incoming,
@@ -86,8 +109,10 @@ public static class AbilityCatalogue
         // -------------------------------------------------------------------
         // Warden - armored frontline. Stamina, short cooldowns, self-sustain.
         // -------------------------------------------------------------------
-        new(CharacterPath.Warden, 1, "warden.slash", "Slash",
-            "A measured cut with whatever you are holding.",
+        // A kick rather than a slash: the opener must not assume a blade. A Warden with a mace,
+        // a staff, or empty hands was still being told they slashed.
+        new(CharacterPath.Warden, 1, "warden.kick", "Kick",
+            "A boot to the knee. Nothing elegant, and it does not care what you are holding.",
             CostType.Stamina, 10, 12, null, TargetingType.SingleTarget,
             "damage.physical", Damage("1.1", "3")),
 
@@ -101,10 +126,14 @@ public static class AbilityCatalogue
             CostType.Stamina, 18, 60, null, TargetingType.Self,
             "buff.damage-up", Buff("1.25", "80", "battle fury")),
 
-        new(CharacterPath.Warden, 7, "warden.parry", "Parry",
-            "Turn a blow aside and shake off what already landed.",
-            CostType.Stamina, 14, 32, null, TargetingType.Self,
-            "heal.restore", Heal("22")),
+        // Parry used to sit here as a castable self-heal. It is a passive now (PassiveKeys.Parry,
+        // Warden 4 / Shade 8), because turning a blow aside is something a fighter does
+        // continuously rather than something they stop to do - and as an ability it had to be
+        // spent *before* the blow it was meant to stop.
+        new(CharacterPath.Warden, 7, "warden.sunder", "Sunder",
+            "Batter the guard apart. What comes next lands on what is left of it.",
+            CostType.Stamina, 16, 44, null, TargetingType.SingleTarget,
+            "debuff.weaken", Vulnerable("1.3", "80", "sundered")),
 
         new(CharacterPath.Warden, 10, "warden.rally", "Rally",
             "Find your feet again in the middle of it.",
@@ -142,7 +171,7 @@ public static class AbilityCatalogue
         new(CharacterPath.Adept, 5, "adept.weaken", "Weaken",
             "Unpick the strength out of something.",
             CostType.Focus, 16, 40, 4, TargetingType.SingleTarget,
-            "debuff.weaken", Debuff("0.75", "80", "weakened")),
+            "debuff.weaken", Weaken("0.75", "80", "weakened")),
 
         new(CharacterPath.Adept, 7, "adept.amplify", "Amplify",
             "Wind the next few strikes tighter.",
@@ -157,7 +186,7 @@ public static class AbilityCatalogue
         new(CharacterPath.Adept, 13, "adept.enfeeble", "Enfeeble",
             "Take the fight out of it at the root.",
             CostType.Focus, 26, 56, 4, TargetingType.SingleTarget,
-            "debuff.weaken", Debuff("0.6", "100", "enfeebled")),
+            "debuff.weaken", Weaken("0.6", "100", "enfeebled")),
 
         new(CharacterPath.Adept, 16, "adept.disjunction", "Disjunction",
             "Pull something apart along the seams it did not know it had.",
@@ -214,45 +243,50 @@ public static class AbilityCatalogue
 
         // -------------------------------------------------------------------
         // Channeler - support and control. Mends more than it harms.
+        //
+        // Every supportive ability here is SingleTarget, not Self. A support Path whose heals
+        // only reach itself is not a support Path - and casting one with no target named still
+        // lands on the caster, because a helpful ability falls back to "me" rather than to
+        // whatever is currently being fought.
         // -------------------------------------------------------------------
         new(CharacterPath.Channeler, 1, "channeler.mend", "Mend",
-            "Close what is open. Slowly, and it holds.",
-            CostType.Focus, 20, 20, 4, TargetingType.Self,
+            "Close what is open, on yourself or on someone beside you.",
+            CostType.Focus, 20, 20, 4, TargetingType.SingleTarget,
             "heal.restore", Heal("25")),
 
         new(CharacterPath.Channeler, 3, "channeler.guidance", "Guidance",
             "Steady a hand that is about to need steadying.",
-            CostType.Focus, 15, 24, null, TargetingType.Self,
+            CostType.Focus, 15, 24, null, TargetingType.SingleTarget,
             "heal.restore", Heal("18")),
 
         new(CharacterPath.Channeler, 5, "channeler.enervate", "Enervate",
             "Draw the momentum out of a thing.",
             CostType.Focus, 18, 44, 4, TargetingType.SingleTarget,
-            "debuff.weaken", Debuff("0.8", "72", "enervated")),
+            "debuff.weaken", Weaken("0.8", "72", "enervated")),
 
         new(CharacterPath.Channeler, 7, "channeler.restore", "Restore",
             "Put back what the fight has taken so far.",
-            CostType.Focus, 28, 40, 8, TargetingType.Self,
+            CostType.Focus, 28, 40, 8, TargetingType.SingleTarget,
             "heal.restore", Heal("50")),
 
         new(CharacterPath.Channeler, 10, "channeler.blessing", "Blessing",
             "Lend the next while a better edge than it earned.",
-            CostType.Focus, 24, 72, null, TargetingType.Self,
+            CostType.Focus, 24, 72, null, TargetingType.SingleTarget,
             "buff.damage-up", Buff("1.3", "96", "blessed")),
 
         new(CharacterPath.Channeler, 13, "channeler.renewal", "Renewal",
             "Begin again, without stopping.",
-            CostType.Focus, 34, 64, 8, TargetingType.Self,
+            CostType.Focus, 34, 64, 8, TargetingType.SingleTarget,
             "heal.restore", Heal("70")),
 
         new(CharacterPath.Channeler, 16, "channeler.sap", "Sap",
             "Take the strength and do not give it back.",
             CostType.Focus, 30, 60, 4, TargetingType.SingleTarget,
-            "debuff.weaken", Debuff("0.55", "100", "sapped")),
+            "debuff.weaken", Weaken("0.55", "100", "sapped")),
 
         new(CharacterPath.Channeler, 20, "channeler.intercession", "Intercession",
             "Stand between someone and what was coming for them.",
-            CostType.Focus, 50, 180, 12, TargetingType.Self,
+            CostType.Focus, 50, 180, 12, TargetingType.SingleTarget,
             "heal.restore", Heal("120")),
     ];
 

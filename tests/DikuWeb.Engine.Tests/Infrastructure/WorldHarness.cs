@@ -9,6 +9,7 @@ using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Commands;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
+using DikuWeb.Domain.Randomness;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.Quests;
@@ -73,6 +74,29 @@ internal sealed class RecordingQuestSaveQueue : ICharacterQuestSaveQueue
 }
 
 /// <summary>
+/// A random source whose probability rolls are decided by the test.
+/// </summary>
+/// <remarks>
+/// Dice still come from a seeded source, so damage stays realistic; only
+/// <see cref="IRandomSource.NextDouble"/> is pinned. That is what <c>Chance</c> reads, which is
+/// how a test says "this parry fires" or "this one does not" without inferring it from a seed.
+/// </remarks>
+internal sealed class ScriptedChanceSource(double nextDouble, int seed = 42) : IRandomSource
+{
+    private readonly SeededRandomSource _dice = new(seed);
+
+    /// <summary>Never rolls a chance: any probability below 1.0 fails.</summary>
+    public static ScriptedChanceSource Never => new(0.999);
+
+    /// <summary>Always rolls a chance: any probability above 0 succeeds.</summary>
+    public static ScriptedChanceSource Always => new(0.0);
+
+    public int Next(int minInclusive, int maxExclusive) => _dice.Next(minInclusive, maxExclusive);
+
+    public double NextDouble() => nextDouble;
+}
+
+/// <summary>
 /// Wires the real WorldState, CommandRegistry, and PlayerView without the hosted service, so
 /// command behaviour can be asserted synchronously. No timers, no sleeping, no database.
 /// </summary>
@@ -80,11 +104,18 @@ internal sealed class WorldHarness
 {
     private readonly Dictionary<Guid, Channel<OutboundEvent>> _channels = [];
 
-    public WorldHarness()
+    /// <param name="random">
+    /// Overrides the seeded default, for tests that need a specific probability roll rather than
+    /// whatever seed 42 happens to produce.
+    /// </param>
+    public WorldHarness(IRandomSource? random = null)
     {
-        var random = new DikuWeb.Domain.Randomness.SeededRandomSource(42);
+        random ??= new SeededRandomSource(42);
         World = new WorldState(random);
-        Commands = new CommandRegistry(clock: Clock);
+        // AbilityCache was left null here, so every `cast` answered "not configured" and the
+        // whole command path went untested - the buff tests reach past it and apply effects to
+        // the world directly. Populated from the catalogue by DefineAbility.
+        Commands = new CommandRegistry(abilityCache: AbilityCache, clock: Clock);
         View = new PlayerView(new RoomLayoutService());
         Options = new EngineOptions { StartingRoom = RoomKey.Parse("test.zone.west") };
         Applier = new WorldMutationApplier(World, View, Options);
@@ -92,7 +123,10 @@ internal sealed class WorldHarness
         Editor = new LoopWorldEditor(Applier, Writes);
         Admin = new RecordingAdminQueue();
         Combat = new EngineCombatSystem(Options, View, ItemTemplates, MobTemplates);
-        Abilities = new AbilitySystem(Clock);
+
+        // With a cache and the real effect registry, so a cast resolves into an actual effect
+        // rather than falling out of Tick with nothing to apply.
+        Abilities = new AbilitySystem(Clock, AbilityCache, new Domain.Abilities.Effects.EffectRegistry());
     }
 
     public WorldState World { get; }
@@ -106,6 +140,21 @@ internal sealed class WorldHarness
     public EngineCombatSystem Combat { get; }
 
     public AbilitySystem Abilities { get; }
+
+    /// <summary>The abilities `cast` can find. Populated by <see cref="DefineAbility"/>.</summary>
+    public AbilityCache AbilityCache { get; } = new();
+
+    /// <summary>
+    /// Puts a real catalogue ability into the cache, so a test casts the same thing the game
+    /// does rather than a hand-built stand-in with convenient numbers.
+    /// </summary>
+    public Domain.Abilities.Ability DefineAbility(string key)
+    {
+        var entry = Domain.Abilities.AbilityCatalogue.All.Single(e => e.Key == key);
+        var ability = Domain.Abilities.AbilityCatalogue.ToAbility(entry);
+        AbilityCache.Put(ability);
+        return ability;
+    }
 
     /// <summary>
     /// Advances time the way <c>GameLoop.Pulse</c> does: one pulse at a time, abilities before

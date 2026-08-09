@@ -330,18 +330,37 @@ public static class StarterWorldSeeder
         string[] Grid,
         Dictionary<string, string> Legend);
 
+    /// <summary>What a reconcile did, for the startup log.</summary>
+    public readonly record struct AbilityReconciliation(int Added, int Updated, int Removed)
+    {
+        public bool ChangedAnything => Added > 0 || Updated > 0 || Removed > 0;
+    }
+
     /// <summary>
-    /// Brings the ability rows in line with <see cref="AbilityCatalogue"/>.
+    /// Makes the ability rows match <see cref="AbilityCatalogue"/> exactly: adds what is missing,
+    /// updates what has drifted, and deletes what the catalogue no longer defines.
     /// </summary>
     /// <remarks>
-    /// Run on every startup and independent of the world check, because abilities are not
-    /// starter *content* - they are what the level table promises. Seeding them once meant an
-    /// existing database never received an ability added later, so a character levelling into it
-    /// was granted a key with no row behind it and could not cast what the game said they knew.
+    /// Run on every startup and independent of the world check, because abilities are not starter
+    /// *content* - they are what the level table promises. Seeding them once meant an existing
+    /// database never received an ability added later, so a character levelling into it was
+    /// granted a key with no row behind it and could not cast what the game said they knew.
     ///
-    /// Upserts by key: a builder's balance edit to a row survives, but the row cannot go missing.
+    /// The catalogue is authoritative in all three directions, which is safe precisely because
+    /// abilities are the one kind of content with no builder UI and no foreign keys pointing at
+    /// them. Nothing else can author a row, so any difference is the catalogue having moved:
+    ///
+    /// - **Missing** rows are the original bug - a promised ability that cannot be cast.
+    /// - **Drifted** rows are the same staleness one level down: retuning a cost or a cooldown
+    ///   here would otherwise never reach a database that already had the row.
+    /// - **Orphaned** rows are keys the catalogue dropped. <c>warden.slash</c> and
+    ///   <c>warden.parry</c> became <c>warden.kick</c> and a passive, and without this the old
+    ///   two would sit in the table forever, castable by nobody and confusing to read.
+    ///
+    /// If abilities ever become builder-editable, this has to become a merge instead - at that
+    /// point a row differing from the catalogue stops meaning "stale".
     /// </remarks>
-    public static async Task<int> ReconcileAbilitiesAsync(
+    public static async Task<AbilityReconciliation> ReconcileAbilitiesAsync(
         DikuWebDbContext db,
         CancellationToken cancellationToken = default)
     {
@@ -350,24 +369,83 @@ public static class StarterWorldSeeder
         var existing = await db.Abilities
             .ToDictionaryAsync(a => a.Key, StringComparer.Ordinal, cancellationToken);
 
-        var added = 0;
+        var catalogue = AbilityCatalogue.All.ToDictionary(e => e.Key, StringComparer.Ordinal);
 
-        foreach (var entry in AbilityCatalogue.All)
+        var toAdd = new List<AbilityCatalogue.Entry>();
+        var toRemove = new List<Ability>();
+        var updated = 0;
+
+        foreach (var (key, entry) in catalogue)
         {
-            if (existing.ContainsKey(entry.Key))
+            if (!existing.TryGetValue(key, out var row))
+            {
+                toAdd.Add(entry);
+                continue;
+            }
+
+            if (Matches(entry, row))
             {
                 continue;
             }
 
-            db.Abilities.Add(AbilityCatalogue.ToAbility(entry));
-            added++;
+            // Replaced rather than edited: Ability is init-only because content rows are meant
+            // to be immutable. Rewriting one in place would mean opening every property up for
+            // anything to mutate, to save a delete and an insert on a table of thirty rows.
+            toRemove.Add(row);
+            toAdd.Add(entry);
+            updated++;
         }
 
-        if (added > 0)
+        foreach (var (key, row) in existing)
         {
+            if (!catalogue.ContainsKey(key))
+            {
+                toRemove.Add(row);
+            }
+        }
+
+        var removed = toRemove.Count - updated;
+
+        if (toRemove.Count == 0 && toAdd.Count == 0)
+        {
+            return new AbilityReconciliation(0, 0, 0);
+        }
+
+        // Two passes, because a replaced row is deleted and re-inserted under the same primary
+        // key. In one SaveChanges the insert can be ordered before the delete and collide.
+        if (toRemove.Count > 0)
+        {
+            db.Abilities.RemoveRange(toRemove);
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        return added;
+        if (toAdd.Count > 0)
+        {
+            db.Abilities.AddRange(toAdd.Select(AbilityCatalogue.ToAbility));
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return new AbilityReconciliation(toAdd.Count - updated, updated, removed);
     }
+
+    /// <summary>
+    /// Whether a stored row already says exactly what the catalogue says. A startup that finds
+    /// everything in agreement writes nothing and logs nothing.
+    /// </summary>
+    private static bool Matches(AbilityCatalogue.Entry entry, Ability row) =>
+        row.Name == entry.Name &&
+        row.Description == entry.Description &&
+        row.CostType == entry.CostType &&
+        row.CostValue == entry.CostValue &&
+        row.CooldownPulses == entry.CooldownPulses &&
+        row.CastTimePulses == entry.CastTimePulses &&
+        row.TargetingType == entry.TargetingType &&
+        row.EffectKey == entry.EffectKey &&
+        SameParams(row.EffectParams, entry.EffectParams);
+
+    private static bool SameParams(
+        IReadOnlyDictionary<string, string> a,
+        IReadOnlyDictionary<string, string> b) =>
+        a.Count == b.Count &&
+        a.All(kv => b.TryGetValue(kv.Key, out var other) && other == kv.Value);
 }

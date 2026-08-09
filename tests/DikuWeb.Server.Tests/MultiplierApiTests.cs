@@ -128,4 +128,53 @@ public sealed class MultiplierApiTests(PostgresFixture postgres)
         // typed Multipliers object the editor sends back.
         Assert.Equal(2.0m, preview.GetProperty("zoneMultipliers").GetProperty("xp").GetDecimal());
     }
+
+    /// <summary>
+    /// The preview resolves a template's *own* health, not a default.
+    /// </summary>
+    /// <remarks>
+    /// `BaseStats` is jsonb, so its values come back as <c>JsonElement</c>. The resolver read
+    /// health with <c>value is int</c>, which is false for every template that had ever been
+    /// saved - so the panel reported 40 health for everything in the zone, and a builder tuning
+    /// the Strength dial watched a number that was not their mob's.
+    /// </remarks>
+    [Fact]
+    public async Task The_preview_resolves_a_templates_own_health()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var roomKey = await BuilderClient.NewRoomAsync(client, zoneKey, "den");
+
+        (await client.PostAsJsonAsync("/api/builder/mob-templates/ogre", new
+        {
+            name = "ogre",
+            baseStats = new { health = 250 },
+        })).EnsureSuccessStatusCode();
+
+        (await client.PostAsJsonAsync("/api/builder/spawners", new
+        {
+            zoneKey,
+            templateKey = "ogre",
+            templateKind = "Mob",
+            roomKeys = new[] { roomKey },
+            targetCount = 1,
+            respawnSeconds = 60,
+        })).EnsureSuccessStatusCode();
+
+        (await client.PatchAsJsonAsync($"/api/builder/zones/{zoneKey}", new
+        {
+            multipliers = new { strength = 2.0 },
+        })).EnsureSuccessStatusCode();
+
+        var preview = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/zones/{zoneKey}/preview", UriKind.Relative)));
+
+        var ogre = preview.GetProperty("templates").EnumerateArray()
+            .Single(t => t.GetProperty("templateKey").GetString() == "ogre");
+
+        // 250 doubled, not the 40 fallback doubled.
+        Assert.Equal(500, ogre.GetProperty("resolvedStats").GetProperty("health").GetInt32());
+    }
 }

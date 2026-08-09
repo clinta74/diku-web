@@ -74,6 +74,23 @@ public sealed class AbilitySystem(
             return;
         }
 
+        // Everything that can fail is resolved before anything is spent. This used to narrate
+        // "takes effect!", deduct the cost, and start the cooldown, and only then look for a
+        // target - so a rat that died during an eight-pulse Bolt cost the caster full price for
+        // an effect that never ran, and told them it had worked.
+        var effect = effects?.Get(ability.EffectKey);
+        var target = ResolveTarget(world, caster, ability, cast);
+
+        if (effect is null || target is null)
+        {
+            actor.SendText(
+                target is null
+                    ? $"Your {ability.Name} finds nothing to take hold of."
+                    : $"Your {ability.Name} fizzles.",
+                "bad");
+            return;
+        }
+
         // Narrate cast
         actor.SendText($"Your {ability.Name} takes effect!", "ability");
         foreach (var occupant in world.OccupantsOf(caster.RoomKey))
@@ -102,44 +119,52 @@ public sealed class AbilitySystem(
         // Set cooldown
         world.SetAbilityCooldown(caster.Id, cast.AbilityKey, clock.CurrentPulse);
 
-        // Apply effect if available
-        if (effects != null)
+        effect.Apply(caster, target, ability.EffectParams, world.Random);
+
+        // If this is a buff/debuff effect, also create the ongoing active effect state
+        if (effect is IBuffEffect buffEffect)
         {
-            var effect = effects.Get(ability.EffectKey);
-            if (effect != null)
-            {
-                // Resolve target based on targeting type
-                object? target = null;
-                if (ability.TargetingType == TargetingType.Self)
-                {
-                    target = caster;
-                }
-                else if (ability.TargetingType == TargetingType.SingleTarget && !string.IsNullOrEmpty(cast.TargetId))
-                {
-                    if (EntityId.IsCharacter(cast.TargetId))
-                    {
-                        target = world.GetCharacter(EntityId.ToGuid(cast.TargetId));
-                    }
-                    else if (EntityId.IsMob(cast.TargetId))
-                    {
-                        target = world.GetMob(EntityId.ToGuid(cast.TargetId));
-                    }
-                }
-
-                if (target != null)
-                {
-                    effect.Apply(caster, target, ability.EffectParams, world.Random);
-
-                    // If this is a buff/debuff effect, also create the ongoing active effect state
-                    if (effect is IBuffEffect buffEffect)
-                    {
-                        var activeEffect = buffEffect.CreateActiveEffect(caster, target, ability.EffectParams, clock.CurrentPulse);
-                        var targetEntityId = target is Character c ? c.Id : ((Mob)target).Id;
-                        world.ApplyEffect(targetEntityId, activeEffect);
-                    }
-                }
-            }
+            var activeEffect = buffEffect.CreateActiveEffect(
+                caster, target, ability.EffectParams, clock.CurrentPulse);
+            var targetEntityId = target is Character c ? c.Id : ((Mob)target).Id;
+            world.ApplyEffect(targetEntityId, activeEffect);
         }
+    }
+
+    /// <summary>
+    /// What this cast lands on, or null when whatever it was aimed at is no longer there.
+    /// </summary>
+    /// <remarks>
+    /// Resolved at the moment the cast lands, not when it was started: a cast time is a window in
+    /// which the world can change, and the target dying inside it is the ordinary case rather
+    /// than an edge one.
+    /// </remarks>
+    private static object? ResolveTarget(
+        WorldState world,
+        Character caster,
+        Ability ability,
+        CastJob cast)
+    {
+        if (ability.TargetingType == TargetingType.Self)
+        {
+            return caster;
+        }
+
+        if (ability.TargetingType != TargetingType.SingleTarget || string.IsNullOrEmpty(cast.TargetId))
+        {
+            // Includes Aoe, which nothing resolves yet - a catalogue test fails the build if any
+            // ability declares it, so this cannot be reached from authored content.
+            return null;
+        }
+
+        if (EntityId.IsCharacter(cast.TargetId))
+        {
+            return world.GetCharacter(EntityId.ToGuid(cast.TargetId));
+        }
+
+        return EntityId.IsMob(cast.TargetId)
+            ? world.GetMob(EntityId.ToGuid(cast.TargetId))
+            : null;
     }
 
     private bool ShouldInterrupt(WorldState world, CastJob cast)

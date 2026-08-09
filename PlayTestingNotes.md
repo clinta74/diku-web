@@ -61,6 +61,33 @@ A rat falls.
   `buff.damage-up`, `debuff.weaken`), so a genuinely distinct *kick* — a stun, an interrupt, a
   snare — needs a new executor, not just a new row. That is the next real step for combat depth.
 
+- ~~warden slash and parry don't make a lot of sense. Slash could be replaced by a kick. A parry
+  is more like an innate ability, warden and shade should have it, and it should passively parry
+  an incoming attack.~~ **done** — both were right, and chasing the second one turned up a third
+  bug.
+
+  **Slash → Kick.** The level-1 opener assumed a blade: a Warden holding a mace, a staff, or
+  nothing at all was still told they slashed. A kick does not care what you are carrying.
+
+  **Parry is a passive now** (`PassiveKeys.Parry`, Warden 4 / Shade 8). It was a castable
+  self-heal on a 32-pulse cooldown, which is not what parrying is — and as an ability it had to
+  be spent *before* the blow it was meant to stop. It rolls in `CombatSystem` after the attack
+  roll but before narration, so it only ever spends itself on a blow that was going to land, and
+  the exchange narrates once as a parry rather than as a hit that is quietly undone. Warden 20%,
+  Shade 12% — a shield and a braced stance against footwork. Adepts and Channelers never parry.
+  Neither do mobs: the chance comes from Path and level, and a mob has neither.
+
+  Warden's level 7 slot became **Sunder** (the target takes 30% more damage), which also gives
+  the Path its own use of the debuff effect.
+
+  **The third bug:** `debuff.weaken` sets `IncomingDamageMultiplier`, which scales the damage the
+  target *takes*. Every "weaken" I wrote used values *below* 1.0 — so Weaken, Enfeeble, Enervate,
+  and Sap all made their target **25–45% harder to kill**. Nothing failed: the spell landed, the
+  effect showed on the status screen, and the fight just went worse. `DebuffEffect` now reads
+  `outgoingMultiplier` as well (it was hardcoded to 1.0, so the effect could not express "deals
+  less damage" at all), the four weakens use it, and a test asserts every debuff moves a
+  multiplier the harmful way.
+
 - ~~some commands like examine and stats should have more data for a builder so. It can also have
   a link to send it into the builder screen for a item, mob, or npc.~~ **fixed** — a `TextSpan`
   can now carry a builder path, and the client renders such a span as a link that routes

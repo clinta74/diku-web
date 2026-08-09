@@ -1,4 +1,4 @@
-using DikuWeb.Domain.Abilities;
+﻿using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
 
 namespace DikuWeb.Domain.Tests.Abilities;
@@ -91,7 +91,6 @@ public sealed class AbilityCatalogueTests
     [InlineData("damage.physical", "scalingFactor")]
     [InlineData("heal.restore", "baseHeal")]
     [InlineData("buff.damage-up", "outgoingMultiplier")]
-    [InlineData("debuff.weaken", "incomingMultiplier")]
     public void Every_ability_carries_the_parameter_its_effect_reads(string effectKey, string parameter)
     {
         var missing = AbilityCatalogue.All
@@ -100,6 +99,85 @@ public sealed class AbilityCatalogueTests
             .ToList();
 
         Assert.Empty(missing);
+    }
+
+    /// <summary>
+    /// A debuff has to move at least one multiplier, and move it the harmful way.
+    /// </summary>
+    /// <remarks>
+    /// This is the assertion that would have caught the original mistake. Every "weaken" in the
+    /// catalogue was written as <c>incomingMultiplier</c> below 1.0, which reads plausibly and
+    /// does the opposite of what it says: incoming scales the damage the target *takes*, so those
+    /// abilities made their target 25-45% harder to kill. Nothing failed - the spell landed, the
+    /// effect appeared on the status screen, and the fight simply went worse.
+    /// </remarks>
+    [Fact]
+    public void Every_debuff_actually_debuffs_its_target()
+    {
+        foreach (var entry in AbilityCatalogue.All.Where(e => e.EffectKey == "debuff.weaken"))
+        {
+            var incoming = Read(entry, "incomingMultiplier");
+            var outgoing = Read(entry, "outgoingMultiplier");
+
+            Assert.True(
+                incoming is not null || outgoing is not null,
+                $"{entry.Key} is a debuff that moves neither multiplier.");
+
+            // Taking more damage, or dealing less. Either is a debuff; the wrong side of 1.0 is a
+            // gift to whoever it was cast at.
+            Assert.True(
+                incoming is null or > 1.0m,
+                $"{entry.Key} sets incomingMultiplier to {incoming}, which protects the target.");
+
+            Assert.True(
+                outgoing is null or < 1.0m,
+                $"{entry.Key} sets outgoingMultiplier to {outgoing}, which strengthens the target.");
+        }
+    }
+
+    [Fact]
+    public void Every_buff_actually_buffs_its_caster()
+    {
+        foreach (var entry in AbilityCatalogue.All.Where(e => e.EffectKey == "buff.damage-up"))
+        {
+            var outgoing = Read(entry, "outgoingMultiplier");
+
+            Assert.True(
+                outgoing is > 1.0m,
+                $"{entry.Key} sets outgoingMultiplier to {outgoing}, which is not an improvement.");
+        }
+    }
+
+    private static decimal? Read(AbilityCatalogue.Entry entry, string key) =>
+        entry.EffectParams.TryGetValue(key, out var raw) &&
+        decimal.TryParse(raw, System.Globalization.CultureInfo.InvariantCulture, out var value)
+            ? value
+            : null;
+
+    /// <summary>
+    /// No ability may declare <c>Aoe</c> until something resolves it.
+    /// </summary>
+    /// <remarks>
+    /// <c>AbilitySystem</c> handles <c>Self</c> and <c>SingleTarget</c>; an AoE cast falls through
+    /// with <c>target = null</c> and applies nothing — after the cost and the cooldown have
+    /// already been spent and "takes effect!" narrated. Nothing uses it today, so the failure is
+    /// unreachable rather than live; this is what stops the first author of an AoE ability from
+    /// discovering that by hand.
+    ///
+    /// Delete this test as part of implementing AoE, not before. §4.11 sets the bar: the filter
+    /// runs per target, so a cast in a mixed room hits the mobs and skips the players.
+    /// </remarks>
+    [Fact]
+    public void No_ability_declares_area_targeting_while_nothing_resolves_it()
+    {
+        var aoe = AbilityCatalogue.All
+            .Where(e => e.TargetingType == TargetingType.Aoe)
+            .Select(e => e.Key)
+            .ToList();
+
+        Assert.True(
+            aoe.Count == 0,
+            $"AoE is not implemented; these would cost a resource and do nothing: {string.Join(", ", aoe)}.");
     }
 
     [Fact]
@@ -169,9 +247,9 @@ public sealed class AbilityCatalogueTests
         var atOne = AbilityProgression.GetKnownAbilitiesForLevel(CharacterPath.Warden, 1);
         var atSeven = AbilityProgression.GetKnownAbilitiesForLevel(CharacterPath.Warden, 7);
 
-        Assert.Contains("warden.slash", atOne);
-        Assert.DoesNotContain("warden.parry", atOne);
-        Assert.Contains("warden.parry", atSeven);
+        Assert.Contains("warden.kick", atOne);
+        Assert.DoesNotContain("warden.sunder", atOne);
+        Assert.Contains("warden.sunder", atSeven);
     }
 
     [Fact]

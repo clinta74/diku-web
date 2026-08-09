@@ -143,4 +143,10 @@ internal static partial class ServerLog
         Level = LogLevel.Error,
         Message = "Failed to save a batch of quest state; the worker retries on the next batch")]
     public static partial void QuestSaveQueueError(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1019,
+        Level = LogLevel.Information,
+        Message = "Reconciled abilities against the catalogue: {Added} added, {Updated} updated, {Removed} removed")]
+    public static partial void AbilitiesReconciled(ILogger logger, int added, int updated, int removed);
 }

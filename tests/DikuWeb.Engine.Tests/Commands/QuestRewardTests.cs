@@ -62,6 +62,9 @@ public sealed class QuestRewardTests
         var harness = Loaded();
         var kael = harness.AddPlayer("Kael", Room);
         harness.AddMob("elder", Room, name: "elder");
+
+        // The ledger has to exist, or the quest is dormant and correctly never offered (§7.4).
+        harness.DefineItem("ledger", "dusty ledger", slot: null);
         harness.DefineQuest("fetch-ledger", giverMobKey: "elder", requiredItemKey: "ledger");
         harness.Drain(kael);
 

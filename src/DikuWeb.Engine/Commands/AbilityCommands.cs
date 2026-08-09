@@ -65,15 +65,18 @@ public static class AbilityCommands
             return;
         }
 
-        // Check cooldown
-        var lastCastPulse = ctx.World.GetAbilityCooldown(character.Id, matchingKey);
+        // Check cooldown. An ability this character has never cast has no last-cast pulse at
+        // all, which is not the same as having cast it on pulse 0.
         var currentPulse = clock?.CurrentPulse ?? 0L;
-        var cooldownRemaining = (lastCastPulse + ability.CooldownPulses) - currentPulse;
-        if (cooldownRemaining > 0)
+        if (ctx.World.GetAbilityCooldown(character.Id, matchingKey) is { } lastCastPulse)
         {
-            var secondsRemaining = Math.Ceiling(cooldownRemaining * 0.25); // 250ms per pulse
-            ctx.Reply($"{ability.Name} is on cooldown ({secondsRemaining}s remaining).");
-            return;
+            var cooldownRemaining = (lastCastPulse + ability.CooldownPulses) - currentPulse;
+            if (cooldownRemaining > 0)
+            {
+                var secondsRemaining = Math.Ceiling(cooldownRemaining * 0.25); // 250ms per pulse
+                ctx.Reply($"{ability.Name} is on cooldown ({secondsRemaining}s remaining).");
+                return;
+            }
         }
 
         // Check cost
@@ -91,17 +94,20 @@ public static class AbilityCommands
             return;
         }
 
-        // Resolve target if specified
-        string? targetId = null;
-        if (!string.IsNullOrEmpty(targetName))
-        {
-            var targetActor = ctx.World.OthersIn(character.RoomKey, ctx.Actor)
-                .FirstOrDefault(p => string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase));
+        var targetId = ResolveTarget(ctx, ability, targetName);
 
-            if (targetActor != null)
-            {
-                targetId = EntityId.ForCharacter(targetActor.CharacterId);
-            }
+        // A single-target ability with nothing to aim at must not be paid for. Cost and cooldown
+        // are spent by the ability system before it resolves a target, so casting at a name that
+        // matched nothing used to charge in full, start the cooldown, and narrate "takes effect!"
+        // over the top of an effect that never ran.
+        if (ability.TargetingType == TargetingType.SingleTarget && targetId is null)
+        {
+            ctx.Reply(
+                targetName is null
+                    ? $"{ability.Name} needs a target."
+                    : $"You don't see '{targetName}' here.",
+                "bad");
+            return;
         }
 
         // Enqueue cast
@@ -119,7 +125,7 @@ public static class AbilityCommands
         ctx.World.CastQueue.Enqueue(castJob);
 
         // Narrate to player
-        ctx.Reply($"You cast {matchingKey}!");
+        ctx.Reply($"You cast {ability.Name}!");
 
         // Narrate to room
         if (targetId != null)
@@ -128,15 +134,74 @@ public static class AbilityCommands
                 .FirstOrDefault(p => EntityId.ForCharacter(p.CharacterId) == targetId);
             if (target != null)
             {
-                ctx.Broadcast($"{ctx.Actor.Name} casts {matchingKey} on {target.Name}!");
-                target.SendText($"{ctx.Actor.Name} casts {matchingKey} on you!", "ability");
+                ctx.Broadcast($"{ctx.Actor.Name} casts {ability.Name} on {target.Name}!");
+                target.SendText($"{ctx.Actor.Name} casts {ability.Name} on you!", "ability");
+            }
+            else
+            {
+                ctx.Broadcast($"{ctx.Actor.Name} casts {ability.Name}!");
             }
         }
         else
         {
-            ctx.Broadcast($"{ctx.Actor.Name} casts {matchingKey}!");
+            ctx.Broadcast($"{ctx.Actor.Name} casts {ability.Name}!");
         }
     }
+
+    /// <summary>
+    /// What this cast is aimed at, as an entity id, or null when it needs no target or found none.
+    /// </summary>
+    /// <remarks>
+    /// This searched players only. A mob was never a candidate, so every offensive ability in the
+    /// game resolved to no target against the things you actually fight - and because cost and
+    /// cooldown are spent before the target is resolved, it charged full price and said it worked.
+    ///
+    /// Falling back to the current combat target is the other half: in a real fight you are
+    /// already swinging at something, and retyping its name on every cast is friction with no
+    /// purpose.
+    /// </remarks>
+    private static string? ResolveTarget(CommandContext ctx, Ability ability, string? targetName)
+    {
+        if (ability.TargetingType == TargetingType.Self)
+        {
+            return null;
+        }
+
+        var actor = ctx.Actor;
+        var roomKey = actor.Character.RoomKey;
+
+        if (!string.IsNullOrEmpty(targetName))
+        {
+            var player = ctx.World.OthersIn(roomKey, actor)
+                .FirstOrDefault(p => string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase));
+
+            if (player is not null)
+            {
+                return EntityId.ForCharacter(player.CharacterId);
+            }
+
+            // Matched the same way every other targeting command matches, so "bolt giant" reaches
+            // the giant rat and does not silently mean "no target".
+            var mob = NameMatch.Best(
+                ctx.World.MobsIn(roomKey), targetName, m => m.TemplateName, m => m.TemplateKey);
+
+            return mob is null ? null : EntityId.ForMob(mob.Id);
+        }
+
+        // No name given. What that should mean depends on which way the ability points: a bolt
+        // means "the thing I am fighting", a heal means "me". Falling back to the combat target
+        // for both would have a Channeler mending the wolf that is biting them.
+        return IsHarmful(ability)
+            ? actor.Character.CurrentTarget
+            : EntityId.ForCharacter(actor.CharacterId);
+    }
+
+    /// <summary>
+    /// Whether this ability is aimed at an enemy. Read from the effect, because that is the thing
+    /// that decides who wants to be hit by it.
+    /// </summary>
+    private static bool IsHarmful(Ability ability) =>
+        ability.EffectKey is "damage.physical" or "debuff.weaken";
 
     private static void ListAbilities(CommandContext ctx)
     {

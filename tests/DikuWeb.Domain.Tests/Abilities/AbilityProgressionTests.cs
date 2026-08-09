@@ -1,4 +1,4 @@
-using DikuWeb.Domain.Abilities;
+﻿using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
 
 namespace DikuWeb.Domain.Tests.Abilities;
@@ -14,7 +14,7 @@ public sealed class AbilityProgressionTests
         // Assert
         Assert.NotEmpty(abilities);
         Assert.All(abilities, a => Assert.StartsWith("warden.", a.AbilityKey));
-        Assert.Contains((1, "warden.slash"), abilities);
+        Assert.Contains((1, "warden.kick"), abilities);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public sealed class AbilityProgressionTests
 
         // Assert
         Assert.Single(known);
-        Assert.Contains("warden.slash", known);
+        Assert.Contains("warden.kick", known);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class AbilityProgressionTests
 
         // Assert
         Assert.Equal(2, known.Count);
-        Assert.Contains("warden.slash", known);
+        Assert.Contains("warden.kick", known);
         Assert.Contains("warden.bash", known);
     }
 
@@ -83,14 +83,14 @@ public sealed class AbilityProgressionTests
 
         // Assert
         Assert.Equal(3, known.Count);
-        Assert.Contains("warden.slash", known);
+        Assert.Contains("warden.kick", known);
         Assert.Contains("warden.bash", known);
 
         // Battle Fury, not Parry. This used to expect parry at 6 and call the result "all",
         // which was doubly wrong: progression carried on past 6 in neither direction, and parry
         // had no ability row behind it, so the level-up granted something uncastable.
         Assert.Contains("warden.battle-fury", known);
-        Assert.DoesNotContain("warden.parry", known);
+        Assert.DoesNotContain("warden.sunder", known);
     }
 
     [Fact]

@@ -49,15 +49,37 @@ public static class AbilityProgression
         path switch
         {
             CharacterPath.Warden => [
+                (4, PassiveKeys.Parry),
                 (5, PassiveKeys.DualWield),
                 (15, PassiveKeys.Ambidextrous),
             ],
             CharacterPath.Shade => [
                 (3, PassiveKeys.DualWield),
+                (8, PassiveKeys.Parry),
                 (10, PassiveKeys.Ambidextrous),
             ],
             _ => [],
         };
+
+    /// <summary>
+    /// The chance, 0.0-1.0, that this character turns aside a blow that would have landed.
+    /// Zero for anyone who has not learned to parry.
+    /// </summary>
+    /// <remarks>
+    /// The Warden parries more often and earlier: a shield and a braced stance are the whole of
+    /// what the Path is. A Shade parries by footwork, which is later and less reliable, and is
+    /// meant to be the lesser half of not being hit - evasion and simply not being there are the
+    /// rest. An Adept or Channeler never parries at all.
+    /// </remarks>
+    public static double ParryChance(CharacterPath path, int level) =>
+        KnowsPassive(path, level, PassiveKeys.Parry)
+            ? path switch
+            {
+                CharacterPath.Warden => 0.20,
+                CharacterPath.Shade => 0.12,
+                _ => 0.0,
+            }
+            : 0.0;
 
     /// <summary>
     /// Get the passives a character currently has (at or below their level).
