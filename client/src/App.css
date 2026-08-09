@@ -128,14 +128,17 @@ input:focus {
 /* Auth and character select                                           */
 /* ------------------------------------------------------------------ */
 
-.form label {
+/* Direct children only. This styles a *field* label - caption above, control below - and every
+   one of those sits at the top level of the form. Left as a descendant selector it also claimed
+   the Path rows nested inside the fieldset, and outspecified their own rule while doing it. */
+.form > label {
   display: block;
   margin-bottom: 0.85rem;
   color: var(--dim);
   font-size: 0.8rem;
 }
 
-.form label input {
+.form > label input {
   margin-top: 0.3rem;
 }
 
@@ -182,25 +185,47 @@ input:focus {
   padding: 0 0 0.4rem;
 }
 
-.path {
+/* Scoped through .paths deliberately. A Path row is a <label> inside .form, and `.form label`
+   (one class + one type) outspecifies a bare `.path` (one class) — so the block/margin rule meant
+   for stacked field labels was winning, which killed the grid entirely: the name and its blurb
+   ran together as "WardenArmored frontline" and every row carried a field-sized bottom margin.
+   `.paths .path` is two classes, so it wins on merit rather than on !important. */
+.paths .path {
   display: grid;
+  /* A fixed name column, so the four blurbs start on one line rather than stepping in and out
+     with the length of each Path name. */
   grid-template-columns: auto 5.5rem 1fr;
-  align-items: baseline;
-  gap: 0.6rem;
-  padding: 0.4rem 0.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 0.2rem;
+  padding: 0.45rem 0.55rem;
   border: 1px solid transparent;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
+  color: inherit;
 }
 
-.path.selected {
+/* Every row keeps its box, so picking one moves a highlight rather than making a border appear
+   from nowhere and shifting the row under the cursor. */
+.paths .path:hover {
+  border-color: var(--border);
+}
+
+.paths .path.selected {
   border-color: var(--accent);
   background: #0b0e13;
 }
 
-.path input {
+.paths .path input {
   width: auto;
+  margin: 0;
+}
+
+/* Only the chosen Path takes the accent. Colouring all four would spend the one colour that
+   means "this is selected" on something that is true of every row. */
+.paths .path.selected strong {
+  color: var(--accent);
 }
 
 /* ------------------------------------------------------------------ */
