@@ -48,6 +48,9 @@ public static class MobBehavior
     /// <summary>The behavior key holding the item template keys a shopkeeper sells.</summary>
     public const string SellsKey = "sells";
 
+    /// <summary>The behavior key letting a mob wander out of the zone it spawned in.</summary>
+    public const string RoamsKey = "roams";
+
     /// <summary>The persisted string for a disposition, for writers and for the builder API.</summary>
     public static string NameOf(MobDisposition disposition) => disposition switch
     {
@@ -82,6 +85,23 @@ public static class MobBehavior
     /// <summary>True when this mob keeps a shop.</summary>
     public static bool IsShopkeeper(IReadOnlyDictionary<string, object>? behavior) =>
         JsonBag.Boolean(behavior, ShopkeeperKey);
+
+    /// <summary>
+    /// True when this mob may wander out of the zone it spawned in.
+    /// </summary>
+    /// <remarks>
+    /// <b>False by default, which confines it.</b> A zone is the unit difficulty is authored in
+    /// (§4.4) — its multipliers are what make a rat in the starting meadow different from a rat in
+    /// the crypt — so a mob strolling across a zone border carries numbers that belong to
+    /// somewhere else. Fencing by geography meant flagging every border room <c>noMob</c> and
+    /// remembering to do it again whenever a builder dug a new exit; fencing by origin is a
+    /// property of the mob, so it cannot be forgotten.
+    ///
+    /// This does not change how <c>noMob</c> works. That flag says "not into this room"; this says
+    /// "not out of that zone", and a mob has to satisfy both.
+    /// </remarks>
+    public static bool Roams(IReadOnlyDictionary<string, object>? behavior) =>
+        JsonBag.Boolean(behavior, RoamsKey);
 
     /// <summary>The idle emotes this mob cycles through. Empty when it has none.</summary>
     public static IReadOnlyList<string> EmotesOf(IReadOnlyDictionary<string, object>? behavior) =>

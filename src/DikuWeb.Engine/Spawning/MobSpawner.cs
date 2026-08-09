@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Inhabitants;
 
 namespace DikuWeb.Engine.Spawning;
 
@@ -87,10 +88,31 @@ public sealed class MobSpawner
                 Stamina = 100,
                 StaminaMax = 100,
             },
-            State = sentinel ? new() { ["sentinel"] = true } : [],
+            State = NewState(sentinel, roomKey),
         };
 
         return mob;
+    }
+
+    /// <summary>
+    /// The per-mob state a fresh spawn starts with.
+    /// </summary>
+    /// <remarks>
+    /// The home zone is recorded here, in the state bag beside <c>sentinel</c>, rather than as a
+    /// column on <c>mobs</c> - it is per-instance runtime state, which is what the bag is for, and
+    /// it needs no migration. It has to be captured at spawn because the mob's own room moves:
+    /// asking "which zone is it in" after it has wandered answers the wrong question.
+    /// </remarks>
+    private static Dictionary<string, object> NewState(bool sentinel, RoomKey roomKey)
+    {
+        var state = new Dictionary<string, object> { [MobState.HomeZoneKey] = roomKey.ZoneKey };
+
+        if (sentinel)
+        {
+            state["sentinel"] = true;
+        }
+
+        return state;
     }
 
     private static int GetIntFromStats(Dictionary<string, object> stats, string key, int defaultValue)

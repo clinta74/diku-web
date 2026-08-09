@@ -27,6 +27,7 @@ public sealed class WorldState(IRandomSource random)
     private readonly Dictionary<Guid, PlayerActor> _byCharacter = [];
     private readonly Dictionary<Guid, Mob> _mobs = [];
     private readonly Dictionary<RoomKey, List<Mob>> _mobsByRoom = [];
+    private readonly Dictionary<Guid, HashSet<Guid>> _mobsBySpawner = [];
     private readonly Dictionary<Guid, ItemInstance> _items = [];
     private readonly Dictionary<RoomKey, List<ItemInstance>> _itemsByRoom = [];
     private readonly Dictionary<RoomKey, Combat> _combatsByRoom = [];
@@ -270,6 +271,11 @@ public sealed class WorldState(IRandomSource random)
         var roomKey = RoomKey.Parse(mob.RoomKey);
         _mobs[mob.Id] = mob;
         MobListFor(roomKey).Add(mob);
+
+        if (mob.SpawnerId is { } spawnerId)
+        {
+            SpawnedListFor(spawnerId).Add(mob.Id);
+        }
     }
 
     /// <summary>Removes a mob from the world.</summary>
@@ -280,6 +286,42 @@ public sealed class WorldState(IRandomSource random)
         var roomKey = RoomKey.Parse(mob.RoomKey);
         _mobs.Remove(mob.Id);
         MobListFor(roomKey).Remove(mob);
+
+        if (mob.SpawnerId is { } spawnerId && _mobsBySpawner.TryGetValue(spawnerId, out var spawned))
+        {
+            spawned.Remove(mob.Id);
+
+            if (spawned.Count == 0)
+            {
+                _mobsBySpawner.Remove(spawnerId);
+            }
+        }
+    }
+
+    /// <summary>
+    /// How many living mobs this spawner is responsible for, anywhere in the world.
+    /// </summary>
+    /// <remarks>
+    /// <b>Anywhere</b>, not in the spawner's own rooms. The sweep used to count what was standing
+    /// in the rooms it fills, so a rat that wandered one room east stopped counting and the
+    /// spawner replaced it - and the replacement wandered off too. A spawner set to three could
+    /// populate a whole zone with rats given long enough, which is the flooding this fixes.
+    ///
+    /// Indexed rather than scanned, because the alternative is every spawner walking every mob in
+    /// the world on every sweep - quadratic in exactly the situation the bug produced.
+    /// </remarks>
+    public int MobsFromSpawner(Guid spawnerId) =>
+        _mobsBySpawner.TryGetValue(spawnerId, out var spawned) ? spawned.Count : 0;
+
+    private HashSet<Guid> SpawnedListFor(Guid spawnerId)
+    {
+        if (!_mobsBySpawner.TryGetValue(spawnerId, out var spawned))
+        {
+            spawned = [];
+            _mobsBySpawner[spawnerId] = spawned;
+        }
+
+        return spawned;
     }
 
     /// <summary>Moves a mob to a new room.</summary>

@@ -127,7 +127,11 @@ public sealed class SpawnerSystem(
             }
 
             var roomKeys = spawner.RoomKeys.Select(RoomKey.Parse).ToList();
-            var currentCount = roomKeys.Sum(room => world.MobsIn(room).Count(m => m.SpawnerId == spawner.Id));
+
+            // Counted across the world rather than across this spawner's own rooms. A mob that
+            // wandered one room east used to stop counting, so the spawner replaced it - and the
+            // replacement wandered off as well. A spawner set to three could fill a zone.
+            var currentCount = world.MobsFromSpawner(spawner.Id);
 
             EngineLog.SpawnerPopulation(
                 logger, spawner.Id, spawner.TemplateKey, currentCount, spawner.TargetCount, roomKeys.Count);
@@ -187,6 +191,10 @@ public sealed class SpawnerSystem(
             return;
         }
 
+        // Deliberately NOT the world-wide count mobs now use. An item spawner is a resupply point
+        // rather than a population cap: take the herb and another grows, which only works if what
+        // is in your pack has stopped counting. A mob spawner asks "how many of these exist" and
+        // an item spawner asks "is the shelf stocked" - the same field, two questions.
         var roomKeys = spawner.RoomKeys.Select(RoomKey.Parse).ToList();
         var currentCount = roomKeys.Sum(room => world.ItemsIn(room).Count(i => i.SpawnerId == spawner.Id));
 

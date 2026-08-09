@@ -519,6 +519,18 @@ notoriously hard to balance and invite grinding.
   runtime instances with concrete, multiplier-resolved stats. Replaces Diku "resets".
 - **Spawner.** A declarative rule on a zone: *maintain N of template X across these rooms,
   respawn D seconds after death.* A population target, not an imperative reset script.
+  **A mob spawner counts what it made, wherever that has got to** — not what is standing in its
+  rooms. Counting by room meant a mob that wandered one step out stopped counting and was
+  replaced, and the replacement wandered off as well.
+  **An item spawner counts by room, deliberately.** It is a resupply point rather than a
+  population cap: take the herb and another grows, which only works if what is in your pack has
+  stopped counting. The same field answers two different questions.
+- **A wandering mob stays in the zone it spawned in**, unless its template sets `roams`. A zone is
+  the unit difficulty is authored in (§4.4), so a mob that crosses a border carries numbers
+  resolved from somewhere else's multipliers. Fencing by geography meant flagging every border
+  room `noMob` and remembering to do it again whenever a builder dug a new exit; fencing by origin
+  is a property of the mob, so it cannot be forgotten. This does not change `noMob`, which says
+  *not into this room* where the home zone says *not out of that zone* — both must hold.
 - Templates are **global**, not zone-scoped. That is what makes the multiplier design pay off —
   the same `kobold-sentry` appears in a starter zone and an endgame zone at wildly different
   power, with one definition.
@@ -1417,6 +1429,13 @@ One deferred nice-to-have remains below, and it is not what the phase goal asks 
 - [x] `get`, `drop`, `give`, `inventory`, `examine`, `destroy`; `put` for containers deferred
 - [x] Equipment slots: `wear`, `wield`, `remove` (containers with depth limit deferred)
 - [x] Mob templates, spawners, population maintenance
+- [x] **Population is counted per spawner across the world, and mobs stay in their home zone.**
+      Both found in playtesting rather than by a test, and they were the same bug wearing two
+      faces: the sweep counted mobs standing in the spawner's own rooms, so anything that wandered
+      out was replaced — and nothing stopped it wandering out of the zone either. A spawner set to
+      three could fill a zone, and a crypt rat could stroll into the starting meadow carrying
+      crypt numbers. Now `WorldState` indexes mobs by the spawner that made them, and a wandering
+      mob turns back at the border unless its template sets `roams`.
 - [x] **Multiplier resolution at spawn time** (§4.4), `spawn_multipliers` recorded per instance
 - [x] World + zone multiplier storage and `world × zone` composition **in the engine and schema**
 - [x] Builder: mob template, item template, and spawner editors (CRUD endpoints)
@@ -1833,6 +1852,8 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | PvP | Refused in an unflagged room, allowed in a flagged one, ends the round after either combatant leaves, and never targets a party member — including a duel already under way, which ends the round the two players group up. AoE in a mixed room hits mobs and skips players. Every hostile action — swing, single-target cast, area effect, taunt — answers through the one gate, so the coverage is that they agree rather than that each was remembered. *Pet laundering is not tested because there are no pets; it is §13's blocking constraint, not a gap here.* |
 | Death | XP loss floors at the level threshold and never de-levels; no loss below the min level or on a PvP death; dying at the exact threshold costs nothing. Respawn falls through all three candidates, including when the bind room was deleted mid-session. Nothing leaves the inventory. |
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
+| Spawners | A mob that wandered out still counts; ten sweeps that scatter what they made never exceed the target; a kill is replaced; two spawners of the same template do not count each other's work; a mob a builder placed by hand satisfies nobody's target. |
+| Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |
 | Parties | Forming, expiry, leadership passing, and the dissolve at one member. Leaving the world drops you from the group — asserted through `WorldState.Remove`, which is the one door out. The split pays only members standing where the mob died, and an odd remainder goes to whoever landed the blow rather than evaporating. |
 | Travel | `recall` reaches the bind point and falls through to the starting room when unbound or when a builder deleted it. Every refusal has a test, because the value of `noRecall` having exactly one reader is entirely in that reader being consulted. |
 | Builder | Mutation → loop → persist → occupants notified, end to end. Audit row written on every write. |

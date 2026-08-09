@@ -14,6 +14,7 @@ export interface BehaviorDraft {
   emotes: string[]
   shopkeeper: boolean
   sells: string[]
+  roams: boolean
 }
 
 export const DISPOSITIONS: Array<{ value: Disposition; label: string; hint: string }> = [
@@ -32,7 +33,7 @@ function asStrings(raw: unknown): string[] {
   return []
 }
 
-/** Pulls the four keys the engine reads out of a stored behavior bag. */
+/** Pulls the keys the engine reads out of a stored behavior bag. */
 export function readBehavior(behavior: Record<string, unknown> | undefined): BehaviorDraft {
   const type = String(behavior?.type ?? 'passive').toLowerCase()
   return {
@@ -40,6 +41,9 @@ export function readBehavior(behavior: Record<string, unknown> | undefined): Beh
     emotes: asStrings(behavior?.emotes),
     shopkeeper: behavior?.shopkeeper === true || behavior?.shopkeeper === 'true',
     sells: asStrings(behavior?.sells),
+    // Absent means confined, matching the engine: a mob stays in the zone it spawned in unless
+    // something says otherwise, so forgetting the key is the safe direction.
+    roams: behavior?.roams === true || behavior?.roams === 'true',
   }
 }
 
@@ -68,6 +72,11 @@ export function writeBehavior(
     delete next.shopkeeper
     delete next.sells
   }
+
+  // Written only when true. The engine reads a missing key as "stays home", so persisting
+  // `roams: false` would store the default as though it were a decision.
+  if (draft.roams) next.roams = true
+  else delete next.roams
 
   return next
 }

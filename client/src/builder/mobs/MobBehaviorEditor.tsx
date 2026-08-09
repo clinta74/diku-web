@@ -86,6 +86,21 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
       <label className="field-check">
         <input
           type="checkbox"
+          checked={draft.roams}
+          onChange={(e) => set({ roams: e.target.checked })}
+        />
+        Wanders beyond its home zone
+      </label>
+
+      <p className="dim">
+        {draft.roams
+          ? 'This mob will follow exits into neighbouring zones, carrying the stats it spawned with — which came from its own zone’s multipliers.'
+          : 'Off by default: this mob wanders freely inside the zone it spawned in and turns back at the border. Rooms flagged noMob still refuse it either way.'}
+      </p>
+
+      <label className="field-check">
+        <input
+          type="checkbox"
           checked={draft.shopkeeper}
           onChange={(e) => set({ shopkeeper: e.target.checked })}
         />

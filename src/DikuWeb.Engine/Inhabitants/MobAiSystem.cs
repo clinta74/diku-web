@@ -159,6 +159,14 @@ public sealed class MobAiSystem(
             return;
         }
 
+        // Where this mob is allowed to end up. Null only when the template says it roams — a mob
+        // with no recorded home falls back to the zone it is standing in, because absence has to
+        // resolve to the confining value the way an absent room flag resolves to the safe one.
+        // Otherwise every mob written before the key existed would be set loose on the next boot.
+        var homeZone = MobBehavior.Roams(template.Behavior)
+            ? null
+            : MobState.HomeZoneOf(mob) ?? RoomKey.Parse(mob.RoomKey).ZoneKey;
+
         // Pick a random exit, respecting noMob flag in the destination
         var exits = room.Exits.ToList();
         var startIdx = random.Next(0, exits.Count);
@@ -168,6 +176,15 @@ public sealed class MobAiSystem(
             var exit = exits[(startIdx + i) % exits.Count];
             var targetRoom = world.FindRoom(exit.ToRoomKey);
             if (targetRoom is null || targetRoom.Flags.BooleanOrNull(RoomFlags.NoMob.Key) == true)
+            {
+                continue;
+            }
+
+            // Both conditions have to hold: noMob says "not into this room", the home zone says
+            // "not out of that zone". An exit that crosses the border is skipped rather than
+            // ending the attempt, so a mob standing at the edge still wanders inward.
+            if (homeZone is not null &&
+                !string.Equals(exit.ToRoomKey.ZoneKey, homeZone, StringComparison.Ordinal))
             {
                 continue;
             }

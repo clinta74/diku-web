@@ -15,7 +15,15 @@ describe('readBehavior', () => {
       emotes: [],
       shopkeeper: false,
       sells: [],
+      roams: false,
     })
+  })
+
+  it('reads a missing roams key as confined to its zone', () => {
+    // The safe direction, and the one the engine takes: a mob with nothing said about it stays
+    // in the zone whose multipliers gave it its numbers.
+    expect(readBehavior({}).roams).toBe(false)
+    expect(readBehavior({ roams: true }).roams).toBe(true)
   })
 
   it('reads the three dispositions', () => {
@@ -91,10 +99,26 @@ describe('writeBehavior', () => {
   it('writes the stock as an array of item keys', () => {
     const next = writeBehavior(
       {},
-      { disposition: 'npc', emotes: [], shopkeeper: true, sells: ['bread', 'torch'] },
+      { disposition: 'npc', emotes: [], shopkeeper: true, sells: ['bread', 'torch'], roams: false },
     )
 
     expect(next.sells).toEqual(['bread', 'torch'])
     expect(next.shopkeeper).toBe(true)
+  })
+
+  it('writes roams only when it is on', () => {
+    // Absent is the engine's default, so storing `roams: false` would record the default as
+    // though a builder had chosen it — and a later change of default would silently not apply.
+    const off = writeBehavior({}, readBehavior({}))
+    expect(off.roams).toBeUndefined()
+
+    const on = writeBehavior({}, { ...readBehavior({}), roams: true })
+    expect(on.roams).toBe(true)
+  })
+
+  it('clears roams when a mob is told to stay home again', () => {
+    const next = writeBehavior({ roams: true }, { ...readBehavior({ roams: true }), roams: false })
+
+    expect(next.roams).toBeUndefined()
   })
 })
