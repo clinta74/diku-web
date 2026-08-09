@@ -14,7 +14,7 @@ numbers rather than a new set of hand-authored content.
 Play is **PvE by default**; player-versus-player is opt-in per room, through the same extensible
 room-flag registry that carries every other room property (§4.10).
 
-Status: **Phases 0–4 and 5.1 complete; 5.2 complete but for AoE targeting.**
+Status: **Phases 0–4 and 5.1–5.2 complete.**
 
 *Playing* works end to end: register, create a character, walk a seeded zone, talk. Inventory,
 equipment, and items work; mob AI emotes and wanders; combat kills, loots, and levels, with XP
@@ -27,7 +27,7 @@ zones, difficulty multipliers with a live preview, mob and item templates, mob b
 (disposition, emotes, shopkeeper and stock), mob and item spawners across multiple rooms, and
 quests.
 
-Next: **dormant quests and AoE targeting**, then 5.3 (communication) and Phase 6 (ops).
+Next: **5.3 (communication)**, which is also what parties need to exist for, then Phase 6 (ops).
 
 A note on reading the checkboxes below: several were checked off for work that was designed but
 not built, or built but dead on arrival. Where an audit has since disproved one it has been
@@ -1585,13 +1585,32 @@ fails quietly, which is why they need to be listed rather than assumed.
 - [x] **The Channeler could not heal anyone.** Every supportive ability on the support Path was
       `TargetingType.Self`. They are `SingleTarget` now, and a helpful ability cast with no target
       named still lands on the caster.
-- [ ] **`TargetingType.Aoe` never resolves a target.** `AbilitySystem` handles `Self` and
-      `SingleTarget`; an AoE cast falls through with `target = null` and silently does nothing.
-      Nothing declares it, so the failure is unreachable rather than live, and a catalogue test
-      now fails the build if anything does — delete that test as part of implementing it. §4.11
-      sets the bar: the filter runs per target, so a cast in a mixed room hits the mobs and skips
-      the players. Note that **party membership does not exist yet** (5.3), so "never targets a
-      party member" cannot be honoured until it does.
+- [x] **`TargetingType.Aoe` resolves.** `AbilitySystem` gathers a target *list*, filtered per
+      target as §4.11 requires: a harmful cast takes every mob that may be fought — skipping
+      non-combatants — plus other players only where the room resolves `pvp`, and nothing at all
+      in a `peaceful` room; a helpful one takes the caster and the people standing with them and
+      leaves the mobs alone. One cost and one cooldown however many it lands on, and a cast that
+      gathers nobody is refused before either is spent. Two abilities declare it: `adept.firestorm`
+      (18) and `channeler.benediction` (18).
+      **Party membership still does not exist** (5.3), so "never targets a party member" is
+      approximated by the `pvp` flag; two lines in `AreaTargets` change when parties land.
+- [x] **Which way an ability points is declared by its executor**, `IAbilityEffect.IsHarmful`,
+      rather than by a hardcoded list of two effect keys in the command layer. That list predated
+      five of the seven executors and classified all of them as helpful, so `cast scorch` with no
+      target named set the caster on fire. It also decides which set an area effect gathers.
+
+- [ ] **The tick systems query the database once per entity per tick.** `MobAiSystem` takes
+      `IMobTemplateRepository` and calls `GetByKeyAsync` per mob inside its loop, so every 16
+      pulses (4 s) it issues one `SELECT ... FROM mob_templates WHERE key = @key LIMIT 1` for
+      each living mob — a world with twenty mobs runs twenty round-trips every four seconds with
+      nobody logged in. `SpawnerSystem` does the same per spawner every 60 pulses (15 s), for
+      both the mob and the item template. `EfMobTemplateRepository` opens a fresh `DbContext` per
+      call and reads `AsNoTracking`, so nothing memoizes between them. `MobTemplateCache` already
+      holds every template, is loaded at boot, and is kept live by the applier — but only the
+      command paths and the Phase 4 systems read it, because the AI and spawner systems predate
+      it and were never migrated. Give both the cache with a repository fallback on miss, the
+      shape `CombatSystem` already uses. This costs throughput rather than correctness, which is
+      why nothing surfaced it until the SQL log was read.
 
 #### 5.2e — Deferred from the original 5.2 list
 - [ ] Pets and charmed mobs inherit their owner's §4.11 permissions (no pet system yet)
@@ -1693,19 +1712,18 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 
 ## 12. Next step
 
-**The builder catch-up and the correctness pass are both done.** Multipliers, world and zone
-editors, spawners, `questItem`, `baseStats`, ability progression, dormant quests, and the cast
-targeting bugs have all landed. What is left is mostly additive:
+**The builder catch-up and the correctness pass are both done, and 5.2 closed with area
+targeting.** Multipliers, world and zone editors, spawners, `questItem`, `baseStats`, ability
+progression, dormant quests, the cast targeting bugs, seven effect executors, and all three
+targeting modes have landed. One additive item is left before the phase boundary:
 
-1. **`TargetingType.Aoe`** — the last unimplemented targeting mode, and now the obvious home for
-   the seven executors that exist. It needs parties (5.3) to honour §4.11 in full; a
-   build-breaking guard is in place until then.
-2. **Mobs cannot cast.** `CastJob` keys on a character, and mobs fight through `MobAttack` rows
-   with no ability keys — so every effect below is a player-only tool. Giving mobs the same
-   vocabulary is what would let a boss stun, snare, or bleed, and is probably the largest
-   remaining lever on how combat *feels*.
+1. **Mobs cannot cast.** `CastJob` keys on a character, and mobs fight through `MobAttack` rows
+   with no ability keys — so every effect is a player-only tool. Giving mobs the same vocabulary
+   is what would let a boss stun, snare, or bleed, and is probably the largest remaining lever on
+   how combat *feels*.
 
-Then 5.3 (communication) and Phase 6 (ops).
+Then 5.3 (communication), which is also where parties arrive — and parties are what let a harmful
+AoE skip your own group rather than leaning on the `pvp` flag to do it. Then Phase 6 (ops).
 
 **Not yet in any phase, from playtesting:**
 

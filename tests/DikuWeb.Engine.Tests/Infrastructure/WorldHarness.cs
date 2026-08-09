@@ -125,8 +125,14 @@ internal sealed class WorldHarness
         Combat = new EngineCombatSystem(Options, View, ItemTemplates, MobTemplates);
 
         // With a cache and the real effect registry, so a cast resolves into an actual effect
-        // rather than falling out of Tick with nothing to apply.
-        Abilities = new AbilitySystem(Clock, AbilityCache, new Domain.Abilities.Effects.EffectRegistry());
+        // rather than falling out of Tick with nothing to apply. The mob templates are what tell
+        // an area effect which mobs are non-combatants; without them a Firestorm would kill the
+        // shopkeeper and the test would pass.
+        Abilities = new AbilitySystem(
+            Clock,
+            AbilityCache,
+            new Domain.Abilities.Effects.EffectRegistry(),
+            mobTemplates: MobTemplates);
     }
 
     public WorldState World { get; }

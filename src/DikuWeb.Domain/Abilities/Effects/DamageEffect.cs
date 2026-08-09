@@ -13,6 +13,8 @@ public sealed class DamageEffect : IAbilityEffect
 {
     public string EffectKey => "damage.physical";
 
+    public bool IsHarmful => true;
+
     public void Apply(object caster, object? target, Dictionary<string, string> parameters, IRandomSource random)
     {
         ArgumentNullException.ThrowIfNull(caster);

@@ -10,6 +10,8 @@ public sealed class BuffEffect : IBuffEffect
 {
     public string EffectKey => "buff.damage-up";
 
+    public bool IsHarmful => false;
+
     public void Apply(
         object caster,
         object? target,

@@ -36,7 +36,8 @@ public sealed class CommandRegistry
         IItemTemplateRepository? itemTemplates = null,
         MobSpawner? mobSpawner = null,
         ItemSpawner? itemSpawner = null,
-        IGameClock? clock = null)
+        IGameClock? clock = null,
+        Domain.Abilities.Effects.EffectRegistry? effects = null)
     {
         _commands = [];
 
@@ -104,7 +105,7 @@ public sealed class CommandRegistry
 
         CombatCommands.Register(_commands);
         RestCommands.Register(_commands);
-        AbilityCommands.Register(_commands, abilityCache, clock);
+        AbilityCommands.Register(_commands, abilityCache, clock, effects);
         QuestCommands.Register(_commands);
         ShopCommands.Register(_commands);
         StatusCommands.Register(_commands);

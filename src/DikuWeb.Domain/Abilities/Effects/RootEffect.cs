@@ -22,6 +22,8 @@ public sealed class RootEffect : IBuffEffect
 {
     public string EffectKey => "control.root";
 
+    public bool IsHarmful => true;
+
     /// <summary>The longest a snare may hold, in pulses - ten seconds.</summary>
     public const long MaxDurationPulses = 40;
 

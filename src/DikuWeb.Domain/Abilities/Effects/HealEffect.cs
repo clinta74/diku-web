@@ -12,6 +12,8 @@ public sealed class HealEffect : IAbilityEffect
 {
     public string EffectKey => "heal.restore";
 
+    public bool IsHarmful => false;
+
     public void Apply(object caster, object? target, Dictionary<string, string> parameters, IRandomSource random)
     {
         ArgumentNullException.ThrowIfNull(caster);

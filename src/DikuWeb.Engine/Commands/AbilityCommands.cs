@@ -1,4 +1,5 @@
 using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Entities;
 using DikuWeb.Engine.Abilities;
@@ -14,17 +15,28 @@ public static class AbilityCommands
     public static void Register(
         List<CommandDefinition> commands,
         AbilityCache? abilityCache = null,
-        IGameClock? clock = null)
+        IGameClock? clock = null,
+        EffectRegistry? effects = null)
     {
+        // Defaulted rather than left null, because this table is only ever read to ask which way
+        // an ability points - and a null one would answer "helpful" for everything, quietly
+        // turning a bare `cast scorch` into setting yourself on fire. The registry is a lookup
+        // over seven built-ins with no state, so a spare instance costs nothing.
+        var effectTable = effects ?? new EffectRegistry();
+
         commands.Add(new CommandDefinition(
             "cast", 1, "cast <ability> [target] (c) - cast an ability",
-            ctx => Cast(ctx, abilityCache, clock)));
+            ctx => Cast(ctx, abilityCache, clock, effectTable)));
 
         commands.Add(new CommandDefinition(
             "abilities", 0, "abilities (ab) - list your known abilities", ListAbilities));
     }
 
-    private static void Cast(CommandContext ctx, AbilityCache? cache, IGameClock? clock)
+    private static void Cast(
+        CommandContext ctx,
+        AbilityCache? cache,
+        IGameClock? clock,
+        EffectRegistry effects)
     {
         if (!ctx.HasArgument)
         {
@@ -103,7 +115,7 @@ public static class AbilityCommands
             return;
         }
 
-        var targetId = ResolveTarget(ctx, ability, targetName);
+        var targetId = ResolveTarget(ctx, ability, targetName, effects);
 
         // A single-target ability with nothing to aim at must not be paid for. Cost and cooldown
         // are spent by the ability system before it resolves a target, so casting at a name that
@@ -169,9 +181,15 @@ public static class AbilityCommands
     /// already swinging at something, and retyping its name on every cast is friction with no
     /// purpose.
     /// </remarks>
-    private static string? ResolveTarget(CommandContext ctx, Ability ability, string? targetName)
+    private static string? ResolveTarget(
+        CommandContext ctx,
+        Ability ability,
+        string? targetName,
+        EffectRegistry effects)
     {
-        if (ability.TargetingType == TargetingType.Self)
+        // Neither of these aims at one thing. An area effect gathers its own targets at the
+        // moment it lands, so a name typed after it is ignored rather than narrowing it.
+        if (ability.TargetingType is TargetingType.Self or TargetingType.Aoe)
         {
             return null;
         }
@@ -200,17 +218,10 @@ public static class AbilityCommands
         // No name given. What that should mean depends on which way the ability points: a bolt
         // means "the thing I am fighting", a heal means "me". Falling back to the combat target
         // for both would have a Channeler mending the wolf that is biting them.
-        return IsHarmful(ability)
+        return effects.Get(ability.EffectKey)?.IsHarmful == true
             ? actor.Character.CurrentTarget
             : EntityId.ForCharacter(actor.CharacterId);
     }
-
-    /// <summary>
-    /// Whether this ability is aimed at an enemy. Read from the effect, because that is the thing
-    /// that decides who wants to be hit by it.
-    /// </summary>
-    private static bool IsHarmful(Ability ability) =>
-        ability.EffectKey is "damage.physical" or "debuff.weaken";
 
     private static void ListAbilities(CommandContext ctx)
     {

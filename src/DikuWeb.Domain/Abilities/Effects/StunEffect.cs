@@ -21,6 +21,8 @@ public sealed class StunEffect : IBuffEffect
 {
     public string EffectKey => "control.stun";
 
+    public bool IsHarmful => true;
+
     /// <summary>
     /// The longest a stun may last, in pulses. Six seconds of not acting is already at the edge
     /// of tolerable; this is a hard ceiling so no authored ability can exceed it by accident.

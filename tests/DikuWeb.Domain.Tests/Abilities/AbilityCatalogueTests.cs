@@ -1,4 +1,5 @@
 ﻿using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Characters;
 
 namespace DikuWeb.Domain.Tests.Abilities;
@@ -242,29 +243,52 @@ public sealed class AbilityCatalogueTests
             : null;
 
     /// <summary>
-    /// No ability may declare <c>Aoe</c> until something resolves it.
+    /// An area effect never carries a cast-time-free instant burst on a short cooldown.
     /// </summary>
     /// <remarks>
-    /// <c>AbilitySystem</c> handles <c>Self</c> and <c>SingleTarget</c>; an AoE cast falls through
-    /// with <c>target = null</c> and applies nothing — after the cost and the cooldown have
-    /// already been spent and "takes effect!" narrated. Nothing uses it today, so the failure is
-    /// unreachable rather than live; this is what stops the first author of an AoE ability from
-    /// discovering that by hand.
-    ///
-    /// Delete this test as part of implementing AoE, not before. §4.11 sets the bar: the filter
-    /// runs per target, so a cast in a mixed room hits the mobs and skips the players.
+    /// This replaces the guard that used to forbid <c>Aoe</c> outright while nothing resolved it.
+    /// The mode is implemented now, and what needs watching has moved: an AoE pays one cost and
+    /// one cooldown however many things it lands on, so the same numbers that are fair on a single
+    /// target are not fair spread across a room. The floor here is deliberately crude — it catches
+    /// a room-wide nuke authored with single-target economics, which is the mistake that is easy
+    /// to make and hard to notice until a Path trivialises every group of mobs in the game.
     /// </remarks>
     [Fact]
-    public void No_ability_declares_area_targeting_while_nothing_resolves_it()
+    public void An_area_ability_costs_more_than_a_single_target_one()
     {
-        var aoe = AbilityCatalogue.All
-            .Where(e => e.TargetingType == TargetingType.Aoe)
-            .Select(e => e.Key)
-            .ToList();
+        var aoe = AbilityCatalogue.All.Where(e => e.TargetingType == TargetingType.Aoe).ToList();
 
-        Assert.True(
-            aoe.Count == 0,
-            $"AoE is not implemented; these would cost a resource and do nothing: {string.Join(", ", aoe)}.");
+        foreach (var entry in aoe)
+        {
+            var comparable = AbilityCatalogue.For(entry.Path)
+                .Where(e => e.TargetingType == TargetingType.SingleTarget)
+                .Where(e => e.UnlockLevel <= entry.UnlockLevel)
+                .ToList();
+
+            Assert.All(comparable, single => Assert.True(
+                entry.CostValue > single.CostValue || entry.CooldownPulses > single.CooldownPulses,
+                $"{entry.Key} hits the whole room for no more cost or cooldown than {single.Key} " +
+                "spends on one target."));
+        }
+    }
+
+    /// <summary>
+    /// Every area ability points somewhere the area filter understands.
+    /// </summary>
+    /// <remarks>
+    /// The filter gathers two different sets depending on <c>IAbilityEffect.IsHarmful</c> — mobs
+    /// and (in a <c>pvp</c> room) other players for one, the caster and the people standing with
+    /// them for the other. An effect key with no executor behind it has neither, so the ability
+    /// would take a cost and fizzle.
+    /// </remarks>
+    [Fact]
+    public void Every_area_ability_has_an_executor_behind_it()
+    {
+        var effects = new EffectRegistry();
+
+        Assert.All(
+            AbilityCatalogue.All.Where(e => e.TargetingType == TargetingType.Aoe),
+            entry => Assert.NotNull(effects.Get(entry.EffectKey)));
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Randomness;
@@ -48,7 +49,8 @@ public static class EngineServiceCollectionExtensions
                 sp.GetService<IItemTemplateRepository>(),
                 sp.GetService<MobSpawner>(),
                 sp.GetService<ItemSpawner>(),
-                sp.GetService<IGameClock>()));
+                sp.GetService<IGameClock>(),
+                sp.GetService<EffectRegistry>()));
         services.AddSingleton<RoomLayoutService>();
         services.AddSingleton<PlayerView>();
         services.AddSingleton<WorldMutationApplier>();
@@ -74,9 +76,18 @@ public static class EngineServiceCollectionExtensions
                 sp.GetService<ItemSpawner>(),
                 sp.GetService<ILogger<CombatSystem>>()));
 
-        // Phase 5 systems (abilities, quests)
+        // Phase 5 systems (abilities, quests). Explicit for the same reason as CombatSystem: the
+        // mob templates are what tell an area effect which mobs are non-combatants, and a
+        // container that quietly failed to supply them would let a stray Firestorm kill the
+        // shopkeeper standing behind the wolves.
         services.AddSingleton<AbilityCache>();
-        services.AddSingleton<AbilitySystem>();
+        services.AddSingleton<AbilitySystem>(sp =>
+            new AbilitySystem(
+                sp.GetRequiredService<IGameClock>(),
+                sp.GetService<AbilityCache>(),
+                sp.GetService<EffectRegistry>(),
+                sp.GetService<ILogger<AbilitySystem>>(),
+                sp.GetService<MobTemplateCache>()));
         services.AddSingleton<QuestCache>();
         services.AddSingleton<ItemTemplateCache>();
         services.AddSingleton<MobTemplateCache>();

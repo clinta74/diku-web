@@ -17,6 +17,8 @@ public sealed class DebuffEffect : IBuffEffect
 {
     public string EffectKey => "debuff.weaken";
 
+    public bool IsHarmful => true;
+
     public void Apply(
         object caster,
         object? target,

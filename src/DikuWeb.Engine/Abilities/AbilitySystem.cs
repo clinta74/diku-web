@@ -4,6 +4,7 @@ using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
@@ -19,7 +20,8 @@ public sealed class AbilitySystem(
     IGameClock clock,
     AbilityCache? cache = null,
     EffectRegistry? effects = null,
-    ILogger<AbilitySystem>? logger = null)
+    ILogger<AbilitySystem>? logger = null,
+    MobTemplateCache? mobTemplates = null)
 {
     public const long TickIntervalPulses = 1; // Every pulse, so cast-time resolution is smooth
 
@@ -79,14 +81,14 @@ public sealed class AbilitySystem(
         // target - so a rat that died during an eight-pulse Bolt cost the caster full price for
         // an effect that never ran, and told them it had worked.
         var effect = effects?.Get(ability.EffectKey);
-        var target = ResolveTarget(world, caster, ability, cast);
+        var targets = effect is null ? [] : ResolveTargets(world, caster, ability, cast, effect);
 
-        if (effect is null || target is null)
+        if (effect is null || targets.Count == 0)
         {
             actor.SendText(
-                target is null
-                    ? $"Your {ability.Name} finds nothing to take hold of."
-                    : $"Your {ability.Name} fizzles.",
+                effect is null
+                    ? $"Your {ability.Name} fizzles."
+                    : $"Your {ability.Name} finds nothing to take hold of.",
                 "bad");
             return;
         }
@@ -119,57 +121,133 @@ public sealed class AbilitySystem(
         // Set cooldown
         world.SetAbilityCooldown(caster.Id, cast.AbilityKey, clock.CurrentPulse);
 
-        effect.Apply(caster, target, ability.EffectParams, world.Random);
-
-        // If this is a buff/debuff effect, also create the ongoing active effect state
-        if (effect is IBuffEffect buffEffect)
+        // One cost and one cooldown however many it lands on - an area effect is paid for by the
+        // cast, not by the target, which is the whole reason to bring one.
+        foreach (var target in targets)
         {
-            var activeEffect = buffEffect.CreateActiveEffect(
-                caster, target, ability.EffectParams, clock.CurrentPulse);
-            var targetEntityId = target is Character c ? c.Id : ((Mob)target).Id;
-            world.ApplyEffect(targetEntityId, activeEffect);
+            effect.Apply(caster, target, ability.EffectParams, world.Random);
 
-            // A stun interrupts, but that is handled by ShouldInterrupt on the next tick rather
-            // than here: driving it from the *state* means any stun breaks a cast however it
-            // arrived, where doing it at the point of application would only cover stuns
-            // delivered by a player's cast.
+            // If this is a buff/debuff effect, also create the ongoing active effect state
+            if (effect is IBuffEffect buffEffect)
+            {
+                var activeEffect = buffEffect.CreateActiveEffect(
+                    caster, target, ability.EffectParams, clock.CurrentPulse);
+                var targetEntityId = target is Character c ? c.Id : ((Mob)target).Id;
+                world.ApplyEffect(targetEntityId, activeEffect);
+
+                // A stun interrupts, but that is handled by ShouldInterrupt on the next tick
+                // rather than here: driving it from the *state* means any stun breaks a cast
+                // however it arrived, where doing it at the point of application would only
+                // cover stuns delivered by a player's cast.
+            }
         }
     }
 
     /// <summary>
-    /// What this cast lands on, or null when whatever it was aimed at is no longer there.
+    /// Everything this cast lands on. Empty when whatever it was aimed at is no longer there, or
+    /// when an area effect gathered nobody it is allowed to touch.
     /// </summary>
     /// <remarks>
     /// Resolved at the moment the cast lands, not when it was started: a cast time is a window in
     /// which the world can change, and the target dying inside it is the ordinary case rather
-    /// than an edge one.
+    /// than an edge one. For an area effect that window matters more, since the room can fill or
+    /// empty while the words are being said.
     /// </remarks>
-    private static object? ResolveTarget(
+    private IReadOnlyList<object> ResolveTargets(
         WorldState world,
         Character caster,
         Ability ability,
-        CastJob cast)
+        CastJob cast,
+        IAbilityEffect effect)
     {
-        if (ability.TargetingType == TargetingType.Self)
+        switch (ability.TargetingType)
         {
-            return caster;
+            case TargetingType.Self:
+                return [caster];
+
+            case TargetingType.Aoe:
+                return AreaTargets(world, caster, effect.IsHarmful);
+
+            case TargetingType.SingleTarget when !string.IsNullOrEmpty(cast.TargetId):
+                object? one = EntityId.IsCharacter(cast.TargetId)
+                    ? world.GetCharacter(EntityId.ToGuid(cast.TargetId))
+                    : EntityId.IsMob(cast.TargetId)
+                        ? world.GetMob(EntityId.ToGuid(cast.TargetId))
+                        : null;
+
+                return one is null ? [] : [one];
+
+            default:
+                return [];
+        }
+    }
+
+    /// <summary>
+    /// Everyone in the caster's room this effect is allowed to reach.
+    /// </summary>
+    /// <remarks>
+    /// <b>Filtered per target, never per room</b> (PLAN.md §4.11). Asking once whether the room
+    /// permits the cast and then hitting everything in it would make a single flag the difference
+    /// between a spell and a massacre - the room a hostile AoE is cast in is routinely mixed, with
+    /// mobs to kill and players who must not be touched standing in it.
+    ///
+    /// So the two directions gather different sets:
+    /// <list type="bullet">
+    /// <item><description><b>Harmful</b> - every mob that may be fought, plus other players only
+    /// where the room resolves <c>pvp</c>. Nothing at all in a <c>peaceful</c> room, and never
+    /// the caster.</description></item>
+    /// <item><description><b>Helpful</b> - the caster and everyone standing with them. Mobs are
+    /// left out: there is no way yet to have an ally who is one.</description></item>
+    /// </list>
+    ///
+    /// Parties do not exist until 5.3. When they do, two lines change here: a harmful AoE must
+    /// skip party members even in a <c>pvp</c> room, and a helpful one should prefer the party
+    /// over the room. Until then "the room" is the closest honest approximation of "your side",
+    /// and it errs generously, which is the safe direction for the helpful case and is gated by
+    /// the <c>pvp</c> flag for the other.
+    /// </remarks>
+    private IReadOnlyList<object> AreaTargets(WorldState world, Character caster, bool harmful)
+    {
+        var room = caster.RoomKey;
+
+        if (!harmful)
+        {
+            return
+            [
+                caster,
+                .. world.OccupantsOf(room)
+                    .Where(p => p.CharacterId != caster.Id)
+                    .Select(object (p) => p.Character),
+            ];
         }
 
-        if (ability.TargetingType != TargetingType.SingleTarget || string.IsNullOrEmpty(cast.TargetId))
+        // Peaceful beats everything, the same way it does for a swing (§4.10). Refused before the
+        // gathering rather than by filtering it empty, so the reason is obvious when reading it.
+        if (world.IsFlagSet(room, RoomFlags.Peaceful))
         {
-            // Includes Aoe, which nothing resolves yet - a catalogue test fails the build if any
-            // ability declares it, so this cannot be reached from authored content.
-            return null;
+            return [];
         }
 
-        if (EntityId.IsCharacter(cast.TargetId))
+        var targets = new List<object>();
+
+        foreach (var mob in world.MobsIn(room))
         {
-            return world.GetCharacter(EntityId.ToGuid(cast.TargetId));
+            // A non-combatant is unattackable everywhere, so an AoE must not be the loophole that
+            // kills the shopkeeper standing behind the wolves.
+            if (!MobBehavior.IsNonCombatant(mobTemplates?.Get(mob.TemplateKey)?.Behavior))
+            {
+                targets.Add(mob);
+            }
         }
 
-        return EntityId.IsMob(cast.TargetId)
-            ? world.GetMob(EntityId.ToGuid(cast.TargetId))
-            : null;
+        if (world.IsFlagSet(room, RoomFlags.Pvp))
+        {
+            targets.AddRange(world.OccupantsOf(room)
+                .Where(p => p.CharacterId != caster.Id)
+                .Select(object (p) => p.Character));
+        }
+
+        return targets;
     }
 
     private bool ShouldInterrupt(WorldState world, CastJob cast)

@@ -20,6 +20,8 @@ public sealed class DamageOverTimeEffect : IBuffEffect
 {
     public string EffectKey => "damage.overtime";
 
+    public bool IsHarmful => true;
+
     public void Apply(
         object caster,
         object? target,

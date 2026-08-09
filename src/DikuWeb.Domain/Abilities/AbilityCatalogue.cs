@@ -17,10 +17,11 @@ namespace DikuWeb.Domain.Abilities;
 /// Deriving both from this list is what makes that class of mismatch impossible rather than
 /// merely fixed.
 ///
-/// Only the four effect executors that exist are used - <c>damage.physical</c>,
-/// <c>heal.restore</c>, <c>buff.damage-up</c>, <c>debuff.weaken</c>. Identity comes from cost,
-/// cadence, and scaling instead: a Warden hits reliably and endures, a Shade pays little and
-/// strikes fast, an Adept pays a lot for a big slow hit, a Channeler mends more than it harms.
+/// Identity comes from cost, cadence, and scaling rather than from a private list of effects: a
+/// Warden hits reliably and endures, a Shade pays little and strikes fast, an Adept pays a lot for
+/// a big slow hit, a Channeler mends more than it harms. Only the Adept and the Channeler reach a
+/// whole room, one in each direction — an area ability is the strongest thing the executors can
+/// express, and spreading it across all four Paths would cost every one of them its shape.
 /// </remarks>
 public static class AbilityCatalogue
 {
@@ -264,6 +265,16 @@ public static class AbilityCatalogue
             CostType.Focus, 34, 40, 12, TargetingType.SingleTarget,
             "damage.physical", Damage("2.2", "14")),
 
+        // The first harmful area ability in the game, and the Adept's alone: a caster who can
+        // answer a whole room is what the Path is for, and handing it to more than one would
+        // flatten the distinction. It costs nearly double Disjunction and sits on a four-minute
+        // cooldown, because an AoE pays once and lands many times. Its per-target scaling is
+        // deliberately below the Path's level-1 Bolt - the value is in the count, not the number.
+        new(CharacterPath.Adept, 18, "adept.firestorm", "Firestorm",
+            "Fill the room with fire and let it decide what burns.",
+            CostType.Focus, 60, 240, 20, TargetingType.Aoe,
+            "damage.physical", Damage("1.3", "6")),
+
         new(CharacterPath.Adept, 20, "adept.cataclysm", "Cataclysm",
             "The long words. Slow to say, and worth saying.",
             CostType.Focus, 45, 160, 16, TargetingType.SingleTarget,
@@ -363,6 +374,15 @@ public static class AbilityCatalogue
             "Take the strength and do not give it back.",
             CostType.Focus, 30, 60, 4, TargetingType.SingleTarget,
             "debuff.weaken", Weaken("0.55", "100", "sapped")),
+
+        // The other half of area targeting, and the reason the filter has two directions: a
+        // helpful AoE gathers the caster and everyone standing with them rather than the things
+        // they are fighting. Until parties exist (5.3) "the room" is the closest honest reading of
+        // "your side", which is generous - and generous is the safe direction for a heal.
+        new(CharacterPath.Channeler, 18, "channeler.benediction", "Benediction",
+            "Say it over everyone at once, and mean it.",
+            CostType.Focus, 55, 200, 16, TargetingType.Aoe,
+            "heal.restore", Heal("55")),
 
         new(CharacterPath.Channeler, 20, "channeler.intercession", "Intercession",
             "Stand between someone and what was coming for them.",
