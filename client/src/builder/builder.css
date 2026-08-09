@@ -246,6 +246,12 @@
   padding: 0.1rem 0;
 }
 
+/* A picker holding a key no template matches. Allowed - content is routinely wired before the
+   thing it points at exists - but worth flagging, since the other cause is a typo. */
+.picker-unknown {
+  border-color: var(--accent);
+}
+
 /* --- Item stat fields ---------------------------------------------- */
 
 /* Two or three across depending on the rail, so a group of four reads as a block rather than a

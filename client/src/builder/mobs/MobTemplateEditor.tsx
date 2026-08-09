@@ -9,6 +9,9 @@ import { useToast } from '../../ui/Toast'
 import { useBuilderData } from '../BuilderData'
 import { MobBehaviorEditor } from './MobBehaviorEditor'
 import { readBehavior, writeBehavior, type BehaviorDraft } from './behavior'
+import { MobStatsEditor } from './MobStatsEditor'
+import { LootEditor } from './LootEditor'
+import { readLoot, writeLoot, type LootRow } from './mobStats'
 
 interface Props {
   templateKey: string
@@ -25,7 +28,8 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
   const [icon, setIcon] = useState('m')
   const [level, setLevel] = useState(1)
   const [wanderIntervalPulses, setWanderIntervalPulses] = useState(24)
-  const [baseHealth, setBaseHealth] = useState(40)
+  const [baseStats, setBaseStats] = useState<Record<string, unknown>>({})
+  const [loot, setLoot] = useState<LootRow[]>([])
   const [baseXp, setBaseXp] = useState(0)
   const [baseGold, setBaseGold] = useState(0)
   const [attacks, setAttacks] = useState<MobAttack[]>([])
@@ -49,7 +53,12 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         setIcon(loaded.icon)
         setLevel(loaded.level)
         setWanderIntervalPulses(loaded.wanderIntervalPulses ?? 24)
-        setBaseHealth(loaded.baseStats?.health ? Number(loaded.baseStats.health) : 40)
+        // Kept verbatim. Only the keys the form owns are written, in place - the item editor
+        // learned this the hard way when a blanket Number() coercion zeroed every dice string.
+        setBaseStats(
+          loaded.baseStats && typeof loaded.baseStats === 'object' ? { ...loaded.baseStats } : {},
+        )
+        setLoot(readLoot(loaded.loot))
         setBaseXp(loaded.baseXp)
         setBaseGold(loaded.baseGold)
         setAttacks(loaded.attacks ?? [])
@@ -75,12 +84,10 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         icon,
         level,
         wanderIntervalPulses,
-        // Spread the loaded stats so editing health does not drop the other stats, and carry
-        // loot and behavior through untouched - the old editor silently wiped both (PLAN §9.2).
-        baseStats: { ...template.baseStats, health: baseHealth },
+        baseStats,
         baseXp,
         baseGold,
-        loot: template.loot,
+        loot: writeLoot(loot),
         // Folded into the stored bag rather than replacing it, so keys this form does not
         // render survive the save.
         behavior: writeBehavior(template.behavior, behavior),
@@ -170,9 +177,6 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         <Field label="Wander (pulses)" hint="Lower = faster. 24 ≈ 6s.">
           <NumberInput min={1} value={wanderIntervalPulses} onChange={change(setWanderIntervalPulses)} />
         </Field>
-        <Field label="Base health">
-          <NumberInput min={1} value={baseHealth} onChange={change(setBaseHealth)} />
-        </Field>
       </div>
 
       <div className="field-row">
@@ -183,6 +187,23 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
           <NumberInput min={0} value={baseGold} onChange={change(setBaseGold)} />
         </Field>
       </div>
+
+      <MobStatsEditor
+        stats={baseStats}
+        onChange={(next) => {
+          setBaseStats(next)
+          setDirty(true)
+        }}
+      />
+
+      <LootEditor
+        rows={loot}
+        itemTemplates={itemTemplates}
+        onChange={(next) => {
+          setLoot(next)
+          setDirty(true)
+        }}
+      />
 
       <MobBehaviorEditor
         draft={behavior}

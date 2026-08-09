@@ -9,6 +9,7 @@ import {
 import { Modal } from '../../ui/Modal'
 import { Field } from '../../ui/Field'
 import { Select } from '../../ui/Select'
+import { TemplatePicker } from '../templates/TemplatePicker'
 import { NumberInput } from '../../ui/NumberInput'
 
 type Kind = 'Mob' | 'Item'
@@ -155,15 +156,11 @@ export function SpawnerDialog({
         </Select>
       </Field>
 
-      <Field label={kind === 'Mob' ? 'Mob template' : 'Item template'}>
-        <Select value={templateKey} onChange={setTemplateKey}>
-          <option value="">— select {kind === 'Mob' ? 'mob' : 'item'} —</option>
-          {templates.map((template) => (
-            <option key={template.key} value={template.key}>
-              {template.name || template.key}
-            </option>
-          ))}
-        </Select>
+      <Field
+        label={kind === 'Mob' ? 'Mob template' : 'Item template'}
+        hint="Type to filter. The list shows the key and the name."
+      >
+        <TemplatePicker value={templateKey} options={templates} onChange={setTemplateKey} />
       </Field>
 
       <Field

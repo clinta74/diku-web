@@ -1,6 +1,7 @@
 import type { ItemTemplate } from '../../net/builderApi'
 import { Field } from '../../ui/Field'
 import { Select } from '../../ui/Select'
+import { TemplatePicker } from '../templates/TemplatePicker'
 import { DISPOSITIONS, type BehaviorDraft, type Disposition } from './behavior'
 
 interface Props {
@@ -127,20 +128,19 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
             )
           })}
 
-          <Field label="Add an item">
-            <Select
+          <Field label="Add an item" hint="Type to filter by key or name.">
+            <TemplatePicker
               value=""
-              onChange={(v) => {
-                if (v) set({ sells: [...draft.sells, v] })
+              options={unstocked.map((t) => ({
+                key: t.key,
+                name: `${t.name || t.key} (${t.baseValue} gold)`,
+              }))}
+              onChange={(key) => {
+                // Only a real template is added: this field is an "add" action rather than a
+                // value, so a half-typed key must not become a stock row.
+                if (unstocked.some((t) => t.key === key)) set({ sells: [...draft.sells, key] })
               }}
-            >
-              <option value="">— select item —</option>
-              {unstocked.map((template) => (
-                <option key={template.key} value={template.key}>
-                  {template.name || template.key} ({template.baseValue} gold)
-                </option>
-              ))}
-            </Select>
+            />
           </Field>
         </div>
       )}

@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { builderApi, type ItemTemplate } from '../../net/builderApi'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
 import { Select } from '../../ui/Select'
 import { NumberInput } from '../../ui/NumberInput'
+import { NumberField } from '../../ui/NumberField'
 import { OverflowMenu } from '../../ui/OverflowMenu'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { useToast } from '../../ui/Toast'
@@ -217,7 +218,7 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
       </div>
 
       <fieldset className="multiplier-set">
-        <legend>As a weapon</legend>
+        <legend>Swing timing</legend>
         <p className="dim detail">
           Blank speed means this is not a weapon: in a main hand it swings at the default 8
           pulses, in an off hand it never strikes at all.
@@ -274,7 +275,7 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
           <div className="stat-grid">
             {group.fields.map((field) => (
               <Field key={field.key} label={field.label} hint={field.hint}>
-                <MultiplierInput
+                <NumberField
                   value={asNumber(baseStats[field.key])}
                   integer={field.kind === 'int'}
                   onChange={(next) => {
@@ -330,69 +331,5 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         onConfirm={() => void confirmDelete()}
       />
     </div>
-  )
-}
-
-/**
- * A numeric field where blank removes the key rather than writing 0.
- *
- * Keeps a text buffer so partial entries like "1." are typable — bound straight to the number,
- * the keystroke parses to 1 and React rewrites the field under the cursor before the "5" arrives.
- * Filters input rather than relying on a spinner, so the value can only ever be a number.
- */
-function MultiplierInput({
-  value,
-  onChange,
-  integer = false,
-}: {
-  value: number | undefined
-  onChange: (value: number | undefined) => void
-  /** Whole numbers only — a flat armour value of 2.5 is not a thing the engine can use. */
-  integer?: boolean
-}) {
-  const [text, setText] = useState(() => (value === undefined ? '' : String(value)))
-  const focused = useRef(false)
-
-  useEffect(() => {
-    if (!focused.current) setText(value === undefined ? '' : String(value))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value])
-
-  function handle(raw: string) {
-    let out = ''
-    let dot = false
-    for (const c of raw) {
-      if (c >= '0' && c <= '9') out += c
-      else if (c === '.' && !dot && !integer) {
-        out += c
-        dot = true
-      }
-    }
-    setText(out)
-    if (out === '' || out === '.') {
-      onChange(undefined)
-      return
-    }
-    const parsed = Number(out)
-    if (Number.isFinite(parsed)) onChange(parsed)
-  }
-
-  return (
-    <input
-      type="text"
-      inputMode={integer ? 'numeric' : 'decimal'}
-      className="number-input"
-      value={text}
-      placeholder="—"
-      spellCheck={false}
-      onFocus={() => {
-        focused.current = true
-      }}
-      onBlur={() => {
-        focused.current = false
-        setText(value === undefined ? '' : String(value))
-      }}
-      onChange={(e) => handle(e.target.value)}
-    />
   )
 }
