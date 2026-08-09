@@ -85,10 +85,7 @@ public sealed class MobAiSystem(
         }
 
         // Idle: emit expressive actions from behavior.emotes
-        if (ShouldEmote(mob, pulse, template))
-        {
-            EmitEmote(world, roomKey, mob, template);
-        }
+        TryEmote(world, roomKey, mob, template, pulse);
 
         // Wander: pick a random exit and move (respects noMob flag, sentinel flag)
         if (ShouldWander(mob, template, room, pulse))
@@ -103,35 +100,62 @@ public sealed class MobAiSystem(
         }
     }
 
-    private bool ShouldEmote(Mob mob, long pulse, MobTemplate template)
+    /// <summary>
+    /// Says whichever line is due, if any (PLAN.md §4.8).
+    /// </summary>
+    /// <remarks>
+    /// <b>Each line keeps its own clock.</b> This used to be one interval shared by every mob in
+    /// the game — sixteen pulses, four seconds — which meant a shopkeeper's sales pitch and a
+    /// rat's squeak arrived at exactly the same rate, and anything with an emote list said
+    /// something roughly fifteen times a minute.
+    ///
+    /// A fresh mob is scheduled rather than fired, so nothing greets the room the instant it
+    /// spawns, and a spawner filling three slots does not produce three lines at once.
+    ///
+    /// <b>One line per tick at most</b>, the most overdue first. Two mobs answering each other on
+    /// the same pulse is atmosphere; one mob saying two things at once is a glitch.
+    /// </remarks>
+    private void TryEmote(WorldState world, RoomKey roomKey, Mob mob, MobTemplate template, long pulse)
     {
-        if (MobBehavior.EmotesOf(template.Behavior).Count == 0)
-        {
-            return false;
-        }
-
-        var lastEmotePulse = GetMobStateLong(mob, "lastEmotePulse");
-        return pulse - lastEmotePulse >= EmoteIntervalPulses;
-    }
-
-    private void EmitEmote(WorldState world, RoomKey roomKey, Mob mob, MobTemplate template)
-    {
-        var emotes = MobBehavior.EmotesOf(template.Behavior);
+        var emotes = MobBehavior.EmoteScheduleOf(template.Behavior);
         if (emotes.Count == 0)
         {
             return;
         }
 
-        var emote = emotes[random.Next(0, emotes.Count)];
+        var schedule = MobState.EmoteScheduleIn(mob);
+        MobEmote? due = null;
+        var dueAt = long.MaxValue;
 
-        // Notify occupants
-        var occupants = world.OccupantsOf(roomKey);
-        foreach (var player in occupants)
+        foreach (var emote in emotes)
         {
-            player.SendText($"{template.Name} {emote}.", "mob-action");
+            if (!schedule.TryGetValue(emote.Text, out var next))
+            {
+                // First sight of this line - for a new mob, or one whose template just gained it.
+                schedule[emote.Text] = emote.NextPulseAfter(pulse, random);
+                continue;
+            }
+
+            if (next <= pulse && next < dueAt)
+            {
+                due = emote;
+                dueAt = next;
+            }
         }
 
-        SetMobStateLong(mob, "lastEmotePulse", clock.CurrentPulse);
+        if (due is not null)
+        {
+            foreach (var player in world.OccupantsOf(roomKey))
+            {
+                player.SendText($"{template.Name} {due.Text}.", "mob-action");
+            }
+
+            schedule[due.Text] = due.NextPulseAfter(pulse, random);
+        }
+
+        // Written back with the lines the template no longer carries dropped, so renaming an
+        // emote in the builder does not leave the old text accruing in every mob's state forever.
+        MobState.SetEmoteSchedule(mob, schedule, emotes.Select(e => e.Text));
     }
 
     private bool ShouldWander(Mob mob, MobTemplate template, Room room, long pulse)

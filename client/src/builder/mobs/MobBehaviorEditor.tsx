@@ -1,8 +1,16 @@
 import type { ItemTemplate } from '../../net/builderApi'
 import { Field } from '../../ui/Field'
+import { NumberInput } from '../../ui/NumberInput'
 import { Select } from '../../ui/Select'
 import { TemplatePicker } from '../templates/TemplatePicker'
-import { DISPOSITIONS, type BehaviorDraft, type Disposition } from './behavior'
+import {
+  DEFAULT_EMOTE_MAX_SECONDS,
+  DEFAULT_EMOTE_MIN_SECONDS,
+  DISPOSITIONS,
+  type BehaviorDraft,
+  type Disposition,
+  type EmoteDraft,
+} from './behavior'
 
 interface Props {
   draft: BehaviorDraft
@@ -20,8 +28,8 @@ interface Props {
 export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
   const set = (patch: Partial<BehaviorDraft>) => onChange({ ...draft, ...patch })
 
-  const editEmote = (index: number, value: string) =>
-    set({ emotes: draft.emotes.map((e, i) => (i === index ? value : e)) })
+  const editEmote = (index: number, patch: Partial<EmoteDraft>) =>
+    set({ emotes: draft.emotes.map((e, i) => (i === index ? { ...e, ...patch } : e)) })
 
   const stocked = new Set(draft.sells)
   const unstocked = itemTemplates.filter((t) => !stocked.has(t.key))
@@ -57,17 +65,34 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
       <div className="emote-list">
         <span className="field-label">Idle emotes</span>
         <p className="dim">
-          Shown every few seconds as “{'{name}'} {draft.emotes[0] || 'snarls'}.” Leave empty and
-          this mob stands in silence.
+          Shown as “{'{name}'} {draft.emotes[0]?.text || 'snarls'}.” Each line keeps its own
+          clock and picks a fresh gap inside its range every time, so two of the same mob in a
+          room do not fall into step. Leave the list empty and this mob stands in silence.
         </p>
 
         {draft.emotes.map((emote, index) => (
           <div className="field-row" key={index}>
-            <input
-              value={emote}
-              placeholder="scratches at the floor"
-              onChange={(e) => editEmote(index, e.target.value)}
-            />
+            <Field label="Says">
+              <input
+                value={emote.text}
+                placeholder="scratches at the floor"
+                onChange={(e) => editEmote(index, { text: e.target.value })}
+              />
+            </Field>
+            <Field label="Every" hint="seconds, at least">
+              <NumberInput
+                min={1}
+                value={emote.minSeconds}
+                onChange={(v) => editEmote(index, { minSeconds: v })}
+              />
+            </Field>
+            <Field label="to" hint="seconds, at most">
+              <NumberInput
+                min={1}
+                value={emote.maxSeconds}
+                onChange={(v) => editEmote(index, { maxSeconds: v })}
+              />
+            </Field>
             <button
               type="button"
               className="danger"
@@ -78,7 +103,27 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
           </div>
         ))}
 
-        <button type="button" onClick={() => set({ emotes: [...draft.emotes, ''] })}>
+        {draft.emotes.some((e) => e.maxSeconds < e.minSeconds) && (
+          <p className="bad">
+            A range that ends before it starts is read as exactly the lower number.
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={() =>
+            set({
+              emotes: [
+                ...draft.emotes,
+                {
+                  text: '',
+                  minSeconds: DEFAULT_EMOTE_MIN_SECONDS,
+                  maxSeconds: DEFAULT_EMOTE_MAX_SECONDS,
+                },
+              ],
+            })
+          }
+        >
           Add emote
         </button>
       </div>

@@ -412,7 +412,17 @@ public sealed class TickSystemTemplateLookupTests
         var silent = Rat();
         var chatty = Rat(WorldHarness.AsPersisted(new Dictionary<string, object>
         {
-            ["emotes"] = new List<object> { "twitches its whiskers" },
+            // Authored with its own cadence, at one second, so the schedule below is exact
+            // rather than a guess at where inside the default range the roll landed.
+            ["emotes"] = new List<object>
+            {
+                new Dictionary<string, object>
+                {
+                    ["text"] = "twitches its whiskers",
+                    ["minSeconds"] = 1,
+                    ["maxSeconds"] = 1,
+                },
+            },
         }));
 
         var cache = new MobTemplateCache();
@@ -422,11 +432,12 @@ public sealed class TickSystemTemplateLookupTests
         var kael = harness.AddPlayer("Kael", West);
         harness.Drain(kael);
 
-        // Emotes fire on a 16-pulse interval measured from the mob's last one, which starts at
-        // zero - so at pulse zero nothing is ever due.
-        harness.Clock.AdvancePulses(20);
-
         var system = AiSystem(harness, new CountingMobRepository(silent), cache);
+
+        // The first sweep schedules rather than speaks: a mob greeting the room the instant it
+        // spawns is what the per-line schedule exists to stop. The line is due one second later.
+        await system.RunAsync(harness.World, CancellationToken.None);
+        harness.Clock.AdvancePulses(8);
 
         await system.RunAsync(harness.World, CancellationToken.None);
 

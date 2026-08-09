@@ -115,4 +115,55 @@ public static class JsonBag
 
         return [.. values.Select(value => value.Trim()).Where(value => value.Length > 0)];
     }
+
+    /// <summary>
+    /// The raw entries of a list, without deciding what any of them is.
+    /// </summary>
+    /// <remarks>
+    /// For lists whose entries are not all the same shape - mob emotes are a bare string or a
+    /// row with its own timing, and both have to keep working. <see cref="Strings"/> would
+    /// stringify a row into raw JSON; this hands each entry back for the caller to identify with
+    /// <see cref="AsBag"/>.
+    /// </remarks>
+    public static IReadOnlyList<object> Items(IReadOnlyDictionary<string, object>? bag, string key)
+    {
+        if (bag is null || !bag.TryGetValue(key, out var raw) || raw is null)
+        {
+            return [];
+        }
+
+        // Same ordering trap as Strings: a string is IEnumerable, and JsonElement is a struct
+        // that would fall through to the catch-all.
+        return raw switch
+        {
+            JsonElement { ValueKind: JsonValueKind.Array } array =>
+                [.. array.EnumerateArray().Select(object (e) => e)],
+            JsonElement { ValueKind: JsonValueKind.Null } =>
+                [],
+            string text =>
+                [text],
+            System.Collections.IEnumerable list =>
+                [.. list.Cast<object?>().Where(v => v is not null).Select(v => v!)],
+            _ =>
+                [raw],
+        };
+    }
+
+    /// <summary>
+    /// Reads one entry as a nested bag, or null when it is not one.
+    /// </summary>
+    /// <remarks>
+    /// Null is how a caller tells a row from a bare value, so the two shapes of a heterogeneous
+    /// list can be told apart without pattern-matching <see cref="JsonElement"/> at the call site -
+    /// which is the mistake this whole class exists to stop being repeated.
+    /// </remarks>
+    public static IReadOnlyDictionary<string, object>? AsBag(object? raw) => raw switch
+    {
+        null => null,
+        IReadOnlyDictionary<string, object> native => native,
+        IDictionary<string, object> mutable => mutable.AsReadOnly(),
+        JsonElement { ValueKind: JsonValueKind.Object } element =>
+            element.EnumerateObject().ToDictionary(p => p.Name, object (p) => p.Value),
+        _ => null,
+    };
 }

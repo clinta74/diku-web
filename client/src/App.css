@@ -14,6 +14,7 @@
   --party: #56d4a0;
   --tell: #d2a8ff;
   --chat: #e3a663;
+  --emote: #a3b1c2;
   --health: #f85149;
   --focus: #79c0ff;
   --stamina: #3fb950;
@@ -352,6 +353,13 @@ input:focus {
 }
 .line .movement {
   color: var(--movement);
+}
+/* Prose about what someone or something is doing, as distinct from what they said. Both the
+   player's own emote and a mob's idle line land here. */
+.line .emote,
+.line .mob-action {
+  color: var(--emote);
+  font-style: italic;
 }
 .line .party {
   color: var(--party);

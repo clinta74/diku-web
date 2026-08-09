@@ -525,6 +525,16 @@ notoriously hard to balance and invite grinding.
   **An item spawner counts by room, deliberately.** It is a resupply point rather than a
   population cap: take the herb and another grows, which only works if what is in your pack has
   stopped counting. The same field answers two different questions.
+- **Idle emotes carry their own cadence.** Each line in a template's `emotes` list is either a
+  bare string, taking a default of every 20–60 seconds, or a row with `text`, `minSeconds`, and
+  `maxSeconds`. Both shapes stay valid and may be mixed, because the bag is schemaless and every
+  emote authored before timing existed is a bare string.
+  A cadence *per line* rather than per mob, because the two things a mob says are rarely worth
+  hearing equally often — a shopkeeper calling the catch of the day every few minutes is
+  atmosphere, and the same line every four seconds is a reason to leave the room. Ranges rather
+  than fixed intervals, so three rats spawned in one sweep do not fall into step and read as
+  clockwork. At most one line per mob per tick, and a freshly spawned mob is *scheduled* rather
+  than fired, so nothing greets the room the instant it appears.
 - **A wandering mob stays in the zone it spawned in**, unless its template sets `roams`. A zone is
   the unit difficulty is authored in (§4.4), so a mob that crosses a border carries numbers
   resolved from somewhere else's multipliers. Fencing by geography meant flagging every border
@@ -1439,10 +1449,17 @@ One deferred nice-to-have remains below, and it is not what the phase goal asks 
 - [x] **Multiplier resolution at spawn time** (§4.4), `spawn_multipliers` recorded per instance
 - [x] World + zone multiplier storage and `world × zone` composition **in the engine and schema**
 - [x] Builder: mob template, item template, and spawner editors (CRUD endpoints)
-- [x] Builder: mob **behavior** editor — disposition, idle emotes, shopkeeper and stock
+- [x] Builder: mob **behavior** editor — disposition, idle emotes with their cadence, whether it
+      roams beyond its zone, shopkeeper and stock
 - [x] Mob AI v1: idle emotes, room-to-room wandering, `sentinel` flag, fire-and-forget system tick
+- [x] **Each idle emote keeps its own clock**, authored as a range. Every mob in the game used to
+      share one hardcoded sixteen-pulse interval, so a shopkeeper's sales pitch and a rat's squeak
+      arrived at the same rate — roughly fifteen times a minute — which is how a room full of
+      atmosphere becomes a room you leave. From playtesting.
 - [x] Ground items and mobs appear on the map with their icons
-- [x] `emote` command for expressive actions
+- [x] `emote` command for expressive actions — **including back to the person who typed it**,
+      which it did not do. `;grins` broadcast to the room and echoed nothing, so in an empty room
+      there was no way to tell a working emote from a swallowed one. From playtesting.
 - [x] **Multipliers are authorable end to end.** The full slice landed: contract → primitive →
       applier → writer → `builderApi` → a Difficulty tab on both the world and zone editors.
       They were seed-and-SQL only, which made §7.5's "the reason the whole feature exists"
@@ -1854,6 +1871,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
 | Spawners | A mob that wandered out still counts; ten sweeps that scatter what they made never exceed the target; a kill is replaced; two spawners of the same template do not count each other's work; a mob a builder placed by hand satisfies nobody's target. |
 | Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |
+| Emotes | Both authored shapes read, and mixed in one list; a row with no text is dropped; an inverted range reads as its lower number. A fresh mob is silent on its first sweep, a fast line talks while a slow one stays quiet, one line lands per tick, and renaming a line prunes the old key rather than accruing it. The schedule survives the jsonb round trip — the one bug class this codebase keeps rediscovering. |
 | Parties | Forming, expiry, leadership passing, and the dissolve at one member. Leaving the world drops you from the group — asserted through `WorldState.Remove`, which is the one door out. The split pays only members standing where the mob died, and an odd remainder goes to whoever landed the blow rather than evaporating. |
 | Travel | `recall` reaches the bind point and falls through to the starting room when unbound or when a builder deleted it. Every refusal has a test, because the value of `noRecall` having exactly one reader is entirely in that reader being consulted. |
 | Builder | Mutation → loop → persist → occupants notified, end to end. Audit row written on every write. |

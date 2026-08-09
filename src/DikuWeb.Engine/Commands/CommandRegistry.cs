@@ -962,6 +962,19 @@ public sealed class CommandRegistry
         ctx.MarkRoomForRefresh(ctx.Actor.RoomKey);
     }
 
+    /// <summary>
+    /// Third-person prose, shown to the room and to the person who wrote it.
+    /// </summary>
+    /// <remarks>
+    /// The echo used to be missing, so typing <c>;grins</c> produced nothing at all on your own
+    /// screen and there was no way to tell a working emote from a swallowed one — in an empty
+    /// room, no way to tell at all.
+    ///
+    /// The same third-person line rather than a second-person rewrite, because rewriting means
+    /// conjugating: "grins" → "grin" is easy, and there is no rule that also turns "waves at the
+    /// fire" or "is lost in thought" into something that reads. Showing what everyone else sees is
+    /// both honest and the thing a player wants to check.
+    /// </remarks>
     private static void Emote(CommandContext ctx)
     {
         if (!ctx.HasArgument)
@@ -970,7 +983,10 @@ public sealed class CommandRegistry
             return;
         }
 
-        ctx.Broadcast($"{ctx.Actor.Name} {ctx.Argument}", "emote");
+        var line = $"{ctx.Actor.Name} {ctx.Argument}";
+
+        ctx.Reply(line, "emote");
+        ctx.Broadcast(line, "emote");
     }
 
     private static void Stats(CommandContext ctx)

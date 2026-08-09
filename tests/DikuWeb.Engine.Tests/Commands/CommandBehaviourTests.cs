@@ -18,6 +18,38 @@ public sealed class CommandBehaviourTests
     }
 
     [Fact]
+    public void An_emote_is_shown_to_the_person_who_wrote_it()
+    {
+        // It used to broadcast only, so `;grins` produced nothing on your own screen — and in an
+        // empty room there was no way to tell a working emote from a swallowed one.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", West);
+        harness.Drain(kael);
+
+        harness.Execute(kael, ";grins slowly");
+
+        Assert.Contains("Kael grins slowly", harness.DrainText(kael), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_emote_reads_the_same_way_to_everyone()
+    {
+        // The same third-person line rather than a second-person rewrite: "grins" → "grin" is
+        // easy, and there is no rule that also handles "waves at the fire".
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", West);
+        var mira = harness.AddPlayer("Mira", West);
+        harness.Drain(kael);
+        harness.Drain(mira);
+
+        harness.Execute(kael, "emote waves at the fire");
+
+        Assert.Equal(
+            harness.DrainText(mira).Trim(),
+            harness.DrainText(kael).Trim());
+    }
+
+    [Fact]
     public void Moving_relocates_the_character_and_updates_occupancy()
     {
         var harness = Loaded();

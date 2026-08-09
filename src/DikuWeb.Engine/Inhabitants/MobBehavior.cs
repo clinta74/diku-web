@@ -103,9 +103,67 @@ public static class MobBehavior
     public static bool Roams(IReadOnlyDictionary<string, object>? behavior) =>
         JsonBag.Boolean(behavior, RoamsKey);
 
-    /// <summary>The idle emotes this mob cycles through. Empty when it has none.</summary>
+    /// <summary>The idle emote text this mob cycles through. Empty when it has none.</summary>
+    /// <remarks>
+    /// Text only. <see cref="EmoteScheduleOf"/> is what the AI reads — this stays for callers that
+    /// want to know <em>whether</em> a mob says anything without caring how often.
+    /// </remarks>
     public static IReadOnlyList<string> EmotesOf(IReadOnlyDictionary<string, object>? behavior) =>
-        JsonBag.Strings(behavior, EmotesKey);
+        [.. EmoteScheduleOf(behavior).Select(e => e.Text)];
+
+    /// <summary>The keys a timed emote row is authored with.</summary>
+    public const string EmoteTextKey = "text";
+
+    /// <inheritdoc cref="EmoteTextKey"/>
+    public const string EmoteMinSecondsKey = "minSeconds";
+
+    /// <inheritdoc cref="EmoteTextKey"/>
+    public const string EmoteMaxSecondsKey = "maxSeconds";
+
+    /// <summary>
+    /// The idle emotes this mob cycles through, each with its own cadence.
+    /// </summary>
+    /// <remarks>
+    /// <b>Two authored shapes, both valid.</b> A bare string is a line with no opinion about
+    /// timing and takes the default range; a row carrying <c>text</c>, <c>minSeconds</c>, and
+    /// <c>maxSeconds</c> says how often it should be heard. The list may mix them, because the bag
+    /// is schemaless (§4.8) and every emote written before timing existed is a bare string — so
+    /// accepting only rows would have silenced all of them.
+    ///
+    /// A row with no <c>text</c> is dropped rather than emitted blank: that is a half-filled
+    /// builder row, and "a rat ." is worse than silence.
+    /// </remarks>
+    public static IReadOnlyList<MobEmote> EmoteScheduleOf(IReadOnlyDictionary<string, object>? behavior)
+    {
+        var emotes = new List<MobEmote>();
+
+        foreach (var entry in JsonBag.Items(behavior, EmotesKey))
+        {
+            if (JsonBag.AsBag(entry) is { } row)
+            {
+                if (JsonBag.Text(row, EmoteTextKey) is not { } text)
+                {
+                    continue;
+                }
+
+                var min = JsonBag.Int32(row, EmoteMinSecondsKey, MobEmote.DefaultMinSeconds);
+                var max = JsonBag.Int32(row, EmoteMaxSecondsKey, MobEmote.DefaultMaxSeconds);
+
+                emotes.Add(MobEmote.FromSeconds(text, min, max));
+                continue;
+            }
+
+            var bare = Convert.ToString(entry, System.Globalization.CultureInfo.InvariantCulture)?.Trim();
+
+            if (!string.IsNullOrEmpty(bare))
+            {
+                emotes.Add(MobEmote.FromSeconds(
+                    bare, MobEmote.DefaultMinSeconds, MobEmote.DefaultMaxSeconds));
+            }
+        }
+
+        return emotes;
+    }
 
     /// <summary>The item template keys this shopkeeper offers. Empty when it stocks nothing.</summary>
     public static IReadOnlyList<string> SellsOf(IReadOnlyDictionary<string, object>? behavior) =>

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { readBehavior, writeBehavior } from './behavior'
+import {
+  DEFAULT_EMOTE_MAX_SECONDS,
+  DEFAULT_EMOTE_MIN_SECONDS,
+  readBehavior,
+  writeBehavior,
+} from './behavior'
 
 /**
  * The behavior bag is schemaless and shared, so the risk in editing it is not a wrong value but
@@ -53,7 +58,46 @@ describe('readBehavior', () => {
   })
 
   it('reads a bare string where a list was expected as one entry', () => {
-    expect(readBehavior({ emotes: 'snarls' }).emotes).toEqual(['snarls'])
+    expect(readBehavior({ emotes: 'snarls' }).emotes).toEqual([
+      { text: 'snarls', minSeconds: DEFAULT_EMOTE_MIN_SECONDS, maxSeconds: DEFAULT_EMOTE_MAX_SECONDS },
+    ])
+  })
+
+  it('gives a bare emote the default cadence', () => {
+    // Every emote written before timing existed is a bare string. Refusing them would silence
+    // all of them.
+    expect(readBehavior({ emotes: ['squeaks'] }).emotes).toEqual([
+      { text: 'squeaks', minSeconds: DEFAULT_EMOTE_MIN_SECONDS, maxSeconds: DEFAULT_EMOTE_MAX_SECONDS },
+    ])
+  })
+
+  it('reads an emote row that carries its own cadence', () => {
+    const draft = readBehavior({
+      emotes: [{ text: 'has the best fish in town', minSeconds: 120, maxSeconds: 300 }],
+    })
+
+    expect(draft.emotes).toEqual([
+      { text: 'has the best fish in town', minSeconds: 120, maxSeconds: 300 },
+    ])
+  })
+
+  it('reads the two shapes mixed in one list', () => {
+    // Which is what a template looks like the moment one line's timing is edited.
+    const draft = readBehavior({ emotes: ['squeaks', { text: 'gnaws', minSeconds: 5, maxSeconds: 9 }] })
+
+    expect(draft.emotes.map((e) => e.text)).toEqual(['squeaks', 'gnaws'])
+    expect(draft.emotes[0].minSeconds).toBe(DEFAULT_EMOTE_MIN_SECONDS)
+    expect(draft.emotes[1].minSeconds).toBe(5)
+  })
+
+  it('drops an emote row with no text', () => {
+    expect(readBehavior({ emotes: [{ minSeconds: 5 }, 'squeaks'] }).emotes).toHaveLength(1)
+  })
+
+  it('reads a range that ends before it starts as exactly the lower number', () => {
+    // Matching the engine's clamp, rather than showing a range the game will not honour.
+    expect(readBehavior({ emotes: [{ text: 'squeaks', minSeconds: 30, maxSeconds: 10 }] }).emotes)
+      .toEqual([{ text: 'squeaks', minSeconds: 30, maxSeconds: 30 }])
   })
 })
 
@@ -90,6 +134,51 @@ describe('writeBehavior', () => {
     const next = writeBehavior(stored, { ...readBehavior(stored), emotes: [] })
 
     expect(next.emotes).toBeUndefined()
+  })
+
+  it('writes a default-cadence emote back as a bare string', () => {
+    // The simplest shape that carries the meaning, so turning the dial is visible in the stored
+    // bag and content written before timing existed round-trips unchanged.
+    const stored = { emotes: ['snarls'] }
+
+    expect(writeBehavior(stored, readBehavior(stored)).emotes).toEqual(['snarls'])
+  })
+
+  it('writes a row once the cadence is not the default', () => {
+    const next = writeBehavior(
+      {},
+      {
+        ...readBehavior({}),
+        emotes: [{ text: 'announces the catch', minSeconds: 120, maxSeconds: 300 }],
+      },
+    )
+
+    expect(next.emotes).toEqual([
+      { text: 'announces the catch', minSeconds: 120, maxSeconds: 300 },
+    ])
+  })
+
+  it('drops a blank emote row rather than saving it', () => {
+    // A half-filled row would reach the engine as an emote with no text.
+    const next = writeBehavior(
+      {},
+      {
+        ...readBehavior({}),
+        emotes: [
+          { text: '  ', minSeconds: 5, maxSeconds: 9 },
+          { text: 'squeaks', minSeconds: DEFAULT_EMOTE_MIN_SECONDS, maxSeconds: DEFAULT_EMOTE_MAX_SECONDS },
+        ],
+      },
+    )
+
+    expect(next.emotes).toEqual(['squeaks'])
+  })
+
+  it('round-trips a timed emote through read', () => {
+    const stored = { emotes: [{ text: 'gnaws', minSeconds: 5, maxSeconds: 9 }] }
+
+    expect(readBehavior(writeBehavior(stored, readBehavior(stored))).emotes)
+      .toEqual(readBehavior(stored).emotes)
   })
 
   it('always writes a disposition so the engine never has to guess', () => {

@@ -16,6 +16,76 @@ public static class MobState
     /// <summary>The zone this mob was spawned into, which bounds where it may wander.</summary>
     public const string HomeZoneKey = "homeZone";
 
+    /// <summary>The pulse each of this mob's emotes is next due on, keyed by the line itself.</summary>
+    /// <remarks>
+    /// Keyed by text rather than by position in the template's list, so adding, removing, or
+    /// reordering emotes in the builder does not shift every schedule onto the wrong line.
+    /// </remarks>
+    public const string EmoteScheduleKey = "emoteNext";
+
+    /// <summary>
+    /// This mob's emote schedule, as a map the caller may edit in place.
+    /// </summary>
+    /// <remarks>
+    /// A copy rather than a live view: the stored value may have arrived from jsonb as a
+    /// <c>JsonElement</c>, which is not writable. <see cref="SetEmoteSchedule"/> puts it back.
+    /// </remarks>
+    public static Dictionary<string, long> EmoteScheduleIn(Mob mob)
+    {
+        ArgumentNullException.ThrowIfNull(mob);
+
+        var schedule = new Dictionary<string, long>(StringComparer.Ordinal);
+
+        if (JsonBag.AsBag(mob.State.GetValueOrDefault(EmoteScheduleKey)) is not { } stored)
+        {
+            return schedule;
+        }
+
+        foreach (var (text, _) in stored)
+        {
+            schedule[text] = JsonBag.Int64(stored, text);
+        }
+
+        return schedule;
+    }
+
+    /// <summary>
+    /// Stores the schedule, keeping only the lines the template still carries.
+    /// </summary>
+    /// <remarks>
+    /// Pruning matters because the key is the emote text: editing a typo in the builder makes a
+    /// new key, and without this every correction would leave its predecessor behind in the state
+    /// of every mob ever spawned from that template.
+    /// </remarks>
+    public static void SetEmoteSchedule(
+        Mob mob,
+        IReadOnlyDictionary<string, long> schedule,
+        IEnumerable<string> keep)
+    {
+        ArgumentNullException.ThrowIfNull(mob);
+        ArgumentNullException.ThrowIfNull(schedule);
+        ArgumentNullException.ThrowIfNull(keep);
+
+        var live = keep.ToHashSet(StringComparer.Ordinal);
+        var kept = new Dictionary<string, object>(StringComparer.Ordinal);
+
+        foreach (var (text, pulse) in schedule)
+        {
+            if (live.Contains(text))
+            {
+                kept[text] = pulse;
+            }
+        }
+
+        if (kept.Count == 0)
+        {
+            mob.State.Remove(EmoteScheduleKey);
+            return;
+        }
+
+        mob.State[EmoteScheduleKey] = kept;
+    }
+
     /// <summary>
     /// The zone this mob calls home, or null when it has never been told.
     /// </summary>
