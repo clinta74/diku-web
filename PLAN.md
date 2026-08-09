@@ -14,7 +14,7 @@ numbers rather than a new set of hand-authored content.
 Play is **PvE by default**; player-versus-player is opt-in per room, through the same extensible
 room-flag registry that carries every other room property (§4.10).
 
-Status: **Phases 0–4 and 5.1–5.2 complete. Remaining: 5.2e, 5.3, Phase 6.**
+Status: **Phase 5 complete (0–4 and 5.1–5.3). Remaining: Phase 6.**
 
 *Playing* works end to end: register, create a character, walk a seeded zone, talk. Inventory,
 equipment, and items work; mob AI emotes and wanders; combat kills, loots, and levels, with XP
@@ -27,8 +27,12 @@ zones, difficulty multipliers with a live preview, mob and item templates, mob b
 (disposition, emotes, shopkeeper and stock), mob and item spawners across multiple rooms, and
 quests — the last with reachability warnings and the prerequisite chain shown in the editor.
 
-Next: **5.3 — parties first**, since three things in the code are already approximating them,
-then `tell`, channels, and `recall`. Then Phase 6 (ops).
+*Playing together* works: parties form by invitation, share a kill, and are the one thing §4.11
+will not let you aim at. `tell`, `reply`, a world channel, and a party channel carry a
+conversation between rooms; `recall` returns you to where you bound.
+
+Next: **Phase 6 (ops)** — admin commands, rate limiting, telemetry, backups, and the recovery
+half of the runbook.
 
 A note on reading the checkboxes below: several were checked off for work that was designed but
 not built, or built but dead on arrival. Where an audit has since disproved one it has been
@@ -638,7 +642,7 @@ The starting registry:
 | `peaceful` | false | combat targeting | No combat at all, mobs included | Phase 4 |
 | `respawn` | false | death, `bind` | A valid bind point (§4.12) | Phase 4 |
 | `noMob` | false | mob AI | Wandering mobs will not path in | Phase 3 |
-| `noRecall` | false | movement, abilities | `recall` and teleport out are refused | Phase 5 |
+| `noRecall` | false | `Travel.Refuse` | `recall` and any future teleport out are refused | Phase 5.3 |
 | `dark` | false | room rendering | Description withheld without a light source | Phase 5 |
 | `indoors` | false | presentation | Shelters from weather when weather exists | later |
 | `unfinished` | false | builder | The build to-do list (§7.6) | Phase 2 |
@@ -669,7 +673,10 @@ other content, and the rest of the world stays safe without anyone configuring a
   skips the players. Running the check once for the room would make a single flag the difference
   between a spell and a massacre.
 - **Party members are never valid targets**, `pvp` room or not — this exists so an AoE cannot wipe
-  your own group by accident.
+  your own group by accident. Checked *before* the `pvp` flag, because being grouped is the
+  stronger statement: an arena is exactly where a group stands next to people it is fighting.
+  Only hostile actions ask. **Heals, buffs, and helpful area effects target the group freely** —
+  that is what a group is for, and the gate is never consulted for them.
 - **PvP kills go to the moderation log**, not the application log, so griefing patterns are
   visible without reading `command_log` by hand.
 
@@ -1454,7 +1461,8 @@ One deferred nice-to-have remains below, and it is not what the phase goal asks 
 - [x] `kill`, `flee`, `consider`, auto-attack continuation
 - [x] Damage model per §4.6, injectable RNG, full unit coverage of the formula
 - [x] **Target validation gate (§4.11), separate from the damage formula:** `peaceful` forbids all
-      combat, player-vs-player requires `pvp`, party members are never targets
+      combat, player-vs-player requires `pvp`, party members are never targets — the last of the
+      three only stopped being a comment in 5.3, when there were parties to check against
 - [x] PvP re-checked every round, so leaving a `pvp` room ends the fight; refusals are narrated
 - [x] PvP kills recorded to the moderation log
 - [x] **Death (§4.12):** no player corpse, no item loss, mob corpses unchanged
@@ -1635,8 +1643,9 @@ one failed quietly, which is why they needed listing rather than assuming — an
       leaves the mobs alone. One cost and one cooldown however many it lands on, and a cast that
       gathers nobody is refused before either is spent. Two abilities declare it: `adept.firestorm`
       (18) and `hallow.benediction` (18).
-      **Party membership still does not exist** (5.3), so "never targets a party member" is
-      approximated by the `pvp` flag; two lines in `AreaTargets` change when parties land.
+      **Party membership now overrides both flags** (5.3): a harmful area effect skips the
+      caster's group even where `pvp` is set — the one room it mattered in — and a helpful one
+      prefers the group over the room, falling back to the room when the caster is ungrouped.
 - [x] **Which way an ability points is declared by its executor**, `IAbilityEffect.IsHarmful`,
       rather than by a hardcoded list of two effect keys in the command layer. That list predated
       five of the seven executors and classified all of them as helpful, so `cast scorch` with no
@@ -1726,7 +1735,38 @@ one failed quietly, which is why they needed listing rather than assuming — an
       phase checklist as work that could never start.
 
 #### 5.3 — Communication and travel
-- [ ] `tell`, channels, `group`/party, party XP split
+- [x] **Parties, session-scoped.** A `PartyRegistry` in `WorldState`, beside combat and active
+      effects, with no table behind it: a party describes who is in the world right now, and
+      persisting one would raise a question — what a party whose members are all offline means —
+      that nothing in §4.11 or the split needs answered. `WorldState.Remove` is the one door out
+      of the world, so party cleanup lives there rather than at the four call sites that reach it.
+      Going link-dead deliberately does *not* clean up: §3.6 leaves that character standing in the
+      room, and a group that dissolved over ten seconds of bad wifi would be worse than one that
+      waited.
+      `group` with subcommands (invite, accept, decline, leave, kick, disband), six members,
+      invitations that expire after a minute, and leadership that passes when the leader walks
+      out. A party of one dissolves itself — otherwise it is a state you cannot tell from being
+      grouped, and it silently changes how a helpful area effect gathers.
+- [x] **The three approximations waiting on parties are gone**, each of which carried a comment
+      saying so. `AreaTargets` filtered by the `pvp` flag as a stand-in for membership;
+      `TargetValidator`'s summary claimed *"party members are never valid targets"* with nothing
+      enforcing it; and the XP split had nothing to split between.
+- [x] **Party XP and gold split**, evenly, remainder to whoever landed the blow, among members
+      **standing in the room where it died**. A member two zones away shares nothing — a group
+      that could farm by scattering would make the split an exploit rather than a convenience.
+      **No group bonus**: four people killing one mob earn exactly what one earns, so grouping is
+      a social choice rather than an efficient one. That may be the wrong call, but it is one
+      number in `RewardShare` and inventing a multiplier before anyone has played in a group would
+      be balancing against a guess.
+- [x] **`tell`, `reply`, a world channel, and a party channel.** `tell` and `gtell` cross rooms,
+      which is what makes them different from `say`. `chat off` silences the world channel in
+      *both* directions — a channel you can shout into while ignoring the replies is not one
+      anybody else wants to share. The short forms were chosen so no older verb lost its
+      abbreviation: `t` is still talk, `r` still rest, `c` still consider, `g` still get.
+- [x] **`AbilityValidator` deleted.** A third copy of the §4.11 rules with no production callers,
+      which applied the hostile check to *every* single-target ability — so anyone who wired it up
+      would have found that healing another player was refused everywhere except a `pvp` room. Its
+      cost check, targeting check, and self-target rule are all enforced on the live path already.
 - [x] **A second world needs no portal concept — an ordinary exit already crosses worlds.**
       This line used to read *"a second world reachable by portal"*, which invented a mechanism
       for something the exit system does already. `RoomExit.ToRoomKey` is a fully-qualified
@@ -1737,10 +1777,21 @@ one failed quietly, which is why they needed listing rather than assuming — an
       `world.zone.room`.
       So this is **content, not code** — build the world, link a room to it. Whether the door is
       described as a portal, a ship, or a staircase is prose.
-- [ ] `recall` / teleport, and the `noRecall` flag that has been waiting for something to refuse
-      (moved up from 5.2e — the same realisation applies). A destination is a `world.zone.room`
+- [x] **`recall`, and the `noRecall` flag finally has one reader.** `Travel.Refuse` is that
+      reader, and it is the seam any future teleport goes through — a flag becomes a lie when a
+      second travel verb lands later and forgets to ask.
+      Recall returns you to the bind point `bind` already sets and death already uses, rather than
+      a second configured room that could drift from it; which also means `bind` now matters while
+      you are alive. It is free and uncooled, which sounds generous until you notice what it is:
+      dying on purpose without the XP loss. What stops it being an escape hatch is that it refuses
+      mid-fight, so the fight you would want out of is the one it will not take you out of.
+      Deliberately not used by the builder's `goto`, which is documented as ignoring exits — a
+      builder held in place by the content they are editing would have to walk out to fix it.
+- [→] Teleport *as a spell* — not built, and not a gap. A destination is a `world.zone.room`
       like any other, so a teleport effect is a parameter, not a new kind of link: nothing about
-      travelling needs to know whether the target is in this world.
+      travelling needs to know whether the target is in this world. When one is wanted it is an
+      executor reading a room key and calling `Travel`, which is why that seam exists now rather
+      than being invented alongside the spell.
 
 ### Phase 6 — Operations
 
@@ -1779,9 +1830,11 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Robustness | One test per row of §7.4. Delete a room out from under a player, point an exit at nothing, orphan a spawner — the loop must survive every one. |
 | Multipliers | Boundary cases: `0.0` yields none, tiny fractions still yield ≥1 health, world × zone composes, rounding is half-away-from-zero. |
 | Room flags | Resolution is room → zone → world → default; an unknown key survives a save/load round-trip; a wrong-typed value resolves to the default; `peaceful` beats `pvp`. The load-bearing test is that **a room with no flags at all is not PvP** — that is the property every other safety claim rests on. |
-| PvP | Refused in an unflagged room, allowed in a flagged one, ends the round after either party leaves, and never targets a party member. AoE in a mixed room hits mobs and skips players. Every hostile action — swing, single-target cast, area effect, taunt — answers through the one gate, so the coverage is that they agree rather than that each was remembered. *Pet laundering is not tested because there are no pets; it is §13's blocking constraint, not a gap here.* |
+| PvP | Refused in an unflagged room, allowed in a flagged one, ends the round after either combatant leaves, and never targets a party member — including a duel already under way, which ends the round the two players group up. AoE in a mixed room hits mobs and skips players. Every hostile action — swing, single-target cast, area effect, taunt — answers through the one gate, so the coverage is that they agree rather than that each was remembered. *Pet laundering is not tested because there are no pets; it is §13's blocking constraint, not a gap here.* |
 | Death | XP loss floors at the level threshold and never de-levels; no loss below the min level or on a PvP death; dying at the exact threshold costs nothing. Respawn falls through all three candidates, including when the bind room was deleted mid-session. Nothing leaves the inventory. |
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
+| Parties | Forming, expiry, leadership passing, and the dissolve at one member. Leaving the world drops you from the group — asserted through `WorldState.Remove`, which is the one door out. The split pays only members standing where the mob died, and an odd remainder goes to whoever landed the blow rather than evaporating. |
+| Travel | `recall` reaches the bind point and falls through to the starting room when unbound or when a builder deleted it. Every refusal has a test, because the value of `noRecall` having exactly one reader is entirely in that reader being consulted. |
 | Builder | Mutation → loop → persist → occupants notified, end to end. Audit row written on every write. |
 | Roles | Promotion reaches an open session without a relog, and demotion revokes builder access within the revalidation interval rather than at cookie expiry. A banned account is rejected while still connected. Self-demotion refused. An offline target can be promoted. Every change writes an `admin_audit` row. |
 | Server | `WebApplicationFactory` + Testcontainers Postgres, including an SSE test that opens the stream, POSTs a command, and asserts events arrive in order. |
@@ -1832,29 +1885,41 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 
 ## 12. Next step
 
-**Phase 5 is closed.** Multipliers, world and zone editors, spawners, `questItem`, `baseStats`,
-ability progression, dormant quests, the cast targeting bugs, seven effect executors, all three
-targeting modes, threat accounting, the quest builder, and mob attack effects have landed.
-**Every content type §4 describes can now be authored in the browser with no SQL**, and the
-effect vocabulary runs in both directions.
+**Phase 5 is closed, 5.3 included.** Multipliers, world and zone editors, spawners, `questItem`,
+`baseStats`, ability progression, dormant quests, the cast targeting bugs, seven effect executors,
+all three targeting modes, threat accounting, the quest builder, mob attack effects, parties, the
+XP split, `tell`/`reply`/channels, and `recall` have landed. **Every content type §4 describes can
+now be authored in the browser with no SQL**, the effect vocabulary runs in both directions, and
+nothing in §4.11 is approximated any more.
 
-**Next: 5.3 (communication and travel).** Two pieces, not four — *"a second world reachable by
-portal"* turned out to be content rather than code, since an ordinary exit already crosses worlds
-and always has.
+**Next: Phase 6 (ops).** The deployment pipeline landed early; what is left is the part that
+matters when something goes wrong.
 
-1. **Parties**, which are the load-bearing half. Three approximations in the codebase are waiting
-   on them, each carrying a comment saying so: `AreaTargets` leans on the `pvp` flag as a
-   stand-in for party membership, `TargetValidator`'s summary lists *"party members are never
-   valid targets"* as a rule nothing enforces, and the XP split has nothing to split between.
-   Do this first — everything else in 5.3 depends on nothing.
-2. **`tell`, channels, `recall`/teleport**, and with teleport the `noRecall` flag finally gets
-   something to refuse.
+1. **Admin commands** — `teleport`, `stat`, `set`, `mute`, `kick`, `ban`. `Travel` is already the
+   seam an admin `teleport` moves through, and `goto` deliberately bypasses it.
+2. **Rate limiting and flood protection.** Only `DigThrottle` exists, covering one endpoint.
+3. **Telemetry.** Nothing is instrumented; the slow-pulse watchdog logs but does not measure, so
+   the §11 targets cannot currently be checked against reality.
+4. **Backups and the recovery runbook** — `DOCKER.md` and `DEPLOY_NO_ENV.md` cover setup, not
+   rollback or incident response.
 
-Then Phase 6 (ops).
+Also logged from playtesting and not yet in a phase: an admin-triggered shutdown with a warning
+and a delay, delay 0 meaning immediate.
 
-The item this section carried last, kept as the record of what it was and why the shape changed:
+The items this section carried last, kept as the record of what they were and why the shape
+changed:
 
-1. **Mob attacks carry effects.** ~~Every one of the seven executors is a player-only tool~~ — the
+1. **Parties.** Three approximations were waiting on them, each carrying a comment saying so:
+   `AreaTargets` leaned on the `pvp` flag as a stand-in for membership, `TargetValidator`'s summary
+   listed *"party members are never valid targets"* as a rule nothing enforced, and the XP split
+   had nothing to split between. All three are now real. Session-scoped was the call — no schema,
+   no save queue, and no question about what a party of offline characters means.
+   The one thing the build surfaced that the plan had not: **`AbilityValidator` was a fourth copy
+   of §4.11 with no callers**, and it applied the hostile check to helpful abilities, so wiring it
+   up would have made healing another player impossible outside a `pvp` room. Deleted rather than
+   corrected — the live path already enforces every rule it held.
+
+2. **Mob attacks carry effects.** ~~Every one of the seven executors is a player-only tool~~ — the
    asymmetry was live rather than theoretical: a Warden's Shield Bash (9) takes a boss off its
    feet for three seconds and the boss had no answer of any kind.
    This used to read *"mobs cannot cast"*, which overstates it and invites a build big enough to

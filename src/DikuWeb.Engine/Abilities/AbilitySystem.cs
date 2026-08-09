@@ -314,15 +314,22 @@ public sealed class AbilitySystem(
     /// <item><description><b>Harmful</b> - every mob that may be fought, plus other players only
     /// where the room resolves <c>pvp</c>. Nothing at all in a <c>peaceful</c> room, and never
     /// the caster.</description></item>
-    /// <item><description><b>Helpful</b> - the caster and everyone standing with them. Mobs are
-    /// left out: there is no way yet to have an ally who is one.</description></item>
+    /// <item><description><b>Helpful</b> - the caster, plus their party where they have one and
+    /// everyone standing with them where they do not. Mobs are left out: there is no way yet to
+    /// have an ally who is one.</description></item>
     /// </list>
     ///
-    /// Parties do not exist until 5.3. When they do, two lines change here: a harmful AoE must
-    /// skip party members even in a <c>pvp</c> room, and a helpful one should prefer the party
-    /// over the room. Until then "the room" is the closest honest approximation of "your side",
-    /// and it errs generously, which is the safe direction for the helpful case and is gated by
-    /// the <c>pvp</c> flag for the other.
+    /// <b>Party membership beats both flags.</b> A harmful area effect skips the caster's group
+    /// even in a <c>pvp</c> room - which is the room where it matters, since a duelling ground is
+    /// exactly where a group fights alongside strangers. Until 5.3 this was approximated by the
+    /// <c>pvp</c> flag alone, which meant the one place PvP was permitted was the one place your
+    /// own Firestorm could kill the people you came in with.
+    ///
+    /// A helpful effect prefers the party over the room for the mirror-image reason: with a group
+    /// present, "your side" is a thing the world can actually answer, and healing the strangers in
+    /// the room instead of the group you are healing for is the wrong answer even though it is a
+    /// generous one. Ungrouped, the room stays the approximation - it errs toward helping people,
+    /// which is the safe direction.
     /// </remarks>
     private IReadOnlyList<object> AreaTargets(WorldState world, Character caster, bool harmful)
     {
@@ -330,13 +337,15 @@ public sealed class AbilitySystem(
 
         if (!harmful)
         {
-            return
-            [
-                caster,
-                .. world.OccupantsOf(room)
-                    .Where(p => p.CharacterId != caster.Id)
-                    .Select(object (p) => p.Character),
-            ];
+            // Party members are gathered from the room, not from the roster: combat and healing
+            // are room-local (§4.2), and a heal that reached a member two zones away would be a
+            // different ability from the one the catalogue describes.
+            var allies = world.OccupantsOf(room)
+                .Where(p => p.CharacterId != caster.Id)
+                .Where(p => !world.Parties.IsGrouped(caster.Id) ||
+                            world.Parties.SameParty(caster.Id, p.CharacterId));
+
+            return [caster, .. allies.Select(object (p) => p.Character)];
         }
 
         var targets = new List<object>();
@@ -356,6 +365,7 @@ public sealed class AbilitySystem(
         {
             targets.AddRange(world.OccupantsOf(room)
                 .Where(p => p.CharacterId != caster.Id)
+                .Where(p => !world.Parties.SameParty(caster.Id, p.CharacterId))
                 .Select(object (p) => p.Character));
         }
 

@@ -107,6 +107,12 @@ public sealed class CommandRegistry
         RestCommands.Register(_commands);
         AbilityCommands.Register(_commands, abilityCache, clock, effects);
         QuestCommands.Register(_commands);
+
+        // After the quest verbs, so a bare "t" still reaches talk rather than tell. Prefix
+        // matching is first-match-wins, and the older verb keeps the shorter abbreviation.
+        PartyCommands.Register(_commands);
+        ChannelCommands.Register(_commands);
+        TravelCommands.Register(_commands);
         ShopCommands.Register(_commands);
         StatusCommands.Register(_commands);
         BuilderCommands.Register(_commands, mobTemplates, itemTemplates, mobSpawner, itemSpawner);

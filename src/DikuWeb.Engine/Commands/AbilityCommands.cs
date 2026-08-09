@@ -211,7 +211,8 @@ public static class AbilityCommands
         // caster's own business and no business of the pvp flag.
         return target is null || target.Id == ctx.Actor.CharacterId
             ? null
-            : HostileActionGate.RefusePlayer(ctx.World, roomKey, target.Name);
+            : HostileActionGate.RefusePlayer(
+                ctx.World, roomKey, ctx.Actor.CharacterId, target.Id, target.Name);
     }
 
     /// <summary>

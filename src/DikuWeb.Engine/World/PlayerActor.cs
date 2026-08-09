@@ -45,6 +45,19 @@ public sealed class PlayerActor
     /// </summary>
     public VitalsPayload? LastSentVitals { get; set; }
 
+    /// <summary>
+    /// Who last sent this player a tell, so <c>reply</c> has something to answer (PLAN.md §5.3).
+    /// Runtime only: a conversation does not outlive the session it happened in.
+    /// </summary>
+    public Guid? LastTellFrom { get; set; }
+
+    /// <summary>
+    /// Whether this player has turned the world channel off. Off means both directions - you do
+    /// not read it and you do not post to it - because a channel you can shout into while ignoring
+    /// the replies is not one anybody else wants to share.
+    /// </summary>
+    public bool ChatOff { get; set; }
+
     public Guid CharacterId => Character.Id;
 
     public string Name => Character.Name;

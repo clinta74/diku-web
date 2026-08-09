@@ -58,9 +58,18 @@ public static class HostileActionGate
     }
 
     /// <summary>
-    /// Why this player may not be attacked, or null if they may be.
+    /// Why this player may not be attacked by that one, or null if they may be.
     /// </summary>
-    public static string? RefusePlayer(WorldState world, RoomKey roomKey, string targetName)
+    /// <remarks>
+    /// Takes both characters rather than just the target's name because being grouped is a fact
+    /// about the pair, not about either one of them (PLAN.md §4.11).
+    /// </remarks>
+    public static string? RefusePlayer(
+        WorldState world,
+        RoomKey roomKey,
+        Guid attackerId,
+        Guid targetId,
+        string targetName)
     {
         ArgumentNullException.ThrowIfNull(world);
 
@@ -69,7 +78,8 @@ public static class HostileActionGate
             CombatantType.Player,
             targetName,
             world.IsFlagSet(roomKey, RoomFlags.Peaceful),
-            world.IsFlagSet(roomKey, RoomFlags.Pvp));
+            world.IsFlagSet(roomKey, RoomFlags.Pvp),
+            world.Parties.SameParty(attackerId, targetId));
 
         return validation.IsAllowed ? null : validation.RefusalReason ?? "You cannot attack that.";
     }

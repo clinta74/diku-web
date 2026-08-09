@@ -60,7 +60,8 @@ public static class CombatCommands
         // Validate target before entering combat. Shared with `cast`, so a rule that refuses a
         // swing refuses a spell too - they used to disagree, and the spell was the permissive one.
         var refusal = targetActor != null
-            ? HostileActionGate.RefusePlayer(ctx.World, character.RoomKey, targetActor.Name)
+            ? HostileActionGate.RefusePlayer(
+                ctx.World, character.RoomKey, character.Id, targetActor.CharacterId, targetActor.Name)
             : HostileActionGate.RefuseMob(ctx.World, ctx.MobTemplates, character.RoomKey, targetMob!);
 
         if (refusal is not null)

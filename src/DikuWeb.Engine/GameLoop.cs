@@ -539,8 +539,18 @@ public sealed class GameLoop(
     {
         var room = actor.RoomKey;
 
+        // Read before the removal, which is what drops them from the party (PLAN.md §5.3).
+        var partyMates = world.Parties.Of(actor.CharacterId)?.Members
+            .Where(id => id != actor.CharacterId)
+            .ToList();
+
         saveQueue.Enqueue(CharacterSnapshot.From(actor.Character, clock.UtcNow));
         world.Remove(actor);
+
+        foreach (var memberId in partyMates ?? [])
+        {
+            world.FindByCharacter(memberId)?.SendText($"{actor.Name} leaves the group.", "party");
+        }
         actor.Output?.TryComplete();
         actor.Output = null;
 

@@ -16,9 +16,9 @@ namespace DikuWeb.Engine.Tests.Systems;
 /// routinely mixed — mobs to kill, a shopkeeper behind them, and other players who must not be
 /// touched.
 ///
-/// Parties arrive in 5.3. Until then a helpful AoE reaches the room rather than the group, which
-/// is generous in the safe direction, and a harmful one is held back from players by the
-/// <c>pvp</c> flag rather than by party membership.
+/// Since 5.3 party membership overrides both flags: a harmful area effect skips the caster's
+/// group even where <c>pvp</c> is set, and a helpful one prefers the group over the room. An
+/// ungrouped caster still gets the room, which is generous in the safe direction.
 /// </remarks>
 public sealed class AreaEffectTests
 {
@@ -277,6 +277,60 @@ public sealed class AreaEffectTests
 
         Assert.True(caster.Character.Vitals.Health > 10);
         Assert.True(friend.Character.Vitals.Health > 10);
+    }
+
+    [Fact]
+    public void A_hostile_area_ability_spares_your_own_group_in_a_pvp_room()
+    {
+        // The room where it matters. A duelling ground is exactly where a group fights alongside
+        // people who are not in it, and until 5.3 the one place PvP was permitted was the one
+        // place your own Firestorm could kill the people you walked in with.
+        var harness = Loaded();
+        harness.Mutate(new SetRoomFlag(West, RoomFlags.Pvp.Key, true));
+
+        var caster = Adept(harness);
+        var ally = harness.AddPlayer("Kael", West);
+        var rival = harness.AddPlayer("Vurn", West);
+
+        Group(harness, caster, ally);
+
+        var allyBefore = ally.Character.Vitals.Health;
+        var rivalBefore = rival.Character.Vitals.Health;
+
+        harness.Execute(caster, "cast firestorm");
+        harness.Pump(FirestormPulses);
+
+        Assert.Equal(allyBefore, ally.Character.Vitals.Health);
+        Assert.True(rival.Character.Vitals.Health < rivalBefore);
+    }
+
+    [Fact]
+    public void A_helpful_area_ability_prefers_the_group_over_the_room()
+    {
+        // With a group present, "your side" is a question the world can answer. Healing the
+        // strangers in the room instead is the wrong answer even though it is a generous one.
+        var harness = Loaded();
+        var caster = Hallow(harness);
+        var ally = harness.AddPlayer("Kael", West);
+        var stranger = harness.AddPlayer("Vurn", West);
+
+        Group(harness, caster, ally);
+
+        ally.Character.Vitals.Health = 10;
+        stranger.Character.Vitals.Health = 10;
+
+        harness.Execute(caster, "cast benediction");
+        harness.Pump(BenedictionPulses);
+
+        Assert.True(ally.Character.Vitals.Health > 10);
+        Assert.Equal(10, stranger.Character.Vitals.Health);
+    }
+
+    /// <summary>Puts two players in one party through the commands, as a player would.</summary>
+    private static void Group(WorldHarness harness, PlayerActor leader, PlayerActor member)
+    {
+        harness.Execute(leader, $"group invite {member.Name}");
+        harness.Execute(member, "group accept");
     }
 
     [Fact]

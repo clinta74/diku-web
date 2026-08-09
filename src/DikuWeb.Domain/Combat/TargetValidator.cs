@@ -17,7 +17,7 @@ public sealed record TargetValidationResult(bool IsAllowed, string? RefusalReaso
 /// - Peaceful forbids all combat
 /// - Player-versus-player requires the pvp flag
 /// - Mobs can be attacked everywhere except peaceful rooms
-/// - Party members are never valid targets (Phase 5)
+/// - Party members are never valid targets, pvp room or not (Phase 5.3)
 /// - Area effects must filter per target, not per room
 /// </summary>
 public static class TargetValidator
@@ -30,6 +30,11 @@ public static class TargetValidator
     /// <param name="targetName">The target's name for narration if refused.</param>
     /// <param name="roomIsPeaceful">Whether the room has the peaceful flag set.</param>
     /// <param name="roomIsPvp">Whether the room has the pvp flag set.</param>
+    /// <param name="sameParty">
+    /// Whether these two are grouped together. Optional because most callers are asking about a
+    /// mob, where the question does not arise; whoever knows the answer passes it, and this stays
+    /// a pure function of its arguments with no registry to reach into.
+    /// </param>
     /// <returns>
     /// IsAllowed=true if the attack is permitted, or IsAllowed=false with a RefusalReason
     /// for narration.
@@ -39,7 +44,8 @@ public static class TargetValidator
         CombatantType targetType,
         string targetName,
         bool roomIsPeaceful,
-        bool roomIsPvp)
+        bool roomIsPvp,
+        bool sameParty = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(targetName);
 
@@ -49,6 +55,16 @@ public static class TargetValidator
             return new TargetValidationResult(
                 false,
                 $"You cannot attack {targetName} here.");
+        }
+
+        // Checked before the pvp flag rather than after it, because being grouped is the stronger
+        // statement: an arena is exactly where two party members are most likely to be standing
+        // when one of them drops an area effect (PLAN.md §4.11).
+        if (sameParty)
+        {
+            return new TargetValidationResult(
+                false,
+                $"{targetName} is in your group.");
         }
 
         // Mobs can be attacked everywhere except peaceful (already checked above).

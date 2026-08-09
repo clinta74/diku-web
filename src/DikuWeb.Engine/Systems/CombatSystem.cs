@@ -229,11 +229,16 @@ public sealed class CombatSystem(
         }
 
         // Whether the fight is allowed at all is re-checked every tick, so clearing `pvp` on a
-        // room ends a duel already under way (PLAN.md §4.11).
+        // room ends a duel already under way (PLAN.md §4.11). Grouping up mid-duel ends it the
+        // same way, for the same reason: the rule is about the state of things now, not about
+        // what was true when the first blow landed.
         var peaceful = world.IsFlagSet(combat.RoomKey, RoomFlags.Peaceful);
         var pvp = world.IsFlagSet(combat.RoomKey, RoomFlags.Pvp);
+        var grouped = EntityId.IsCharacter(attackerId) && EntityId.IsCharacter(targetId) &&
+            world.Parties.SameParty(EntityId.ToGuid(attackerId), EntityId.ToGuid(targetId));
+
         var validation = TargetValidator.ValidateTarget(
-            attackerType.Value, targetType.Value, targetName, peaceful, pvp);
+            attackerType.Value, targetType.Value, targetName, peaceful, pvp, grouped);
 
         if (!validation.IsAllowed)
         {
@@ -1057,30 +1062,13 @@ public sealed class CombatSystem(
             killerChar = world.GetCharacter(EntityId.ToGuid(killerId));
         }
 
-        // Award XP to killer
+        var mobRoomKey = RoomKey.Parse(mob.RoomKey);
+
         if (killerChar != null)
         {
-            killerChar.Xp += mob.ResolvedXp;
-
-            // Level up loop
-            while (CharacterProgression.TryLevelUp(
-                killerChar.Level, killerChar.Xp, killerChar.Attributes, killerChar.Path, killerChar.Vitals) is var result && result != null)
-            {
-                killerChar.Level = result.NewLevel;
-                killerChar.Attributes = result.NewAttributes;
-                killerChar.Vitals = result.NewVitals;
-                var actor = world.FindByCharacter(killerChar.Id);
-                if (actor != null)
-                {
-                    actor.SendText($"You advance to level {result.NewLevel}!", "levelup");
-                }
-            }
-
-            // Award gold
-            killerChar.Gold += mob.ResolvedGold;
+            AwardKill(world, killerChar, mob, mobRoomKey);
         }
 
-        var mobRoomKey = RoomKey.Parse(mob.RoomKey);
         RollLoot(world, mob, mobRoomKey);
 
         // Narrate mob death to the room
@@ -1095,6 +1083,74 @@ public sealed class CombatSystem(
 
         // Refresh the room for all players to see the mob removed and any loot spawned
         view?.RefreshRoom(world, mobRoomKey);
+    }
+
+    /// <summary>
+    /// Hands out a kill's experience and gold, split across the killer's party (PLAN.md §5.3).
+    /// </summary>
+    /// <remarks>
+    /// <b>Who shares is decided by the room, not by the roster.</b> A party member in another zone
+    /// gets nothing: they were not at the fight, and a group that could farm by scattering across
+    /// the map would make the split a exploit rather than a convenience. The killer is always
+    /// first, so an odd remainder goes to whoever actually landed the blow.
+    ///
+    /// The killer is the top of the hate list, which since threat accounting landed means the top
+    /// of <em>all</em> damage - so the Adept who nuked from behind the Warden is credited, and the
+    /// split then hands the Warden their share anyway.
+    /// </remarks>
+    private static void AwardKill(WorldState world, Character killer, Mob mob, RoomKey roomKey)
+    {
+        var sharers = new List<Character> { killer };
+
+        foreach (var memberId in world.Parties.MembersOf(killer.Id))
+        {
+            if (memberId == killer.Id || world.FindByCharacter(memberId) is not { } member)
+            {
+                continue;
+            }
+
+            // Present means standing where it died. A member who fled the room a moment ago is
+            // out, which is the same rule combat itself uses for staying in a fight (§4.2).
+            if (member.RoomKey == roomKey)
+            {
+                sharers.Add(member.Character);
+            }
+        }
+
+        var xp = RewardShare.Split(mob.ResolvedXp, sharers.Count);
+        var gold = RewardShare.Split(mob.ResolvedGold, sharers.Count);
+
+        for (var i = 0; i < sharers.Count; i++)
+        {
+            Award(world, sharers[i], xp[i], gold[i], shared: sharers.Count > 1);
+        }
+    }
+
+    private static void Award(WorldState world, Character character, long xp, long gold, bool shared)
+    {
+        character.Xp += xp;
+        character.Gold += gold;
+
+        var actor = world.FindByCharacter(character.Id);
+
+        if (shared && actor is not null)
+        {
+            // Said out loud, because a share that arrived silently looks like the reward shrank.
+            actor.SendText($"Your share: {xp} experience, {gold} gold.", "party");
+        }
+
+        while (CharacterProgression.TryLevelUp(
+            character.Level,
+            character.Xp,
+            character.Attributes,
+            character.Path,
+            character.Vitals) is { } result)
+        {
+            character.Level = result.NewLevel;
+            character.Attributes = result.NewAttributes;
+            character.Vitals = result.NewVitals;
+            actor?.SendText($"You advance to level {result.NewLevel}!", "levelup");
+        }
     }
 
     /// <summary>

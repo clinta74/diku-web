@@ -7,6 +7,7 @@ using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Randomness;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Abilities;
+using DikuWeb.Engine.Social;
 
 namespace DikuWeb.Engine.World;
 
@@ -33,8 +34,16 @@ public sealed class WorldState(IRandomSource random)
     private readonly Dictionary<(Guid CharacterId, string AbilityKey), long> _abilityCooldowns = [];
     private readonly Dictionary<Guid, List<ActiveEffect>> _activeEffects = [];
     private readonly Dictionary<Guid, Dictionary<string, CharacterQuest>> _questsByCharacter = [];
+    private readonly PartyRegistry _parties = new();
 
     public IRandomSource Random => _random;
+
+    /// <summary>
+    /// Who is grouped with whom (PLAN.md §5.3). Lives here rather than in a table because a
+    /// party is session-scoped: it describes the world as it stands, like combat and active
+    /// effects do, and it ends with the session rather than outliving it.
+    /// </summary>
+    public PartyRegistry Parties => _parties;
 
     public CastQueueService CastQueue => _castQueue;
 
@@ -209,6 +218,10 @@ public sealed class WorldState(IRandomSource random)
         OccupantList(actor.RoomKey).Add(actor);
     }
 
+    /// <summary>
+    /// Takes a character out of the world. The one door out, which is why the party registry is
+    /// cleaned up here rather than at each of the four call sites that lead to it.
+    /// </summary>
     public void Remove(PlayerActor actor)
     {
         ArgumentNullException.ThrowIfNull(actor);
@@ -216,6 +229,7 @@ public sealed class WorldState(IRandomSource random)
         _byCharacter.Remove(actor.CharacterId);
         _bySession.Remove(actor.SessionId);
         OccupantList(actor.RoomKey).Remove(actor);
+        _parties.Forget(actor.CharacterId);
     }
 
     /// <summary>Rebinds an actor to a new session after a reconnect.</summary>

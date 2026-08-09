@@ -9,6 +9,11 @@
   --accent: #d9a441;
   --speech: #79c0ff;
   --movement: #8b949e;
+  /* The three ways someone talks to you from outside the room (PLAN §5.3). Distinct from
+     --speech, so a tell arriving mid-fight is not mistaken for someone standing next to you. */
+  --party: #56d4a0;
+  --tell: #d2a8ff;
+  --chat: #e3a663;
   --health: #f85149;
   --focus: #79c0ff;
   --stamina: #3fb950;
@@ -347,6 +352,19 @@ input:focus {
 }
 .line .movement {
   color: var(--movement);
+}
+.line .party {
+  color: var(--party);
+}
+.line .tell {
+  color: var(--tell);
+}
+.line .chat {
+  color: var(--chat);
+}
+.line .levelup {
+  color: var(--accent);
+  font-weight: 600;
 }
 .line .occupant {
   color: var(--text);
