@@ -12,6 +12,7 @@ import {
   builderApi,
   type ItemTemplate,
   type MobTemplate,
+  type Quest,
   type RoomDetail,
   type RoomFlagDefinition,
   type WorldSummary,
@@ -35,6 +36,7 @@ interface BuilderDataValue {
   rooms: RoomDetail[]
   mobTemplates: MobTemplate[]
   itemTemplates: ItemTemplate[]
+  quests: Quest[]
   validation: ZoneValidation | null
 
   refreshWorlds: () => Promise<void>
@@ -42,6 +44,7 @@ interface BuilderDataValue {
   loadZone: (zoneKey: string | null) => Promise<void>
   refreshMobTemplates: () => Promise<void>
   refreshItemTemplates: () => Promise<void>
+  refreshQuests: () => Promise<void>
 }
 
 const BuilderDataContext = createContext<BuilderDataValue | null>(null)
@@ -61,6 +64,7 @@ export function BuilderDataProvider({ children }: { children: ReactNode }) {
   const [rooms, setRooms] = useState<RoomDetail[]>([])
   const [mobTemplates, setMobTemplates] = useState<MobTemplate[]>([])
   const [itemTemplates, setItemTemplates] = useState<ItemTemplate[]>([])
+  const [quests, setQuests] = useState<Quest[]>([])
   const [validation, setValidation] = useState<ZoneValidation | null>(null)
 
   // The keys currently loaded, so the change feed can reload the right slice without the
@@ -104,13 +108,18 @@ export function BuilderDataProvider({ children }: { children: ReactNode }) {
     setItemTemplates(await builderApi.itemTemplates().catch(() => []))
   }, [])
 
+  const refreshQuests = useCallback(async () => {
+    setQuests(await builderApi.quests().catch(() => []))
+  }, [])
+
   // One-time loads that never depend on selection.
   useEffect(() => {
     void builderApi.roomFlags().then(setFlagDefinitions).catch(() => undefined)
     void refreshWorlds()
     void refreshMobTemplates()
     void refreshItemTemplates()
-  }, [refreshWorlds, refreshMobTemplates, refreshItemTemplates])
+    void refreshQuests()
+  }, [refreshWorlds, refreshMobTemplates, refreshItemTemplates, refreshQuests])
 
   // The builder change feed. A second builder's write lands here as an entity-changed event;
   // we reload the affected slice. Degrades silently if the endpoint is absent - EventSource
@@ -152,12 +161,15 @@ export function BuilderDataProvider({ children }: { children: ReactNode }) {
         case 'item-template':
           void refreshItemTemplates()
           break
+        case 'quest':
+          void refreshQuests()
+          break
       }
     }
 
     source.addEventListener('entity-changed', onChange as EventListener)
     return () => source.close()
-  }, [refreshWorlds, loadZones, loadZone, refreshMobTemplates, refreshItemTemplates])
+  }, [refreshWorlds, loadZones, loadZone, refreshMobTemplates, refreshItemTemplates, refreshQuests])
 
   const value = useMemo<BuilderDataValue>(
     () => ({
@@ -167,12 +179,14 @@ export function BuilderDataProvider({ children }: { children: ReactNode }) {
       rooms,
       mobTemplates,
       itemTemplates,
+      quests,
       validation,
       refreshWorlds,
       loadZones,
       loadZone,
       refreshMobTemplates,
       refreshItemTemplates,
+      refreshQuests,
     }),
     [
       flagDefinitions,
@@ -181,12 +195,14 @@ export function BuilderDataProvider({ children }: { children: ReactNode }) {
       rooms,
       mobTemplates,
       itemTemplates,
+      quests,
       validation,
       refreshWorlds,
       loadZones,
       loadZone,
       refreshMobTemplates,
       refreshItemTemplates,
+      refreshQuests,
     ],
   )
 

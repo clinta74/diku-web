@@ -63,6 +63,10 @@ vi.mock('../net/builderApi', () => ({
     mobTemplates: () => Promise.resolve([]),
     itemTemplates: () => Promise.resolve([]),
     spawners: () => Promise.resolve([]),
+    // BuilderData loads these on mount alongside the templates. Omitting one is not a quiet
+    // gap: the provider calls it unconditionally, so a missing function throws before the
+    // `.catch` can see it and surfaces as an unhandled rejection across every test in the file.
+    quests: () => Promise.resolve([]),
   },
 }))
 
@@ -126,6 +130,7 @@ describe('builder shell', () => {
     expect(await screen.findByRole('tab', { name: 'World' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Mobs' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Items' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Quests' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /exit builder/i })).toBeTruthy()
   })
 

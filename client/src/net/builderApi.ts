@@ -219,6 +219,60 @@ export interface Quest {
   sortOrder: number
 }
 
+/**
+ * One reason a quest could not be finished. Advisory: an unfinishable quest still saves, it just
+ * should not be a surprise (PLAN.md §7.4).
+ */
+export interface ReachabilityWarning {
+  kind: string
+  message: string
+  itemKey: string | null
+  mobKey: string | null
+}
+
+export interface QuestReachability {
+  questKey: string
+  warnings: ReachabilityWarning[]
+}
+
+/** A quest in the chain graph. `external` marks a prerequisite that lives in another zone. */
+export interface StorylineNode {
+  key: string
+  name: string
+  zoneKey: string
+  external: boolean
+}
+
+/** `from` must be completed before `to` can be offered. */
+export interface StorylineEdge {
+  from: string
+  to: string
+}
+
+export interface Storyline {
+  zoneKey: string
+  nodes: StorylineNode[]
+  edges: StorylineEdge[]
+  /** Quests sitting on a prerequisite cycle. Every one of them is unstartable. */
+  cycles: string[]
+  /** Quests whose prerequisites can never all be met. */
+  unreachable: string[]
+  /** Prerequisites naming a quest that does not exist. */
+  missingPrerequisites: Array<{ quest: string; missing: string }>
+}
+
+/**
+ * The four dialogue strings a quest can override (PLAN.md §4.9), keyed exactly as
+ * `QuestCommands` reads them. Each falls back to generated prose when absent, so leaving one
+ * blank is a real choice rather than a hole.
+ */
+export const DIALOGUE_KEYS = [
+  'giverOffer',
+  'giverInProgress',
+  'giverComplete',
+  'turninReady',
+] as const
+
 const base = '/api/builder'
 
 export const builderApi = {
@@ -400,9 +454,6 @@ export const builderApi = {
   deleteSpawner: (id: string) =>
     request<void>(`${base}/spawners/${id}`, { method: 'DELETE' }),
 
-  // The server side is complete - WorldWriter has its UpsertQuest arm now, so these writes
-  // persist. What is missing is the UI: nothing in the app calls any of them yet, so quests can
-  // only be authored by hand against the API (PLAN.md §5.2b, §12).
   quests: () => request<Quest[]>(`${base}/quests`),
 
   quest: (key: string) => request<Quest>(`${base}/quests/${key}`),
@@ -423,18 +474,9 @@ export const builderApi = {
     request<void>(`${base}/quests/${key}`, { method: 'DELETE' }),
 
   questReachability: (key: string) =>
-    request<{ questKey: string; warnings: Array<{ type: string; item?: string }> }>(
-      `${base}/quests/${key}/reachability`,
-    ),
+    request<QuestReachability>(`${base}/quests/${key}/reachability`),
 
-  storyline: (zoneKey: string) =>
-    request<{
-      zoneKey: string
-      nodes: Array<{ key: string; name: string }>
-      edges: Array<{ from: string; to: string }>
-      cycles: string[]
-      deadEnds: string[]
-    }>(`${base}/zones/${zoneKey}/storyline`),
+  storyline: (zoneKey: string) => request<Storyline>(`${base}/zones/${zoneKey}/storyline`),
 }
 
 export const DIRECTIONS = ['north', 'east', 'south', 'west', 'up', 'down'] as const

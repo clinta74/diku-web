@@ -25,16 +25,19 @@ const TABS: TabItem[] = [
   { value: 'world', label: 'World' },
   { value: 'mobs', label: 'Mobs' },
   { value: 'items', label: 'Items' },
+  { value: 'quests', label: 'Quests' },
 ]
 
 function tabFromPath(pathname: string): BuilderTab {
   if (pathname.startsWith('/builder/mobs')) return 'mobs'
   if (pathname.startsWith('/builder/items')) return 'items'
+  if (pathname.startsWith('/builder/quests')) return 'quests'
   return 'world'
 }
 
 /**
- * The builder chrome: header, the World/Mobs/Items tab bar, and a router Outlet the tabs fill.
+ * The builder chrome: header, the World/Mobs/Items/Quests tab bar, and a router Outlet the tabs
+ * fill.
  * The data provider, toast host, and unsaved-changes guard live here so every tab and dialog
  * shares them.
  */

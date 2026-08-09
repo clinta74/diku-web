@@ -25,7 +25,7 @@ and sell. Builder access is granted from inside the game.
 *Authoring* now covers the whole content model in the browser with no SQL: geography, worlds,
 zones, difficulty multipliers with a live preview, mob and item templates, mob behavior
 (disposition, emotes, shopkeeper and stock), mob and item spawners across multiple rooms, and
-quests.
+quests — the last with reachability warnings and the prerequisite chain shown in the editor.
 
 Next: **5.3 (communication)**, which is also what parties need to exist for, then Phase 6 (ops).
 
@@ -978,11 +978,8 @@ API client, and types with the game.
 | **Item templates** | Name, description, icon, slot, weight, base value, base stats. |
 | **Mob templates** | Name, description, icon, level, base stats, base xp/gold, behavior, loot. |
 | **Spawners** | Template, target rooms, count, respawn seconds. |
-| **Quests** *(not built)* | Giver mob, turn-in mob, required item and count, rewards, prerequisites, and the four dialogue strings (§4.9). |
-| **Storyline graph** *(not built)* | Quests as nodes, prerequisites as edges. Shows the chain, flags cycles and unreachable quests. |
-
-The last two rows are spec, not shipped code: the API behind both exists and is exercised by
-tests, but nothing in the React app calls it (§5.2b, §12).
+| **Quests** | Giver mob, turn-in mob, required item and count, rewards, prerequisites, and the four dialogue strings (§4.9). Reachability warnings shown inline. |
+| **Storyline graph** | The chain as an indented list — depth is what a builder needs to see, and indentation *is* "how far in is this". Flags cycles, unreachable quests, and prerequisites naming a quest that does not exist. |
 
 Placing a one-off object in a room is just a spawner with `target_count: 1` — the builder offers
 it as *Place item here* rather than making you think about spawners.
@@ -1543,7 +1540,7 @@ One deferred nice-to-have remains below, and it is not what the phase goal asks 
       and reset on restart, matching cooldowns and combat state
 - [x] `buffs` command lists what is active and when it ends
 
-#### 5.2b — Quest engine ⚠️ **engine complete, no builder UI**
+#### 5.2b — Quest engine ✅ **complete**
 - [x] `quests` + `character_quests` tables, Active/Completed only, composite key
 - [x] String keys for mobs and items rather than FKs, so a quest can be authored before its
       content exists (§7.4)
@@ -1556,12 +1553,23 @@ One deferred nice-to-have remains below, and it is not what the phase goal asks 
 - [x] `CharacterQuestSaveQueue` so progress survives restart
 - [x] Builder API: quest CRUD, reachability (`GET /quests/{key}/reachability`), and the
       storyline graph with cycle detection (`GET /zones/{zoneKey}/storyline`)
-- [ ] **Builder UI: there is no way to author a quest.** The server half above is complete and
-      `builderApi.ts` already types `createQuest` / `updateQuest` / `questReachability` /
-      `storyline` — every one of them with zero callers. `BuilderShell` has three tabs (`world`,
-      `mobs`, `items`) and `QuestEditor.tsx` does not exist, so quest lines can only be authored
-      by hand against the API. This line was checked off naming a file that was never written;
-      it is the §12 lesson repeating, and it stays open until a caller exists. See §12.
+- [x] **Builder UI: a Quests tab** (`QuestsTab`, `QuestEditor`, `QuestCreateDialog`,
+      `StorylinePanel`, `ReachabilityPanel`). This line was previously checked off naming a
+      `QuestEditor.tsx` that was never written, while `builderApi`'s five quest functions had zero
+      callers — the §12 lesson repeating, and the worst version of it, because the plan claimed a
+      whole authoring surface that did not exist. Three columns rather than the templates' two:
+      a quest is not isolated the way a template is, and a chain is invisible from inside any
+      quest in it.
+      Every mob and item reference is picked from a real template, because a typo produces a
+      *dormant* quest — one that reads perfectly in the journal, is offered by nobody, and reports
+      no error anywhere. Prerequisites stay free text, since a chain is routinely authored
+      backwards (§7.4) and the storyline panel is what reports a key that never turns up.
+      Reachability warnings render in the editor, where §10 says they have to be: an unobtainable
+      required item fails silently in play, so the quest reads correctly and the player just
+      wanders.
+      Two things the API shape forced, both worth knowing: **create needs a zone, giver, and
+      turn-in**, so quests get their own create dialog rather than the shared key-and-name one;
+      and **a quest key is one segment**, not the dotted composite a room uses.
 
 #### 5.2c — Shops and currency ✅ **complete**
 - [x] `buy` / `sell` / `list` against a mob flagged `shopkeeper`
@@ -1785,22 +1793,13 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 
 ## 12. Next step
 
-**The builder catch-up and the correctness pass are both done, and 5.2 closed with area
-targeting.** Multipliers, world and zone editors, spawners, `questItem`, `baseStats`, ability
-progression, dormant quests, the cast targeting bugs, seven effect executors, and all three
-targeting modes have landed. Two items are left before the phase boundary:
+**Phase 5.2 is closed.** Multipliers, world and zone editors, spawners, `questItem`, `baseStats`,
+ability progression, dormant quests, the cast targeting bugs, seven effect executors, all three
+targeting modes, threat accounting, and the quest builder have landed. **Every content type
+§4 describes can now be authored in the browser with no SQL.** One item is left before the phase
+boundary:
 
-1. **Quests cannot be authored.** The engine, the CRUD API, reachability, and the storyline graph
-   all work and are tested; the builder has no quest tab, so the only way to create a quest line
-   is by hand against the API. Everything §4.9 describes is unreachable to a builder, which makes
-   this the one gap that blocks *content* rather than mechanics. What it needs: a `Quests` tab
-   beside World / Mobs / Items, with giver, turn-in, required item, and reward pickers bound to
-   real template keys the way `MobBehaviorEditor` picks shop stock — typed keys are how you get
-   the dormant-quest state by accident. Prerequisites are the chain editor, since chaining is the
-   only storyline mechanism there is. Then the four dialogue strings, and the storyline graph and
-   reachability warnings shown *in the editor*, where an unobtainable item is still cheap to fix.
-
-2. **Mobs cannot cast.** `CastJob` keys on a character, and mobs fight through `MobAttack` rows
+1. **Mobs cannot cast.** `CastJob` keys on a character, and mobs fight through `MobAttack` rows
    with no ability keys — so every effect is a player-only tool. Giving mobs the same vocabulary
    is what would let a boss stun, snare, or bleed, and is probably the largest remaining lever on
    how combat *feels*.
@@ -1825,9 +1824,11 @@ AoE skip your own group rather than leaning on the `pvp` flag to do it. Then Pha
   proves nothing about the running game — author it through `WorldHarness.AsPersisted`.
 - **An endpoint with no caller is not a feature, and a checkbox is not evidence.** Reachability,
   the multiplier preview, world delete, and `/respawn` were all written, checked off, and never
-  wired to anything. Before checking a box, name the test or the call site. The quest editor is
+  wired to anything. Before checking a box, name the test or the call site. The quest editor was
   this same lesson caught a second time, and the worst version of it: 5.2b checked off a
   `QuestEditor.tsx` that was never written, so the plan claimed a whole authoring surface that
-  does not exist. Naming a file is not evidence either — open it.
+  did not exist for as long as nobody looked. **Naming a file is not evidence either — open it.**
+  It is built now, and its smoke test asserts the API is *called*, because that is the property
+  that was missing rather than the code.
 
 **No open questions remain.** Q3 (Path respec) is decided: Paths are fixed at creation (§4.5).

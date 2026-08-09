@@ -6,6 +6,7 @@ import { BuilderShell } from './builder/BuilderShell'
 import { WorldTab } from './builder/world/WorldTab'
 import { MobsTab } from './builder/mobs/MobsTab'
 import { ItemsTab } from './builder/items/ItemsTab'
+import { QuestsTab } from './builder/quests/QuestsTab'
 import { api, type Account, type Character } from './net/api'
 import './App.css'
 
@@ -128,6 +129,7 @@ export default function App() {
               <Route path="world/:world?/:zone?/:room?/:section?" element={<WorldTab />} />
               <Route path="mobs/:templateKey?" element={<MobsTab />} />
               <Route path="items/:templateKey?" element={<ItemsTab />} />
+              <Route path="quests/:questKey?" element={<QuestsTab />} />
             </Route>
           </Routes>
         </>

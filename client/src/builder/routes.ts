@@ -13,7 +13,7 @@ export type Section = (typeof SECTIONS)[number]
 /** Rooms open on their prose first; a bare room URL redirects here. */
 export const DEFAULT_SECTION: Section = 'details'
 
-export type BuilderTab = 'world' | 'mobs' | 'items'
+export type BuilderTab = 'world' | 'mobs' | 'items' | 'quests'
 
 /** The route params react-router extracts from the `world` branch, each a single slug. */
 export interface WorldRouteParams {
@@ -93,4 +93,8 @@ export function toMobsPath(templateKey?: string | null): string {
 
 export function toItemsPath(templateKey?: string | null): string {
   return templateKey ? `/builder/items/${templateKey}` : '/builder/items'
+}
+
+export function toQuestsPath(questKey?: string | null): string {
+  return questKey ? `/builder/quests/${questKey}` : '/builder/quests'
 }

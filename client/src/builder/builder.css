@@ -371,6 +371,42 @@
   gap: 0.35rem;
 }
 
+/* --- Quest chain -------------------------------------------------- */
+
+/* Indentation is the graph. Prerequisites are the only storyline mechanism there is (§4.9), so
+   the shape worth seeing is depth - what can be started now, and what has to wait - and a node
+   canvas would answer that less directly than a nested list does. */
+.chain-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.85em;
+}
+
+.chain-list li {
+  padding: 0.15rem 0;
+}
+
+/* Inline so the badges that follow sit on the same line as the name. */
+.chain-list button.link {
+  display: inline;
+  width: auto;
+  text-align: left;
+  padding: 0;
+}
+
+.chain-list button.link.selected {
+  color: var(--accent);
+}
+
+/* An external prerequisite is shown for context and is not editable from this zone, so it must
+   not read as a dead control. */
+.chain-list button.link:disabled {
+  color: var(--dim);
+  text-decoration: none;
+  cursor: default;
+}
+
 /* --- Zone canvas additions ---------------------------------------- */
 
 .pan-pad {

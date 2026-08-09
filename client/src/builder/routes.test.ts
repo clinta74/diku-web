@@ -4,6 +4,7 @@ import {
   keysFromParams,
   toItemsPath,
   toMobsPath,
+  toQuestsPath,
   toWorldPath,
   type Section,
   type WorldRouteParams,
@@ -113,6 +114,13 @@ describe('template tab paths', () => {
     expect(toMobsPath('warden-mentor')).toBe('/builder/mobs/warden-mentor')
     expect(toItemsPath()).toBe('/builder/items')
     expect(toItemsPath('rusted-blade')).toBe('/builder/items/rusted-blade')
+  })
+
+  it('maps quest keys the same way', () => {
+    // A quest key is one segment, not the dotted composite a room uses - the server validates
+    // it with IsKeySegment, so `zone.quest` would be refused on create.
+    expect(toQuestsPath()).toBe('/builder/quests')
+    expect(toQuestsPath('errand-for-mira')).toBe('/builder/quests/errand-for-mira')
   })
 })
 
