@@ -19,7 +19,8 @@ public sealed class MobAiSystem(
     IMobTemplateRepository templates,
     IRandomSource random,
     IGameClock clock,
-    PlayerView view)
+    PlayerView view,
+    MobTemplateCache? templateCache = null)
 {
     private const int EmoteIntervalPulses = 16;  // Every 4 seconds
 
@@ -34,9 +35,33 @@ public sealed class MobAiSystem(
         }
     }
 
+    /// <summary>
+    /// The template this mob was spawned from, from memory where possible.
+    /// </summary>
+    /// <remarks>
+    /// This used to be an unconditional <c>GetByKeyAsync</c>, which opens a fresh
+    /// <c>DbContext</c> and issues one <c>SELECT</c> per mob. At one sweep every four seconds
+    /// that is a world with twenty mobs making twenty round-trips a sweep with nobody logged in -
+    /// throughput rather than correctness, which is why nothing surfaced it until the SQL log was
+    /// read. The cache holds every template, is loaded at boot, and is kept live by the applier;
+    /// this system simply predates it.
+    ///
+    /// The fallback is gated on <see cref="MobTemplateCache.IsLoaded"/> rather than on a miss.
+    /// Falling back per miss would look safer and behave worse: a mob whose template a builder
+    /// deleted misses forever, so it would issue a doomed query for that mob on every sweep for
+    /// as long as it stands there - reintroducing the exact pathology being removed, in the one
+    /// case where it never pays off. An unloaded cache is a different thing, and reading through
+    /// to the repository is what keeps a host that never called <c>LoadAsync</c> from silently
+    /// having no mob AI at all.
+    /// </remarks>
+    private async Task<MobTemplate?> TemplateForAsync(Mob mob, CancellationToken ct) =>
+        templateCache is { IsLoaded: true }
+            ? templateCache.Get(mob.TemplateKey)
+            : await templates.GetByKeyAsync(mob.TemplateKey, ct);
+
     private async Task ProcessMobAsync(WorldState world, Mob mob, CancellationToken ct)
     {
-        var template = await templates.GetByKeyAsync(mob.TemplateKey, ct);
+        var template = await TemplateForAsync(mob, ct);
         if (template is null)
         {
             return;

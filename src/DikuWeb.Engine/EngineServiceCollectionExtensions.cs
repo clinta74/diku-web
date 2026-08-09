@@ -57,11 +57,30 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<LoopWorldEditor>();
         services.AddSingleton<GameGateway>();
 
-        // Phase 3 systems (spawners, mob AI)
+        // Phase 3 systems (spawners, mob AI). Both take the template caches so their sweeps read
+        // memory instead of issuing one SELECT per entity per tick; both fall back to the
+        // repository if a cache was never loaded, so a container that omitted one costs
+        // throughput rather than behaviour.
         services.AddSingleton<MobSpawner>();
         services.AddSingleton<ItemSpawner>();
-        services.AddSingleton<SpawnerSystem>();
-        services.AddSingleton<MobAiSystem>();
+        services.AddSingleton<SpawnerSystem>(sp =>
+            new SpawnerSystem(
+                sp.GetRequiredService<ISpawnerRepository>(),
+                sp.GetRequiredService<IMobTemplateRepository>(),
+                sp.GetRequiredService<IItemTemplateRepository>(),
+                sp.GetRequiredService<MobSpawner>(),
+                sp.GetRequiredService<ItemSpawner>(),
+                sp.GetRequiredService<ILogger<SpawnerSystem>>(),
+                sp.GetService<PlayerView>(),
+                sp.GetService<MobTemplateCache>(),
+                sp.GetService<ItemTemplateCache>()));
+        services.AddSingleton<MobAiSystem>(sp =>
+            new MobAiSystem(
+                sp.GetRequiredService<IMobTemplateRepository>(),
+                sp.GetRequiredService<IRandomSource>(),
+                sp.GetRequiredService<IGameClock>(),
+                sp.GetRequiredService<PlayerView>(),
+                sp.GetService<MobTemplateCache>()));
 
         // Phase 4 systems (combat, progression). Constructed explicitly rather than by
         // convention: the template caches are optional parameters, and a container that quietly

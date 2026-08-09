@@ -1599,18 +1599,23 @@ fails quietly, which is why they need to be listed rather than assumed.
       five of the seven executors and classified all of them as helpful, so `cast scorch` with no
       target named set the caster on fire. It also decides which set an area effect gathers.
 
-- [ ] **The tick systems query the database once per entity per tick.** `MobAiSystem` takes
-      `IMobTemplateRepository` and calls `GetByKeyAsync` per mob inside its loop, so every 16
-      pulses (4 s) it issues one `SELECT ... FROM mob_templates WHERE key = @key LIMIT 1` for
-      each living mob — a world with twenty mobs runs twenty round-trips every four seconds with
-      nobody logged in. `SpawnerSystem` does the same per spawner every 60 pulses (15 s), for
-      both the mob and the item template. `EfMobTemplateRepository` opens a fresh `DbContext` per
-      call and reads `AsNoTracking`, so nothing memoizes between them. `MobTemplateCache` already
-      holds every template, is loaded at boot, and is kept live by the applier — but only the
-      command paths and the Phase 4 systems read it, because the AI and spawner systems predate
-      it and were never migrated. Give both the cache with a repository fallback on miss, the
-      shape `CombatSystem` already uses. This costs throughput rather than correctness, which is
-      why nothing surfaced it until the SQL log was read.
+- [x] **The tick systems no longer query the database once per entity per tick.** `MobAiSystem`
+      called `GetByKeyAsync` per mob every 16 pulses (4 s) and `SpawnerSystem` did the same per
+      spawner per kind every 60 (15 s), each opening a fresh `DbContext` for a single-row
+      `AsNoTracking` read that nothing memoized — a world with twenty mobs made twenty round-trips
+      every four seconds with nobody logged in. Both now read `MobTemplateCache` /
+      `ItemTemplateCache`, which already held every template, load at boot, and are kept live by
+      the applier; only the command paths and the Phase 4 systems read them, because these two
+      systems predate them.
+      **The fallback is gated on `IsLoaded`, not on a miss** — a deliberate departure from the
+      note this item started as. A per-miss fallback looks safer and behaves worse: a mob or
+      spawner whose template a builder deleted misses forever, so it would reissue the doomed
+      query on every sweep for the life of the process, which is the pathology being removed in
+      the one case where it can never pay off. An unloaded cache is a different failure, and
+      reading through to the repository for it is what stops a host that never called `LoadAsync`
+      from silently having no mob AI at all.
+      Behaviour is identical either way, which is why nothing surfaced this until the SQL log was
+      read — so the tests count repository calls rather than assert on outcomes.
 
 #### 5.2e — Deferred from the original 5.2 list
 - [ ] Pets and charmed mobs inherit their owner's §4.11 permissions (no pet system yet)

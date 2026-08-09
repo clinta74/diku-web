@@ -3,6 +3,7 @@ using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.World;
 using Microsoft.Extensions.Logging;
@@ -21,8 +22,35 @@ public sealed class SpawnerSystem(
     MobSpawner mobSpawner,
     ItemSpawner itemSpawner,
     ILogger<SpawnerSystem> logger,
-    PlayerView? view = null)
+    PlayerView? view = null,
+    MobTemplateCache? mobTemplateCache = null,
+    ItemTemplateCache? itemTemplateCache = null)
 {
+    /// <summary>
+    /// The templates a spawner fills from, out of memory where possible.
+    /// </summary>
+    /// <remarks>
+    /// The sweep used to call <c>GetByKeyAsync</c> per spawner, per kind, every 60 pulses, each
+    /// opening a fresh <c>DbContext</c> for a single-row read that nothing memoized between
+    /// calls. The caches hold every template, load at boot, and are kept live by the applier -
+    /// this system predates them.
+    ///
+    /// Gated on <c>IsLoaded</c> rather than falling back per miss, for the reason spelled out in
+    /// <c>MobAiSystem.TemplateForAsync</c>: a spawner pointing at a template a builder deleted
+    /// misses on every sweep forever, so a per-miss fallback would keep issuing the doomed query
+    /// in precisely the case where it can never succeed.
+    /// </remarks>
+    private async Task<MobTemplate?> MobTemplateAsync(string key, CancellationToken ct) =>
+        mobTemplateCache is { IsLoaded: true }
+            ? mobTemplateCache.Get(key)
+            : await mobTemplates.GetByKeyAsync(key, ct);
+
+    /// <inheritdoc cref="MobTemplateAsync"/>
+    private async Task<ItemTemplate?> ItemTemplateAsync(string key, CancellationToken ct) =>
+        itemTemplateCache is { IsLoaded: true }
+            ? itemTemplateCache.Get(key)
+            : await itemTemplates.GetByKeyAsync(key, ct);
+
     public async Task RunAsync(WorldState world, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -59,7 +87,7 @@ public sealed class SpawnerSystem(
     {
         try
         {
-            var template = await mobTemplates.GetByKeyAsync(spawner.TemplateKey, ct);
+            var template = await MobTemplateAsync(spawner.TemplateKey, ct);
             if (template is null)
             {
                 EngineLog.SpawnerTemplateNotFound(logger, spawner.Id, spawner.TemplateKey);
@@ -122,7 +150,7 @@ public sealed class SpawnerSystem(
 
     private async Task ProcessItemSpawnerAsync(WorldState world, Spawner spawner, CancellationToken ct)
     {
-        var template = await itemTemplates.GetByKeyAsync(spawner.TemplateKey, ct);
+        var template = await ItemTemplateAsync(spawner.TemplateKey, ct);
         if (template is null)
         {
             EngineLog.SpawnerTemplateNotFound(logger, spawner.Id, spawner.TemplateKey);
