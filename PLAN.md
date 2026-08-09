@@ -542,6 +542,23 @@ and a second field for it would be a second source of truth to disagree with.
   gained it, or neither. The third is not a failure: a stun, a root, a taunt, and a buff all land
   without moving a health bar, and reporting them as nothing would make half the catalogue look
   broken. Those use the effect's own `name` — *"leaves a rat reeling"*.
+- **A hostile ability opens a fight, and closes one.** Both ends were missing, because abilities
+  resolve in their own system earlier in the pulse and used to write to `Vitals.Health` and stop:
+  - *Opening.* Engagement is keyed on the effect's `IsHarmful`, not on damage dealt — the
+    abilities that move no health are exactly the ones that most need the fight to exist. Wounds
+    only tick inside a combat, so an opening Ambush applied a bleed that then never ticked, and a
+    stun landed on something that carried on standing there. The caster's own weapon follows the
+    ability **only when they were not already fighting something**: `kick rat` is a way to start a
+    fight, and one that leaves the player standing there afterwards is not one — but throwing a
+    debuff at the second mob in the room is not a request to turn your back on the first, and an
+    area effect must never pick one victim out of the room to swing at.
+  - *Closing.* Deaths from outside the combat loop are resolved at the top of the next combat
+    tick, through the same `HandleDeath` a swing's kill goes through, so the experience, the loot,
+    and the corpse are identical however the killing damage arrived. Without it a mob killed by a
+    kick sat in the fight at zero health for ever: it could not swing, so the fight never dropped
+    below two combatants and never ended, and the player stayed `Fighting` — unable even to `kill`
+    again. Sweeping *first* is what preserves "the blow that kills ends the exchange here and
+    now": whatever killed a combatant, it is out before anyone takes a turn.
 
 ### 4.8 Content model
 
@@ -1973,6 +1990,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |
 | Narration | A name authored as "a rat" does not become "an a rat" — asserted on the helper, since it feeds combat, the room listing, and every ability that names a target. A bare noun is unaffected, which is what every existing call site relies on. |
 | Abilities | **Every entry in the catalogue** is castable by its display name and usable as a verb — a theory over the whole list, because the individual ability tests each pick one and drive it, which is how eight multi-word abilities stayed unreachable without anything noticing. Plus: a skill is refused by `cast` with the verb form named, a spell is not, an ability another Path owns is not a verb for you, and an existing command always wins. |
+| Abilities in a fight | An ability opens a fight and the player keeps swinging afterwards — asserted on the mob's health continuing to fall, not on the character's target field, since setting one without the other is exactly the bug that reads as fixed. A bleed applied out of combat still ticks; a stun that moves no health still engages; a heal starts nothing. A kill landed by an ability removes the mob, ends the fight, pays the same XP and gold as a swing, and leaves the player able to start another one — that last is what a player actually notices, because a fight that never ended refuses every later `kill`. The same for a kill landed by a wound. |
 | Telemetry | Every pulse is recorded rather than only the slow ones; an over-budget pulse is counted as well as timed; a command with no acceptance timestamp is counted but not timed; the gauges read live state at collection time. Meter and instrument names are pinned, because renaming one breaks every dashboard silently — the metrics simply stop arriving. *The numbers themselves are deliberately not asserted: a p99 measured under an xUnit host is not the p99 §11 is about.* |
 | Rate limits | A flood is refused once the bucket empties but the early commands still land; the 429 carries `Retry-After`; **one player's flood does not refuse another player**, which is the load-bearing property — a global partition would let anyone switch the game off for everyone; the event stream is never limited; repeated failed logins are. Asserted against a host configured with real numbers, since the shared test host lifts them out of the way. |
 | Moderation | A mute is refused on every one of the six verbs that carry words to another player, expires against the clock rather than by a sweep, and stops none of walking, fighting, or turning a channel off. The account verbs enqueue rather than acting, since the loop cannot read the account store. No new verb steals an older one's abbreviation. |

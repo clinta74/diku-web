@@ -1,6 +1,7 @@
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Narration;
@@ -113,6 +114,12 @@ public sealed class AbilitySystem(
         // Set cooldown
         world.SetAbilityCooldown(caster.Id, cast.AbilityKey, clock.CurrentPulse);
 
+        // Whether this cast should point the caster's weapon at what it hit, decided once for the
+        // whole cast rather than per target - an area effect must never pick one victim out of the
+        // room to swing at.
+        var mayRetarget = ability.TargetingType == TargetingType.SingleTarget &&
+                          !IsCommittedToALiveTarget(world, caster);
+
         // One cost and one cooldown however many it lands on - an area effect is paid for by the
         // cast, not by the target, which is the whole reason to bring one.
         foreach (var target in targets)
@@ -129,6 +136,17 @@ public sealed class AbilitySystem(
             // and no outcome. A player could not tell a hit from a miss, an area effect that
             // caught four things from one that caught one, or a heal that was already at full.
             Narrate(world, actor, caster, ability, effect, target, before);
+
+            // Anything hostile starts the fight, whatever it did to the health bar. Keyed on the
+            // effect's own IsHarmful rather than on damage dealt, because the abilities that move
+            // no health are exactly the ones that most need the fight to exist: a bleed only ticks
+            // inside a combat, so an opening Ambush on something not yet engaged used to apply a
+            // wound that then never ticked, and a stun landed on a mob that carried on standing
+            // there. The gate that decided this cast was allowed at all has already run.
+            if (effect.IsHarmful)
+            {
+                Engage(world, caster, target, mayRetarget);
+            }
 
             CreditThreat(world, caster, target, before);
 
@@ -320,7 +338,94 @@ public sealed class AbilitySystem(
     };
 
     /// <summary>
-    /// Puts what an ability just did on the mob's hate list, engaging it if it was not fighting.
+    /// Puts a hostile ability's target into a fight with the caster.
+    /// </summary>
+    /// <remarks>
+    /// <b>An ability is a way to open a fight, not something you do beside one.</b> Without this a
+    /// kick was a free hit that changed nothing: the mob took the damage and stood there, because
+    /// nothing had put it in combat, and the threat it should have earned had no hate list to be
+    /// recorded on.
+    ///
+    /// The caster's own weapon follows only when <paramref name="retarget"/> says so - see
+    /// <see cref="IsCommittedToALiveTarget"/> for when that is.
+    /// </remarks>
+    private static void Engage(WorldState world, Character caster, object target, bool retarget)
+    {
+        switch (target)
+        {
+            case Mob mob:
+                CombatEngagement.Engage(world, caster, mob, retarget);
+                break;
+
+            // A duel opened with a spell is still a duel. Reached only where the room resolves
+            // `pvp`, since that is the one place ResolveTargets will hand back another player -
+            // and without it a Bolt could take a character to zero health outside any fight, where
+            // nothing was watching for the death.
+            case Character victim when victim.Id != caster.Id:
+                EngagePlayer(world, caster, victim, retarget);
+                break;
+        }
+    }
+
+    /// <summary>Mirrors what <c>kill</c> does to two characters, minus the narration.</summary>
+    private static void EngagePlayer(
+        WorldState world,
+        Character caster,
+        Character victim,
+        bool retarget)
+    {
+        var combat = world.GetOrCreateCombat(caster.RoomKey);
+
+        var casterId = EntityId.ForCharacter(caster.Id);
+        var victimId = EntityId.ForCharacter(victim.Id);
+
+        combat.AddCombatant(casterId);
+        combat.AddCombatant(victimId);
+
+        caster.CombatState = CombatState.Fighting;
+        victim.CombatState = CombatState.Fighting;
+
+        if (retarget)
+        {
+            caster.CurrentTarget = victimId;
+            combat.PlayerTargets[caster.Id] = victimId;
+        }
+    }
+
+    /// <summary>
+    /// Whether the caster is already swinging at something that is still alive and still here.
+    /// </summary>
+    /// <remarks>
+    /// This is what decides whether a hostile ability moves the caster's weapon. Not fighting
+    /// anything, and it does: <c>kick rat</c> is a way to start a fight, and one that left the
+    /// player standing there afterwards is the bug this answers. Already fighting, and it does
+    /// not - throwing a debuff at the second mob in the room is not a request to turn your back
+    /// on the first one, and a silent target switch mid-fight is a good way to die.
+    ///
+    /// The current target is checked rather than trusted: it survives the thing it named dying or
+    /// walking out, and a stale one would read as a commitment the caster no longer has.
+    /// </remarks>
+    private static bool IsCommittedToALiveTarget(WorldState world, Character caster)
+    {
+        if (caster.CurrentTarget is not { } targetId || !EntityId.IsWellFormed(targetId))
+        {
+            return false;
+        }
+
+        var id = EntityId.ToGuid(targetId);
+
+        if (EntityId.IsMob(targetId))
+        {
+            return world.GetMob(id) is { Vitals.Health: > 0 } mob &&
+                   RoomKey.Parse(mob.RoomKey) == caster.RoomKey;
+        }
+
+        return world.GetCharacter(id) is { Vitals.Health: > 0 } other &&
+               other.RoomKey == caster.RoomKey;
+    }
+
+    /// <summary>
+    /// Puts what an ability just did on the mob's hate list.
     /// </summary>
     /// <remarks>
     /// Ability damage used to reach <c>Vitals.Health</c> and stop there, so it was worth no
@@ -328,10 +433,6 @@ public sealed class AbilitySystem(
     /// cumulative damage: <b>the Adept, the Path built to deal the most damage in the game, was
     /// the only one that could never pull a mob off anyone.</b> Cataclysm could take most of a
     /// boss's health and leave it chewing on the Warden who had scratched it twice.
-    ///
-    /// Hurting something also starts the fight, the way swinging at it does. Without that an
-    /// opening Bolt was free: the mob took the damage and stood there, because nothing had put it
-    /// in combat, and the threat had nowhere to be recorded either.
     /// </remarks>
     private static void CreditThreat(WorldState world, Character caster, object target, int before)
     {
@@ -345,10 +446,6 @@ public sealed class AbilitySystem(
         {
             return;
         }
-
-        // Not a retarget: an area effect hits everything in the room, and swinging the caster's
-        // own weapon round to the last thing the flames touched is not what they asked for.
-        CombatEngagement.Engage(world, caster, mob, retarget: false);
 
         ThreatCredit.Credit(
             world,

@@ -83,6 +83,19 @@ public sealed class CombatSystem(
 
             foreach (var combat in active)
             {
+                // Kills this loop did not make, before anything acts on this pulse. Abilities
+                // resolve earlier in the same pulse and write straight to the health bar, so a
+                // mob killed by a kick used to sit at zero health inside the fight for ever: it
+                // could not swing, so nothing ever ended the combat, and the experience, the loot
+                // and the corpse never came. The player was left permanently Fighting and could
+                // not even `kill` again.
+                //
+                // This does not weaken "the blow that kills ends the exchange here and now" -
+                // Strike still resolves its own kill the instant it lands. Sweeping first is what
+                // keeps the guarantee: whatever killed this combatant, it is out of the fight
+                // before anyone takes a turn, so the dead never get one more.
+                ResolveDeathsFromOutside(world, combat);
+
                 // Wounds tick before swings. A bleed that finishes something should resolve
                 // before it gets another turn, the same way the blow that kills ends the
                 // exchange rather than being swept up afterwards.
@@ -123,6 +136,31 @@ public sealed class CombatSystem(
             foreach (var roomKey in finished)
             {
                 world.EndCombat(roomKey);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Resolves any combatant that arrived at this pulse already dead.
+    /// </summary>
+    /// <remarks>
+    /// An ability, a trap, or anything else that reaches <c>Vitals.Health</c> from outside this
+    /// loop. <see cref="HandleDeath"/> is the same door a swing's kill goes through, so the
+    /// experience, the loot, the corpse and the removal from the fight are identical however the
+    /// killing damage arrived - which is the whole point of routing it here rather than letting
+    /// each damage source grow its own half of a death.
+    ///
+    /// A combatant the world no longer has counts as dead too. <see cref="HandleDeath"/> finds
+    /// nothing to award and removes the entry, which is the cleanup a despawn would otherwise
+    /// leave behind.
+    /// </remarks>
+    private void ResolveDeathsFromOutside(WorldState world, Combat combat)
+    {
+        foreach (var combatantId in combat.Combatants.ToList())
+        {
+            if (!IsAlive(world, combatantId))
+            {
+                HandleDeath(world, combat, combatantId);
             }
         }
     }
