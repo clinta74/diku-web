@@ -14,7 +14,7 @@ numbers rather than a new set of hand-authored content.
 Play is **PvE by default**; player-versus-player is opt-in per room, through the same extensible
 room-flag registry that carries every other room property (§4.10).
 
-Status: **Phases 0–4 and 5.1–5.2 complete.**
+Status: **Phases 0–4 and 5.1–5.2 complete. Remaining: 5.2e, 5.3, Phase 6.**
 
 *Playing* works end to end: register, create a character, walk a seeded zone, talk. Inventory,
 equipment, and items work; mob AI emotes and wanders; combat kills, loots, and levels, with XP
@@ -1278,11 +1278,12 @@ Notes from the build:
   occupants used to omit the extras from the map entirely — present in the room and the contents
   list, invisible on the grid. Overlapping icons are the better failure.
 
-### Phase 2 — World builder: geography ⚠️ **geography complete; world and zone properties are not**
+### Phase 2 — World builder: geography ✅ **complete**
 *Done when: a new zone can be built end to end in the browser, with no SQL and no seeder edits.*
 
-Rooms, exits, flags, and the canvas are done and hold up. What is missing is a level up: the
-**containers** those rooms live in — worlds and zones — have almost no editor.
+Rooms, exits, flags, and the canvas were done first and held up. The gap was a level up — the
+**containers** those rooms live in — and `WorldPanel`, `ZonePanel`, and the per-flag primitives
+for both scopes closed it.
 
 - [x] Roles (player / builder / moderator / admin) + authorization policies **(moved up from Ops)**
 - [x] `WorldMutation` path: enqueue → loop applies → persist → notify occupants
@@ -1393,11 +1394,14 @@ Notes from the build:
 - **A demoted builder is told, not silently stripped.** Verbs that stop working with no
   explanation read as the game breaking rather than as a decision somebody made.
 
-### Phase 3 — Objects, inhabitants, and multipliers ⚠️ **the engine is done; the dial is not authorable**
+### Phase 3 — Objects, inhabitants, and multipliers ✅ **complete**
 *Done when: a zone's difficulty is a slider, and the same kobold is trivial in one zone and lethal in another.*
 
-The engine half is complete and correct. The **slider is missing**: a builder cannot set a
-multiplier from the browser, which is the half the phase goal is written about.
+The engine half was correct from the start; the **slider** was what was missing, which is the
+half the phase goal is written about. `MultiplierEditor` and its live preview sit on both the
+world and the zone panel now, and mob stats and loot are authorable alongside them.
+
+One deferred nice-to-have remains below, and it is not what the phase goal asks for.
 
 - [x] Item templates + instances (weight and capacity limits deferred)
 - [x] `get`, `drop`, `give`, `inventory`, `examine`, `destroy`; `put` for containers deferred
@@ -1429,7 +1433,10 @@ multiplier from the browser, which is the half the phase goal is written about.
       `BaseStats["health"]` as `value is int`, false for every jsonb-loaded template, so it fell
       through to its 40 fallback. A builder tuning the Strength dial was watching a number that
       was not their mob's. Now read through `JsonBag.Int32`.
-- [ ] Loot table and `baseStats` editors for mob templates (only `health` has a field today)
+- [x] **Loot table and `baseStats` editors for mob templates** (`MobStatsEditor`, `LootEditor`,
+      both wired into `MobTemplateEditor`). Only `health` had a field, out of the ten keys the
+      engine reads, so nine of a mob's stats were unauthorable from the browser. A test
+      transcribes the engine's key list, so an editor that offers fewer fails.
 - [x] **`Mob.State` reads through `JsonBag`.** It pattern-matched `is long` / `is true`, which is
       correct only while nothing reads or writes the `mobs` table. The schema and the
       `DbSet<Mob>` both exist, so the day mob persistence lands the sentinel flag and the emote
@@ -1463,11 +1470,13 @@ multiplier from the browser, which is the half the phase goal is written about.
       (Shade 10, Warden 15) to strike on its own beat; mob templates carry an array of attacks,
       each on its own clock. A dead combatant no longer swings, and a cast in progress silences
       the swings that would otherwise interrupt it
-- [ ] **Builder-authored armour still does nothing.** `armorMultiplier` scales only the flat
-      armour a piece already declares, and the item editor offers no way to declare it — the
-      multiplier list is the whole vocabulary. Damage got a baseline (unarmed 1–2) for the
-      multiplier to act on; armour has no safe equivalent, because a flat baseline of 10 would
-      reduce nearly every hit in the game to 1. Needs a design decision, not a patch.
+- [x] **Builder-authored armour works.** `armorMultiplier` scales only the flat armour a piece
+      already declares, and the item editor offered no way to declare any — so every authored
+      piece resolved `0 × multiplier = 0`. The editor now writes `armorFlat`, `armorPercent`, and
+      `defense` alongside the weapon stats, which is what the multiplier needed to act on.
+      No armour *baseline* was added, and none should be: unarmed damage could take one (1–2)
+      because the floor is a scratch, but a flat armour baseline of 10 would reduce nearly every
+      hit in the game to 1. Unarmoured resolving to zero is the correct answer.
 
 ### Phase 5 — Depth
 
@@ -1554,9 +1563,10 @@ multiplier from the browser, which is the half the phase goal is written about.
 - [x] Shop coverage: `ShopCommandTests` (engine) exercises list / buy / sell against behavior in
       the shape storage returns it
 
-#### 5.2d — Gaps in the above, found by audit ⚠️ **partly done**
-These are the parts of 5.2 that were checked off in spirit but are not in the code. Each one
-fails quietly, which is why they need to be listed rather than assumed.
+#### 5.2d — Gaps in the above, found by audit ✅ **complete**
+These were the parts of 5.2 that had been checked off in spirit but were not in the code. Every
+one failed quietly, which is why they needed listing rather than assuming — and is the reason
+§12's rule now reads "before checking a box, name the test or the call site."
 
 - [x] **The behavior bag was unreadable.** `Behavior` is `Dictionary<string, object>` stored as
       jsonb, so every value arrives as a `JsonElement`. `ShopCommands` tested `is bool` and
@@ -1746,6 +1756,14 @@ AoE skip your own group rather than leaning on the `pvp` flag to do it. Then Pha
 
 **Not yet in any phase, from playtesting:**
 
+- **A taunt for Warden and Shade** — pushes the caster up the mob's hate list, targets the
+  current opponent by default and a named mob otherwise, and pulls an unengaged mob into combat
+  as though it had been attacked. The hate list already exists (`Combat.AddToHateList`, seeded on
+  `kill`), so this is the first thing that would *manipulate* it rather than merely feed it, and
+  the first ability whose effect is not damage, healing, or a stat change. Note it hands a player
+  a way to start a fight with something they never attacked, so it has to pass the same §4.11
+  gate `kill` does — including the non-combatant refusal, or taunt becomes the way to make a
+  shopkeeper hostile.
 - Command-line autocomplete for item and mob names; `spawn` should complete against real keys.
 - An explicit per-template alias list. Matching is derived from the name now, which covers the
   common case — but nothing reaches a named wolf called "Fang" whose key is `grey-wolf`.
