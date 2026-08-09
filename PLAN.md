@@ -59,9 +59,8 @@ un-checked and annotated rather than deleted, because the pattern matters — **
 
 ### Open questions (decide before the phase that needs them)
 
-- **Q3 (Phase 5):** Are the four Paths (§4.5) fixed at creation or respec-able?
-
-*Resolved: **Q1** (PvP) → §4.11. **Q2** (death penalty) → §4.12.*
+*None. **Q1** (PvP) → §4.11. **Q2** (death penalty) → §4.12. **Q3** (Path respec) → §4.5:
+**Paths are fixed at creation.***
 
 ---
 
@@ -463,6 +462,14 @@ analogue), **Stamina** (movement and heavy attacks).
 Four Paths chosen at creation: **Warden** (armored frontline), **Adept** (focus-caster),
 **Shade** (stealth/burst), **Channeler** (support/control). A Path grants an ability list and
 shapes stat growth; it does not hard-gate equipment.
+
+**A Path is fixed at creation and cannot be changed** (resolves **Q3**). Rerolling is the respec:
+characters are cheap to make, levelling is the game, and a second character on the same account
+costs nothing. What a respec would buy is the ability to skip that, and what it would cost is
+everything downstream of "your abilities follow from your Path" — spent ability points to refund
+or strand, equipment chosen for a Path you no longer are, and a progression table that has to
+mean something on a character who arrived at level 20 by a different road. None of that is worth
+building to save a player from a decision made on the character-creation screen.
 
 ### 4.6 Combat math
 
@@ -1621,7 +1628,8 @@ fails quietly, which is why they need to be listed rather than assumed.
 - [ ] Pets and charmed mobs inherit their owner's §4.11 permissions (no pet system yet)
 - [ ] `noRecall` refuses teleports out — the flag is registered with no reader, and there is
       no teleport or recall command for it to refuse
-- [ ] Path respec (**Q3 still open**) — the only open question in the document
+- [x] Path respec — **decided against** (Q3, §4.5). Paths are fixed at creation; rerolling is the
+      respec. Nothing to build, which is the point: this line closes rather than defers.
 
 #### 5.3 — Communication and travel
 - [ ] `tell`, channels, `group`/party, party XP split
@@ -1749,4 +1757,4 @@ AoE skip your own group rather than leaning on the `pvp` flag to do it. Then Pha
   the multiplier preview, world delete, and `/respawn` were all written, checked off, and never
   wired to anything. Before checking a box, name the test or the call site.
 
-Q3 (Path respec) is still the only open question in the document, and only 5.2e depends on it.
+**No open questions remain.** Q3 (Path respec) is decided: Paths are fixed at creation (§4.5).
