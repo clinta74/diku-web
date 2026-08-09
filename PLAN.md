@@ -27,7 +27,8 @@ zones, difficulty multipliers with a live preview, mob and item templates, mob b
 (disposition, emotes, shopkeeper and stock), mob and item spawners across multiple rooms, and
 quests — the last with reachability warnings and the prerequisite chain shown in the editor.
 
-Next: **5.3 (communication)**, which is also what parties need to exist for, then Phase 6 (ops).
+Next: **5.3 — parties first**, since three things in the code are already approximating them,
+then `tell`, channels, and `recall`. Then Phase 6 (ops).
 
 A note on reading the checkboxes below: several were checked off for work that was designed but
 not built, or built but dead on arrival. Where an audit has since disproved one it has been
@@ -1714,8 +1715,10 @@ one failed quietly, which is why they needed listing rather than assuming — an
       got "You don't see 'Bram' here." while standing there.
 
 #### 5.2e — Deferred from the original 5.2 list
-- [ ] `noRecall` refuses teleports out — the flag is registered with no reader, and there is
-      no teleport or recall command for it to refuse
+- [→] `noRecall` refuses teleports out — **moved to 5.3**, where the `recall` command it is
+      waiting for now sits. The flag is registered with no reader, which is not a bug on its own:
+      §4.10 says a flag with no reader is dead weight, and this one is dead weight *until the
+      verb exists*. Listing it apart from that verb was what made it look like an oversight.
 - [x] Path respec — **decided against** (Q3, §4.5). Paths are fixed at creation; rerolling is the
       respec. Nothing to build, which is the point: this line closes rather than defers.
 - [→] Pets and charmed mobs inheriting their owner's §4.11 permissions — **moved to §13**. There
@@ -1724,7 +1727,20 @@ one failed quietly, which is why they needed listing rather than assuming — an
 
 #### 5.3 — Communication and travel
 - [ ] `tell`, channels, `group`/party, party XP split
-- [ ] A second world reachable by portal, with its own world-level multipliers
+- [x] **A second world needs no portal concept — an ordinary exit already crosses worlds.**
+      This line used to read *"a second world reachable by portal"*, which invented a mechanism
+      for something the exit system does already. `RoomExit.ToRoomKey` is a fully-qualified
+      `world.zone.room`; `ApplyLink` compares nothing but whether the source room exists;
+      movement resolves the key and moves; `/validate` looks its targets up globally, so a
+      cross-world exit is not reported as dangling; the zone canvas skips edges to rooms it does
+      not hold, so the layout degrades rather than breaking; and Add Exit already takes a free
+      `world.zone.room`.
+      So this is **content, not code** — build the world, link a room to it. Whether the door is
+      described as a portal, a ship, or a staircase is prose.
+- [ ] `recall` / teleport, and the `noRecall` flag that has been waiting for something to refuse
+      (moved up from 5.2e — the same realisation applies). A destination is a `world.zone.room`
+      like any other, so a teleport effect is a parameter, not a new kind of link: nothing about
+      travelling needs to know whether the target is in this world.
 
 ### Phase 6 — Operations
 
@@ -1822,10 +1838,19 @@ targeting modes, threat accounting, the quest builder, and mob attack effects ha
 **Every content type §4 describes can now be authored in the browser with no SQL**, and the
 effect vocabulary runs in both directions.
 
-**Next: 5.3 (communication and travel)** — `tell`, channels, parties and party XP split, and a
-second world reachable by portal. Parties are also what let a harmful AoE skip your own group
-rather than leaning on the `pvp` flag to do it (§4.11), and `AreaTargets` names the two lines that
-change. Then Phase 6 (ops).
+**Next: 5.3 (communication and travel).** Two pieces, not four — *"a second world reachable by
+portal"* turned out to be content rather than code, since an ordinary exit already crosses worlds
+and always has.
+
+1. **Parties**, which are the load-bearing half. Three approximations in the codebase are waiting
+   on them, each carrying a comment saying so: `AreaTargets` leans on the `pvp` flag as a
+   stand-in for party membership, `TargetValidator`'s summary lists *"party members are never
+   valid targets"* as a rule nothing enforces, and the XP split has nothing to split between.
+   Do this first — everything else in 5.3 depends on nothing.
+2. **`tell`, channels, `recall`/teleport**, and with teleport the `noRecall` flag finally gets
+   something to refuse.
+
+Then Phase 6 (ops).
 
 The item this section carried last, kept as the record of what it was and why the shape changed:
 
