@@ -55,6 +55,12 @@ public sealed class CommandContext
     public EngineOptions? Options { get; init; }
 
     /// <summary>
+    /// The pending-shutdown countdown, for the admin verb that sets it. Null where the world
+    /// cannot be closed from inside itself, which is why the handler checks rather than assumes.
+    /// </summary>
+    public Systems.ShutdownSchedule? Shutdown { get; init; }
+
+    /// <summary>
     /// The game clock, for handlers that have to ask whether a timed effect is still running.
     /// </summary>
     public IGameClock? Clock { get; init; }
@@ -79,6 +85,25 @@ public sealed class CommandContext
 
     /// <summary>Set by a handler to have the loop remove this player after the command.</summary>
     public LeaveReason? LeaveRequested { get; set; }
+
+    /// <summary>
+    /// Other characters the loop should remove after this command, and why (PLAN.md §8, Phase 6).
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="LeaveRequested"/>, which only ever means "the person who typed
+    /// this". Removing someone else has to go back through the loop rather than happening in the
+    /// handler, because leaving the world is more than dropping them from
+    /// <see cref="WorldState"/> — there is a save, a channel to close, and a room to redraw, and a
+    /// second copy of that list would drift from the first.
+    /// </remarks>
+    private readonly List<(Guid CharacterId, LeaveReason Reason)> _removals = [];
+
+    /// <inheritdoc cref="_removals"/>
+    public IReadOnlyList<(Guid CharacterId, LeaveReason Reason)> RemovalsRequested => _removals;
+
+    /// <summary>Asks the loop to take another character out of the world after this command.</summary>
+    public void RequestRemoval(Guid characterId, LeaveReason reason) =>
+        _removals.Add((characterId, reason));
 
     /// <summary>Rooms marked for refresh after command completes.</summary>
     internal HashSet<RoomKey> RoomsToRefresh { get; } = [];

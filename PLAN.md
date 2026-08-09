@@ -1833,7 +1833,31 @@ one failed quietly, which is why they needed listing rather than assuming — an
 
 Partly done ahead of schedule — the deployment pipeline landed alongside Phase 5.
 
-- [ ] Admin commands: `teleport`, `stat`, `set`, `mute`, `kick`, `ban`
+- [x] **Admin commands the loop can answer itself: `teleport`, `stat`, `kick`, `shutdown`.**
+      In `AdminWorldCommands`, deliberately apart from `AdminCommands`: those touch the *account*
+      store, which §2.1 forbids the loop, so each hands off to a queue and is answered later.
+      These are about the world, which the loop owns outright. Mixing the two would make it
+      impossible to tell from the file which kind you were reading.
+      - `teleport <name>` fetches a player to you — `goto` already went the other way, and
+        fetching is what you want when answering *"I am stuck"*. It ignores `noRecall`, roots, and
+        combat on purpose: being held by content is the usual reason to need it, and a tool the
+        content could veto is no use in the case it exists for.
+      - `stat` answers what the room description cannot — which spawner is responsible for a mob
+        still being here, which zone's multipliers produced its numbers, what is on its hate list.
+        Both of the questions the last round of playtesting raised.
+      - `kick` hands the removal back to the loop rather than doing it in the handler: leaving the
+        world saves, closes the channel, and redraws the room, and the second copy of that list is
+        the one that goes stale. Says something in the room, too — a character vanishing with no
+        explanation reads as a bug.
+      - `shutdown <minutes|now|cancel>` with warnings at nine milestones, from thirty minutes down
+        to five seconds. **From playtesting.** Progress is already safe (§11); what a warning
+        protects is the half hour someone spent walking to a boss, which no save gives back.
+        Minutes, not seconds, because that is the unit the decision is made in. Immediate is
+        spelled `now` rather than `0`, so the destructive case is a word typed on purpose.
+        `IShutdownSignal` keeps the Engine ignorant of being hosted; the Server implements it over
+        `IHostApplicationLifetime`, which is what makes the stop orderly rather than abrupt.
+- [ ] Admin commands still outstanding: `set`, `mute`, `ban` — all three outlive the session, so
+      they belong with the account work rather than with the world verbs above
       (`goto` shipped with Phase 2; `promote` / `demote` / `whois` with Phase 2a)
 - [ ] Rate limiting per session; command flood protection; builder API throttling
       (only `DigThrottle` exists, covering the `dig` endpoint alone)
@@ -1871,6 +1895,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
 | Spawners | A mob that wandered out still counts; ten sweeps that scatter what they made never exceed the target; a kill is replaced; two spawners of the same template do not count each other's work; a mob a builder placed by hand satisfies nobody's target. |
 | Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |
+| Admin | Every verb reads as unknown to a player *and to a builder* — content authority is not moderation authority. Teleport ignores `noRecall` and a fight; kick asks the loop rather than removing anyone itself, and cannot name the caller. Shutdown warns before it acts, reports without acting when asked bare, reschedules rather than refusing, does not announce milestones longer than its own delay, and only reaches the host when the countdown actually runs out. |
 | Emotes | Both authored shapes read, and mixed in one list; a row with no text is dropped; an inverted range reads as its lower number. A fresh mob is silent on its first sweep, a fast line talks while a slow one stays quiet, one line lands per tick, and renaming a line prunes the old key rather than accruing it. The schedule survives the jsonb round trip — the one bug class this codebase keeps rediscovering. |
 | Parties | Forming, expiry, leadership passing, and the dissolve at one member. Leaving the world drops you from the group — asserted through `WorldState.Remove`, which is the one door out. The split pays only members standing where the mob died, and an odd remainder goes to whoever landed the blow rather than evaporating. |
 | Travel | `recall` reaches the bind point and falls through to the starting room when unbound or when a builder deleted it. Every refusal has a test, because the value of `noRecall` having exactly one reader is entirely in that reader being consulted. |

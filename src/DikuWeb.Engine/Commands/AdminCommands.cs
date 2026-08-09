@@ -126,7 +126,7 @@ internal static class AdminCommands
     /// verb for everyone else, matching the builder commands (§7.6): nobody below Admin should
     /// learn from the game that these exist.
     /// </summary>
-    private static bool RequireAdmin(CommandContext ctx)
+    internal static bool RequireAdmin(CommandContext ctx)
     {
         if (ctx.Actor.Role == AccountRole.Admin)
         {

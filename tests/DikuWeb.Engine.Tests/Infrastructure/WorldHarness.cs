@@ -142,12 +142,30 @@ internal sealed class WorldHarness
             AbilityCache,
             new Domain.Abilities.Effects.EffectRegistry(),
             mobTemplates: MobTemplates);
+
+        Shutdown = new ShutdownSchedule(Clock, ShutdownSignal);
     }
 
     public WorldState World { get; }
 
     /// <summary>Time under the test's control, so per-attack timing is exact rather than raced.</summary>
     public ManualGameClock Clock { get; } = new();
+
+    /// <summary>Records that the world was asked to close, instead of closing the test run.</summary>
+    internal sealed class RecordingShutdownSignal : IShutdownSignal
+    {
+        public int Stops { get; private set; }
+
+        public bool Stopped => Stops > 0;
+
+        public void Stop() => Stops++;
+    }
+
+    /// <summary>What <c>shutdown</c> would have done to the host.</summary>
+    public RecordingShutdownSignal ShutdownSignal { get; } = new();
+
+    /// <summary>The countdown the admin verb schedules. Ticked by <see cref="Pump"/>.</summary>
+    public ShutdownSchedule Shutdown { get; private set; } = null!;
 
     /// <summary>Mob templates combat reads attack lists from.</summary>
     public MobTemplateCache MobTemplates { get; } = new();
@@ -182,6 +200,9 @@ internal sealed class WorldHarness
         {
             Abilities.Tick(World);
             Combat.Tick(World, Clock.CurrentPulse);
+            // Last in the pulse, matching GameLoop: the countdown announces into a world that has
+            // finished being updated.
+            Shutdown.Tick(World);
             Clock.AdvancePulses(1);
         }
     }
@@ -355,6 +376,7 @@ internal sealed class WorldHarness
             ItemTemplates = ItemTemplates,
             MobTemplates = MobTemplates,
             Options = Options,
+            Shutdown = Shutdown,
             Clock = Clock,
             Quests = Quests,
             QuestSaveQueue = QuestSaves,

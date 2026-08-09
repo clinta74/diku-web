@@ -151,4 +151,14 @@ public enum LeaveReason
 
     /// <summary>Server shutting down.</summary>
     Shutdown = 3,
+
+    /// <summary>
+    /// An admin disconnected them (PLAN.md §8, Phase 6).
+    /// </summary>
+    /// <remarks>
+    /// Distinct from <see cref="Quit"/> because the two are not the same event to anyone reading
+    /// the log afterwards, and because a kick is worth saying out loud in the room they were
+    /// standing in — a character vanishing with no explanation reads as a bug.
+    /// </remarks>
+    Kicked = 4,
 }

@@ -3,6 +3,7 @@ using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Engine;
+using DikuWeb.Engine.Systems;
 using DikuWeb.Persistence;
 using DikuWeb.Persistence.Converters;
 using DikuWeb.Persistence.Seeding;
@@ -48,6 +49,10 @@ builder.Services.AddSingleton<IQuestRepository, EfQuestRepository>();
 builder.Services.AddSingleton<ICharacterQuestRepository, EfCharacterQuestRepository>();
 
 builder.Services.AddSingleton<EffectRegistry>();
+
+// Lets an admin's `shutdown` reach the host. Registered here rather than in the Engine because
+// stopping the process is the Server's business; the Engine only asks.
+builder.Services.AddSingleton<IShutdownSignal, HostShutdownSignal>();
 
 builder.Services.AddSingleton<CharacterSaveQueue>();
 builder.Services.AddSingleton<ICharacterSaveQueue>(sp => sp.GetRequiredService<CharacterSaveQueue>());

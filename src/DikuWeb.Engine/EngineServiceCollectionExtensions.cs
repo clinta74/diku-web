@@ -116,6 +116,15 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<MobTemplateCache>();
         services.AddSingleton<SpawnerCache>();
 
+        // The countdown itself is always available, so `shutdown` can be scheduled and cancelled
+        // wherever the engine runs. What is optional is IShutdownSignal - the thing that actually
+        // stops the host - which the Server supplies. Without it a countdown announces and then
+        // reaches zero having done nothing, which is the right behaviour for a test host.
+        services.AddSingleton<ShutdownSchedule>(sp =>
+            new ShutdownSchedule(
+                sp.GetRequiredService<IGameClock>(),
+                sp.GetService<IShutdownSignal>()));
+
         // Game loop - wired once all systems are available
         services.AddHostedService<GameLoop>();
 

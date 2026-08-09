@@ -51,6 +51,7 @@ public sealed class GameLoop(
     MobAiSystem? mobAiSystem,
     CombatSystem? combatSystem,
     AbilitySystem? abilitySystem,
+    ShutdownSchedule? shutdown,
     EngineOptions options,
     ILogger<GameLoop> logger) : BackgroundService
 {
@@ -193,6 +194,10 @@ public sealed class GameLoop(
         {
             Autosave();
         }
+
+        // Last in the pulse, so the world it announces into is the one that just finished being
+        // updated - and the final warning is not sent from a half-run tick.
+        shutdown?.Tick(world);
     }
 
     private void DrainInbound()
@@ -442,6 +447,7 @@ public sealed class GameLoop(
             ItemTemplates = itemTemplateCache,
             MobTemplates = mobTemplateCache,
             Options = options,
+            Shutdown = shutdown,
             Clock = clock,
             Quests = questCache,
             QuestSaveQueue = questSaveQueue,
@@ -465,6 +471,16 @@ public sealed class GameLoop(
         foreach (var roomKey in context.RoomsToRefresh)
         {
             view.RefreshRoom(world, roomKey);
+        }
+
+        // Other people first, so an admin who kicked someone still sees the result before their
+        // own command can take them out of the world.
+        foreach (var (characterId, removalReason) in context.RemovalsRequested)
+        {
+            if (world.FindByCharacter(characterId) is { } removed)
+            {
+                RemovePlayer(removed, removalReason);
+            }
         }
 
         if (context.LeaveRequested is { } reason)

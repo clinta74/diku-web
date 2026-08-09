@@ -117,6 +117,7 @@ public sealed class CommandRegistry
         StatusCommands.Register(_commands);
         BuilderCommands.Register(_commands, mobTemplates, itemTemplates, mobSpawner, itemSpawner);
         AdminCommands.Register(_commands);
+        AdminWorldCommands.Register(_commands);
     }
 
     public IReadOnlyList<CommandDefinition> Commands => _commands;
