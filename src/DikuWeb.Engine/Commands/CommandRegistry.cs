@@ -120,6 +120,26 @@ public sealed class CommandRegistry
             : _commands.FirstOrDefault(c => c.Matches(verb));
 
     /// <summary>
+    /// Punctuation that stands in for a whole verb, with no space after it.
+    /// </summary>
+    /// <remarks>
+    /// The two commands worth the keystroke are the two typed most often and always with an
+    /// argument, so <c>'hello</c> and <c>;grins</c> read naturally. Expanded here rather than
+    /// registered as verbs, because a <see cref="CommandDefinition"/> is matched by prefix and
+    /// would demand the space - <c>' hello</c> works, <c>'hello</c> would not.
+    ///
+    /// Deliberately a short list. Every character claimed here is one that can never start an
+    /// ordinary command, and a shortcut nobody remembers costs more than it saves.
+    /// </remarks>
+    private static readonly Dictionary<char, string> _verbShortcuts = new()
+    {
+        ['\''] = "say",
+        ['"'] = "say",
+        [';'] = "emote",
+        [':'] = "emote",
+    };
+
+    /// <summary>
     /// Splits raw input into a verb and its remainder. "say  hello  there" keeps the
     /// message intact - only the separator after the verb is consumed.
     /// </summary>
@@ -129,6 +149,11 @@ public sealed class CommandRegistry
         if (trimmed.Length == 0)
         {
             return (string.Empty, string.Empty);
+        }
+
+        if (_verbShortcuts.TryGetValue(trimmed[0], out var shortcut))
+        {
+            return (shortcut, trimmed[1..].TrimStart());
         }
 
         var space = trimmed.IndexOf(' ', StringComparison.Ordinal);
@@ -265,6 +290,16 @@ public sealed class CommandRegistry
         }
 
         spans.Add(new TextSpan("\n\nMost verbs accept a prefix, so 'l' is 'look'.", "dim"));
+
+        // A shortcut nobody discovers is not a shortcut. Listed from the same table the parser
+        // reads, so adding one here is impossible to forget.
+        var shortcuts = string.Join(
+            ", ",
+            _verbShortcuts
+                .GroupBy(pair => pair.Value, StringComparer.Ordinal)
+                .Select(group => $"{string.Join(" or ", group.Select(p => p.Key))} = {group.Key}"));
+
+        spans.Add(new TextSpan($"\nNo space needed after {shortcuts}.", "dim"));
 
         ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
     }

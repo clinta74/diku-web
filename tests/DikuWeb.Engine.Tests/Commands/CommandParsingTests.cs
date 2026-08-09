@@ -85,4 +85,72 @@ public sealed class CommandParsingTests
     [Fact]
     public void Every_command_advertises_help_text() =>
         Assert.All(_registry.Commands, c => Assert.False(string.IsNullOrWhiteSpace(c.Help)));
+
+    /// <summary>
+    /// Punctuation shortcuts expand with no space after them.
+    /// </summary>
+    /// <remarks>
+    /// Expanded in <c>Split</c> rather than registered as verbs, because a
+    /// <c>CommandDefinition</c> matches by prefix and so would require the separator - typing
+    /// <c>'hello</c> is the whole point, and <c>' hello</c> is what a registered verb would have
+    /// demanded.
+    /// </remarks>
+    [Theory]
+    [InlineData("'hello there", "say", "hello there")]
+    [InlineData("\"hello there", "say", "hello there")]
+    [InlineData(";grins slowly", "emote", "grins slowly")]
+    [InlineData(":grins slowly", "emote", "grins slowly")]
+    public void Punctuation_shortcuts_expand_to_a_verb(string typed, string verb, string argument)
+    {
+        var (parsedVerb, parsedArgument) = CommandRegistry.Split(typed);
+
+        Assert.Equal(verb, parsedVerb);
+        Assert.Equal(argument, parsedArgument);
+    }
+
+    [Theory]
+    [InlineData("' hello", "hello")]
+    [InlineData("'   hello  ", "hello")]
+    public void A_shortcut_tolerates_a_space_after_it(string typed, string argument) =>
+        Assert.Equal(argument, CommandRegistry.Split(typed).Argument);
+
+    [Fact]
+    public void A_bare_shortcut_carries_no_argument()
+    {
+        // Falls through to the verb's own "Say what?" rather than saying an empty string.
+        var (verb, argument) = CommandRegistry.Split("'");
+
+        Assert.Equal("say", verb);
+        Assert.Equal(string.Empty, argument);
+    }
+
+    [Fact]
+    public void A_shortcut_keeps_the_case_of_what_follows()
+    {
+        // Verbs are lowercased; a message must not be. "'Hello" is a greeting, not a shout.
+        Assert.Equal("Hello There", CommandRegistry.Split("'Hello There").Argument);
+    }
+
+    [Theory]
+    [InlineData("say hello", "say", "hello")]
+    [InlineData("look", "look", "")]
+    public void Ordinary_input_is_unaffected(string typed, string verb, string argument)
+    {
+        var parsed = CommandRegistry.Split(typed);
+
+        Assert.Equal(verb, parsed.Verb);
+        Assert.Equal(argument, parsed.Argument);
+    }
+
+    [Fact]
+    public void Every_shortcut_expands_to_a_verb_that_exists()
+    {
+        // A shortcut pointing at a verb nobody registered would report "not something you can do"
+        // for a key the help text advertises.
+        foreach (var typed in new[] { "'x", "\"x", ";x", ":x" })
+        {
+            var verb = CommandRegistry.Split(typed).Verb;
+            Assert.NotNull(_registry.Find(verb));
+        }
+    }
 }
