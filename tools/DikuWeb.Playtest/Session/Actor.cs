@@ -81,7 +81,7 @@ public sealed class Actor : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(transcript);
 
         var client = target.NewClient();
-        var username = Names.Unique("acct").ToLowerInvariant();
+        var username = Names.Unique();
         const string password = "correcthorse";
 
         var register = await client.PostAsJsonAsync(

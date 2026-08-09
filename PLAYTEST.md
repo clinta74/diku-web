@@ -127,6 +127,34 @@ the scrollback.
 says — `invite` for a line reading *"asks you to join"* — and the run reported "nothing flagged"
 while silently spending twenty seconds. Waiting for something that never comes is a finding.
 
+## What a run leaves behind
+
+**It never stops the server.** In `--server` mode the apparatus is a guest: it connects to
+something you are running, and shutting down a shared dev or staging box because a test run
+finished would be far worse than any bug it could find. Hosted mode owns a server's lifetime and
+tears it down; that is the only mode that should.
+
+*(If a server does outlive the shell that started it, that is `dotnet run` — it spawns the app as a
+child and killing the wrapper does not take the child with it. That orphan is what locks build
+outputs into MSB3021. `Get-Process DikuWeb.Server | Stop-Process -Force`.)*
+
+**It does leave accounts.** Every actor registers a real account and character against the real
+database, and there is no delete endpoint — deliberately. So a dev database accumulates one account
+per actor per run, for ever. They all carry the `playtest_` prefix precisely so they can be told
+apart from a person's at a glance:
+
+```sql
+-- What the apparatus has left behind
+select count(*) from accounts where username like 'playtest\_%';
+
+-- Purge it. Characters are soft-deleted by the schema; the accounts go with them.
+delete from accounts where username like 'playtest\_%';
+```
+
+Hosted mode makes the question moot, because the database is thrown away with the run. Against a
+long-lived server, purge occasionally — and never point the apparatus at production, which the
+account-per-actor design makes obvious enough to state once.
+
 ## The apparatus is a client
 
 It references `DikuWeb.Domain` and nothing else. If it ever needs `Engine` or `Server` to work,

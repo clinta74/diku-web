@@ -45,8 +45,24 @@ public static class Names
         }
     }
 
+    /// <summary>
+    /// The prefix every account this apparatus creates carries.
+    /// </summary>
+    /// <remarks>
+    /// <b>Litter has to be identifiable.</b> An actor registers a real account against the real
+    /// server, and there is no delete endpoint — deliberately — so the apparatus cannot tidy up
+    /// after itself over the API. Fifty-four runs later, a dev database is fifty-four accounts
+    /// deep in throwaways, and the only thing that makes them safe to purge is being able to tell
+    /// them apart from a person's at a glance. Usernames allow underscores, so this is
+    /// unmistakable in a way a bare prefix was not.
+    ///
+    /// See PLAYTEST.md for the purge. Hosted mode makes the whole question moot, because the
+    /// database it registers against is thrown away with the run.
+    /// </remarks>
+    public const string AccountPrefix = "playtest_";
+
     /// <summary>A name nothing else will have taken, for accounts rather than characters.</summary>
-    public static string Unique(string prefix) => prefix + RandomLetters(8);
+    public static string Unique() => AccountPrefix + RandomLetters(8);
 
     private static string Letters(string raw) =>
         new([.. raw.Where(char.IsAsciiLetter)]);
