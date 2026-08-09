@@ -38,7 +38,8 @@ public sealed class CombatSystem(
     ItemTemplateCache? itemTemplates = null,
     MobTemplateCache? mobTemplates = null,
     ItemSpawner? itemSpawner = null,
-    ILogger<CombatSystem>? logger = null)
+    ILogger<CombatSystem>? logger = null,
+    EffectRegistry? effects = null)
 {
     /// <summary>Combat is evaluated every pulse; per-attack delays do the pacing.</summary>
     public const int TickIntervalPulses = 1;
@@ -368,9 +369,95 @@ public sealed class CombatSystem(
                 continue;
             }
 
-            if (Strike(world, strike, slot, Scale(baseStats, attack.DamageMultiplier), attack.Verb))
+            if (Strike(world, strike, slot, Scale(baseStats, attack.DamageMultiplier), attack.Verb, attack))
             {
                 return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Applies the effect an attack carries, if it carries one and the blow landed.
+    /// </summary>
+    /// <remarks>
+    /// The whole of "mobs can stun, snare, and bleed" (PLAN.md §12). It is this small because the
+    /// receiving side was already built for players: <c>ActiveEffect</c>, <c>ApplyEffect</c>,
+    /// <c>IsStunned</c> gating the cast command and the combat loop, <c>PreventsEscape</c> gating
+    /// <c>flee</c>. Only the emitting side was missing, and an attack is a better home for it than
+    /// a spellbook - the swing already has a timer, already rolls to hit, and already resolves
+    /// damage, so the effect inherits the miss chance and the parry for free. A stun you dodged
+    /// should not stun you.
+    ///
+    /// Unknown keys are ignored rather than refused. The registry is the authority on what exists,
+    /// and a mob template naming an effect this build does not have should swing for its damage
+    /// rather than stop swinging - the same "absence is the safe value" rule the flags follow.
+    /// </remarks>
+    private void ApplyRider(WorldState world, StrikeContext strike, MobAttack? rider)
+    {
+        if (rider?.EffectKey is not { } key ||
+            effects?.Get(key) is not { } effect ||
+            !EntityId.IsWellFormed(strike.AttackerId) ||
+            !EntityId.IsWellFormed(strike.TargetId))
+        {
+            return;
+        }
+
+        object? source = EntityId.IsMob(strike.AttackerId)
+            ? world.GetMob(EntityId.ToGuid(strike.AttackerId))
+            : world.GetCharacter(EntityId.ToGuid(strike.AttackerId));
+
+        object? target = EntityId.IsMob(strike.TargetId)
+            ? world.GetMob(EntityId.ToGuid(strike.TargetId))
+            : world.GetCharacter(EntityId.ToGuid(strike.TargetId));
+
+        if (source is null || target is null)
+        {
+            return;
+        }
+
+        var parameters = rider.EffectParams ?? [];
+
+        effect.Apply(source, target, parameters, world.Random);
+
+        if (effect is IBuffEffect ongoing)
+        {
+            world.ApplyEffect(
+                EntityId.ToGuid(strike.TargetId),
+                ongoing.CreateActiveEffect(source, target, parameters, strike.Pulse));
+        }
+
+        NarrateRider(world, strike, effect.EffectKey, parameters);
+    }
+
+    /// <summary>
+    /// Says that something other than damage just happened.
+    /// </summary>
+    /// <remarks>
+    /// Without this a stun is invisible: the player's next command is refused with "You cannot
+    /// gather yourself" and nothing ever explained why. The effect's own <c>name</c> parameter is
+    /// the wording, because that is what the status panel and the ability that applied it already
+    /// use - "reeling" reads the same wherever it came from.
+    /// </remarks>
+    private static void NarrateRider(
+        WorldState world,
+        StrikeContext strike,
+        string effectKey,
+        Dictionary<string, string> parameters)
+    {
+        var label = parameters.TryGetValue("name", out var name) && !string.IsNullOrWhiteSpace(name)
+            ? name
+            : effectKey;
+
+        if (strike.TargetActor is PlayerActor targetPlayer)
+        {
+            targetPlayer.SendText($"You are {label}!", "bad");
+        }
+
+        foreach (var occupant in world.OccupantsOf(strike.Combat.RoomKey))
+        {
+            if (occupant.CharacterId != (strike.TargetActor as PlayerActor)?.CharacterId)
+            {
+                occupant.SendText($"{strike.TargetName} is {label}!", "combat");
             }
         }
     }
@@ -379,12 +466,17 @@ public sealed class CombatSystem(
     /// Resolves one swing: narration, damage, hate, and the target's death if it caused one.
     /// </summary>
     /// <returns>True when the fight is over for this attacker - the target died or left.</returns>
+    /// <param name="rider">
+    /// An effect this attack carries, applied on a landed hit. Mobs only: a player's effects come
+    /// from abilities, which have a cost and a cooldown to pay for them.
+    /// </param>
     private bool Strike(
         WorldState world,
         StrikeContext strike,
         AttackSlot slot,
         AttackerStats attackerStats,
-        string verb)
+        string verb,
+        MobAttack? rider = null)
     {
         if (!IsAlive(world, strike.TargetId))
         {
@@ -467,6 +559,9 @@ public sealed class CombatSystem(
 
         if (HealthOf(world, strike.TargetId) > 0)
         {
+            // Only on a survivor. Stunning something the same blow just killed is wasted work,
+            // and a bleed on a corpse would tick against a dead thing.
+            ApplyRider(world, strike, rider);
             return false;
         }
 

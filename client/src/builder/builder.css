@@ -371,6 +371,18 @@
   gap: 0.35rem;
 }
 
+/* --- Mob attack effects -------------------------------------------- */
+
+/* Set apart from the attack rows above it. An effect is a property of one attack, but it needs
+   several fields of its own, so inlining it into that row would make every row unreadable. */
+.attack-effect {
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
 /* --- Quest chain -------------------------------------------------- */
 
 /* Indentation is the graph. Prerequisites are the only storyline mechanism there is (§4.9), so

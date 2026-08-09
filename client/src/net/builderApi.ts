@@ -154,6 +154,14 @@ export interface MobAttack {
   delayPulses: number
   /** Scales this attack against the mob's damage. Null means 1.0. */
   damageMultiplier: number | null
+  /**
+   * An effect applied on a landed hit, keyed as the engine's `EffectRegistry` knows it. Null for
+   * a plain attack. This is how a mob stuns, snares, or bleeds — it has attacks rather than a
+   * spellbook (PLAN.md §12).
+   */
+  effectKey: string | null
+  /** Parameters for `effectKey`. Strings, because that is what the executors parse. */
+  effectParams: Record<string, string> | null
 }
 
 export interface MobTemplate {

@@ -47,6 +47,14 @@ public static class MobAttackResolver
                 Verb = AttackTiming.VerbOr(attack.Verb),
                 DelayPulses = AttackTiming.Clamp(attack.DelayPulses),
                 DamageMultiplier = attack.DamageMultiplier is > 0m ? attack.DamageMultiplier : null,
+
+                // Blank is the same as absent. An editor that writes "" for an untouched dropdown
+                // would otherwise produce an attack that looks up an effect named nothing on
+                // every single swing.
+                EffectKey = string.IsNullOrWhiteSpace(attack.EffectKey) ? null : attack.EffectKey.Trim(),
+                EffectParams = attack.EffectParams is { Count: > 0 }
+                    ? new Dictionary<string, string>(attack.EffectParams, StringComparer.Ordinal)
+                    : null,
             });
         }
 

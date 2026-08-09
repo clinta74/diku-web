@@ -1816,15 +1816,22 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 
 ## 12. Next step
 
-**Phase 5.2 is closed.** Multipliers, world and zone editors, spawners, `questItem`, `baseStats`,
+**Phase 5 is closed.** Multipliers, world and zone editors, spawners, `questItem`, `baseStats`,
 ability progression, dormant quests, the cast targeting bugs, seven effect executors, all three
-targeting modes, threat accounting, and the quest builder have landed. **Every content type
-§4 describes can now be authored in the browser with no SQL.** One item is left before the phase
-boundary:
+targeting modes, threat accounting, the quest builder, and mob attack effects have landed.
+**Every content type §4 describes can now be authored in the browser with no SQL**, and the
+effect vocabulary runs in both directions.
 
-1. **Mob attacks cannot carry effects.** Every one of the seven executors is a player-only tool,
-   and the asymmetry is already live: a Warden's Shield Bash (9) takes a boss off its feet for
-   three seconds and the boss has no answer of any kind.
+**Next: 5.3 (communication and travel)** — `tell`, channels, parties and party XP split, and a
+second world reachable by portal. Parties are also what let a harmful AoE skip your own group
+rather than leaning on the `pvp` flag to do it (§4.11), and `AreaTargets` names the two lines that
+change. Then Phase 6 (ops).
+
+The item this section carried last, kept as the record of what it was and why the shape changed:
+
+1. **Mob attacks carry effects.** ~~Every one of the seven executors is a player-only tool~~ — the
+   asymmetry was live rather than theoretical: a Warden's Shield Bash (9) takes a boss off its
+   feet for three seconds and the boss had no answer of any kind.
    This used to read *"mobs cannot cast"*, which overstates it and invites a build big enough to
    defer forever. **The receiving side is already finished**: `ActiveEffect`, `world.ApplyEffect`,
    `IsStunned` gating both the cast command and the combat loop, `PreventsEscape` gating `flee`.
@@ -1835,17 +1842,22 @@ boundary:
    per-attack timers that already let a wolf bite every second and rake every three.
    *A departure from the traditional mob spellcaster, deliberately: a mob's abilities are things
    it does with its attacks rather than a spellbook it works through.*
-
-Then 5.3 (communication), which is also where parties arrive — and parties are what let a harmful
-AoE skip your own group rather than leaning on the `pvp` flag to do it. Then Phase 6 (ops).
+   Shipped as `MobAttack.EffectKey` + `EffectParams`, applied in `CombatSystem.ApplyRider` where
+   the swing's damage already lands — so the effect inherits the miss chance, the parry, and the
+   death check for free, and a stun you dodged does not stun you. It lands only on a survivor.
+   An unknown key is ignored at runtime (absence is the safe value, as with flags) and **refused**
+   at the builder API, where a typo is still cheap to fix. The editor offers only harmful effects:
+   a rider hits whoever the attack hit, so a helpful one would mean a mob mending the player it
+   just struck.
 
 **Not yet in any phase, from playtesting:**
 
-- Command-line autocomplete for item and mob names; `spawn` should complete against real keys.
-- An explicit per-template alias list. Matching is derived from the name now, which covers the
-  common case — but nothing reaches a named wolf called "Fang" whose key is `grey-wolf`.
+- An admin-triggered shutdown with a warning and a delay, a delay of zero meaning now. Probably
+  belongs beside the other admin commands in Phase 6, with the confirmation in the builder.
 - `examine` and `stats` are builder-aware; the other inspection commands (`look`, `inventory`,
   `consider`) are not.
+- Autocomplete and alias lists moved to §13 — both want a protocol or schema addition rather than
+  a command tweak, so neither is the small fix its one-line description suggests.
 
 **Two lessons from the audits, worth carrying forward:**
 

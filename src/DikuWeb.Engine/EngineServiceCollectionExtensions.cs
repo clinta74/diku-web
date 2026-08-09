@@ -94,7 +94,10 @@ public static class EngineServiceCollectionExtensions
                 sp.GetService<ItemTemplateCache>(),
                 sp.GetService<MobTemplateCache>(),
                 sp.GetService<ItemSpawner>(),
-                sp.GetService<ILogger<CombatSystem>>()));
+                sp.GetService<ILogger<CombatSystem>>(),
+                // Without this a mob attack carrying an effect swings for its damage and applies
+                // nothing - the silent half-feature this codebase keeps having to relearn.
+                sp.GetService<EffectRegistry>()));
 
         // Phase 5 systems (abilities, quests). Explicit for the same reason as CombatSystem: the
         // mob templates are what tell an area effect which mobs are non-combatants, and a

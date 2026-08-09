@@ -122,7 +122,16 @@ internal sealed class WorldHarness
         Writes = new RecordingWriteQueue();
         Editor = new LoopWorldEditor(Applier, Writes);
         Admin = new RecordingAdminQueue();
-        Combat = new EngineCombatSystem(Options, View, ItemTemplates, MobTemplates);
+        // With the real effect registry, so a mob attack that carries an effect actually applies
+        // it rather than swinging for damage alone.
+        Combat = new EngineCombatSystem(
+            Options,
+            View,
+            ItemTemplates,
+            MobTemplates,
+            itemSpawner: null,
+            logger: null,
+            effects: new Domain.Abilities.Effects.EffectRegistry());
 
         // With a cache and the real effect registry, so a cast resolves into an actual effect
         // rather than falling out of Tick with nothing to apply. The mob templates are what tell

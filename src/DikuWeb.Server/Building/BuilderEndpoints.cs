@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Spawning;
@@ -1242,10 +1243,29 @@ public static class BuilderEndpoints
             {
                 return refusal;
             }
+
+            // Refused rather than stored, the same way an unknown room flag is (§4.10). An effect
+            // key nothing answers to would be a mob attack that silently swings for damage alone,
+            // and the builder would have no way to tell that from an effect that simply missed.
+            if (!string.IsNullOrWhiteSpace(attack.EffectKey) &&
+                !KnownEffects.Contains(attack.EffectKey.Trim()))
+            {
+                return Invalid($"'{attack.EffectKey}' is not a known effect.");
+            }
         }
 
         return null;
     }
+
+    /// <summary>
+    /// The effect executors that exist, for validating what a mob attack may carry.
+    /// </summary>
+    /// <remarks>
+    /// The registry itself rather than a list of keys beside it: a second copy is how the
+    /// catalogue test drifted, and this one would drift the same way the day an eighth executor
+    /// lands. Stateless, so one shared instance is fine.
+    /// </remarks>
+    private static readonly EffectRegistry KnownEffects = new();
 
     /// <summary>
     /// Tidies an authored attack list. A blank verb defaults rather than being refused - the
@@ -1259,5 +1279,13 @@ public static class BuilderEndpoints
                 Verb = AttackTiming.VerbOr(a.Verb),
                 DelayPulses = AttackTiming.Clamp(a.DelayPulses),
                 DamageMultiplier = a.DamageMultiplier,
+
+                // Carried through, not dropped. Rebuilding the row field by field is what makes
+                // this the exact place a newly added property goes missing - silently, since the
+                // save succeeds and only the effect is gone.
+                EffectKey = string.IsNullOrWhiteSpace(a.EffectKey) ? null : a.EffectKey.Trim(),
+                EffectParams = a.EffectParams is { Count: > 0 }
+                    ? new Dictionary<string, string>(a.EffectParams, StringComparer.Ordinal)
+                    : null,
             })];
 }

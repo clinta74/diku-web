@@ -12,6 +12,8 @@ import { readBehavior, writeBehavior, type BehaviorDraft } from './behavior'
 import { MobStatsEditor } from './MobStatsEditor'
 import { LootEditor } from './LootEditor'
 import { readLoot, writeLoot, type LootRow } from './mobStats'
+import { Select } from '../../ui/Select'
+import { ATTACK_EFFECTS, effectOption, pruneParams } from './attackEffects'
 
 interface Props {
   templateKey: string
@@ -128,8 +130,38 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
     setDirty(true)
   }
 
+  /**
+   * Changing the effect discards the previous one's parameters. The executors skip what they do
+   * not recognise, so a stale `tickDamage` left on a stun would be invisible rather than wrong -
+   * until someone reads the row and cannot tell what it was meant to do.
+   */
+  function editAttackEffect(index: number, effectKey: string) {
+    setAttacks((current) =>
+      current.map((a, i) =>
+        i === index
+          ? { ...a, effectKey: effectKey || null, effectParams: pruneParams(effectKey, a.effectParams) }
+          : a,
+      ),
+    )
+    setDirty(true)
+  }
+
+  function editAttackParam(index: number, key: string, value: string) {
+    setAttacks((current) =>
+      current.map((a, i) => {
+        if (i !== index) return a
+        const next = { ...(a.effectParams ?? {}), [key]: value }
+        return { ...a, effectParams: pruneParams(a.effectKey, next) }
+      }),
+    )
+    setDirty(true)
+  }
+
   function addAttack() {
-    setAttacks((current) => [...current, { verb: 'hit', delayPulses: 8, damageMultiplier: null }])
+    setAttacks((current) => [
+      ...current,
+      { verb: 'hit', delayPulses: 8, damageMultiplier: null, effectKey: null, effectParams: null },
+    ])
     setDirty(true)
   }
 
@@ -254,6 +286,45 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
             </button>
           </div>
         ))}
+
+        {attacks.map((attack, index) => {
+          const option = effectOption(attack.effectKey)
+          return (
+            <div className="attack-effect" key={`effect-${index}`}>
+              <Field
+                label={`“${attack.verb || 'hit'}” also…`}
+                hint={option?.summary ?? 'Nothing beyond its damage.'}
+              >
+                <Select
+                  value={attack.effectKey ?? ''}
+                  onChange={(v) => editAttackEffect(index, v)}
+                >
+                  <option value="">— nothing —</option>
+                  {ATTACK_EFFECTS.map((effect) => (
+                    <option key={effect.key} value={effect.key}>
+                      {effect.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+
+              {option && (
+                <div className="stat-grid">
+                  {option.params.map((param) => (
+                    <Field key={param.key} label={param.label} hint={param.hint}>
+                      <input
+                        value={attack.effectParams?.[param.key] ?? ''}
+                        placeholder={param.fallback}
+                        inputMode={param.integer ? 'numeric' : 'text'}
+                        onChange={(e) => editAttackParam(index, param.key, e.target.value)}
+                      />
+                    </Field>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
 
         <button type="button" onClick={addAttack}>
           Add attack
