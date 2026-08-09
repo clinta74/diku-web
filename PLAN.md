@@ -1893,8 +1893,22 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
       does not have — so it is a deployment note in `Program.cs`, not a silent default.
       (`DigThrottle` predates this and still covers `dig` on its own, guarding against a held key
       carving forty rooms rather than against load.)
-- [ ] OpenTelemetry: pulse duration p50/p99, sessions, commands/s, queue depths
-      — nothing is instrumented; the slow-pulse watchdog logs but does not measure
+- [x] **Instrumented, with no exporter** — `EngineMetrics`, six instruments on a meter named
+      `DikuWeb.Engine`: pulse duration, pulses over budget, command latency, commands handled,
+      active sessions, rooms loaded. All `System.Diagnostics.Metrics` primitives from the base
+      library, so **nothing was added to the dependency graph**.
+      The line is drawn there deliberately: instrumentation has to live in the code, but where it
+      is sent is a deployment decision and can be made later. A deployment that wants these
+      shipped adds an OpenTelemetry exporter pointed at the meter name and changes no code.
+      **Every pulse is recorded, not only the slow ones.** The watchdog logs a line when a pulse
+      runs over budget, which answers *did that happen* and cannot answer *is it getting worse* —
+      a log has no distribution, so one bad pulse and a p99 that has been creeping up for a week
+      look identical.
+      Command latency is stamped at **gateway acceptance**, not when the loop picks the message
+      up: the queue wait is the interesting part of the §11 target, and measuring from the pick-up
+      would hide exactly the delay worth seeing.
+- [ ] Exporter and dashboard — the numbers in §11 are still unverified against a real deployment.
+      The instruments now exist to verify them; nothing yet collects them.
 - [ ] Scheduled `pg_dump` backups + a rehearsed restore drill
 - [ ] World export/import (JSON) for moving content between environments
 - [ ] Deployment pipeline:
@@ -1927,6 +1941,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
 | Spawners | A mob that wandered out still counts; ten sweeps that scatter what they made never exceed the target; a kill is replaced; two spawners of the same template do not count each other's work; a mob a builder placed by hand satisfies nobody's target. |
 | Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |
+| Telemetry | Every pulse is recorded rather than only the slow ones; an over-budget pulse is counted as well as timed; a command with no acceptance timestamp is counted but not timed; the gauges read live state at collection time. Meter and instrument names are pinned, because renaming one breaks every dashboard silently — the metrics simply stop arriving. *The numbers themselves are deliberately not asserted: a p99 measured under an xUnit host is not the p99 §11 is about.* |
 | Rate limits | A flood is refused once the bucket empties but the early commands still land; the 429 carries `Retry-After`; **one player's flood does not refuse another player**, which is the load-bearing property — a global partition would let anyone switch the game off for everyone; the event stream is never limited; repeated failed logins are. Asserted against a host configured with real numbers, since the shared test host lifts them out of the way. |
 | Moderation | A mute is refused on every one of the six verbs that carry words to another player, expires against the clock rather than by a sweep, and stops none of walking, fighting, or turning a channel off. The account verbs enqueue rather than acting, since the loop cannot read the account store. No new verb steals an older one's abbreviation. |
 | Admin | Every verb reads as unknown to a player *and to a builder* — content authority is not moderation authority. Teleport ignores `noRecall` and a fight; kick asks the loop rather than removing anyone itself, and cannot name the caller. Shutdown warns before it acts, reports without acting when asked bare, reschedules rather than refusing, does not announce milestones longer than its own delay, and only reaches the host when the countdown actually runs out. |

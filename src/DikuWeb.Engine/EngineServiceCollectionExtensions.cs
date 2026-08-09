@@ -10,6 +10,7 @@ using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Quests;
 using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.Systems;
+using DikuWeb.Engine.Telemetry;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
 using Microsoft.Extensions.DependencyInjection;
@@ -124,6 +125,15 @@ public static class EngineServiceCollectionExtensions
             new ShutdownSchedule(
                 sp.GetRequiredService<IGameClock>(),
                 sp.GetService<IShutdownSignal>()));
+
+        // Instruments only, no exporter (PLAN.md §8, Phase 6). Nothing leaves the process until a
+        // deployment adds one pointed at EngineMetrics.MeterName, which needs no change here -
+        // instrumentation belongs in the code, where it is sent does not.
+        //
+        // Resolved through IMeterFactory where the host provides one, so a test host gets its own
+        // Meter rather than sharing a process-wide singleton with every other test host.
+        services.AddSingleton<EngineMetrics>(sp =>
+            new EngineMetrics(sp.GetService<System.Diagnostics.Metrics.IMeterFactory>()));
 
         // Game loop - wired once all systems are available
         services.AddHostedService<GameLoop>();

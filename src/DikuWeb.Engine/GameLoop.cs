@@ -10,6 +10,7 @@ using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.Quests;
 using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.Systems;
+using DikuWeb.Engine.Telemetry;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
 using Microsoft.Extensions.Hosting;
@@ -52,6 +53,7 @@ public sealed class GameLoop(
     CombatSystem? combatSystem,
     AbilitySystem? abilitySystem,
     ShutdownSchedule? shutdown,
+    EngineMetrics? metrics,
     EngineOptions options,
     ILogger<GameLoop> logger) : BackgroundService
 {
@@ -100,6 +102,10 @@ public sealed class GameLoop(
 
         EngineLog.LoopStarting(logger, world.RoomCount, GameTiming.PulseInterval.TotalMilliseconds);
 
+        // Published once the world is loaded, so the first collection reports real counts rather
+        // than the zeroes an empty pre-load world would give.
+        metrics?.PublishGauges(() => world.PlayerCount, () => world.RoomCount);
+
         using var timer = new PeriodicTimer(GameTiming.PulseInterval);
 
         try
@@ -120,7 +126,15 @@ public sealed class GameLoop(
                 }
 
                 var elapsed = Stopwatch.GetElapsedTime(start);
-                if (elapsed > GameTiming.PulseBudget)
+                var overBudget = elapsed > GameTiming.PulseBudget;
+
+                // Recorded every pulse, not only the slow ones. The log answers "did that
+                // happen"; only a distribution answers "is it getting worse", and a log of the
+                // failures alone cannot tell one bad pulse from a p99 that has been creeping up
+                // for a week (PLAN.md §11).
+                metrics?.RecordPulse(elapsed.TotalMilliseconds, overBudget);
+
+                if (overBudget)
                 {
                     EngineLog.SlowPulse(
                         logger,
@@ -215,6 +229,12 @@ public sealed class GameLoop(
                     break;
                 case PlayerCommand command:
                     HandleCommand(command);
+
+                    // Timed here rather than inside the handler, which has half a dozen early
+                    // returns - a refused verb still cost the queue wait and still tells you what
+                    // the loop's latency looks like.
+                    metrics?.RecordCommand(
+                        Stopwatch.GetElapsedTime(command.AcceptedAt).TotalMilliseconds);
                     break;
                 case LeaveWorld leave:
                     HandleLeave(leave);

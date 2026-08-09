@@ -67,6 +67,20 @@ public sealed record EnterWorld : SessionMessage
 public sealed record PlayerCommand : SessionMessage
 {
     public required string Input { get; init; }
+
+    /// <summary>
+    /// When this was created, as a <see cref="System.Diagnostics.Stopwatch"/> timestamp
+    /// (PLAN.md §8, Phase 6).
+    /// </summary>
+    /// <remarks>
+    /// Defaulted at construction, so it is stamped where the command is accepted rather than
+    /// somewhere further in — the queue wait is the interesting part of the §11 target and
+    /// measuring from the moment the loop picked it up would hide exactly the delay worth seeing.
+    ///
+    /// A monotonic timestamp rather than a wall clock: this is only ever subtracted from a later
+    /// one, and wall time can step backwards.
+    /// </remarks>
+    public long AcceptedAt { get; init; } = System.Diagnostics.Stopwatch.GetTimestamp();
 }
 
 public sealed record LeaveWorld : SessionMessage
