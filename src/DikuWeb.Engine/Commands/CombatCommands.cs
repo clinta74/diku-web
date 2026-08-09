@@ -204,6 +204,16 @@ public static class CombatCommands
             return;
         }
 
+        // A snare denies the escape, which is the whole of what it does: ordinary movement is
+        // already refused while fighting, so a root that only blocked walking would do nothing
+        // in the one situation it is ever cast in.
+        if (ctx.World.IsRooted(character.Id, ctx.Clock?.CurrentPulse ?? 0L))
+        {
+            var holding = ctx.World.RootName(character.Id, ctx.Clock?.CurrentPulse ?? 0L) ?? "something";
+            ctx.Reply($"You cannot break away — you are {holding}.", "bad");
+            return;
+        }
+
         // End combat for this character
         var combat = ctx.World.FindCombat(character.RoomKey);
         if (combat != null)

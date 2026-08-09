@@ -141,6 +141,22 @@ public static class AbilityCatalogue
         };
 
     /// <summary>
+    /// Holds the target where it stands for <paramref name="duration"/> pulses: it can still
+    /// fight, but it cannot flee or walk away.
+    /// </summary>
+    /// <remarks>
+    /// Clamped by <c>RootEffect</c> for the same reason as the stun. What it denies is <c>flee</c>
+    /// - ordinary movement is already refused mid-fight, so blocking only that would do nothing
+    /// in the situation a snare is cast in.
+    /// </remarks>
+    private static Dictionary<string, string> Root(string duration, string name) =>
+        new(StringComparer.Ordinal)
+        {
+            ["durationPulses"] = duration,
+            ["name"] = name,
+        };
+
+    /// <summary>
     /// The whole catalogue, ordered by Path then unlock level.
     /// </summary>
     /// <remarks>
@@ -271,10 +287,13 @@ public static class AbilityCatalogue
             CostType.Stamina, 14, 56, null, TargetingType.Self,
             "buff.damage-up", Buff("1.3", "72", "fortified")),
 
-        new(CharacterPath.Shade, 7, "shade.shadowstep", "Shadowstep",
-            "Cross the gap without crossing the ground.",
-            CostType.Stamina, 16, 24, null, TargetingType.SingleTarget,
-            "damage.physical", Damage("1.6", "8")),
+        // Shadowstep was a third flat damage number on a Path that already had several. A
+        // hamstring is the thing an assassin actually wants and nothing else in the game does:
+        // it decides whether the fight ends, rather than how fast.
+        new(CharacterPath.Shade, 7, "shade.hamstring", "Hamstring",
+            "Cut low. Whatever it was going to do next, it is not going anywhere.",
+            CostType.Stamina, 16, 60, null, TargetingType.SingleTarget,
+            "control.root", Root("32", "hamstrung")),
 
         // Ambush is the Shade's bleed rather than another number: applied early it out-damages
         // the burst it replaced, and applied late it does almost nothing. Stacks to three, so

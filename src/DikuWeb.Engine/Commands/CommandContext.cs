@@ -1,7 +1,8 @@
-using DikuWeb.Domain.Worlds;
+﻿using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Quests;
+using DikuWeb.Engine.Time;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.Spawning;
@@ -52,6 +53,11 @@ public sealed class CommandContext
 
     /// <summary>Engine tuning the handlers read, such as the shop sellback rate.</summary>
     public EngineOptions? Options { get; init; }
+
+    /// <summary>
+    /// The game clock, for handlers that have to ask whether a timed effect is still running.
+    /// </summary>
+    public IGameClock? Clock { get; init; }
 
     /// <summary>Quest definitions the command layer reads. Null if quests are unavailable.</summary>
     public QuestCache? Quests { get; init; }

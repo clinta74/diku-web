@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Abilities;
@@ -433,6 +433,7 @@ public sealed class GameLoop(
             ItemTemplates = itemTemplateCache,
             MobTemplates = mobTemplateCache,
             Options = options,
+            Clock = clock,
             Quests = questCache,
             QuestSaveQueue = questSaveQueue,
             Verb = verb,

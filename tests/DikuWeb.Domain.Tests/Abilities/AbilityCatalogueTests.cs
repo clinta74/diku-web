@@ -27,6 +27,7 @@ public sealed class AbilityCatalogueTests
         "debuff.weaken",
         "damage.overtime",
         "control.stun",
+        "control.root",
     };
 
     [Fact]
@@ -187,6 +188,37 @@ public sealed class AbilityCatalogueTests
             Assert.True(
                 duration <= Domain.Abilities.Effects.StunEffect.MaxDurationPulses,
                 $"{entry.Key} stuns for {duration}, past the {Domain.Abilities.Effects.StunEffect.MaxDurationPulses}-pulse ceiling.");
+        }
+    }
+
+    /// <summary>Snares are clamped for the same reason stuns are, and pinned for the same reason.</summary>
+    [Fact]
+    public void No_snare_is_authored_longer_than_the_ceiling()
+    {
+        foreach (var entry in AbilityCatalogue.All.Where(e => e.EffectKey == "control.root"))
+        {
+            var duration = Read(entry, "durationPulses");
+
+            Assert.True(duration is > 0, $"{entry.Key} snares for {duration}.");
+            Assert.True(
+                duration <= Domain.Abilities.Effects.RootEffect.MaxDurationPulses,
+                $"{entry.Key} snares for {duration}, past the {Domain.Abilities.Effects.RootEffect.MaxDurationPulses}-pulse ceiling.");
+        }
+    }
+
+    /// <summary>
+    /// Control effects hold one target at a time and never stack, so nothing can be chained into
+    /// a permanent lock.
+    /// </summary>
+    [Fact]
+    public void No_control_effect_stacks()
+    {
+        foreach (var entry in AbilityCatalogue.All.Where(e => e.EffectKey.StartsWith("control.", StringComparison.Ordinal)))
+        {
+            var maxStacks = Read(entry, "maxStacks");
+            Assert.True(
+                maxStacks is null or 1,
+                $"{entry.Key} stacks to {maxStacks}, which chains into a lock.");
         }
     }
 

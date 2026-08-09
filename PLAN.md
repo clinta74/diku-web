@@ -1492,7 +1492,11 @@ multiplier from the browser, which is the half the phase goal is written about.
       an authored typo cannot remove someone from the game, and a catalogue test fails the build
       rather than letting the clamp apply silently. New `warden.shield-bash` at 9 — `warden.kick`
       stays instant damage.
-- [ ] One more executor would finish the set: a **snare/root**.
+- [x] **`control.root`** — the seventh, and the counterpart to the stun: it leaves the turn and
+      closes the exit. What it denies is `flee`; ordinary movement is already refused mid-fight,
+      so a root that only blocked walking would do nothing in the one situation it is cast in.
+      Clamped to 40 pulses. `shade.shadowstep` became `shade.hamstring`, which decides whether a
+      fight ends rather than how fast — something no damage number expressed.
 
 #### 5.1a–5.1d — Ability System ✅ **complete**
 - [x] Ability system: cost, cooldown, cast time, targeting rules
@@ -1692,16 +1696,17 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 editors, spawners, `questItem`, `baseStats`, ability progression, dormant quests, and the cast
 targeting bugs have all landed. What is left is mostly additive:
 
-1. **A fifth effect executor.** Paths differ in cost and cadence because only four effects exist
-   (`damage.physical`, `heal.restore`, `buff.damage-up`, `debuff.weaken`). A stun, interrupt,
-   snare, or damage-over-time is what would make them differ in *kind* — and it is the unlock for
-   both real combat depth and a `kick` that does something a `bash` does not.
-2. **`TargetingType.Aoe`** — worth doing once an ability wants it, and it needs parties (5.3) to
-   honour §4.11 in full. A build-breaking guard is in place until then.
-3. **Per-flag world and zone primitives** (Phase 2) — flag edits at those scopes are still
+1. **`TargetingType.Aoe`** — the last unimplemented targeting mode, and now the obvious home for
+   the seven executors that exist. It needs parties (5.3) to honour §4.11 in full; a
+   build-breaking guard is in place until then.
+2. **Per-flag world and zone primitives** (Phase 2) — flag edits at those scopes are still
    whole-map writes.
-4. **Loot table and `baseStats` editors** for mob templates (Phase 3).
-5. **Builder-authored armour** (Phase 4) — needs a design decision, not a patch.
+3. **Loot table and `baseStats` editors** for mob templates (Phase 3).
+4. **Builder-authored armour** (Phase 4) — needs a design decision, not a patch.
+5. **Mobs cannot cast.** `CastJob` keys on a character, and mobs fight through `MobAttack` rows
+   with no ability keys — so every effect below is a player-only tool. Giving mobs the same
+   vocabulary is what would let a boss stun, snare, or bleed, and is probably the largest
+   remaining lever on how combat *feels*.
 
 Then 5.3 (communication) and Phase 6 (ops).
 

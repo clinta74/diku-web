@@ -159,6 +159,16 @@ public sealed class CommandRegistry
             return;
         }
 
+        // Snared. This mostly matters out of combat - in a fight the check above has already
+        // refused - but a root that let you walk away the moment the fight ended would be a
+        // strange kind of snare.
+        if (ctx.World.IsRooted(character.Id, ctx.Clock?.CurrentPulse ?? 0L))
+        {
+            var holding = ctx.World.RootName(character.Id, ctx.Clock?.CurrentPulse ?? 0L) ?? "something";
+            ctx.Reply($"You cannot go anywhere — you are {holding}.", "bad");
+            return;
+        }
+
         var room = ctx.World.FindRoom(ctx.Actor.RoomKey);
         var exit = room?.ExitTo(direction);
 

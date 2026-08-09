@@ -1,4 +1,4 @@
-using System.Threading.Channels;
+﻿using System.Threading.Channels;
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
@@ -340,6 +340,7 @@ internal sealed class WorldHarness
             ItemTemplates = ItemTemplates,
             MobTemplates = MobTemplates,
             Options = Options,
+            Clock = Clock,
             Quests = Quests,
             QuestSaveQueue = QuestSaves,
             Verb = verb,

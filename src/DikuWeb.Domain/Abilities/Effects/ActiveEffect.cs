@@ -48,6 +48,16 @@ public sealed class ActiveEffect
     /// </remarks>
     public bool PreventsActing { get; init; }
 
+    /// <summary>
+    /// While true the bearer cannot leave: no walking out, and no fleeing a fight.
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="PreventsActing"/> rather than a degree of it. A stun takes the
+    /// turn and leaves the exit open; a snare leaves the turn and closes the exit. An ability can
+    /// reasonably want either without the other.
+    /// </remarks>
+    public bool PreventsEscape { get; init; }
+
     /// <summary>Pulse at which this effect expires and is removed.</summary>
     public long ExpiresAtPulse { get; set; }
 

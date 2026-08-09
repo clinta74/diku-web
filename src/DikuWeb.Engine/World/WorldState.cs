@@ -430,6 +430,24 @@ public sealed class WorldState(IRandomSource random)
         _activeEffects.TryGetValue(entityId, out var list) &&
         list.Any(e => e.PreventsActing && e.ExpiresAtPulse > currentPulse);
 
+    /// <summary>
+    /// Whether this entity is snared and so cannot leave the room or flee a fight.
+    /// </summary>
+    /// <remarks>
+    /// Expiry is checked here for the same reason as <see cref="IsStunned"/>: the sweep that
+    /// removes effects runs on the 60s tick, and a snare measured in seconds would otherwise
+    /// hold long after it was supposed to let go.
+    /// </remarks>
+    public bool IsRooted(Guid entityId, long currentPulse) =>
+        _activeEffects.TryGetValue(entityId, out var list) &&
+        list.Any(e => e.PreventsEscape && e.ExpiresAtPulse > currentPulse);
+
+    /// <summary>The name of whatever is holding this entity, for narration.</summary>
+    public string? RootName(Guid entityId, long currentPulse) =>
+        _activeEffects.TryGetValue(entityId, out var list)
+            ? list.FirstOrDefault(e => e.PreventsEscape && e.ExpiresAtPulse > currentPulse)?.Name
+            : null;
+
     /// <summary>Apply a new effect to an entity, handling stacking rules.</summary>
     public void ApplyEffect(Guid entityId, ActiveEffect effect)
     {
