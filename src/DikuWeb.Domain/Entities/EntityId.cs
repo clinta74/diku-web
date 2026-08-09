@@ -60,4 +60,21 @@ public static class EntityId
 
         return Guid.Parse(entityId.AsSpan(PrefixLength));
     }
+
+    /// <summary>
+    /// Whether this string is an ID <see cref="ToGuid"/> can actually read.
+    /// </summary>
+    /// <remarks>
+    /// For the places an ID arrives from storage rather than from <see cref="ForCharacter"/> -
+    /// an effect's recorded source, most of all, which round-trips through jsonb and outlives the
+    /// cast that set it. <see cref="ToGuid"/> throws on a malformed one, and the combat loop is
+    /// the worst possible place to find that out: a single bad ID in a hate list would take down
+    /// the tick, and a dead loop is a dead world for everyone connected. Check before admitting
+    /// an ID to a structure the loop iterates.
+    /// </remarks>
+    public static bool IsWellFormed(string? entityId) =>
+        entityId is not null &&
+        (entityId.StartsWith(CharacterPrefix, StringComparison.Ordinal) ||
+         entityId.StartsWith(MobPrefix, StringComparison.Ordinal)) &&
+        Guid.TryParse(entityId.AsSpan(PrefixLength), out _);
 }

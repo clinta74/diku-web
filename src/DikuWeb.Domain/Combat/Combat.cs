@@ -140,4 +140,50 @@ public sealed class Combat
         }
         return null;
     }
+
+    /// <summary>How much this mob hates one attacker. Zero when it has no reason to.</summary>
+    public int HateOf(string mobId, string attackerId) =>
+        HateLists.TryGetValue(mobId, out var hateList) &&
+        hateList.TryGetValue(attackerId, out var hate)
+            ? hate
+            : 0;
+
+    /// <summary>The highest threat anyone holds against this mob, or zero if nobody does.</summary>
+    public int HighestHate(string mobId) =>
+        HateLists.TryGetValue(mobId, out var hateList) && hateList.Count > 0
+            ? hateList.Values.Max()
+            : 0;
+
+    /// <summary>
+    /// Puts one attacker at the top of a mob's hate list, ahead of the current leader by
+    /// <paramref name="lead"/>, and returns the threat they now hold.
+    /// </summary>
+    /// <remarks>
+    /// The only thing in the game that writes threat rather than adding it, which is what makes a
+    /// taunt a taunt: everything else earns its place by dealing damage.
+    /// </remarks>
+    /// <para>
+    /// <b>A lead, not a lock.</b> The list stays a damage meter, so whoever the taunt displaced
+    /// climbs back by dealing <paramref name="lead"/> more damage than the taunter does in the
+    /// meantime. That is deliberate - a taunt that pinned a mob permanently would delete the
+    /// decision it exists to create, and holding threat would stop being something a Warden has
+    /// to keep doing.
+    /// </para>
+    /// <para>
+    /// Never lowers anyone. A taunter who is already miles ahead keeps what they had rather than
+    /// being dropped to a computed number, so taunting twice cannot cost you the lead.
+    /// </para>
+    public int ForceTopHater(string mobId, string attackerId, int lead)
+    {
+        if (!HateLists.TryGetValue(mobId, out var hateList))
+        {
+            return 0;
+        }
+
+        var target = HighestHate(mobId) + Math.Max(1, lead);
+        var current = hateList.TryGetValue(attackerId, out var held) ? held : 0;
+
+        hateList[attackerId] = Math.Max(current, target);
+        return hateList[attackerId];
+    }
 }

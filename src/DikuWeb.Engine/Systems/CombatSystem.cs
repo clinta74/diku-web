@@ -562,6 +562,13 @@ public sealed class CombatSystem(
                 var damage = effect.TickDamage * Math.Max(1, effect.Stacks);
 
                 ApplyDamage(world, combatantId, damage);
+
+                // Credited to whoever applied it, not to whoever is standing nearby. A Shade's
+                // Ambush is most of that Path's damage, and without this none of it was worth any
+                // threat - the bleed did the work and the melee got the blame.
+                ThreatCredit.CreditTick(
+                    world, combat.RoomKey, effect.SourceEntityId, combatantId, damage);
+
                 NarrateTick(world, combat, combatantId, effect, damage);
 
                 if (HealthOf(world, combatantId) <= 0)

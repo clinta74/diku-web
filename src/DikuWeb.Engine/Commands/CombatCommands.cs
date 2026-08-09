@@ -4,6 +4,7 @@ using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Inhabitants;
+using DikuWeb.Engine.Systems;
 
 namespace DikuWeb.Engine.Commands;
 
@@ -118,22 +119,13 @@ public static class CombatCommands
         else if (targetMob != null)
         {
             var displayName = string.IsNullOrEmpty(targetMob.TemplateName) ? targetMob.TemplateKey : targetMob.TemplateName;
-            var targetId = EntityId.ForMob(targetMob.Id);
-            character.CombatState = CombatState.Fighting;
-            character.CurrentTarget = targetId;
-            combat.AddCombatant(EntityId.ForCharacter(character.Id));
-            combat.AddCombatant(targetId);
-            combat.PlayerTargets[character.Id] = targetId;
 
-            // Seed hate so the mob fights back from the moment it is attacked rather than from
-            // the moment it is first hurt. It picks its target by top hater, and with weapons
-            // now swinging on their own clocks a slow opener would otherwise leave it standing
-            // there. This mirrors what MobAiSystem does when a mob starts the fight itself.
-            combat.AddToHateList(targetId, EntityId.ForCharacter(character.Id), 1);
+            // The six steps of starting a fight live in one place, because three things now do it
+            // - this verb, a taunt, and a damaging ability landing on something not yet engaged.
+            CombatEngagement.Engage(ctx.World, character, targetMob);
 
             ctx.Reply($"You begin attacking {NarrationHelper.WithArticle(displayName)}!");
             ctx.Broadcast($"{actor.Name} attacks {NarrationHelper.WithArticle(displayName)}!");
-            targetMob.CombatState = CombatState.Fighting;
         }
     }
 

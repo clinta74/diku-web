@@ -6,6 +6,7 @@ using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Presentation;
+using DikuWeb.Engine.Systems;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
 using Microsoft.Extensions.Logging;
@@ -125,7 +126,14 @@ public sealed class AbilitySystem(
         // cast, not by the target, which is the whole reason to bring one.
         foreach (var target in targets)
         {
+            // Health before and after, rather than asking the executor how much it dealt. The
+            // executors return void and each computes damage its own way; reading the wound is
+            // the one measure that is true of all of them and cannot drift from what landed.
+            var before = HealthOf(target);
+
             effect.Apply(caster, target, ability.EffectParams, world.Random);
+
+            CreditThreat(world, caster, target, before);
 
             // If this is a buff/debuff effect, also create the ongoing active effect state
             if (effect is IBuffEffect buffEffect)
@@ -141,6 +149,52 @@ public sealed class AbilitySystem(
                 // cover stuns delivered by a player's cast.
             }
         }
+    }
+
+    private static int HealthOf(object target) => target switch
+    {
+        Character character => character.Vitals.Health,
+        Mob mob => mob.Vitals.Health,
+        _ => 0,
+    };
+
+    /// <summary>
+    /// Puts what an ability just did on the mob's hate list, engaging it if it was not fighting.
+    /// </summary>
+    /// <remarks>
+    /// Ability damage used to reach <c>Vitals.Health</c> and stop there, so it was worth no
+    /// threat at all. That inverted the design of the hate list, which picks its target by
+    /// cumulative damage: <b>the Adept, the Path built to deal the most damage in the game, was
+    /// the only one that could never pull a mob off anyone.</b> Cataclysm could take most of a
+    /// boss's health and leave it chewing on the Warden who had scratched it twice.
+    ///
+    /// Hurting something also starts the fight, the way swinging at it does. Without that an
+    /// opening Bolt was free: the mob took the damage and stood there, because nothing had put it
+    /// in combat, and the threat had nowhere to be recorded either.
+    /// </remarks>
+    private static void CreditThreat(WorldState world, Character caster, object target, int before)
+    {
+        if (target is not Mob mob)
+        {
+            return;
+        }
+
+        var damage = before - mob.Vitals.Health;
+        if (damage <= 0)
+        {
+            return;
+        }
+
+        // Not a retarget: an area effect hits everything in the room, and swinging the caster's
+        // own weapon round to the last thing the flames touched is not what they asked for.
+        CombatEngagement.Engage(world, caster, mob, retarget: false);
+
+        ThreatCredit.Credit(
+            world,
+            caster.RoomKey,
+            EntityId.ForCharacter(caster.Id),
+            EntityId.ForMob(mob.Id),
+            damage);
     }
 
     /// <summary>
