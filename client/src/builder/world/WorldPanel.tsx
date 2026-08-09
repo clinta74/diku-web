@@ -138,13 +138,9 @@ export function WorldPanel({ worldKey, onDeleted }: Props) {
           scope="world"
           flags={world.flags}
           inheritedNote="World flags sit at the top of the chain — a change here can flip a flag for every room in the world at once."
-          onSet={(key, value) => {
-            const next = { ...world.flags }
-            if (value === null) delete next[key]
-            else next[key] = value
-
-            return builderApi.updateWorld(world.key, { flags: next }).then(() => refreshWorlds())
-          }}
+          onSet={(key, value) =>
+            builderApi.setWorldFlag(world.key, key, value).then(() => refreshWorlds())
+          }
         />
       )}
 

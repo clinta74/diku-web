@@ -17,9 +17,9 @@ interface Props {
  * `pvp` and `peaceful` as two-state buttons, so it could express neither the distinction nor any
  * flag added later.
  *
- * Unlike the room editor this is still a whole-map write — there is no per-flag world or zone
- * primitive yet — so two builders editing one zone's flags at the same moment can overwrite each
- * other. Worth fixing when a second builder is ever likely; not worth blocking this on.
+ * Each toggle is a single-flag PUT, like the room editor's. It was briefly a whole-map write, and
+ * two builders in one zone would then silently overwrite each other's flags — the loser's edit
+ * vanished with no error, since the winning request carried a perfectly valid map.
  */
 export function ScopedFlagList({ scope, flags, inheritedNote, onSet }: Props) {
   const { flagDefinitions } = useBuilderData()

@@ -129,15 +129,9 @@ export function ZonePanel({ zoneKey }: ZonePanelProps) {
           scope="zone"
           flags={zone.flags}
           inheritedNote="Unset flags fall through to the world, then to the registry default."
-          onSet={(key, value) => {
-            const next = { ...zone.flags }
-            if (value === null) delete next[key]
-            else next[key] = value
-
-            return builderApi
-              .updateZone(zone.key, { flags: next })
-              .then(() => loadZones(zone.worldKey))
-          }}
+          onSet={(key, value) =>
+            builderApi.setZoneFlag(zone.key, key, value).then(() => loadZones(zone.worldKey))
+          }
         />
       )}
 

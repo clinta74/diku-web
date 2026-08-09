@@ -128,15 +128,15 @@ public sealed record SaveRoomRequest(
 public sealed record SaveExitRequest(string? To, bool Reciprocal = true);
 
 /// <summary>
-/// One flag, three states. <c>true</c> and <c>false</c> are decisions about this room;
-/// <c>null</c> removes the key so the zone or world decides.
+/// One flag, three states, at whichever of the three scopes the route names. <c>true</c> and
+/// <c>false</c> are decisions made here; <c>null</c> removes the key so the level above decides.
 /// </summary>
 /// <remarks>
 /// This exists so the editor never has to send a whole flag map to change one flag.
-/// <see cref="SaveRoomRequest.Flags"/> replaces the entire set, which quietly discards
-/// whatever another builder set in the meantime.
+/// <see cref="SaveRoomRequest.Flags"/> and its world and zone equivalents replace the entire set,
+/// which quietly discards whatever another builder set in the meantime.
 /// </remarks>
-public sealed record SetRoomFlagRequest(bool? Value);
+public sealed record SetFlagRequest(bool? Value);
 
 /// <summary>PLAN.md §7.6. Every field optional: <c>{ "direction": "north" }</c> is the common case.</summary>
 public sealed record DigRequest(

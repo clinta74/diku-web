@@ -315,7 +315,7 @@ public static class BuilderRoomEndpoints
     private static async Task<IResult> SetFlagAsync(
         string key,
         string flag,
-        SetRoomFlagRequest request,
+        SetFlagRequest request,
         WorldEditor editor,
         BuilderQueries queries,
         HttpContext http,

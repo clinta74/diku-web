@@ -187,6 +187,33 @@ public sealed record SetRoomFlag(RoomKey Key, string Flag, bool? Value) : WorldC
     public override string EntityKey => Key.ToString();
 }
 
+/// <summary>
+/// Sets or clears one flag on one zone, leaving its siblings alone. A null value clears it, which
+/// is not the same as setting it false - the key is removed, so the world above decides (§4.10).
+/// </summary>
+/// <remarks>
+/// The alternative is what the builder did before this existed: read the whole flag map, edit one
+/// key, and PATCH it back. Two builders working in one zone then erase each other, and the loss is
+/// silent - the second write simply carries an older map. Rooms already had this primitive; the
+/// scopes above them are where the blast radius is largest, so they needed it more.
+/// </remarks>
+public sealed record SetZoneFlag(string Key, string Flag, bool? Value) : WorldChange
+{
+    public override string EntityKind => "zone";
+
+    public override string EntityKey => Key;
+}
+
+/// <summary>
+/// Sets or clears one flag on one world. See <see cref="SetZoneFlag"/> - same shape, one level up.
+/// </summary>
+public sealed record SetWorldFlag(string Key, string Flag, bool? Value) : WorldChange
+{
+    public override string EntityKind => "world";
+
+    public override string EntityKey => Key;
+}
+
 // ---------------------------------------------------------------------------
 // Templates and Spawners
 // ---------------------------------------------------------------------------

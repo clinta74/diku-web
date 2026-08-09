@@ -59,6 +59,8 @@ public sealed class WorldMutationApplier(
             DigRoom change => ApplyDig(change),
             RenameRoom change => ApplyRename(change),
             SetRoomFlag change => ApplySetFlag(change),
+            SetZoneFlag change => ApplySetZoneFlag(change),
+            SetWorldFlag change => ApplySetWorldFlag(change),
             UpsertMobTemplate change => ApplyUpsertMobTemplate(change),
             DeleteMobTemplate change => ApplyDeleteMobTemplate(change),
             UpsertItemTemplate change => ApplyUpsertItemTemplate(change),
@@ -144,6 +146,27 @@ public sealed class WorldMutationApplier(
         return MutationResult.Ok([change]);
     }
 
+    private MutationResult ApplySetWorldFlag(SetWorldFlag change)
+    {
+        var target = world.FindWorld(change.Key);
+        if (target is null)
+        {
+            return MutationResult.Fail(MutationError.NotFound, $"No world '{change.Key}'.");
+        }
+
+        if (EditFlag(target.Flags, change.Flag, change.Value) is not { } flags)
+        {
+            return UnknownFlag(change.Flag);
+        }
+
+        target.Flags = flags;
+
+        // Top of the inheritance chain, so this can flip a flag for every room in the world.
+        RefreshWorld(change.Key);
+
+        return MutationResult.Ok([ToUpsert(target)]);
+    }
+
     // -----------------------------------------------------------------------
     // Zones
     // -----------------------------------------------------------------------
@@ -226,6 +249,25 @@ public sealed class WorldMutationApplier(
 
         world.RemoveZone(change.Key);
         return MutationResult.Ok([change]);
+    }
+
+    private MutationResult ApplySetZoneFlag(SetZoneFlag change)
+    {
+        var zone = world.FindZone(change.Key);
+        if (zone is null)
+        {
+            return MutationResult.Fail(MutationError.NotFound, $"No zone '{change.Key}'.");
+        }
+
+        if (EditFlag(zone.Flags, change.Flag, change.Value) is not { } flags)
+        {
+            return UnknownFlag(change.Flag);
+        }
+
+        zone.Flags = flags;
+        RefreshZone(change.Key);
+
+        return MutationResult.Ok([ToUpsert(zone)]);
     }
 
     // -----------------------------------------------------------------------
@@ -412,25 +454,9 @@ public sealed class WorldMutationApplier(
             return MutationResult.Fail(MutationError.NotFound, $"No room '{change.Key}'.");
         }
 
-        if (!RoomFlags.IsKnown(change.Flag))
+        if (EditFlag(room.Flags, change.Flag, change.Value) is not { } flags)
         {
-            // Refused rather than stored. Unknown keys are preserved when they arrive from the
-            // database (§4.10), but there is no reason to let a builder type a new one into
-            // existence - it would be a flag nothing ever reads.
-            return MutationResult.Fail(
-                MutationError.Invalid,
-                $"'{change.Flag}' is not a known room flag.");
-        }
-
-        var flags = room.Flags.Clone();
-
-        if (change.Value is { } value)
-        {
-            flags.Set(change.Flag, value);
-        }
-        else
-        {
-            flags.Clear(change.Flag);
+            return UnknownFlag(change.Flag);
         }
 
         room.Flags = flags;
@@ -438,6 +464,46 @@ public sealed class WorldMutationApplier(
 
         return MutationResult.Ok([ToUpsert(room)], change.Key);
     }
+
+    /// <summary>
+    /// Applies one flag edit to a copy of a flag set, or returns null if the registry does not
+    /// know the key.
+    /// </summary>
+    /// <remarks>
+    /// Shared by all three scopes, so a null value means "remove the key and let the level above
+    /// decide" identically at each of them - the distinction the three-state control in the
+    /// builder exists to express (§4.10). The set is copied rather than edited in place because
+    /// callers hand the result straight to a primitive that persistence replays.
+    /// </remarks>
+    private static FlagSet? EditFlag(FlagSet current, string flag, bool? value)
+    {
+        if (!RoomFlags.IsKnown(flag))
+        {
+            return null;
+        }
+
+        var next = current.Clone();
+
+        if (value is { } set)
+        {
+            next.Set(flag, set);
+        }
+        else
+        {
+            next.Clear(flag);
+        }
+
+        return next;
+    }
+
+    /// <remarks>
+    /// Refused rather than stored. Unknown keys are preserved when they arrive from the database
+    /// (§4.10), but there is no reason to let a builder type a new one into existence - it would
+    /// be a flag nothing ever reads.
+    /// </remarks>
+    private static MutationResult UnknownFlag(string flag) => MutationResult.Fail(
+        MutationError.Invalid,
+        $"'{flag}' is not a known room flag.");
 
     // -----------------------------------------------------------------------
     // Exits
@@ -685,6 +751,44 @@ public sealed class WorldMutationApplier(
         }
 
         return room;
+    }
+
+    /// <summary>
+    /// The whole-entity primitive describing a world as it now stands.
+    /// </summary>
+    /// <remarks>
+    /// A single-flag edit still replays as a full upsert, because the persistence layer writes
+    /// rows, not field deltas. The narrow primitive is about what the <em>builder</em> sends -
+    /// one key, so concurrent edits to different flags no longer clobber each other - and the
+    /// row written afterwards is the one memory just settled on.
+    /// </remarks>
+    public static UpsertWorld ToUpsert(Domain.Worlds.World target)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+
+        return new UpsertWorld(
+            target.Key,
+            target.Name,
+            target.Description,
+            target.SortOrder,
+            target.Flags.Clone(),
+            target.Multipliers.Clone());
+    }
+
+    /// <inheritdoc cref="ToUpsert(Domain.Worlds.World)"/>
+    public static UpsertZone ToUpsert(Zone zone)
+    {
+        ArgumentNullException.ThrowIfNull(zone);
+
+        return new UpsertZone(
+            zone.Key,
+            zone.WorldKey,
+            zone.Name,
+            zone.Description,
+            zone.MinLevel,
+            zone.MaxLevel,
+            zone.Flags.Clone(),
+            zone.Multipliers.Clone());
     }
 
     public static UpsertRoom ToUpsert(Room room)

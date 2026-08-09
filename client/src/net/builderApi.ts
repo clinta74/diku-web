@@ -238,6 +238,13 @@ export const builderApi = {
       body: JSON.stringify(body),
     }),
 
+  /** @see setRoomFlag — same three states, one scope up. */
+  setWorldFlag: (key: string, flag: string, value: boolean | null) =>
+    request<WorldSummary>(`${base}/worlds/${key}/flags/${flag}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value }),
+    }),
+
   deleteWorld: (key: string) =>
     request<void>(`${base}/worlds/${key}`, { method: 'DELETE' }),
 
@@ -254,6 +261,13 @@ export const builderApi = {
     request<ZoneSummary>(`${base}/zones/${key}`, {
       method: 'PATCH',
       body: JSON.stringify(body),
+    }),
+
+  /** @see setRoomFlag — same three states, one scope up. */
+  setZoneFlag: (key: string, flag: string, value: boolean | null) =>
+    request<ZoneSummary>(`${base}/zones/${key}/flags/${flag}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value }),
     }),
 
   deleteZone: (key: string) => request<void>(`${base}/zones/${key}`, { method: 'DELETE' }),

@@ -1290,9 +1290,10 @@ Rooms, exits, flags, and the canvas are done and hold up. What is missing is a l
 - [x] **The zone editor renders the flag registry**, the way the room editor does, so a newly
       registered flag appears with no client change — and carries name, description, and level
       range. It was two literal buttons (`pvp`, `peaceful`) and nothing else.
-- [ ] World and zone flag edits are still **whole-map writes** — there is no per-flag primitive
-      for either, so two builders editing one zone's flags at the same moment overwrite each
-      other. The room editor has had per-flag `PUT` since Phase 2.
+- [x] **Per-flag world and zone primitives** (`SetWorldFlag`, `SetZoneFlag`, both `PUT
+      …/flags/{flag}`). All three scopes now edit one key at a time. They were whole-map writes,
+      so two builders editing one zone's flags at the same moment overwrote each other — silently,
+      since the losing request carried a complete, valid, merely stale map.
 - [x] ASCII grid painter with legend management
 - [x] Zone canvas: auto-layout from the exit graph, drag to arrange, drag to link
 - [x] Live push of edits to players standing in an edited room
@@ -1699,11 +1700,7 @@ targeting bugs have all landed. What is left is mostly additive:
 1. **`TargetingType.Aoe`** — the last unimplemented targeting mode, and now the obvious home for
    the seven executors that exist. It needs parties (5.3) to honour §4.11 in full; a
    build-breaking guard is in place until then.
-2. **Per-flag world and zone primitives** (Phase 2) — flag edits at those scopes are still
-   whole-map writes.
-3. **Loot table and `baseStats` editors** for mob templates (Phase 3).
-4. **Builder-authored armour** (Phase 4) — needs a design decision, not a patch.
-5. **Mobs cannot cast.** `CastJob` keys on a character, and mobs fight through `MobAttack` rows
+2. **Mobs cannot cast.** `CastJob` keys on a character, and mobs fight through `MobAttack` rows
    with no ability keys — so every effect below is a player-only tool. Giving mobs the same
    vocabulary is what would let a boss stun, snare, or bleed, and is probably the largest
    remaining lever on how combat *feels*.

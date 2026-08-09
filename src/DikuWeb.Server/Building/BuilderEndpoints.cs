@@ -30,12 +30,14 @@ public static class BuilderEndpoints
         group.MapGet("/worlds/{key}", GetWorldAsync);
         group.MapPost("/worlds/{key}", CreateWorldAsync);
         group.MapPatch("/worlds/{key}", UpdateWorldAsync);
+        group.MapPut("/worlds/{key}/flags/{flag}", SetWorldFlagAsync);
         group.MapDelete("/worlds/{key}", DeleteWorldAsync);
 
         group.MapGet("/zones", ListZonesAsync);
         group.MapGet("/zones/{key}", GetZoneAsync);
         group.MapPost("/zones/{key}", CreateZoneAsync);
         group.MapPatch("/zones/{key}", UpdateZoneAsync);
+        group.MapPut("/zones/{key}/flags/{flag}", SetZoneFlagAsync);
         group.MapDelete("/zones/{key}", DeleteZoneAsync);
 
         group.MapGet("/zones/{key}/rooms", ListRoomsAsync);
@@ -222,6 +224,33 @@ public static class BuilderEndpoints
         return await SaveAsync(editor, change, http, ct, () => queries.WorldAsync(key, ct));
     }
 
+    /// <summary>
+    /// Sets one flag on one world, leaving its siblings alone.
+    /// </summary>
+    /// <remarks>
+    /// The room editor has had this since §4.10; the scopes above it were still doing a
+    /// read-modify-PATCH of the whole flag map, which loses a concurrent builder's edit to a
+    /// different flag - and loses it silently, since the second write is a perfectly valid map.
+    /// The blast radius is largest here, so the narrow primitive matters most here.
+    ///
+    /// A null value clears the key rather than setting it false, which is the third state the
+    /// builder's control offers: let the level above decide.
+    /// </remarks>
+    private static async Task<IResult> SetWorldFlagAsync(
+        string key,
+        string flag,
+        SetFlagRequest request,
+        WorldEditor editor,
+        BuilderQueries queries,
+        HttpContext http,
+        CancellationToken ct) =>
+        await SaveAsync(
+            editor,
+            new SetWorldFlag(key, flag, request.Value),
+            http,
+            ct,
+            () => queries.WorldAsync(key, ct));
+
     private static async Task<IResult> DeleteWorldAsync(
         string key,
         WorldEditor editor,
@@ -304,6 +333,22 @@ public static class BuilderEndpoints
 
         return await SaveAsync(editor, change, http, ct, () => queries.ZoneAsync(key, ct));
     }
+
+    /// <inheritdoc cref="SetWorldFlagAsync"/>
+    private static async Task<IResult> SetZoneFlagAsync(
+        string key,
+        string flag,
+        SetFlagRequest request,
+        WorldEditor editor,
+        BuilderQueries queries,
+        HttpContext http,
+        CancellationToken ct) =>
+        await SaveAsync(
+            editor,
+            new SetZoneFlag(key, flag, request.Value),
+            http,
+            ct,
+            () => queries.ZoneAsync(key, ct));
 
     private static async Task<IResult> DeleteZoneAsync(
         string key,
