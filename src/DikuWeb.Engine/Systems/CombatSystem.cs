@@ -1,4 +1,5 @@
 using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Entities;
@@ -81,6 +82,11 @@ public sealed class CombatSystem(
 
             foreach (var combat in active)
             {
+                // Wounds tick before swings. A bleed that finishes something should resolve
+                // before it gets another turn, the same way the blow that kills ends the
+                // exchange rather than being swept up afterwards.
+                TickDamageOverTime(world, combat, currentPulse);
+
                 foreach (var combatantId in combat.Combatants.ToList())
                 {
                     // A death or a departure earlier in this same pulse may already have taken
@@ -504,6 +510,92 @@ public sealed class CombatSystem(
         foreach (var occupant in world.OccupantsOf(strike.Combat.RoomKey))
         {
             occupant.SendText(line, "combat");
+        }
+    }
+
+    /// <summary>
+    /// Applies every bleed, burn, and poison that is due on this pulse.
+    /// </summary>
+    /// <remarks>
+    /// Inside the combat loop rather than in its own system, because that is where the pieces
+    /// already are: <see cref="ApplyDamage"/>, <see cref="HandleDeath"/>, and with them the XP,
+    /// the loot, and the corpse. A separate ticker would have to reach for a <see cref="Combat"/>
+    /// to kill anything, and a bleed that could not land the killing blow would be a strange kind
+    /// of wound.
+    ///
+    /// The consequence is that wounds only tick during a fight. Fleeing stops the bleeding, which
+    /// is a real balance decision rather than an accident - and it falls out of §4.11's rule that
+    /// leaving ends the fight immediately.
+    /// </remarks>
+    private void TickDamageOverTime(WorldState world, Combat combat, long currentPulse)
+    {
+        foreach (var combatantId in combat.Combatants.ToList())
+        {
+            if (!combat.Combatants.Contains(combatantId) || !IsAlive(world, combatantId))
+            {
+                continue;
+            }
+
+            foreach (var effect in world.GetActiveEffects(EntityId.ToGuid(combatantId)))
+            {
+                // Expiry is checked here as well as by the sweep that removes it. The sweep runs
+                // on the 60s tick and this runs every pulse, so relying on it alone would let a
+                // wound keep working for up to a minute after it ran out.
+                if (!effect.Ticks ||
+                    effect.NextTickPulse > currentPulse ||
+                    effect.ExpiresAtPulse <= currentPulse)
+                {
+                    continue;
+                }
+
+                effect.NextTickPulse = currentPulse + effect.TickIntervalPulses;
+
+                // Stacks multiply the wound rather than each keeping its own clock, so five
+                // stacks of a bleed read as one worse bleed instead of five overlapping ones.
+                var damage = effect.TickDamage * Math.Max(1, effect.Stacks);
+
+                ApplyDamage(world, combatantId, damage);
+                NarrateTick(world, combat, combatantId, effect, damage);
+
+                if (HealthOf(world, combatantId) <= 0)
+                {
+                    HandleDeath(world, combat, combatantId);
+                    break;
+                }
+            }
+        }
+    }
+
+    /// <summary>Tells the room that a wound is still working.</summary>
+    private static void NarrateTick(
+        WorldState world,
+        Combat combat,
+        string combatantId,
+        ActiveEffect effect,
+        int damage)
+    {
+        var isCharacter = EntityId.IsCharacter(combatantId);
+        var name = isCharacter
+            ? world.GetCharacter(EntityId.ToGuid(combatantId))?.Name
+            : world.GetMob(EntityId.ToGuid(combatantId)) is { } mob
+                ? (string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName)
+                : null;
+
+        if (name is null)
+        {
+            return;
+        }
+
+        foreach (var occupant in world.OccupantsOf(combat.RoomKey))
+        {
+            var isVictim = isCharacter &&
+                           occupant.CharacterId == EntityId.ToGuid(combatantId);
+
+            occupant.SendText(
+                isVictim
+                    ? $"Your {effect.Name} costs you {damage}."
+                    : $"{NarrationHelper.WithDefiniteArticle(name, capitalize: true)} suffers {damage} from {effect.Name}.",
+                "combat");
         }
     }
 

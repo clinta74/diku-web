@@ -15,6 +15,7 @@ public sealed class EffectRegistry
         Register(new HealEffect());
         Register(new BuffEffect());
         Register(new DebuffEffect());
+        Register(new DamageOverTimeEffect());
     }
 
     public void Register(IAbilityEffect effect)

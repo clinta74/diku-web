@@ -1478,9 +1478,14 @@ multiplier from the browser, which is the half the phase goal is written about.
       catalogue is authoritative, which is safe because abilities are the one content type with
       no builder UI and no foreign keys pointing at them. Without the purge, a renamed ability
       (`warden.slash` → `warden.kick`) left the old row in the table forever.
-- [ ] Only four effect executors exist (`damage.physical`, `heal.restore`, `buff.damage-up`,
-      `debuff.weaken`), so Paths differ in cost and cadence rather than in kind. A stun, an
-      interrupt, or a snare needs a new executor — not a new ability row.
+- [x] **`damage.overtime`** — the fifth executor, and the first that differs in *kind*: damage on
+      a clock of its own rather than a number scaled at the moment of a swing. Shade's Ambush is a
+      stacking bleed, Adept's Scorch a heavier burn, Channeler's Wither the long slow one. The
+      tick lives in `CombatSystem.Tick` where the death, XP, and loot paths already are, so a
+      bleed can land the killing blow — the consequence being that wounds only work during a
+      fight, and fleeing stops the bleeding.
+- [ ] Two more executors would finish the set: a **stun/interrupt** and a **snare/root**. Until
+      then Paths still differ mostly in cost and cadence.
 
 #### 5.1a–5.1d — Ability System ✅ **complete**
 - [x] Ability system: cost, cooldown, cast time, targeting rules

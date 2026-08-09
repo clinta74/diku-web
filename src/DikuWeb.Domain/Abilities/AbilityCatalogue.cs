@@ -97,6 +97,35 @@ public static class AbilityCatalogue
         };
 
     /// <summary>
+    /// A wound that keeps working: <paramref name="damage"/> every <paramref name="interval"/>
+    /// pulses until it runs out.
+    /// </summary>
+    /// <remarks>
+    /// Total damage is <c>damage × (duration / interval)</c>, and none of it lands on the cast
+    /// itself - so a bleed is worth more the earlier it goes on, and worth nothing at all against
+    /// something about to die. That is the point of it: it rewards a different decision than a
+    /// bigger number would.
+    ///
+    /// It only ticks during a fight, because the ticker lives in the combat loop where the death,
+    /// XP, and loot paths already are. Fleeing stops the bleeding.
+    /// </remarks>
+    private static Dictionary<string, string> OverTime(
+        string damage,
+        string interval,
+        string duration,
+        string name,
+        string maxStacks = "1") =>
+        new(StringComparer.Ordinal)
+        {
+            ["tickDamage"] = damage,
+            ["tickIntervalPulses"] = interval,
+            ["durationPulses"] = duration,
+            ["maxStacks"] = maxStacks,
+            ["stackingRule"] = maxStacks == "1" ? "Refresh" : "Stack",
+            ["name"] = name,
+        };
+
+    /// <summary>
     /// The whole catalogue, ordered by Path then unlock level.
     /// </summary>
     /// <remarks>
@@ -178,10 +207,12 @@ public static class AbilityCatalogue
             CostType.Focus, 20, 64, null, TargetingType.Self,
             "buff.damage-up", Buff("1.35", "80", "amplified")),
 
+        // The Adept's burn: slower and heavier per tick than the Shade's bleed, and it does not
+        // stack - one big fire rather than several small cuts.
         new(CharacterPath.Adept, 10, "adept.scorch", "Scorch",
-            "Heat with intent behind it.",
-            CostType.Focus, 24, 20, 8, TargetingType.SingleTarget,
-            "damage.physical", Damage("1.7", "9")),
+            "Heat with intent behind it, and nowhere for the heat to go.",
+            CostType.Focus, 24, 32, 8, TargetingType.SingleTarget,
+            "damage.overtime", OverTime("9", "12", "72", "burning")),
 
         new(CharacterPath.Adept, 13, "adept.enfeeble", "Enfeeble",
             "Take the fight out of it at the root.",
@@ -221,10 +252,13 @@ public static class AbilityCatalogue
             CostType.Stamina, 16, 24, null, TargetingType.SingleTarget,
             "damage.physical", Damage("1.6", "8")),
 
+        // Ambush is the Shade's bleed rather than another number: applied early it out-damages
+        // the burst it replaced, and applied late it does almost nothing. Stacks to three, so
+        // the fast, cheap Path has something to spend its speed on.
         new(CharacterPath.Shade, 10, "shade.ambush", "Ambush",
-            "The blow that was already on its way.",
+            "Open something that will not close on its own.",
             CostType.Stamina, 20, 28, null, TargetingType.SingleTarget,
-            "damage.physical", Damage("1.9", "10")),
+            "damage.overtime", OverTime("5", "8", "48", "bleeding", maxStacks: "3")),
 
         new(CharacterPath.Shade, 13, "shade.vanish", "Vanish",
             "Break away and let them lose you.",
@@ -259,10 +293,13 @@ public static class AbilityCatalogue
             CostType.Focus, 15, 24, null, TargetingType.SingleTarget,
             "heal.restore", Heal("18")),
 
-        new(CharacterPath.Channeler, 5, "channeler.enervate", "Enervate",
-            "Draw the momentum out of a thing.",
+        // The Channeler's wither: the longest of the three and the slowest to pay out, which
+        // suits a Path that wins by outlasting rather than by out-hitting. Sap at 16 keeps the
+        // Path's weaken, so this does not cost it its control identity.
+        new(CharacterPath.Channeler, 5, "channeler.wither", "Wither",
+            "Set something going that will not stop on its own.",
             CostType.Focus, 18, 44, 4, TargetingType.SingleTarget,
-            "debuff.weaken", Weaken("0.8", "72", "enervated")),
+            "damage.overtime", OverTime("6", "16", "96", "withering")),
 
         new(CharacterPath.Channeler, 7, "channeler.restore", "Restore",
             "Put back what the fight has taken so far.",

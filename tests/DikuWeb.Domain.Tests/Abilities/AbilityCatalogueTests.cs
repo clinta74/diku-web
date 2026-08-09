@@ -25,6 +25,7 @@ public sealed class AbilityCatalogueTests
         "heal.restore",
         "buff.damage-up",
         "debuff.weaken",
+        "damage.overtime",
     };
 
     [Fact]
@@ -91,6 +92,8 @@ public sealed class AbilityCatalogueTests
     [InlineData("damage.physical", "scalingFactor")]
     [InlineData("heal.restore", "baseHeal")]
     [InlineData("buff.damage-up", "outgoingMultiplier")]
+    [InlineData("damage.overtime", "tickDamage")]
+    [InlineData("damage.overtime", "tickIntervalPulses")]
     public void Every_ability_carries_the_parameter_its_effect_reads(string effectKey, string parameter)
     {
         var missing = AbilityCatalogue.All
@@ -132,6 +135,35 @@ public sealed class AbilityCatalogueTests
             Assert.True(
                 outgoing is null or < 1.0m,
                 $"{entry.Key} sets outgoingMultiplier to {outgoing}, which strengthens the target.");
+        }
+    }
+
+    /// <summary>
+    /// A wound has to actually work: damage above zero, on an interval above zero, for long
+    /// enough to tick at least once.
+    /// </summary>
+    /// <remarks>
+    /// <c>ActiveEffect.Ticks</c> requires both a positive damage and a positive interval, so
+    /// either at zero produces an effect that sits on the target doing nothing — the same silent
+    /// shape as a buff with the wrong parameter name. A duration shorter than one interval is the
+    /// subtler version: it ticks zero times and expires.
+    /// </remarks>
+    [Fact]
+    public void Every_wound_ticks_at_least_once_before_it_expires()
+    {
+        foreach (var entry in AbilityCatalogue.All.Where(e => e.EffectKey == "damage.overtime"))
+        {
+            var damage = Read(entry, "tickDamage");
+            var interval = Read(entry, "tickIntervalPulses");
+            var duration = Read(entry, "durationPulses");
+
+            Assert.True(damage is > 0, $"{entry.Key} ticks for {damage}.");
+            Assert.True(interval is > 0, $"{entry.Key} has a tick interval of {interval}.");
+            // Strictly greater: a tick due on the expiry pulse is skipped, so a wound whose
+            // duration equals its interval ticks zero times.
+            Assert.True(
+                duration > interval,
+                $"{entry.Key} lasts {duration} pulses but ticks every {interval}, so it never lands.");
         }
     }
 

@@ -22,6 +22,23 @@ public sealed class ActiveEffect
     /// <summary>Incoming damage multiplier (default 1.0 = no change).</summary>
     public decimal IncomingDamageMultiplier { get; init; } = 1.0m;
 
+    /// <summary>
+    /// Damage dealt each time this effect ticks. Zero for anything that is not a bleed or a burn.
+    /// </summary>
+    public int TickDamage { get; init; }
+
+    /// <summary>
+    /// Pulses between ticks. Zero means this effect never ticks, whatever <see cref="TickDamage"/>
+    /// says - a tick interval of zero would otherwise fire every pulse.
+    /// </summary>
+    public long TickIntervalPulses { get; init; }
+
+    /// <summary>The next pulse this effect deals its damage on.</summary>
+    public long NextTickPulse { get; set; }
+
+    /// <summary>True when this effect deals damage over time rather than only scaling it.</summary>
+    public bool Ticks => TickDamage > 0 && TickIntervalPulses > 0;
+
     /// <summary>Pulse at which this effect expires and is removed.</summary>
     public long ExpiresAtPulse { get; set; }
 
