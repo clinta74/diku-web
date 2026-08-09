@@ -190,6 +190,13 @@ public sealed class CombatSystem(
             return;
         }
 
+        // Neither do the stunned. This is the gate the whole effect hangs on: swings are the
+        // only thing a mob does in combat, so missing it here would make a stun cosmetic.
+        if (world.IsStunned(EntityId.ToGuid(attackerId), currentPulse))
+        {
+            return;
+        }
+
         // A character committed to a spell is not also swinging a sword.
         if (EntityId.IsCharacter(attackerId) &&
             world.CastQueue.IsCasting(EntityId.ToGuid(attackerId)))

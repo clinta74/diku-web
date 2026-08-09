@@ -39,6 +39,15 @@ public sealed class ActiveEffect
     /// <summary>True when this effect deals damage over time rather than only scaling it.</summary>
     public bool Ticks => TickDamage > 0 && TickIntervalPulses > 0;
 
+    /// <summary>
+    /// While true the bearer takes no turn: no swings, no casts, and any cast in progress breaks.
+    /// </summary>
+    /// <remarks>
+    /// A flag on the effect rather than a field on the character, so it expires through the same
+    /// sweep as everything else and cannot be left set by a code path that forgot to clear it.
+    /// </remarks>
+    public bool PreventsActing { get; init; }
+
     /// <summary>Pulse at which this effect expires and is removed.</summary>
     public long ExpiresAtPulse { get; set; }
 

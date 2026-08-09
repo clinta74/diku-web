@@ -51,6 +51,14 @@ public sealed class MobAiSystem(
 
         var pulse = clock.CurrentPulse;
 
+        // A stunned mob does nothing at all - it does not emote, wander off, or pick a fight.
+        // Gating only its swings would have it strolling out of the room mid-stun, which reads
+        // as the stun having done nothing.
+        if (world.IsStunned(mob.Id, pulse))
+        {
+            return;
+        }
+
         // Idle: emit expressive actions from behavior.emotes
         if (ShouldEmote(mob, pulse, template))
         {

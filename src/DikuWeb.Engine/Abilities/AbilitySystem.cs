@@ -128,6 +128,11 @@ public sealed class AbilitySystem(
                 caster, target, ability.EffectParams, clock.CurrentPulse);
             var targetEntityId = target is Character c ? c.Id : ((Mob)target).Id;
             world.ApplyEffect(targetEntityId, activeEffect);
+
+            // A stun interrupts, but that is handled by ShouldInterrupt on the next tick rather
+            // than here: driving it from the *state* means any stun breaks a cast however it
+            // arrived, where doing it at the point of application would only cover stuns
+            // delivered by a player's cast.
         }
     }
 
@@ -186,7 +191,11 @@ public sealed class AbilitySystem(
             return true;
         }
 
-        return false;
+        // Stunned casters lose the thread. Checked here rather than at the moment a stun ability
+        // resolves, so it holds however the stun arrived - a mob ability, a trap, or anything
+        // else that ever applies one. Tying it to the casting path would have meant only stuns
+        // delivered by a player cast could interrupt.
+        return world.IsStunned(cast.CharacterId, clock.CurrentPulse);
     }
 
     private void InterruptCast(WorldState world, CastJob cast)

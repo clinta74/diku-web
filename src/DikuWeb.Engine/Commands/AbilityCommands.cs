@@ -38,6 +38,15 @@ public static class AbilityCommands
 
         var character = ctx.Actor.Character;
 
+        // Stunned means stunned: no swings in the combat loop, and no new casts here either.
+        // Gating only the loop would leave a stunned caster free to keep casting, which is the
+        // half of "cannot act" that matters most against an Adept.
+        if (ctx.World.IsStunned(character.Id, clock?.CurrentPulse ?? 0L))
+        {
+            ctx.Reply("You cannot gather yourself.", "bad");
+            return;
+        }
+
         // Determine which abilities the character knows (at their level)
         var knownAbilityKeys = AbilityProgression.GetKnownAbilitiesForLevel(character.Path, character.Level);
         if (!knownAbilityKeys.Any())

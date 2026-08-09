@@ -417,6 +417,19 @@ public sealed class WorldState(IRandomSource random)
     public IReadOnlyList<ActiveEffect> GetActiveEffects(Guid entityId) =>
         _activeEffects.TryGetValue(entityId, out var list) ? list : [];
 
+    /// <summary>
+    /// Whether this entity is stunned and so takes no turn at all.
+    /// </summary>
+    /// <remarks>
+    /// Asked in three places - the combat loop, the cast command, and the mob AI - and each one
+    /// answering for itself is how a stun ends up stopping swings but not spells. The expiry is
+    /// checked here rather than trusted to the sweep, which runs on the 60s tick: a stun measured
+    /// in a couple of swings would otherwise outlive itself by most of a minute.
+    /// </remarks>
+    public bool IsStunned(Guid entityId, long currentPulse) =>
+        _activeEffects.TryGetValue(entityId, out var list) &&
+        list.Any(e => e.PreventsActing && e.ExpiresAtPulse > currentPulse);
+
     /// <summary>Apply a new effect to an entity, handling stacking rules.</summary>
     public void ApplyEffect(Guid entityId, ActiveEffect effect)
     {

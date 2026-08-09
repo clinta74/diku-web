@@ -26,6 +26,7 @@ public sealed class AbilityCatalogueTests
         "buff.damage-up",
         "debuff.weaken",
         "damage.overtime",
+        "control.stun",
     };
 
     [Fact]
@@ -164,6 +165,28 @@ public sealed class AbilityCatalogueTests
             Assert.True(
                 duration > interval,
                 $"{entry.Key} lasts {duration} pulses but ticks every {interval}, so it never lands.");
+        }
+    }
+
+    /// <summary>
+    /// A stun stays short enough to be a tempo tool rather than a removal.
+    /// </summary>
+    /// <remarks>
+    /// <c>StunEffect</c> clamps to its own ceiling, so an over-long value cannot reach play — but
+    /// it would clamp *silently*, and an author who wrote 200 and got 24 would have no idea. This
+    /// fails the build instead.
+    /// </remarks>
+    [Fact]
+    public void No_stun_is_authored_longer_than_the_ceiling()
+    {
+        foreach (var entry in AbilityCatalogue.All.Where(e => e.EffectKey == "control.stun"))
+        {
+            var duration = Read(entry, "durationPulses");
+
+            Assert.True(duration is > 0, $"{entry.Key} stuns for {duration}.");
+            Assert.True(
+                duration <= Domain.Abilities.Effects.StunEffect.MaxDurationPulses,
+                $"{entry.Key} stuns for {duration}, past the {Domain.Abilities.Effects.StunEffect.MaxDurationPulses}-pulse ceiling.");
         }
     }
 

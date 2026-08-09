@@ -1484,8 +1484,15 @@ multiplier from the browser, which is the half the phase goal is written about.
       tick lives in `CombatSystem.Tick` where the death, XP, and loot paths already are, so a
       bleed can land the killing blow — the consequence being that wounds only work during a
       fight, and fleeing stops the bleeding.
-- [ ] Two more executors would finish the set: a **stun/interrupt** and a **snare/root**. Until
-      then Paths still differ mostly in cost and cadence.
+- [x] **`control.stun`** — the sixth, and the first that takes a *turn* away rather than changing
+      a number. `PreventsActing` is checked in three places, because each gate is independent: the
+      combat loop that swings, the `cast` command that starts spells, and the mob AI that emotes,
+      wanders, and aggresses. The interrupt is driven by `ShouldInterrupt` reading the *state*, so
+      any stun breaks a cast however it arrived. Duration is clamped in the effect (24 pulses) so
+      an authored typo cannot remove someone from the game, and a catalogue test fails the build
+      rather than letting the clamp apply silently. New `warden.shield-bash` at 9 — `warden.kick`
+      stays instant damage.
+- [ ] One more executor would finish the set: a **snare/root**.
 
 #### 5.1a–5.1d — Ability System ✅ **complete**
 - [x] Ability system: cost, cooldown, cast time, targeting rules

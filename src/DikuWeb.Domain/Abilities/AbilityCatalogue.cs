@@ -126,6 +126,21 @@ public static class AbilityCatalogue
         };
 
     /// <summary>
+    /// Takes the target off its feet for <paramref name="duration"/> pulses: no swings, no casts,
+    /// and anything it was casting breaks.
+    /// </summary>
+    /// <remarks>
+    /// <c>StunEffect</c> clamps the duration to its own ceiling, so a typo that added a zero is a
+    /// short stun rather than an opponent removed from the game.
+    /// </remarks>
+    private static Dictionary<string, string> Stun(string duration, string name) =>
+        new(StringComparer.Ordinal)
+        {
+            ["durationPulses"] = duration,
+            ["name"] = name,
+        };
+
+    /// <summary>
     /// The whole catalogue, ordered by Path then unlock level.
     /// </summary>
     /// <remarks>
@@ -163,6 +178,15 @@ public static class AbilityCatalogue
             "Batter the guard apart. What comes next lands on what is left of it.",
             CostType.Stamina, 16, 44, null, TargetingType.SingleTarget,
             "debuff.weaken", Vulnerable("1.3", "80", "sundered")),
+
+        // The Warden's window-opener, and the one thing no amount of damage scaling expresses.
+        // Kick stays instant damage at level 1 - this is the ability that had to be added rather
+        // than the opener being repurposed, so a Warden keeps a cheap reliable hit *and* gains a
+        // tempo tool.
+        new(CharacterPath.Warden, 9, "warden.shield-bash", "Shield Bash",
+            "The flat of the shield, hard, into whatever is nearest to a jaw.",
+            CostType.Stamina, 20, 72, null, TargetingType.SingleTarget,
+            "control.stun", Stun("10", "reeling")),
 
         new(CharacterPath.Warden, 10, "warden.rally", "Rally",
             "Find your feet again in the middle of it.",
