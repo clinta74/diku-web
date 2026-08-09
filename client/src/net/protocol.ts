@@ -6,6 +6,13 @@
 export interface TextSpan {
   t: string
   s?: string | null
+  /**
+   * A builder path this span opens, e.g. `/builder/items/rusty-dagger`. Routed internally
+   * rather than navigated, so following one keeps the session and the event stream alive.
+   * Only ever sent to builders — the server decides, so its absence is not a permission check
+   * the client has to make.
+   */
+  b?: string | null
 }
 
 export interface TextPayload {

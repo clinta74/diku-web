@@ -190,7 +190,8 @@ public static class BuilderEndpoints
             Trim(request.Name) ?? key,
             request.Description ?? string.Empty,
             request.SortOrder ?? 0,
-            ToFlagSet(request.Flags));
+            ToFlagSet(request.Flags),
+            request.Multipliers ?? new Multipliers());
 
         return await SaveAsync(editor, change, http, ct, () => queries.WorldAsync(key, ct));
     }
@@ -215,7 +216,8 @@ public static class BuilderEndpoints
             request.SortOrder ?? existing.SortOrder,
             // A null Flags means "leave them alone"; an empty object means "clear them". The
             // distinction matters because PATCH bodies are routinely partial.
-            request.Flags is null ? ToFlagSet(existing.Flags) : ToFlagSet(request.Flags));
+            request.Flags is null ? ToFlagSet(existing.Flags) : ToFlagSet(request.Flags),
+            request.Multipliers ?? existing.Multipliers);
 
         return await SaveAsync(editor, change, http, ct, () => queries.WorldAsync(key, ct));
     }
@@ -271,7 +273,8 @@ public static class BuilderEndpoints
             request.Description ?? string.Empty,
             request.MinLevel ?? 1,
             request.MaxLevel ?? 50,
-            ToFlagSet(request.Flags));
+            ToFlagSet(request.Flags),
+            request.Multipliers ?? new Multipliers());
 
         return await SaveAsync(editor, change, http, ct, () => queries.ZoneAsync(key, ct));
     }
@@ -296,7 +299,8 @@ public static class BuilderEndpoints
             request.Description ?? existing.Description,
             request.MinLevel ?? existing.MinLevel,
             request.MaxLevel ?? existing.MaxLevel,
-            request.Flags is null ? ToFlagSet(existing.Flags) : ToFlagSet(request.Flags));
+            request.Flags is null ? ToFlagSet(existing.Flags) : ToFlagSet(request.Flags),
+            request.Multipliers ?? existing.Multipliers);
 
         return await SaveAsync(editor, change, http, ct, () => queries.ZoneAsync(key, ct));
     }
@@ -487,7 +491,8 @@ public static class BuilderEndpoints
             request.BaseValue ?? 0,
             request.BaseStats ?? new Dictionary<string, object>(),
             request.AttackDelayPulses,
-            Trim(request.AttackVerb));
+            Trim(request.AttackVerb),
+            request.IsQuestItem ?? false);
 
         return await SaveAsync(editor, change, http, ct, () => queries.ItemTemplateAsync(key, ct));
     }
@@ -520,7 +525,8 @@ public static class BuilderEndpoints
             request.BaseValue ?? existing.BaseValue,
             request.BaseStats ?? existing.BaseStats,
             request.AttackDelayPulses ?? existing.AttackDelayPulses,
-            Trim(request.AttackVerb) ?? existing.AttackVerb);
+            Trim(request.AttackVerb) ?? existing.AttackVerb,
+            request.IsQuestItem ?? existing.IsQuestItem);
 
         return await SaveAsync(editor, change, http, ct, () => queries.ItemTemplateAsync(key, ct));
     }

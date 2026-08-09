@@ -1,4 +1,6 @@
-﻿using DikuWeb.Domain.Abilities;
+﻿using System.Globalization;
+using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
@@ -318,20 +320,35 @@ public sealed class CommandRegistry
             return;
         }
 
-        // Look in hand first, then on the ground - "examine" is most often aimed at something
-        // you are already holding.
+        // Look in hand first, then on the ground, then at whoever is standing here. "examine" is
+        // most often aimed at something you are already holding - but it used to look at nothing
+        // else at all, so examining an NPC in front of you reported that it was not there.
         var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
         var targetItem = FindItemByName(inventory, ctx.Argument)
             ?? FindItemByName(ctx.World.ItemsIn(ctx.Actor.RoomKey), ctx.Argument);
 
-        if (targetItem is null)
+        if (targetItem is not null)
         {
-            ctx.Reply($"You don't see any {ctx.Argument} here.", "bad");
+            ExamineItem(ctx, targetItem);
             return;
         }
 
-        var template = ctx.ItemTemplates?.Get(targetItem.TemplateKey);
-        var article = NarrationHelper.WithDefiniteArticle(targetItem.TemplateName);
+        var targetMob = NameMatch.Best(
+            ctx.World.MobsIn(ctx.Actor.RoomKey), ctx.Argument, m => m.TemplateName, m => m.TemplateKey);
+
+        if (targetMob is not null)
+        {
+            ExamineMob(ctx, targetMob);
+            return;
+        }
+
+        ctx.Reply($"You don't see any {ctx.Argument} here.", "bad");
+    }
+
+    private static void ExamineItem(CommandContext ctx, ItemInstance item)
+    {
+        var template = ctx.ItemTemplates?.Get(item.TemplateKey);
+        var article = NarrationHelper.WithDefiniteArticle(item.TemplateName);
 
         var spans = new List<TextSpan>
         {
@@ -346,8 +363,146 @@ public sealed class CommandRegistry
 
         spans.Add(new TextSpan($"\n{UsageProse(template?.Slot)}", "dim"));
 
+        if (ItemState.IsQuestItem(item))
+        {
+            spans.Add(new TextSpan("\nIt is bound to a quest — it cannot be sold or destroyed.", "dim"));
+        }
+
+        AppendBuilderDetail(ctx, spans, item.TemplateKey, BuilderLinks.ToItem(item.TemplateKey), () =>
+        [
+            ("value", item.Value.ToString(CultureInfo.InvariantCulture)),
+            ("weight", template?.Weight.ToString(CultureInfo.InvariantCulture) ?? "?"),
+            ("slot", template?.Slot?.ToString() ?? "none"),
+            ("speed", template?.AttackDelayPulses?.ToString(CultureInfo.InvariantCulture) ?? "—"),
+            ("verb", template?.AttackVerb ?? "—"),
+            ("stats", Describe(item.ResolvedStats)),
+        ]);
+
         ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
     }
+
+    private static void ExamineMob(CommandContext ctx, Mob mob)
+    {
+        var template = ctx.MobTemplates?.Get(mob.TemplateKey);
+        var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+        var article = NarrationHelper.WithDefiniteArticle(displayName);
+
+        var spans = new List<TextSpan>
+        {
+            new($"You examine {article}.", "heading"),
+        };
+
+        if (!string.IsNullOrWhiteSpace(template?.Description))
+        {
+            spans.Add(new TextSpan($"\n{template.Description}"));
+        }
+
+        // Health as a fraction rather than a number: a player should be able to see that
+        // something is hurt without being handed the combat log.
+        spans.Add(new TextSpan($"\n{ConditionProse(mob)}", "dim"));
+
+        var disposition = MobBehavior.DispositionOf(template?.Behavior);
+        if (disposition == MobDisposition.Npc)
+        {
+            spans.Add(new TextSpan("\nThey are not someone you can fight.", "dim"));
+        }
+        else if (disposition == MobDisposition.Aggressive)
+        {
+            spans.Add(new TextSpan("\nIt watches you the way something decides to attack.", "bad"));
+        }
+
+        if (MobBehavior.IsShopkeeper(template?.Behavior))
+        {
+            spans.Add(new TextSpan("\nThey keep a shop — try 'list'.", "good"));
+        }
+
+        AppendBuilderDetail(ctx, spans, mob.TemplateKey, BuilderLinks.ToMob(mob.TemplateKey), () =>
+        [
+            ("level", mob.Level.ToString(CultureInfo.InvariantCulture)),
+            ("health", $"{mob.Vitals.Health}/{mob.Vitals.HealthMax}"),
+            ("xp", mob.ResolvedXp.ToString(CultureInfo.InvariantCulture)),
+            ("gold", mob.ResolvedGold.ToString(CultureInfo.InvariantCulture)),
+            ("type", MobBehavior.NameOf(disposition)),
+            ("spawner", mob.SpawnerId?.ToString() ?? "—"),
+            ("stats", Describe(mob.ResolvedStats)),
+        ]);
+
+        ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
+    }
+
+    /// <summary>How badly hurt something looks, without printing its hit points.</summary>
+    private static string ConditionProse(Mob mob)
+    {
+        if (mob.Vitals.HealthMax <= 0)
+        {
+            return "It is hard to tell what shape it is in.";
+        }
+
+        var fraction = (double)mob.Vitals.Health / mob.Vitals.HealthMax;
+
+        return fraction switch
+        {
+            >= 1.0 => "It is unhurt.",
+            >= 0.75 => "It has been scratched.",
+            >= 0.5 => "It is bleeding.",
+            >= 0.25 => "It is badly hurt.",
+            > 0 => "It is barely standing.",
+            _ => "It is not long for this world.",
+        };
+    }
+
+    /// <summary>
+    /// Appends the template key, the raw numbers, and a link into the builder.
+    /// </summary>
+    /// <remarks>
+    /// Builders only. A player has no use for a template key and no way to follow the link, and
+    /// showing it would put the builder's existence on the wire for everyone. The values are
+    /// gathered lazily so a player's <c>examine</c> does no work to produce a block it will
+    /// never see.
+    /// </remarks>
+    private static void AppendBuilderDetail(
+        CommandContext ctx,
+        List<TextSpan> spans,
+        string templateKey,
+        string builderPath,
+        Func<IReadOnlyList<(string Label, string Value)>> details)
+    {
+        if (!ctx.Actor.Role.Satisfies(AccountRole.Builder))
+        {
+            return;
+        }
+
+        // The key *is* the link. It is already on screen and it is already the thing the builder
+        // would go looking for, so a separate "Open in builder" line was one row of pure
+        // scaffolding under every block.
+        //
+        // The line break goes in a plain span, never in the link. A link renders as an
+        // inline-block <button> and the scrollback's white-space: pre-wrap is inherited into it,
+        // so a newline inside one makes the *button* several lines tall instead of breaking the
+        // line, and its label drops to the baseline of whatever preceded it.
+        spans.Add(new TextSpan("\n\n"));
+        spans.Add(new TextSpan($"[{templateKey}]", "link", builderPath));
+
+        var rows = details();
+
+        // Padded to the widest label in *this* block rather than to a constant, so the columns
+        // stay aligned when a field is added and no block is indented further than it needs to
+        // be. The scrollback is monospace with pre-wrap, so the spaces survive to the screen -
+        // without the padding, "xp:" and "spawner:" start their values seven columns apart.
+        var width = rows.Count == 0 ? 0 : rows.Max(r => r.Label.Length);
+
+        foreach (var (label, value) in rows)
+        {
+            spans.Add(new TextSpan($"\n  {(label + ":").PadRight(width + 2)}{value}", "dim"));
+        }
+    }
+
+    /// <summary>A stat bag as one readable line, or an em dash when it is empty.</summary>
+    private static string Describe(IReadOnlyDictionary<string, object>? stats) =>
+        stats is null || stats.Count == 0
+            ? "—"
+            : string.Join(", ", stats.OrderBy(kv => kv.Key, StringComparer.Ordinal)
+                .Select(kv => $"{kv.Key}={kv.Value}"));
 
     /// <summary>Prose telling a player, in-world, how (or whether) an item can be equipped.</summary>
     private static string UsageProse(ItemSlot? slot) => slot switch
@@ -827,26 +982,89 @@ public sealed class CommandRegistry
             }
         }
 
+        AppendBuilderSheet(ctx, spans, equipped);
+
         ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
     }
 
-    private static ItemInstance? FindItemByName(IEnumerable<ItemInstance> items, string name)
+    /// <summary>
+    /// The builder's half of the stats screen: where you are, what you are wearing by key, and
+    /// a way into the editor for each.
+    /// </summary>
+    /// <remarks>
+    /// A builder testing a change is usually standing in the thing they just edited, so the most
+    /// useful link on this screen is the room itself - it saves finding the room again in a tree
+    /// that may be several zones deep.
+    /// </remarks>
+    private static void AppendBuilderSheet(
+        CommandContext ctx,
+        List<TextSpan> spans,
+        IReadOnlyList<ItemInstance> equipped)
     {
-        var comparison = StringComparison.OrdinalIgnoreCase;
-
-        // Try matching by TemplateName first (display name)
-        var byName = items.FirstOrDefault(i =>
-            !string.IsNullOrEmpty(i.TemplateName) &&
-            i.TemplateName.Equals(name, comparison));
-
-        if (byName is not null)
+        if (!ctx.Actor.Role.Satisfies(AccountRole.Builder))
         {
-            return byName;
+            return;
         }
 
-        // Fall back to TemplateKey match (for backwards compatibility with key-based input)
-        return items.FirstOrDefault(i => i.TemplateKey.Equals(name, comparison));
+        var roomKey = ctx.Actor.RoomKey;
+        var zone = ctx.World.FindZone(roomKey.ZoneKey);
+
+        spans.Add(new TextSpan("\n\nBuilder", "heading"));
+
+        // Same column treatment as the examine block. Each key carries its own link, so there is
+        // no trailing list of "Open X in builder" lines repeating keys already in the column.
+        var rows = new List<(string Label, string Value, string? Link)>
+        {
+            ("room", roomKey.ToString(), BuilderLinks.ToRoom(roomKey)),
+        };
+
+        if (zone is not null)
+        {
+            // The dial this room's contents are scaled by. Reading it here saves guessing why a
+            // rat in this zone hits harder than the same rat next door.
+            // "0.##" so a neutral dial reads "×1" rather than "×1.0" - a column of ".0" is noise
+            // that makes the two factors a builder actually changed harder to pick out.
+            var m = zone.Multipliers;
+            rows.Add(("zone", zone.Key, null));
+            rows.Add((
+                "scaling",
+                $"strength ×{m.Strength:0.##}  damage ×{m.Damage:0.##}  " +
+                $"xp ×{m.Xp:0.##}  gold ×{m.Gold:0.##}",
+                null));
+        }
+
+        foreach (var item in equipped.OrderBy(i => i.EquippedSlot))
+        {
+            rows.Add((
+                item.EquippedSlot?.ToString() ?? "held",
+                item.TemplateKey,
+                BuilderLinks.ToItem(item.TemplateKey)));
+        }
+
+        var width = rows.Max(r => r.Label.Length);
+
+        foreach (var (label, value, link) in rows)
+        {
+            // The label and its padding are a plain span, so neither the line break nor the
+            // alignment ever lands inside a link - see AppendBuilderDetail for what that costs.
+            spans.Add(new TextSpan($"\n  {(label + ":").PadRight(width + 2)}", "dim"));
+            spans.Add(link is null
+                ? new TextSpan(value, "dim")
+                : new TextSpan(value, "link", link));
+        }
+
     }
+
+    /// <summary>
+    /// The item in this list that the player meant.
+    /// </summary>
+    /// <remarks>
+    /// This demanded the whole display name or the whole key, so an "old coin" answered to
+    /// "old coin" and "old-coin" and nothing else - <c>get coin</c> failed on the only thing in
+    /// the room. See <see cref="NameMatch"/> for what counts as a match now.
+    /// </remarks>
+    private static ItemInstance? FindItemByName(IEnumerable<ItemInstance> items, string name) =>
+        NameMatch.Best(items, name, i => i.TemplateName, i => i.TemplateKey);
 
     private static bool IsDirection(string name) =>
         DirectionExtensions.All.Any(d => d.ToLowerName() == name);

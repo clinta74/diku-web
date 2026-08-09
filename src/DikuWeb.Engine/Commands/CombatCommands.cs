@@ -1,4 +1,4 @@
-using DikuWeb.Domain.Combat;
+﻿using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Narration;
@@ -40,8 +40,8 @@ public static class CombatCommands
         var targetActor = ctx.World.OthersIn(character.RoomKey, actor)
             .FirstOrDefault(p => string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase));
 
-        var targetMob = ctx.World.MobsIn(character.RoomKey)
-            .FirstOrDefault(m => m.TemplateKey.EndsWith(targetName, StringComparison.OrdinalIgnoreCase));
+        var targetMob = NameMatch.Best(
+            ctx.World.MobsIn(character.RoomKey), targetName, m => m.TemplateName, m => m.TemplateKey);
 
         if (targetActor == null && targetMob == null)
         {
@@ -152,8 +152,8 @@ public static class CombatCommands
         var targetActor = ctx.World.OthersIn(actor.Character.RoomKey, actor)
             .FirstOrDefault(p => string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase));
 
-        var targetMob = ctx.World.MobsIn(actor.Character.RoomKey)
-            .FirstOrDefault(m => m.TemplateKey.EndsWith(targetName, StringComparison.OrdinalIgnoreCase));
+        var targetMob = NameMatch.Best(
+            ctx.World.MobsIn(actor.Character.RoomKey), targetName, m => m.TemplateName, m => m.TemplateKey);
 
         if (targetActor == null && targetMob == null)
         {

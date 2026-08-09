@@ -577,6 +577,10 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("icon");
 
+                    b.Property<bool>("IsQuestItem")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_quest_item");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")

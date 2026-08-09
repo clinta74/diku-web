@@ -88,6 +88,7 @@ public sealed class WorldMutationApplier(
                 Description = change.Description,
                 SortOrder = change.SortOrder,
                 Flags = change.Flags.Clone(),
+                Multipliers = change.Multipliers.Clone(),
             });
         }
         else
@@ -96,6 +97,12 @@ public sealed class WorldMutationApplier(
             existing.Description = change.Description;
             existing.SortOrder = change.SortOrder;
             existing.Flags = change.Flags.Clone();
+
+            // Live, like every other edit. Already-spawned mobs keep the numbers they were
+            // spawned with - multipliers resolve once, at spawn time (§4.4) - so a change here
+            // reaches the next spawn, not the ones standing in the room. That is what the
+            // "Respawn zone" button is for.
+            existing.Multipliers = change.Multipliers.Clone();
 
             // World flags sit at the top of the inheritance chain, so a change here can flip
             // pvp for thousands of rooms at once. Everyone currently standing anywhere in it
@@ -170,6 +177,7 @@ public sealed class WorldMutationApplier(
                 MinLevel = change.MinLevel,
                 MaxLevel = change.MaxLevel,
                 Flags = change.Flags.Clone(),
+                Multipliers = change.Multipliers.Clone(),
             });
         }
         else
@@ -179,6 +187,7 @@ public sealed class WorldMutationApplier(
             existing.MinLevel = change.MinLevel;
             existing.MaxLevel = change.MaxLevel;
             existing.Flags = change.Flags.Clone();
+            existing.Multipliers = change.Multipliers.Clone();
 
             RefreshZone(change.Key);
         }
@@ -769,6 +778,7 @@ public sealed class WorldMutationApplier(
             BaseStats = new Dictionary<string, object>(change.BaseStats, StringComparer.Ordinal),
             AttackDelayPulses = change.AttackDelayPulses,
             AttackVerb = change.AttackVerb,
+            IsQuestItem = change.IsQuestItem,
         });
 
         return MutationResult.Ok([change]);

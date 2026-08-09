@@ -139,8 +139,13 @@ public static class ShopCommands
         var (shopkeeperTemplate, itemKey) = shopkeepers
             .Select(shop => (
                 Shop: shop,
-                Key: MobBehavior.SellsOf(shop.Behavior)
-                    .FirstOrDefault(k => k.EndsWith(itemName, StringComparison.OrdinalIgnoreCase))))
+                // Matched on the stocked item's display name as well as its key, so "buy bread"
+                // works against a "loaf-of-bread" key the player has never seen.
+                Key: NameMatch.Best(
+                    MobBehavior.SellsOf(shop.Behavior),
+                    itemName,
+                    k => ctx.ItemTemplates?.Get(k)?.Name,
+                    k => k)))
             .FirstOrDefault(match => match.Key is not null);
 
         if (itemKey is null)
@@ -180,22 +185,10 @@ public static class ShopCommands
             return;
         }
 
-        var spawner = new ItemSpawner();
-        var spawnedItem = spawner.Spawn(itemTemplate, zone, world, character.RoomKey);
-
-        // Create item instance and add to inventory
-        var instance = new DikuWeb.Domain.Items.ItemInstance
-        {
-            Id = Guid.NewGuid(),
-            TemplateKey = itemTemplate.Key,
-            TemplateName = itemTemplate.Name,
-            Icon = itemTemplate.Icon,
-            RoomKey = character.RoomKey.ToString(),
-            ResolvedStats = new(itemTemplate.BaseStats),
-            SpawnMultipliers = spawnedItem.SpawnMultipliers,
-            Value = spawnedItem.Value,
-            State = [],
-        };
+        // The spawner's instance is used directly. This used to spawn one and then hand-build a
+        // second from its parts, which was identical field for field - and would now silently
+        // drop the questItem stamp the spawner applies.
+        var instance = new ItemSpawner().Spawn(itemTemplate, zone, world, character.RoomKey);
 
         ctx.World.AddItem(instance);
         ctx.World.PickUpItem(instance, character.Id);
@@ -238,8 +231,8 @@ public static class ShopCommands
 
         // Find the item in inventory
         var inventory = ctx.World.InventoryOf(character.Id);
-        var itemToSell = inventory
-            .FirstOrDefault(i => i.TemplateName.EndsWith(itemName, StringComparison.OrdinalIgnoreCase));
+        var itemToSell = NameMatch.Best(
+            inventory, itemName, i => i.TemplateName, i => i.TemplateKey);
 
         if (itemToSell is null)
         {

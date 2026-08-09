@@ -32,6 +32,23 @@ public sealed class Multipliers
     public decimal SpawnDensity { get; set; } = 1.0m;
 
     /// <summary>
+    /// A detached copy, for the same reason <c>FlagSet.Clone</c> exists: a mutation primitive is
+    /// held for replay into the database, so the in-memory world must not share the instance the
+    /// change is carrying, or a later edit to one would silently rewrite the other.
+    /// </summary>
+    public Multipliers Clone() => new()
+    {
+        Strength = Strength,
+        Health = Health,
+        Damage = Damage,
+        Xp = Xp,
+        Gold = Gold,
+        ItemValue = ItemValue,
+        ItemPower = ItemPower,
+        SpawnDensity = SpawnDensity,
+    };
+
+    /// <summary>
     /// Resolve a base value through world and zone multipliers.
     /// PLAN.md §4.4: round(base × world × zone), with guards per multiplier type.
     /// </summary>

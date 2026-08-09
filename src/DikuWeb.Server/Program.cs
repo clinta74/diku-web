@@ -206,6 +206,11 @@ ServerLog.DatabaseConfigured(logger, csb.Host ?? "(unset)", csb.Database ?? "(un
         logger,
         TimeProvider.System);
 
+    // Abilities are reconciled in every environment, unlike starter content. They are not a
+    // fixture: the level table promises them, so a missing row is a character who cannot cast
+    // what the game has already told them they know.
+    await StarterWorldSeeder.ReconcileAbilitiesAsync(db);
+
     // Seeding stays development-only: it writes starter content, which is a fixture, not schema.
     if (app.Environment.IsDevelopment())
     {

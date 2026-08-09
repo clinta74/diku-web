@@ -19,13 +19,39 @@ namespace DikuWeb.Engine.Presentation;
 /// </summary>
 public sealed class RoomLayoutService
 {
-    private const int DefaultWidth = 11;
-    private const int DefaultHeight = 5;
+    /// <summary>
+    /// The rectangle a room with no authored art renders as. Doubled from 11x5, to match the
+    /// size the starter rooms are drawn at - a room that fell back to the old size looked
+    /// cramped beside its neighbours rather than merely plain.
+    /// </summary>
+    private const int DefaultWidth = 21;
+    private const int DefaultHeight = 9;
     private const string DefaultFloor = ".";
 
-    /// <summary>Tiles nothing is ever drawn on. Purely an aesthetic choice.</summary>
+    /// <summary>
+    /// Tiles nothing is ever drawn on.
+    /// </summary>
+    /// <remarks>
+    /// Cosmetic, but it is what stops a rat being drawn standing on the altar or inside the
+    /// forge. Anything solid enough that a builder drew it as an object belongs here; open
+    /// ground - floor, grass, path, rubble, stairs - does not.
+    /// </remarks>
     private static readonly HashSet<string> NonPlaceableTiles =
-        new(StringComparer.OrdinalIgnoreCase) { "wall", "water" };
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "wall",
+            "water",
+            "tree",
+            "oak",
+            "table",
+            "bench",
+            "bar",
+            "altar",
+            "forge",
+            "anvil",
+            "well",
+            "millstone",
+        };
 
     private static readonly IReadOnlyDictionary<string, string> DefaultLegend =
         new Dictionary<string, string>(StringComparer.Ordinal) { [DefaultFloor] = "floor" };

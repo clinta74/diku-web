@@ -49,6 +49,19 @@ public sealed class ItemTemplate
     /// Null narrates as "hit". See <see cref="Narration.NarrationHelper.ThirdPerson"/>.
     /// </summary>
     public string? AttackVerb { get; set; }
+
+    /// <summary>
+    /// Marks instances of this template as bound to a quest: they cannot be sold or destroyed,
+    /// but can still be dropped (PLAN.md §4.9).
+    /// </summary>
+    /// <remarks>
+    /// A column rather than a <see cref="BaseStats"/> key, for the same reason as
+    /// <see cref="AttackDelayPulses"/>: it is a rule the server enforces, not a number to scale.
+    /// The flag is stamped onto each instance at spawn time by <c>ItemSpawner</c> rather than read
+    /// from the template at the point of sale, so an item already in a pack keeps the rule it was
+    /// created under even if a builder later unsets it.
+    /// </remarks>
+    public bool IsQuestItem { get; set; }
 }
 
 /// <summary>Equippable item slots.</summary>

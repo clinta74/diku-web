@@ -1,0 +1,282 @@
+using DikuWeb.Domain.Characters;
+
+namespace DikuWeb.Domain.Abilities;
+
+/// <summary>
+/// Every ability in the game, with the Path and level that grants it.
+/// </summary>
+/// <remarks>
+/// One list, rather than a seeder that writes ability rows and a progression table that names
+/// them. Those were separate and had drifted in both directions: four abilities were unlocked at
+/// level 6 with no row behind them (<c>warden.parry</c>, <c>adept.amplify</c>,
+/// <c>shade.shadowstep</c>, <c>channeler.restore</c>) so reaching level 6 granted something that
+/// could not be cast, while three that *were* seeded appeared in no progression at all
+/// (<c>warden.battle-fury</c>, <c>adept.weaken</c>, <c>shade.fortify</c>) and so were unlearnable
+/// - which is the whole of Phase 5.2a's buffs and debuffs, unreachable in play.
+///
+/// Deriving both from this list is what makes that class of mismatch impossible rather than
+/// merely fixed.
+///
+/// Only the four effect executors that exist are used - <c>damage.physical</c>,
+/// <c>heal.restore</c>, <c>buff.damage-up</c>, <c>debuff.weaken</c>. Identity comes from cost,
+/// cadence, and scaling instead: a Warden hits reliably and endures, a Shade pays little and
+/// strikes fast, an Adept pays a lot for a big slow hit, a Channeler mends more than it harms.
+/// </remarks>
+public static class AbilityCatalogue
+{
+    /// <summary>One ability, and what it takes to learn it.</summary>
+    /// <param name="Path">The Path that learns it.</param>
+    /// <param name="UnlockLevel">The level at which it is granted.</param>
+    public sealed record Entry(
+        CharacterPath Path,
+        int UnlockLevel,
+        string Key,
+        string Name,
+        string Description,
+        CostType CostType,
+        int CostValue,
+        long CooldownPulses,
+        long? CastTimePulses,
+        TargetingType TargetingType,
+        string EffectKey,
+        Dictionary<string, string> EffectParams);
+
+    private static Dictionary<string, string> Damage(string scaling, string min) =>
+        new(StringComparer.Ordinal) { ["scalingFactor"] = scaling, ["minDamage"] = min };
+
+    private static Dictionary<string, string> Heal(string amount) =>
+        new(StringComparer.Ordinal) { ["baseHeal"] = amount };
+
+    /// <summary>
+    /// A damage-up buff on the caster. The key is <c>outgoingMultiplier</c> because that is what
+    /// <c>BuffEffect</c> reads - a parameter it does not recognise is skipped in silence, so a
+    /// plausible-looking name like "magnitude" would produce a buff that did nothing.
+    /// </summary>
+    private static Dictionary<string, string> Buff(string outgoing, string duration, string name) =>
+        new(StringComparer.Ordinal)
+        {
+            ["outgoingMultiplier"] = outgoing,
+            ["durationPulses"] = duration,
+            ["maxStacks"] = "1",
+            ["stackingRule"] = "Refresh",
+            ["name"] = name,
+        };
+
+    /// <summary>A weakening debuff on the target. <c>DebuffEffect</c> reads incoming, not outgoing.</summary>
+    private static Dictionary<string, string> Debuff(string incoming, string duration, string name) =>
+        new(StringComparer.Ordinal)
+        {
+            ["incomingMultiplier"] = incoming,
+            ["durationPulses"] = duration,
+            ["maxStacks"] = "1",
+            ["stackingRule"] = "Refresh",
+            ["name"] = name,
+        };
+
+    /// <summary>
+    /// The whole catalogue, ordered by Path then unlock level.
+    /// </summary>
+    /// <remarks>
+    /// Unlocks land every two or three levels to level 20, so a level-up is usually worth
+    /// something. Progression used to stop at level 6 for every Path, which is the reason
+    /// levelling past it felt empty: there was nothing left to earn.
+    /// </remarks>
+    public static IReadOnlyList<Entry> All { get; } =
+    [
+        // -------------------------------------------------------------------
+        // Warden - armored frontline. Stamina, short cooldowns, self-sustain.
+        // -------------------------------------------------------------------
+        new(CharacterPath.Warden, 1, "warden.slash", "Slash",
+            "A measured cut with whatever you are holding.",
+            CostType.Stamina, 10, 12, null, TargetingType.SingleTarget,
+            "damage.physical", Damage("1.1", "3")),
+
+        new(CharacterPath.Warden, 3, "warden.bash", "Bash",
+            "Put your shoulder behind it. Slower, and it lands heavier.",
+            CostType.Stamina, 15, 20, null, TargetingType.SingleTarget,
+            "damage.physical", Damage("1.4", "5")),
+
+        new(CharacterPath.Warden, 5, "warden.battle-fury", "Battle Fury",
+            "Anger sharpens the next stretch of a fight.",
+            CostType.Stamina, 18, 60, null, TargetingType.Self,
+            "buff.damage-up", Buff("1.25", "80", "battle fury")),
+
+        new(CharacterPath.Warden, 7, "warden.parry", "Parry",
+            "Turn a blow aside and shake off what already landed.",
+            CostType.Stamina, 14, 32, null, TargetingType.Self,
+            "heal.restore", Heal("22")),
+
+        new(CharacterPath.Warden, 10, "warden.rally", "Rally",
+            "Find your feet again in the middle of it.",
+            CostType.Stamina, 22, 48, 4, TargetingType.Self,
+            "heal.restore", Heal("40")),
+
+        new(CharacterPath.Warden, 13, "warden.shield-wall", "Shield Wall",
+            "Set yourself. Nothing moves you for a while.",
+            CostType.Stamina, 25, 90, null, TargetingType.Self,
+            "buff.damage-up", Buff("1.4", "100", "shield wall")),
+
+        new(CharacterPath.Warden, 16, "warden.crushing-blow", "Crushing Blow",
+            "One heavy swing, wound up and committed to.",
+            CostType.Stamina, 30, 36, 4, TargetingType.SingleTarget,
+            "damage.physical", Damage("2.0", "12")),
+
+        new(CharacterPath.Warden, 20, "warden.last-stand", "Last Stand",
+            "Refuse to fall. The refusal is most of it.",
+            CostType.Health, 15, 200, null, TargetingType.Self,
+            "heal.restore", Heal("80")),
+
+        // -------------------------------------------------------------------
+        // Adept - focus caster. Expensive, slow, and hits hardest at range.
+        // -------------------------------------------------------------------
+        new(CharacterPath.Adept, 1, "adept.bolt", "Bolt",
+            "A thrown splinter of raw force.",
+            CostType.Focus, 15, 12, 8, TargetingType.SingleTarget,
+            "damage.physical", Damage("1.2", "4")),
+
+        new(CharacterPath.Adept, 3, "adept.shield", "Arcane Shield",
+            "A shell of ordered air, briefly.",
+            CostType.Focus, 12, 24, null, TargetingType.Self,
+            "heal.restore", Heal("20")),
+
+        new(CharacterPath.Adept, 5, "adept.weaken", "Weaken",
+            "Unpick the strength out of something.",
+            CostType.Focus, 16, 40, 4, TargetingType.SingleTarget,
+            "debuff.weaken", Debuff("0.75", "80", "weakened")),
+
+        new(CharacterPath.Adept, 7, "adept.amplify", "Amplify",
+            "Wind the next few strikes tighter.",
+            CostType.Focus, 20, 64, null, TargetingType.Self,
+            "buff.damage-up", Buff("1.35", "80", "amplified")),
+
+        new(CharacterPath.Adept, 10, "adept.scorch", "Scorch",
+            "Heat with intent behind it.",
+            CostType.Focus, 24, 20, 8, TargetingType.SingleTarget,
+            "damage.physical", Damage("1.7", "9")),
+
+        new(CharacterPath.Adept, 13, "adept.enfeeble", "Enfeeble",
+            "Take the fight out of it at the root.",
+            CostType.Focus, 26, 56, 4, TargetingType.SingleTarget,
+            "debuff.weaken", Debuff("0.6", "100", "enfeebled")),
+
+        new(CharacterPath.Adept, 16, "adept.disjunction", "Disjunction",
+            "Pull something apart along the seams it did not know it had.",
+            CostType.Focus, 34, 40, 12, TargetingType.SingleTarget,
+            "damage.physical", Damage("2.2", "14")),
+
+        new(CharacterPath.Adept, 20, "adept.cataclysm", "Cataclysm",
+            "The long words. Slow to say, and worth saying.",
+            CostType.Focus, 45, 160, 16, TargetingType.SingleTarget,
+            "damage.physical", Damage("3.0", "25")),
+
+        // -------------------------------------------------------------------
+        // Shade - stealth and burst. Cheap, fast, and fragile.
+        // -------------------------------------------------------------------
+        new(CharacterPath.Shade, 1, "shade.strike", "Quick Strike",
+            "In and out before it turns.",
+            CostType.Stamina, 12, 10, null, TargetingType.SingleTarget,
+            "damage.physical", Damage("1.25", "4")),
+
+        new(CharacterPath.Shade, 3, "shade.evasion", "Evasion",
+            "Not being where the blow lands.",
+            CostType.Stamina, 10, 16, null, TargetingType.Self,
+            "heal.restore", Heal("15")),
+
+        new(CharacterPath.Shade, 5, "shade.fortify", "Fortify",
+            "Settle your grip and pick the angle.",
+            CostType.Stamina, 14, 56, null, TargetingType.Self,
+            "buff.damage-up", Buff("1.3", "72", "fortified")),
+
+        new(CharacterPath.Shade, 7, "shade.shadowstep", "Shadowstep",
+            "Cross the gap without crossing the ground.",
+            CostType.Stamina, 16, 24, null, TargetingType.SingleTarget,
+            "damage.physical", Damage("1.6", "8")),
+
+        new(CharacterPath.Shade, 10, "shade.ambush", "Ambush",
+            "The blow that was already on its way.",
+            CostType.Stamina, 20, 28, null, TargetingType.SingleTarget,
+            "damage.physical", Damage("1.9", "10")),
+
+        new(CharacterPath.Shade, 13, "shade.vanish", "Vanish",
+            "Break away and let them lose you.",
+            CostType.Stamina, 18, 72, null, TargetingType.Self,
+            "heal.restore", Heal("45")),
+
+        new(CharacterPath.Shade, 16, "shade.assassinate", "Assassinate",
+            "One place, once, properly.",
+            CostType.Stamina, 28, 44, 4, TargetingType.SingleTarget,
+            "damage.physical", Damage("2.4", "16")),
+
+        new(CharacterPath.Shade, 20, "shade.death-mark", "Death Mark",
+            "Decide how this ends, then make it true.",
+            CostType.Stamina, 35, 150, null, TargetingType.SingleTarget,
+            "damage.physical", Damage("2.8", "22")),
+
+        // -------------------------------------------------------------------
+        // Channeler - support and control. Mends more than it harms.
+        // -------------------------------------------------------------------
+        new(CharacterPath.Channeler, 1, "channeler.mend", "Mend",
+            "Close what is open. Slowly, and it holds.",
+            CostType.Focus, 20, 20, 4, TargetingType.Self,
+            "heal.restore", Heal("25")),
+
+        new(CharacterPath.Channeler, 3, "channeler.guidance", "Guidance",
+            "Steady a hand that is about to need steadying.",
+            CostType.Focus, 15, 24, null, TargetingType.Self,
+            "heal.restore", Heal("18")),
+
+        new(CharacterPath.Channeler, 5, "channeler.enervate", "Enervate",
+            "Draw the momentum out of a thing.",
+            CostType.Focus, 18, 44, 4, TargetingType.SingleTarget,
+            "debuff.weaken", Debuff("0.8", "72", "enervated")),
+
+        new(CharacterPath.Channeler, 7, "channeler.restore", "Restore",
+            "Put back what the fight has taken so far.",
+            CostType.Focus, 28, 40, 8, TargetingType.Self,
+            "heal.restore", Heal("50")),
+
+        new(CharacterPath.Channeler, 10, "channeler.blessing", "Blessing",
+            "Lend the next while a better edge than it earned.",
+            CostType.Focus, 24, 72, null, TargetingType.Self,
+            "buff.damage-up", Buff("1.3", "96", "blessed")),
+
+        new(CharacterPath.Channeler, 13, "channeler.renewal", "Renewal",
+            "Begin again, without stopping.",
+            CostType.Focus, 34, 64, 8, TargetingType.Self,
+            "heal.restore", Heal("70")),
+
+        new(CharacterPath.Channeler, 16, "channeler.sap", "Sap",
+            "Take the strength and do not give it back.",
+            CostType.Focus, 30, 60, 4, TargetingType.SingleTarget,
+            "debuff.weaken", Debuff("0.55", "100", "sapped")),
+
+        new(CharacterPath.Channeler, 20, "channeler.intercession", "Intercession",
+            "Stand between someone and what was coming for them.",
+            CostType.Focus, 50, 180, 12, TargetingType.Self,
+            "heal.restore", Heal("120")),
+    ];
+
+    /// <summary>Every ability this Path learns, in unlock order.</summary>
+    public static IReadOnlyList<Entry> For(CharacterPath path) =>
+        [.. All.Where(e => e.Path == path).OrderBy(e => e.UnlockLevel)];
+
+    /// <summary>Builds the <see cref="Ability"/> row for an entry.</summary>
+    public static Ability ToAbility(Entry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        return new Ability
+        {
+            Key = entry.Key,
+            Name = entry.Name,
+            Description = entry.Description,
+            CostType = entry.CostType,
+            CostValue = entry.CostValue,
+            CooldownPulses = entry.CooldownPulses,
+            CastTimePulses = entry.CastTimePulses,
+            TargetingType = entry.TargetingType,
+            EffectParams = new Dictionary<string, string>(entry.EffectParams, StringComparer.Ordinal),
+            EffectKey = entry.EffectKey,
+        };
+    }
+}

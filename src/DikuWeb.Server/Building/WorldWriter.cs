@@ -92,6 +92,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         Description = c.Description,
                         SortOrder = c.SortOrder,
                         Flags = c.Flags.Clone(),
+                        Multipliers = c.Multipliers.Clone(),
                     });
 
                     return ContentAction.Create;
@@ -101,6 +102,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 entity.Description = c.Description;
                 entity.SortOrder = c.SortOrder;
                 entity.Flags = c.Flags.Clone();
+                entity.Multipliers = c.Multipliers.Clone();
                 return ContentAction.Update;
             }
 
@@ -130,6 +132,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         MinLevel = c.MinLevel,
                         MaxLevel = c.MaxLevel,
                         Flags = c.Flags.Clone(),
+                        Multipliers = c.Multipliers.Clone(),
                     });
 
                     return ContentAction.Create;
@@ -140,6 +143,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 entity.MinLevel = c.MinLevel;
                 entity.MaxLevel = c.MaxLevel;
                 entity.Flags = c.Flags.Clone();
+                entity.Multipliers = c.Multipliers.Clone();
                 return ContentAction.Update;
             }
 
@@ -308,6 +312,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         BaseStats = c.BaseStats,
                         AttackDelayPulses = c.AttackDelayPulses,
                         AttackVerb = c.AttackVerb,
+                        IsQuestItem = c.IsQuestItem,
                     });
 
                     return ContentAction.Create;
@@ -322,6 +327,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 entity.BaseStats = c.BaseStats;
                 entity.AttackDelayPulses = c.AttackDelayPulses;
                 entity.AttackVerb = c.AttackVerb;
+                entity.IsQuestItem = c.IsQuestItem;
                 return ContentAction.Update;
             }
 

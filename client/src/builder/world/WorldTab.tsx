@@ -7,6 +7,7 @@ import type { BuilderOutletContext } from '../BuilderShell'
 import { ZoneCanvas } from '../ZoneCanvas'
 import { RoomEditor } from '../room/RoomEditor'
 import { WorldTree } from './WorldTree'
+import { WorldPanel } from './WorldPanel'
 import { ZonePanel } from './ZonePanel'
 import { ValidationPanel } from './ValidationPanel'
 
@@ -102,7 +103,16 @@ export function WorldTab() {
       </main>
 
       <aside className="builder-col">
-        {zoneKey && <ZonePanel zoneKey={zoneKey} />}
+        {/* The zone panel wins the slot when a zone is selected: it is the narrower scope, and
+            it carries the difficulty preview, which is what a builder is usually here for. The
+            world panel is how you reach a world's own properties at all. */}
+        {zoneKey ? (
+          <ZonePanel zoneKey={zoneKey} />
+        ) : (
+          worldKey && (
+            <WorldPanel worldKey={worldKey} onDeleted={() => navigate(toWorldPath(null))} />
+          )
+        )}
         <ValidationPanel validation={validation} onSelect={goRoom} />
       </aside>
     </div>

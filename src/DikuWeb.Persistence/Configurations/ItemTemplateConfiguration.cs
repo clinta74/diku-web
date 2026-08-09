@@ -22,5 +22,6 @@ internal sealed class ItemTemplateConfiguration : IEntityTypeConfiguration<ItemT
         builder.Property(e => e.BaseStats).HasColumnName("base_stats").HasColumnType("jsonb");
         builder.Property(e => e.AttackDelayPulses).HasColumnName("attack_delay_pulses");
         builder.Property(e => e.AttackVerb).HasColumnName("attack_verb");
+        builder.Property(e => e.IsQuestItem).HasColumnName("is_quest_item");
     }
 }

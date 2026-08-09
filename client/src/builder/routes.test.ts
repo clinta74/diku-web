@@ -115,3 +115,34 @@ describe('template tab paths', () => {
     expect(toItemsPath('rusted-blade')).toBe('/builder/items/rusted-blade')
   })
 })
+
+/**
+ * The server builds these same paths in `BuilderLinks.cs`, for the deep links `examine` and
+ * `stats` hand a builder. Nothing connects the two but agreement, and a drift fails quietly —
+ * the link routes to an empty tab rather than erroring — so the shapes are pinned here.
+ */
+describe('deep links handed out by the game', () => {
+  it('matches BuilderLinks.ToItem', () => {
+    expect(toItemsPath('rusted-blade')).toBe('/builder/items/rusted-blade')
+  })
+
+  it('matches BuilderLinks.ToMob', () => {
+    expect(toMobsPath('giant-rat')).toBe('/builder/mobs/giant-rat')
+  })
+
+  it('matches BuilderLinks.ToRoom, which slugs each segment', () => {
+    // The server has RoomKey "aldenmoor.millbrook.north-gate" and emits the slugged form.
+    expect(toWorldPath('aldenmoor', 'aldenmoor.millbrook', 'aldenmoor.millbrook.north-gate')).toBe(
+      '/builder/world/aldenmoor/millbrook/north-gate/details',
+    )
+  })
+
+  it('round-trips a server-built room link back to the keys it names', () => {
+    const path = '/builder/world/aldenmoor/millbrook/north-gate/details'
+    const recovered = keysFromParams(paramsFromWorldPath(path))
+
+    expect(recovered.worldKey).toBe('aldenmoor')
+    expect(recovered.zoneKey).toBe('aldenmoor.millbrook')
+    expect(recovered.roomKey).toBe('aldenmoor.millbrook.north-gate')
+  })
+})

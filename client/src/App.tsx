@@ -85,7 +85,18 @@ export default function App() {
               characterId={stage.character.id}
               characterName={stage.character.name}
               onRoomChange={onRoomChange}
-              onOpenBuilder={canBuild ? () => navigate('/builder') : undefined}
+              // A path opens the builder on that exact entity — the deep links `examine` and
+              // `stats` hand a builder. No path is the plain "open the builder" button.
+              //
+              // The typeof guard is deliberate: an optional-parameter callback is assignable to
+              // `() => void`, so a caller that wires this straight to onClick type-checks and
+              // then passes a MouseEvent as the "path". That is exactly how the builder button
+              // broke, and it broke silently.
+              onOpenBuilder={
+                canBuild
+                  ? (path?: string) => navigate(typeof path === 'string' ? path : '/builder')
+                  : undefined
+              }
               onLeave={() => {
                 // Frees the slot against the per-account cap straight away rather than waiting
                 // out the 90 s link-dead window.

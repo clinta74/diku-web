@@ -19,7 +19,18 @@ public static class EventTypes
 /// <summary>
 /// Styled markup rather than raw ANSI, so the client owns the colour theme (PLAN.md §3.5).
 /// </summary>
-public sealed record TextSpan(string T, string? S = null);
+/// <param name="T">The text.</param>
+/// <param name="S">A style name the client resolves against its own theme.</param>
+/// <param name="B">
+/// A builder path this span opens, e.g. <c>/builder/items/rusty-dagger</c>. Null for ordinary
+/// prose, which is nearly all of it.
+/// </param>
+/// <remarks>
+/// The link is a *path*, not a URL: the client routes it internally rather than navigating, so
+/// following one from the game keeps the session and the stream alive. Only builders are ever
+/// sent one — the server decides, so a player cannot discover the builder by reading the wire.
+/// </remarks>
+public sealed record TextSpan(string T, string? S = null, string? B = null);
 
 public sealed record TextPayload(IReadOnlyList<TextSpan> Spans)
 {

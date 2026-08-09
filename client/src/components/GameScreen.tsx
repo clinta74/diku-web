@@ -10,8 +10,11 @@ interface Props {
   onLeave: () => void
   /** Drives the builder's follow mode (PLAN.md §7.6). Ignored for ordinary players. */
   onRoomChange?: (roomKey: string) => void
-  /** Shown only to builders; opens the builder alongside this session. */
-  onOpenBuilder?: () => void
+  /**
+   * Shown only to builders; opens the builder alongside this session. An optional path opens
+   * it on a specific entity, which is what the deep links in `examine` and `stats` use.
+   */
+  onOpenBuilder?: (path?: string) => void
   /** Ref to focus the command input from parent (used when closing builder). */
   focusInputRef?: React.RefObject<(() => void) | null>
 }
@@ -73,7 +76,7 @@ export function GameScreen({
         contents={state.contents?.occupants ?? []}
         onKeyword={(keyword) => insertKeyword.current?.(keyword)}
       />
-      <Scrollback lines={state.scrollback} />
+      <Scrollback lines={state.scrollback} onOpenBuilder={onOpenBuilder} />
       <InputBar onSend={send} insertRef={insertKeyword} focusRef={focusInputRef ?? focusInput} />
       <VitalsBar
         vitals={state.vitals}
@@ -173,7 +176,13 @@ function RoomPanel({
   )
 }
 
-function Scrollback({ lines }: { lines: { id: number; spans: TextSpan[] }[] }) {
+function Scrollback({
+  lines,
+  onOpenBuilder,
+}: {
+  lines: { id: number; spans: TextSpan[] }[]
+  onOpenBuilder?: (path?: string) => void
+}) {
   const endRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -184,11 +193,26 @@ function Scrollback({ lines }: { lines: { id: number; spans: TextSpan[] }[] }) {
     <section className="scrollback" aria-live="polite">
       {lines.map((line) => (
         <div key={line.id} className="line">
-          {line.spans.map((span, i) => (
-            <span key={i} className={span.s ?? undefined}>
-              {span.t}
-            </span>
-          ))}
+          {line.spans.map((span, i) =>
+            // A span carrying a builder path renders as a button rather than text. Only
+            // builders are ever sent one, so there is no permission check here — but the
+            // handler is still optional, and without it the span stays plain text rather
+            // than becoming a control that does nothing.
+            span.b && onOpenBuilder ? (
+              <button
+                key={i}
+                type="button"
+                className="span-link"
+                onClick={() => onOpenBuilder(span.b ?? undefined)}
+              >
+                {span.t}
+              </button>
+            ) : (
+              <span key={i} className={span.s ?? undefined}>
+                {span.t}
+              </span>
+            ),
+          )}
         </div>
       ))}
       <div ref={endRef} />
@@ -323,7 +347,10 @@ function VitalsBar({
         {connected ? 'connected' : 'reconnecting…'}
       </span>
       {onOpenBuilder && (
-        <button type="button" className="leave" onClick={onOpenBuilder}>
+        // Called with no arguments on purpose. Passing the handler straight to onClick hands it
+        // React's MouseEvent as its first argument, which this signature now reads as a builder
+        // path — so the button navigated to an event object instead of /builder.
+        <button type="button" className="leave" onClick={() => onOpenBuilder()}>
           builder
         </button>
       )}

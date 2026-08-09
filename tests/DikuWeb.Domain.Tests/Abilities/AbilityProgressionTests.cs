@@ -76,7 +76,7 @@ public sealed class AbilityProgressionTests
     }
 
     [Fact]
-    public void GetKnownAbilitiesForLevel_Level6_ReturnsAll()
+    public void GetKnownAbilitiesForLevel_Level6_ReturnsEverythingUnlockedSoFar()
     {
         // Act
         var known = AbilityProgression.GetKnownAbilitiesForLevel(CharacterPath.Warden, 6);
@@ -85,7 +85,21 @@ public sealed class AbilityProgressionTests
         Assert.Equal(3, known.Count);
         Assert.Contains("warden.slash", known);
         Assert.Contains("warden.bash", known);
-        Assert.Contains("warden.parry", known);
+
+        // Battle Fury, not Parry. This used to expect parry at 6 and call the result "all",
+        // which was doubly wrong: progression carried on past 6 in neither direction, and parry
+        // had no ability row behind it, so the level-up granted something uncastable.
+        Assert.Contains("warden.battle-fury", known);
+        Assert.DoesNotContain("warden.parry", known);
+    }
+
+    [Fact]
+    public void GetKnownAbilitiesForLevel_KeepsGrantingPastLevelSix()
+    {
+        var atSix = AbilityProgression.GetKnownAbilitiesForLevel(CharacterPath.Warden, 6);
+        var atTwenty = AbilityProgression.GetKnownAbilitiesForLevel(CharacterPath.Warden, 20);
+
+        Assert.True(atTwenty.Count > atSix.Count);
     }
 
     [Fact]

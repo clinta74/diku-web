@@ -1,0 +1,166 @@
+namespace DikuWeb.Engine;
+
+/// <summary>
+/// Matches what a player typed against a thing's display name and template key.
+/// </summary>
+/// <remarks>
+/// Every targeting command used to demand something exact: items matched the full display name
+/// or the full key, so <c>destroy coin</c> failed on "old coin" and only <c>destroy old-coin</c>
+/// worked. Mobs matched with <c>TemplateKey.EndsWith</c>, which accepted "rat" for "giant-rat"
+/// but also accepted "t", and never looked at the display name at all.
+///
+/// Matching is derived from the name rather than authored, so no content needs a keyword list
+/// for the common case: a builder who writes "old coin" gets "coin", "old", and "co" for free.
+/// Ranked rather than boolean, so when several things in a room answer to the same word, the
+/// closest one wins instead of whichever happened to be first in the list.
+/// </remarks>
+public static class NameMatch
+{
+    /// <summary>No match. Higher-numbered ranks are worse matches.</summary>
+    private const int NoMatch = int.MaxValue;
+
+    /// <summary>
+    /// How well <paramref name="typed"/> identifies the thing, or null when it does not.
+    /// </summary>
+    public static int? Rank(string? typed, string? name, string? key)
+    {
+        var needle = typed?.Trim();
+        if (string.IsNullOrEmpty(needle))
+        {
+            return null;
+        }
+
+        var rank = RankOf(needle, name, key);
+        return rank == NoMatch ? null : rank;
+    }
+
+    /// <summary>True when what was typed identifies this thing at all.</summary>
+    public static bool Matches(string? typed, string? name, string? key) =>
+        Rank(typed, name, key) is not null;
+
+    /// <summary>
+    /// The best match in <paramref name="candidates"/>, or null when nothing answers to it.
+    /// Ties keep the earlier candidate, so room order still breaks a genuine draw.
+    /// </summary>
+    public static T? Best<T>(
+        IEnumerable<T> candidates,
+        string? typed,
+        Func<T, string?> name,
+        Func<T, string?> key)
+        where T : class
+    {
+        ArgumentNullException.ThrowIfNull(candidates);
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(key);
+
+        T? best = null;
+        var bestRank = NoMatch;
+
+        foreach (var candidate in candidates)
+        {
+            var rank = RankOf(typed?.Trim(), name(candidate), key(candidate));
+            if (rank < bestRank)
+            {
+                best = candidate;
+                bestRank = rank;
+
+                if (rank == 0)
+                {
+                    break;
+                }
+            }
+        }
+
+        return best;
+    }
+
+    private static int RankOf(string? needle, string? name, string? key)
+    {
+        if (string.IsNullOrEmpty(needle))
+        {
+            return NoMatch;
+        }
+
+        const StringComparison Ordinal = StringComparison.OrdinalIgnoreCase;
+
+        // An exact name is unambiguous and beats everything, so "old coin" always finds the
+        // old coin even in a room that also holds an "old coin purse".
+        if (!string.IsNullOrEmpty(name) && name.Equals(needle, Ordinal))
+        {
+            return 0;
+        }
+
+        if (!string.IsNullOrEmpty(key) && key.Equals(needle, Ordinal))
+        {
+            return 1;
+        }
+
+        // A whole word, which is how players actually refer to things: "coin", "blade", "rat".
+        // The last word ranks best - "dagger" should find the rusty dagger rather than the
+        // dagger hilt, because the last word is the noun in English noun phrases.
+        var nameWords = Words(name);
+        var keyWords = Words(key);
+
+        var lastNameWord = nameWords.Count > 0 ? nameWords[^1] : null;
+        if (lastNameWord is not null && lastNameWord.Equals(needle, Ordinal))
+        {
+            return 2;
+        }
+
+        var lastKeyWord = keyWords.Count > 0 ? keyWords[^1] : null;
+        if (lastKeyWord is not null && lastKeyWord.Equals(needle, Ordinal))
+        {
+            return 3;
+        }
+
+        if (nameWords.Any(w => w.Equals(needle, Ordinal)))
+        {
+            return 4;
+        }
+
+        if (keyWords.Any(w => w.Equals(needle, Ordinal)))
+        {
+            return 5;
+        }
+
+        // A prefix of a word, so "dag" reaches the dagger. Whole-name prefixes come first so
+        // "old c" still finds "old coin".
+        if (!string.IsNullOrEmpty(name) && name.StartsWith(needle, Ordinal))
+        {
+            return 6;
+        }
+
+        if (!string.IsNullOrEmpty(key) && key.StartsWith(needle, Ordinal))
+        {
+            return 7;
+        }
+
+        if (lastNameWord is not null && lastNameWord.StartsWith(needle, Ordinal))
+        {
+            return 8;
+        }
+
+        if (nameWords.Any(w => w.StartsWith(needle, Ordinal)))
+        {
+            return 9;
+        }
+
+        if (keyWords.Any(w => w.StartsWith(needle, Ordinal)))
+        {
+            return 10;
+        }
+
+        return NoMatch;
+    }
+
+    /// <summary>
+    /// The words in a name or key. Keys are hyphenated ("rusty-dagger") and names are spaced
+    /// ("a rusty dagger"), so both separators split - a key and a name should answer to the
+    /// same words whichever the builder happened to type it in.
+    /// </summary>
+    private static List<string> Words(string? text) =>
+        string.IsNullOrEmpty(text)
+            ? []
+            : [.. text.Split([' ', '-', '_'], StringSplitOptions.RemoveEmptyEntries
+                | StringSplitOptions.TrimEntries)];
+}

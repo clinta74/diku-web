@@ -240,10 +240,15 @@ input:focus {
   padding: 0.75rem 1rem;
 }
 
+/*
+ * Box-drawing glyphs have to tile edge to edge, so the map gets no letter-spacing and a line
+ * height of exactly 1. Any tracking at all leaves visible gaps between the segments of a wall
+ * and the border stops reading as a continuous line.
+ */
 .map {
   margin: 0 0 0.6rem;
-  line-height: 1.15;
-  letter-spacing: 0.08em;
+  line-height: 1;
+  letter-spacing: 0;
   color: var(--dim);
   white-space: pre;
 }
@@ -335,6 +340,35 @@ input:focus {
 }
 .line .sys-disconnect {
   color: var(--bad);
+}
+
+/*
+ * A builder deep link inside the scrollback. A button for the keyboard and screen readers, but
+ * stripped back to read as part of the prose - it sits mid-line among spans, so any button
+ * chrome would break the flow of the text around it.
+ */
+.line .span-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+
+  /* Sits in the run of text rather than as a box on the baseline. The server keeps line breaks
+     out of link spans, but a button is inline-block by default and would still align by its own
+     bottom edge — these two make it behave like the text around it either way. */
+  display: inline;
+  vertical-align: baseline;
+  white-space: inherit;
+}
+
+.line .span-link:hover,
+.line .span-link:focus-visible {
+  color: var(--good);
 }
 
 .input-bar {
@@ -908,8 +942,36 @@ code.dim {
 .grid-painter .palette {
   display: flex;
   gap: 0.2rem;
-  margin-bottom: 0.4rem;
   flex-wrap: wrap;
+}
+
+/* Grouped so the box-drawing glyphs are findable. A flat row of ~50 swatches would be a
+   character map, which is the thing having a palette is meant to save you from. */
+.grid-painter .palette-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.grid-painter .palette-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.grid-painter .palette-label {
+  color: var(--dim);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Box-drawing glyphs only join up at their true cell width, so the swatches drop the tracking
+   the rest of the builder uses. */
+.grid-painter .swatch,
+.grid-painter .cell {
+  letter-spacing: 0;
 }
 
 .swatch {

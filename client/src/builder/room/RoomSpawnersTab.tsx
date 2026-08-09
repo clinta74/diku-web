@@ -9,15 +9,15 @@ interface Props {
   room: RoomDetail
 }
 
-/** Spawners that place mobs in this room. Add/edit share one dialog; delete confirms. */
+/** Spawners that populate this room. Add/edit share one dialog; removal confirms. */
 export function RoomSpawnersTab({ room }: Props) {
-  const { mobTemplates } = useBuilderData()
+  const { mobTemplates, itemTemplates, rooms } = useBuilderData()
   const toast = useToast()
   const [spawners, setSpawners] = useState<Spawner[]>([])
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Spawner | null>(null)
   const [adding, setAdding] = useState(false)
-  const [deleting, setDeleting] = useState<Spawner | null>(null)
+  const [removing, setRemoving] = useState<Spawner | null>(null)
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(() => {
@@ -29,20 +29,38 @@ export function RoomSpawnersTab({ room }: Props) {
 
   useEffect(load, [load])
 
-  async function confirmDelete() {
-    if (!deleting) return
+  /**
+   * Removal is scoped to this room when the spawner covers others.
+   *
+   * The list shows every spawner *containing* this room, so a zone-wide spawner appears in each
+   * of its rooms. "Remove" used to delete the whole thing while the confirmation said it would
+   * "stop populating this room" — a builder tidying one room could empty twenty.
+   */
+  async function confirmRemove() {
+    if (!removing) return
     setBusy(true)
+    setError(null)
     try {
-      await builderApi.deleteSpawner(deleting.id)
-      setDeleting(null)
+      const remaining = removing.roomKeys.filter((k) => k !== room.key)
+
+      if (remaining.length > 0) {
+        await builderApi.updateSpawner(removing.id, { roomKeys: remaining })
+        toast.notify('Spawner no longer fills this room')
+      } else {
+        await builderApi.deleteSpawner(removing.id)
+        toast.notify('Spawner removed')
+      }
+
+      setRemoving(null)
       load()
-      toast.notify('Spawner removed')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not delete the spawner.')
+      setError(e instanceof Error ? e.message : 'Could not remove the spawner.')
     } finally {
       setBusy(false)
     }
   }
+
+  const zoneRooms = rooms.filter((r) => r.zoneKey === room.zoneKey)
 
   return (
     <div className="section-body">
@@ -52,25 +70,32 @@ export function RoomSpawnersTab({ room }: Props) {
         <p className="dim">No spawners in this room.</p>
       ) : (
         <ul className="spawner-list">
-          {spawners.map((spawner) => (
-            <li key={spawner.id}>
-              <div className="spawner-info">
-                <strong>{spawner.templateKey}</strong>
-                <span className="dim">
-                  {spawner.targetCount}× · respawn {spawner.respawnSeconds}s
-                  {spawner.sentinel ? ' · sentinel' : ''}
-                </span>
-              </div>
-              <div className="spawner-actions">
-                <button type="button" onClick={() => setEditing(spawner)}>
-                  Edit
-                </button>
-                <button type="button" className="danger-button" onClick={() => setDeleting(spawner)}>
-                  Remove
-                </button>
-              </div>
-            </li>
-          ))}
+          {spawners.map((spawner) => {
+            const elsewhere = spawner.roomKeys.length - 1
+            return (
+              <li key={spawner.id}>
+                <div className="spawner-info">
+                  <strong>{spawner.templateKey}</strong>
+                  <span className="dim">
+                    {spawner.templateKind === 'Item' ? 'item · ' : ''}
+                    {spawner.targetCount}× · respawn {spawner.respawnSeconds}s
+                    {spawner.sentinel ? ' · sentinel' : ''}
+                    {/* Say so plainly: the count is shared across the whole set, so this room
+                        does not necessarily get targetCount of them. */}
+                    {elsewhere > 0 && ` · shared with ${elsewhere} other room${elsewhere === 1 ? '' : 's'}`}
+                  </span>
+                </div>
+                <div className="spawner-actions">
+                  <button type="button" onClick={() => setEditing(spawner)}>
+                    Edit
+                  </button>
+                  <button type="button" className="danger-button" onClick={() => setRemoving(spawner)}>
+                    Remove
+                  </button>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       )}
 
@@ -89,6 +114,8 @@ export function RoomSpawnersTab({ room }: Props) {
         zoneKey={room.zoneKey}
         roomKey={room.key}
         mobTemplates={mobTemplates}
+        itemTemplates={itemTemplates}
+        zoneRooms={zoneRooms}
         editing={editing}
         onSaved={() => {
           load()
@@ -97,16 +124,22 @@ export function RoomSpawnersTab({ room }: Props) {
       />
 
       <ConfirmDialog
-        open={deleting !== null}
-        onOpenChange={(open) => !open && setDeleting(null)}
-        title="Remove spawner?"
+        open={removing !== null}
+        onOpenChange={(open) => !open && setRemoving(null)}
+        title={
+          removing && removing.roomKeys.length > 1 ? 'Stop filling this room?' : 'Delete spawner?'
+        }
         description={
-          deleting ? `The ${deleting.templateKey} spawner will stop populating this room.` : undefined
+          removing
+            ? removing.roomKeys.length > 1
+              ? `The ${removing.templateKey} spawner covers ${removing.roomKeys.length} rooms. This removes only this one; the spawner keeps filling the other ${removing.roomKeys.length - 1}.`
+              : `This room is the only one the ${removing.templateKey} spawner fills, so the spawner is deleted outright.`
+            : undefined
         }
         destructive
         busy={busy}
-        confirmLabel="Remove"
-        onConfirm={() => void confirmDelete()}
+        confirmLabel={removing && removing.roomKeys.length > 1 ? 'Remove from this room' : 'Delete spawner'}
+        onConfirm={() => void confirmRemove()}
       />
     </div>
   )

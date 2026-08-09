@@ -204,7 +204,7 @@ public sealed class GracefulDegradationTests
             new SetRoomFlag(Nowhere, RoomFlags.Pvp.Key, true),
             new UnlinkExit(West, Direction.Up),
             new RenameRoom(Nowhere, RoomKey.Parse("test.zone.elsewhere")),
-            new UpsertZone("other.zone", "other", "Other", "", 1, 50, new FlagSet()),
+            new UpsertZone("other.zone", "other", "Other", "", 1, 50, new FlagSet(), new Multipliers()),
         ];
 
         foreach (var change in doomed)

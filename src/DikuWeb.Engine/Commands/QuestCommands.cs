@@ -1,4 +1,4 @@
-using DikuWeb.Domain.Characters;
+﻿using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Worlds;
@@ -47,8 +47,8 @@ public static class QuestCommands
         var character = ctx.Actor.Character;
 
         // Find the mob in the current room
-        var targetMob = ctx.World.MobsIn(character.RoomKey)
-            .FirstOrDefault(m => m.TemplateKey.EndsWith(npcName, StringComparison.OrdinalIgnoreCase));
+        var targetMob = NameMatch.Best(
+            ctx.World.MobsIn(character.RoomKey), npcName, m => m.TemplateName, m => m.TemplateKey);
 
         if (targetMob is null)
         {
@@ -294,8 +294,8 @@ public static class QuestCommands
         var character = ctx.Actor.Character;
 
         // Find the mob in the current room
-        var targetMob = ctx.World.MobsIn(character.RoomKey)
-            .FirstOrDefault(m => m.TemplateKey.EndsWith(npcName, StringComparison.OrdinalIgnoreCase));
+        var targetMob = NameMatch.Best(
+            ctx.World.MobsIn(character.RoomKey), npcName, m => m.TemplateName, m => m.TemplateKey);
 
         if (targetMob is null)
         {
@@ -464,22 +464,13 @@ public static class QuestCommands
         }
 
         var spawner = new DikuWeb.Engine.Spawning.ItemSpawner();
-        var rewardItem = spawner.Spawn(itemTemplate, zone, world, character.RoomKey);
 
+        // Spawned per copy, not once and cloned: each instance needs its own id, and the spawner
+        // is the only place that stamps the questItem flag - which quest rewards are the most
+        // likely items in the game to carry.
         for (var i = 0; i < quest.RewardItemCount; i++)
         {
-            var instance = new DikuWeb.Domain.Items.ItemInstance
-            {
-                Id = Guid.NewGuid(),
-                TemplateKey = itemTemplate.Key,
-                TemplateName = itemTemplate.Name,
-                Icon = itemTemplate.Icon,
-                RoomKey = character.RoomKey.ToString(),
-                ResolvedStats = new(itemTemplate.BaseStats),
-                SpawnMultipliers = rewardItem.SpawnMultipliers,
-                Value = rewardItem.Value,
-                State = [],
-            };
+            var instance = spawner.Spawn(itemTemplate, zone, world, character.RoomKey);
 
             ctx.World.AddItem(instance);
             ctx.World.PickUpItem(instance, character.Id);

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NumberInput } from '../ui/NumberInput'
+import { PALETTE, PALETTE_GLYPHS, tileFor } from './palette'
 
 interface Props {
   grid: string[]
@@ -7,16 +8,13 @@ interface Props {
   onChange: (grid: string[], legend: Record<string, string>) => void
 }
 
-const DEFAULT_PALETTE: [string, string][] = [
-  ['.', 'floor'],
-  ['#', 'wall'],
-  ['~', 'water'],
-  [',', 'grass'],
-  ['"', 'undergrowth'],
-  ['+', 'door'],
-  ['o', 'prop'],
-  ['^', 'stairs'],
-]
+/**
+ * The size a fresh grid starts at, matching what the starter zone is drawn at and what the
+ * client falls back to for a room with no art. Was 11x5, which is too small to fit a room's
+ * furniture inside its own walls.
+ */
+const NEW_GRID_WIDTH = 21
+const NEW_GRID_HEIGHT = 9
 
 /**
  * The room grid edited as ASCII art (PLAN.md §7.2): pick a glyph, click or drag to paint,
@@ -30,10 +28,11 @@ export function GridPainter({ grid, legend, onChange }: Props) {
   const [glyph, setGlyph] = useState('.')
   const [painting, setPainting] = useState(false)
 
-  const palette = [...DEFAULT_PALETTE]
-  for (const [key, tile] of Object.entries(legend)) {
-    if (!palette.some(([g]) => g === key)) palette.push([key, tile])
-  }
+  // Glyphs this room already uses that the palette does not offer — art authored before a
+  // group existed, or imported. Shown so painting over one is possible without retyping it.
+  const extras = Object.entries(legend).filter(
+    ([key]) => !PALETTE_GLYPHS.some(([g]) => g === key),
+  )
 
   const height = grid.length
   const width = height > 0 ? Math.max(...grid.map((row) => row.length)) : 0
@@ -46,8 +45,8 @@ export function GridPainter({ grid, legend, onChange }: Props) {
     row[x] = glyph
     rows[y] = row.join('')
 
-    const tile = palette.find(([g]) => g === glyph)?.[1] ?? 'floor'
-    onChange(rows, { ...legend, [glyph]: legend[glyph] ?? tile })
+    // The room's own name for a glyph wins: a builder who renamed `═` to "bar" keeps it.
+    onChange(rows, { ...legend, [glyph]: legend[glyph] ?? tileFor(glyph) })
   }
 
   function resize(nextWidth: number, nextHeight: number) {
@@ -69,7 +68,7 @@ export function GridPainter({ grid, legend, onChange }: Props) {
         <p className="dim">
           No terrain art. The client draws a plain rectangle, which is a perfectly good room.
         </p>
-        <button type="button" onClick={() => resize(11, 5)}>
+        <button type="button" onClick={() => resize(NEW_GRID_WIDTH, NEW_GRID_HEIGHT)}>
           Start a grid
         </button>
       </div>
@@ -80,18 +79,48 @@ export function GridPainter({ grid, legend, onChange }: Props) {
 
   return (
     <div className="grid-painter">
-      <div className="palette">
-        {palette.map(([g, tile]) => (
-          <button
-            key={g}
-            type="button"
-            className={g === glyph ? 'swatch selected' : 'swatch'}
-            title={tile}
-            onClick={() => setGlyph(g)}
-          >
-            {g === ' ' ? '␠' : g}
-          </button>
+      <div className="palette-groups">
+        {PALETTE.map((group) => (
+          <div className="palette-group" key={group.label}>
+            <span className="palette-label" title={group.hint}>
+              {group.label}
+            </span>
+            <div className="palette">
+              {group.glyphs.map(([g, tile]) => (
+                <button
+                  key={g}
+                  type="button"
+                  className={g === glyph ? 'swatch selected' : 'swatch'}
+                  title={legend[g] ? `${legend[g]} (in this room)` : tile}
+                  onClick={() => setGlyph(g)}
+                >
+                  {g === ' ' ? '␠' : g}
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
+
+        {extras.length > 0 && (
+          <div className="palette-group">
+            <span className="palette-label" title="Glyphs this room uses that are not in the palette.">
+              In this room
+            </span>
+            <div className="palette">
+              {extras.map(([g, tile]) => (
+                <button
+                  key={g}
+                  type="button"
+                  className={g === glyph ? 'swatch selected' : 'swatch'}
+                  title={tile}
+                  onClick={() => setGlyph(g)}
+                >
+                  {g === ' ' ? '␠' : g}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* onMouseLeave ends a drag that left the canvas, so the mouse-up never arrives and

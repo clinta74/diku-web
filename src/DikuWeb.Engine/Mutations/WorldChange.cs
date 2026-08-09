@@ -36,7 +36,8 @@ public sealed record UpsertWorld(
     string Name,
     string Description,
     int SortOrder,
-    FlagSet Flags) : WorldChange
+    FlagSet Flags,
+    Multipliers Multipliers) : WorldChange
 {
     public override string EntityKind => "world";
 
@@ -57,7 +58,8 @@ public sealed record UpsertZone(
     string Description,
     int MinLevel,
     int MaxLevel,
-    FlagSet Flags) : WorldChange
+    FlagSet Flags,
+    Multipliers Multipliers) : WorldChange
 {
     public override string EntityKind => "zone";
 
@@ -225,7 +227,8 @@ public sealed record UpsertItemTemplate(
     int BaseValue,
     Dictionary<string, object> BaseStats,
     int? AttackDelayPulses,
-    string? AttackVerb) : WorldChange
+    string? AttackVerb,
+    bool IsQuestItem) : WorldChange
 {
     public override string EntityKind => "item-template";
 

@@ -17,10 +17,12 @@ public sealed record WorldResponse(
     string Description,
     int SortOrder,
     IReadOnlyDictionary<string, bool> Flags,
+    Multipliers Multipliers,
     int ZoneCount)
 {
     public static WorldResponse From(World world, int zoneCount) =>
-        new(world.Key, world.Name, world.Description, world.SortOrder, Flat(world.Flags), zoneCount);
+        new(world.Key, world.Name, world.Description, world.SortOrder, Flat(world.Flags),
+            world.Multipliers.Clone(), zoneCount);
 
     internal static IReadOnlyDictionary<string, bool> Flat(FlagSet flags) =>
         RoomFlags.All
@@ -36,11 +38,12 @@ public sealed record ZoneResponse(
     int MinLevel,
     int MaxLevel,
     IReadOnlyDictionary<string, bool> Flags,
+    Multipliers Multipliers,
     int RoomCount)
 {
     public static ZoneResponse From(Zone zone, int roomCount) =>
         new(zone.Key, zone.WorldKey, zone.Name, zone.Description, zone.MinLevel, zone.MaxLevel,
-            WorldResponse.Flat(zone.Flags), roomCount);
+            WorldResponse.Flat(zone.Flags), zone.Multipliers.Clone(), roomCount);
 }
 
 public sealed record ExitResponse(string Direction, string To, bool TargetExists);
@@ -89,19 +92,28 @@ public sealed record AuditEntry(
 // Requests
 // ---------------------------------------------------------------------------
 
+/// <remarks>
+/// <paramref name="Multipliers"/> is all-or-nothing: null leaves the stored set alone, and a
+/// value replaces the whole set. It is not merged field by field, because
+/// <see cref="Domain.Worlds.Multipliers"/> defaults every unspecified factor to 1.0 — a partial
+/// object would silently reset the factors it omitted. The editor sends all eight.
+/// </remarks>
 public sealed record SaveWorldRequest(
     string? Name,
     string? Description,
     int? SortOrder,
-    IReadOnlyDictionary<string, bool>? Flags);
+    IReadOnlyDictionary<string, bool>? Flags,
+    Multipliers? Multipliers);
 
+/// <inheritdoc cref="SaveWorldRequest"/>
 public sealed record SaveZoneRequest(
     string? WorldKey,
     string? Name,
     string? Description,
     int? MinLevel,
     int? MaxLevel,
-    IReadOnlyDictionary<string, bool>? Flags);
+    IReadOnlyDictionary<string, bool>? Flags,
+    Multipliers? Multipliers);
 
 public sealed record SaveRoomRequest(
     string? ZoneKey,
@@ -180,7 +192,8 @@ public sealed record ItemTemplateResponse(
     int BaseValue,
     Dictionary<string, object> BaseStats,
     int? AttackDelayPulses,
-    string? AttackVerb);
+    string? AttackVerb,
+    bool IsQuestItem);
 
 public sealed record SaveItemTemplateRequest(
     string? Name,
@@ -192,7 +205,8 @@ public sealed record SaveItemTemplateRequest(
     int? BaseValue,
     Dictionary<string, object>? BaseStats,
     int? AttackDelayPulses,
-    string? AttackVerb);
+    string? AttackVerb,
+    bool? IsQuestItem);
 
 public sealed record SpawnerResponse(
     Guid Id,

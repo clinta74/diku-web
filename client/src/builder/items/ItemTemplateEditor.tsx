@@ -7,6 +7,7 @@ import { NumberInput } from '../../ui/NumberInput'
 import { OverflowMenu } from '../../ui/OverflowMenu'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { useToast } from '../../ui/Toast'
+import { asMultiplier } from './baseStats'
 
 interface Props {
   templateKey: string
@@ -32,11 +33,16 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
   const [slot, setSlot] = useState<string | null>(null)
   const [weight, setWeight] = useState(0)
   const [baseValue, setBaseValue] = useState(0)
-  const [baseStats, setBaseStats] = useState<Record<string, number>>({})
+  // Deliberately `unknown`, not `number`. This bag is schemaless (PLAN.md §4.8) and carries
+  // values this form does not render - `damage: "1d6"` most of all. It used to be loaded through
+  // `Number(v) || 0`, which turned every one of them into 0 and saved that back, so editing an
+  // item's *name* silently destroyed its damage dice.
+  const [baseStats, setBaseStats] = useState<Record<string, unknown>>({})
   // Weapon speed and verb are columns, not base stats: the coercion below would turn a verb
   // into 0, and a delay below the floor has to be refusable by the server.
   const [attackDelayPulses, setAttackDelayPulses] = useState<number | null>(null)
   const [attackVerb, setAttackVerb] = useState('')
+  const [isQuestItem, setIsQuestItem] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -57,15 +63,13 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         setSlot(loaded.slot)
         setWeight(loaded.weight)
         setBaseValue(loaded.baseValue)
+        // Kept verbatim. Only the keys this form owns are ever written, in place.
         setBaseStats(
-          loaded.baseStats && typeof loaded.baseStats === 'object'
-            ? Object.fromEntries(
-                Object.entries(loaded.baseStats).map(([k, v]) => [k, Number(v) || 0]),
-              )
-            : {},
+          loaded.baseStats && typeof loaded.baseStats === 'object' ? { ...loaded.baseStats } : {},
         )
         setAttackDelayPulses(loaded.attackDelayPulses ?? null)
         setAttackVerb(loaded.attackVerb ?? '')
+        setIsQuestItem(loaded.isQuestItem)
         setDirty(false)
       })
       .catch((e) => {
@@ -90,6 +94,7 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         baseStats,
         attackDelayPulses,
         attackVerb: attackVerb.trim() === '' ? null : attackVerb.trim(),
+        isQuestItem,
       })
       setTemplate(updated)
       setSlot(updated.slot)
@@ -118,6 +123,12 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
   }
 
   const touch = () => setDirty(true)
+
+  // Everything in the bag this form has no field for. Sorted so the list does not reshuffle
+  // between renders.
+  const carriedStats = Object.entries(baseStats)
+    .filter(([key]) => !STAT_MULTIPLIERS.includes(key))
+    .sort(([a], [b]) => a.localeCompare(b))
 
   if (error && !template) return <p className="bad">{error}</p>
   if (!template) return <p className="dim">Loading…</p>
@@ -244,13 +255,31 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         </div>
       </fieldset>
 
+      <label className="field-check">
+        <input
+          type="checkbox"
+          checked={isQuestItem}
+          onChange={(e) => {
+            setIsQuestItem(e.target.checked)
+            touch()
+          }}
+        />
+        Quest item — cannot be sold or destroyed, but can still be dropped
+      </label>
+      {isQuestItem && (
+        <p className="dim detail">
+          Stamped onto each copy when it spawns, so items already in a pack keep the rule they
+          were created under. Turning this off will not free copies that already exist.
+        </p>
+      )}
+
       <fieldset className="multiplier-set">
         <legend>Stat multipliers (when worn/wielded)</legend>
         <p className="dim detail">1.0 = no change, 1.1 = +10%, 0.9 = -10%. Blank removes it.</p>
         {STAT_MULTIPLIERS.map((stat) => (
           <Field key={stat} label={stat}>
             <MultiplierInput
-              value={baseStats[stat]}
+              value={asMultiplier(baseStats[stat])}
               onChange={(next) => {
                 setBaseStats((prev) => {
                   const copy = { ...prev }
@@ -263,6 +292,16 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
             />
           </Field>
         ))}
+
+        {carriedStats.length > 0 && (
+          /* Shown, not editable. These survive a save either way, but a builder who cannot see
+             them has no way to know an item has a damage die at all - and invisible content is
+             how the coercion bug went unnoticed. */
+          <p className="dim detail">
+            Also on this item, carried through unchanged:{' '}
+            {carriedStats.map(([key, value]) => `${key} = ${String(value)}`).join(', ')}
+          </p>
+        )}
       </fieldset>
 
       <div className="row">

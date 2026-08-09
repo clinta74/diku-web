@@ -12,31 +12,13 @@ public static class AbilityProgression
     /// Get all abilities a character should know based on their Path and current level.
     /// Returns (UnlockLevel, AbilityKey) tuples in order of unlock.
     /// </summary>
+    /// <remarks>
+    /// Derived from <see cref="AbilityCatalogue"/> rather than listed again here. This was a
+    /// hand-written table beside a hand-written seeder, and the two had drifted apart in both
+    /// directions - unlocks with no ability row, and ability rows nothing ever unlocked.
+    /// </remarks>
     public static IReadOnlyList<(int UnlockLevel, string AbilityKey)> GetAbilitiesForPath(CharacterPath path) =>
-        path switch
-        {
-            CharacterPath.Warden => [
-                (1, "warden.slash"),
-                (3, "warden.bash"),
-                (6, "warden.parry"),
-            ],
-            CharacterPath.Adept => [
-                (1, "adept.bolt"),
-                (3, "adept.shield"),
-                (6, "adept.amplify"),
-            ],
-            CharacterPath.Shade => [
-                (1, "shade.strike"),
-                (3, "shade.evasion"),
-                (6, "shade.shadowstep"),
-            ],
-            CharacterPath.Channeler => [
-                (1, "channeler.mend"),
-                (3, "channeler.guidance"),
-                (6, "channeler.restore"),
-            ],
-            _ => [],
-        };
+        [.. AbilityCatalogue.For(path).Select(e => (e.UnlockLevel, e.Key))];
 
     /// <summary>
     /// Get the abilities a character currently knows (at or below their level).

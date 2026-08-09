@@ -14,21 +14,20 @@ numbers rather than a new set of hand-authored content.
 Play is **PvE by default**; player-versus-player is opt-in per room, through the same extensible
 room-flag registry that carries every other room property (§4.10).
 
-Status: **The game engine is feature-complete through Phase 5.2. The builder is not.**
+Status: **Phases 0–4 and 5.1 complete; 5.2 complete but for dormant quests and AoE.**
 
 *Playing* works end to end: register, create a character, walk a seeded zone, talk. Inventory,
 equipment, and items work; mob AI emotes and wanders; combat kills, loots, and levels, with XP
-penalties and respawn; abilities carry cost, cooldown, cast time, targeting, and effects including
-timed buffs and debuffs. Quests run the full talk → collect → give → reward loop with prerequisite
-chains and zone-scaled rewards. Shops buy and sell. Builder access is granted from inside the game.
+penalties and respawn. Each Path learns eight abilities to level 20. Quests run the full
+talk → collect → give → reward loop with prerequisite chains and zone-scaled rewards. Shops buy
+and sell. Builder access is granted from inside the game.
 
-*Authoring* is where the work is. Geography, templates, spawners, quests, and mob behavior can all
-be built in the browser — but **zone and world multipliers cannot be set from the builder at all**,
-which is the one dial §7.5 calls "the reason the whole feature exists". There is no world editor,
-the zone panel is two hardcoded buttons, item spawners have no authoring path, and editing an item
-template silently zeroes any dice-string stat.
+*Authoring* now covers the whole content model in the browser with no SQL: geography, worlds,
+zones, difficulty multipliers with a live preview, mob and item templates, mob behavior
+(disposition, emotes, shopkeeper and stock), mob and item spawners across multiple rooms, and
+quests.
 
-Next: **the builder catch-up listed under Phases 2 and 3**, then finish 5.2d, then 5.3.
+Next: **dormant quests and AoE targeting**, then 5.3 (communication) and Phase 6 (ops).
 
 A note on reading the checkboxes below: several were checked off for work that was designed but
 not built, or built but dead on arrival. Where an audit has since disproved one it has been
@@ -1284,15 +1283,16 @@ Rooms, exits, flags, and the canvas are done and hold up. What is missing is a l
 - [x] Advisory `/validate`: dangling exits, orphan rooms, unreachable areas, unknown flag keys,
       rooms that are PvP only by inheritance
 - [x] Builder UI: world tree, room editor (full), zone panel (flags only)
-- [ ] **There is no world editor.** No `WorldPanel`; a world's name, description, sort order, and
-      flags cannot be edited from the browser at all.
-- [ ] **World and zone delete are unreachable.** Both routes exist and both `builderApi`
-      functions exist; neither function has a single caller, so a mistyped world or zone is
-      permanent from the browser's point of view.
-- [ ] **The zone panel is two hardcoded buttons.** `ZonePanel.tsx` renders `pvp` and `peaceful`
-      literally rather than from the flag registry the room editor already reads, so a newly
-      registered zone flag is invisible. Name, description, and level range are not editable.
-      Each toggle is a whole-map write — there is no per-flag zone primitive.
+- [x] **World editor** (`WorldPanel.tsx`) — name, description, sort order, flags, difficulty, and
+      delete. There was no world editor of any kind before.
+- [x] **World and zone delete are reachable.** Both routes and both `builderApi` functions
+      existed with no caller anywhere, so a mistyped world was permanent from the browser.
+- [x] **The zone editor renders the flag registry**, the way the room editor does, so a newly
+      registered flag appears with no client change — and carries name, description, and level
+      range. It was two literal buttons (`pvp`, `peaceful`) and nothing else.
+- [ ] World and zone flag edits are still **whole-map writes** — there is no per-flag primitive
+      for either, so two builders editing one zone's flags at the same moment overwrite each
+      other. The room editor has had per-flag `PUT` since Phase 2.
 - [x] ASCII grid painter with legend management
 - [x] Zone canvas: auto-layout from the exit graph, drag to arrange, drag to link
 - [x] Live push of edits to players standing in an edited room
@@ -1396,21 +1396,21 @@ multiplier from the browser, which is the half the phase goal is written about.
 - [x] Mob AI v1: idle emotes, room-to-room wandering, `sentinel` flag, fire-and-forget system tick
 - [x] Ground items and mobs appear on the map with their icons
 - [x] `emote` command for expressive actions
-- [ ] **Multipliers cannot be saved from the builder.** `UpsertWorld` / `UpsertZone` carry no
-      `Multipliers` field, and `WorldWriter` mentions the word nowhere, so the value is
-      seed-and-SQL only. §7.5 calls multipliers "the reason the whole feature exists". Needs the
-      full slice: contract → primitive → applier → writer → UI.
-- [ ] **The multiplier preview panel does not exist.** *(Was checked off; it is not built.)*
-      `GET /zones/{key}/preview` and `BuilderQueries.PreviewAsync` are implemented and correct,
-      but `client/src` contains no reference to `preview` — no API function, no panel. The
-      endpoint is unreachable.
-- [ ] **Item spawners cannot be created.** `SpawnerDialog` hardcodes `templateKind: 'Mob'` and is
-      only ever handed `mobTemplates`, so half the spawning system has no authoring path.
-- [ ] **Multi-room spawners cannot be edited.** Create hardcodes `roomKeys: [roomKey]`; update
-      omits `roomKeys` entirely, so the room set can never change after creation.
-- [ ] **Editing an item template corrupts its stats.** `ItemTemplateEditor` loads `baseStats`
-      through `Number(v) || 0`, so a `"1d6"` damage string — which the domain explicitly permits —
-      silently becomes `0` when any unrelated field is saved.
+- [x] **Multipliers are authorable end to end.** The full slice landed: contract → primitive →
+      applier → writer → `builderApi` → a Difficulty tab on both the world and zone editors.
+      They were seed-and-SQL only, which made §7.5's "the reason the whole feature exists"
+      the one dial nobody could turn.
+- [x] **The multiplier preview panel exists.** *(Was checked off once while unbuilt.)* The
+      endpoint had been correct since Phase 3 with no caller anywhere in `client/src`.
+- [x] **Item spawners and multi-room spawners are authorable.** `SpawnerDialog` takes a kind
+      toggle and both template lists, and a room multi-select; update sends `roomKeys`.
+- [x] **Item template stats survive an edit.** `baseStats` is kept verbatim and only the five
+      multiplier keys are written in place. Stats the form has no field for are listed read-only
+      beneath it, so a builder can at least see the `"1d6"` that is there.
+- [x] **Spawner removal is honest about scope.** The room list shows every spawner *containing*
+      this room, and "Remove" deleted the whole thing while the confirmation said it would stop
+      filling "this room" — tidying one room could empty twenty. It now removes this room from
+      the set, and only deletes outright when this was the last room.
 - [ ] Loot table and `baseStats` editors for mob templates (only `health` has a field today)
 - [ ] Builder: *Respawn zone* button to apply live multiplier edits to existing mobs (deferred nice-to-have)
 
@@ -1447,6 +1447,20 @@ multiplier from the browser, which is the half the phase goal is written about.
       reduce nearly every hit in the game to 1. Needs a design decision, not a patch.
 
 ### Phase 5 — Depth
+
+#### 5.1e — Ability progression ✅ **complete**
+- [x] **8 abilities per Path unlocking to level 20**, never more than four levels apart. It used
+      to stop at level 6 for every Path, so levelling past it granted nothing.
+- [x] **One `AbilityCatalogue`** feeds both the seeder and `AbilityProgression`. They were two
+      hand-written lists and had drifted apart in both directions: four abilities were unlocked
+      at level 6 with **no ability row behind them**, so the level-up granted something
+      uncastable; and `warden.battle-fury`, `adept.weaken`, and `shade.fortify` were seeded but
+      in no progression, so all of 5.2a's buffs and debuffs were **unlearnable**.
+- [x] Ability rows **reconcile on every startup**, not once at seed time, so an existing database
+      receives abilities added later. Seeding bailed whenever a world already existed.
+- [ ] Only four effect executors exist (`damage.physical`, `heal.restore`, `buff.damage-up`,
+      `debuff.weaken`), so Paths differ in cost and cadence rather than in kind. A stun, an
+      interrupt, or a snare needs a new executor — not a new ability row.
 
 #### 5.1a–5.1d — Ability System ✅ **complete**
 - [x] Ability system: cost, cooldown, cast time, targeting rules
@@ -1512,9 +1526,12 @@ fails quietly, which is why they need to be listed rather than assumed.
       quests' rewards, and to check giver/turn-in mobs exist and are spawned.
 - [x] **Non-combatant mobs.** `type: "npc"` mobs can neither attack nor be attacked, so a quest
       giver or shopkeeper cannot be killed into a soft-lock (§7.4). Authorable in the builder.
-- [ ] **`questItem` is read but never written.** `ShopCommands` refuses to buy an item carrying
-      the flag and `destroy` refuses to destroy one — both now read it correctly — but nothing
-      sets it. Still needs an authoring path on the item template editor and on quest rewards.
+- [x] **`questItem` is written as well as read.** A toggle on the item template editor sets
+      `IsQuestItem`, and `ItemSpawner` stamps the flag onto every instance — the one path shop
+      stock, quest rewards, the spawner sweep, and combat loot all pass through. Both readers had
+      been correct and both dead, so neither rule had ever fired in play. Two call sites that
+      hand-built an `ItemInstance` from a spawned one now use the spawned instance directly;
+      they would otherwise have dropped the stamp.
 - [ ] **Dormant-quest handling is absent.** Deleting a mob or item a quest references leaves the
       quest pointing at nothing; §7.4 requires the quest go dormant and `character_quests` rows
       survive. No code path and no test.
@@ -1622,29 +1639,23 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 
 ## 12. Next step
 
-**Multipliers end to end, because the dial the design is built around cannot be turned.**
+**The builder catch-up is done.** Multipliers, world and zone editors, item and multi-room
+spawners, `questItem`, the `baseStats` corruption, and ability progression all landed. What is
+left is smaller and mostly green-field:
 
-Every zone in the game is stuck on its seeded numbers. The resolution engine is correct and
-tested, the preview endpoint is written and correct — and neither is reachable from the browser,
-because `UpsertWorld` / `UpsertZone` carry no `Multipliers` field. That is a vertical slice, in
-order: contract → primitive → applier → writer → `builderApi.ts` → UI. The §7.5 preview table
-comes free once the client can call the endpoint that already exists.
+1. **Dormant quests** (5.2d) — deleting a referenced mob strands the quest; §7.4 requires the
+   giver stop offering it while in-progress rows survive, marked unavailable. The largest
+   remaining correctness gap.
+2. **`TargetingType.Aoe`** (5.2d) — `AbilitySystem` handles `Self` and `SingleTarget`; an AoE
+   cast leaves `target = null` and the guard below skips the effect, so it silently does nothing.
+3. **A fifth effect executor.** Paths currently differ in cost and cadence because only four
+   effects exist. A stun, interrupt, snare, or damage-over-time is what would make them differ
+   in *kind* — and it is the unlock for real combat depth.
+4. **Per-flag world and zone primitives** (Phase 2) — flag edits at those scopes are still
+   whole-map writes.
+5. **Loot table and `baseStats` editors** for mob templates (Phase 3).
 
-Then, roughly in cost order:
-
-1. **Item `baseStats` corruption** (Phase 3) — a one-line load fix. It is destroying authored
-   content *today*, every time somebody edits an item's name, and the damage is silent.
-2. **`questItem` authoring** (5.2d) — both readers are correct now, but nothing writes the flag,
-   so neither the shop rule nor the `destroy` rule has ever fired in play. A toggle on the item
-   editor plus a write on quest reward spawning.
-3. **World and zone editors** (Phase 2) — a world has no editor at all, and the zone panel should
-   render the flag registry the way the room editor already does.
-4. **Item and multi-room spawners** (Phase 3) — half the spawning system has no authoring path.
-5. **Dormant quests** (5.2d) — deleting a referenced mob strands the quest; §7.4 requires the
-   giver stop offering it while in-progress rows survive.
-6. **`TargetingType.Aoe`** (5.2d) — resolves no target and silently does nothing.
-
-Only then 5.3 (communication) and Phase 6 (ops), which are green-field rather than catch-up.
+Then 5.3 (communication) and Phase 6 (ops).
 
 **Two lessons from the audits, worth carrying forward:**
 

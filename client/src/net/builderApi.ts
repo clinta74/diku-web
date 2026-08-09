@@ -12,12 +12,52 @@ export interface RoomFlagDefinition {
   phase: string
 }
 
+/**
+ * The §4.4 difficulty dial. Composition is `round(base × world × zone)`, so 1.0 everywhere is
+ * "no change" and the two levels multiply rather than override.
+ */
+export interface Multipliers {
+  /** Master dial: scales health and damage together. */
+  strength: number
+  health: number
+  damage: number
+  xp: number
+  gold: number
+  itemValue: number
+  itemPower: number
+  /** Spawner target counts — makes a zone crowded, not just tougher. */
+  spawnDensity: number
+}
+
+export const MULTIPLIER_KEYS: Array<keyof Multipliers> = [
+  'strength',
+  'health',
+  'damage',
+  'xp',
+  'gold',
+  'itemValue',
+  'itemPower',
+  'spawnDensity',
+]
+
+export const NEUTRAL_MULTIPLIERS: Multipliers = {
+  strength: 1,
+  health: 1,
+  damage: 1,
+  xp: 1,
+  gold: 1,
+  itemValue: 1,
+  itemPower: 1,
+  spawnDensity: 1,
+}
+
 export interface WorldSummary {
   key: string
   name: string
   description: string
   sortOrder: number
   flags: Record<string, boolean>
+  multipliers: Multipliers
   zoneCount: number
 }
 
@@ -29,7 +69,24 @@ export interface ZoneSummary {
   minLevel: number
   maxLevel: number
   flags: Record<string, boolean>
+  multipliers: Multipliers
   roomCount: number
+}
+
+/** One template's stats before and after this zone's multipliers, for the §7.5 preview table. */
+export interface MultiplierPreviewRow {
+  templateKey: string
+  templateName: string
+  kind: string
+  baseStats: Record<string, unknown>
+  resolvedStats: Record<string, number>
+}
+
+export interface MultiplierPreview {
+  zoneKey: string
+  worldMultipliers: Record<string, number>
+  zoneMultipliers: Record<string, number>
+  templates: MultiplierPreviewRow[]
 }
 
 export interface RoomExit {
@@ -127,6 +184,8 @@ export interface ItemTemplate {
   attackDelayPulses: number | null
   /** Base-form verb describing how it strikes: "slash", "crush". */
   attackVerb: string | null
+  /** Bound to a quest: cannot be sold or destroyed, but can still be dropped (PLAN.md §4.9). */
+  isQuestItem: boolean
 }
 
 export interface Spawner {
@@ -198,6 +257,14 @@ export const builderApi = {
     }),
 
   deleteZone: (key: string) => request<void>(`${base}/zones/${key}`, { method: 'DELETE' }),
+
+  /**
+   * How every template in a zone resolves under the current multipliers (PLAN.md §7.5).
+   * The endpoint has existed since Phase 3; nothing called it until the multipliers became
+   * editable, so the panel it was written for never got built.
+   */
+  zonePreview: (zoneKey: string) =>
+    request<MultiplierPreview>(`${base}/zones/${zoneKey}/preview`),
 
   rooms: (zoneKey: string) => request<RoomDetail[]>(`${base}/zones/${zoneKey}/rooms`),
 

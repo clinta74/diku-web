@@ -6,9 +6,24 @@ import type { RoomDetail } from '../net/builderApi'
 
 // A tiny in-memory builder API so the shell can load without a network. Only the reads the
 // world tab performs on mount are needed.
-const worlds = [{ key: 'aldenmoor', name: 'Aldenmoor', description: '', sortOrder: 0, flags: {}, zoneCount: 1 }]
+// Hoisted alongside the vi.mock factory below, which is lifted to the top of the file and so
+// cannot see an ordinary const declared here.
+const neutral = vi.hoisted(() => ({
+  strength: 1,
+  health: 1,
+  damage: 1,
+  xp: 1,
+  gold: 1,
+  itemValue: 1,
+  itemPower: 1,
+  spawnDensity: 1,
+}))
+
+const worlds = [
+  { key: 'aldenmoor', name: 'Aldenmoor', description: '', sortOrder: 0, flags: {}, multipliers: neutral, zoneCount: 1 },
+]
 const zones = [
-  { key: 'aldenmoor.millbrook', worldKey: 'aldenmoor', name: 'Millbrook', description: '', minLevel: 1, maxLevel: 5, flags: {}, roomCount: 2 },
+  { key: 'aldenmoor.millbrook', worldKey: 'aldenmoor', name: 'Millbrook', description: '', minLevel: 1, maxLevel: 5, flags: {}, multipliers: neutral, roomCount: 2 },
 ]
 const rooms: RoomDetail[] = [
   { key: 'aldenmoor.millbrook.north-gate', zoneKey: 'aldenmoor.millbrook', title: 'The North Gate', description: 'A gate.', flags: {}, resolved: [], grid: [], legend: {}, editorX: null, editorY: null, exits: [] },
@@ -20,7 +35,25 @@ const room = (key: string) => rooms.find((r) => r.key === key)!
 vi.mock('../net/builderApi', () => ({
   DIRECTIONS: ['north', 'east', 'south', 'west', 'up', 'down'],
   OPPOSITE: { north: 'south', south: 'north', east: 'west', west: 'east', up: 'down', down: 'up' },
+  MULTIPLIER_KEYS: [
+    'strength',
+    'health',
+    'damage',
+    'xp',
+    'gold',
+    'itemValue',
+    'itemPower',
+    'spawnDensity',
+  ],
+  NEUTRAL_MULTIPLIERS: neutral,
   builderApi: {
+    zonePreview: () =>
+      Promise.resolve({
+        zoneKey: 'aldenmoor.millbrook',
+        worldMultipliers: neutral,
+        zoneMultipliers: neutral,
+        templates: [],
+      }),
     roomFlags: () => Promise.resolve([]),
     worlds: () => Promise.resolve(worlds),
     zones: () => Promise.resolve(zones),

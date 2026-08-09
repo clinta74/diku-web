@@ -108,7 +108,7 @@ public sealed class CacheLivenessTests
         var (applier, _, _, items) = NewApplier();
 
         applier.Apply(new UpsertItemTemplate(
-            "blade", "a blade", "", "/", ItemSlot.MainHand, 10, 25, [], 8, "slash"));
+            "blade", "a blade", "", "/", ItemSlot.MainHand, 10, 25, [], 8, "slash", false));
 
         Assert.Equal(25, items.Get("blade")?.BaseValue);
         Assert.Equal(8, items.Get("blade")?.AttackDelayPulses);
@@ -116,12 +116,14 @@ public sealed class CacheLivenessTests
 
         // The shop price is the reason this matters: it reads the cache, not the repository.
         // So does weapon speed - combat resolves the delay through this same cache every pulse.
+        // The quest-item flag rides along: the spawner reads it from this cache too.
         applier.Apply(new UpsertItemTemplate(
-            "blade", "a blade", "", "/", ItemSlot.MainHand, 10, 99, [], 4, "cleave"));
+            "blade", "a blade", "", "/", ItemSlot.MainHand, 10, 99, [], 4, "cleave", true));
 
         Assert.Equal(99, items.Get("blade")?.BaseValue);
         Assert.Equal(4, items.Get("blade")?.AttackDelayPulses);
         Assert.Equal("cleave", items.Get("blade")?.AttackVerb);
+        Assert.True(items.Get("blade")?.IsQuestItem);
 
         applier.Apply(new DeleteItemTemplate("blade"));
         Assert.Null(items.Get("blade"));

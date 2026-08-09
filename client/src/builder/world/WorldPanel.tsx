@@ -1,57 +1,56 @@
 import { useEffect, useState } from 'react'
 import { builderApi, type Multipliers } from '../../net/builderApi'
+import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { Field } from '../../ui/Field'
 import { NumberInput } from '../../ui/NumberInput'
-import { Textarea } from '../../ui/Textarea'
+import { OverflowMenu } from '../../ui/OverflowMenu'
 import { Tabs } from '../../ui/Tabs'
+import { Textarea } from '../../ui/Textarea'
 import { useToast } from '../../ui/Toast'
 import { useBuilderData } from '../BuilderData'
 import { MultiplierEditor } from './MultiplierEditor'
 import { readMultipliers } from './multipliers'
-import { MultiplierPreviewPanel } from './MultiplierPreviewPanel'
 import { ScopedFlagList } from './ScopedFlagList'
 
-interface ZonePanelProps {
-  zoneKey: string
+interface Props {
+  worldKey: string
+  onDeleted: () => void
 }
 
 type Section = 'details' | 'flags' | 'difficulty'
 
 /**
- * The zone editor.
+ * The world editor.
  *
- * It used to be two hardcoded buttons — `pvp` and `peaceful` — so a newly registered zone flag
- * was invisible, and a zone's name, level range, and difficulty could not be edited at all.
- * Flags now render from the same server registry the room editor reads.
+ * There was no such thing before: a world's name, description, sort order, flags, and difficulty
+ * could only be set by seeding or by SQL, and the delete route — which exists on the server and
+ * in `builderApi` — had no caller anywhere in the UI.
  */
-export function ZonePanel({ zoneKey }: ZonePanelProps) {
+export function WorldPanel({ worldKey, onDeleted }: Props) {
   const toast = useToast()
-  const { zones, loadZones } = useBuilderData()
-  const zone = zones.find((z) => z.key === zoneKey)
+  const { worlds, refreshWorlds } = useBuilderData()
+  const world = worlds.find((w) => w.key === worldKey)
 
   const [section, setSection] = useState<Section>('details')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [minLevel, setMinLevel] = useState(1)
-  const [maxLevel, setMaxLevel] = useState(50)
+  const [sortOrder, setSortOrder] = useState(0)
   const [multipliers, setMultipliers] = useState<Multipliers>(() => readMultipliers(undefined))
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [savedAt, setSavedAt] = useState(0)
+  const [deleting, setDeleting] = useState(false)
 
-  // Reload the form whenever a different zone is selected, or the selected one changes under us.
   useEffect(() => {
-    if (!zone) return
-    setName(zone.name)
-    setDescription(zone.description)
-    setMinLevel(zone.minLevel)
-    setMaxLevel(zone.maxLevel)
-    setMultipliers(readMultipliers(zone.multipliers))
+    if (!world) return
+    setName(world.name)
+    setDescription(world.description)
+    setSortOrder(world.sortOrder)
+    setMultipliers(readMultipliers(world.multipliers))
     setDirty(false)
-  }, [zone?.key, zone])
+  }, [world?.key, world])
 
-  if (!zone) return null
+  if (!world) return null
 
   const change = <T,>(setter: (value: T) => void) => (value: T) => {
     setter(value)
@@ -59,23 +58,35 @@ export function ZonePanel({ zoneKey }: ZonePanelProps) {
   }
 
   async function save() {
-    if (!zone) return
+    if (!world) return
     setBusy(true)
     setError(null)
     try {
-      await builderApi.updateZone(zone.key, {
-        name,
-        description,
-        minLevel,
-        maxLevel,
-        multipliers,
-      })
-      await loadZones(zone.worldKey)
+      await builderApi.updateWorld(world.key, { name, description, sortOrder, multipliers })
+      await refreshWorlds()
       setDirty(false)
-      setSavedAt((n) => n + 1)
-      toast.notify('Zone saved')
+      toast.notify('World saved')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function confirmDelete() {
+    if (!world) return
+    setBusy(true)
+    try {
+      await builderApi.deleteWorld(world.key)
+      await refreshWorlds()
+      setDeleting(false)
+      toast.notify('World deleted')
+      onDeleted()
+    } catch (e) {
+      // The server refuses while anyone is standing in it (§7.4), which is a message worth
+      // showing rather than a failure to swallow.
+      setError(e instanceof Error ? e.message : 'Delete failed.')
+      setDeleting(false)
     } finally {
       setBusy(false)
     }
@@ -85,9 +96,12 @@ export function ZonePanel({ zoneKey }: ZonePanelProps) {
     <section className="editor-section">
       <header className="room-editor-head">
         <div>
-          <h3>{name || zone.key}</h3>
-          <code className="room-key">{zone.key}</code>
+          <h3>{name || world.key}</h3>
+          <code className="room-key">{world.key}</code>
         </div>
+        <OverflowMenu
+          actions={[{ label: 'Delete world…', onSelect: () => setDeleting(true), destructive: true }]}
+        />
       </header>
 
       {error && <p className="bad">{error}</p>}
@@ -95,7 +109,7 @@ export function ZonePanel({ zoneKey }: ZonePanelProps) {
       <Tabs
         value={section}
         onValueChange={(v) => setSection(v as Section)}
-        aria-label="Zone sections"
+        aria-label="World sections"
         tabs={[
           { value: 'details', label: 'Details' },
           { value: 'flags', label: 'Flags' },
@@ -113,30 +127,23 @@ export function ZonePanel({ zoneKey }: ZonePanelProps) {
             <Textarea rows={3} value={description} onChange={change(setDescription)} />
           </Field>
 
-          <div className="field-row">
-            <Field label="Min level">
-              <NumberInput min={1} value={minLevel} onChange={change(setMinLevel)} />
-            </Field>
-            <Field label="Max level" hint="Advisory — nothing enforces it yet.">
-              <NumberInput min={1} value={maxLevel} onChange={change(setMaxLevel)} />
-            </Field>
-          </div>
+          <Field label="Sort order" hint="Lower sorts first in the world list.">
+            <NumberInput min={0} value={sortOrder} onChange={change(setSortOrder)} />
+          </Field>
         </div>
       )}
 
       {section === 'flags' && (
         <ScopedFlagList
-          scope="zone"
-          flags={zone.flags}
-          inheritedNote="Unset flags fall through to the world, then to the registry default."
+          scope="world"
+          flags={world.flags}
+          inheritedNote="World flags sit at the top of the chain — a change here can flip a flag for every room in the world at once."
           onSet={(key, value) => {
-            const next = { ...zone.flags }
+            const next = { ...world.flags }
             if (value === null) delete next[key]
             else next[key] = value
 
-            return builderApi
-              .updateZone(zone.key, { flags: next })
-              .then(() => loadZones(zone.worldKey))
+            return builderApi.updateWorld(world.key, { flags: next }).then(() => refreshWorlds())
           }}
         />
       )}
@@ -144,18 +151,15 @@ export function ZonePanel({ zoneKey }: ZonePanelProps) {
       {section === 'difficulty' && (
         <div className="section-body">
           <MultiplierEditor
-            scope="zone"
+            scope="world"
             value={multipliers}
             onChange={change(setMultipliers)}
             disabled={busy}
           />
-
-          <h4>Preview</h4>
           <p className="dim detail">
-            Every template that spawns in this zone, at the numbers it will spawn with. Save to
-            refresh.
+            Per-zone previews live on each zone, since what a number means depends on the zone it
+            is multiplied into.
           </p>
-          <MultiplierPreviewPanel zoneKey={zone.key} refreshToken={savedAt} />
         </div>
       )}
 
@@ -171,6 +175,17 @@ export function ZonePanel({ zoneKey }: ZonePanelProps) {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleting}
+        onOpenChange={setDeleting}
+        title={`Delete ${world.key}?`}
+        description="Every zone and room in it goes too. This cannot be undone, and is refused while anyone is standing in the world."
+        destructive
+        busy={busy}
+        confirmLabel="Delete world"
+        onConfirm={() => void confirmDelete()}
+      />
     </section>
   )
 }

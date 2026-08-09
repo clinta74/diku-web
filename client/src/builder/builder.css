@@ -228,6 +228,73 @@
   letter-spacing: 0.08em;
 }
 
+/* --- Spawner room picker ------------------------------------------- */
+
+/* A zone can hold many rooms, so the list scrolls rather than pushing the dialog's buttons
+   off the bottom of the viewport. */
+.room-picker {
+  list-style: none;
+  margin: 0;
+  padding: 0.4rem;
+  max-height: 11rem;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.room-picker li {
+  padding: 0.1rem 0;
+}
+
+/* --- Difficulty multipliers ---------------------------------------- */
+
+/* Two columns so eight factors read as a block rather than a long scroll. Collapses to one
+   column in the narrow right-hand rail. */
+.multiplier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.6rem;
+}
+
+/* The preview can be wider than the rail it sits in; scroll it rather than the page. */
+.preview-table-wrap {
+  overflow-x: auto;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.preview-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.82rem;
+}
+
+.preview-table th,
+.preview-table td {
+  text-align: left;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.preview-table thead th {
+  color: var(--dim);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.preview-table .numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A resolved value equal to its base is dimmed, so the ones the dial actually moved stand out. */
+.preview-table .strong {
+  font-weight: 600;
+  color: var(--good, inherit);
+}
+
 /* --- Mob behavior -------------------------------------------------- */
 
 .emote-list,

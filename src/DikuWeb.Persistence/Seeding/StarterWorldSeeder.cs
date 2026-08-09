@@ -1,4 +1,4 @@
-using DikuWeb.Domain.Abilities;
+﻿using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Worlds;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,6 +37,20 @@ public static class StarterWorldSeeder
         ("chapel-steps", Direction.Down, "chapel-nave"),
     ];
 
+    /// <summary>
+    /// The starter zone's rooms.
+    /// </summary>
+    /// <remarks>
+    /// Grids are 21x9 - roughly double the old 11x5 - and drawn with box-drawing borders instead
+    /// of hashes. The extra room is what makes furniture legible: a tavern with four tables and a
+    /// bar reads as a tavern, where at 11x5 it could only afford a suggestion of one. Six of these
+    /// rooms had no art at all and rendered as a blank rectangle.
+    ///
+    /// Every glyph must be a single BMP character. <c>RoomLayoutService</c> indexes terrain rows
+    /// per <c>char</c>, so anything outside the basic plane would be split across two cells and
+    /// draw as mojibake - which rules out emoji. Box-drawing, block, and geometric shapes are all
+    /// safe, and are what a monospace font renders at exactly one cell wide.
+    /// </remarks>
     private static readonly RoomSeed[] Rooms =
     [
         new("old-mill", "The Old Mill", 0, 0,
@@ -44,115 +58,198 @@ public static class StarterWorldSeeder
             + "the axle beam sags where the water no longer reaches it. Somewhere inside, "
             + "something small scurries along a rafter.",
             [
-                "###########",
-                "#.........#",
-                "#....o....#",
-                "#.........#",
-                "##~~~~~~~##",
+                "┌───────────────────┐",
+                "│░░...............░░│",
+                "│..┌───────────┐....│",
+                "│..│.....◎.....│....│",
+                "│..└───────────┘....│",
+                "│░.................░│",
+                "├───────────────────┤",
+                "│≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈│",
+                "└───────────────────┘",
             ],
-            new() { ["#"] = "wall", ["."] = "floor", ["o"] = "millstone", ["~"] = "water" }),
+            new() { ["."] = "floor", ["≈"] = "water", ["─"] = "wall", ["│"] = "wall", ["┌"] = "wall", ["┐"] = "wall", ["└"] = "wall", ["┘"] = "wall", ["├"] = "wall", ["┤"] = "wall", ["░"] = "rubble", ["◎"] = "well" }),
 
         new("millpond", "The Millpond", 0, 1,
             "Still green water, thick with duckweed, holds the sky upside down. Reeds crowd "
             + "the near bank. A heron stands motionless in the shallows and does not "
             + "acknowledge you.",
             [
-                ",,,,,,,,,,,",
-                ",,~~~~~~~,,",
-                ",~~~~~~~~~,",
-                ",,~~~~~~~,,",
-                ",,,,,,,,,,,",
+                "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+                "\"\"\"\"≈≈≈≈≈≈≈≈≈≈≈\"\"\"\"\"\"",
+                "\"\"≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈\"\"",
+                "\"≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈\"\"",
+                "\"≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈\"",
+                "\"≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈\"\"",
+                "\"\"≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈\"\"",
+                "\"\"\"\"≈≈≈≈≈≈≈≈≈≈≈\"\"\"\"\"\"",
+                "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
             ],
-            new() { [","] = "grass", ["~"] = "water" }),
+            new() { ["\""] = "grass", ["≈"] = "water" }),
 
         new("hill-road", "The Hill Road", 2, 0,
             "Cart ruts climb north into brown hills and lose themselves in the gorse. The "
             + "wind up here carries no smell of the village at all.",
-            [], []),
+            [
+                "\"\"\"\"\"\"\"\"\"·\"\"\"\"\"\"\"\"\"\"\"",
+                "\"\"♣\"\"\"\"\"\"·\"\"\"\"\"\"♣\"\"\"\"",
+                "\"\"\"\"\"\"\"\"\"·\"\"\"\"\"\"\"\"\"\"\"",
+                "\"\"\"\"\"\"\"\"·\"·\"\"\"\"\"\"\"\"\"\"",
+                "\"♣\"\"\"\"\"\"·\"\"·\"\"\"♣\"\"\"\"\"",
+                "\"\"\"\"\"\"\"·\"\"\"\"·\"\"\"\"\"\"\"\"",
+                "\"\"\"\"\"\"·\"\"\"\"\"\"·\"\"\"♣\"\"\"",
+                "\"\"\"\"\"·\"\"\"\"\"\"\"\"·\"\"\"\"\"\"",
+                "\"\"\"\"·\"\"\"\"\"\"\"\"\"\"·\"\"\"\"\"",
+            ],
+            new() { ["\""] = "grass", ["·"] = "path", ["♣"] = "tree" }),
 
         new("north-gate", "The North Gate", 2, 1,
             "A weathered portcullis stands half-raised above the road, its iron teeth furred "
             + "with rust. Nobody has lowered it in living memory, and the winch house has "
             + "been given over to swallows.",
             [
-                "###########",
-                "#.........#",
-                "#.........#",
-                "#.........#",
-                "####...####",
+                "┌────────╥─╥────────┐",
+                "│........│.│........│",
+                "│........│.│........│",
+                "│░.......│.│.......░│",
+                "│........···........│",
+                "│...................│",
+                "│░.................░│",
+                "│........···........│",
+                "└────────╨─╨────────┘",
             ],
-            new() { ["#"] = "wall", ["."] = "floor" }),
+            new() { ["."] = "floor", ["·"] = "path", ["─"] = "wall", ["│"] = "wall", ["┌"] = "wall", ["┐"] = "wall", ["└"] = "wall", ["┘"] = "wall", ["╥"] = "gate", ["╨"] = "gate", ["░"] = "rubble" }),
 
         new("market-row", "Market Row", 4, 1,
             "Empty trestle tables lean against the shopfronts, stacked for a market day that "
             + "is not today. Straw and broken crate slats drift against the kerb.",
-            [], []),
+            [
+                "┌───────────────────┐",
+                "│▬▬...▬▬...▬▬...▬▬..│",
+                "│...................│",
+                "│░.................░│",
+                "│...................│",
+                "│..▬▬...▬▬...▬▬...▬▬│",
+                "│...................│",
+                "│░░...............░░│",
+                "└─────────··────────┘",
+            ],
+            new() { ["."] = "floor", ["·"] = "path", ["─"] = "wall", ["│"] = "wall", ["┌"] = "wall", ["┐"] = "wall", ["└"] = "wall", ["┘"] = "wall", ["░"] = "rubble", ["▬"] = "table" }),
 
         new("village-green", "The Village Green", 2, 2,
             "Cropped grass, a lightning-split oak, and a stone bench worn smooth by "
             + "generations of sitting. Paths run off in every direction, all of them shorter "
             + "than they look.",
             [
-                ",,,,,,,,,,,",
-                ",,.......,,",
-                ",,...T...,,",
-                ",,.......,,",
-                ",,,,,,,,,,,",
+                "\"\"\"\"\"\"\"\"\"··\"\"\"\"\"\"\"\"\"\"",
+                "\"\"♣\"\"\"\"\"\"··\"\"\"\"\"\"♣\"\"\"",
+                "\"\"\"\"\"\"\"\"\"\"·\"\"\"\"\"\"\"\"\"\"",
+                "·········\"♠\"·········",
+                "\"\"\"\"\"\"\"\"\"\"·\"\"\"\"\"\"\"\"\"\"",
+                "\"\"\"\"\"═══\"\"·\"\"\"\"\"\"\"\"\"\"",
+                "\"\"♣\"\"\"\"\"\"\"·\"\"\"\"\"\"♣\"\"\"",
+                "\"\"\"\"\"\"\"\"\"\"·\"\"\"\"\"\"\"\"\"\"",
+                "\"\"\"\"\"\"\"\"\"\"··\"\"\"\"\"\"\"\"\"",
             ],
-            new() { [","] = "grass", ["."] = "path", ["T"] = "oak" }),
+            new() { ["\""] = "grass", ["·"] = "path", ["═"] = "bench", ["♠"] = "oak", ["♣"] = "tree" }),
 
         new("smithy", "The Smithy", 0, 2,
             "Heat rolls out of the open front like a held breath. Horseshoes hang in graded "
             + "rows along the wall, and the anvil bears a bright crescent where the hammer "
             + "always lands.",
             [
-                "###########",
-                "#.........#",
-                "#..A...F..#",
-                "#.........#",
-                "####...####",
+                "┌───────────────────┐",
+                "│▲▲.......░.........│",
+                "│▲▲.................│",
+                "│.........▄.........│",
+                "│...................│",
+                "│░...............═══│",
+                "│...................│",
+                "│...................│",
+                "└─────────··────────┘",
             ],
-            new() { ["#"] = "wall", ["."] = "floor", ["A"] = "anvil", ["F"] = "forge" }),
+            new() { ["."] = "floor", ["·"] = "path", ["─"] = "wall", ["│"] = "wall", ["┌"] = "wall", ["┐"] = "wall", ["└"] = "wall", ["┘"] = "wall", ["═"] = "bench", ["▄"] = "anvil", ["░"] = "rubble", ["▲"] = "forge" }),
 
         new("tavern-door", "Outside the Drowned Rat", 4, 2,
             "A painted sign shows a rodent floating cheerfully in a tankard. The door beneath "
             + "it stands open, and warm noise spills out into the street.",
-            [], []),
+            [
+                "┌────────┐░░░┌──────┐",
+                "│........│...│......│",
+                "│........└───┘......│",
+                "│..................·│",
+                "└───────╥╥─────────·│",
+                "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"·\"",
+                "\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"·\"\"",
+                "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"·\"\"\"",
+                "················\"\"\"\"\"",
+            ],
+            new() { ["\""] = "grass", ["."] = "floor", ["·"] = "path", ["─"] = "wall", ["│"] = "wall", ["┌"] = "wall", ["┐"] = "wall", ["└"] = "wall", ["┘"] = "wall", ["╥"] = "gate", ["░"] = "rubble", ["♣"] = "tree" }),
 
         new("tavern-common", "The Drowned Rat", 4, 3,
             "Low beams, lower conversation, and a fire that has been burning so long the "
             + "stones behind it have gone the colour of old tea. The floor is sticky in a way "
             + "nobody wants explained.",
             [
-                "###########",
-                "#.t...t...#",
-                "#.....==..#",
-                "#.t...t...#",
-                "####...####",
+                "┌───────────────────┐",
+                "│..▬▬.....▬▬........│",
+                "│..▬▬.....▬▬........│",
+                "│................▲▲.│",
+                "│...................│",
+                "│..▬▬.....▬▬........│",
+                "│..▬▬.....▬▬........│",
+                "│═══════════════....│",
+                "└─────────··────────┘",
             ],
-            new() { ["#"] = "wall", ["."] = "floor", ["t"] = "table", ["="] = "bar" }),
+            new() { ["."] = "floor", ["·"] = "path", ["─"] = "wall", ["│"] = "wall", ["┌"] = "wall", ["┐"] = "wall", ["└"] = "wall", ["┘"] = "wall", ["═"] = "bench", ["▬"] = "table", ["▲"] = "forge" }),
 
         new("well-yard", "The Well Yard", 2, 3,
             "A round stone well with a rope that disappears into dark. Somebody has left a "
             + "chipped cup on the rim for whoever comes thirsty next.",
-            [], []),
+            [
+                "\"\"\"\"\"\"\"\"\"··\"\"\"\"\"\"\"\"\"\"",
+                "\"\"\"\"\"\"\"\"\"\"·\"\"\"\"\"\"\"\"\"\"",
+                "\"\"\"┌───┐\"\"·\"\"\"\"\"\"\"\"\"\"",
+                "···│.◎.│·············",
+                "\"\"\"└───┘\"\"·\"\"\"\"\"\"\"\"\"\"",
+                "\"\"\"\"\"\"\"\"\"\"·\"\"\"\"\"\"\"\"\"\"",
+                "\"\"♣\"\"\"\"\"\"\"·\"\"\"\"\"\"♣\"\"\"",
+                "\"\"\"\"\"\"\"\"\"\"·\"\"\"\"\"\"\"\"\"\"",
+                "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+            ],
+            new() { ["\""] = "grass", ["."] = "floor", ["·"] = "path", ["─"] = "wall", ["│"] = "wall", ["┌"] = "wall", ["┐"] = "wall", ["└"] = "wall", ["┘"] = "wall", ["◎"] = "well", ["♣"] = "tree" }),
 
         new("chapel-steps", "The Chapel Steps", 0, 3,
             "Shallow steps, hollowed in the middle by centuries of feet, run down to a door "
             + "of grey wood. Moss has taken the north side of every one of them.",
-            [], []),
+            [
+                "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+                "\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"",
+                "\"\"\"\"\"┌─────────┐\"\"\"\"\"",
+                "·····│≡≡≡≡≡≡≡≡≡│\"\"\"\"\"",
+                "\"\"\"\"\"│≡≡≡≡≡≡≡≡≡│\"\"\"\"\"",
+                "\"\"\"\"\"│≡≡≡≡≡≡≡≡≡│\"\"\"\"\"",
+                "\"\"\"\"\"└────╥╥───┘\"\"\"\"\"",
+                "\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+                "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+            ],
+            new() { ["\""] = "grass", ["·"] = "path", ["≡"] = "stairs", ["─"] = "wall", ["│"] = "wall", ["┌"] = "wall", ["┐"] = "wall", ["└"] = "wall", ["┘"] = "wall", ["╥"] = "gate", ["♣"] = "tree" }),
 
         new("chapel-nave", "The Chapel Nave", 0, 4,
             "Cold, quiet, and smelling of stone dust. Six rows of benches face an altar with "
             + "nothing on it. The light from the high windows arrives already tired.",
             [
-                "###########",
-                "#..b...b..#",
-                "#..b.+.b..#",
-                "#..b...b..#",
-                "#####.#####",
+                "┌─────────··────────┐",
+                "│═══════..═════════.│",
+                "│═══════..═════════.│",
+                "│═══════..═════════.│",
+                "│........†..........│",
+                "│═══════..═════════.│",
+                "│═══════..═════════.│",
+                "│═══════..═════════.│",
+                "└───────────────────┘",
             ],
-            new() { ["#"] = "wall", ["."] = "floor", ["b"] = "bench", ["+"] = "altar" }),
+            new() { ["."] = "floor", ["·"] = "path", ["†"] = "altar", ["─"] = "wall", ["│"] = "wall", ["┌"] = "wall", ["┐"] = "wall", ["└"] = "wall", ["┘"] = "wall", ["═"] = "bench" })
     ];
 
     public static async Task<bool> SeedAsync(
@@ -219,9 +316,7 @@ public static class StarterWorldSeeder
             });
         }
 
-        // Seed starter abilities per Path
-        SeedAbilities(db);
-
+        // Abilities are reconciled separately, on every startup - see ReconcileAbilitiesAsync.
         await db.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -235,186 +330,44 @@ public static class StarterWorldSeeder
         string[] Grid,
         Dictionary<string, string> Legend);
 
-    private static void SeedAbilities(DikuWebDbContext db)
+    /// <summary>
+    /// Brings the ability rows in line with <see cref="AbilityCatalogue"/>.
+    /// </summary>
+    /// <remarks>
+    /// Run on every startup and independent of the world check, because abilities are not
+    /// starter *content* - they are what the level table promises. Seeding them once meant an
+    /// existing database never received an ability added later, so a character levelling into it
+    /// was granted a key with no row behind it and could not cast what the game said they knew.
+    ///
+    /// Upserts by key: a builder's balance edit to a row survives, but the row cannot go missing.
+    /// </remarks>
+    public static async Task<int> ReconcileAbilitiesAsync(
+        DikuWebDbContext db,
+        CancellationToken cancellationToken = default)
     {
-        // Warden abilities
-        db.Abilities.Add(new Ability
-        {
-            Key = "warden.slash",
-            Name = "Slash",
-            Description = "A basic melee attack.",
-            CostType = CostType.Stamina,
-            CostValue = 10,
-            CooldownPulses = 12,
-            CastTimePulses = null,
-            TargetingType = TargetingType.SingleTarget,
-            EffectKey = "damage.physical",
-            EffectParams = new() { { "scalingFactor", "1.1" }, { "minDamage", "3" } },
-        });
+        ArgumentNullException.ThrowIfNull(db);
 
-        db.Abilities.Add(new Ability
-        {
-            Key = "warden.bash",
-            Name = "Bash",
-            Description = "A heavy blow that hits harder.",
-            CostType = CostType.Stamina,
-            CostValue = 15,
-            CooldownPulses = 20,
-            CastTimePulses = null,
-            TargetingType = TargetingType.SingleTarget,
-            EffectKey = "damage.physical",
-            EffectParams = new() { { "scalingFactor", "1.4" }, { "minDamage", "5" } },
-        });
+        var existing = await db.Abilities
+            .ToDictionaryAsync(a => a.Key, StringComparer.Ordinal, cancellationToken);
 
-        // Adept abilities
-        db.Abilities.Add(new Ability
-        {
-            Key = "adept.bolt",
-            Name = "Bolt",
-            Description = "A magical energy blast.",
-            CostType = CostType.Focus,
-            CostValue = 15,
-            CooldownPulses = 12,
-            CastTimePulses = 8,
-            TargetingType = TargetingType.SingleTarget,
-            EffectKey = "damage.physical",
-            EffectParams = new() { { "scalingFactor", "1.2" }, { "minDamage", "4" } },
-        });
+        var added = 0;
 
-        db.Abilities.Add(new Ability
+        foreach (var entry in AbilityCatalogue.All)
         {
-            Key = "adept.shield",
-            Name = "Arcane Shield",
-            Description = "A protective barrier.",
-            CostType = CostType.Focus,
-            CostValue = 12,
-            CooldownPulses = 24,
-            CastTimePulses = null,
-            TargetingType = TargetingType.Self,
-            EffectKey = "heal.restore",
-            EffectParams = new() { { "baseHeal", "20" } },
-        });
-
-        // Shade abilities
-        db.Abilities.Add(new Ability
-        {
-            Key = "shade.strike",
-            Name = "Quick Strike",
-            Description = "A swift and precise strike.",
-            CostType = CostType.Stamina,
-            CostValue = 12,
-            CooldownPulses = 10,
-            CastTimePulses = null,
-            TargetingType = TargetingType.SingleTarget,
-            EffectKey = "damage.physical",
-            EffectParams = new() { { "scalingFactor", "1.25" }, { "minDamage", "4" } },
-        });
-
-        db.Abilities.Add(new Ability
-        {
-            Key = "shade.evasion",
-            Name = "Evasion",
-            Description = "A defensive technique.",
-            CostType = CostType.Focus,
-            CostValue = 10,
-            CooldownPulses = 16,
-            CastTimePulses = null,
-            TargetingType = TargetingType.Self,
-            EffectKey = "heal.restore",
-            EffectParams = new() { { "baseHeal", "15" } },
-        });
-
-        // Channeler abilities
-        db.Abilities.Add(new Ability
-        {
-            Key = "channeler.mend",
-            Name = "Mend",
-            Description = "Restore health to yourself or an ally.",
-            CostType = CostType.Focus,
-            CostValue = 20,
-            CooldownPulses = 20,
-            CastTimePulses = 4,
-            TargetingType = TargetingType.Self,
-            EffectKey = "heal.restore",
-            EffectParams = new() { { "baseHeal", "25" } },
-        });
-
-        db.Abilities.Add(new Ability
-        {
-            Key = "channeler.guidance",
-            Name = "Guidance",
-            Description = "Grant insight and aid.",
-            CostType = CostType.Focus,
-            CostValue = 15,
-            CooldownPulses = 24,
-            CastTimePulses = null,
-            TargetingType = TargetingType.Self,
-            EffectKey = "heal.restore",
-            EffectParams = new() { { "baseHeal", "18" } },
-        });
-
-        // Buff/Debuff abilities (Phase 5.2a)
-        db.Abilities.Add(new Ability
-        {
-            Key = "warden.battle-fury",
-            Name = "Battle Fury",
-            Description = "Increase your outgoing damage for a time.",
-            CostType = CostType.Focus,
-            CostValue = 12,
-            CooldownPulses = 60,
-            CastTimePulses = null,
-            TargetingType = TargetingType.Self,
-            EffectKey = "buff.damage-up",
-            EffectParams = new()
+            if (existing.ContainsKey(entry.Key))
             {
-                { "outgoingMultiplier", "1.5" },
-                { "durationPulses", "240" },
-                { "maxStacks", "1" },
-                { "stackingRule", "Refresh" },
-                { "name", "battle fury" },
-            },
-        });
+                continue;
+            }
 
-        db.Abilities.Add(new Ability
-        {
-            Key = "adept.weaken",
-            Name = "Weaken",
-            Description = "Weaken a target's defenses, making them take more damage.",
-            CostType = CostType.Focus,
-            CostValue = 15,
-            CooldownPulses = 60,
-            CastTimePulses = 4,
-            TargetingType = TargetingType.SingleTarget,
-            EffectKey = "debuff.weaken",
-            EffectParams = new()
-            {
-                { "incomingMultiplier", "1.3" },
-                { "durationPulses", "240" },
-                { "maxStacks", "1" },
-                { "stackingRule", "Refresh" },
-                { "name", "weakness" },
-            },
-        });
+            db.Abilities.Add(AbilityCatalogue.ToAbility(entry));
+            added++;
+        }
 
-        db.Abilities.Add(new Ability
+        if (added > 0)
         {
-            Key = "shade.fortify",
-            Name = "Fortify",
-            Description = "Reduce the incoming damage you take.",
-            CostType = CostType.Focus,
-            CostValue = 10,
-            CooldownPulses = 48,
-            CastTimePulses = null,
-            TargetingType = TargetingType.Self,
-            EffectKey = "buff.damage-up",
-            EffectParams = new()
-            {
-                { "incomingMultiplier", "0.75" },
-                { "durationPulses", "240" },
-                { "maxStacks", "1" },
-                { "stackingRule", "Refresh" },
-                { "name", "fortified" },
-            },
-        });
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return added;
     }
 }

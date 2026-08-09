@@ -61,7 +61,14 @@ public sealed class ItemSpawner
                 ["SpawnDensity"] = zoneMults.SpawnDensity,
             },
             Value = resolvedValue,
-            State = [],
+
+            // Stamped here rather than read from the template at the point of sale, so this is
+            // the one place every spawn path has to pass through - shop stock, quest rewards,
+            // the spawner sweep, and combat loot all land here. PLAN.md §4.9: cannot be sold or
+            // destroyed, can still be dropped.
+            State = template.IsQuestItem
+                ? new Dictionary<string, object> { ["questItem"] = true }
+                : [],
         };
 
         return item;
