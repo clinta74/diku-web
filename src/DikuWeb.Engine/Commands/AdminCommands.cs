@@ -30,22 +30,24 @@ internal static class AdminCommands
             "whois", 5, "whois <name> - account, role, and whether they are online (admin)",
             Whois, Requires: AccountRole.Admin));
 
-        // Full words, both of them. These outlive the session they are typed in, which is the
-        // difference between them and `kick`.
+        // All suffixed with `player`, matching `kickplayer`. The command table is checked before
+        // a player's own abilities, so every short word claimed here is one an ability can never
+        // be named — and these are typed rarely enough that the extra six characters cost nobody
+        // anything. It also reads better: what is being banned is a person, not a room or a mob.
         commands.Add(new CommandDefinition(
-            "ban", 3, "ban <name> [reason] - refuse an account and evict it (admin)",
+            "banplayer", 4, "banplayer <name> [reason] - refuse an account and evict it (admin)",
             Ban, Requires: AccountRole.Admin));
 
         commands.Add(new CommandDefinition(
-            "unban", 5, "unban <name> - let an account sign in again (admin)",
+            "unbanplayer", 6, "unbanplayer <name> - let an account sign in again (admin)",
             Unban, Requires: AccountRole.Admin));
 
         commands.Add(new CommandDefinition(
-            "mute", 4, "mute <name> <minutes> [reason] - silence an account (admin)",
+            "muteplayer", 5, "muteplayer <name> <minutes> [reason] - silence an account (admin)",
             Mute, Requires: AccountRole.Admin));
 
         commands.Add(new CommandDefinition(
-            "unmute", 6, "unmute <name> - let an account speak again (admin)",
+            "unmuteplayer", 8, "unmuteplayer <name> - let an account speak again (admin)",
             Unmute, Requires: AccountRole.Admin));
     }
 
@@ -68,7 +70,7 @@ internal static class AdminCommands
 
         if (name is null)
         {
-            ctx.Reply("Usage: ban <name> [reason]", "bad");
+            ctx.Reply("Usage: banplayer <name> [reason]", "bad");
             return;
         }
 
@@ -93,7 +95,7 @@ internal static class AdminCommands
 
         if (name is null)
         {
-            ctx.Reply("Usage: unban <name>", "bad");
+            ctx.Reply("Usage: unbanplayer <name>", "bad");
             return;
         }
 
@@ -129,7 +131,7 @@ internal static class AdminCommands
 
         if (name is null || rest is null)
         {
-            ctx.Reply("Usage: mute <name> <minutes> [reason]", "bad");
+            ctx.Reply("Usage: muteplayer <name> <minutes> [reason]", "bad");
             return;
         }
 
@@ -138,7 +140,7 @@ internal static class AdminCommands
         if (!int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var minutes) ||
             minutes <= 0)
         {
-            ctx.Reply("How many minutes? Usage: mute <name> <minutes> [reason]", "bad");
+            ctx.Reply("How many minutes? Usage: muteplayer <name> <minutes> [reason]", "bad");
             return;
         }
 
@@ -165,7 +167,7 @@ internal static class AdminCommands
 
         if (name is null)
         {
-            ctx.Reply("Usage: unmute <name>", "bad");
+            ctx.Reply("Usage: unmuteplayer <name>", "bad");
             return;
         }
 

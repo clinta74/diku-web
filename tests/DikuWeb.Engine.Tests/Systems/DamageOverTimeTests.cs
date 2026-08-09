@@ -208,7 +208,7 @@ public sealed class DamageOverTimeTests
         // rather than the hand-built effect the other tests use.
         var (harness, player, rat) = Fight();
 
-        harness.Execute(player, "cast ambush rat");
+        harness.Execute(player, "ambush rat");
         harness.Pump(2);
 
         var effects = harness.World.GetActiveEffects(rat.Id);

@@ -1,0 +1,261 @@
+using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Tests.Infrastructure;
+using DikuWeb.Engine.World;
+
+namespace DikuWeb.Engine.Tests.Commands;
+
+/// <summary>
+/// Every ability in the catalogue can actually be used, by the words a player would type.
+/// </summary>
+/// <remarks>
+/// From playtesting: <em>"warden kick ability cannot seem to be used. check all abilities and how
+/// a player would use them."</em>
+///
+/// The individual ability tests elsewhere each pick one ability and drive it, which is how a whole
+/// class of abilities stayed unusable without any test noticing — nothing walked the catalogue and
+/// asked whether each entry could be reached from a keyboard. These do.
+/// </remarks>
+public sealed class AbilityUsabilityTests
+{
+    private static readonly RoomKey West = RoomKey.Parse("test.zone.west");
+
+    /// <summary>
+    /// A character of the right Path and level, with the resources to pay for anything.
+    /// </summary>
+    /// <remarks>
+    /// Maxima are raised rather than left at the Path's defaults: the harness does not recompute
+    /// them when it sets a level, and the point here is whether the ability can be <em>named</em>,
+    /// not whether a level 20 has the stamina for Last Stand.
+    /// </remarks>
+    private static (WorldHarness Harness, PlayerActor Actor) CasterFor(AbilityCatalogue.Entry entry)
+    {
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var actor = harness.AddPlayer("Caster", West, path: entry.Path, level: entry.UnlockLevel);
+        var vitals = actor.Character.Vitals;
+
+        vitals.HealthMax = 5000;
+        vitals.Health = 5000;
+        vitals.FocusMax = 5000;
+        vitals.Focus = 5000;
+        vitals.StaminaMax = 5000;
+        vitals.Stamina = 5000;
+
+        harness.DefineAbility(entry.Key);
+        harness.AddMob("rat", West, health: 500, name: "a rat");
+
+        return (harness, actor);
+    }
+
+    public static TheoryData<string> EveryAbility()
+    {
+        var data = new TheoryData<string>();
+
+        foreach (var entry in AbilityCatalogue.All)
+        {
+            data.Add(entry.Key);
+        }
+
+        return data;
+    }
+
+    private static AbilityCatalogue.Entry EntryFor(string key) =>
+        AbilityCatalogue.All.Single(e => e.Key == key);
+
+    [Theory]
+    [MemberData(nameof(EveryAbility))]
+    public void Every_ability_can_be_cast_by_its_display_name(string key)
+    {
+        // The name is what `abilities` prints and what the builder shows, so it is the string a
+        // player will type. Keys are an implementation detail nobody should have to learn.
+        var entry = EntryFor(key);
+        var (harness, actor) = CasterFor(entry);
+
+        harness.Execute(actor, $"cast {entry.Name} rat");
+
+        var text = harness.DrainText(actor);
+
+        Assert.DoesNotContain("You don't know an ability", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("not configured", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [MemberData(nameof(EveryAbility))]
+    public void Every_ability_can_be_used_as_a_verb_of_its_own(string key)
+    {
+        // How a Diku player expects a skill to work: `kick rat`, not `cast kick rat`. The verb
+        // table is checked first, so this can never shadow an existing command.
+        var entry = EntryFor(key);
+        var (harness, actor) = CasterFor(entry);
+
+        harness.Execute(actor, $"{entry.Name} rat");
+
+        var text = harness.DrainText(actor);
+
+        Assert.DoesNotContain("is not something you can do", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("You don't know an ability", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void The_warden_opener_works_by_name_the_way_it_was_reported()
+    {
+        // The exact case from playtesting, spelled out rather than left to the theory above.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 1);
+        harness.DefineAbility("warden.kick");
+        var rat = harness.AddMob("rat", West, health: 100, name: "a rat");
+
+        harness.Execute(warden, "kick rat");
+        harness.Pump(20);
+
+        Assert.True(rat.Vitals.Health < 100, "Kick should have landed.");
+    }
+
+    [Fact]
+    public void A_two_word_ability_is_not_read_as_an_ability_and_a_target()
+    {
+        // `cast shield bash rat` used to take the first word as the ability and the second as the
+        // target, so every multi-word ability in the catalogue was unreachable by name.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 9);
+        warden.Character.Vitals.StaminaMax = 500;
+        warden.Character.Vitals.Stamina = 500;
+
+        harness.DefineAbility("warden.shield-bash");
+        var rat = harness.AddMob("rat", West, health: 200, name: "a rat");
+
+        harness.Execute(warden, "shield bash rat");
+        harness.Pump(20);
+
+        // Shield Bash is a stun, not damage, so the effect on the rat is what landing looks like.
+        Assert.NotEmpty(harness.World.GetActiveEffects(rat.Id));
+    }
+
+    [Fact]
+    public void Casting_a_skill_is_refused_and_says_what_to_type_instead()
+    {
+        // "cast kick" reads wrong because it is wrong. The refusal is the teaching, so it names
+        // the verb form rather than just objecting - including for a two-word skill, which is
+        // also the case that used to be unparseable.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 9);
+        warden.Character.Vitals.StaminaMax = 500;
+        warden.Character.Vitals.Stamina = 500;
+
+        harness.DefineAbility("warden.shield-bash");
+        harness.AddMob("rat", West, health: 200, name: "a rat");
+
+        harness.Execute(warden, "cast shield bash rat");
+
+        var text = harness.DrainText(warden);
+
+        Assert.Contains("is a skill, not a spell", text, StringComparison.Ordinal);
+        Assert.Contains("'shield bash rat'", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Casting_a_spell_is_exactly_right()
+    {
+        // The other half: `cast` is for spells, and an Adept casting one is told nothing about
+        // vocabulary because there is nothing wrong with what they typed.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var adept = harness.AddPlayer("Ilse", West, path: CharacterPath.Adept, level: 1);
+        adept.Character.Vitals.FocusMax = 500;
+        adept.Character.Vitals.Focus = 500;
+
+        harness.DefineAbility("adept.bolt");
+        var rat = harness.AddMob("rat", West, health: 200, name: "a rat");
+
+        harness.Execute(adept, "cast bolt rat");
+        harness.Pump(20);
+
+        Assert.True(rat.Vitals.Health < 200, "Bolt should have landed.");
+    }
+
+    [Fact]
+    public void An_ability_another_path_owns_is_not_a_verb_for_you()
+    {
+        // The fallback resolves against what this character has learned, so a Warden typing
+        // `firestorm` gets the unknown-verb message: for them it genuinely is not a verb. Naming
+        // it through `cast` is where "you don't know that" belongs, and the next test covers it.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 20);
+        harness.DefineAbility("adept.firestorm");
+
+        Assert.Null(harness.Commands.FindAbilityVerb(warden.Character, "firestorm", "rat"));
+    }
+
+    [Fact]
+    public void Casting_an_ability_another_path_owns_says_you_do_not_know_it()
+    {
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 20);
+        harness.DefineAbility("adept.firestorm");
+        harness.AddMob("rat", West, health: 100, name: "a rat");
+
+        harness.Execute(warden, "cast firestorm rat");
+
+        Assert.Contains("don't know", harness.DrainText(warden), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void A_real_typo_is_still_a_typo()
+    {
+        // Asserted at the resolver rather than through the harness, because "no ability answered"
+        // is the fact that matters: the loop turns it into the unknown-verb message, and a test
+        // that went through the harness would be asserting the harness's own throw instead.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 20);
+        harness.DefineAbility("warden.kick");
+
+        Assert.Null(harness.Commands.FindAbilityVerb(warden.Character, "flurgle", "rat"));
+    }
+
+    [Fact]
+    public void An_ability_you_know_resolves_to_the_cast_handler()
+    {
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 20);
+        harness.DefineAbility("warden.kick");
+
+        var resolved = harness.Commands.FindAbilityVerb(warden.Character, "kick", "rat");
+
+        Assert.NotNull(resolved);
+        Assert.Equal("cast", resolved.Value.Definition.Name);
+        Assert.Equal("kick rat", resolved.Value.Argument);
+    }
+
+    [Fact]
+    public void An_existing_verb_always_wins()
+    {
+        // The verb table is checked first, so adding abilities as verbs can never take a command
+        // out from under someone. `rest` is a verb; nothing about it changes.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 20);
+
+        harness.Execute(warden, "rest");
+
+        Assert.Equal(CharacterRestState.Rest, warden.Character.RestState);
+    }
+}

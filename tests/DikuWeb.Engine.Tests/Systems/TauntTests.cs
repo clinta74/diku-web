@@ -75,7 +75,7 @@ public sealed class TauntTests
         combat.AddToHateList(MobId(rat), PlayerId(adept), 400);
         Assert.Equal(PlayerId(adept), TopHater(harness, rat));
 
-        harness.Execute(warden, "cast taunt");
+        harness.Execute(warden, "taunt");
         harness.Pump(2);
 
         Assert.Equal(PlayerId(warden), TopHater(harness, rat));
@@ -91,7 +91,7 @@ public sealed class TauntTests
         var rat = harness.AddMob("rat", West, health: 5_000);
 
         harness.Execute(warden, "kill rat");
-        harness.Execute(warden, "cast taunt");
+        harness.Execute(warden, "taunt");
         harness.Pump(2);
 
         Assert.Equal(PlayerId(warden), rat.CurrentTarget);
@@ -106,7 +106,7 @@ public sealed class TauntTests
         var warden = Warden(harness);
         var mob = harness.AddMob("target", West, health: health, name: "target");
 
-        harness.Execute(warden, "cast taunt target");
+        harness.Execute(warden, "taunt target");
         harness.Pump(2);
 
         return HateFor(harness, mob, warden);
@@ -141,7 +141,7 @@ public sealed class TauntTests
         var rat = harness.AddMob("rat", West, health: 5_000);
 
         harness.Execute(warden, "kill rat");
-        harness.Execute(warden, "cast taunt");
+        harness.Execute(warden, "taunt");
         harness.Pump(2);
         Assert.Equal(PlayerId(warden), TopHater(harness, rat));
 
@@ -164,7 +164,7 @@ public sealed class TauntTests
         harness.World.FindCombat(West)!.AddToHateList(MobId(rat), PlayerId(warden), 50_000);
         var before = HateFor(harness, rat, warden);
 
-        harness.Execute(warden, "cast taunt");
+        harness.Execute(warden, "taunt");
         harness.Pump(2);
 
         Assert.True(HateFor(harness, rat, warden) >= before);
@@ -179,7 +179,7 @@ public sealed class TauntTests
         var warden = Warden(harness);
         var rat = harness.AddMob("rat", West, health: 500);
 
-        harness.Execute(warden, "cast taunt rat");
+        harness.Execute(warden, "taunt rat");
         harness.Pump(2);
 
         Assert.NotNull(harness.World.FindCombat(West));
@@ -196,7 +196,7 @@ public sealed class TauntTests
         harness.AddMob("wolf", West, health: 500, name: "wolf");
 
         harness.Execute(warden, "kill rat");
-        harness.Execute(warden, "cast taunt");
+        harness.Execute(warden, "taunt");
         harness.Pump(2);
 
         Assert.Equal(PlayerId(warden), rat.CurrentTarget);
@@ -216,7 +216,7 @@ public sealed class TauntTests
         var warden = Warden(harness);
         var keeper = harness.AddMob("keeper", West, health: 500, name: "keeper", behavior: Npc());
 
-        harness.Execute(warden, "cast taunt keeper");
+        harness.Execute(warden, "taunt keeper");
         harness.Pump(2);
 
         Assert.Equal(CombatState.Idle, keeper.CombatState);
@@ -232,7 +232,7 @@ public sealed class TauntTests
         var warden = Warden(harness);
         var rat = harness.AddMob("rat", West, health: 500);
 
-        harness.Execute(warden, "cast taunt rat");
+        harness.Execute(warden, "taunt rat");
         harness.Pump(2);
 
         Assert.Equal(CombatState.Idle, rat.CombatState);
@@ -248,7 +248,7 @@ public sealed class TauntTests
         harness.AddMob("keeper", West, health: 500, name: "keeper", behavior: Npc());
 
         var before = warden.Character.Vitals.Stamina;
-        harness.Execute(warden, "cast taunt keeper");
+        harness.Execute(warden, "taunt keeper");
         harness.Pump(2);
 
         Assert.Equal(before, warden.Character.Vitals.Stamina);

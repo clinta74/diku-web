@@ -35,7 +35,7 @@ public sealed class AdminWorldCommandTests
     [Theory]
     [InlineData("teleport Kael")]
     [InlineData("stat Kael")]
-    [InlineData("kick Kael")]
+    [InlineData("kickplayer Kael")]
     [InlineData("shutdown 5")]
     [InlineData("set Kael gold 500")]
     public void A_player_is_told_the_verb_does_not_exist(string input)
@@ -60,7 +60,7 @@ public sealed class AdminWorldCommandTests
         var builder = harness.AddPlayer("Bram", West, role: AccountRole.Builder);
         harness.AddPlayer("Kael", East);
 
-        harness.Execute(builder, "kick Kael");
+        harness.Execute(builder, "kickplayer Kael");
 
         Assert.Contains("not something you can do", harness.DrainText(builder), StringComparison.Ordinal);
         Assert.NotNull(harness.World.FindPlayerByName("Kael"));
@@ -188,7 +188,7 @@ public sealed class AdminWorldCommandTests
         var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
         var player = harness.AddPlayer("Kael", East);
 
-        var context = harness.Execute(admin, "kick Kael");
+        var context = harness.Execute(admin, "kickplayer Kael");
 
         Assert.Equal(
             [(player.CharacterId, LeaveReason.Kicked)],
@@ -202,7 +202,7 @@ public sealed class AdminWorldCommandTests
         var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
         var player = harness.AddPlayer("Kael", East);
 
-        harness.Execute(admin, "kick Kael language in chat");
+        harness.Execute(admin, "kickplayer Kael language in chat");
 
         var events = harness.Drain(player);
 
@@ -222,7 +222,7 @@ public sealed class AdminWorldCommandTests
         var witness = harness.AddPlayer("Mira", East);
         harness.Drain(witness);
 
-        harness.Execute(admin, "kick Kael");
+        harness.Execute(admin, "kickplayer Kael");
 
         Assert.Contains("removed from the world", harness.DrainText(witness), StringComparison.Ordinal);
     }
@@ -235,7 +235,7 @@ public sealed class AdminWorldCommandTests
         var harness = Loaded();
         var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
 
-        var context = harness.Execute(admin, "kick Root");
+        var context = harness.Execute(admin, "kickplayer Root");
 
         Assert.Empty(context.RemovalsRequested);
         Assert.Contains("is online", harness.DrainText(admin), StringComparison.Ordinal);

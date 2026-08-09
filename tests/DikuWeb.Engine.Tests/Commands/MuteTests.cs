@@ -189,7 +189,7 @@ public sealed class MuteTests
         var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
         harness.AddPlayer("Kael", West);
 
-        harness.Execute(admin, "mute Kael 30 language in chat");
+        harness.Execute(admin, "muteplayer Kael 30 language in chat");
 
         var request = Assert.Single(harness.Admin.Requests);
         var mute = Assert.IsType<SetAccountMuteRequest>(request);
@@ -207,7 +207,7 @@ public sealed class MuteTests
         var harness = Loaded();
         var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
 
-        harness.Execute(admin, "mute Kael");
+        harness.Execute(admin, "muteplayer Kael");
 
         Assert.Empty(harness.Admin.Requests);
         Assert.Contains("Usage", harness.DrainText(admin), StringComparison.Ordinal);
@@ -219,7 +219,7 @@ public sealed class MuteTests
         var harness = Loaded();
         var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
 
-        harness.Execute(admin, "unmute Kael");
+        harness.Execute(admin, "unmuteplayer Kael");
 
         var mute = Assert.IsType<SetAccountMuteRequest>(Assert.Single(harness.Admin.Requests));
 
@@ -232,7 +232,7 @@ public sealed class MuteTests
         var harness = Loaded();
         var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
 
-        harness.Execute(admin, "ban Kael griefing");
+        harness.Execute(admin, "banplayer Kael griefing");
 
         var ban = Assert.IsType<SetAccountBanRequest>(Assert.Single(harness.Admin.Requests));
 
@@ -247,7 +247,7 @@ public sealed class MuteTests
         var harness = Loaded();
         var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
 
-        harness.Execute(admin, "unban Kael");
+        harness.Execute(admin, "unbanplayer Kael");
 
         var ban = Assert.IsType<SetAccountBanRequest>(Assert.Single(harness.Admin.Requests));
 
@@ -255,10 +255,10 @@ public sealed class MuteTests
     }
 
     [Theory]
-    [InlineData("ban Kael")]
-    [InlineData("mute Kael 30")]
-    [InlineData("unban Kael")]
-    [InlineData("unmute Kael")]
+    [InlineData("banplayer Kael")]
+    [InlineData("muteplayer Kael 30")]
+    [InlineData("unbanplayer Kael")]
+    [InlineData("unmuteplayer Kael")]
     public void A_player_cannot_moderate_anyone(string input)
     {
         var harness = Loaded();
@@ -276,16 +276,18 @@ public sealed class MuteTests
         // Prefix matching is first-match-wins, so a new verb can quietly steal an older one's
         // shorthand. Every one of these was typed by somebody before ban and mute existed.
         Assert.Equal("bind", Verb("b"));
+        Assert.Equal("banplayer", Verb("banp"));
         Assert.Equal("buy", Verb("bu"));
-        Assert.Equal("ban", Verb("ban"));
-        Assert.Equal("mute", Verb("mute"));
-        Assert.Equal("unban", Verb("unban"));
-        Assert.Equal("unmute", Verb("unmute"));
+
+        Assert.Equal("muteplayer", Verb("mutep"));
+        Assert.Equal("unbanplayer", Verb("unbanp"));
+        Assert.Equal("unmuteplayer", Verb("unmutepl"));
         Assert.Equal("unlink", Verb("unlink"));
 
         // Nothing short enough to be typed by accident reaches a moderation verb.
         Assert.Null(new WorldHarness().Commands.Find("un"));
         Assert.Null(new WorldHarness().Commands.Find("ba"));
+        Assert.Null(new WorldHarness().Commands.Find("kick"));
     }
 
     private static string Verb(string typed) =>

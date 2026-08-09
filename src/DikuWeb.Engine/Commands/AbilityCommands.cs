@@ -30,7 +30,8 @@ public static class AbilityCommands
             ctx => Cast(ctx, abilityCache, clock, effectTable)));
 
         commands.Add(new CommandDefinition(
-            "abilities", 0, "abilities (ab) - list your known abilities", ListAbilities));
+            "abilities", 0, "abilities (ab) - list your known abilities",
+            ctx => ListAbilities(ctx, abilityCache)));
     }
 
     private static void Cast(
@@ -44,10 +45,6 @@ public static class AbilityCommands
             ctx.Reply("Cast what ability?");
             return;
         }
-
-        var parts = ctx.Argument.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var abilityNameOrKey = parts[0];
-        var targetName = parts.Length > 1 ? parts[1] : null;
 
         var character = ctx.Actor.Character;
 
@@ -68,22 +65,38 @@ public static class AbilityCommands
             return;
         }
 
-        // Find ability by key or name prefix
-        var matchingKey = knownAbilityKeys.FirstOrDefault(k =>
-            k.EndsWith(abilityNameOrKey, StringComparison.OrdinalIgnoreCase) ||
-            k.Contains(abilityNameOrKey, StringComparison.OrdinalIgnoreCase));
+        // The ability and the target are worked out together, because where one ends and the
+        // other begins is not decidable a word at a time - "shield bash rat" has to know that
+        // Shield Bash is a thing before it can tell that "rat" is the target.
+        var match = AbilityLookup.Resolve(cache, character, ctx.Argument);
 
-        if (matchingKey == null)
+        if (!match.Found)
         {
-            ctx.Reply($"You don't know an ability called '{abilityNameOrKey}'.");
+            ctx.Reply($"You don't know an ability called '{ctx.Argument}'.");
             return;
         }
 
-        // Resolve ability template from cache
-        var ability = cache?.Get(matchingKey);
-        if (ability == null)
+        var ability = match.Ability!;
+        var targetName = match.Target;
+        var matchingKey = ability.Key;
+        var kind = AbilityKinds.Of(ability);
+
+        // `cast kick` reads wrong because it is wrong: a boot to the knee is not a spell. The
+        // split is not invented for this - the catalogue already draws it, since the two caster
+        // Paths pay Focus for all eighteen of their abilities and the two martial Paths pay
+        // Stamina.
+        //
+        // Refused rather than quietly allowed, because the point is to teach the vocabulary, and
+        // the verb form always works. Any prefix of "cast" reaches the verb, since it takes a
+        // single character - so this is asking "did they type cast", not "did they type c".
+        if (kind == AbilityKind.Skill &&
+            "cast".StartsWith(ctx.Verb, StringComparison.OrdinalIgnoreCase))
         {
-            ctx.Reply($"Ability '{matchingKey}' not configured. (Server error)");
+            var usage = targetName is null
+                ? ability.Name.ToLowerInvariant()
+                : $"{ability.Name.ToLowerInvariant()} {targetName}";
+
+            ctx.Reply($"{ability.Name} is a skill, not a spell. Just type '{usage}'.", "bad");
             return;
         }
 
@@ -157,8 +170,12 @@ public static class AbilityCommands
 
         ctx.World.CastQueue.Enqueue(castJob);
 
-        // Narrate to player
-        ctx.Reply($"You cast {ability.Name}!");
+        // A Warden does not cast a kick. The verb follows the kind, so the prose matches what the
+        // character is actually doing.
+        var first = kind == AbilityKind.Spell ? "cast" : "use";
+        var third = kind == AbilityKind.Spell ? "casts" : "uses";
+
+        ctx.Reply($"You {first} {ability.Name}!");
 
         // Narrate to room
         if (targetId != null)
@@ -167,17 +184,17 @@ public static class AbilityCommands
                 .FirstOrDefault(p => EntityId.ForCharacter(p.CharacterId) == targetId);
             if (target != null)
             {
-                ctx.Broadcast($"{ctx.Actor.Name} casts {ability.Name} on {target.Name}!");
-                target.SendText($"{ctx.Actor.Name} casts {ability.Name} on you!", "ability");
+                ctx.Broadcast($"{ctx.Actor.Name} {third} {ability.Name} on {target.Name}!");
+                target.SendText($"{ctx.Actor.Name} {third} {ability.Name} on you!", "ability");
             }
             else
             {
-                ctx.Broadcast($"{ctx.Actor.Name} casts {ability.Name}!");
+                ctx.Broadcast($"{ctx.Actor.Name} {third} {ability.Name}!");
             }
         }
         else
         {
-            ctx.Broadcast($"{ctx.Actor.Name} casts {ability.Name}!");
+            ctx.Broadcast($"{ctx.Actor.Name} {third} {ability.Name}!");
         }
     }
 
@@ -277,7 +294,7 @@ public static class AbilityCommands
             : EntityId.ForCharacter(actor.CharacterId);
     }
 
-    private static void ListAbilities(CommandContext ctx)
+    private static void ListAbilities(CommandContext ctx, AbilityCache? cache)
     {
         var character = ctx.Actor.Character;
         var knownAbilities = AbilityProgression.GetKnownAbilitiesForLevel(character.Path, character.Level);
@@ -289,13 +306,43 @@ public static class AbilityCommands
             return;
         }
 
-        if (knownAbilities.Count > 0)
+        // Grouped by kind and shown by name, because the name is what you type. This used to
+        // print raw keys - "warden.shield-bash" - which taught players an implementation detail
+        // and, worse, taught it as though it were the thing to type.
+        var resolved = knownAbilities
+            .Select(key => (Key: key, Ability: cache?.Get(key)))
+            .ToList();
+
+        foreach (var kind in new[] { AbilityKind.Skill, AbilityKind.Spell })
         {
-            ctx.Reply($"Your abilities ({character.Path}):");
-            foreach (var key in knownAbilities)
+            var group = resolved
+                .Where(r => r.Ability is not null && AbilityKinds.Of(r.Ability) == kind)
+                .ToList();
+
+            if (group.Count == 0)
             {
-                ctx.Reply($"  • {key}");
+                continue;
             }
+
+            ctx.Reply(
+                kind == AbilityKind.Spell
+                    ? $"Your spells ({character.Path}) — 'cast <name> [target]':"
+                    : $"Your skills ({character.Path}) — type the name: '<name> [target]':",
+                "heading");
+
+            foreach (var (_, ability) in group)
+            {
+                ctx.Reply(
+                    $"  • {ability!.Name}  ({ability.CostValue} {ability.CostType.ToString().ToLowerInvariant()})");
+            }
+        }
+
+        // Anything the cache could not resolve is still worth naming: a key with no row behind it
+        // is a content problem, and silently omitting it would hide it from the person best
+        // placed to report it.
+        foreach (var (key, ability) in resolved.Where(r => r.Ability is null))
+        {
+            ctx.Reply($"  • {key} — not configured", "bad");
         }
 
         // Passives are never cast, so they are listed apart from the things `cast` accepts -

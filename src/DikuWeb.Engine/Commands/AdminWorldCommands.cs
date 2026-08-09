@@ -36,10 +36,12 @@ internal static class AdminWorldCommands
             "stat", 4, "stat [name] - inspect a character, mob, or item (admin)",
             Stat, Requires: AccountRole.Admin));
 
-        // Full word. Disconnecting somebody by fumbling a prefix of `kill` would be a bad
-        // surprise for both of you.
+        // `kickplayer`, not `kick`, because Kick is a Warden skill and the command table is
+        // checked before a player's abilities are — an admin verb named `kick` would take the
+        // Warden opener away from every Warden in the game. The suffix is cheap here: these are
+        // typed rarely, and by people who can be expected to learn a longer word.
         commands.Add(new CommandDefinition(
-            "kick", 4, "kick <name> [reason] - disconnect a player (admin)",
+            "kickplayer", 5, "kickplayer <name> [reason] - disconnect a player (admin)",
             Kick, Requires: AccountRole.Admin));
 
         // All eight characters, for the same reason `quit` demands four: there is no undo, and
@@ -491,7 +493,7 @@ internal static class AdminWorldCommands
 
         if (!ctx.HasArgument)
         {
-            ctx.Reply("Usage: kick <name> [reason]", "bad");
+            ctx.Reply("Usage: kickplayer <name> [reason]", "bad");
             return;
         }
 

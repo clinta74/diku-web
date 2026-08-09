@@ -513,6 +513,26 @@ exploration, which is what a MUD is for. Each level grants attribute and ability
 deliberately: point-buy rather than use-based improvement, because use-based systems are
 notoriously hard to balance and invite grinding.
 
+**Spells are cast; skills are done.** `cast bolt rat` and `kick rat` — the verb matches what the
+character is doing, because *"cast kick"* describes a boot to the knee as though it were
+sorcery. The split is **derived, not authored**: the two caster Paths pay Focus for all eighteen
+of their abilities and the two martial Paths pay Stamina, so the cost type already draws the line
+and a second field for it would be a second source of truth to disagree with.
+
+- **Every ability is usable as a verb of its own**, resolved *after* the command table misses — so
+  an existing command can never be taken out from under someone, and abilities added later need
+  no registration. Done as a fallback rather than as thirty-seven registered verbs because the
+  table is global while abilities are per-Path: registering them would put an Adept's Amplify in
+  front of a Shade's Ambush for `am`, and the Shade would be told they do not know an ability
+  they have.
+- **`cast` refuses a skill**, naming the verb form instead. The refusal is the teaching.
+- The cost is that an ability sharing a name with a command is unreachable as a verb, which is why
+  the moderation verbs are `kickplayer`, `banplayer`, `muteplayer` — a command called `kick` would
+  have taken the Warden opener away from every Warden in the game.
+- **Abilities resolve by display name, not by key.** `shield bash`, `shield-bash`, and
+  `warden.shield-bash` all arrive at the same place, matched longest-first so a two-word ability
+  is not read as a one-word ability plus a target.
+
 ### 4.8 Content model
 
 - **Template → Instance.** `MobTemplate`/`ItemTemplate` hold the baseline; `Mob`/`Item` are
@@ -1941,6 +1961,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
 | Spawners | A mob that wandered out still counts; ten sweeps that scatter what they made never exceed the target; a kill is replaced; two spawners of the same template do not count each other's work; a mob a builder placed by hand satisfies nobody's target. |
 | Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |
+| Abilities | **Every entry in the catalogue** is castable by its display name and usable as a verb — a theory over the whole list, because the individual ability tests each pick one and drive it, which is how eight multi-word abilities stayed unreachable without anything noticing. Plus: a skill is refused by `cast` with the verb form named, a spell is not, an ability another Path owns is not a verb for you, and an existing command always wins. |
 | Telemetry | Every pulse is recorded rather than only the slow ones; an over-budget pulse is counted as well as timed; a command with no acceptance timestamp is counted but not timed; the gauges read live state at collection time. Meter and instrument names are pinned, because renaming one breaks every dashboard silently — the metrics simply stop arriving. *The numbers themselves are deliberately not asserted: a p99 measured under an xUnit host is not the p99 §11 is about.* |
 | Rate limits | A flood is refused once the bucket empties but the early commands still land; the 429 carries `Retry-After`; **one player's flood does not refuse another player**, which is the load-bearing property — a global partition would let anyone switch the game off for everyone; the event stream is never limited; repeated failed logins are. Asserted against a host configured with real numbers, since the shared test host lifts them out of the way. |
 | Moderation | A mute is refused on every one of the six verbs that carry words to another player, expires against the clock rather than by a sweep, and stops none of walking, fighting, or turning a channel off. The account verbs enqueue rather than acting, since the loop cannot read the account store. No new verb steals an older one's abbreviation. |

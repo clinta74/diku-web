@@ -362,8 +362,24 @@ internal sealed class WorldHarness
     public CommandContext Execute(PlayerActor actor, string input)
     {
         var (verb, argument) = CommandRegistry.Split(input);
-        var definition = Commands.Find(verb)
-            ?? throw new InvalidOperationException($"No command matched '{verb}'.");
+        var definition = Commands.Find(verb);
+
+        if (definition is null)
+        {
+            // Mirrors GameLoop.HandleCommand: a verb the table does not have may still be one of
+            // this character's abilities, since skills are verbs. Without this the harness would
+            // dispatch differently from the game, and a test could pass against a path the loop
+            // never takes.
+            if (Commands.FindAbilityVerb(actor.Character, verb, argument) is { } ability)
+            {
+                definition = ability.Definition;
+                argument = ability.Argument;
+            }
+            else
+            {
+                throw new InvalidOperationException($"No command matched '{verb}'.");
+            }
+        }
 
         var context = new CommandContext
         {

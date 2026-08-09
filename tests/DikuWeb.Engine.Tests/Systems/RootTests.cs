@@ -187,7 +187,7 @@ public sealed class RootTests
         shade.Character.Vitals.Stamina = 200;
         var rat = harness.AddMob("rat", West, health: 500);
 
-        harness.Execute(shade, "cast hamstring rat");
+        harness.Execute(shade, "hamstring rat");
         harness.Pump(2);
 
         Assert.True(harness.World.IsRooted(rat.Id, harness.Clock.CurrentPulse));

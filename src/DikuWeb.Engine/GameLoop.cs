@@ -509,10 +509,22 @@ public sealed class GameLoop(
         }
 
         var definition = commands.Find(verb);
+
         if (definition is null)
         {
-            actor.SendText($"'{verb}' is not something you can do. Try 'help'.", "bad");
-            return;
+            // Not a command. It may still be one of this character's abilities: skills are verbs
+            // (PLAN.md §4.7), so `kick rat` has to reach Kick. Checked only after the table has
+            // missed, so no existing command can ever be taken out from under someone.
+            if (commands.FindAbilityVerb(actor.Character, verb, argument) is not { } ability)
+            {
+                actor.SendText($"'{verb}' is not something you can do. Try 'help'.", "bad");
+                return;
+            }
+
+            // The typed verb is kept rather than rewritten to "cast": the handler needs to know
+            // which way the player reached it, because a skill may be named but not cast.
+            definition = ability.Definition;
+            argument = ability.Argument;
         }
 
         var context = new CommandContext

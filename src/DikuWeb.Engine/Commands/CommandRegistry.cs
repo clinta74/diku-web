@@ -40,6 +40,7 @@ public sealed class CommandRegistry
         Domain.Abilities.Effects.EffectRegistry? effects = null)
     {
         _commands = [];
+        _abilityCache = abilityCache;
 
         // Directions first, so a bare "n" or "e" always wins the prefix race against any
         // later verb. This is the single most-typed input in the game.
@@ -120,12 +121,61 @@ public sealed class CommandRegistry
         AdminWorldCommands.Register(_commands);
     }
 
+    /// <summary>
+    /// The abilities this registry can resolve a bare verb against. Held per instance rather than
+    /// in a static, for the reason the caches above already carry: a static made the
+    /// last-constructed registry the one every other registry read from.
+    /// </summary>
+    private readonly AbilityCache? _abilityCache;
+
     public IReadOnlyList<CommandDefinition> Commands => _commands;
 
     public CommandDefinition? Find(string verb) =>
         string.IsNullOrEmpty(verb)
             ? null
             : _commands.FirstOrDefault(c => c.Matches(verb));
+
+    /// <summary>
+    /// Resolves a verb the table does not have as one of this character's abilities.
+    /// </summary>
+    /// <remarks>
+    /// <b>Skills are verbs.</b> A player types <c>kick rat</c>, not <c>cast kick rat</c> — the
+    /// reported bug was exactly that, and the answer to it.
+    ///
+    /// A fallback rather than thirty-seven registered verbs, for three reasons. The table is
+    /// global while abilities are per-Path, so registering them would put an Adept's Amplify in
+    /// front of a Shade's Ambush for the prefix <c>am</c>, and the Shade would be told they do not
+    /// know an ability they have. It covers abilities added later with no further work. And
+    /// because it runs only once the table has missed, <b>it can never take a command out from
+    /// under someone</b> — which is what makes it safe to add to a game already being played.
+    ///
+    /// The cost is that an ability sharing a name with a command is unreachable as a verb, which
+    /// is why the moderation verbs grew their <c>player</c> suffix rather than keeping <c>kick</c>.
+    /// </remarks>
+    /// <returns>
+    /// The <c>cast</c> definition and the argument to run it with, or null when nothing this
+    /// character knows answers to the verb — which leaves it a plain unknown command.
+    /// </returns>
+    public (CommandDefinition Definition, string Argument)? FindAbilityVerb(
+        Character character,
+        string verb,
+        string argument)
+    {
+        ArgumentNullException.ThrowIfNull(character);
+
+        if (string.IsNullOrEmpty(verb) || Find("cast") is not { } cast)
+        {
+            return null;
+        }
+
+        var typed = string.IsNullOrWhiteSpace(argument) ? verb : $"{verb} {argument}";
+
+        // Resolved here rather than left to the handler, so a genuine typo still reads as an
+        // unknown command instead of "you don't know an ability called 'flurgle rat'".
+        return AbilityLookup.Resolve(_abilityCache, character, typed).Found
+            ? (cast, typed)
+            : null;
+    }
 
     /// <summary>
     /// Punctuation that stands in for a whole verb, with no space after it.
