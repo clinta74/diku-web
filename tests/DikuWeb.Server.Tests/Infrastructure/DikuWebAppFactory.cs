@@ -9,7 +9,9 @@ namespace DikuWeb.Server.Tests.Infrastructure;
 /// Boots the real server against the containerised database. Nothing is stubbed: the
 /// health endpoints under test are the ones that will run in production.
 /// </summary>
-public sealed class DikuWebAppFactory(string connectionString) : WebApplicationFactory<Program>
+public sealed class DikuWebAppFactory(
+    string connectionString,
+    IReadOnlyDictionary<string, string>? settings = null) : WebApplicationFactory<Program>
 {
     /// <summary>
     /// Small on purpose. Each test builds its own host, and a host's pool is not torn down the
@@ -40,6 +42,24 @@ public sealed class DikuWebAppFactory(string connectionString) : WebApplicationF
         // is still coming up; a test pointed at an unreachable host should fail in a second, and
         // a test pointed at a live container has nothing to wait for.
         builder.UseSetting("Database:MigrationRetryBudgetSeconds", "0");
+
+        // Rate limits lifted out of the way (PLAN.md §8, Phase 6). One host serves the whole
+        // collection from a single loopback address, so every test shares one auth partition and
+        // one builder partition - which is the sharpest possible version of the shared-address
+        // problem the limiter has in production behind a proxy. Left at the shipped values, the
+        // suite would exhaust the sign-in budget during setup and fail tests that are not about
+        // rate limiting at all.
+        //
+        // RateLimitTests overrides these downward on its own host, so the limits themselves are
+        // still asserted against real numbers.
+        builder.UseSetting("RateLimits:AuthAttemptsPerMinute", "100000");
+        builder.UseSetting("RateLimits:CommandBurst", "100000");
+        builder.UseSetting("RateLimits:BuilderBurst", "100000");
+
+        foreach (var (key, value) in settings ?? new Dictionary<string, string>())
+        {
+            builder.UseSetting(key, value);
+        }
 
         builder.ConfigureLogging(logging =>
         {

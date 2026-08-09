@@ -32,8 +32,17 @@ public static class GameEndpoints
 
         group.MapGet("/sessions", ListSessions);
         group.MapPost("/{characterId:guid}/enter", EnterAsync);
+
+        // The stream is deliberately unlimited. It is one long-lived request per character, so a
+        // limiter would never fire on honest use and would be a way to break a session that had
+        // reconnected a few times in quick succession.
         group.MapGet("/{characterId:guid}/stream", StreamAsync);
-        group.MapPost("/{characterId:guid}/command", SubmitCommand);
+
+        // The one endpoint a player can hold down a key against, and the one that costs the
+        // single-threaded loop its budget (PLAN.md §2.1).
+        group.MapPost("/{characterId:guid}/command", SubmitCommand)
+            .RequireRateLimiting(RateLimiting.Commands);
+
         group.MapPost("/{characterId:guid}/leave", Leave);
     }
 

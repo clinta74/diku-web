@@ -1878,8 +1878,21 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
         a room they are not in. It reports the old value beside the new, because the reason to
         reach for it is that a number was wrong.
       (`goto` shipped with Phase 2; `promote` / `demote` / `whois` with Phase 2a)
-- [ ] Rate limiting per session; command flood protection; builder API throttling
-      (only `DigThrottle` exists, covering the `dig` endpoint alone)
+- [x] **Rate limiting per caller.** Three policies, because the three surfaces differ: commands
+      partitioned by *character* (the thing the single-threaded loop spends its budget on, so an
+      account with three characters legitimately costs three characters' worth), builder by
+      account and deliberately looser, auth by remote address and tight — the only one defending
+      against a stranger. A 429 carries `Retry-After`, since a client that retries immediately
+      turns one breach into the tight loop being limited.
+      The SSE stream is deliberately *not* limited: one long-lived request per character, where a
+      limiter would never fire on honest use and would break a session that reconnected twice.
+      **Known weakness, named rather than hidden:** behind the nginx front end every caller shares
+      the proxy's address, so the auth limit is a site-wide cap until forwarded headers are
+      honoured. The numbers are configuration (`RateLimits:*`) for exactly this reason. Honouring
+      `X-Forwarded-For` safely needs a trusted-proxy list, which is a deployment input this repo
+      does not have — so it is a deployment note in `Program.cs`, not a silent default.
+      (`DigThrottle` predates this and still covers `dig` on its own, guarding against a held key
+      carving forty rooms rather than against load.)
 - [ ] OpenTelemetry: pulse duration p50/p99, sessions, commands/s, queue depths
       — nothing is instrumented; the slow-pulse watchdog logs but does not measure
 - [ ] Scheduled `pg_dump` backups + a rehearsed restore drill
@@ -1914,6 +1927,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
 | Spawners | A mob that wandered out still counts; ten sweeps that scatter what they made never exceed the target; a kill is replaced; two spawners of the same template do not count each other's work; a mob a builder placed by hand satisfies nobody's target. |
 | Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |
+| Rate limits | A flood is refused once the bucket empties but the early commands still land; the 429 carries `Retry-After`; **one player's flood does not refuse another player**, which is the load-bearing property — a global partition would let anyone switch the game off for everyone; the event stream is never limited; repeated failed logins are. Asserted against a host configured with real numbers, since the shared test host lifts them out of the way. |
 | Moderation | A mute is refused on every one of the six verbs that carry words to another player, expires against the clock rather than by a sweep, and stops none of walking, fighting, or turning a channel off. The account verbs enqueue rather than acting, since the loop cannot read the account store. No new verb steals an older one's abbreviation. |
 | Admin | Every verb reads as unknown to a player *and to a builder* — content authority is not moderation authority. Teleport ignores `noRecall` and a fight; kick asks the loop rather than removing anyone itself, and cannot name the caller. Shutdown warns before it acts, reports without acting when asked bare, reschedules rather than refusing, does not announce milestones longer than its own delay, and only reaches the host when the countdown actually runs out. |
 | Emotes | Both authored shapes read, and mixed in one list; a row with no text is dropped; an inverted range reads as its lower number. A fresh mob is silent on its first sweep, a fast line talks while a slow one stays quiet, one line lands per tick, and renaming a line prunes the old key rather than accruing it. The schedule survives the jsonb round trip — the one bug class this codebase keeps rediscovering. |

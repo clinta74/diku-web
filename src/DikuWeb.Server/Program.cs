@@ -151,10 +151,24 @@ builder.Services.AddSingleton<BuilderChangeFeed>();
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<DikuWebDbContext>("database", tags: ["ready"]);
 
+// Per-caller limits (§8, Phase 6). The numbers come from configuration so a deployment can adjust
+// them without a rebuild — see RateLimiting.Options.
+//
+// DEPLOYMENT NOTE: the auth limit partitions by remote address, and behind the nginx front end
+// (docker-compose.prod.yml) that address is the proxy's for every caller. Until forwarded headers
+// are honoured, treat `RateLimits:AuthAttemptsPerMinute` as a site-wide cap rather than a
+// per-visitor one, and set it accordingly.
+builder.Services.AddDikuWebRateLimiting(builder.Configuration);
+
 var app = builder.Build();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// After authentication, because the command and builder limits are partitioned by who is calling
+// and would otherwise see every request as anonymous — which would put every player in one shared
+// bucket and let any one of them exhaust it for the rest.
+app.UseRateLimiter();
 
 // ---------------------------------------------------------------------------
 // Endpoints

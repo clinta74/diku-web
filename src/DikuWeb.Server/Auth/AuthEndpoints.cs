@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.RegularExpressions;
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Persistence;
+using DikuWeb.Server.Infrastructure;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -23,8 +24,17 @@ public static partial class AuthEndpoints
     {
         var group = routes.MapGroup("/api/auth");
 
-        group.MapPost("/register", RegisterAsync);
-        group.MapPost("/login", LoginAsync);
+        // The only surface a stranger can reach, so the only one where the limit is tight
+        // (PLAN.md §8, Phase 6). Partitioned by address, since there is no account yet to
+        // partition by.
+        group.MapPost("/register", RegisterAsync)
+            .RequireRateLimiting(RateLimiting.Auth);
+
+        group.MapPost("/login", LoginAsync)
+            .RequireRateLimiting(RateLimiting.Auth);
+
+        // Left alone: it reads the cookie the caller already has and touches no database row a
+        // stranger could guess at.
         group.MapGet("/me", MeAsync);
 
         // Cast required. LogoutAsync's signature is Func<HttpContext, Task<IResult>>, which

@@ -6,6 +6,7 @@ using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Server.Auth;
+using DikuWeb.Server.Infrastructure;
 using Microsoft.AspNetCore.Http.Features;
 
 namespace DikuWeb.Server.Building;
@@ -20,7 +21,12 @@ public static class BuilderEndpoints
     {
         ArgumentNullException.ThrowIfNull(routes);
 
-        var group = routes.MapGroup("/api/builder").RequireAuthorization(Policies.Builder);
+        // Throttled per account, and loosely: opening the builder issues a burst of reads for the
+        // zone tree, and the population here is a trusted role whose failure mode is mess rather
+        // than breach — the same reasoning DigThrottle already carries for `dig` alone.
+        var group = routes.MapGroup("/api/builder")
+            .RequireAuthorization(Policies.Builder)
+            .RequireRateLimiting(RateLimiting.Builder);
 
         // The flag registry drives the room editor's checkboxes, so a newly registered flag
         // reaches the UI with no client change at all (PLAN.md §4.10).
