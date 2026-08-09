@@ -30,5 +30,18 @@ public sealed class Account
 
     public string? BanReason { get; set; }
 
+    /// <summary>
+    /// Silenced on the player-to-player channels until this moment (PLAN.md §8, Phase 6).
+    /// </summary>
+    /// <remarks>
+    /// A time rather than a flag, so a mute expires on its own. The moderation action people
+    /// actually want is "cool off for an hour", and an indefinite mute somebody has to remember
+    /// to lift is one that does not get lifted.
+    ///
+    /// Null means not muted, and a time in the past means the same thing — the row is not cleaned
+    /// up when it expires, because doing so would need a sweep whose only job is tidiness.
+    /// </remarks>
+    public DateTimeOffset? MutedUntil { get; set; }
+
     public ICollection<Characters.Character> Characters { get; init; } = [];
 }

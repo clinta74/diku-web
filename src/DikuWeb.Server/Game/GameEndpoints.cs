@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Engine;
 using DikuWeb.Engine.Protocol;
@@ -83,10 +84,11 @@ public static class GameEndpoints
         var session = result.Session!;
 
         // Read here rather than in the Engine: the loop has no account store and could not
-        // query one anyway (PLAN.md §2.1). This is what gates the in-game builder verbs.
-        var role = await db.Accounts
+        // query one anyway (PLAN.md §2.1). This is what gates the in-game builder verbs, and -
+        // since Phase 6 - whether anything this character says reaches anyone.
+        var account = await db.Accounts
             .Where(a => a.Id == accountId)
-            .Select(a => a.Role)
+            .Select(a => new { a.Role, a.MutedUntil })
             .FirstOrDefaultAsync(cancellationToken);
 
         // Load character's inventory and equipped items
@@ -109,7 +111,8 @@ public static class GameEndpoints
         {
             SessionId = session.Id,
             Character = character,
-            Role = role,
+            Role = account?.Role ?? AccountRole.Player,
+            MutedUntil = account?.MutedUntil,
             Output = session.Events.Writer,
             Items = items,
             Quests = quests,

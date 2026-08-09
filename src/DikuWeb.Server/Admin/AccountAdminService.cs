@@ -30,6 +30,22 @@ public sealed record RoleChangeResult(
     public bool Ok => Outcome is RoleChangeOutcome.Changed or RoleChangeOutcome.Unchanged;
 }
 
+/// <summary>
+/// The outcome of a moderation action (PLAN.md §8, Phase 6).
+/// </summary>
+/// <param name="TargetAccountId">
+/// Set only on success, and only so the worker can reach a session already open — a ban that
+/// leaves the banned player connected is not a ban.
+/// </param>
+public sealed record ModerationResult(
+    bool Ok,
+    string Message,
+    Guid? TargetAccountId = null,
+    DateTimeOffset? MutedUntil = null)
+{
+    public static ModerationResult Failed(string message) => new(false, message);
+}
+
 public sealed record AccountSummary(
     Guid Id,
     string Username,
@@ -102,6 +118,122 @@ public sealed class AccountAdminService(DikuWebDbContext db, TimeProvider clock)
             target.Id,
             previous,
             role);
+    }
+
+    /// <summary>
+    /// Bans or lifts a ban (PLAN.md §8, Phase 6).
+    /// </summary>
+    /// <remarks>
+    /// One method for both directions, because they are the same edit to the same column with the
+    /// same audit row — a separate unban path is how one of the two ends up not writing one.
+    ///
+    /// Self-banning is refused for the reason self-demotion is: there is no recovery from it
+    /// except the SQL §7.7 exists to eliminate. Banning <em>another</em> admin is permitted, since
+    /// the alternative is an account nobody can act on.
+    /// </remarks>
+    public async Task<ModerationResult> SetBanAsync(
+        Guid actorAccountId,
+        string targetUsername,
+        bool banned,
+        string? reason,
+        CancellationToken cancellationToken)
+    {
+        var target = await db.Accounts
+            .FirstOrDefaultAsync(a => a.Username == targetUsername, cancellationToken);
+
+        if (target is null)
+        {
+            return ModerationResult.Failed($"There is no account named '{targetUsername}'.");
+        }
+
+        if (target.Id == actorAccountId)
+        {
+            return ModerationResult.Failed("You cannot ban yourself.");
+        }
+
+        if (target.IsBanned == banned)
+        {
+            return ModerationResult.Failed(
+                $"{target.Username} is already {(banned ? "banned" : "not banned")}.");
+        }
+
+        target.IsBanned = banned;
+        target.BanReason = banned ? reason : null;
+
+        db.AdminAudits.Add(new AdminAudit
+        {
+            ActorAccountId = actorAccountId,
+            TargetAccountId = target.Id,
+            Action = banned ? AdminAction.Banned : AdminAction.Unbanned,
+            Before = banned ? "active" : "banned",
+            After = banned ? "banned" : "active",
+            Reason = reason,
+            At = clock.GetUtcNow(),
+        });
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new ModerationResult(
+            true,
+            banned
+                ? $"{target.Username} is banned.{(reason is null ? string.Empty : $" ({reason})")}"
+                : $"{target.Username} may sign in again.",
+            target.Id);
+    }
+
+    /// <summary>
+    /// Silences an account until a stated time, or lifts the silence when <paramref name="until"/>
+    /// is null (PLAN.md §8, Phase 6).
+    /// </summary>
+    public async Task<ModerationResult> SetMuteAsync(
+        Guid actorAccountId,
+        string targetUsername,
+        DateTimeOffset? until,
+        string? reason,
+        CancellationToken cancellationToken)
+    {
+        var target = await db.Accounts
+            .FirstOrDefaultAsync(a => a.Username == targetUsername, cancellationToken);
+
+        if (target is null)
+        {
+            return ModerationResult.Failed($"There is no account named '{targetUsername}'.");
+        }
+
+        if (target.Id == actorAccountId)
+        {
+            return ModerationResult.Failed("You cannot mute yourself.");
+        }
+
+        var before = target.MutedUntil;
+
+        if (until is null && (before is null || before <= clock.GetUtcNow()))
+        {
+            return ModerationResult.Failed($"{target.Username} is not muted.");
+        }
+
+        target.MutedUntil = until;
+
+        db.AdminAudits.Add(new AdminAudit
+        {
+            ActorAccountId = actorAccountId,
+            TargetAccountId = target.Id,
+            Action = AdminAction.MuteChanged,
+            Before = before?.ToString("u") ?? "not muted",
+            After = until?.ToString("u") ?? "not muted",
+            Reason = reason,
+            At = clock.GetUtcNow(),
+        });
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new ModerationResult(
+            true,
+            until is null
+                ? $"{target.Username} may speak again."
+                : $"{target.Username} is muted until {until:u}.{(reason is null ? string.Empty : $" ({reason})")}",
+            target.Id,
+            until);
     }
 
     public async Task<AccountSummary?> FindAsync(string username, CancellationToken cancellationToken)

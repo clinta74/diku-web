@@ -85,8 +85,17 @@ public static class ChannelCommands
         Deliver(ctx, target, ctx.Argument);
     }
 
+    /// <remarks>
+    /// The mute is checked here rather than in <c>Tell</c> and <c>Reply</c> separately, so the two
+    /// entry points cannot disagree about whether a silenced player may still answer.
+    /// </remarks>
     private static void Deliver(CommandContext ctx, PlayerActor target, string message)
     {
+        if (ctx.RefusedForMute())
+        {
+            return;
+        }
+
         ctx.Reply($"You tell {target.Name}, '{message}'", "tell");
         target.SendText($"{ctx.Actor.Name} tells you, '{message}'", "tell");
 
@@ -136,6 +145,13 @@ public static class ChannelCommands
         if (ctx.Actor.ChatOff)
         {
             ctx.Reply("Your world channel is off. 'chat on' first.", "bad");
+            return;
+        }
+
+        // Checked after the on/off branches, so a muted player can still turn the channel off and
+        // back on — the mute is about what they send, not about what reaches them.
+        if (ctx.RefusedForMute())
+        {
             return;
         }
 

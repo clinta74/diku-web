@@ -77,6 +77,40 @@ public sealed record LookupAccountRequest : AccountAdminRequest
     public required string TargetUsername { get; init; }
 }
 
+/// <summary>
+/// Bans or unbans an account (PLAN.md §8, Phase 6).
+/// </summary>
+/// <remarks>
+/// One request for both directions rather than two, because they are the same edit to the same
+/// column with the same audit row — and a separate unban path is how one of the two ends up
+/// forgetting to write the audit.
+/// </remarks>
+public sealed record SetAccountBanRequest : AccountAdminRequest
+{
+    public required string TargetUsername { get; init; }
+
+    public required bool Banned { get; init; }
+
+    public string? Reason { get; init; }
+}
+
+/// <summary>
+/// Silences an account on the player-to-player channels for a while (PLAN.md §8, Phase 6).
+/// </summary>
+/// <remarks>
+/// A duration rather than a flag, because the moderation action people actually want is "cool off
+/// for an hour" and an indefinite mute someone has to remember to lift is one that never gets
+/// lifted. <see cref="Until"/> null means lift it now.
+/// </remarks>
+public sealed record SetAccountMuteRequest : AccountAdminRequest
+{
+    public required string TargetUsername { get; init; }
+
+    public required DateTimeOffset? Until { get; init; }
+
+    public string? Reason { get; init; }
+}
+
 /// <summary>Read-only access to template data for spawning systems.</summary>
 public interface IMobTemplateRepository
 {

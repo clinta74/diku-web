@@ -259,6 +259,11 @@ public sealed class CommandRegistry
             return;
         }
 
+        if (ctx.RefusedForMute())
+        {
+            return;
+        }
+
         ctx.Reply($"You say, '{ctx.Argument}'", "speech");
         ctx.Broadcast($"{ctx.Actor.Name} says, '{ctx.Argument}'", "speech");
     }
@@ -981,6 +986,13 @@ public sealed class CommandRegistry
         if (!ctx.HasArgument)
         {
             ctx.Reply("Emote what?", "bad");
+            return;
+        }
+
+        // Covered too: an emote is free text in front of other players, so a mute that let it
+        // through would be a mute you could talk around.
+        if (ctx.RefusedForMute())
+        {
             return;
         }
 

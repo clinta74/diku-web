@@ -49,6 +49,7 @@ internal sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
         builder.Property(a => a.LastLoginAt).HasColumnName("last_login_at");
         builder.Property(a => a.IsBanned).HasColumnName("is_banned").IsRequired();
         builder.Property(a => a.BanReason).HasColumnName("ban_reason").HasMaxLength(512);
+        builder.Property(a => a.MutedUntil).HasColumnName("muted_until");
 
         builder.HasMany(a => a.Characters)
             .WithOne(c => c.Account)

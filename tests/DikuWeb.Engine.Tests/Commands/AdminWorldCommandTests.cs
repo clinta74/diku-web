@@ -37,6 +37,7 @@ public sealed class AdminWorldCommandTests
     [InlineData("stat Kael")]
     [InlineData("kick Kael")]
     [InlineData("shutdown 5")]
+    [InlineData("set Kael gold 500")]
     public void A_player_is_told_the_verb_does_not_exist(string input)
     {
         // Worded as an unknown verb rather than as a refusal, matching the builder commands:
@@ -238,6 +239,87 @@ public sealed class AdminWorldCommandTests
 
         Assert.Empty(context.RemovalsRequested);
         Assert.Contains("is online", harness.DrainText(admin), StringComparison.Ordinal);
+    }
+
+    // -----------------------------------------------------------------------
+    // set
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void Set_changes_a_live_value()
+    {
+        // Through the world's own objects, so the save queue picks it up like any other change.
+        // SQL against a running world would be invisible to the loop, whose copy is the authority
+        // until it saves over the top of whatever was written.
+        var harness = Loaded();
+        var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
+        var player = harness.AddPlayer("Kael", East);
+
+        harness.Execute(admin, "set Kael gold 500");
+
+        Assert.Equal(500, player.Character.Gold);
+    }
+
+    [Fact]
+    public void Set_clamps_a_vital_to_its_maximum()
+    {
+        // An admin topping someone up types a big number on purpose; a full heal should not
+        // require arithmetic.
+        var harness = Loaded();
+        var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
+        var player = harness.AddPlayer("Kael", East);
+        player.Character.Vitals.Health = 1;
+
+        harness.Execute(admin, "set Kael health 99999");
+
+        Assert.Equal(player.Character.Vitals.HealthMax, player.Character.Vitals.Health);
+    }
+
+    [Fact]
+    public void Set_refuses_a_field_nobody_chose_to_expose()
+    {
+        // A closed list rather than reflection: reflection would silently expose every field
+        // added afterwards, including ones where writing directly corrupts something else.
+        var harness = Loaded();
+        var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
+        harness.AddPlayer("Kael", East);
+
+        harness.Execute(admin, "set Kael roomkey test.zone.west");
+
+        Assert.Contains("not settable", harness.DrainText(admin), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Set_tells_the_player_it_happened()
+    {
+        // Their numbers changed underneath them. Finding out silently is how a support action
+        // gets reported as a bug.
+        var harness = Loaded();
+        var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
+        var player = harness.AddPlayer("Kael", East);
+        harness.Drain(player);
+
+        harness.Execute(admin, "set Kael level 10");
+
+        Assert.Contains(
+            harness.Drain(player),
+            e => e.Type == EventTypes.Sys &&
+                 ((SysPayload)e.Payload).Message.Contains("level", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Set_reports_the_old_value_as_well_as_the_new()
+    {
+        // The point of reaching for this is that a number was wrong, and an admin who cannot see
+        // what it was cannot tell whether they fixed it.
+        var harness = Loaded();
+        var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
+        var player = harness.AddPlayer("Kael", East);
+        player.Character.Gold = 7;
+
+        harness.Execute(admin, "set Kael gold 500");
+
+        Assert.Contains("7 → 500", harness.DrainText(admin), StringComparison.Ordinal);
     }
 
     // -----------------------------------------------------------------------

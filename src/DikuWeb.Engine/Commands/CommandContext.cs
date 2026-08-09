@@ -113,6 +113,31 @@ public sealed class CommandContext
     /// <summary>Mark a room to be refreshed for all occupants after this command completes.</summary>
     public void MarkRoomForRefresh(RoomKey roomKey) => RoomsToRefresh.Add(roomKey);
 
+    /// <summary>
+    /// True when this player is silenced, having told them so (PLAN.md §8, Phase 6).
+    /// </summary>
+    /// <remarks>
+    /// Asked by every verb that carries words to another player — <c>say</c>, <c>emote</c>,
+    /// <c>tell</c>, <c>reply</c>, <c>chat</c>, <c>gtell</c> — because a mute that only covered the
+    /// global channel would be a mute in name only.
+    ///
+    /// It reports rather than swallowing. Silently dropping the message is worse than refusing it:
+    /// the player carries on talking to a room that cannot hear them, which is a crueller
+    /// punishment than the one that was chosen and looks like a bug besides.
+    /// </remarks>
+    public bool RefusedForMute()
+    {
+        var now = Clock?.UtcNow ?? DateTimeOffset.UtcNow;
+
+        if (!Actor.IsMuted(now))
+        {
+            return false;
+        }
+
+        Reply($"You have been muted until {Actor.MutedUntil:u}. Nothing you say leaves your lips.", "bad");
+        return true;
+    }
+
     public void Reply(string text) => Actor.SendText(text);
 
     public void Reply(string text, string style) => Actor.SendText(text, style);

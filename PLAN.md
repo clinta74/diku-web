@@ -1856,8 +1856,27 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
         spelled `now` rather than `0`, so the destructive case is a word typed on purpose.
         `IShutdownSignal` keeps the Engine ignorant of being hosted; the Server implements it over
         `IHostApplicationLifetime`, which is what makes the stop orderly rather than abrupt.
-- [ ] Admin commands still outstanding: `set`, `mute`, `ban` — all three outlive the session, so
-      they belong with the account work rather than with the world verbs above
+- [x] **`ban` / `unban`, `mute` / `unmute`, and `set`.** The first four outlive the session, so
+      they go through `IAccountAdminQueue` beside `promote`; `set` is world-side and answers
+      immediately.
+      - **A ban evicts.** Cookie revalidation (§7.7) refuses the *next* request, but an SSE stream
+        is one long-lived request that was authorised before the ban existed — so a ban without
+        `EvictAccount` leaves the banned player in the world until they choose to leave. By
+        account rather than by session, or a second tab keeps playing.
+      - **A mute is a time, not a flag.** `accounts.muted_until`, nullable, so it lifts itself
+        with no sweep whose only job is tidiness. The duration is required rather than defaulted:
+        a mute with no stated end is one somebody has to remember to lift, and a forgotten one is
+        indistinguishable from a ban nobody meant to apply.
+      - **A mute covers every verb that carries words to another player** — `say`, `emote`,
+        `tell`, `reply`, `chat`, `gtell` — through one `RefusedForMute` gate. Anything less is a
+        mute in name only: a silenced player still has a private channel to five group members.
+        It *refuses* rather than swallowing, because a player talking to a room that cannot hear
+        them is a crueller punishment than the one chosen, and looks like a bug besides.
+      - **`set` takes a closed list of fields**, not reflection over `Character`. Reflection would
+        expose every field added afterwards, including ones where writing directly corrupts
+        something else — setting `RoomKey` without moving the actor leaves a character indexed in
+        a room they are not in. It reports the old value beside the new, because the reason to
+        reach for it is that a number was wrong.
       (`goto` shipped with Phase 2; `promote` / `demote` / `whois` with Phase 2a)
 - [ ] Rate limiting per session; command flood protection; builder API throttling
       (only `DigThrottle` exists, covering the `dig` endpoint alone)
@@ -1895,6 +1914,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
 | Spawners | A mob that wandered out still counts; ten sweeps that scatter what they made never exceed the target; a kill is replaced; two spawners of the same template do not count each other's work; a mob a builder placed by hand satisfies nobody's target. |
 | Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |
+| Moderation | A mute is refused on every one of the six verbs that carry words to another player, expires against the clock rather than by a sweep, and stops none of walking, fighting, or turning a channel off. The account verbs enqueue rather than acting, since the loop cannot read the account store. No new verb steals an older one's abbreviation. |
 | Admin | Every verb reads as unknown to a player *and to a builder* — content authority is not moderation authority. Teleport ignores `noRecall` and a fight; kick asks the loop rather than removing anyone itself, and cannot name the caller. Shutdown warns before it acts, reports without acting when asked bare, reschedules rather than refusing, does not announce milestones longer than its own delay, and only reaches the host when the countdown actually runs out. |
 | Emotes | Both authored shapes read, and mixed in one list; a row with no text is dropped; an inverted range reads as its lower number. A fresh mob is silent on its first sweep, a fast line talks while a slow one stays quiet, one line lands per tick, and renaming a line prunes the old key rather than accruing it. The schedule survives the jsonb round trip — the one bug class this codebase keeps rediscovering. |
 | Parties | Forming, expiry, leadership passing, and the dissolve at one member. Leaving the world drops you from the group — asserted through `WorldState.Remove`, which is the one door out. The split pays only members standing where the mob died, and an odd remainder goes to whoever landed the blow rather than evaporating. |

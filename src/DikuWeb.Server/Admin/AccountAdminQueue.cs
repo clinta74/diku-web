@@ -96,6 +96,52 @@ public sealed class AccountAdminWorker(
                 break;
             }
 
+            case SetAccountBanRequest ban:
+            {
+                var result = await service.SetBanAsync(
+                    ban.ActorAccountId, ban.TargetUsername, ban.Banned, ban.Reason, cancellationToken);
+
+                Reply(request, result.Message, result.Ok ? SysKinds.Info : SysKinds.Warning);
+
+                if (result.Ok && ban.Banned && result.TargetAccountId is { } bannedId)
+                {
+                    // Cookie revalidation stops their next request (§7.7), but an SSE stream is
+                    // one long-lived request that was authorised before the ban existed - so
+                    // without this the banned player stays in the world until they choose to go.
+                    gateway.TrySubmit(new EvictAccount
+                    {
+                        AccountId = bannedId,
+                        Message = ban.Reason is null
+                            ? "Your account has been banned."
+                            : $"Your account has been banned: {ban.Reason}",
+                    });
+                }
+
+                break;
+            }
+
+            case SetAccountMuteRequest mute:
+            {
+                var result = await service.SetMuteAsync(
+                    mute.ActorAccountId, mute.TargetUsername, mute.Until, mute.Reason, cancellationToken);
+
+                Reply(request, result.Message, result.Ok ? SysKinds.Info : SysKinds.Warning);
+
+                if (result.Ok && result.TargetAccountId is { } mutedId)
+                {
+                    // Pushed live for the same reason a role change is: the value is read at
+                    // EnterWorld, so otherwise a mute would not reach the person it was aimed at
+                    // until they logged out, which is the one moment it stops mattering.
+                    gateway.TrySubmit(new SetActorMute
+                    {
+                        AccountId = mutedId,
+                        MutedUntil = result.MutedUntil,
+                    });
+                }
+
+                break;
+            }
+
             case LookupAccountRequest lookup:
             {
                 var account = await service.FindAsync(lookup.TargetUsername, cancellationToken);

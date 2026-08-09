@@ -231,6 +231,12 @@ public sealed class GameLoop(
                 case SetActorRole role:
                     HandleSetActorRole(role);
                     break;
+                case SetActorMute mute:
+                    HandleSetActorMute(mute);
+                    break;
+                case EvictAccount evict:
+                    HandleEvictAccount(evict);
+                    break;
             }
         }
     }
@@ -258,6 +264,58 @@ public sealed class GameLoop(
                 SysKinds.Warning);
 
             EngineLog.ActorRoleChanged(logger, actor.Name, message.Role.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Applies a mute to every character this account has in the world (PLAN.md §8, Phase 6).
+    /// </summary>
+    /// <remarks>
+    /// Told plainly, for the same reason a role change is: a player whose <c>say</c> silently
+    /// stopped reaching anyone would conclude the game was broken and go looking for a bug.
+    /// </remarks>
+    private void HandleSetActorMute(SetActorMute message)
+    {
+        foreach (var actor in world.AllPlayers.Where(p => p.Character.AccountId == message.AccountId))
+        {
+            actor.MutedUntil = message.MutedUntil;
+
+            actor.SendSys(
+                actor.IsMuted(clock.UtcNow)
+                    ? $"You have been muted until {message.MutedUntil:u}."
+                    : "You may speak again.",
+                SysKinds.Warning);
+        }
+    }
+
+    /// <summary>
+    /// Takes every character an account has out of the world (PLAN.md §8, Phase 6).
+    /// </summary>
+    /// <remarks>
+    /// What makes a ban reach someone already connected. Cookie revalidation (§7.7) stops the next
+    /// request, but an SSE stream is one long-lived request that was authorised before the ban
+    /// existed — so without this a banned player stays in the world until they choose to leave.
+    ///
+    /// The list is copied first because <see cref="RemovePlayer"/> mutates the collection being
+    /// enumerated, which matters here in a way it does not elsewhere: an account with two
+    /// characters in the world is exactly the case this exists to cover.
+    /// </remarks>
+    private void HandleEvictAccount(EvictAccount message)
+    {
+        var evicted = world.AllPlayers
+            .Where(p => p.Character.AccountId == message.AccountId)
+            .ToList();
+
+        foreach (var actor in evicted)
+        {
+            actor.SendSys(message.Message, SysKinds.Disconnect);
+
+            foreach (var other in world.OthersIn(actor.RoomKey, actor))
+            {
+                other.SendText($"{actor.Name} is removed from the world.", "movement");
+            }
+
+            RemovePlayer(actor, LeaveReason.Kicked);
         }
     }
 
@@ -384,6 +442,7 @@ public sealed class GameLoop(
         {
             Character = character,
             Role = message.Role,
+            MutedUntil = message.MutedUntil,
             SessionId = message.SessionId,
             Output = message.Output,
         };

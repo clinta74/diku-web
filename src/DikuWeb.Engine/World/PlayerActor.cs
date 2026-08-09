@@ -27,6 +27,25 @@ public sealed class PlayerActor
 
     public bool IsBuilder => Role is AccountRole.Builder or AccountRole.Admin;
 
+    /// <summary>
+    /// When this account's mute expires, or null when it is not muted (PLAN.md §8, Phase 6).
+    /// </summary>
+    /// <remarks>
+    /// Settable for the same reason <see cref="Role"/> is: a mute has to reach a character already
+    /// playing, which is the only time it matters. Only the loop writes it, on a
+    /// <see cref="Protocol.SetActorMute"/>.
+    /// </remarks>
+    public DateTimeOffset? MutedUntil { get; set; }
+
+    /// <summary>
+    /// Whether this player may speak to anyone right now.
+    /// </summary>
+    /// <remarks>
+    /// Compared against the clock rather than cleared on expiry, so a mute lifts itself without a
+    /// sweep whose only job is tidiness.
+    /// </remarks>
+    public bool IsMuted(DateTimeOffset now) => MutedUntil is { } until && until > now;
+
     /// <summary>Mutable: a reconnect inside the grace window rebinds a new session.</summary>
     public Guid SessionId { get; set; }
 

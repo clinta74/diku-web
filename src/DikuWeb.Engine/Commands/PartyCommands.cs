@@ -333,6 +333,14 @@ public static class PartyCommands
             return;
         }
 
+        // A mute covers the party channel too. It reaches other players, which is the whole of
+        // what a mute is about - and a silenced player with a private channel to five people is
+        // not silenced.
+        if (ctx.RefusedForMute())
+        {
+            return;
+        }
+
         // Reaches the whole party wherever they are - which is the point of having one channel
         // that is not the room.
         foreach (var memberId in party.Members)

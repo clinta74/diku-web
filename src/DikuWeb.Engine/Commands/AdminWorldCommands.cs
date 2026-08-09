@@ -48,6 +48,131 @@ internal static class AdminWorldCommands
             "shutdown", 8,
             "shutdown <minutes|now|cancel> [reason] - close the world, with warning (admin)",
             Shutdown, Requires: AccountRole.Admin));
+
+        commands.Add(new CommandDefinition(
+            "set", 3, "set <name> <field> <value> - change a live character value (admin)",
+            Set, Requires: AccountRole.Admin));
+    }
+
+    /// <summary>
+    /// The fields <c>set</c> will write, and what each one means.
+    /// </summary>
+    /// <remarks>
+    /// A closed list rather than reflection over <see cref="Domain.Characters.Character"/>. Every
+    /// field here is one somebody decided a support tool should be able to change; reflection
+    /// would silently expose every field added afterwards, including the ones where writing a
+    /// value directly corrupts something else — setting <c>RoomKey</c> without moving the actor
+    /// would leave a character indexed in a room they are not in.
+    /// </remarks>
+    private static readonly string[] _settableFields = ["health", "focus", "stamina", "gold", "xp", "level"];
+
+    /// <summary>
+    /// Changes one live value on a character.
+    /// </summary>
+    /// <remarks>
+    /// The blunt instrument, and deliberately so: it is what you reach for when a bug has left
+    /// somebody with the wrong number and the alternative is SQL against a running world — which
+    /// would be invisible to the loop, since the character in memory is the authority until it
+    /// saves over the top of whatever was written.
+    ///
+    /// Changes are made through the world's own objects, so the save queue picks them up on the
+    /// next autosave exactly as any other change would.
+    /// </remarks>
+    private static void Set(CommandContext ctx)
+    {
+        if (!RequireAdmin(ctx))
+        {
+            return;
+        }
+
+        var parts = ctx.Argument.Trim().Split(' ', 3, StringSplitOptions.TrimEntries);
+
+        if (parts.Length < 3)
+        {
+            ctx.Reply($"Usage: set <name> <field> <value>. Fields: {string.Join(", ", _settableFields)}.", "bad");
+            return;
+        }
+
+        var target = ctx.World.FindPlayerByName(parts[0])
+            ?? NameMatch.Best(ctx.World.AllPlayers, parts[0], p => p.Name, _ => null);
+
+        if (target is null)
+        {
+            ctx.Reply($"Nobody named '{parts[0]}' is online.", "bad");
+            return;
+        }
+
+        var field = parts[1].ToLowerInvariant();
+
+        // The field is checked before the value, so an unknown field reports itself rather than
+        // complaining about a value that was never going to be used.
+        if (!_settableFields.Contains(field, StringComparer.Ordinal))
+        {
+            ctx.Reply($"'{field}' is not settable. Fields: {string.Join(", ", _settableFields)}.", "bad");
+            return;
+        }
+
+        if (!int.TryParse(parts[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ||
+            value < 0)
+        {
+            ctx.Reply("The value must be a whole number, zero or more.", "bad");
+            return;
+        }
+
+        var character = target.Character;
+        var vitals = character.Vitals;
+
+        // Reported before and after, because the point of using this is that a number was wrong -
+        // and an admin who cannot see what it was cannot tell whether they fixed it.
+        string before;
+
+        switch (field)
+        {
+            case "health":
+                before = vitals.Health.ToString(CultureInfo.InvariantCulture);
+                // Clamped to the maximum rather than refused: an admin topping someone up types a
+                // big number on purpose, and a full heal should not need arithmetic.
+                vitals.Health = Math.Min(value, vitals.HealthMax);
+                break;
+
+            case "focus":
+                before = vitals.Focus.ToString(CultureInfo.InvariantCulture);
+                vitals.Focus = Math.Min(value, vitals.FocusMax);
+                break;
+
+            case "stamina":
+                before = vitals.Stamina.ToString(CultureInfo.InvariantCulture);
+                vitals.Stamina = Math.Min(value, vitals.StaminaMax);
+                break;
+
+            case "gold":
+                before = character.Gold.ToString(CultureInfo.InvariantCulture);
+                character.Gold = value;
+                break;
+
+            case "xp":
+                before = character.Xp.ToString(CultureInfo.InvariantCulture);
+                character.Xp = value;
+                break;
+
+            case "level":
+                // Not clamped to the xp curve. Levelling somebody to test content is the reason
+                // this exists, and refusing it because their experience does not agree would make
+                // the tool useless for the job it is for.
+                before = character.Level.ToString(CultureInfo.InvariantCulture);
+                character.Level = Math.Max(1, value);
+                break;
+
+            default:
+                // Unreachable while the switch covers _settableFields, which the guard above has
+                // already checked against. Kept so adding a name to that list without a case here
+                // fails loudly rather than silently doing nothing.
+                ctx.Reply($"'{field}' is listed as settable but nothing here writes it.", "bad");
+                return;
+        }
+
+        ctx.Reply($"{target.Name}: {field} {before} → {value}.", "heading");
+        target.SendSys($"An administrator set your {field} to {value}.", SysKinds.Warning);
     }
 
     /// <summary>

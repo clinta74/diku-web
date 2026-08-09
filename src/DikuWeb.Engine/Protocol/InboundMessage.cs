@@ -46,6 +46,12 @@ public sealed record EnterWorld : SessionMessage
     public AccountRole Role { get; init; } = AccountRole.Player;
 
     /// <summary>
+    /// When this account's mute expires, if it is muted. Carried in for the same reason
+    /// <see cref="Role"/> is: the Engine has no account store to ask.
+    /// </summary>
+    public DateTimeOffset? MutedUntil { get; init; }
+
+    /// <summary>
     /// Character's active and completed quests, loaded from the database by the Server.
     /// Empty by default; the Server populates this if quest support is enabled.
     /// </summary>
@@ -117,6 +123,41 @@ public sealed record SetActorRole : InboundMessage
     public required Guid AccountId { get; init; }
 
     public required AccountRole Role { get; init; }
+}
+
+/// <summary>
+/// Pushes a mute onto a character already playing (PLAN.md §8, Phase 6).
+/// </summary>
+/// <remarks>
+/// The same problem <see cref="SetActorRole"/> solves, for the same reason: the value is read from
+/// the account at <see cref="EnterWorld"/>, so without this a mute would not reach the person it
+/// was aimed at until they logged out — which is the one moment it stops mattering.
+/// </remarks>
+public sealed record SetActorMute : InboundMessage
+{
+    public required Guid AccountId { get; init; }
+
+    public required DateTimeOffset? MutedUntil { get; init; }
+}
+
+/// <summary>
+/// Takes every character an account has out of the world (PLAN.md §8, Phase 6).
+/// </summary>
+/// <remarks>
+/// What makes a ban take effect on someone already connected. Revalidating the auth cookie (§7.7)
+/// stops the <em>next</em> request, but an SSE stream is one long-lived request that has already
+/// been authorised — so a ban without this leaves the banned player in the world until they choose
+/// to leave.
+///
+/// By account rather than by session, because a ban is aimed at the account and reaching only the
+/// session that happened to be noticed would leave a second tab playing.
+/// </remarks>
+public sealed record EvictAccount : InboundMessage
+{
+    public required Guid AccountId { get; init; }
+
+    /// <summary>Shown before the disconnect, so it is not a connection that merely stopped.</summary>
+    public required string Message { get; init; }
 }
 
 /// <summary>

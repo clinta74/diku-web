@@ -35,4 +35,21 @@ public sealed class AdminAudit
 public enum AdminAction
 {
     RoleChanged = 0,
+
+    /// <summary>Sign-in refused and any open session evicted (PLAN.md §8, Phase 6).</summary>
+    Banned = 1,
+
+    /// <summary>The ban lifted. Recorded, because "who let them back in" is also a question.</summary>
+    Unbanned = 2,
+
+    /// <summary>
+    /// Silenced on the player-to-player channels until a stated time.
+    /// </summary>
+    /// <remarks>
+    /// Both directions land here rather than getting a <c>Muted</c>/<c>Unmuted</c> pair, because
+    /// a mute is a value with an expiry rather than a state to toggle: lifting one is setting that
+    /// value to nothing, and <see cref="AdminAudit.Before"/> and <see cref="AdminAudit.After"/>
+    /// already say which way it went.
+    /// </remarks>
+    MuteChanged = 3,
 }
