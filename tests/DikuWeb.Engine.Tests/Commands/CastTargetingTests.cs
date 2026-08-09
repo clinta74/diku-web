@@ -157,9 +157,9 @@ public sealed class CastTargetingTests
     {
         // The one case that did work. It must keep working.
         var harness = Loaded();
-        harness.DefineAbility("channeler.mend");
+        harness.DefineAbility("hallow.mend");
 
-        var healer = harness.AddPlayer("Sera", Room, path: CharacterPath.Channeler, level: 5);
+        var healer = harness.AddPlayer("Sera", Room, path: CharacterPath.Hallow, level: 5);
         healer.Character.Vitals.Focus = 100;
 
         var hurt = harness.AddPlayer("Kael", Room);

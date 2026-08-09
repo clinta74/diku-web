@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { api, type Account, type Character } from '../net/api'
 
-const PATHS = ['Warden', 'Adept', 'Shade', 'Channeler'] as const
+const PATHS = ['Warden', 'Adept', 'Shade', 'Hallow'] as const
 
 const PATH_BLURBS: Record<string, string> = {
   Warden: 'Armored frontline. High health, steady damage.',
   Adept: 'Focus-caster. Fragile, but hits from range.',
   Shade: 'Stealth and burst. Fast, and hard to pin down.',
-  Channeler: 'Support and control. Shapes a fight rather than winning it alone.',
+  Hallow: 'Support and control. Shapes a fight rather than winning it alone.',
 }
 
 export function AuthScreen({ onReady }: { onReady: (account: Account) => void }) {

@@ -1,4 +1,4 @@
-﻿using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Characters;
 
@@ -17,7 +17,7 @@ namespace DikuWeb.Domain.Tests.Abilities;
 public sealed class AbilityCatalogueTests
 {
     private static readonly CharacterPath[] Paths =
-        [CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Shade, CharacterPath.Channeler];
+        [CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Shade, CharacterPath.Hallow];
 
     /// <summary>The effect executors that exist. An ability naming anything else does nothing.</summary>
     private static readonly HashSet<string> KnownEffects = new(StringComparer.Ordinal)

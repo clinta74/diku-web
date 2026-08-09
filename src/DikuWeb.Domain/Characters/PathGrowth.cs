@@ -35,15 +35,15 @@ public static class PathGrowth
     /// <summary>Shade: stealth and burst — favors Agility and Insight.</summary>
     public static StatGrowth ShadeGrowth => new(Might: 1, Agility: 2, Vitality: 0, Insight: 2, Resolve: 1);
 
-    /// <summary>Channeler: support and control — balanced Insight/Resolve with Vitality.</summary>
-    public static StatGrowth ChannelerGrowth => new(Might: 0, Agility: 1, Vitality: 1, Insight: 2, Resolve: 2);
+    /// <summary>Hallow: support and control — balanced Insight/Resolve with Vitality.</summary>
+    public static StatGrowth HallowGrowth => new(Might: 0, Agility: 1, Vitality: 1, Insight: 2, Resolve: 2);
 
     public static StatGrowth For(CharacterPath path) => path switch
     {
         CharacterPath.Warden => WardenGrowth,
         CharacterPath.Adept => AdeptGrowth,
         CharacterPath.Shade => ShadeGrowth,
-        CharacterPath.Channeler => ChannelerGrowth,
+        CharacterPath.Hallow => HallowGrowth,
         _ => new(Might: 1, Agility: 1, Vitality: 1, Insight: 1, Resolve: 1),
     };
 }

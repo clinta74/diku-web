@@ -1,4 +1,4 @@
-﻿using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
 
 namespace DikuWeb.Domain.Tests.Abilities;
@@ -41,15 +41,15 @@ public sealed class AbilityProgressionTests
     }
 
     [Fact]
-    public void GetAbilitiesForPath_Channeler_ReturnsChannelerAbilities()
+    public void GetAbilitiesForPath_Hallow_ReturnsHallowAbilities()
     {
         // Act
-        var abilities = AbilityProgression.GetAbilitiesForPath(CharacterPath.Channeler);
+        var abilities = AbilityProgression.GetAbilitiesForPath(CharacterPath.Hallow);
 
         // Assert
         Assert.NotEmpty(abilities);
-        Assert.All(abilities, a => Assert.StartsWith("channeler.", a.AbilityKey));
-        Assert.Contains((1, "channeler.mend"), abilities);
+        Assert.All(abilities, a => Assert.StartsWith("hallow.", a.AbilityKey));
+        Assert.Contains((1, "hallow.mend"), abilities);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public sealed class AbilityProgressionTests
     public void Knows_WithKnownAbility_ReturnsTrue()
     {
         // Act
-        var knows = AbilityProgression.Knows(CharacterPath.Channeler, 1, "channeler.mend");
+        var knows = AbilityProgression.Knows(CharacterPath.Hallow, 1, "hallow.mend");
 
         // Assert
         Assert.True(knows);

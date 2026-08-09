@@ -38,9 +38,9 @@ public sealed class PathGrowthTests
     }
 
     [Fact]
-    public void Channeler_growth_favors_insight_and_resolve()
+    public void Hallow_growth_favors_insight_and_resolve()
     {
-        var growth = PathGrowth.ChannelerGrowth;
+        var growth = PathGrowth.HallowGrowth;
         Assert.Equal(2, growth.Insight);
         Assert.Equal(2, growth.Resolve);
         Assert.Equal(1, growth.Vitality);
@@ -54,7 +54,7 @@ public sealed class PathGrowthTests
         Assert.Equal(PathGrowth.WardenGrowth, PathGrowth.For(CharacterPath.Warden));
         Assert.Equal(PathGrowth.AdeptGrowth, PathGrowth.For(CharacterPath.Adept));
         Assert.Equal(PathGrowth.ShadeGrowth, PathGrowth.For(CharacterPath.Shade));
-        Assert.Equal(PathGrowth.ChannelerGrowth, PathGrowth.For(CharacterPath.Channeler));
+        Assert.Equal(PathGrowth.HallowGrowth, PathGrowth.For(CharacterPath.Hallow));
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public sealed class PathGrowthTests
             PathGrowth.WardenGrowth,
             PathGrowth.AdeptGrowth,
             PathGrowth.ShadeGrowth,
-            PathGrowth.ChannelerGrowth
+            PathGrowth.HallowGrowth
         };
 
         foreach (var growth in paths)

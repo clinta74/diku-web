@@ -115,7 +115,7 @@ public sealed class ParryCombatTests
 
     [Theory]
     [InlineData(CharacterPath.Adept)]
-    [InlineData(CharacterPath.Channeler)]
+    [InlineData(CharacterPath.Hallow)]
     public void A_casting_path_never_parries(CharacterPath path)
     {
         var (harness, player, _) = Fight(path, 20, ScriptedChanceSource.Always);

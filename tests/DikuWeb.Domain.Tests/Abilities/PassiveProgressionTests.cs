@@ -15,7 +15,7 @@ public sealed class PassiveProgressionTests
     [InlineData(CharacterPath.Warden, 4, false)]
     [InlineData(CharacterPath.Warden, 5, true)]
     [InlineData(CharacterPath.Adept, 50, false)]
-    [InlineData(CharacterPath.Channeler, 50, false)]
+    [InlineData(CharacterPath.Hallow, 50, false)]
     public void Dual_wield_unlocks_by_path_and_level(CharacterPath path, int level, bool expected) =>
         Assert.Equal(expected, AbilityProgression.KnowsPassive(path, level, PassiveKeys.DualWield));
 
@@ -25,7 +25,7 @@ public sealed class PassiveProgressionTests
     [InlineData(CharacterPath.Warden, 14, false)]
     [InlineData(CharacterPath.Warden, 15, true)]
     [InlineData(CharacterPath.Adept, 50, false)]
-    [InlineData(CharacterPath.Channeler, 50, false)]
+    [InlineData(CharacterPath.Hallow, 50, false)]
     public void Ambidextrous_unlocks_by_path_and_level(CharacterPath path, int level, bool expected) =>
         Assert.Equal(expected, AbilityProgression.KnowsPassive(path, level, PassiveKeys.Ambidextrous));
 
@@ -49,7 +49,7 @@ public sealed class PassiveProgressionTests
     [InlineData(CharacterPath.Warden)]
     [InlineData(CharacterPath.Shade)]
     [InlineData(CharacterPath.Adept)]
-    [InlineData(CharacterPath.Channeler)]
+    [InlineData(CharacterPath.Hallow)]
     public void Passives_are_not_castable_abilities(CharacterPath path)
     {
         var abilities = AbilityProgression.GetKnownAbilitiesForLevel(path, 50);

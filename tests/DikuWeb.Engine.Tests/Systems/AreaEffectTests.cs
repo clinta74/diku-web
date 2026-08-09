@@ -51,12 +51,12 @@ public sealed class AreaEffectTests
         return actor;
     }
 
-    private static PlayerActor Channeler(WorldHarness harness, string name = "Bram", RoomKey? at = null)
+    private static PlayerActor Hallow(WorldHarness harness, string name = "Bram", RoomKey? at = null)
     {
-        var actor = harness.AddPlayer(name, at ?? West, path: CharacterPath.Channeler, level: 18);
+        var actor = harness.AddPlayer(name, at ?? West, path: CharacterPath.Hallow, level: 18);
         actor.Character.Vitals.FocusMax = 200;
         actor.Character.Vitals.Focus = 200;
-        harness.DefineAbility("channeler.benediction");
+        harness.DefineAbility("hallow.benediction");
         return actor;
     }
 
@@ -266,7 +266,7 @@ public sealed class AreaEffectTests
     public void A_helpful_area_ability_reaches_the_caster_and_the_people_with_them()
     {
         var harness = Loaded();
-        var caster = Channeler(harness);
+        var caster = Hallow(harness);
         var friend = harness.AddPlayer("Kael", West);
 
         caster.Character.Vitals.Health = 10;
@@ -284,7 +284,7 @@ public sealed class AreaEffectTests
     {
         // The filter has two directions precisely so a room heal does not mend the wolves.
         var harness = Loaded();
-        var caster = Channeler(harness);
+        var caster = Hallow(harness);
         var wolf = harness.AddMob("wolf", West, health: 100, name: "wolf");
         wolf.Vitals.Health = 10;
 
@@ -302,7 +302,7 @@ public sealed class AreaEffectTests
         var harness = Loaded();
         harness.Mutate(new SetRoomFlag(West, RoomFlags.Peaceful.Key, true));
 
-        var caster = Channeler(harness);
+        var caster = Hallow(harness);
         caster.Character.Vitals.Health = 10;
 
         harness.Execute(caster, "cast benediction");
@@ -340,10 +340,10 @@ public sealed class AreaEffectTests
     public void A_bare_cast_of_a_heal_still_lands_on_the_caster()
     {
         var harness = Loaded();
-        var caster = harness.AddPlayer("Bram", West, path: CharacterPath.Channeler, level: 10);
+        var caster = harness.AddPlayer("Bram", West, path: CharacterPath.Hallow, level: 10);
         caster.Character.Vitals.FocusMax = 200;
         caster.Character.Vitals.Focus = 200;
-        harness.DefineAbility("channeler.mend");
+        harness.DefineAbility("hallow.mend");
         caster.Character.Vitals.Health = 5;
 
         harness.Execute(caster, "cast mend");

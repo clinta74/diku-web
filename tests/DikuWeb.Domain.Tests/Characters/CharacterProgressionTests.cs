@@ -266,7 +266,7 @@ public sealed class CharacterProgressionTests
     [Fact]
     public void All_level_1_characters_have_starting_vitals()
     {
-        var paths = new[] { CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Shade, CharacterPath.Channeler };
+        var paths = new[] { CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Shade, CharacterPath.Hallow };
 
         foreach (var path in paths)
         {

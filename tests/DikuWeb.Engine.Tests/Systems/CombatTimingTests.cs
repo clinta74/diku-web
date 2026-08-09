@@ -1,4 +1,4 @@
-﻿using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
@@ -89,7 +89,7 @@ public sealed class CombatTimingTests
 
     [Theory]
     [InlineData(CharacterPath.Adept)]
-    [InlineData(CharacterPath.Channeler)]
+    [InlineData(CharacterPath.Hallow)]
     public void A_path_that_never_learns_it_never_swings_an_off_hand(CharacterPath path)
     {
         var fight = Fight(mainHandDelay: 8, offHandDelay: 4, level: 50, path: path);

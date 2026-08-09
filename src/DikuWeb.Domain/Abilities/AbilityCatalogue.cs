@@ -9,7 +9,7 @@ namespace DikuWeb.Domain.Abilities;
 /// One list, rather than a seeder that writes ability rows and a progression table that names
 /// them. Those were separate and had drifted in both directions: four abilities were unlocked at
 /// level 6 with no row behind them (<c>warden.parry</c>, <c>adept.amplify</c>,
-/// <c>shade.shadowstep</c>, <c>channeler.restore</c>) so reaching level 6 granted something that
+/// <c>shade.shadowstep</c>, <c>hallow.restore</c>) so reaching level 6 granted something that
 /// could not be cast, while three that *were* seeded appeared in no progression at all
 /// (<c>warden.battle-fury</c>, <c>adept.weaken</c>, <c>shade.fortify</c>) and so were unlearnable
 /// - which is the whole of Phase 5.2a's buffs and debuffs, unreachable in play.
@@ -19,7 +19,7 @@ namespace DikuWeb.Domain.Abilities;
 ///
 /// Identity comes from cost, cadence, and scaling rather than from a private list of effects: a
 /// Warden hits reliably and endures, a Shade pays little and strikes fast, an Adept pays a lot for
-/// a big slow hit, a Channeler mends more than it harms. Only the Adept and the Channeler reach a
+/// a big slow hit, a Hallow mends more than it harms. Only the Adept and the Hallow reach a
 /// whole room, one in each direction — an area ability is the strongest thing the executors can
 /// express, and spreading it across all four Paths would cost every one of them its shape.
 /// </remarks>
@@ -330,47 +330,47 @@ public static class AbilityCatalogue
             "damage.physical", Damage("2.8", "22")),
 
         // -------------------------------------------------------------------
-        // Channeler - support and control. Mends more than it harms.
+        // Hallow - support and control. Mends more than it harms.
         //
         // Every supportive ability here is SingleTarget, not Self. A support Path whose heals
         // only reach itself is not a support Path - and casting one with no target named still
         // lands on the caster, because a helpful ability falls back to "me" rather than to
         // whatever is currently being fought.
         // -------------------------------------------------------------------
-        new(CharacterPath.Channeler, 1, "channeler.mend", "Mend",
+        new(CharacterPath.Hallow, 1, "hallow.mend", "Mend",
             "Close what is open, on yourself or on someone beside you.",
             CostType.Focus, 20, 20, 4, TargetingType.SingleTarget,
             "heal.restore", Heal("25")),
 
-        new(CharacterPath.Channeler, 3, "channeler.guidance", "Guidance",
+        new(CharacterPath.Hallow, 3, "hallow.guidance", "Guidance",
             "Steady a hand that is about to need steadying.",
             CostType.Focus, 15, 24, null, TargetingType.SingleTarget,
             "heal.restore", Heal("18")),
 
-        // The Channeler's wither: the longest of the three and the slowest to pay out, which
+        // The Hallow's wither: the longest of the three and the slowest to pay out, which
         // suits a Path that wins by outlasting rather than by out-hitting. Sap at 16 keeps the
         // Path's weaken, so this does not cost it its control identity.
-        new(CharacterPath.Channeler, 5, "channeler.wither", "Wither",
+        new(CharacterPath.Hallow, 5, "hallow.wither", "Wither",
             "Set something going that will not stop on its own.",
             CostType.Focus, 18, 44, 4, TargetingType.SingleTarget,
             "damage.overtime", OverTime("6", "16", "96", "withering")),
 
-        new(CharacterPath.Channeler, 7, "channeler.restore", "Restore",
+        new(CharacterPath.Hallow, 7, "hallow.restore", "Restore",
             "Put back what the fight has taken so far.",
             CostType.Focus, 28, 40, 8, TargetingType.SingleTarget,
             "heal.restore", Heal("50")),
 
-        new(CharacterPath.Channeler, 10, "channeler.blessing", "Blessing",
+        new(CharacterPath.Hallow, 10, "hallow.blessing", "Blessing",
             "Lend the next while a better edge than it earned.",
             CostType.Focus, 24, 72, null, TargetingType.SingleTarget,
             "buff.damage-up", Buff("1.3", "96", "blessed")),
 
-        new(CharacterPath.Channeler, 13, "channeler.renewal", "Renewal",
+        new(CharacterPath.Hallow, 13, "hallow.renewal", "Renewal",
             "Begin again, without stopping.",
             CostType.Focus, 34, 64, 8, TargetingType.SingleTarget,
             "heal.restore", Heal("70")),
 
-        new(CharacterPath.Channeler, 16, "channeler.sap", "Sap",
+        new(CharacterPath.Hallow, 16, "hallow.sap", "Sap",
             "Take the strength and do not give it back.",
             CostType.Focus, 30, 60, 4, TargetingType.SingleTarget,
             "debuff.weaken", Weaken("0.55", "100", "sapped")),
@@ -379,12 +379,12 @@ public static class AbilityCatalogue
         // helpful AoE gathers the caster and everyone standing with them rather than the things
         // they are fighting. Until parties exist (5.3) "the room" is the closest honest reading of
         // "your side", which is generous - and generous is the safe direction for a heal.
-        new(CharacterPath.Channeler, 18, "channeler.benediction", "Benediction",
+        new(CharacterPath.Hallow, 18, "hallow.benediction", "Benediction",
             "Say it over everyone at once, and mean it.",
             CostType.Focus, 55, 200, 16, TargetingType.Aoe,
             "heal.restore", Heal("55")),
 
-        new(CharacterPath.Channeler, 20, "channeler.intercession", "Intercession",
+        new(CharacterPath.Hallow, 20, "hallow.intercession", "Intercession",
             "Stand between someone and what was coming for them.",
             CostType.Focus, 50, 180, 12, TargetingType.SingleTarget,
             "heal.restore", Heal("120")),

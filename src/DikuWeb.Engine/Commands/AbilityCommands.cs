@@ -217,7 +217,7 @@ public static class AbilityCommands
 
         // No name given. What that should mean depends on which way the ability points: a bolt
         // means "the thing I am fighting", a heal means "me". Falling back to the combat target
-        // for both would have a Channeler mending the wolf that is biting them.
+        // for both would have a Hallow mending the wolf that is biting them.
         return effects.Get(ability.EffectKey)?.IsHarmful == true
             ? actor.Character.CurrentTarget
             : EntityId.ForCharacter(actor.CharacterId);

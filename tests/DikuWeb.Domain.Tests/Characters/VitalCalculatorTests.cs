@@ -152,7 +152,7 @@ public sealed class VitalCalculatorTests
     [InlineData(CharacterPath.Warden)]
     [InlineData(CharacterPath.Adept)]
     [InlineData(CharacterPath.Shade)]
-    [InlineData(CharacterPath.Channeler)]
+    [InlineData(CharacterPath.Hallow)]
     public void All_paths_start_with_positive_vitals(CharacterPath path)
     {
         var h = VitalCalculator.HealthMax(path, level: 1, AttributeSet.Baseline);

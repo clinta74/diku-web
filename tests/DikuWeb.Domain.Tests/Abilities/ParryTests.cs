@@ -33,7 +33,7 @@ public sealed class ParryTests
 
     [Theory]
     [InlineData(CharacterPath.Adept)]
-    [InlineData(CharacterPath.Channeler)]
+    [InlineData(CharacterPath.Hallow)]
     public void The_casting_paths_never_parry(CharacterPath path)
     {
         // Even at the level cap. Standing in the way of a blade is not what either Path does.
@@ -58,7 +58,7 @@ public sealed class ParryTests
         // A parry that always fires makes the Path unkillable by anything that swings.
         foreach (var path in new[]
         {
-            CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Shade, CharacterPath.Channeler,
+            CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Shade, CharacterPath.Hallow,
         })
         {
             var chance = AbilityProgression.ParryChance(path, 20);

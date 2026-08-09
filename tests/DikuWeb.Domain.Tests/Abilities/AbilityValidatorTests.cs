@@ -101,9 +101,9 @@ public sealed class AbilityValidatorTests
             Id = Guid.CreateVersion7(),
             AccountId = Guid.CreateVersion7(),
             Name = "Healer",
-            Path = CharacterPath.Channeler,
+            Path = CharacterPath.Hallow,
             Attributes = AttributeSet.Baseline,
-            Vitals = Vitals.StartingFor(CharacterPath.Channeler),
+            Vitals = Vitals.StartingFor(CharacterPath.Hallow),
             RoomKey = RoomKey.Parse("test.zone.room"),
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -137,9 +137,9 @@ public sealed class AbilityValidatorTests
             Id = Guid.CreateVersion7(),
             AccountId = Guid.CreateVersion7(),
             Name = "Caster",
-            Path = CharacterPath.Channeler,
+            Path = CharacterPath.Hallow,
             Attributes = AttributeSet.Baseline,
-            Vitals = Vitals.StartingFor(CharacterPath.Channeler),
+            Vitals = Vitals.StartingFor(CharacterPath.Hallow),
             RoomKey = RoomKey.Parse("test.zone.room"),
             CreatedAt = DateTimeOffset.UtcNow,
         };

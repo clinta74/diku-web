@@ -460,8 +460,14 @@ Three vitals: **Health** (damage pool, zero = death), **Focus** (powers abilitie
 analogue), **Stamina** (movement and heavy attacks).
 
 Four Paths chosen at creation: **Warden** (armored frontline), **Adept** (focus-caster),
-**Shade** (stealth/burst), **Channeler** (support/control). A Path grants an ability list and
+**Shade** (stealth/burst), **Hallow** (support/control). A Path grants an ability list and
 shapes stat growth; it does not hard-gate equipment.
+
+*The fourth Path was called **Channeler** through Phase 5. "Hallow" says what it does — a name
+that reads as healing at a glance, while still covering Wither, Sap, and Enfeeble, which "Mender"
+would have misdescribed. Renamed while it was cheap: `characters.path` stores the enum's name, so
+this cost one data migration, and the ability keys cost nothing because `character_abilities` (§6)
+does not exist yet and the seeder reconciles `hallow.*` against the catalogue on every boot.*
 
 **A Path is fixed at creation and cannot be changed** (resolves **Q3**). Rerolling is the respec:
 characters are cheap to make, levelling is the game, and a second character on the same account
@@ -1488,7 +1494,7 @@ multiplier from the browser, which is the half the phase goal is written about.
       (`warden.slash` → `warden.kick`) left the old row in the table forever.
 - [x] **`damage.overtime`** — the fifth executor, and the first that differs in *kind*: damage on
       a clock of its own rather than a number scaled at the moment of a swing. Shade's Ambush is a
-      stacking bleed, Adept's Scorch a heavier burn, Channeler's Wither the long slow one. The
+      stacking bleed, Adept's Scorch a heavier burn, Hallow's Wither the long slow one. The
       tick lives in `CombatSystem.Tick` where the death, XP, and loot paths already are, so a
       bleed can land the killing blow — the consequence being that wounds only work during a
       fight, and fleeing stops the bleeding.
@@ -1589,7 +1595,7 @@ fails quietly, which is why they need to be listed rather than assumed.
 - [x] **Every ability was on cooldown at boot.** `GetAbilityCooldown` returned `0` for "never
       cast", which is a real pulse — so for the first `CooldownPulses` of server uptime the whole
       spellbook was refused. Returns `long?` now.
-- [x] **The Channeler could not heal anyone.** Every supportive ability on the support Path was
+- [x] **The Hallow could not heal anyone.** Every supportive ability on the support Path was
       `TargetingType.Self`. They are `SingleTarget` now, and a helpful ability cast with no target
       named still lands on the caster.
 - [x] **`TargetingType.Aoe` resolves.** `AbilitySystem` gathers a target *list*, filtered per
@@ -1598,7 +1604,7 @@ fails quietly, which is why they need to be listed rather than assumed.
       in a `peaceful` room; a helpful one takes the caster and the people standing with them and
       leaves the mobs alone. One cost and one cooldown however many it lands on, and a cast that
       gathers nobody is refused before either is spent. Two abilities declare it: `adept.firestorm`
-      (18) and `channeler.benediction` (18).
+      (18) and `hallow.benediction` (18).
       **Party membership still does not exist** (5.3), so "never targets a party member" is
       approximated by the `pvp` flag; two lines in `AreaTargets` change when parties land.
 - [x] **Which way an ability points is declared by its executor**, `IAbilityEffect.IsHarmful`,

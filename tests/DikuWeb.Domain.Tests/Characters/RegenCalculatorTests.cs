@@ -187,7 +187,7 @@ public sealed class RegenCalculatorTests
     [Fact]
     public void All_paths_regen_at_sleep()
     {
-        var paths = new[] { CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Shade, CharacterPath.Channeler };
+        var paths = new[] { CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Shade, CharacterPath.Hallow };
 
         foreach (var path in paths)
         {

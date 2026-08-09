@@ -42,7 +42,7 @@ public static class AbilityProgression
     /// resolve.
     /// </summary>
     /// <remarks>
-    /// Only the two martial Paths learn to fight with a second weapon. An Adept or Channeler may
+    /// Only the two martial Paths learn to fight with a second weapon. An Adept or Hallow may
     /// still put a blade in their off hand; it simply never strikes.
     /// </remarks>
     public static IReadOnlyList<(int UnlockLevel, string PassiveKey)> GetPassivesForPath(CharacterPath path) =>
@@ -69,7 +69,7 @@ public static class AbilityProgression
     /// The Warden parries more often and earlier: a shield and a braced stance are the whole of
     /// what the Path is. A Shade parries by footwork, which is later and less reliable, and is
     /// meant to be the lesser half of not being hit - evasion and simply not being there are the
-    /// rest. An Adept or Channeler never parries at all.
+    /// rest. An Adept or Hallow never parries at all.
     /// </remarks>
     public static double ParryChance(CharacterPath path, int level) =>
         KnowsPassive(path, level, PassiveKeys.Parry)
