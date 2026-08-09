@@ -7,7 +7,7 @@ import { NumberInput } from '../../ui/NumberInput'
 import { OverflowMenu } from '../../ui/OverflowMenu'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { useToast } from '../../ui/Toast'
-import { asMultiplier } from './baseStats'
+import { asNumber, OWNED_STAT_KEYS, STAT_GROUPS } from './stats'
 
 interface Props {
   templateKey: string
@@ -16,13 +16,6 @@ interface Props {
 }
 
 const ITEM_SLOTS = ['Head', 'Chest', 'Hands', 'Legs', 'Feet', 'MainHand', 'OffHand', 'Trinket']
-const STAT_MULTIPLIERS = [
-  'damageMultiplier',
-  'armorMultiplier',
-  'healthMultiplier',
-  'focusMultiplier',
-  'staminaMultiplier',
-]
 
 export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props) {
   const toast = useToast()
@@ -127,7 +120,7 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
   // Everything in the bag this form has no field for. Sorted so the list does not reshuffle
   // between renders.
   const carriedStats = Object.entries(baseStats)
-    .filter(([key]) => !STAT_MULTIPLIERS.includes(key))
+    .filter(([key]) => !OWNED_STAT_KEYS.includes(key))
     .sort(([a], [b]) => a.localeCompare(b))
 
   if (error && !template) return <p className="bad">{error}</p>
@@ -273,25 +266,41 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         </p>
       )}
 
+      {STAT_GROUPS.map((group) => (
+        <fieldset className="multiplier-set" key={group.label}>
+          <legend>{group.label}</legend>
+          {group.hint && <p className="dim detail">{group.hint}</p>}
+
+          <div className="stat-grid">
+            {group.fields.map((field) => (
+              <Field key={field.key} label={field.label} hint={field.hint}>
+                <MultiplierInput
+                  value={asNumber(baseStats[field.key])}
+                  integer={field.kind === 'int'}
+                  onChange={(next) => {
+                    setBaseStats((prev) => {
+                      const copy = { ...prev }
+                      // Blank removes the key rather than writing 0. Zero armour and *no*
+                      // armour resolve the same today, but a stored 0 is a claim the item
+                      // makes, and a later rule that treats them differently would be wrong.
+                      if (next === undefined) delete copy[field.key]
+                      else copy[field.key] = next
+                      return copy
+                    })
+                    touch()
+                  }}
+                />
+              </Field>
+            ))}
+          </div>
+        </fieldset>
+      ))}
+
       <fieldset className="multiplier-set">
-        <legend>Stat multipliers (when worn/wielded)</legend>
-        <p className="dim detail">1.0 = no change, 1.1 = +10%, 0.9 = -10%. Blank removes it.</p>
-        {STAT_MULTIPLIERS.map((stat) => (
-          <Field key={stat} label={stat}>
-            <MultiplierInput
-              value={asMultiplier(baseStats[stat])}
-              onChange={(next) => {
-                setBaseStats((prev) => {
-                  const copy = { ...prev }
-                  if (next === undefined) delete copy[stat]
-                  else copy[stat] = next
-                  return copy
-                })
-                touch()
-              }}
-            />
-          </Field>
-        ))}
+        <legend>Other stats</legend>
+        {carriedStats.length === 0 && (
+          <p className="dim detail">Nothing beyond the fields above.</p>
+        )}
 
         {carriedStats.length > 0 && (
           /* Shown, not editable. These survive a save either way, but a builder who cannot see
@@ -325,16 +334,21 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
 }
 
 /**
- * A decimal field where blank means "no multiplier" (the key is removed), distinct from 0 which
- * would zero the stat. Keeps a text buffer so partial entries like "1." are typable, and filters
- * to digits and a single dot - no spinner, free text entry, same as the other numeric fields.
+ * A numeric field where blank removes the key rather than writing 0.
+ *
+ * Keeps a text buffer so partial entries like "1." are typable — bound straight to the number,
+ * the keystroke parses to 1 and React rewrites the field under the cursor before the "5" arrives.
+ * Filters input rather than relying on a spinner, so the value can only ever be a number.
  */
 function MultiplierInput({
   value,
   onChange,
+  integer = false,
 }: {
   value: number | undefined
   onChange: (value: number | undefined) => void
+  /** Whole numbers only — a flat armour value of 2.5 is not a thing the engine can use. */
+  integer?: boolean
 }) {
   const [text, setText] = useState(() => (value === undefined ? '' : String(value)))
   const focused = useRef(false)
@@ -349,7 +363,7 @@ function MultiplierInput({
     let dot = false
     for (const c of raw) {
       if (c >= '0' && c <= '9') out += c
-      else if (c === '.' && !dot) {
+      else if (c === '.' && !dot && !integer) {
         out += c
         dot = true
       }
@@ -366,7 +380,7 @@ function MultiplierInput({
   return (
     <input
       type="text"
-      inputMode="decimal"
+      inputMode={integer ? 'numeric' : 'decimal'}
       className="number-input"
       value={text}
       placeholder="—"

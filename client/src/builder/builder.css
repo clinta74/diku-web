@@ -246,6 +246,16 @@
   padding: 0.1rem 0;
 }
 
+/* --- Item stat fields ---------------------------------------------- */
+
+/* Two or three across depending on the rail, so a group of four reads as a block rather than a
+   column that pushes the save button off the screen. */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.6rem;
+}
+
 /* --- Difficulty multipliers ---------------------------------------- */
 
 /* Two columns so eight factors read as a block rather than a long scroll. Collapses to one
