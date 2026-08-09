@@ -36,3 +36,7 @@ that ends. Two things that sweep found which were not in the note:
 - **A player killed by a spell outside a fight** was never noticed either: only mobs were engaged,
   so in a `pvp` room a Bolt could take a character to zero health with nothing watching for the
   death. A hostile ability now opens the duel the way `kill` does.
+
+
+- the mob attacks section has the attack also section split a pary as you add more attack types. This section should
+be combined with the attack section as well and layed out to make it more intuitive on how to use it.

@@ -35,7 +35,8 @@ public sealed class WorldMutationApplier(
     QuestCache? questCache = null,
     MobTemplateCache? mobTemplateCache = null,
     ItemTemplateCache? itemTemplateCache = null,
-    SpawnerCache? spawnerCache = null)
+    SpawnerCache? spawnerCache = null,
+    IItemSaveQueue? itemSaveQueue = null)
 {
     private const string UnfinishedTitle = "An Unfinished Room";
 
@@ -420,6 +421,12 @@ public sealed class WorldMutationApplier(
             applied.Add(new SetExit(exit.FromRoomKey, exit.Direction, change.To));
         }
 
+        // An exit is not the only thing that names a room. A spawner names the rooms it fills, so
+        // a rename it does not follow leaves it filling a key that no longer resolves - and the
+        // failure is silent, because a spawner with nothing to do looks exactly like one that is
+        // already satisfied.
+        applied.AddRange(RepointSpawners(change.From, change.To));
+
         applied.Add(new DeleteRoom(change.From));
 
         var occupants = world.OccupantsOf(change.From).ToList();
@@ -429,6 +436,8 @@ public sealed class WorldMutationApplier(
         {
             exit.ToRoomKey = change.To;
         }
+
+        MoveContents(change.From, change.To);
 
         // Occupants follow the room rather than being evicted: from their point of view
         // nothing happened, which is the correct experience for a key change. Moved before
@@ -446,6 +455,110 @@ public sealed class WorldMutationApplier(
         }
 
         return MutationResult.Ok(applied, change.To);
+    }
+
+    /// <summary>
+    /// Rewrites the old key wherever a spawner lists it, and returns the primitives that say so.
+    /// </summary>
+    /// <remarks>
+    /// Emitted as ordinary <see cref="UpsertSpawner"/> changes rather than written straight to the
+    /// cache, so the same edit reaches Postgres and the audit log through the path every other
+    /// spawner edit takes. Applied here too, because the caller returns these for persistence to
+    /// replay - it does not feed them back through <see cref="Apply"/>.
+    ///
+    /// Distinct, because a spawner may already list the new key: a builder renaming <c>a</c> onto
+    /// a spawner that fills <c>a</c> and <c>b</c> must not end up with <c>b</c> twice, which would
+    /// quietly double that room's odds of being picked.
+    ///
+    /// The spawner's own <c>ZoneKey</c> is left alone. It selects the multipliers a spawn resolves
+    /// against (§4.4), not where the rooms are, so a rename that also moves the room to another
+    /// zone leaves the spawner filling a foreign room with its own zone's numbers. That is worth
+    /// knowing about and is not worth guessing at: which zone the builder meant is a question only
+    /// the builder can answer.
+    /// </remarks>
+    private List<WorldChange> RepointSpawners(RoomKey from, RoomKey to)
+    {
+        var changes = new List<WorldChange>();
+        if (spawnerCache is null)
+        {
+            return changes;
+        }
+
+        var oldKey = from.ToString();
+        var newKey = to.ToString();
+
+        // Copied before iterating: applying each change replaces the entry in the cache underneath
+        // the enumerator.
+        var affected = spawnerCache.All
+            .Where(s => s.RoomKeys.Contains(oldKey, StringComparer.Ordinal))
+            .ToList();
+
+        foreach (var spawner in affected)
+        {
+            var rooms = spawner.RoomKeys
+                .Select(key => string.Equals(key, oldKey, StringComparison.Ordinal) ? newKey : key)
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            var change = new UpsertSpawner(
+                spawner.Id,
+                spawner.ZoneKey,
+                spawner.TemplateKey,
+                spawner.TemplateKind,
+                rooms,
+                spawner.TargetCount,
+                spawner.RespawnSeconds,
+                spawner.Sentinel);
+
+            ApplyUpsertSpawner(change);
+            changes.Add(change);
+        }
+
+        return changes;
+    }
+
+    /// <summary>
+    /// Carries the mobs and the ground items across to the new key.
+    /// </summary>
+    /// <remarks>
+    /// Both hold the room key they are standing on as a string of their own, and neither is
+    /// reachable through the room. Left behind, they are in a room the world no longer has: the AI
+    /// looks the room up, finds nothing, and returns - so the mob never moves, never fights, and
+    /// never appears in anyone's room contents again, while still counting against its spawner's
+    /// population. A dropped sword goes the same way, minus the counting.
+    ///
+    /// Called while both keys still work. <c>RemoveRoom</c> drops the room and its occupant list;
+    /// the mob and item indexes are keyed separately and would keep the old key indefinitely.
+    /// </remarks>
+    private void MoveContents(RoomKey from, RoomKey to)
+    {
+        foreach (var mob in world.MobsIn(from).ToList())
+        {
+            world.MoveMob(mob, to);
+
+            // The home zone is what bounds where a mob may wander, and it was recorded at spawn.
+            // A rename that also changes the zone would otherwise fence the mob out of the zone it
+            // is standing in - every exit fails the border check, so it can never move again.
+            if (from.ZoneKey != to.ZoneKey &&
+                string.Equals(MobState.HomeZoneOf(mob), from.ZoneKey, StringComparison.Ordinal))
+            {
+                mob.State[MobState.HomeZoneKey] = to.ZoneKey;
+            }
+        }
+
+        foreach (var item in world.ItemsIn(from).ToList())
+        {
+            // Out and back in rather than an in-place edit: the world indexes items by the room
+            // key they carry, so changing the key without re-indexing hides the item from the room
+            // it is now in and leaves it listed in the room it is not.
+            world.RemoveItem(item);
+            item.RoomKey = to.ToString();
+            world.AddItem(item);
+
+            // Ground items are persisted (ItemSaveQueue), so the in-memory move alone would be
+            // undone by the next restart - the row would still name the room that was renamed.
+            itemSaveQueue?.Enqueue(item);
+        }
     }
 
     private MutationResult ApplySetFlag(SetRoomFlag change)

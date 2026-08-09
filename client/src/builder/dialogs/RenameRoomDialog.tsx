@@ -10,7 +10,10 @@ interface RenameRoomDialogProps {
   onRenamed: (room: RoomDetail) => void
 }
 
-/** Renames a room, rewriting every exit that pointed at it. Replaces the inline rename row. */
+/**
+ * Renames a room. The server rewrites every exit that pointed at it and every spawner that
+ * filled it, and carries the mobs and floor items across. Replaces the inline rename row.
+ */
 export function RenameRoomDialog({ open, onOpenChange, roomKey, onRenamed }: RenameRoomDialogProps) {
   const [value, setValue] = useState(roomKey)
   const [error, setError] = useState<string | null>(null)
@@ -48,7 +51,7 @@ export function RenameRoomDialog({ open, onOpenChange, roomKey, onRenamed }: Ren
       open={open}
       onOpenChange={onOpenChange}
       title="Rename room"
-      description="Rewrites every exit that pointed here."
+      description="Rewrites every exit and spawner that pointed here."
       footer={
         <>
           <button type="button" onClick={() => onOpenChange(false)} disabled={busy}>

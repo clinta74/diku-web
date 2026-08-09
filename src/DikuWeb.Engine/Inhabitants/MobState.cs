@@ -23,6 +23,40 @@ public static class MobState
     /// </remarks>
     public const string EmoteScheduleKey = "emoteNext";
 
+    /// <summary>The pulse this mob may next try to wander on.</summary>
+    /// <remarks>
+    /// A deadline, rather than the <c>lastWanderPulse</c> stamp it replaces. The gap between two
+    /// moves is now drawn per move, so there is no longer one interval to add a stamp to. Mobs are
+    /// respawned from scratch at boot, so the old key needs no migration - it simply stops being
+    /// written.
+    /// </remarks>
+    public const string WanderNextKey = "wanderNext";
+
+    /// <summary>
+    /// When this mob may next try to wander, or null when it has never been scheduled.
+    /// </summary>
+    /// <remarks>
+    /// Null is not zero. A mob with no schedule is one the AI has not seen yet, and it has to be
+    /// scheduled rather than moved - reading absence as "due now" is exactly what had every mob in
+    /// a room leaving together on the first sweep after it spawned, and re-arming from that same
+    /// pulse forever after.
+    /// </remarks>
+    public static long? WanderNextOf(Mob mob)
+    {
+        ArgumentNullException.ThrowIfNull(mob);
+
+        return mob.State.ContainsKey(WanderNextKey)
+            ? JsonBag.Int64(mob.State, WanderNextKey)
+            : null;
+    }
+
+    /// <inheritdoc cref="WanderNextOf"/>
+    public static void SetWanderNext(Mob mob, long pulse)
+    {
+        ArgumentNullException.ThrowIfNull(mob);
+        mob.State[WanderNextKey] = pulse;
+    }
+
     /// <summary>
     /// This mob's emote schedule, as a map the caller may edit in place.
     /// </summary>

@@ -118,7 +118,12 @@ internal sealed class WorldHarness
         Commands = new CommandRegistry(abilityCache: AbilityCache, clock: Clock);
         View = new PlayerView(new RoomLayoutService());
         Options = new EngineOptions { StartingRoom = RoomKey.Parse("test.zone.west") };
-        Applier = new WorldMutationApplier(World, View, Options);
+        // With the caches and the item queue the host wires up, because an edit that has to reach
+        // them is one this harness must be able to see. Built bare, it applied a rename that
+        // repointed exits and silently skipped everything else the loop's applier would have
+        // touched, and no test could tell the difference.
+        Applier = new WorldMutationApplier(
+            World, View, Options, Quests, MobTemplates, ItemTemplates, Spawners, ItemSaves);
         Writes = new RecordingWriteQueue();
         Editor = new LoopWorldEditor(Applier, Writes);
         Admin = new RecordingAdminQueue();
@@ -209,6 +214,9 @@ internal sealed class WorldHarness
 
     /// <summary>Item templates the registry resolves slots and descriptions from.</summary>
     public ItemTemplateCache ItemTemplates { get; } = new();
+
+    /// <summary>The spawner rules a builder edit has to keep current.</summary>
+    public SpawnerCache Spawners { get; } = new();
 
     /// <summary>
     /// Quests the command layer reads. Populated by <see cref="DefineQuest"/>.

@@ -160,6 +160,19 @@ public sealed class MobAiSystem(
 
     private bool ShouldWander(Mob mob, MobTemplate template, Room room, long pulse)
     {
+        // A fight is a claim on a mob's attention, and something that strolls out of one reads as
+        // combat having done nothing - the same argument the stun guard in Tick already makes for
+        // itself. Reported from live play: "You begin attacking a zombie!" and, two swings later,
+        // "A zombie leaves north." The fight was over before it had started.
+        //
+        // Not a substitute for a mob deciding to run away. Fleeing is a decision, narrated as one,
+        // and it would end the fight properly; this is a mob strolling off mid-swing because its
+        // wander timer happened to come due.
+        if (mob.CombatState == CombatState.Fighting)
+        {
+            return false;
+        }
+
         // Check sentinel flag: some mobs don't wander
         if (GetMobStateBool(mob, "sentinel"))
         {
@@ -172,8 +185,69 @@ public sealed class MobAiSystem(
             return false;
         }
 
-        var lastWanderPulse = GetMobStateLong(mob, "lastWanderPulse");
-        return pulse - lastWanderPulse >= template.WanderIntervalPulses;
+        return ClaimWanderTurn(mob, template, pulse);
+    }
+
+    /// <summary>
+    /// True when this mob's turn to wander has come, re-arming its timer either way.
+    /// </summary>
+    /// <remarks>
+    /// <b>A schedule per mob, not one interval everybody reads.</b> This used to be
+    /// <c>pulse - lastWanderPulse >= interval</c> against a counter starting at zero, which put the
+    /// whole world in step: a fresh mob is already overdue, so it moves on the first sweep that
+    /// sees it and re-arms from that pulse - and the AI itself only runs every sixteen pulses, so
+    /// the comparison quantises to the same sweeps for everyone. Two rats spawned into one room
+    /// left together and arrived together for as long as they both lived, which reads as a squad
+    /// rather than as two animals.
+    ///
+    /// So the fix <see cref="MobEmote"/> already made for idle lines, applied here: a fresh mob is
+    /// scheduled rather than fired, and each turn is drawn from a range around the authored
+    /// interval instead of from the interval itself. The template's number keeps its meaning as
+    /// the cadence - it is the average of one now rather than the exact period - so nothing
+    /// authored has to change.
+    ///
+    /// Re-armed whether or not a move follows. A mob fenced in by <c>noMob</c> neighbours or by
+    /// its own zone border would otherwise be due on every sweep for the rest of its life,
+    /// rescanning its exits to conclude again that it cannot use any of them.
+    /// </remarks>
+    private bool ClaimWanderTurn(Mob mob, MobTemplate template, long pulse)
+    {
+        if (MobState.WanderNextOf(mob) is not { } due)
+        {
+            ScheduleWander(mob, template, pulse);
+            return false;
+        }
+
+        // Only a turn that came re-arms. Redrawing on every sweep would push the deadline ahead
+        // of the sweep that was about to meet it, so the mob would move only when the draw landed
+        // inside one sweep's worth of pulses - a cadence set by how often the AI runs rather than
+        // by the number the template authored.
+        if (due > pulse)
+        {
+            return false;
+        }
+
+        ScheduleWander(mob, template, pulse);
+        return true;
+    }
+
+    /// <summary>
+    /// Draws the next wander pulse from a range centred on the template's interval.
+    /// </summary>
+    /// <remarks>
+    /// Half the interval either side: wide enough that two mobs sharing a template drift apart
+    /// within a few moves, narrow enough that one authored to move every six seconds is still
+    /// recognisably doing that. The floor of one pulse is what keeps an interval of zero - or a
+    /// spread that rounds down to it - from meaning "every pulse, forever".
+    /// </remarks>
+    private void ScheduleWander(Mob mob, MobTemplate template, long pulse)
+    {
+        var spread = template.WanderIntervalPulses / 2;
+        var min = Math.Max(1, template.WanderIntervalPulses - spread);
+        var max = Math.Max(min, template.WanderIntervalPulses + spread);
+
+        // Exclusive upper bound, hence the +1 - the same reason MobEmote.NextPulseAfter has one.
+        MobState.SetWanderNext(mob, pulse + random.Next(min, max + 1));
     }
 
     private void TryWander(WorldState world, RoomKey fromRoomKey, Mob mob, Room room, MobTemplate template)
@@ -238,7 +312,6 @@ public sealed class MobAiSystem(
             view.RefreshRoom(world, fromRoomKey);
             view.RefreshRoom(world, exit.ToRoomKey);
 
-            SetMobStateLong(mob, "lastWanderPulse", clock.CurrentPulse);
             return;
         }
     }
@@ -306,23 +379,17 @@ public sealed class MobAiSystem(
     }
 
     /// <summary>
-    /// Reads a pulse counter out of the mob's state bag.
+    /// Reads a flag out of the mob's state bag.
     /// </summary>
     /// <remarks>
-    /// Through <see cref="JsonBag"/> rather than by pattern-matching <c>is long</c>. Nothing reads
+    /// Through <see cref="JsonBag"/> rather than by pattern-matching <c>is bool</c>. Nothing reads
     /// or writes the <c>mobs</c> table today, so the bag only ever holds the native types this
     /// file put there - but the table and the <c>DbSet&lt;Mob&gt;</c> both exist, and the day mob
     /// persistence lands every value comes back as a <c>JsonElement</c>. At that point a type
-    /// check would silently return 0 here and false below, and the emote timers and the sentinel
-    /// flag would go quiet with nothing to show for it. That has already happened three times to
-    /// the other bags; this is the same trap, disarmed early.
+    /// check would silently return false, and the sentinel flag would go quiet with nothing to
+    /// show for it. That has already happened three times to the other bags; this is the same
+    /// trap, disarmed early. <see cref="MobState"/> reads its own keys the same way.
     /// </remarks>
-    private static long GetMobStateLong(Mob mob, string key) =>
-        JsonBag.Int64(mob.State, key);
-
-    private static void SetMobStateLong(Mob mob, string key, long value) =>
-        mob.State[key] = value;
-
     private static bool GetMobStateBool(Mob mob, string key) =>
         JsonBag.Boolean(mob.State, key);
 }

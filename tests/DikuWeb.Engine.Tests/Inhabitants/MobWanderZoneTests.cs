@@ -99,6 +99,14 @@ public sealed class MobWanderZoneTests
         return mob;
     }
 
+    /// <summary>
+    /// Runs the AI until the mobs have had a turn to wander.
+    /// </summary>
+    /// <remarks>
+    /// Two sweeps, not one. The first sweep a mob is seen on schedules its next wander rather than
+    /// firing one, which is what stops a spawner's three rats leaving together; the template's
+    /// one-pulse interval makes the second sweep due for certain.
+    /// </remarks>
     private static async Task WanderAsync(WorldHarness harness, MobTemplate template)
     {
         var ai = new MobAiSystem(
@@ -107,9 +115,12 @@ public sealed class MobWanderZoneTests
             harness.Clock,
             harness.View);
 
-        // Past the wander interval, so the attempt actually happens.
-        harness.Clock.AdvancePulses(8);
-        await ai.RunAsync(harness.World, CancellationToken.None);
+        for (var sweep = 0; sweep < 2; sweep++)
+        {
+            // Past the wander interval, so the attempt actually happens.
+            harness.Clock.AdvancePulses(8);
+            await ai.RunAsync(harness.World, CancellationToken.None);
+        }
     }
 
     [Fact]
