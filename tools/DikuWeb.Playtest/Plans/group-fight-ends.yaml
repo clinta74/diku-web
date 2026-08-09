@@ -68,17 +68,20 @@ steps:
 
   - actor: Bram
     note: |
-      The whole point. Both must be released, not just whoever landed the blow — and `kill`
-      refusing anyone already Fighting is what makes this a real check rather than a hopeful one.
-    do: kill rat
-    expect-not: "already in combat"
+      The whole point: both must be released, not just whoever landed the blow.
 
-  - actor: Kael
-    do: kill rat
-    expect-not: "already in combat"
-
-  - actor: Kael
-    note: And walking out, which a stuck fight also prevents.
+      Checked by walking rather than by attacking, and the difference matters. `kill` looks up its
+      target *before* it checks whether you are already fighting, so once the rat is dead
+      "kill rat" answers "You don't see 'rat' here" and never reaches the check — the first
+      version of this plan passed on that, which is to say it proved nothing. Movement is refused
+      only for being in combat, so walking out is unambiguous.
     do: north
     wait: { text: "You walk north" }
     expect: "You walk north"
+    expect-not: "while in combat"
+
+  - actor: Kael
+    do: north
+    wait: { text: "You walk north" }
+    expect: "You walk north"
+    expect-not: "while in combat"

@@ -2,15 +2,12 @@
 
 Add anything noticed while playing here. Cleared as items are done.
 
-## Outstanding
+_Nothing outstanding._ The queue lives in [BUGS.md](BUGS.md).
 
-Triaged into [BUGS.md](BUGS.md), which is the queue. Two blocking findings from the first serious
-run of the playtesting apparatus, both about a fight the other party walks out of:
-
-- **A fight your target leaves never releases you** — stuck `Fighting` for the rest of the session,
-  refused every later `kill` and unable to move. Reproduces in a unit test.
-- **A mob you are fighting can wander out of the room** — which is how you get into that state.
-  Blocked on the uncommitted wander-cadence work in `MobAiSystem.ShouldWander`.
+The zombie that walked out of its own fight was two bugs compounding, and both are fixed. Nothing
+wanders out of a fight now; and when the other party does leave — by fleeing, by dying, by any
+route — the fight lets go of everyone properly and says so. The plan library reads clean, with a
+rat wandering *in* mid-fight to prove the guard stopped the right mob rather than freezing the zone.
 
 A group fight now ends for everyone. You were right, and it was worse than "some players may stay
 in combat": in a group it **never** ended. The rule counted heads rather than sides — two or more

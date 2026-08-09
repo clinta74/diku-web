@@ -156,17 +156,22 @@ One guard at the top of `ShouldWander`, above the cadence work. Three tests: a f
 a released one wanders again — the guard must not be a life sentence — and an idle one is
 unaffected.
 
-### Step 3 — Re-run the plan library and clear the flag
+### Step 3 — Re-run the plan library and clear the flag ✅ **done**
 
-`combat-basics` is deliberately left flagged and says so in its own `about:`. After steps 1 and 2 it
-should read clean; if it does not, the transcript says why. Remove the KNOWN FAILING paragraph.
+All six read clean except `shopping`, which degrades as designed without `--admin-user` and says
+so. `combat-basics` shows an exchange running its full eighteen seconds with **another rat
+wandering in partway through** — the proof that the guard stopped the right mob rather than
+freezing the zone.
+
+It also caught one of the plans passing for the wrong reason. `A group fight ends` checked release
+with `kill rat`, but `kill` looks up its target *before* checking whether you are already fighting,
+so once the rat was dead the answer was "You don't see 'rat' here" and the check was never reached.
+Movement is refused only for being in combat, so both members now walk out instead — unambiguous.
 
 ```
 dotnet run --project tools/DikuWeb.Playtest -- --server http://localhost:5050 \
     --plans tools/DikuWeb.Playtest/plans
 ```
-
-**Done when:** all six plans read clean except `shopping`, which needs `--admin-user` and says so.
 
 ### Step 4 — Hosted target and world fixtures (#5)
 

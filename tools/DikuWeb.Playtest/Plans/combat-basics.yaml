@@ -9,11 +9,11 @@ about: |
   reason is free: the way down is a zone boundary, so this also covers walking between zones,
   which nothing else does.
 
-  KNOWN FAILING, and correctly so. This plan currently flags "waited for falls and never saw it",
-  because a mob you are fighting can wander out of the room mid-fight — `ShouldWander` gates on
-  the sentinel flag, on `noMob`, and on being stunned, but not on being in a fight. The transcript
-  shows it plainly: "You begin attacking a rat!" and then, a second later, "A rat leaves south."
-  Leave this plan flagged until that is fixed; it is reporting the world accurately.
+  This plan was the one that found "a mob you are fighting can wander out of the room" — it used to
+  flag "waited for falls and never saw it", because the rat left one swing into the fight. Fixed;
+  the transcript now shows an exchange running its full length, with another rat wandering *in*
+  partway through, which is the proof that the guard stopped the right mob rather than freezing
+  the zone.
 
 cast:
   - name: Theron
