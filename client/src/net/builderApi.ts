@@ -400,8 +400,9 @@ export const builderApi = {
   deleteSpawner: (id: string) =>
     request<void>(`${base}/spawners/${id}`, { method: 'DELETE' }),
 
-  // Quest writes cannot succeed yet: WorldWriter has no UpsertQuest arm and 500s. These are
-  // kept for when server persistence lands; there is no quest UI in the meantime (PLAN §9.3).
+  // The server side is complete - WorldWriter has its UpsertQuest arm now, so these writes
+  // persist. What is missing is the UI: nothing in the app calls any of them yet, so quests can
+  // only be authored by hand against the API (PLAN.md §5.2b, §12).
   quests: () => request<Quest[]>(`${base}/quests`),
 
   quest: (key: string) => request<Quest>(`${base}/quests/${key}`),

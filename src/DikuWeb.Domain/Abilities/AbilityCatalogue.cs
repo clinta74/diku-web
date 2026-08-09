@@ -142,6 +142,19 @@ public static class AbilityCatalogue
         };
 
     /// <summary>
+    /// Takes the target's attention off whoever currently has it and puts it on the caster, by
+    /// <paramref name="lead"/> of the target's health bar's worth of threat.
+    /// </summary>
+    /// <remarks>
+    /// A lead rather than a lock: the hate list is still cumulative damage afterwards, so whoever
+    /// was displaced climbs back by out-damaging the taunter from here. Expressed as a fraction
+    /// of the target's health because threat grows without bound over a fight - a flat number
+    /// would be decisive in the first ten seconds and beneath notice five minutes in.
+    /// </remarks>
+    private static Dictionary<string, string> TauntLead(string lead) =>
+        new(StringComparer.Ordinal) { ["leadFraction"] = lead };
+
+    /// <summary>
     /// Holds the target where it stands for <paramref name="duration"/> pulses: it can still
     /// fight, but it cannot flee or walk away.
     /// </summary>
@@ -204,6 +217,15 @@ public static class AbilityCatalogue
             "The flat of the shield, hard, into whatever is nearest to a jaw.",
             CostType.Stamina, 20, 72, null, TargetingType.SingleTarget,
             "control.stun", Stun("10", "reeling")),
+
+        // The Warden's reason to exist in a group. Everything else on this Path survives damage;
+        // this is the only thing that decides who *takes* it. Cheap and on a short cooldown,
+        // because holding a mob is a job rather than a moment - and because the ability it is
+        // answering, an Adept's biggest cast, comes back around too.
+        new(CharacterPath.Warden, 8, "warden.taunt", "Taunt",
+            "Say something unforgivable about its mother, at volume.",
+            CostType.Stamina, 12, 32, null, TargetingType.SingleTarget,
+            "control.taunt", TauntLead("0.30")),
 
         new(CharacterPath.Warden, 10, "warden.rally", "Rally",
             "Find your feet again in the middle of it.",
@@ -313,6 +335,14 @@ public static class AbilityCatalogue
             "Open something that will not close on its own.",
             CostType.Stamina, 20, 28, null, TargetingType.SingleTarget,
             "damage.overtime", OverTime("5", "8", "48", "bleeding", maxStacks: "3")),
+
+        // A Shade's version: later, dearer, and a smaller lead than the Warden's. It is the
+        // off-tank's tool rather than the tank's - enough to take a mob for a while, not enough
+        // to make the Path a substitute for one that can survive holding it.
+        new(CharacterPath.Shade, 12, "shade.provoke", "Provoke",
+            "A cut where it will be noticed, and a look daring it to do something about it.",
+            CostType.Stamina, 18, 48, null, TargetingType.SingleTarget,
+            "control.taunt", TauntLead("0.18")),
 
         new(CharacterPath.Shade, 13, "shade.vanish", "Vanish",
             "Break away and let them lose you.",

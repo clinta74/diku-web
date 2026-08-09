@@ -978,8 +978,11 @@ API client, and types with the game.
 | **Item templates** | Name, description, icon, slot, weight, base value, base stats. |
 | **Mob templates** | Name, description, icon, level, base stats, base xp/gold, behavior, loot. |
 | **Spawners** | Template, target rooms, count, respawn seconds. |
-| **Quests** | Giver mob, turn-in mob, required item and count, rewards, prerequisites, and the four dialogue strings (§4.9). |
-| **Storyline graph** | Quests as nodes, prerequisites as edges. Shows the chain, flags cycles and unreachable quests. |
+| **Quests** *(not built)* | Giver mob, turn-in mob, required item and count, rewards, prerequisites, and the four dialogue strings (§4.9). |
+| **Storyline graph** *(not built)* | Quests as nodes, prerequisites as edges. Shows the chain, flags cycles and unreachable quests. |
+
+The last two rows are spec, not shipped code: the API behind both exists and is exercised by
+tests, but nothing in the React app calls it (§5.2b, §12).
 
 Placing a one-off object in a room is just a spawner with `target_count: 1` — the builder offers
 it as *Place item here* rather than making you think about spawners.
@@ -1540,7 +1543,7 @@ One deferred nice-to-have remains below, and it is not what the phase goal asks 
       and reset on restart, matching cooldowns and combat state
 - [x] `buffs` command lists what is active and when it ends
 
-#### 5.2b — Quest engine ✅ **complete**
+#### 5.2b — Quest engine ⚠️ **engine complete, no builder UI**
 - [x] `quests` + `character_quests` tables, Active/Completed only, composite key
 - [x] String keys for mobs and items rather than FKs, so a quest can be authored before its
       content exists (§7.4)
@@ -1551,8 +1554,14 @@ One deferred nice-to-have remains below, and it is not what the phase goal asks 
 - [x] Repeatable quests with a `TimesCompleted` counter
 - [x] `quests` journal and `quest <name>` detail
 - [x] `CharacterQuestSaveQueue` so progress survives restart
-- [x] Builder: quest editor (`QuestEditor.tsx`), quest CRUD API, storyline graph with cycle
-      detection (`GET /zones/{zoneKey}/storyline`)
+- [x] Builder API: quest CRUD, reachability (`GET /quests/{key}/reachability`), and the
+      storyline graph with cycle detection (`GET /zones/{zoneKey}/storyline`)
+- [ ] **Builder UI: there is no way to author a quest.** The server half above is complete and
+      `builderApi.ts` already types `createQuest` / `updateQuest` / `questReachability` /
+      `storyline` — every one of them with zero callers. `BuilderShell` has three tabs (`world`,
+      `mobs`, `items`) and `QuestEditor.tsx` does not exist, so quest lines can only be authored
+      by hand against the API. This line was checked off naming a file that was never written;
+      it is the §12 lesson repeating, and it stays open until a caller exists. See §12.
 
 #### 5.2c — Shops and currency ✅ **complete**
 - [x] `buy` / `sell` / `list` against a mob flagged `shopkeeper`
@@ -1639,6 +1648,41 @@ one failed quietly, which is why they needed listing rather than assuming — an
       from silently having no mob AI at all.
       Behaviour is identical either way, which is why nothing surfaced this until the SQL log was
       read — so the tests count repository calls rather than assert on outcomes.
+
+#### 5.2f — Threat, and the gate every hostile action goes through
+
+- [x] **Every kind of damage counts on the hate list.** `GetTopHater` reads cumulative damage, so
+      the list was always a damage meter that reorders itself — but only landed melee swings fed
+      it. Ability damage went from the executor straight into `Vitals.Health`, and damage-over-time
+      ticks straight in from the combat loop. That inverted the design: **the Adept, the Path built
+      to deal the most damage in the game, was the only one that could never pull a mob off
+      anybody**, and the Shade's Ambush was worth no threat at all. Damage is measured as the
+      target's health before and after, since the executors return `void`; a tick credits
+      `ActiveEffect.SourceEntityId`, because the caster may have left and the bleed keeps working.
+- [x] **Hurting a mob with an ability starts the fight**, the way swinging at it does. An opening
+      Bolt used to be free — the mob took the damage and stood there, nothing having put it in
+      combat. Engages without retargeting, so an area effect cannot swing the caster's own weapon
+      round to the last thing the flames touched.
+- [x] **`taunt` (Warden 8) and `provoke` (Shade 12)** — the first thing in the game that *writes*
+      threat instead of earning it. Sets the caster above the current top by a fraction of the
+      target's max health (0.30 / 0.18), which is a **lead, not a lock**: the list is still a
+      damage meter afterwards, so whoever was displaced climbs back by out-damaging the taunter.
+      Expressed as a fraction because threat grows without bound over a fight — a flat lead would
+      be decisive in the first ten seconds and beneath notice five minutes in, and would mean
+      nothing consistent between a rat and a dragon.
+- [x] **One §4.11 gate for every hostile action** (`HostileActionGate`). `kill` refused a
+      `peaceful` room, a non-combatant, and an unsanctioned duel; **`cast` checked none of the
+      three**, so a Bolt worked in a safe room and an Adept could kill the shopkeeper handing out
+      the zone's quests. Area effects had grown a third copy of the same rules. All three answer
+      through one place now — which is what makes taunt safe, since it is a way to start a fight
+      with something you never attacked.
+- [x] **A malformed entity ID can no longer kill the game loop.** One in a hate list became the
+      top hater and threw on the next tick when nothing could resolve its room. Effect sources
+      survive a jsonb round trip and outlive the cast that set them, so `EntityId.IsWellFormed`
+      guards the door. Found by a test, not in production.
+- [x] **You can name yourself as a target.** The player search is `OthersIn`, which excludes the
+      caster, so a Hallow typing their own name at their own heal — the obvious thing to type —
+      got "You don't see 'Bram' here." while standing there.
 
 #### 5.2e — Deferred from the original 5.2 list
 - [ ] Pets and charmed mobs inherit their owner's §4.11 permissions (no pet system yet)
@@ -1744,9 +1788,19 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 **The builder catch-up and the correctness pass are both done, and 5.2 closed with area
 targeting.** Multipliers, world and zone editors, spawners, `questItem`, `baseStats`, ability
 progression, dormant quests, the cast targeting bugs, seven effect executors, and all three
-targeting modes have landed. One additive item is left before the phase boundary:
+targeting modes have landed. Two items are left before the phase boundary:
 
-1. **Mobs cannot cast.** `CastJob` keys on a character, and mobs fight through `MobAttack` rows
+1. **Quests cannot be authored.** The engine, the CRUD API, reachability, and the storyline graph
+   all work and are tested; the builder has no quest tab, so the only way to create a quest line
+   is by hand against the API. Everything §4.9 describes is unreachable to a builder, which makes
+   this the one gap that blocks *content* rather than mechanics. What it needs: a `Quests` tab
+   beside World / Mobs / Items, with giver, turn-in, required item, and reward pickers bound to
+   real template keys the way `MobBehaviorEditor` picks shop stock — typed keys are how you get
+   the dormant-quest state by accident. Prerequisites are the chain editor, since chaining is the
+   only storyline mechanism there is. Then the four dialogue strings, and the storyline graph and
+   reachability warnings shown *in the editor*, where an unobtainable item is still cheap to fix.
+
+2. **Mobs cannot cast.** `CastJob` keys on a character, and mobs fight through `MobAttack` rows
    with no ability keys — so every effect is a player-only tool. Giving mobs the same vocabulary
    is what would let a boss stun, snare, or bleed, and is probably the largest remaining lever on
    how combat *feels*.
@@ -1756,14 +1810,6 @@ AoE skip your own group rather than leaning on the `pvp` flag to do it. Then Pha
 
 **Not yet in any phase, from playtesting:**
 
-- **A taunt for Warden and Shade** — pushes the caster up the mob's hate list, targets the
-  current opponent by default and a named mob otherwise, and pulls an unengaged mob into combat
-  as though it had been attacked. The hate list already exists (`Combat.AddToHateList`, seeded on
-  `kill`), so this is the first thing that would *manipulate* it rather than merely feed it, and
-  the first ability whose effect is not damage, healing, or a stat change. Note it hands a player
-  a way to start a fight with something they never attacked, so it has to pass the same §4.11
-  gate `kill` does — including the non-combatant refusal, or taunt becomes the way to make a
-  shopkeeper hostile.
 - Command-line autocomplete for item and mob names; `spawn` should complete against real keys.
 - An explicit per-template alias list. Matching is derived from the name now, which covers the
   common case — but nothing reaches a named wolf called "Fang" whose key is `grey-wolf`.
@@ -1779,6 +1825,9 @@ AoE skip your own group rather than leaning on the `pvp` flag to do it. Then Pha
   proves nothing about the running game — author it through `WorldHarness.AsPersisted`.
 - **An endpoint with no caller is not a feature, and a checkbox is not evidence.** Reachability,
   the multiplier preview, world delete, and `/respawn` were all written, checked off, and never
-  wired to anything. Before checking a box, name the test or the call site.
+  wired to anything. Before checking a box, name the test or the call site. The quest editor is
+  this same lesson caught a second time, and the worst version of it: 5.2b checked off a
+  `QuestEditor.tsx` that was never written, so the plan claimed a whole authoring surface that
+  does not exist. Naming a file is not evidence either — open it.
 
 **No open questions remain.** Q3 (Path respec) is decided: Paths are fixed at creation (§4.5).

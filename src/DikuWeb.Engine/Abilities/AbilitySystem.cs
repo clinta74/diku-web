@@ -3,6 +3,7 @@ using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Presentation;
@@ -135,6 +136,11 @@ public sealed class AbilitySystem(
 
             CreditThreat(world, caster, target, before);
 
+            if (effect is IThreatEffect threatEffect)
+            {
+                Taunt(world, actor, caster, target, threatEffect, ability);
+            }
+
             // If this is a buff/debuff effect, also create the ongoing active effect state
             if (effect is IBuffEffect buffEffect)
             {
@@ -147,6 +153,64 @@ public sealed class AbilitySystem(
                 // rather than here: driving it from the *state* means any stun breaks a cast
                 // however it arrived, where doing it at the point of application would only
                 // cover stuns delivered by a player's cast.
+            }
+        }
+    }
+
+    /// <summary>
+    /// Puts the caster at the top of a mob's hate list and turns it on them.
+    /// </summary>
+    /// <remarks>
+    /// The lead is a fraction of the target's <em>maximum</em> health rather than its current,
+    /// so a taunt on something nearly dead is not worth less than the same taunt at full health -
+    /// which would make the ability weakest at exactly the moment a fight is most likely to go
+    /// wrong.
+    ///
+    /// The mob is retargeted immediately rather than left for the next combat tick to work out.
+    /// The tick would get there, but a taunt whose whole promise is "it hits me now" cannot
+    /// afford to be a swing late, and the swing it would be late by is the one landing on the
+    /// person the taunt was meant to save.
+    /// </remarks>
+    private static void Taunt(
+        WorldState world,
+        PlayerActor actor,
+        Character caster,
+        object target,
+        IThreatEffect effect,
+        Ability ability)
+    {
+        if (target is not Mob mob)
+        {
+            // Nothing else has a hate list. Taunting another player is not a thing the game has
+            // a meaning for, and silently doing nothing is the honest answer.
+            return;
+        }
+
+        var combat = CombatEngagement.Engage(world, caster, mob, retarget: false);
+
+        var mobId = EntityId.ForMob(mob.Id);
+        var casterId = EntityId.ForCharacter(caster.Id);
+
+        var lead = (int)Math.Ceiling(
+            Math.Max(1, mob.Vitals.HealthMax) * effect.LeadFraction(ability.EffectParams));
+
+        combat.ForceTopHater(mobId, casterId, lead);
+
+        mob.CurrentTarget = casterId;
+
+        var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+        actor.SendText(
+            $"{NarrationHelper.WithDefiniteArticle(displayName, capitalize: true)} turns on you!",
+            "combat");
+
+        foreach (var occupant in world.OccupantsOf(caster.RoomKey))
+        {
+            if (occupant.CharacterId != caster.Id)
+            {
+                occupant.SendText(
+                    $"{NarrationHelper.WithDefiniteArticle(displayName, capitalize: true)} " +
+                    $"turns on {actor.Name}!",
+                    "combat");
             }
         }
     }
@@ -275,20 +339,14 @@ public sealed class AbilitySystem(
             ];
         }
 
-        // Peaceful beats everything, the same way it does for a swing (§4.10). Refused before the
-        // gathering rather than by filtering it empty, so the reason is obvious when reading it.
-        if (world.IsFlagSet(room, RoomFlags.Peaceful))
-        {
-            return [];
-        }
-
         var targets = new List<object>();
 
         foreach (var mob in world.MobsIn(room))
         {
-            // A non-combatant is unattackable everywhere, so an AoE must not be the loophole that
-            // kills the shopkeeper standing behind the wolves.
-            if (!MobBehavior.IsNonCombatant(mobTemplates?.Get(mob.TemplateKey)?.Behavior))
+            // Through the same gate a swing and a single-target cast go through, so "peaceful
+            // forbids it" and "an NPC is not someone you can fight" are one rule with one place
+            // to change rather than three copies that agreed when they were written.
+            if (HostileActionGate.MayStrikeMob(world, mobTemplates, room, mob))
             {
                 targets.Add(mob);
             }

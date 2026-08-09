@@ -18,6 +18,7 @@ public sealed class EffectRegistry
         Register(new DamageOverTimeEffect());
         Register(new StunEffect());
         Register(new RootEffect());
+        Register(new TauntEffect());
     }
 
     public void Register(IAbilityEffect effect)

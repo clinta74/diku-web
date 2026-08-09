@@ -20,16 +20,17 @@ public sealed class AbilityCatalogueTests
         [CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Shade, CharacterPath.Hallow];
 
     /// <summary>The effect executors that exist. An ability naming anything else does nothing.</summary>
-    private static readonly HashSet<string> KnownEffects = new(StringComparer.Ordinal)
-    {
-        "damage.physical",
-        "heal.restore",
-        "buff.damage-up",
-        "debuff.weaken",
-        "damage.overtime",
-        "control.stun",
-        "control.root",
-    };
+    /// <summary>
+    /// The executors that actually exist, asked of the registry rather than listed again here.
+    /// </summary>
+    /// <remarks>
+    /// This was a literal set, and it was a second source of truth for the same question the
+    /// registry already answers — so every executor added after it was written had to be
+    /// remembered in two places, and forgetting the second one turns this test from a guard into
+    /// a thing that fails for no reason. That is the same shape as the seeder-versus-progression
+    /// drift <c>AbilityCatalogue</c> exists to make impossible.
+    /// </remarks>
+    private static readonly EffectRegistry KnownEffects = new();
 
     [Fact]
     public void Every_ability_key_is_unique()
@@ -282,14 +283,10 @@ public sealed class AbilityCatalogueTests
     /// would take a cost and fizzle.
     /// </remarks>
     [Fact]
-    public void Every_area_ability_has_an_executor_behind_it()
-    {
-        var effects = new EffectRegistry();
-
+    public void Every_area_ability_has_an_executor_behind_it() =>
         Assert.All(
             AbilityCatalogue.All.Where(e => e.TargetingType == TargetingType.Aoe),
-            entry => Assert.NotNull(effects.Get(entry.EffectKey)));
-    }
+            entry => Assert.NotNull(KnownEffects.Get(entry.EffectKey)));
 
     [Fact]
     public void Every_path_starts_with_something_castable_at_level_one()

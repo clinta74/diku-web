@@ -1,4 +1,5 @@
 # Play testing notes
 
 Add anything noticed while playing here. Cleared as items are done.
-Warden and Shade should get a taunt ability that moves the player up on the hate list of the mob. like spells it should default to the mob that they are already attacking. if the name of a mob is given it should target that. this can be mobs they are not attacking and will cause that mob to become agressive to that player as if they had attacked them and put them into combat.
+
+- A admin should be able to trigger a shutdown of the server with a command. This can be a time delay with a warning and a time value provided. a delay of a 0 would force an instant shutdown. Maybe this should be in the builder so that we can confirm the s

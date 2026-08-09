@@ -3,6 +3,7 @@ using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Entities;
 using DikuWeb.Engine.Abilities;
+using DikuWeb.Engine.Systems;
 using DikuWeb.Engine.Time;
 
 namespace DikuWeb.Engine.Commands;
@@ -131,6 +132,17 @@ public static class AbilityCommands
             return;
         }
 
+        // A hostile ability answers to §4.11 exactly as a swing does. `kill` has always refused a
+        // peaceful room, a non-combatant, and an unsanctioned duel; `cast` checked none of the
+        // three, so a Bolt worked in a safe room and an Adept could kill the shopkeeper who hands
+        // out the zone's quests. Refused here rather than at resolution, so nothing is spent.
+        if (effects.Get(ability.EffectKey)?.IsHarmful == true &&
+            HostileRefusal(ctx, targetId) is { } refusal)
+        {
+            ctx.Reply(refusal, "bad");
+            return;
+        }
+
         // Enqueue cast
         var castJob = new CastJob
         {
@@ -170,6 +182,39 @@ public static class AbilityCommands
     }
 
     /// <summary>
+    /// Why this cast may not be aimed where it is aimed, or null if it may be.
+    /// </summary>
+    /// <remarks>
+    /// Self-targeted abilities and area effects both arrive here with a null target id and are
+    /// waved through: nothing hostile is aimed at the caster, and an area effect gathers its own
+    /// targets at resolution, filtering each one through the same gate.
+    /// </remarks>
+    private static string? HostileRefusal(CommandContext ctx, string? targetId)
+    {
+        if (targetId is null || !EntityId.IsWellFormed(targetId))
+        {
+            return null;
+        }
+
+        var roomKey = ctx.Actor.Character.RoomKey;
+
+        if (EntityId.IsMob(targetId))
+        {
+            return ctx.World.GetMob(EntityId.ToGuid(targetId)) is { } mob
+                ? HostileActionGate.RefuseMob(ctx.World, ctx.MobTemplates, roomKey, mob)
+                : null;
+        }
+
+        var target = ctx.World.GetCharacter(EntityId.ToGuid(targetId));
+
+        // Never yourself, whatever the room says: a harmful ability aimed at the caster is the
+        // caster's own business and no business of the pvp flag.
+        return target is null || target.Id == ctx.Actor.CharacterId
+            ? null
+            : HostileActionGate.RefusePlayer(ctx.World, roomKey, target.Name);
+    }
+
+    /// <summary>
     /// What this cast is aimed at, as an entity id, or null when it needs no target or found none.
     /// </summary>
     /// <remarks>
@@ -199,6 +244,14 @@ public static class AbilityCommands
 
         if (!string.IsNullOrEmpty(targetName))
         {
+            // Yourself first. The player search below is OthersIn, which excludes the caster, so
+            // a Hallow typing their own name at their own heal - the obvious thing to type - got
+            // "You don't see 'Bram' here." while standing there.
+            if (string.Equals(actor.Name, targetName, StringComparison.OrdinalIgnoreCase))
+            {
+                return EntityId.ForCharacter(actor.CharacterId);
+            }
+
             var player = ctx.World.OthersIn(roomKey, actor)
                 .FirstOrDefault(p => string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase));
 

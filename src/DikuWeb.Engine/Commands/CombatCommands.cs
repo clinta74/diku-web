@@ -57,46 +57,16 @@ public static class CombatCommands
             return;
         }
 
-        // Validate target before entering combat
-        var peaceful = ctx.World.IsFlagSet(character.RoomKey, RoomFlags.Peaceful);
-        var pvp = ctx.World.IsFlagSet(character.RoomKey, RoomFlags.Pvp);
+        // Validate target before entering combat. Shared with `cast`, so a rule that refuses a
+        // swing refuses a spell too - they used to disagree, and the spell was the permissive one.
+        var refusal = targetActor != null
+            ? HostileActionGate.RefusePlayer(ctx.World, character.RoomKey, targetActor.Name)
+            : HostileActionGate.RefuseMob(ctx.World, ctx.MobTemplates, character.RoomKey, targetMob!);
 
-        if (targetActor != null)
+        if (refusal is not null)
         {
-            var validation = TargetValidator.ValidateTarget(
-                CombatantType.Player, CombatantType.Player, targetActor.Name, peaceful, pvp);
-            if (!validation.IsAllowed)
-            {
-                ctx.Reply(validation.RefusalReason ?? "You cannot attack that target.");
-                return;
-            }
-        }
-        else if (targetMob != null)
-        {
-            // A non-combatant is refused before the room rules are consulted: an NPC is
-            // unattackable everywhere, not merely in peaceful rooms. Quest givers, turn-ins, and
-            // shopkeepers are all NPCs, and killing one strands whoever was mid-quest until the
-            // spawner comes back around (PLAN.md §7.4).
-            var mobTemplate = ctx.MobTemplates?.Get(targetMob.TemplateKey);
-            if (MobBehavior.IsNonCombatant(mobTemplate?.Behavior))
-            {
-                var name = string.IsNullOrEmpty(targetMob.TemplateName)
-                    ? targetMob.TemplateKey
-                    : targetMob.TemplateName;
-
-                ctx.Reply(
-                    $"{NarrationHelper.WithDefiniteArticle(name, capitalize: true)} is not someone you can fight.",
-                    "bad");
-                return;
-            }
-
-            var validation = TargetValidator.ValidateTarget(
-                CombatantType.Player, CombatantType.Mob, targetMob.TemplateKey, peaceful, pvp);
-            if (!validation.IsAllowed)
-            {
-                ctx.Reply(validation.RefusalReason ?? "You cannot attack that target.");
-                return;
-            }
+            ctx.Reply(refusal, "bad");
+            return;
         }
 
         // Get or create combat for this room
