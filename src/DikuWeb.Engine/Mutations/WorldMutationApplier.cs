@@ -1,6 +1,7 @@
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Quests;
+using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Presentation;
@@ -33,7 +34,8 @@ public sealed class WorldMutationApplier(
     EngineOptions options,
     QuestCache? questCache = null,
     MobTemplateCache? mobTemplateCache = null,
-    ItemTemplateCache? itemTemplateCache = null)
+    ItemTemplateCache? itemTemplateCache = null,
+    SpawnerCache? spawnerCache = null)
 {
     private const string UnfinishedTitle = "An Unfinished Room";
 
@@ -894,11 +896,28 @@ public sealed class WorldMutationApplier(
         return MutationResult.Ok([change]);
     }
 
-    private MutationResult ApplyUpsertSpawner(UpsertSpawner change) =>
-        MutationResult.Ok([change]);
+    private MutationResult ApplyUpsertSpawner(UpsertSpawner change)
+    {
+        spawnerCache?.Put(new Spawner
+        {
+            Id = change.Id,
+            ZoneKey = change.ZoneKey,
+            TemplateKey = change.TemplateKey,
+            TemplateKind = change.TemplateKind,
+            RoomKeys = [.. change.RoomKeys],
+            TargetCount = change.TargetCount,
+            RespawnSeconds = change.RespawnSeconds,
+            Sentinel = change.Sentinel,
+        });
 
-    private MutationResult ApplyDeleteSpawner(DeleteSpawner change) =>
-        MutationResult.Ok([change]);
+        return MutationResult.Ok([change]);
+    }
+
+    private MutationResult ApplyDeleteSpawner(DeleteSpawner change)
+    {
+        spawnerCache?.Remove(change.Id);
+        return MutationResult.Ok([change]);
+    }
 
     // -----------------------------------------------------------------------
     // Quests (Phase 5.2b)

@@ -45,6 +45,8 @@ public sealed class GameLoop(
     ItemTemplateCache? itemTemplateCache,
     IMobTemplateRepository? mobTemplateRepository,
     MobTemplateCache? mobTemplateCache,
+    ISpawnerRepository? spawnerRepository,
+    SpawnerCache? spawnerCache,
     SpawnerSystem? spawnerSystem,
     MobAiSystem? mobAiSystem,
     CombatSystem? combatSystem,
@@ -86,6 +88,13 @@ public sealed class GameLoop(
         if (mobTemplateRepository != null && mobTemplateCache != null)
         {
             await mobTemplateCache.LoadAsync(mobTemplateRepository, stoppingToken);
+        }
+
+        // Load the spawner rules, so the sweep reads memory instead of the whole table every
+        // 15 seconds. Kept live by the applier, same as the caches above.
+        if (spawnerRepository != null && spawnerCache != null)
+        {
+            await spawnerCache.LoadAsync(spawnerRepository, stoppingToken);
         }
 
         EngineLog.LoopStarting(logger, world.RoomCount, GameTiming.PulseInterval.TotalMilliseconds);

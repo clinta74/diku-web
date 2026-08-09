@@ -57,10 +57,10 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<LoopWorldEditor>();
         services.AddSingleton<GameGateway>();
 
-        // Phase 3 systems (spawners, mob AI). Both take the template caches so their sweeps read
-        // memory instead of issuing one SELECT per entity per tick; both fall back to the
-        // repository if a cache was never loaded, so a container that omitted one costs
-        // throughput rather than behaviour.
+        // Phase 3 systems (spawners, mob AI). Both take the caches so their sweeps read memory
+        // instead of querying every tick - per-key template lookups for both, plus the whole
+        // spawners table for the sweep; both fall back to the repository if a cache was never
+        // loaded, so a container that omitted one costs throughput rather than behaviour.
         services.AddSingleton<MobSpawner>();
         services.AddSingleton<ItemSpawner>();
         services.AddSingleton<SpawnerSystem>(sp =>
@@ -73,7 +73,8 @@ public static class EngineServiceCollectionExtensions
                 sp.GetRequiredService<ILogger<SpawnerSystem>>(),
                 sp.GetService<PlayerView>(),
                 sp.GetService<MobTemplateCache>(),
-                sp.GetService<ItemTemplateCache>()));
+                sp.GetService<ItemTemplateCache>(),
+                sp.GetService<SpawnerCache>()));
         services.AddSingleton<MobAiSystem>(sp =>
             new MobAiSystem(
                 sp.GetRequiredService<IMobTemplateRepository>(),
@@ -110,6 +111,7 @@ public static class EngineServiceCollectionExtensions
         services.AddSingleton<QuestCache>();
         services.AddSingleton<ItemTemplateCache>();
         services.AddSingleton<MobTemplateCache>();
+        services.AddSingleton<SpawnerCache>();
 
         // Game loop - wired once all systems are available
         services.AddHostedService<GameLoop>();

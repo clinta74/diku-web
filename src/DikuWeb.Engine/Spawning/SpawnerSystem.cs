@@ -12,7 +12,7 @@ namespace DikuWeb.Engine.Spawning;
 
 /// <summary>
 /// Runs every 15 seconds to maintain population targets set by Spawners.
-/// Queries database for active spawners, checks current population, and calls
+/// Reads the spawner rules and templates out of memory, checks current population, and calls
 /// MobSpawner/ItemSpawner to create new instances as needed.
 /// </summary>
 public sealed class SpawnerSystem(
@@ -24,7 +24,8 @@ public sealed class SpawnerSystem(
     ILogger<SpawnerSystem> logger,
     PlayerView? view = null,
     MobTemplateCache? mobTemplateCache = null,
-    ItemTemplateCache? itemTemplateCache = null)
+    ItemTemplateCache? itemTemplateCache = null,
+    SpawnerCache? spawnerCache = null)
 {
     /// <summary>
     /// The templates a spawner fills from, out of memory where possible.
@@ -51,13 +52,30 @@ public sealed class SpawnerSystem(
             ? itemTemplateCache.Get(key)
             : await itemTemplates.GetByKeyAsync(key, ct);
 
+    /// <summary>
+    /// The spawner rules to enforce this sweep, out of memory where possible.
+    /// </summary>
+    /// <remarks>
+    /// Unlike the templates there is no key to miss on - the sweep wants the whole set - so the
+    /// only reason to touch the database is a cache that was never loaded at all.
+    ///
+    /// Copied rather than enumerated live: the sweep is fire-and-forget, so a template read that
+    /// does fall through to the database parks it on the thread pool, and a builder saving a
+    /// spawner on the loop thread meanwhile would otherwise invalidate the enumerator underneath
+    /// it. One list of a few dozen references every 15 seconds is not the cost being avoided here.
+    /// </remarks>
+    private async Task<IReadOnlyList<Spawner>> SpawnersAsync(CancellationToken ct) =>
+        spawnerCache is { IsLoaded: true }
+            ? [.. spawnerCache.All]
+            : await spawners.GetAllAsync(ct);
+
     public async Task RunAsync(WorldState world, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(world);
 
         try
         {
-            var allSpawners = await spawners.GetAllAsync(ct);
+            var allSpawners = await SpawnersAsync(ct);
             EngineLog.SpawnerSweepStarting(logger, allSpawners.Count);
 
             foreach (var spawner in allSpawners)

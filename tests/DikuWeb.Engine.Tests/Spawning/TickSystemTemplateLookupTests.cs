@@ -57,10 +57,15 @@ public sealed class TickSystemTemplateLookupTests
             Task.FromResult<IReadOnlyList<ItemTemplate>>(templates);
     }
 
-    private sealed class FakeSpawnerRepository(params Spawner[] spawners) : ISpawnerRepository
+    private sealed class CountingSpawnerRepository(params Spawner[] spawners) : ISpawnerRepository
     {
-        public Task<IReadOnlyList<Spawner>> GetAllAsync(CancellationToken ct) =>
-            Task.FromResult<IReadOnlyList<Spawner>>(spawners);
+        public int Queries { get; private set; }
+
+        public Task<IReadOnlyList<Spawner>> GetAllAsync(CancellationToken ct)
+        {
+            Queries++;
+            return Task.FromResult<IReadOnlyList<Spawner>>(spawners);
+        }
     }
 
     private static MobTemplate Rat(Dictionary<string, object>? behavior = null) => new()
@@ -110,14 +115,17 @@ public sealed class TickSystemTemplateLookupTests
 
         var mobRepo = new CountingMobRepository(Rat());
         var itemRepo = new CountingItemRepository(Coin());
+        var spawnerRepo = new CountingSpawnerRepository(MobSpawnerFor("rat"), ItemSpawnerFor("coin"));
 
         var mobCache = new MobTemplateCache();
         await mobCache.LoadAsync(mobRepo, CancellationToken.None);
         var itemCache = new ItemTemplateCache();
         await itemCache.LoadAsync(itemRepo, CancellationToken.None);
+        var spawnerCache = new SpawnerCache();
+        await spawnerCache.LoadAsync(spawnerRepo, CancellationToken.None);
 
         var system = new SpawnerSystem(
-            new FakeSpawnerRepository(MobSpawnerFor("rat"), ItemSpawnerFor("coin")),
+            spawnerRepo,
             mobRepo,
             itemRepo,
             new MobSpawner(),
@@ -125,7 +133,8 @@ public sealed class TickSystemTemplateLookupTests
             NullLogger<SpawnerSystem>.Instance,
             harness.View,
             mobCache,
-            itemCache);
+            itemCache,
+            spawnerCache);
 
         // Four sweeps is a minute of wall-clock at the real cadence.
         for (var i = 0; i < 4; i++)
@@ -134,10 +143,93 @@ public sealed class TickSystemTemplateLookupTests
         }
 
         // GetAllAsync during the load is not a per-entity query and is not counted; what must be
-        // zero is the per-key lookup inside the loop.
+        // zero is every read the sweep itself makes - the per-key template lookups and the
+        // spawner table it used to re-read whole, every sweep, forever.
         Assert.Equal(0, mobRepo.Queries);
         Assert.Equal(0, itemRepo.Queries);
+        Assert.Equal(1, spawnerRepo.Queries);
         Assert.Single(harness.World.MobsIn(West));
+    }
+
+    [Fact]
+    public async Task The_sweep_reads_the_spawner_table_when_the_cache_was_never_loaded()
+    {
+        // Same gate as the templates: an unloaded cache must mean "read through", not "no
+        // spawners", or a container that supplied the cache without populating it would empty
+        // the world.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var mobRepo = new CountingMobRepository(Rat());
+        var mobCache = new MobTemplateCache();
+        await mobCache.LoadAsync(mobRepo, CancellationToken.None);
+        var spawnerRepo = new CountingSpawnerRepository(MobSpawnerFor("rat"));
+
+        var system = new SpawnerSystem(
+            spawnerRepo,
+            mobRepo,
+            new CountingItemRepository(),
+            new MobSpawner(),
+            new ItemSpawner(),
+            NullLogger<SpawnerSystem>.Instance,
+            harness.View,
+            mobCache,
+            new ItemTemplateCache(),
+            new SpawnerCache());
+
+        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, CancellationToken.None);
+
+        Assert.Equal(2, spawnerRepo.Queries);
+        Assert.Single(harness.World.MobsIn(West));
+    }
+
+    [Fact]
+    public async Task A_spawner_saved_in_the_builder_reaches_the_next_sweep()
+    {
+        // Reading the cache rather than the table must not cost the "edits are live" guarantee:
+        // a spawner created in the builder has to populate its rooms on the very next sweep,
+        // with no restart and no query.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var mobRepo = new CountingMobRepository(Rat());
+        var mobCache = new MobTemplateCache();
+        await mobCache.LoadAsync(mobRepo, CancellationToken.None);
+
+        var spawnerRepo = new CountingSpawnerRepository();
+        var spawnerCache = new SpawnerCache();
+        await spawnerCache.LoadAsync(spawnerRepo, CancellationToken.None);
+
+        var system = new SpawnerSystem(
+            spawnerRepo,
+            mobRepo,
+            new CountingItemRepository(),
+            new MobSpawner(),
+            new ItemSpawner(),
+            NullLogger<SpawnerSystem>.Instance,
+            harness.View,
+            mobCache,
+            new ItemTemplateCache(),
+            spawnerCache);
+
+        await system.RunAsync(harness.World, CancellationToken.None);
+        Assert.Empty(harness.World.MobsIn(West));
+
+        var spawner = MobSpawnerFor("rat");
+        spawnerCache.Put(spawner);
+        await system.RunAsync(harness.World, CancellationToken.None);
+
+        Assert.Single(harness.World.MobsIn(West));
+
+        // And a deleted spawner stops being enforced - though what it already placed stays put,
+        // exactly as it did when the sweep read the table.
+        spawnerCache.Remove(spawner.Id);
+        harness.World.RemoveMob(harness.World.MobsIn(West).Single());
+        await system.RunAsync(harness.World, CancellationToken.None);
+
+        Assert.Empty(harness.World.MobsIn(West));
+        Assert.Equal(1, spawnerRepo.Queries);
     }
 
     [Fact]
@@ -152,7 +244,7 @@ public sealed class TickSystemTemplateLookupTests
         var mobRepo = new CountingMobRepository(Rat());
 
         var system = new SpawnerSystem(
-            new FakeSpawnerRepository(MobSpawnerFor("rat")),
+            new CountingSpawnerRepository(MobSpawnerFor("rat")),
             mobRepo,
             new CountingItemRepository(),
             new MobSpawner(),
@@ -175,7 +267,7 @@ public sealed class TickSystemTemplateLookupTests
         harness.LoadTestWorld();
 
         var system = new SpawnerSystem(
-            new FakeSpawnerRepository(MobSpawnerFor("rat")),
+            new CountingSpawnerRepository(MobSpawnerFor("rat")),
             new CountingMobRepository(Rat()),
             new CountingItemRepository(),
             new MobSpawner(),
@@ -202,7 +294,7 @@ public sealed class TickSystemTemplateLookupTests
         await mobCache.LoadAsync(mobRepo, CancellationToken.None);
 
         var system = new SpawnerSystem(
-            new FakeSpawnerRepository(MobSpawnerFor("gone")),
+            new CountingSpawnerRepository(MobSpawnerFor("gone")),
             mobRepo,
             new CountingItemRepository(),
             new MobSpawner(),
@@ -234,7 +326,7 @@ public sealed class TickSystemTemplateLookupTests
         await mobCache.LoadAsync(mobRepo, CancellationToken.None);
 
         var system = new SpawnerSystem(
-            new FakeSpawnerRepository(MobSpawnerFor("rat")),
+            new CountingSpawnerRepository(MobSpawnerFor("rat")),
             mobRepo,
             new CountingItemRepository(),
             new MobSpawner(),

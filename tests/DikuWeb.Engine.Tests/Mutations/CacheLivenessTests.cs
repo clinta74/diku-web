@@ -1,6 +1,7 @@
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Quests;
+using DikuWeb.Domain.Spawning;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Engine.Presentation;
@@ -22,7 +23,7 @@ public sealed class CacheLivenessTests
     private static UpsertQuest NewQuest(string key, string giver, string name = "A Quest") =>
         new(key, "test.zone", name, "", "", giver, giver, null, 1, 0, 0, null, 1, [], false, [], 0);
 
-    private static (WorldMutationApplier Applier, QuestCache Quests, MobTemplateCache Mobs, ItemTemplateCache Items) NewApplier()
+    private static (WorldMutationApplier Applier, QuestCache Quests, MobTemplateCache Mobs, ItemTemplateCache Items, SpawnerCache Spawners) NewApplier()
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
@@ -30,17 +31,18 @@ public sealed class CacheLivenessTests
         var quests = new QuestCache();
         var mobs = new MobTemplateCache();
         var items = new ItemTemplateCache();
+        var spawners = new SpawnerCache();
 
         var applier = new WorldMutationApplier(
-            harness.World, harness.View, harness.Options, quests, mobs, items);
+            harness.World, harness.View, harness.Options, quests, mobs, items, spawners);
 
-        return (applier, quests, mobs, items);
+        return (applier, quests, mobs, items, spawners);
     }
 
     [Fact]
     public void Saving_a_quest_makes_it_live_without_a_reload()
     {
-        var (applier, quests, _, _) = NewApplier();
+        var (applier, quests, _, _, _) = NewApplier();
 
         applier.Apply(NewQuest("test.errand", "guard"));
 
@@ -53,7 +55,7 @@ public sealed class CacheLivenessTests
     {
         // The giver index is what `talk` reads. A stale entry would leave the previous NPC still
         // offering a quest they no longer own.
-        var (applier, quests, _, _) = NewApplier();
+        var (applier, quests, _, _, _) = NewApplier();
 
         applier.Apply(NewQuest("test.errand", "guard"));
         applier.Apply(NewQuest("test.errand", "captain"));
@@ -66,7 +68,7 @@ public sealed class CacheLivenessTests
     [Fact]
     public void Deleting_a_quest_drops_it_from_the_cache_and_its_indexes()
     {
-        var (applier, quests, _, _) = NewApplier();
+        var (applier, quests, _, _, _) = NewApplier();
 
         applier.Apply(NewQuest("test.errand", "guard"));
         applier.Apply(new DeleteQuest("test.errand"));
@@ -78,7 +80,7 @@ public sealed class CacheLivenessTests
     [Fact]
     public void Saving_a_mob_template_makes_it_live()
     {
-        var (applier, _, mobs, _) = NewApplier();
+        var (applier, _, mobs, _, _) = NewApplier();
 
         applier.Apply(new UpsertMobTemplate(
             "rat", "a rat", "", "r", 1, 24, [], 0, 0, [], [], []));
@@ -105,7 +107,7 @@ public sealed class CacheLivenessTests
     [Fact]
     public void Saving_an_item_template_makes_it_live()
     {
-        var (applier, _, _, items) = NewApplier();
+        var (applier, _, _, items, _) = NewApplier();
 
         applier.Apply(new UpsertItemTemplate(
             "blade", "a blade", "", "/", ItemSlot.MainHand, 10, 25, [], 8, "slash", false));
@@ -127,6 +129,32 @@ public sealed class CacheLivenessTests
 
         applier.Apply(new DeleteItemTemplate("blade"));
         Assert.Null(items.Get("blade"));
+    }
+
+    [Fact]
+    public void Saving_a_spawner_makes_it_live()
+    {
+        // The sweep reads this cache rather than the spawners table, so a save that stopped at
+        // the database would leave the rule dormant until the next restart.
+        var (applier, _, _, _, spawners) = NewApplier();
+
+        var id = Guid.CreateVersion7();
+        applier.Apply(new UpsertSpawner(
+            id, "test.zone", "rat", TemplateKind.Mob, ["test.zone.west"], 2, 30, false));
+
+        Assert.Equal(2, spawners.Get(id)?.TargetCount);
+
+        applier.Apply(new UpsertSpawner(
+            id, "test.zone", "rat", TemplateKind.Mob, ["test.zone.west", "test.zone.east"], 5, 30, true));
+
+        Assert.Equal(5, spawners.Get(id)?.TargetCount);
+        Assert.Equal(2, spawners.Get(id)?.RoomKeys.Count);
+        Assert.True(spawners.Get(id)?.Sentinel);
+        Assert.Single(spawners.All);
+
+        applier.Apply(new DeleteSpawner(id));
+        Assert.Null(spawners.Get(id));
+        Assert.Empty(spawners.All);
     }
 
     [Fact]
@@ -158,6 +186,7 @@ public sealed class CacheLivenessTests
         services.AddSingleton<QuestCache>();
         services.AddSingleton<MobTemplateCache>();
         services.AddSingleton<ItemTemplateCache>();
+        services.AddSingleton<SpawnerCache>();
         services.AddSingleton<WorldMutationApplier>();
 
         using var provider = services.BuildServiceProvider();
@@ -165,6 +194,11 @@ public sealed class CacheLivenessTests
 
         applier.Apply(NewQuest("test.errand", "guard"));
 
+        var spawnerId = Guid.CreateVersion7();
+        applier.Apply(new UpsertSpawner(
+            spawnerId, "test.zone", "rat", TemplateKind.Mob, ["test.zone.west"], 1, 30, false));
+
         Assert.NotNull(provider.GetRequiredService<QuestCache>().Get("test.errand"));
+        Assert.NotNull(provider.GetRequiredService<SpawnerCache>().Get(spawnerId));
     }
 }
