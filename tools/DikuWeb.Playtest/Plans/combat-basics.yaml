@@ -1,0 +1,94 @@
+name: Combat basics
+about: |
+  Walk somewhere dangerous, fight what lives there, and be paid for it. The oldest loop in the
+  genre, and the one that has to work before anything else is worth testing.
+
+  It goes to the Sunken Crypt rather than the tavern, for two reasons. The crypt spawner keeps two
+  rats where Millbrook keeps one, and a library of plans that all queue for the same single mob is
+  a library that fails for reasons which have nothing to do with what it is testing. The second
+  reason is free: the way down is a zone boundary, so this also covers walking between zones,
+  which nothing else does.
+
+  KNOWN FAILING, and correctly so. This plan currently flags "waited for falls and never saw it",
+  because a mob you are fighting can wander out of the room mid-fight — `ShouldWander` gates on
+  the sentinel flag, on `noMob`, and on being stunned, but not on being in a fight. The transcript
+  shows it plainly: "You begin attacking a rat!" and then, a second later, "A rat leaves south."
+  Leave this plan flagged until that is fixed; it is reporting the world accurately.
+
+cast:
+  - name: Theron
+    path: Warden
+
+steps:
+  - actor: Theron
+    note: Down through the chapel to the crypt — four rooms, the last of them a zone boundary.
+    do: south
+    wait: { text: "You walk south" }
+  - actor: Theron
+    do: south
+    wait: { text: "The Well Yard" }
+  - actor: Theron
+    do: west
+    wait: { text: "The Chapel Steps" }
+  - actor: Theron
+    do: down
+    wait: { text: "The Chapel Nave" }
+
+  - actor: Theron
+    note: |
+      And down again, which crosses from Millbrook into the Sunken Crypt. A player should not be
+      able to tell where a zone ends except by what lives there.
+    do: down
+    wait: { text: "Crypt Hall" }
+    expect: "Crypt Hall"
+
+  - actor: Theron
+    do: south
+    wait: { text: "The Crypt Chapel" }
+
+  - actor: Theron
+    note: |
+      Wait for something to fight rather than assuming it is standing there. The crypt rats wander
+      between here and the ossuary, so the room is routinely empty on arrival — the first run of
+      this plan walked in, found nothing, and spent two minutes waiting for a fight it had never
+      started.
+
+      This is as close to reliable as a plan against a live world gets: a rat can still wander out
+      between this line and the next. A plan that needs certainty needs to build its own mob, which
+      is what the world fixtures are for.
+    wait: { text: "rat", timeout: 90 }
+    expect: "rat"
+
+  - actor: Theron
+    note: |
+      `consider` before committing is what a careful player does, and it is the only warning the
+      game offers before a fight it cannot win.
+    do: consider rat
+    expect: "Level"
+
+  - actor: Theron
+    note: Opening a fight should say so, in the second person, naming what was attacked.
+    do: kill rat
+    wait: { text: "You begin attacking" }
+    expect: "You begin attacking"
+
+  - actor: Theron
+    note: |
+      Then the exchange runs on its own. Both sides must be narrated: a fight reporting only your
+      own blows reads as though nothing is fighting back.
+    wait: { text: "falls", timeout: 120 }
+    expect:
+      - "You hit a rat"
+      - "a rat falls"
+
+  - actor: Theron
+    note: A kill should pay, and the fight should be over.
+    do: stats
+    expect-not: "is not something you can do"
+
+  - actor: Theron
+    note: |
+      Two rats live here, so there should still be one — and being able to attack it is the proof
+      that the first fight actually ended.
+    do: kill rat
+    expect-not: "already in combat"

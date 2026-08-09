@@ -1,0 +1,84 @@
+name: A group fight ends
+about: |
+  The bug that only a second player could find, and the reason this apparatus was worth building.
+
+  The rule for "is this fight still going" counted heads: two or more combatants meant a fight.
+  That is correct for exactly one shape — one player against one mob, where the mob dying leaves
+  one combatant. Two players on one mob is three; the mob dies, two remain, the count is still
+  two, and the fight never ended. Everyone left was stuck Fighting, refused every later `kill` and
+  unable to walk out of the room. It scaled with the party, and it was invisible solo, which is
+  how it survived.
+
+  Read the two columns side by side. Both players should be released at the same moment.
+
+cast:
+  - name: Bram
+    path: Warden
+  - name: Kael
+    path: Warden
+
+steps:
+  - note: Both walk to the tavern together.
+    together:
+      - { actor: Bram, do: south }
+      - { actor: Kael, do: south }
+  - note: ""
+    together:
+      - { actor: Bram, do: east }
+      - { actor: Kael, do: east }
+  - note: ""
+    together:
+      - { actor: Bram, do: south }
+      - { actor: Kael, do: south }
+
+  - actor: Bram
+    wait: { text: "The Drowned Rat" }
+    expect: "The Drowned Rat"
+  - actor: Kael
+    wait: { text: "The Drowned Rat" }
+    expect: "The Drowned Rat"
+
+  - actor: Bram
+    note: Group first, so the kill is shared and the party path is the one under test.
+    do: group invite Kael
+
+  # A step's own `wait` runs *after* its command, so waiting for the invitation and accepting it
+  # are two steps. Written as one, the accept would go out before the invitation had landed.
+  - actor: Kael
+    wait: { text: "join their group" }
+    expect: "group accept"
+  - actor: Kael
+    do: group accept
+
+  - actor: Bram
+    wait: { text: "joins the group" }
+    expect: "Kael joins the group"
+
+  - note: Both attack the same rat. Three combatants, which is the shape that used to hang.
+    together:
+      - { actor: Bram, do: kill rat }
+      - { actor: Kael, do: kill rat }
+
+  - actor: Bram
+    wait: { text: "falls", timeout: 120 }
+    expect: "a rat falls"
+  - actor: Kael
+    wait: { text: "falls", timeout: 30 }
+    expect: "a rat falls"
+
+  - actor: Bram
+    note: |
+      The whole point. Both must be released, not just whoever landed the blow — and `kill`
+      refusing anyone already Fighting is what makes this a real check rather than a hopeful one.
+    do: kill rat
+    expect-not: "already in combat"
+
+  - actor: Kael
+    do: kill rat
+    expect-not: "already in combat"
+
+  - actor: Kael
+    note: And walking out, which a stuck fight also prevents.
+    do: north
+    wait: { text: "You walk north" }
+    expect: "You walk north"

@@ -1,0 +1,81 @@
+name: An ability opens a fight
+about: |
+  The playtesting note of 2026-08-09, as a player would hit it. Two things were wrong and both
+  were invisible to the test suite, because every assertion about them passed:
+
+    * The ability said "Your Kick takes effect!" — no target, no amount, no outcome. A player
+      could not tell a hit from a miss.
+    * A mob killed by an ability sat in the fight at zero health for ever. No experience, no
+      loot, no corpse, and the player was stuck Fighting: refused every later `kill`, and unable
+      to walk out of the room.
+
+  Kick is the Warden's level-1 opener, so this needs no admin and no fixtures — a fresh character
+  can run it. That is deliberate: the plan guarding the most-reported bug should have the fewest
+  reasons not to run.
+
+  One thing this plan cannot check is that the Warden's *own weapon* starts swinging after the
+  ability, which was the other half of the note. A level-1 kick one-shots a city rat, so there is
+  never anything left to swing at. That half needs a mob tougher than anything the starter world
+  contains, and until fixtures can build one it is covered by the engine tests instead.
+
+cast:
+  - name: Theron
+    path: Warden
+
+steps:
+  - actor: Theron
+    do: south
+    wait: { text: "You walk south" }
+  - actor: Theron
+    do: east
+    wait: { text: "You walk east" }
+  - actor: Theron
+    do: south
+    wait: { text: "The Drowned Rat" }
+
+  - actor: Theron
+    note: |
+      Abilities are verbs. `cast kick` should be refused by naming the verb form — the refusal is
+      the teaching, and it is the whole reason the split between spells and skills is visible to
+      a player at all.
+    do: cast kick rat
+    expect:
+      - "skill, not a spell"
+      - "kick rat"
+    expect-not: "You use Kick"
+
+  - actor: Theron
+    note: |
+      The ability must say what it actually did: who it hit, and for how much.
+    do: kick rat
+    wait: { text: "Your Kick" }
+    expect:
+      - "You use Kick"
+      - "Your Kick hits a rat for"
+    expect-not: "takes effect"
+
+  - actor: Theron
+    note: |
+      The kill has to be a whole kill. Experience and gold arriving is the visible half of
+      HandleDeath having run at all — when an ability killed something, none of it used to.
+    expect:
+      - "a rat falls"
+      - "xp 25"
+
+  - actor: Theron
+    note: |
+      And the fight has to be over. This is the exact check the bug failed: movement is refused
+      while fighting, so walking out is the proof that a corpse is not still holding you in a
+      fight that can never end.
+    do: north
+    wait: { text: "You walk north" }
+    expect: "You walk north"
+    expect-not: "while in combat"
+
+  - actor: Theron
+    note: The other thing a stuck fight prevents.
+    do: south
+    wait: { text: "The Drowned Rat" }
+  - actor: Theron
+    do: kill rat
+    expect-not: "already in combat"

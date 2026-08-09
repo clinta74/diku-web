@@ -197,14 +197,23 @@ public sealed class PlanRunner(IGameTarget target, Transcript transcript, RunSet
             return;
         }
 
-        // Everything this actor has seen since their previous step ended, which is the window all
-        // of this step's observations are judged against.
+        // The window every observation in this step is judged against.
         //
-        // Not "since this command was sent", which was the first attempt and was wrong in both
-        // directions: it could not see the arrival burst, and it silently dropped anything that
-        // landed between two steps — a mob's opening swing, another player walking in. Not "since
-        // the plan began" either, or sequential combat steps would all pass on the first exchange's
-        // output. Between the two is the only reading that matches what a plan means by "then".
+        // <b>It advances only when a step actually says something.</b> A step with no `do` is not a
+        // new moment — it is the plan continuing to watch the last thing it did, which is how
+        // "walk south" and "then you should be in the tavern" get written as two steps. Advancing
+        // on every step broke exactly that: the room description arrived during the walk step's
+        // settle, the watching step opened a window after it, and both players sat waiting ten
+        // seconds for a line the transcript plainly shows they had already been sent.
+        //
+        // A step that does say something opens a fresh window, so sequential commands cannot pass
+        // on the previous one's output — which is the failure in the other direction, and the one
+        // that would quietly make a combat plan meaningless.
+        if (step.Do is not null)
+        {
+            since[step.Actor] = transcript.Now;
+        }
+
         var window = since.GetValueOrDefault(step.Actor, TimeSpan.Zero);
 
         if (step.Do is not null)
@@ -214,8 +223,6 @@ public sealed class PlanRunner(IGameTarget target, Transcript transcript, RunSet
 
         await WaitAsync(step, actor, window, actors, problems, cancellationToken);
         Observe(step, actor, window, actors);
-
-        since[step.Actor] = transcript.Now;
     }
 
     /// <summary>

@@ -1,0 +1,71 @@
+name: Shopping
+about: |
+  Buying and selling, and the accounting behind them. Needs the bar maiden in The Drowned Rat.
+
+  This plan wants an admin, and degrades honestly without one: money is granted with `set`
+  rather than earned, because the alternative is killing rats and the starter world keeps exactly
+  one of them — a plan that competes with every other plan for the same mob is a plan that fails
+  for reasons that have nothing to do with shops. Run with --admin-user/--admin-password to get
+  the whole thing; without them the promotion is refused, it is recorded as a problem, and
+  everything up to the first purchase still runs.
+
+cast:
+  - name: Overseer
+    path: Warden
+    role: Admin
+  - name: Coin
+    path: Warden
+
+steps:
+  - actor: Coin
+    do: south
+    wait: { text: "You walk south" }
+  - actor: Coin
+    do: east
+    wait: { text: "You walk east" }
+  - actor: Coin
+    do: south
+    wait: { text: "The Drowned Rat" }
+
+  - actor: Coin
+    note: |
+      A shopkeeper is not something you can fight. Refusing in words rather than silently is the
+      difference between a rule and a bug.
+    do: kill bar maiden
+    expect-not: "You begin attacking"
+
+  - actor: Coin
+    note: The stock list is the whole interface. It must name what is for sale and price it.
+    do: list
+    wait: { text: "beer" }
+    expect: "beer"
+
+  - actor: Coin
+    note: |
+      Buying with nothing should be refused clearly. A new character has no gold, so this is the
+      empty-pocket case without having to arrange one.
+    do: buy beer
+    expect-not: "You buy"
+
+  - actor: Overseer
+    note: Money by fiat, so the rest of the plan is about the shop rather than about rats.
+    do: set Coin gold 100
+    expect: "gold"
+
+  - actor: Coin
+    do: buy beer
+    wait: { text: "beer" }
+
+  - actor: Coin
+    note: What you paid for should be in your hands.
+    do: inventory
+    expect: "beer"
+
+  - actor: Coin
+    note: And selling it back should work, at whatever the shop pays for it.
+    do: sell beer
+    expect-not: "is not something you can do"
+
+  - actor: Coin
+    do: inventory
+    expect-not: "beer"

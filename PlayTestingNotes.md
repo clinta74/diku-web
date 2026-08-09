@@ -2,7 +2,16 @@
 
 Add anything noticed while playing here. Cleared as items are done.
 
-_Nothing outstanding._
+## Outstanding
+
+- **A mob you are fighting can wander out of the room.** Found by the first serious run of the
+  playtesting apparatus, in `combat-basics`: *"You begin attacking a rat!"* and then, 1.2 seconds
+  later, *"A rat leaves south."* The fight is over, silently — the player is told nothing, and
+  stands there while rats wander in and out around them. `MobAiSystem.ShouldWander` gates on the
+  sentinel flag, on the room's `noMob` flag, and on being stunned, but never on `CombatState`.
+  A stunned mob is explicitly stopped from "strolling out of the room mid-stun, which reads as the
+  stun having done nothing" — the same reasoning applies to a fight. **Not fixed here because
+  `MobAiSystem.cs` has 68 lines of uncommitted work in that exact method.**
 
 A group fight now ends for everyone. You were right, and it was worse than "some players may stay
 in combat": in a group it **never** ended. The rule counted heads rather than sides — two or more
