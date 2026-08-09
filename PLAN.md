@@ -660,8 +660,10 @@ other content, and the rest of the world stays safe without anyone configuring a
   only ever widens what a *player* may target.
 - **A refused attack is narrated, never silent.** *"You cannot attack Kael here."*
 - **Pets and charmed mobs inherit their owner's permissions.** A pet is an extension of the player
-  who commands it; routing an attack through one must not launder it past the check. The ability
-  system (Phase 5) has to honour this the day charm exists.
+  who commands it; routing an attack through one must not launder it past the check. *There is no
+  pet system and none is planned — see §13, which records this as the constraint that blocks one
+  rather than as a feature waiting for it.* `HostileActionGate` is where it would have to land,
+  and it must land **before** anything can be commanded, not alongside it.
 - **Area effects filter per target, not per room.** An AoE cast in a mixed room hits the mobs and
   skips the players. Running the check once for the room would make a single flag the difference
   between a spell and a massacre.
@@ -1657,6 +1659,25 @@ one failed quietly, which is why they needed listing rather than assuming — an
       Behaviour is identical either way, which is why nothing surfaced this until the SQL log was
       read — so the tests count repository calls rather than assert on outcomes.
 
+- [x] **The spawner rules themselves are cached too.** The item above moved the *templates* out of
+      the database and left the sweep still opening a `DbContext` for
+      `SELECT … FROM spawners` every 15 seconds — the last per-tick query in the engine, and the
+      one still visible in the SQL log afterwards. `SpawnerCache` is the same shape as the template
+      caches, keyed by `Guid` rather than by key, loaded at boot and kept live by the applier:
+      `ApplyUpsertSpawner` / `ApplyDeleteSpawner` had been no-ops that forwarded the change to
+      persistence and nothing else, so this is also what makes a spawner saved in the builder take
+      effect on the next sweep instead of at the next restart.
+      **Gated on `IsLoaded` for the same reason, but the miss question does not arise** — the sweep
+      wants the whole set, so there is no key to miss on and the only read-through case is a host
+      that never loaded the cache.
+      The sweep **copies** the values rather than enumerating them live. It is fire-and-forget, so
+      a template read that *does* fall through to the database parks the rest of the loop on the
+      thread pool, and a builder saving a spawner on the loop thread meanwhile would invalidate the
+      enumerator underneath it. One list of a few dozen references every 15 seconds is not the cost
+      being avoided here.
+      Unchanged: deleting a spawner stops it being enforced but does not despawn what it already
+      placed.
+
 #### 5.2f — Threat, and the gate every hostile action goes through
 
 - [x] **Every kind of damage counts on the hate list.** `GetTopHater` reads cumulative damage, so
@@ -1693,11 +1714,13 @@ one failed quietly, which is why they needed listing rather than assuming — an
       got "You don't see 'Bram' here." while standing there.
 
 #### 5.2e — Deferred from the original 5.2 list
-- [ ] Pets and charmed mobs inherit their owner's §4.11 permissions (no pet system yet)
 - [ ] `noRecall` refuses teleports out — the flag is registered with no reader, and there is
       no teleport or recall command for it to refuse
 - [x] Path respec — **decided against** (Q3, §4.5). Paths are fixed at creation; rerolling is the
       respec. Nothing to build, which is the point: this line closes rather than defers.
+- [→] Pets and charmed mobs inheriting their owner's §4.11 permissions — **moved to §13**. There
+      is no pet system and none is planned for a numbered phase, so this had been sitting in a
+      phase checklist as work that could never start.
 
 #### 5.3 — Communication and travel
 - [ ] `tell`, channels, `group`/party, party XP split
@@ -1740,7 +1763,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Robustness | One test per row of §7.4. Delete a room out from under a player, point an exit at nothing, orphan a spawner — the loop must survive every one. |
 | Multipliers | Boundary cases: `0.0` yields none, tiny fractions still yield ≥1 health, world × zone composes, rounding is half-away-from-zero. |
 | Room flags | Resolution is room → zone → world → default; an unknown key survives a save/load round-trip; a wrong-typed value resolves to the default; `peaceful` beats `pvp`. The load-bearing test is that **a room with no flags at all is not PvP** — that is the property every other safety claim rests on. |
-| PvP | Refused in an unflagged room, allowed in a flagged one, ends the round after either party leaves, never targets a party member, and cannot be laundered through a pet. AoE in a mixed room hits mobs and skips players. |
+| PvP | Refused in an unflagged room, allowed in a flagged one, ends the round after either party leaves, and never targets a party member. AoE in a mixed room hits mobs and skips players. Every hostile action — swing, single-target cast, area effect, taunt — answers through the one gate, so the coverage is that they agree rather than that each was remembered. *Pet laundering is not tested because there are no pets; it is §13's blocking constraint, not a gap here.* |
 | Death | XP loss floors at the level threshold and never de-levels; no loss below the min level or on a PvP death; dying at the exact threshold costs nothing. Respawn falls through all three candidates, including when the bind room was deleted mid-session. Nothing leaves the inventory. |
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
 | Builder | Mutation → loop → persist → occupants notified, end to end. Audit row written on every write. |
@@ -1799,10 +1822,19 @@ targeting modes, threat accounting, and the quest builder have landed. **Every c
 §4 describes can now be authored in the browser with no SQL.** One item is left before the phase
 boundary:
 
-1. **Mobs cannot cast.** `CastJob` keys on a character, and mobs fight through `MobAttack` rows
-   with no ability keys — so every effect is a player-only tool. Giving mobs the same vocabulary
-   is what would let a boss stun, snare, or bleed, and is probably the largest remaining lever on
-   how combat *feels*.
+1. **Mob attacks cannot carry effects.** Every one of the seven executors is a player-only tool,
+   and the asymmetry is already live: a Warden's Shield Bash (9) takes a boss off its feet for
+   three seconds and the boss has no answer of any kind.
+   This used to read *"mobs cannot cast"*, which overstates it and invites a build big enough to
+   defer forever. **The receiving side is already finished**: `ActiveEffect`, `world.ApplyEffect`,
+   `IsStunned` gating both the cast command and the combat loop, `PreventsEscape` gating `flee`.
+   A player can already receive all seven. What is missing is a way for a mob to *emit* one.
+   So the shape is an optional `effectKey` and params on `MobAttack`, applied where its damage
+   already lands — no `CastJob`, no cast bar, no mob focus pool, no target-selection changes, and
+   no migration, since `attacks` is already `jsonb`. It reuses the effect registry and the
+   per-attack timers that already let a wolf bite every second and rake every three.
+   *A departure from the traditional mob spellcaster, deliberately: a mob's abilities are things
+   it does with its attacks rather than a spellbook it works through.*
 
 Then 5.3 (communication), which is also where parties arrive — and parties are what let a harmful
 AoE skip your own group rather than leaning on the `pvp` flag to do it. Then Phase 6 (ops).
@@ -1832,3 +1864,48 @@ AoE skip your own group rather than leaning on the `pvp` flag to do it. Then Pha
   that was missing rather than the code.
 
 **No open questions remain.** Q3 (Path respec) is decided: Paths are fixed at creation (§4.5).
+
+---
+
+## 13. Future enhancements
+
+Not in any phase, and deliberately so. Each of these is a real idea with no committed slot —
+listed here rather than in a phase checklist, because an unstartable item inside a phase reads as
+work that is merely late.
+
+### Pets and charmed mobs
+
+**Status: not planned. Nothing in the codebase references a pet, and nothing should until this
+section becomes a phase.**
+
+§4.11 already states the rule a pet system would have to honour: *a pet is an extension of the
+player who commands it, and routing an attack through one must not launder it past the check.*
+That sentence has been in the document since PvP was designed, and it is the reason this is
+written down at all rather than dropped.
+
+**The blocking constraint, for whoever builds it.** Every hostile action now goes through one
+gate, `HostileActionGate`, which asks *"may this player do this to that target"* and answers with
+a refusal or null. A pet attacking on its owner's behalf is a **mob** acting, so it does not pass
+through that gate at all — `RefuseMob` and `RefusePlayer` both take `CombatantType.Player` as the
+attacker, because today every hostile action has a player behind it.
+
+That is the laundering hole in exactly the form §4.11 warns about: order a pet to kill someone in
+a non-PvP room and no check has an opinion. So the day pets exist, the gate has to learn a third
+question — *who is this mob acting for* — and every call site has to route through it. Doing that
+first, before any pet can be commanded, is the difference between the rule holding and the rule
+being a paragraph.
+
+Until then this is blocked, not deferred: **no partial pet support should land**, because a pet
+that can attack before the gate understands ownership is a PvP bypass shipped by accident.
+
+### Command-line autocomplete
+
+Item and mob names on the command line, and `spawn` completing against real keys. Wants a
+protocol addition — the client cannot complete what it has never been sent.
+
+### Per-template alias lists
+
+Matching is derived from the name, which covers the common case. Nothing reaches a named wolf
+called "Fang" whose key is `grey-wolf`. An explicit alias list on the template is the fix; the
+matcher (`NameMatch`) already ranks candidates, so it is a new source of candidates rather than a
+new algorithm.
