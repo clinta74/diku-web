@@ -532,6 +532,16 @@ and a second field for it would be a second source of truth to disagree with.
 - **Abilities resolve by display name, not by key.** `shield bash`, `shield-bash`, and
   `warden.shield-bash` all arrive at the same place, matched longest-first so a two-word ability
   is not read as a one-word ability plus a target.
+- **An ability says what it did, per target, with the number.** *"Your Kick hits a rat for 7."*
+  This was one line before the loop — *"Your Kick takes effect!"* — naming no target, no amount,
+  and no outcome, so a player could not tell a hit from a miss or an area effect that caught four
+  things from one that caught one. Read from the **health delta** rather than from the executor,
+  which is the same reasoning threat credit already uses: the executors return void and each
+  computes its own numbers, so the wound is the one measure that cannot drift from what landed.
+  Three outcomes, because there are three kinds of ability — something lost health, something
+  gained it, or neither. The third is not a failure: a stun, a root, a taunt, and a buff all land
+  without moving a health bar, and reporting them as nothing would make half the catalogue look
+  broken. Those use the effect's own `name` — *"leaves a rat reeling"*.
 
 ### 4.8 Content model
 
@@ -1961,6 +1971,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
 | Spawners | A mob that wandered out still counts; ten sweeps that scatter what they made never exceed the target; a kill is replaced; two spawners of the same template do not count each other's work; a mob a builder placed by hand satisfies nobody's target. |
 | Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |
+| Narration | A name authored as "a rat" does not become "an a rat" — asserted on the helper, since it feeds combat, the room listing, and every ability that names a target. A bare noun is unaffected, which is what every existing call site relies on. |
 | Abilities | **Every entry in the catalogue** is castable by its display name and usable as a verb — a theory over the whole list, because the individual ability tests each pick one and drive it, which is how eight multi-word abilities stayed unreachable without anything noticing. Plus: a skill is refused by `cast` with the verb form named, a spell is not, an ability another Path owns is not a verb for you, and an existing command always wins. |
 | Telemetry | Every pulse is recorded rather than only the slow ones; an over-budget pulse is counted as well as timed; a command with no acceptance timestamp is counted but not timed; the gauges read live state at collection time. Meter and instrument names are pinned, because renaming one breaks every dashboard silently — the metrics simply stop arriving. *The numbers themselves are deliberately not asserted: a p99 measured under an xUnit host is not the p99 §11 is about.* |
 | Rate limits | A flood is refused once the bucket empties but the early commands still land; the 429 carries `Retry-After`; **one player's flood does not refuse another player**, which is the load-bearing property — a global partition would let anyone switch the game off for everyone; the event stream is never limited; repeated failed logins are. Asserted against a host configured with real numbers, since the shared test host lifts them out of the way. |

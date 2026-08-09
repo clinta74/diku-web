@@ -95,16 +95,6 @@ public sealed class AbilitySystem(
             return;
         }
 
-        // Narrate cast
-        actor.SendText($"Your {ability.Name} takes effect!", "ability");
-        foreach (var occupant in world.OccupantsOf(caster.RoomKey))
-        {
-            if (occupant.CharacterId != caster.Id)
-            {
-                occupant.SendText($"{actor.Name}'s {ability.Name} takes effect!", "ability");
-            }
-        }
-
         // Deduct cost
         var costAmount = ability.CostValue;
         switch (ability.CostType)
@@ -133,6 +123,12 @@ public sealed class AbilitySystem(
             var before = HealthOf(target);
 
             effect.Apply(caster, target, ability.EffectParams, world.Random);
+
+            // Said per target, with the number, immediately after it landed. This used to be one
+            // line before the loop - "Your Kick takes effect!" - which named no target, no amount,
+            // and no outcome. A player could not tell a hit from a miss, an area effect that
+            // caught four things from one that caught one, or a heal that was already at full.
+            Narrate(world, actor, caster, ability, effect, target, before);
 
             CreditThreat(world, caster, target, before);
 
@@ -220,6 +216,107 @@ public sealed class AbilitySystem(
         Character character => character.Vitals.Health,
         Mob mob => mob.Vitals.Health,
         _ => 0,
+    };
+
+    /// <summary>
+    /// Says what the ability actually did to this target, to everyone who can see it.
+    /// </summary>
+    /// <remarks>
+    /// <b>Read from the wound, not from the executor.</b> The executors return void and each
+    /// computes its own numbers, so the health delta is the one measure true of all of them and
+    /// the only one that cannot drift from what really landed — the same reasoning that already
+    /// governs threat credit.
+    ///
+    /// Three outcomes, because there are three kinds of ability. Something lost health, something
+    /// gained it, or neither — and the third is not a failure: a stun, a root, a taunt, and a buff
+    /// all land without moving a health bar, so reporting them as nothing would make half the
+    /// catalogue look broken.
+    /// </remarks>
+    private static void Narrate(
+        WorldState world,
+        PlayerActor actor,
+        Character caster,
+        Ability ability,
+        IAbilityEffect effect,
+        object target,
+        int before)
+    {
+        var delta = before - HealthOf(target);
+
+        var targetIsCaster = target is Character self && self.Id == caster.Id;
+        var name = TargetName(target);
+        var youText = targetIsCaster ? "yourself" : name;
+
+        var (mine, theirs, room) = delta switch
+        {
+            > 0 => (
+                $"Your {ability.Name} hits {youText} for {delta}.",
+                $"{actor.Name}'s {ability.Name} hits you for {delta}.",
+                $"{actor.Name}'s {ability.Name} hits {name} for {delta}."),
+
+            < 0 => (
+                $"Your {ability.Name} restores {-delta} to {youText}.",
+                $"{actor.Name}'s {ability.Name} restores {-delta} to you.",
+                $"{actor.Name}'s {ability.Name} restores {-delta} to {name}."),
+
+            // No health moved. The effect's own name is what it is called in the fiction -
+            // "reeling", "rooted" - and is the only thing that distinguishes a stun from a snare
+            // in the scrollback.
+            _ => Held(actor, ability, effect, name, youText),
+        };
+
+        actor.SendText(mine, "ability");
+
+        var targetActor = target is Character c ? world.FindByCharacter(c.Id) : null;
+
+        if (targetActor is not null && !targetIsCaster)
+        {
+            targetActor.SendText(theirs, "ability");
+        }
+
+        foreach (var occupant in world.OccupantsOf(caster.RoomKey))
+        {
+            if (occupant.CharacterId != caster.Id &&
+                occupant.CharacterId != targetActor?.CharacterId)
+            {
+                occupant.SendText(room, "ability");
+            }
+        }
+    }
+
+    private static (string Mine, string Theirs, string Room) Held(
+        PlayerActor actor,
+        Ability ability,
+        IAbilityEffect effect,
+        string name,
+        string youText)
+    {
+        // The effect's `name` parameter where it has one, so a builder who wrote "reeling" gets
+        // "leaves the rat reeling" rather than a generic line that reads the same for every
+        // control effect in the game.
+        var condition = ability.EffectParams.TryGetValue("name", out var authored) &&
+                        !string.IsNullOrWhiteSpace(authored)
+            ? authored.Trim()
+            : null;
+
+        return condition is null
+            ? ($"Your {ability.Name} takes hold of {youText}.",
+               $"{actor.Name}'s {ability.Name} takes hold of you.",
+               $"{actor.Name}'s {ability.Name} takes hold of {name}.")
+            : ($"Your {ability.Name} leaves {youText} {condition}.",
+               $"{actor.Name}'s {ability.Name} leaves you {condition}.",
+               $"{actor.Name}'s {ability.Name} leaves {name} {condition}.");
+    }
+
+    /// <summary>
+    /// What to call the target in prose. Mobs take an article, players do not.
+    /// </summary>
+    private static string TargetName(object target) => target switch
+    {
+        Character character => character.Name,
+        Mob mob => NarrationHelper.WithArticle(
+            string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName),
+        _ => "something",
     };
 
     /// <summary>

@@ -123,4 +123,47 @@ public sealed class NarrationHelperTests
 
         Assert.Equal("A rat eyes {missing}.", result);
     }
+
+    // -----------------------------------------------------------------------
+    // A name that already carries its article
+    // -----------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("a rat", "a rat")]
+    [InlineData("an orc", "an orc")]
+    [InlineData("the innkeeper", "the innkeeper")]
+    public void WithArticle_leaves_a_name_that_already_has_one_alone(string name, string expected)
+    {
+        // Templates are authored by hand, and "a rat" is at least as natural to type as "rat".
+        // Without this the builder's own wording decided whether the game said "an a rat" - in
+        // combat, in the room listing, and in every ability that names a target.
+        Assert.Equal(expected, NarrationHelper.WithArticle(name));
+    }
+
+    [Fact]
+    public void WithArticle_still_capitalizes_a_name_that_brought_its_own_article()
+    {
+        Assert.Equal("A rat", NarrationHelper.WithArticle("a rat", capitalize: true));
+    }
+
+    [Theory]
+    [InlineData("a rat", "the rat")]
+    [InlineData("an orc", "the orc")]
+    [InlineData("the innkeeper", "the innkeeper")]
+    public void WithDefiniteArticle_swaps_the_article_rather_than_stacking_them(
+        string name,
+        string expected)
+    {
+        // What the builder wrote is a noun phrase, not a bare noun, so the indefinite article is
+        // replaced rather than prefixed.
+        Assert.Equal(expected, NarrationHelper.WithDefiniteArticle(name));
+    }
+
+    [Fact]
+    public void A_bare_noun_is_unaffected_by_any_of_this()
+    {
+        // The common case, and the one every existing call site relies on.
+        Assert.Equal("a rat", NarrationHelper.WithArticle("rat"));
+        Assert.Equal("the rat", NarrationHelper.WithDefiniteArticle("rat"));
+    }
 }

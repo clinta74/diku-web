@@ -37,9 +37,24 @@ public static class NarrationHelper
             return name;
         }
 
+        // A name that already carries one keeps it. Templates are authored by hand and "a rat" is
+        // at least as natural a thing to type as "rat", so without this a builder's own wording
+        // decides whether the game says "an a rat" - and it would say it in combat, in the room
+        // listing, and in every ability that names a target.
+        if (HasArticle(name))
+        {
+            return capitalize ? Capitalize(name) : name;
+        }
+
         var result = $"{GetArticle(name)} {name}";
         return capitalize ? Capitalize(result) : result;
     }
+
+    /// <summary>Whether this name already opens with an article.</summary>
+    private static bool HasArticle(string name) =>
+        name.StartsWith("a ", StringComparison.OrdinalIgnoreCase) ||
+        name.StartsWith("an ", StringComparison.OrdinalIgnoreCase) ||
+        name.StartsWith("the ", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Names a specific, already-established thing: "the long sword". Proper names are
@@ -50,6 +65,14 @@ public static class NarrationHelper
         if (string.IsNullOrEmpty(name) || IsProperName(name))
         {
             return name;
+        }
+
+        // Same reasoning as WithArticle: a name authored as "a rat" becomes "the rat" rather than
+        // "the a rat", because what the builder wrote was a noun phrase, not a bare noun.
+        if (HasArticle(name))
+        {
+            var noun = name[(name.IndexOf(' ', StringComparison.Ordinal) + 1)..];
+            return capitalize ? $"The {noun}" : $"the {noun}";
         }
 
         return capitalize ? $"The {name}" : $"the {name}";

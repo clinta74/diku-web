@@ -183,6 +183,121 @@ public sealed class AbilityUsabilityTests
         Assert.True(rat.Vitals.Health < 200, "Bolt should have landed.");
     }
 
+    // -----------------------------------------------------------------------
+    // Saying what it did
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void A_damaging_ability_names_its_target_and_its_number()
+    {
+        // From playtesting: "Alloran's Kick takes effect!" and nothing else — no target, no
+        // amount, no way to tell a hit from a miss or an area effect that caught four things
+        // from one that caught one.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 1);
+        harness.DefineAbility("warden.kick");
+        harness.AddMob("rat", West, health: 200, name: "a rat");
+
+        harness.Execute(warden, "kick rat");
+        harness.Pump(20);
+
+        var text = harness.DrainText(warden);
+
+        Assert.Contains("Your Kick hits a rat for", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("takes effect", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_room_sees_what_landed_on_whom()
+    {
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 1);
+        var watcher = harness.AddPlayer("Kael", West);
+        harness.DefineAbility("warden.kick");
+        harness.AddMob("rat", West, health: 200, name: "a rat");
+
+        harness.Execute(warden, "kick rat");
+        harness.Pump(20);
+        harness.Drain(warden);
+
+        Assert.Contains(
+            "Bram's Kick hits a rat for",
+            harness.DrainText(watcher),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_heal_reports_what_it_restored()
+    {
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var hallow = harness.AddPlayer("Bram", West, path: CharacterPath.Hallow, level: 1);
+        hallow.Character.Vitals.FocusMax = 500;
+        hallow.Character.Vitals.Focus = 500;
+        hallow.Character.Vitals.Health = 5;
+
+        harness.DefineAbility("hallow.mend");
+
+        harness.Execute(hallow, "cast mend");
+        harness.Pump(20);
+
+        Assert.Contains("restores", harness.DrainText(hallow), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_control_ability_says_what_it_left_behind()
+    {
+        // Nothing moves a health bar here, and reporting that as nothing would make half the
+        // catalogue look broken. The effect's own name is what tells a stun from a snare.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 9);
+        warden.Character.Vitals.StaminaMax = 500;
+        warden.Character.Vitals.Stamina = 500;
+
+        harness.DefineAbility("warden.shield-bash");
+        harness.AddMob("rat", West, health: 200, name: "a rat");
+
+        harness.Execute(warden, "shield bash rat");
+        harness.Pump(20);
+
+        Assert.Contains(
+            "leaves a rat reeling",
+            harness.DrainText(warden),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_area_effect_reports_every_target_it_caught()
+    {
+        // The line per target is the point: one line for the whole cast could not distinguish a
+        // Firestorm that caught the room from one that caught a single rat.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var adept = harness.AddPlayer("Ilse", West, path: CharacterPath.Adept, level: 18);
+        adept.Character.Vitals.FocusMax = 500;
+        adept.Character.Vitals.Focus = 500;
+
+        harness.DefineAbility("adept.firestorm");
+        harness.AddMob("rat", West, health: 300, name: "a rat");
+        harness.AddMob("wolf", West, health: 300, name: "a wolf");
+
+        harness.Execute(adept, "cast firestorm");
+        harness.Pump(24);
+
+        var text = harness.DrainText(adept);
+
+        Assert.Contains("a rat for", text, StringComparison.Ordinal);
+        Assert.Contains("a wolf for", text, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void An_ability_another_path_owns_is_not_a_verb_for_you()
     {
