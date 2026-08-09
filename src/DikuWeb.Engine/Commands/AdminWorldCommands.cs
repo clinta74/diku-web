@@ -54,6 +54,14 @@ internal static class AdminWorldCommands
         commands.Add(new CommandDefinition(
             "set", 3, "set <name> <field> <value> - change a live character value (admin)",
             Set, Requires: AccountRole.Admin));
+
+        // Eight characters, for the same reason `shutdown` demands them: there is no undo from
+        // inside the game, and this is the only verb that takes something away from a player
+        // permanently. Abbreviating it to `del` is how the wrong Kael gets deleted.
+        commands.Add(new CommandDefinition(
+            "deletecharacter", 8,
+            "deletecharacter <name> - retire a character permanently (admin)",
+            DeleteCharacter, Requires: AccountRole.Admin));
     }
 
     /// <summary>
@@ -530,6 +538,80 @@ internal static class AdminWorldCommands
 
         ctx.RequestRemoval(target.CharacterId, LeaveReason.Kicked);
         ctx.Reply($"You disconnect {target.Name}.", "heading");
+    }
+
+    /// <summary>
+    /// Retires a character permanently (PLAN.md §7.7).
+    /// </summary>
+    /// <remarks>
+    /// Two halves in two places, because the work spans the one line the architecture will not let
+    /// anything cross. Taking the character out of the world happens here, on the loop thread,
+    /// through the same <c>RequestRemoval</c> that <c>kickplayer</c> uses. Writing
+    /// <c>DeletedAt</c> is a database edit, which the loop may not make (§2.1), so it is enqueued
+    /// and answered asynchronously — which is also why the reply arrives as a <c>sys</c> line
+    /// rather than as this command's own output.
+    ///
+    /// Offline characters are the ordinary case, so this deliberately does not require the target
+    /// to be online: an administrator clearing out a name is usually clearing out one nobody is
+    /// using. The name is resolved against the world first only so that prefix matching works the
+    /// way it does everywhere else, and falls back to what was typed.
+    /// </remarks>
+    private static void DeleteCharacter(CommandContext ctx)
+    {
+        if (!RequireAdmin(ctx))
+        {
+            return;
+        }
+
+        if (!ctx.HasArgument)
+        {
+            ctx.Reply("Usage: deletecharacter <name>", "bad");
+            return;
+        }
+
+        var typed = ctx.Argument.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
+
+        // Excluding the caller is the whole self-protection rule, as it is for kickplayer. An
+        // admin deleting the character they are standing in would leave the loop holding a session
+        // for a row that no longer exists.
+        var online = NameMatch.Best(
+            ctx.World.AllPlayers.Where(p => p.CharacterId != ctx.Actor.CharacterId),
+            typed,
+            p => p.Name,
+            _ => null);
+
+        if (string.Equals(typed, ctx.Actor.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Reply("You cannot delete the character you are playing.", "bad");
+            return;
+        }
+
+        var name = online?.Name ?? typed;
+
+        if (online is not null)
+        {
+            online.SendSys(
+                "This character has been deleted by an administrator.",
+                SysKinds.Disconnect);
+
+            // Said in the room too. Somebody vanishing with no explanation reads as a bug to
+            // everyone who was standing there.
+            foreach (var other in ctx.World.OthersIn(online.RoomKey, online))
+            {
+                other.SendText($"{online.Name} is removed from the world.", "movement");
+            }
+
+            ctx.RequestRemoval(online.CharacterId, LeaveReason.Kicked);
+        }
+
+        ctx.AdminQueue?.Enqueue(new DeleteCharacterRequest
+        {
+            ActorAccountId = ctx.Actor.Character.AccountId,
+            ReplyToSessionId = ctx.Actor.SessionId,
+            CharacterName = name,
+        });
+
+        ctx.Reply($"Deleting {name}...", "heading");
     }
 
     /// <summary>

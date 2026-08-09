@@ -38,6 +38,7 @@ public sealed class AdminWorldCommandTests
     [InlineData("kickplayer Kael")]
     [InlineData("shutdown 5")]
     [InlineData("set Kael gold 500")]
+    [InlineData("deletecharacter Kael")]
     public void A_player_is_told_the_verb_does_not_exist(string input)
     {
         // Worded as an unknown verb rather than as a refusal, matching the builder commands:

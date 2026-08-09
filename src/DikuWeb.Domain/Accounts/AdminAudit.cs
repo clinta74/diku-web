@@ -52,4 +52,15 @@ public enum AdminAction
     /// already say which way it went.
     /// </remarks>
     MuteChanged = 3,
+
+    /// <summary>
+    /// A character retired by an administrator (PLAN.md §7.7).
+    /// </summary>
+    /// <remarks>
+    /// Audited like every other administrative act, and for a sharper reason than most: this is
+    /// the only one that takes something away from a player permanently, so "who deleted Kael"
+    /// has to be answerable. <see cref="AdminAudit.Before"/> carries the character's name and
+    /// level, because after the fact there is nothing left to look it up from.
+    /// </remarks>
+    CharacterDeleted = 4,
 }

@@ -142,6 +142,24 @@ public sealed class AccountAdminWorker(
                 break;
             }
 
+            case DeleteCharacterRequest delete:
+            {
+                // The character is already out of the world by now — the command did that on the
+                // loop thread before enqueueing, because only the loop may touch a session (§2.1).
+                // All that is left is the row.
+                var result = await service.DeleteCharacterAsync(
+                    delete.ActorAccountId, delete.CharacterName, cancellationToken);
+
+                Reply(request, result.Message, result.Ok ? SysKinds.Info : SysKinds.Warning);
+
+                if (result.Ok)
+                {
+                    ServerLog.CharacterDeleted(logger, delete.CharacterName);
+                }
+
+                break;
+            }
+
             case LookupAccountRequest lookup:
             {
                 var account = await service.FindAsync(lookup.TargetUsername, cancellationToken);

@@ -249,13 +249,29 @@ public sealed class CombatSystem(
             return;
         }
 
-        // Validate both combatants are in the same room
-        var attackerRoom = GetCombatantRoom(world, attackerId);
-        var targetRoom = GetCombatantRoom(world, targetId);
-        if (attackerRoom != combat.RoomKey || targetRoom != combat.RoomKey)
+        // Two different departures, and they used to be one condition with one consequence:
+        // whoever left, the *attacker* was removed. When the target was the one who left, that
+        // took the wrong party out of the fight - and took them out without releasing them, so
+        // they kept CombatState.Fighting and their target while no longer being in Combatants,
+        // where the end-of-fight sweep would have found them. Stuck for the rest of the session:
+        // every later `kill` refused with "You're already in combat!", every direction refused
+        // with "You can't leave while in combat!". The only way out was logging in again.
+        if (GetCombatantRoom(world, attackerId) != combat.RoomKey)
         {
-            // Combatant left the room, remove them from combat
             combat.RemoveCombatant(attackerId);
+            EndCombatFor(world, attackerId);
+            return;
+        }
+
+        if (GetCombatantRoom(world, targetId) != combat.RoomKey)
+        {
+            // The target is removed and released; the attacker stays in the fight for
+            // IsCombatActive to judge at the end of the pulse. With nothing left to hit it ends
+            // the fight and releases everybody, which is the same door every other ending uses.
+            combat.RemoveCombatant(targetId);
+            EndCombatFor(world, targetId);
+            ForgetTarget(world, combat, targetId);
+            NarrateTargetGone(world, attackerId, targetId);
             return;
         }
 
@@ -1286,6 +1302,66 @@ public sealed class CombatSystem(
                 world.AddItem(itemSpawner.Spawn(itemTemplate, zone, worldEntity, roomKey));
             }
         }
+    }
+
+    /// <summary>
+    /// Clears anyone's aim at a combatant who has left the fight.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Combat.RemoveCombatant"/> already drops the fight's own <c>PlayerTargets</c>
+    /// entries, but a character carries its target on <c>CurrentTarget</c> as well, and that is
+    /// the copy <c>kill</c> reads. Left behind, it refuses the next fight with "You're already in
+    /// combat!" even though the fight it names has forgotten them — the two records disagreeing is
+    /// the whole failure, so both have to be cleared in the same breath.
+    /// </remarks>
+    private static void ForgetTarget(WorldState world, Combat combat, string departedId)
+    {
+        foreach (var combatantId in combat.Combatants)
+        {
+            if (EntityId.IsCharacter(combatantId))
+            {
+                if (world.GetCharacter(EntityId.ToGuid(combatantId)) is { } character &&
+                    character.CurrentTarget == departedId)
+                {
+                    character.CurrentTarget = null;
+                }
+            }
+            else if (EntityId.IsMob(combatantId))
+            {
+                if (world.GetMob(EntityId.ToGuid(combatantId)) is { } mob &&
+                    mob.CurrentTarget == departedId)
+                {
+                    mob.CurrentTarget = null;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Says that the thing you were fighting is no longer there.
+    /// </summary>
+    /// <remarks>
+    /// Every other way a fight ends has words on it — a death says "A rat falls.", fleeing says
+    /// "You manage to escape!", a refused target explains itself. This one was silent, and the
+    /// silence is why being trapped in a fight nobody was in went unnoticed for so long: it was
+    /// indistinguishable from the bug. The room already narrates the departure itself; what was
+    /// missing is that the departure ended something.
+    /// </remarks>
+    private static void NarrateTargetGone(WorldState world, string attackerId, string targetId)
+    {
+        if (!EntityId.IsCharacter(attackerId) ||
+            world.FindByCharacter(EntityId.ToGuid(attackerId)) is not { } actor)
+        {
+            return;
+        }
+
+        var (_, name, _) = ResolveCombatantInfo(world, targetId);
+
+        actor.SendText(
+            string.IsNullOrEmpty(name)
+                ? "You stop fighting."
+                : $"You stop fighting {NarrationHelper.WithArticle(name)}.",
+            "combat");
     }
 
     private static void EndCombatFor(WorldState world, string combatantId)

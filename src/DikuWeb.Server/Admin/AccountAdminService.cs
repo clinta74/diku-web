@@ -236,6 +236,56 @@ public sealed class AccountAdminService(DikuWebDbContext db, TimeProvider clock)
             until);
     }
 
+    /// <summary>
+    /// Retires a character by name (PLAN.md §7.7).
+    /// </summary>
+    /// <remarks>
+    /// <b>A soft delete.</b> The row keeps its <c>DeletedAt</c> and everything hanging off it —
+    /// items, quest progress, the audit trail — stays referentially intact. Hard deletion would
+    /// cascade through all of it, and "we deleted the wrong Kael" is not a recoverable sentence.
+    /// The character list already filters on <c>DeletedAt == null</c>, so it disappears from the
+    /// account it belonged to without anything else having to learn about deletion.
+    ///
+    /// <b>It does not remove them from the world.</b> That is the worker's job, because only the
+    /// loop may touch a session (§2.1) — and doing it here would be exactly the race that rule
+    /// exists to forbid. The name is freed either way: names are unique across live characters,
+    /// and this one is no longer live.
+    /// </remarks>
+    public async Task<ModerationResult> DeleteCharacterAsync(
+        Guid actorAccountId,
+        string characterName,
+        CancellationToken cancellationToken)
+    {
+        var character = await db.Characters.FirstOrDefaultAsync(
+            c => c.Name == characterName && c.DeletedAt == null, cancellationToken);
+
+        if (character is null)
+        {
+            return ModerationResult.Failed($"There is no character named '{characterName}'.");
+        }
+
+        character.DeletedAt = clock.GetUtcNow();
+
+        db.AdminAudits.Add(new AdminAudit
+        {
+            ActorAccountId = actorAccountId,
+            TargetAccountId = character.AccountId,
+            Action = AdminAction.CharacterDeleted,
+
+            // The name and level, because after this there is nothing left to look them up from.
+            Before = $"{character.Name} (level {character.Level})",
+            After = "deleted",
+            At = clock.GetUtcNow(),
+        });
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new ModerationResult(
+            true,
+            $"{character.Name} has been deleted.",
+            character.AccountId);
+    }
+
     public async Task<AccountSummary?> FindAsync(string username, CancellationToken cancellationToken)
     {
         var account = await db.Accounts.AsNoTracking()

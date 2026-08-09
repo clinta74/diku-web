@@ -149,4 +149,10 @@ internal static partial class ServerLog
         Level = LogLevel.Information,
         Message = "Reconciled abilities against the catalogue: {Added} added, {Updated} updated, {Removed} removed")]
     public static partial void AbilitiesReconciled(ILogger logger, int added, int updated, int removed);
+
+    [LoggerMessage(
+        EventId = 1020,
+        Level = LogLevel.Information,
+        Message = "Character '{Name}' was deleted by an administrator")]
+    public static partial void CharacterDeleted(ILogger logger, string name);
 }

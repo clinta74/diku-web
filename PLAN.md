@@ -506,6 +506,22 @@ function of the two combatants, which is exactly what makes it unit-testable in 
 Target validation is a separate gate on purpose — the damage formula never learns who is a
 player and who is a mob, so it stays the same pure function either way.
 
+**Leaving a fight is two questions, not one.** "The attacker left the room" and "the target left"
+used to be one condition with one consequence — the *attacker* was removed. When the target was the
+one who left, that took the wrong party out, and took them out without releasing them: they kept
+`CombatState.Fighting` and their target while no longer being in `Combatants`, where the
+end-of-fight sweep would have found them. Stuck for the rest of the session, refused every later
+`kill` and every direction. The target's departure now removes the target, clears it from everyone
+aiming at it — **including `Character.CurrentTarget`, which is the copy `kill` reads** — and is
+narrated, because every other way out of a fight has words on it and this silence was
+indistinguishable from the bug.
+
+**Nothing wanders out of a fight.** `ShouldWander` gates on being in one, beside the sentinel and
+`noMob` gates it already had. It is the argument the stun guard makes for itself: gating only a
+mob's swings "would have it strolling out of the room mid-stun, which reads as the stun having done
+nothing", and a fight is the same claim on its attention. Fleeing is still a decision a mob can
+make; this is only about a wander timer coming due mid-swing.
+
 **A fight is over when nobody in it still has somebody to hit — sides, not heads.** The rule was
 once "two or more combatants", which is correct for exactly one shape of fight: one player against
 one mob, where the mob dying leaves one combatant. **In a group it never ended.** Two players on
@@ -2002,6 +2018,8 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |
 | Narration | A name authored as "a rat" does not become "an a rat" — asserted on the helper, since it feeds combat, the room listing, and every ability that names a target. A bare noun is unaffected, which is what every existing call site relies on. |
 | Abilities | **Every entry in the catalogue** is castable by its display name and usable as a verb — a theory over the whole list, because the individual ability tests each pick one and drive it, which is how eight multi-word abilities stayed unreachable without anything noticing. Plus: a skill is refused by `cast` with the verb form named, a spell is not, an ability another Path owns is not a verb for you, and an existing command always wins. |
+| Leaving a fight | The reported transcript verbatim — a mob wanders off mid-fight and the player can still walk away and still start another fight — plus the ending being narrated rather than silent. Against that, the shapes that must not change: the *attacker* leaving still removes the attacker, one of two mobs leaving does not end the fight, and `flee` still cleans up after itself. Wandering has its own three: a fighting mob stays, a released one moves again (the guard must not be a life sentence), and an idle one is untouched. |
+| Deleting a character | Offline by name, online with the session removed and the room told; a prefix resolves to the full name before it is enqueued, since the database half needs the whole one. The refusals are most of it: not the character you are playing, not without a name, not abbreviated below eight characters, and unknown to both a player *and* a builder. |
 | A fight ending | Every shape, because the old rule was right for one of them and wrong for the rest: a group of two and of three both released when the mob dies, and released *completely* — able to start another fight, which is what a player actually notices. A bystander who never chose a target is let go too, since a rule that only freed people who had one would strand exactly the tank. Against that, the shapes that must stay live: a duel, a mob that has not been hit back, and one of two mobs dying. |
 | Abilities in a fight | An ability opens a fight and the player keeps swinging afterwards — asserted on the mob's health continuing to fall, not on the character's target field, since setting one without the other is exactly the bug that reads as fixed. A bleed applied out of combat still ticks; a stun that moves no health still engages; a heal starts nothing. A kill landed by an ability removes the mob, ends the fight, pays the same XP and gold as a swing, and leaves the player able to start another one — that last is what a player actually notices, because a fight that never ended refuses every later `kill`. The same for a kill landed by a wound. |
 | Telemetry | Every pulse is recorded rather than only the slow ones; an over-budget pulse is counted as well as timed; a command with no acceptance timestamp is counted but not timed; the gauges read live state at collection time. Meter and instrument names are pinned, because renaming one breaks every dashboard silently — the metrics simply stop arriving. *The numbers themselves are deliberately not asserted: a p99 measured under an xUnit host is not the p99 §11 is about.* |

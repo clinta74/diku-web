@@ -8,9 +8,9 @@ this codebase keeps its reasoning.
 
 | # | Bug | Severity | Verified | Status |
 |---|-----|----------|----------|--------|
-| 1 | A fight your target leaves never releases you | **Blocking** | Unit test | Open |
-| 2 | A mob you are fighting can wander out of the room | **Blocking** | Live transcript | Open |
-| 3 | Nothing tells you your fight ended | Moderate | Live transcript | Open |
+| 1 | A fight your target leaves never releases you | **Blocking** | Unit test | **Fixed** |
+| 2 | A mob you are fighting can wander out of the room | **Blocking** | Live transcript | **Fixed** |
+| 3 | Nothing tells you your fight ended | Moderate | Live transcript | **Fixed** with #1 |
 | 4 | The auth rate limiter is site-wide behind a proxy | Moderate | By inspection | Known, deliberate |
 | 5 | "Melee starts after an ability" is unverified live | Coverage gap | — | Blocked on fixtures |
 
@@ -134,29 +134,27 @@ target and world fixtures (`PLAYTEST.md`, milestone 4).
 # Work plan
 
 Ordered by what unblocks what. #1 and #2 are separable but they were found together and they
-compound, so they ship together.
+compound, so they shipped together.
 
-### Step 1 — Release a fight whose target left (#1, #3)
+### Step 1 — Release a fight whose target left (#1, #3) ✅ **done**
 
-`src/DikuWeb.Engine/Systems/CombatSystem.cs`, in `RunCombatant`. Split the room check into two
-cases; on a target that left, remove the *target* and let the existing end-of-fight sweep judge the
-rest. Narrate the ending once to whoever remains.
+`CombatSystem.RunCombatant` now asks the two questions separately. An attacker who left is removed
+*and* released; a target who left is removed, everyone aiming at them forgets them, and the
+attacker stays in the fight for `IsCombatActive` to judge — which, since the head-count fix, finds
+nobody left to hit and ends it properly for everybody.
 
-Touches nothing anyone else is holding. Do this first — it is the one that strands players, and it
-is the fix that makes #2 merely annoying instead of session-ending.
+`ForgetTarget` clears `Character.CurrentTarget` as well as the fight's own `PlayerTargets`, because
+that is the copy `kill` reads and the two disagreeing was the whole failure. And the ending is
+narrated — *"You stop fighting a zombie."* — since every other exit from a fight has words on it.
 
-**Done when:** the probe that currently fails passes, `flee` and the duel and three-way cases still
-pass, and the full engine suite is green.
+Seven tests, including the reported transcript verbatim and the shapes that must keep working:
+the attacker leaving, one of two mobs leaving, and `flee`.
 
-### Step 2 — Stop a fighting mob wandering off (#2)
+### Step 2 — Stop a fighting mob wandering off (#2) ✅ **done**
 
-`src/DikuWeb.Engine/Inhabitants/MobAiSystem.cs`, one guard in `ShouldWander`.
-
-**Blocked on** the uncommitted wander-cadence work in that method landing. Check with whoever holds
-it rather than editing around them.
-
-**Done when:** a fighting mob stays put through its wander turn, resumes afterwards, and the
-cadence tests are still green.
+One guard at the top of `ShouldWander`, above the cadence work. Three tests: a fighting mob stays,
+a released one wanders again — the guard must not be a life sentence — and an idle one is
+unaffected.
 
 ### Step 3 — Re-run the plan library and clear the flag
 
@@ -177,6 +175,16 @@ dotnet run --project tools/DikuWeb.Playtest -- --server http://localhost:5050 \
 every content-dependent plan reproducible rather than a race against a spawner.
 
 It also removes the reason `combat-basics` had to go to the crypt in the first place.
+
+### Step 5 — Have the apparatus tidy up after itself
+
+`deletecharacter <name>` now exists for admins, which gives the apparatus a way to retire the
+characters it creates. A plan with an Admin in its cast can already call it; the better shape is
+the runner doing it at teardown whenever an admin is available, so the world stops accumulating
+`Theronqxbfm`s.
+
+The accounts still remain — there is no delete-account verb and there should not be one lightly —
+but characters are what clutter `who` and the room listings. See PLAN.md for the SQL purge.
 
 ### Not in this queue
 

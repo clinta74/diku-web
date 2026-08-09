@@ -78,6 +78,24 @@ public sealed record LookupAccountRequest : AccountAdminRequest
 }
 
 /// <summary>
+/// Retires a character by name (PLAN.md §7.7).
+/// </summary>
+/// <remarks>
+/// By <em>character</em> name rather than account name, which is the opposite of every other
+/// request here — and deliberately, because a character is the thing an administrator can see.
+/// They are dealing with a name standing in a room, and making them look up which account owns it
+/// first is asking them to do a join by hand.
+///
+/// A soft delete: the row keeps its <c>DeletedAt</c> and everything hanging off it stays
+/// referentially intact. Hard deletion would cascade through items, quest progress and audit rows,
+/// and "we deleted the wrong Kael" is not a recoverable sentence.
+/// </remarks>
+public sealed record DeleteCharacterRequest : AccountAdminRequest
+{
+    public required string CharacterName { get; init; }
+}
+
+/// <summary>
 /// Bans or unbans an account (PLAN.md §8, Phase 6).
 /// </summary>
 /// <remarks>
