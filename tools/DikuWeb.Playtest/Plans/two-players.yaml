@@ -1,0 +1,74 @@
+name: Two players
+about: |
+  Everything that only exists because somebody else is there: being seen, being spoken to, and
+  forming a group. Needs no content, so it runs anywhere the first-hour plan runs.
+
+  The thing to read here is the alignment. Every line one player sees about the other should sit
+  at or after the line where the other did it — if a reply appears above the thing it answers,
+  either the clock or the ordering is wrong and nothing else in any multi-actor plan can be
+  trusted.
+
+cast:
+  - name: Alice
+    path: Adept
+  - name: Bob
+    path: Warden
+
+steps:
+  - actor: Alice
+    note: Arriving in an occupied room should announce you to the people already in it.
+    do: look
+    wait: { text: "Exits:" }
+
+  - actor: Bob
+    note: Speech is room-local. Bob should hear it because he is standing there.
+    do: say well met
+
+  - actor: Alice
+    wait: { text: "well met" }
+    expect: "well met"
+
+  - actor: Alice
+    do: say and to you
+  - actor: Bob
+    wait: { text: "and to you" }
+    expect: "and to you"
+
+  - actor: Alice
+    note: A tell reaches anywhere in the world, and the reply should find its way back.
+    do: tell Bob are you coming
+  - actor: Bob
+    wait: { text: "are you coming" }
+    expect: "are you coming"
+
+  - actor: Bob
+    do: reply on my way
+  - actor: Alice
+    wait: { text: "on my way" }
+    expect: "on my way"
+
+  - actor: Alice
+    do: group invite Bob
+  - actor: Bob
+    wait: { text: "join their group" }
+    expect: "group accept"
+
+  - actor: Bob
+    do: group accept
+  - actor: Alice
+    wait: { text: "joins the group" }
+    expect: "Bob joins the group"
+
+  - actor: Alice
+    note: Group speech should reach the group and nobody else.
+    do: gtell we are grouped
+  - actor: Bob
+    wait: { text: "we are grouped" }
+    expect: "we are grouped"
+
+  - note: Both look at once, which is the simplest thing that can race.
+    together:
+      - actor: Alice
+        do: look
+      - actor: Bob
+        do: look

@@ -1,0 +1,55 @@
+name: First hour
+about: |
+  Everything a new player does before they meet anything dangerous: arrive, read the room, walk
+  somewhere, come back, and find out who else is around.
+
+  This plan needs no content at all, which is what makes it the one to run first against a server
+  you have never pointed the apparatus at. If it reads oddly, the problem is the apparatus or the
+  connection, not the world.
+
+cast:
+  - name: Theron
+    path: Warden
+
+steps:
+  - actor: Theron
+    note: |
+      Entering the world should describe where you are without being asked. A MUD that opens on a
+      blank screen has lost the player before they have typed anything.
+    expect:
+      - "Exits:"
+
+  - actor: Theron
+    do: look
+    wait: { text: "Exits:" }
+    expect: "Exits:"
+
+  - actor: Theron
+    note: Walking should say where you went, and the new room should describe itself.
+    do: north
+    wait: { text: "You walk" }
+    expect:
+      - "You walk north"
+      - "Exits:"
+
+  - actor: Theron
+    do: south
+    wait: { text: "You walk" }
+    expect: "You walk south"
+
+  - actor: Theron
+    note: A direction with no exit should be refused in words, never silently.
+    do: up
+    expect-not: "You walk up"
+
+  - actor: Theron
+    do: who
+    wait: { text: "online" }
+    expect: "Theron"
+
+  - actor: Theron
+    note: |
+      `help` is the only thing a lost player knows to type, so it has to answer. This is also the
+      cheapest check that the command table is loaded at all.
+    do: help
+    expect-not: "is not something you can do"

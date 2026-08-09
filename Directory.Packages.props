@@ -18,6 +18,16 @@
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.10" />
   </ItemGroup>
 
+  <ItemGroup Label="Playtesting apparatus">
+    <!--
+      Plans are authored by hand and carry prose - a `note:` explaining what the next stretch is
+      meant to show is the difference between a transcript somebody reads and one nobody does.
+      JSON cannot hold a paragraph without escaping it into unreadability, which is the whole
+      reason for the one dependency.
+    -->
+    <PackageVersion Include="YamlDotNet" Version="16.3.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Testing">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />
