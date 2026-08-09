@@ -975,9 +975,41 @@ public sealed class CombatSystem(
         }
     }
 
-    private static bool IsCombatActive(Combat combat) =>
-        // Combat is active if there are at least 2 combatants (allows PvP and PvE)
-        combat.Combatants.Count >= 2;
+    /// <summary>
+    /// Whether anyone left in this fight still has someone to hit.
+    /// </summary>
+    /// <remarks>
+    /// <b>Sides, not heads.</b> This used to be <c>Combatants.Count >= 2</c>, which is right for
+    /// exactly one shape of fight — one player against one mob, where the mob dying leaves one
+    /// combatant and ends it. <b>In a group it never ended.</b> Two players on one mob is three
+    /// combatants; the mob dies, two remain, the count is still two, and both players were left
+    /// permanently <c>Fighting</c> — refused every later <c>kill</c> and unable to walk out of the
+    /// room. It scaled with the party: the bigger the group, the more people it stranded.
+    ///
+    /// A target that is still in the fight is the honest test, because it is the same thing
+    /// <see cref="RunCombatant"/> asks before swinging: if nobody can name an opponent, nobody is
+    /// going to swing, and a fight where nothing can happen is over. It reads correctly for every
+    /// shape without enumerating them — a duel stays active because each duellist targets the
+    /// other, a taunted player stays in because the mob's hate list still names them, and a party
+    /// standing over a corpse falls out because <see cref="Combat.RemoveCombatant"/> already
+    /// cleared every target that pointed at it.
+    /// </remarks>
+    private static bool IsCombatActive(Combat combat)
+    {
+        foreach (var combatantId in combat.Combatants)
+        {
+            var target = ResolveTargetOf(combat, combatantId);
+
+            if (!string.IsNullOrEmpty(target) &&
+                target != combatantId &&
+                combat.Combatants.Contains(target))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private void HandleDeath(WorldState world, Combat combat, string entityId)
     {

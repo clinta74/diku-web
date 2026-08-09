@@ -506,6 +506,18 @@ function of the two combatants, which is exactly what makes it unit-testable in 
 Target validation is a separate gate on purpose — the damage formula never learns who is a
 player and who is a mob, so it stays the same pure function either way.
 
+**A fight is over when nobody in it still has somebody to hit — sides, not heads.** The rule was
+once "two or more combatants", which is correct for exactly one shape of fight: one player against
+one mob, where the mob dying leaves one combatant. **In a group it never ended.** Two players on
+one mob is three combatants; the mob dies, two remain, the count is still two, and both players
+were left permanently `Fighting` — refused every later `kill` and unable to walk out of the room.
+It scaled with the party, and it was invisible solo, which is how it survived. Asking whether
+anyone still has a target that is also in the fight is the same question the loop asks before
+swinging, and it reads correctly for every shape without enumerating them: a duel stays live
+because each duellist targets the other, a taunted player stays in because the mob's hate list
+still names them, and a party standing over a corpse falls out because removing the corpse already
+cleared every target that pointed at it.
+
 ### 4.7 Progression
 
 Levels 1–50. XP from kills, quest completion, and first-time room discovery — rewarding
@@ -1990,6 +2002,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |
 | Narration | A name authored as "a rat" does not become "an a rat" — asserted on the helper, since it feeds combat, the room listing, and every ability that names a target. A bare noun is unaffected, which is what every existing call site relies on. |
 | Abilities | **Every entry in the catalogue** is castable by its display name and usable as a verb — a theory over the whole list, because the individual ability tests each pick one and drive it, which is how eight multi-word abilities stayed unreachable without anything noticing. Plus: a skill is refused by `cast` with the verb form named, a spell is not, an ability another Path owns is not a verb for you, and an existing command always wins. |
+| A fight ending | Every shape, because the old rule was right for one of them and wrong for the rest: a group of two and of three both released when the mob dies, and released *completely* — able to start another fight, which is what a player actually notices. A bystander who never chose a target is let go too, since a rule that only freed people who had one would strand exactly the tank. Against that, the shapes that must stay live: a duel, a mob that has not been hit back, and one of two mobs dying. |
 | Abilities in a fight | An ability opens a fight and the player keeps swinging afterwards — asserted on the mob's health continuing to fall, not on the character's target field, since setting one without the other is exactly the bug that reads as fixed. A bleed applied out of combat still ticks; a stun that moves no health still engages; a heal starts nothing. A kill landed by an ability removes the mob, ends the fight, pays the same XP and gold as a swing, and leaves the player able to start another one — that last is what a player actually notices, because a fight that never ended refuses every later `kill`. The same for a kill landed by a wound. |
 | Telemetry | Every pulse is recorded rather than only the slow ones; an over-budget pulse is counted as well as timed; a command with no acceptance timestamp is counted but not timed; the gauges read live state at collection time. Meter and instrument names are pinned, because renaming one breaks every dashboard silently — the metrics simply stop arriving. *The numbers themselves are deliberately not asserted: a p99 measured under an xUnit host is not the p99 §11 is about.* |
 | Rate limits | A flood is refused once the bucket empties but the early commands still land; the 429 carries `Retry-After`; **one player's flood does not refuse another player**, which is the load-bearing property — a global partition would let anyone switch the game off for everyone; the event stream is never limited; repeated failed logins are. Asserted against a host configured with real numbers, since the shared test host lifts them out of the way. |
