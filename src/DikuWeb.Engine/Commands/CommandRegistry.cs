@@ -505,23 +505,32 @@ public sealed class CommandRegistry
             spans.Add(new TextSpan($"\n{template.Description}"));
         }
 
+        // Named rather than pronouned, in every line below. These sentences used to run "It is
+        // unhurt." straight into "They are not someone you can fight." - two pronouns for one
+        // mob, a line apart. Choosing between them does not work either: "It" is wrong for the
+        // old man and the bar maiden, "They" is wrong for a rat, and nothing in a template says
+        // which kind of thing it is. The subject reads for both, and it is unambiguous when two
+        // mobs are standing in the room.
+        var subject = NarrationHelper.WithDefiniteArticle(displayName, capitalize: true);
+
         // Health as a fraction rather than a number: a player should be able to see that
         // something is hurt without being handed the combat log.
-        spans.Add(new TextSpan($"\n{ConditionProse(mob)}", "dim"));
+        spans.Add(new TextSpan($"\n{ConditionProse(mob, subject, article)}", "dim"));
 
         var disposition = MobBehavior.DispositionOf(template?.Behavior);
         if (disposition == MobDisposition.Npc)
         {
-            spans.Add(new TextSpan("\nThey are not someone you can fight.", "dim"));
+            spans.Add(new TextSpan($"\n{subject} is not someone you can fight.", "dim"));
         }
         else if (disposition == MobDisposition.Aggressive)
         {
-            spans.Add(new TextSpan("\nIt watches you the way something decides to attack.", "bad"));
+            spans.Add(new TextSpan(
+                $"\n{subject} watches you the way something decides to attack.", "bad"));
         }
 
         if (MobBehavior.IsShopkeeper(template?.Behavior))
         {
-            spans.Add(new TextSpan("\nThey keep a shop — try 'list'.", "good"));
+            spans.Add(new TextSpan($"\n{subject} keeps a shop — try 'list'.", "good"));
         }
 
         AppendBuilderDetail(ctx, spans, mob.TemplateKey, BuilderLinks.ToMob(mob.TemplateKey), () =>
@@ -538,24 +547,37 @@ public sealed class CommandRegistry
         ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
     }
 
-    /// <summary>How badly hurt something looks, without printing its hit points.</summary>
-    private static string ConditionProse(Mob mob)
+    /// <summary>
+    /// How badly hurt something looks, without printing its hit points.
+    /// </summary>
+    /// <param name="subject">
+    /// The mob named with its definite article and a capital — "The old man". Passed in rather
+    /// than pronouned, because no pronoun is right for both a bar maiden and a rat.
+    /// </param>
+    /// <param name="midSentence">
+    /// The same name for use inside a sentence — "the old man". A separate argument rather than
+    /// a <c>ToLower</c> of <paramref name="subject"/>, which would turn a proper name into
+    /// "mira".
+    /// </param>
+    private static string ConditionProse(Mob mob, string subject, string midSentence)
     {
         if (mob.Vitals.HealthMax <= 0)
         {
-            return "It is hard to tell what shape it is in.";
+            // The leading "It" here is the impersonal one — about the difficulty of telling,
+            // not about the mob — so it survives.
+            return $"It is hard to tell what shape {midSentence} is in.";
         }
 
         var fraction = (double)mob.Vitals.Health / mob.Vitals.HealthMax;
 
         return fraction switch
         {
-            >= 1.0 => "It is unhurt.",
-            >= 0.75 => "It has been scratched.",
-            >= 0.5 => "It is bleeding.",
-            >= 0.25 => "It is badly hurt.",
-            > 0 => "It is barely standing.",
-            _ => "It is not long for this world.",
+            >= 1.0 => $"{subject} is unhurt.",
+            >= 0.75 => $"{subject} has been scratched.",
+            >= 0.5 => $"{subject} is bleeding.",
+            >= 0.25 => $"{subject} is badly hurt.",
+            > 0 => $"{subject} is barely standing.",
+            _ => $"{subject} is not long for this world.",
         };
     }
 

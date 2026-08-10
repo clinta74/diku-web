@@ -211,7 +211,36 @@ public sealed class BuilderDetailTests
 
         harness.Execute(kael, "examine barkeep");
 
-        Assert.Contains("keep a shop", harness.DrainText(kael), StringComparison.Ordinal);
+        // "The barkeep keeps a shop" - named rather than "They keep a shop", so the line agrees
+        // with the condition line above it about what to call the mob.
+        Assert.Contains("The barkeep keeps a shop", harness.DrainText(kael), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Examining_a_mob_calls_it_the_same_thing_on_every_line()
+    {
+        // Reported from play. The condition line said "It is unhurt." and the disposition line
+        // said "They are not someone you can fight." - two pronouns for one mob, a line apart.
+        // Neither pronoun works for the whole roster either: "It" is wrong for the bar maiden,
+        // "They" is wrong for a rat, and a template does not say which kind of thing it is.
+        // Every line names the mob now, so there is nothing left to disagree about.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        harness.AddMob(
+            "oldman",
+            Room,
+            name: "old man",
+            behavior: WorldHarness.AsPersisted(new Dictionary<string, object> { ["type"] = "npc" }));
+        harness.Drain(kael);
+
+        harness.Execute(kael, "examine old man");
+
+        var text = harness.DrainText(kael);
+        Assert.Contains("You examine the old man.", text, StringComparison.Ordinal);
+        Assert.Contains("The old man is unhurt.", text, StringComparison.Ordinal);
+        Assert.Contains("The old man is not someone you can fight.", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("They are", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("It is unhurt", text, StringComparison.Ordinal);
     }
 
     [Fact]
