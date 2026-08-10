@@ -137,6 +137,24 @@ public static class QuestCommands
                     : $"You've already completed {quest.Name}.";
                 narrations.Add(complete);
             }
+            else if (questState?.Status == QuestStatus.Completed && quest.IsRepeatable
+                && ChainStillRunning(ctx, character.Id, quest.Key) is { } blocking)
+            {
+                // Repeatable, finished, but something further down the chain is still open. Taking
+                // it again now would reset a step whose consequences are still in play.
+                narrations.Add(
+                    $"About {quest.Name} — finish {blocking.Name} first, or give it up.");
+            }
+            else if (questState?.Status == QuestStatus.Completed && quest.IsRepeatable
+                && !UpstreamHasRunAgain(ctx, character.Id, quest, questState))
+            {
+                // Repeatable and clear below, but the step *above* has not been run again - so
+                // this is a player re-entering the chain in the middle. Left open, the old man
+                // would hand out the second errand to somebody with no glass and no way to get
+                // one, because taking the first errand is then blocked by this one being active.
+                // Recoverable by abandoning, but a chain should be re-entered at its head.
+                narrations.Add($"About {quest.Name} — that comes later. First things first.");
+            }
             else if (questState?.Status == QuestStatus.Completed && quest.IsRepeatable)
             {
                 // Repeatable quest can be re-offered
@@ -327,6 +345,90 @@ public static class QuestCommands
         }
 
         ctx.Reply($"You give up on {name}. You can ask for it again.");
+    }
+
+    /// <summary>
+    /// Whether every prerequisite has been finished more times than this quest has, which is what
+    /// makes a repeat a fresh run through the chain rather than a re-entry into the middle of it.
+    /// </summary>
+    /// <remarks>
+    /// <c>TimesCompleted</c> already counts the runs, so the comparison needs no new state: after
+    /// one full pass both legs sit at 1 and the second is not offered again; run the first leg
+    /// once more and it is at 2, which is what unlocks the second.
+    ///
+    /// A quest with no prerequisites is the head of its chain and always passes — otherwise
+    /// nothing would ever be repeatable at all.
+    /// </remarks>
+    private static bool UpstreamHasRunAgain(
+        CommandContext ctx, Guid characterId, Quest quest, CharacterQuest state)
+    {
+        foreach (var prerequisiteKey in quest.PrerequisiteQuestKeys)
+        {
+            var prerequisite = ctx.World.GetQuestState(characterId, prerequisiteKey);
+
+            if (prerequisite is null || prerequisite.TimesCompleted <= state.TimesCompleted)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The quest still open somewhere downstream of <paramref name="questKey"/>, or null if the
+    /// chain below it is clear.
+    /// </summary>
+    /// <remarks>
+    /// <b>A repeatable quest is repeatable once the chain it starts is done, not once its own leg
+    /// is.</b> Repeatability was a property of the single quest, so a player who had finished
+    /// <c>A Fresh Drink</c> and was carrying the glass could take the errand again mid-chain: the
+    /// first leg reset to Active while the second stayed Active behind it, and the journal then
+    /// described a state the story cannot be in — the beer not yet delivered, the glass already
+    /// in hand.
+    ///
+    /// Downstream is transitive, because a chain is not only two long. It is walked rather than
+    /// stored, for the reason dormancy is derived (§7.4): prerequisites are edited live, and a
+    /// cached answer would be wrong the moment a builder inserted a step.
+    ///
+    /// Only <em>Active</em> blocks. A completed step downstream is exactly the case this is meant
+    /// to allow, and the visited set is what keeps an authored cycle — which the storyline panel
+    /// reports but does not prevent — from walking forever.
+    /// </remarks>
+    private static Quest? ChainStillRunning(CommandContext ctx, Guid characterId, string questKey)
+    {
+        if (ctx.Quests is null)
+        {
+            return null;
+        }
+
+        var all = ctx.Quests.All;
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { questKey };
+        var frontier = new Queue<string>();
+        frontier.Enqueue(questKey);
+
+        while (frontier.Count > 0)
+        {
+            var current = frontier.Dequeue();
+
+            foreach (var candidate in all.Values)
+            {
+                if (!candidate.PrerequisiteQuestKeys.Contains(current, StringComparer.OrdinalIgnoreCase)
+                    || !visited.Add(candidate.Key))
+                {
+                    continue;
+                }
+
+                if (ctx.World.GetQuestState(characterId, candidate.Key)?.Status == QuestStatus.Active)
+                {
+                    return candidate;
+                }
+
+                frontier.Enqueue(candidate.Key);
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

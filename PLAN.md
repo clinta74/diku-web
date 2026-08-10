@@ -1731,7 +1731,26 @@ One deferred nice-to-have remains below, and it is not what the phase goal asks 
       offer / in-progress / complete / turn-in
 - [x] `give` hook: strict match on item and count, otherwise the NPC refuses and keeps nothing
 - [x] Prerequisite chains, enforced on offer — the mechanism storylines are built from
-- [x] Repeatable quests with a `TimesCompleted` counter
+- [x] Repeatable quests with a `TimesCompleted` counter. **Repeatable is a property of the chain,
+      not of the leg** — which only became visible once a chain existed to test it on.
+      Two gates, both on the re-offer only, since a first offer has no history to consult:
+      - **Nothing downstream may still be Active.** A player who had finished *A Fresh Drink* and
+        was carrying the glass could take the errand again while *The Empty Glass* was open, so
+        the first leg reset to Active behind the second and the journal described a state the
+        story cannot be in — the beer not yet delivered, the glass already in hand. Downstream is
+        walked transitively rather than stored, for the reason dormancy is derived (§7.4):
+        prerequisites are edited live and a cached answer would be wrong the moment a builder
+        inserted a step. The player's two ways to clear it are the two they already have — finish
+        it, or `abandon` it.
+      - **Every prerequisite must have run again.** Otherwise a player who had completed the whole
+        chain could take the *second* leg straight from its giver, arriving with no glass and no
+        way to get one, because taking the first leg is then blocked by this one being active.
+        Recoverable by abandoning, but a chain should be re-entered at its head. `TimesCompleted`
+        already counts the runs, so the comparison needs no new state: after one pass both legs
+        sit at 1 and the second is not re-offered; run the head again and it is at 2, which is
+        what opens the second.
+      A quest that is **not** repeatable is unaffected by either gate — finishing the rest of the
+      story must not quietly reopen the parts meant to happen once.
 - [x] `quests` journal and `quest <name>` detail. **`quest <name>` did not reach the detail view
       for four months** — a verb matches on any prefix of its name and `Find` takes the first
       definition that matches, so with `quests` registered ahead of it and asking for only three
@@ -2102,6 +2121,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | PvP | Refused in an unflagged room, allowed in a flagged one, ends the round after either combatant leaves, and never targets a party member — including a duel already under way, which ends the round the two players group up. AoE in a mixed room hits mobs and skips players. Every hostile action — swing, single-target cast, area effect, taunt — answers through the one gate, so the coverage is that they agree rather than that each was remembered. *Pet laundering is not tested because there are no pets; it is §13's blocking constraint, not a gap here.* |
 | Death | XP loss floors at the level threshold and never de-levels; no loss below the min level or on a PvP death; dying at the exact threshold costs nothing. Respawn falls through all three candidates, including when the bind room was deleted mid-session. Nothing leaves the inventory. |
 | Verbs | **Every registered verb is reachable by something a player can type.** A verb whose name is a strict prefix of an earlier one is shadowed completely — no input reaches it and nothing reports that, which is how `quest` sat behind `quests` for four months. Asserted over the whole table rather than on the pair that broke, plus the shortest allowed abbreviation of each verb resolving to something. |
+| Repeating a chain | A three-link chain, so downstream is tested as transitive rather than as one hop. The chain reruns once all of it is finished; a leg one step down and a leg two steps down both block the head; `abandon` on the open leg releases it; a middle leg is not re-offered until the head has run again, and is once the counters say so. Against those, the two shapes that must not change: a non-repeatable quest stays finished whatever the chain does, and a chain nobody has started is offered normally. |
 | Abandoning a quest | An active quest returns to never-started, in the world *and* in storage — the delete has to reach the row or a restart brings the quest back Active. A repeatable one already finished reverts to Completed with `TimesCompleted` intact rather than being deleted, since the row is the history. The refusals: a finished quest, a quest you never had, and a bare verb, none of which change any state. |
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
 | Spawners | A mob that wandered out still counts; ten sweeps that scatter what they made never exceed the target; a kill is replaced; two spawners of the same template do not count each other's work; a mob a builder placed by hand satisfies nobody's target. |

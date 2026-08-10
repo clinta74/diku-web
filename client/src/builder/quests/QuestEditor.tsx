@@ -391,8 +391,14 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
               touch()
             }}
           />
-          Repeatable — can be turned in more than once
+          Repeatable — can be taken again once the whole chain is finished
         </label>
+
+        <p className="dim">
+          {isRepeatable
+            ? 'Offered again only when nothing further down the chain is still open, and only after the step above it has been run again. A player part-way through has to finish or abandon first, so a repeat is always a fresh run rather than a re-entry into the middle.'
+            : 'Once only. Finishing the rest of the chain does not reopen it.'}
+        </p>
 
         <Field label="Sort order" hint="Lower sorts first in the journal.">
           <NumberInput
