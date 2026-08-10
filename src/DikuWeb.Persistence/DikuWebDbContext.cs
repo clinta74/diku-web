@@ -36,8 +36,9 @@ public sealed class DikuWebDbContext(DbContextOptions<DikuWebDbContext> options)
 
     public DbSet<MobTemplate> MobTemplates => Set<MobTemplate>();
 
-    public DbSet<Mob> Mobs => Set<Mob>();
-
+    // There is deliberately no DbSet<Mob>. A mob is a population, not a record: spawners
+    // rebuild the world's inhabitants on every sweep (§4.8), so a persisted mob would be a
+    // second, staler answer to a question the spawner already answers. See §6.
     public DbSet<Spawner> Spawners => Set<Spawner>();
 
     public DbSet<Quest> Quests => Set<Quest>();

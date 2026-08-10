@@ -339,76 +339,6 @@ namespace DikuWeb.Persistence.Migrations
                     b.ToTable("characters", (string)null);
                 });
 
-            modelBuilder.Entity("DikuWeb.Domain.Inhabitants.Mob", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<int>("CombatState")
-                        .HasColumnType("integer")
-                        .HasColumnName("combat_state");
-
-                    b.Property<string>("CurrentTarget")
-                        .HasColumnType("text")
-                        .HasColumnName("current_target");
-
-                    b.Property<int>("Level")
-                        .HasColumnType("integer")
-                        .HasColumnName("level");
-
-                    b.Property<int>("ResolvedGold")
-                        .HasColumnType("integer")
-                        .HasColumnName("resolved_gold");
-
-                    b.Property<Dictionary<string, object>>("ResolvedStats")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("resolved_stats");
-
-                    b.Property<int>("ResolvedXp")
-                        .HasColumnType("integer")
-                        .HasColumnName("resolved_xp");
-
-                    b.Property<string>("RoomKey")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("room_key");
-
-                    b.Property<Dictionary<string, decimal>>("SpawnMultipliers")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("spawn_multipliers");
-
-                    b.Property<Guid?>("SpawnerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("spawner_id");
-
-                    b.Property<Dictionary<string, object>>("State")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("state");
-
-                    b.Property<string>("TemplateKey")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("template_key");
-
-                    b.Property<string>("TemplateName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("template_name");
-
-                    b.HasKey("Id")
-                        .HasName("pk_mobs");
-
-                    b.HasIndex("RoomKey")
-                        .HasDatabaseName("ix_mobs_room_key");
-
-                    b.ToTable("mobs", (string)null);
-                });
-
             modelBuilder.Entity("DikuWeb.Domain.Inhabitants.MobTemplate", b =>
                 {
                     b.Property<string>("Key")
@@ -992,7 +922,8 @@ namespace DikuWeb.Persistence.Migrations
 
                     b.OwnsOne("DikuWeb.Domain.Characters.Vitals", "Vitals", b1 =>
                         {
-                            b1.Property<Guid>("CharacterId");
+                            b1.Property<Guid>("CharacterId")
+                                .ValueGeneratedOnAdd();
 
                             b1.Property<int>("Focus");
 
@@ -1023,52 +954,6 @@ namespace DikuWeb.Persistence.Migrations
 
                     b.Navigation("Attributes")
                         .IsRequired();
-
-                    b.Navigation("Vitals")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("DikuWeb.Domain.Inhabitants.Mob", b =>
-                {
-                    b.OwnsOne("DikuWeb.Domain.Characters.Vitals", "Vitals", b1 =>
-                        {
-                            b1.Property<Guid>("MobId")
-                                .HasColumnType("uuid")
-                                .HasColumnName("id");
-
-                            b1.Property<int>("Focus")
-                                .HasColumnType("integer")
-                                .HasColumnName("vitals_focus");
-
-                            b1.Property<int>("FocusMax")
-                                .HasColumnType("integer")
-                                .HasColumnName("vitals_focus_max");
-
-                            b1.Property<int>("Health")
-                                .HasColumnType("integer")
-                                .HasColumnName("vitals_health");
-
-                            b1.Property<int>("HealthMax")
-                                .HasColumnType("integer")
-                                .HasColumnName("vitals_health_max");
-
-                            b1.Property<int>("Stamina")
-                                .HasColumnType("integer")
-                                .HasColumnName("vitals_stamina");
-
-                            b1.Property<int>("StaminaMax")
-                                .HasColumnType("integer")
-                                .HasColumnName("vitals_stamina_max");
-
-                            b1.HasKey("MobId")
-                                .HasName("pk_mobs");
-
-                            b1.ToTable("mobs");
-
-                            b1.WithOwner()
-                                .HasForeignKey("MobId")
-                                .HasConstraintName("fk_mobs_mobs_id");
-                        });
 
                     b.Navigation("Vitals")
                         .IsRequired();

@@ -974,6 +974,23 @@ command_log         id, character_id, input, at
 
 Notes:
 
+- **There is no `mobs` table, deliberately.** A mob is a *population*, not a record: a spawner
+  says "maintain N of template X across these rooms" (§4.8), so the sweep rebuilds the world's
+  inhabitants at every restart from rules that are already stored. Persisting mobs would be a
+  second, staler answer to a question the spawner already answers — and a worse one, since it
+  would restore a rat with three health left standing wherever it had wandered to, which the
+  spawner would then have to reconcile against its target.
+  The asymmetry with `item_instances` is the point rather than an inconsistency: a sword dropped
+  on the floor is persisted because **nothing would recreate it**; a rat is not, because
+  something does.
+  One did exist, from the initial migration until 2026-08-10, with a full EF configuration and
+  never a single reader or writer — the only `DbSet` in the model with no call sites anywhere.
+  It was empty in every environment it ever ran in. Dropping it cost one thing worth naming: the
+  owned `vitals_*` columns were the only place in the model where an explicit `HasColumnName`
+  differed from what `SnakeCaseNaming` would have produced, so the test proving the convention
+  does not override an explicit choice lost its only subject. It is now asserted against a model
+  built for the purpose, which is the better test anyway — a rule about every entity should not
+  have its proof tied to one of them.
 - **No entity x,y columns.** Positions are derived (§4.3). `rooms.editor_x/y` is the one stored
   coordinate and belongs to the builder canvas, not the game.
 - `multipliers jsonb` on both `worlds` and `zones` — a small map of the §4.4 keys. `jsonb`
@@ -1059,6 +1076,38 @@ convention. Making it a convention rather than ~100 `HasColumnName` calls means 
 cannot drift back.
 
 **Seeding stays development-only.** The starter world is a fixture, not schema.
+
+**The migration history is squashed while nothing has shipped.** Pre-release, a migration chain is
+an accounting of how the schema was arrived at rather than a contract with anybody's data — no
+deployed database exists that has to be walked forward through it. Six migrations became one on
+2026-08-10, the second such squash; the rule for when it stops is **the first real deployment**,
+after which a migration is a promise to a database somebody else's data lives in and squashing one
+breaks it.
+
+**Squashing means every dev database is rebuilt, which means content has to survive it.** §6 makes
+Postgres the only source of truth for the world, so a database that is dropped takes the world with
+it — and the seeder rebuilds only twelve rooms of Millbrook, not the Sunken Crypt somebody dug, the
+mob templates they authored, or the spawners that place them. `tools/export-content.sql` writes
+those eight tables out as upserts:
+
+```
+tools/export-content.ps1                      # writes backups/content-<date>.sql
+docker exec dikuweb-postgres psql -U dikuweb -d dikuweb -f /tmp/content.sql
+```
+
+Upserts rather than inserts, so the file does not care whether the seeder has already run — applied
+to a seeded database the twelve Millbrook rooms are updated in place with whatever they had actually
+become, and to a bare one they are inserted. It exports **content only**: accounts, characters,
+items, quest progress, and the audit tables are player data and history, and a content restore that
+resurrected deleted characters would be a bug. Abilities are absent for a different reason —
+`ReconcileAbilitiesAsync` rebuilds them from the catalogue on every startup, so exporting them would
+restore rows the next boot only has to correct.
+
+The rehearsal is the part worth keeping: build a scratch database, migrate it, seed it, apply the
+export, then **regenerate the export from the rebuilt database and diff it against the original**.
+Identical output is the only check that proves the round trip is lossless rather than merely
+plausible, and it is cheap enough to run every time. This is the stopgap until Phase 6's world
+export/import (JSON), and finishing that is what would let a *plan* carry its own content.
 
 **What if migration fails?**
 

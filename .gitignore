@@ -26,6 +26,13 @@ yarn-error.log*
 appsettings.Local.json
 appsettings.*.Local.json
 
+# ---- Database dumps and content exports ----
+# Written by tools/export-content.ps1 and by pg_dump. Ignored as a directory because what lands
+# here is not uniform: a content export is harmless, but a full dump carries every account's
+# email and password hash, and one careless commit publishes them. A world snapshot worth keeping
+# in history should be committed by path, deliberately, after reading it.
+backups/
+
 # ---- Tooling ----
 .idea/
 .DS_Store

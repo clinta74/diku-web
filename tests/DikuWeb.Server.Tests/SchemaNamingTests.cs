@@ -76,21 +76,78 @@ public sealed class SchemaNamingTests
         Assert.Empty(offenders.Distinct());
     }
 
+    /// <summary>
+    /// The convention fills gaps; it must not override a name a configuration chose.
+    /// </summary>
+    /// <remarks>
+    /// This used to be asserted against the owned <c>vitals_*</c> columns on <c>mobs</c>, which
+    /// was the only place in the model where an explicit name differed from what the convention
+    /// would have produced. Dropping that table took the test's subject with it - and no
+    /// production column distinguishes the two paths any more, so pointing it at one would have
+    /// left an assertion that cannot fail.
+    ///
+    /// So it is asserted against the convention itself, over a model built here for the purpose.
+    /// That is the more honest test in any case: <c>SnakeCaseNaming</c> is a rule about every
+    /// entity, and tying the proof of it to one entity is what let it rot in the first place.
+    /// </remarks>
     [Fact]
-    public void The_owned_vitals_columns_keep_their_explicit_names()
+    public void An_explicit_column_name_survives_the_convention()
     {
-        // The convention fills gaps; it must not override a name a configuration chose. Vitals
-        // is the case that proves it - the owned property is "Health", and left to the
-        // convention it would collide with any other "health" column on the same table.
-        // Vitals is owned, so it reports the same table as its owner - hence the IsOwned filter.
-        var mob = BuildModel().GetEntityTypes()
-            .Single(e => e.GetTableName() == "mobs" && !e.IsOwned());
-        var vitals = mob.GetNavigations().Single(n => n.Name == "Vitals").TargetEntityType;
-        var table = StoreObjectIdentifier.Create(mob, StoreObjectType.Table)!.Value;
+        var model = BuildNamingProbe();
+        var entity = model.GetEntityTypes().Single(e => e.ClrType == typeof(NamingProbe));
+        var table = StoreObjectIdentifier.Create(entity, StoreObjectType.Table)!.Value;
 
-        var columns = vitals.GetProperties().Select(p => p.GetColumnName(table)).ToList();
+        string? Column(string property) =>
+            entity.GetProperties().Single(p => p.Name == property).GetColumnName(table);
 
-        Assert.Contains("vitals_health", columns);
-        Assert.Contains("vitals_health_max", columns);
+        // Chosen by hand, and deliberately not what the convention would produce.
+        Assert.Equal("vitals_health_max", Column(nameof(NamingProbe.HealthCeiling)));
+
+        // Left to the convention, which fills it in.
+        Assert.Equal("wander_interval_pulses", Column(nameof(NamingProbe.WanderIntervalPulses)));
+
+        // And the table name too, since it was never named explicitly.
+        Assert.Equal("naming_probes", entity.GetTableName());
+    }
+
+    /// <summary>
+    /// Built through a real context rather than a bare <c>ModelBuilder</c>, so the probe goes
+    /// through the same provider conventions production entities do — which is the only way the
+    /// result says anything about them.
+    /// </summary>
+    private static IModel BuildNamingProbe()
+    {
+        var options = new DbContextOptionsBuilder<NamingProbeContext>()
+            .UseNpgsql("Host=localhost;Database=model-only")
+            .Options;
+
+        using var db = new NamingProbeContext(options);
+        return db.Model;
+    }
+
+    private sealed class NamingProbeContext(DbContextOptions<NamingProbeContext> options)
+        : DbContext(options)
+    {
+        public DbSet<NamingProbe> NamingProbes => Set<NamingProbe>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<NamingProbe>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.HealthCeiling).HasColumnName("vitals_health_max");
+            });
+
+            SnakeCaseNaming.ApplyTo(modelBuilder);
+        }
+    }
+
+    private sealed class NamingProbe
+    {
+        public int Id { get; set; }
+
+        public int HealthCeiling { get; set; }
+
+        public int WanderIntervalPulses { get; set; }
     }
 }
