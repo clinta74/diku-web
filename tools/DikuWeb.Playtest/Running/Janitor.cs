@@ -72,11 +72,22 @@ public static class Janitor
                 await Task.Delay(Settle, cancellationToken);
             }
 
+            // Hand the privilege back. Ten runs left ten Admin accounts standing, all with the
+            // same known password, because deleting the character never touched the account — a
+            // dev database only, but "the test tool quietly manufactures administrators" is not a
+            // sentence that should be true anywhere. Borrowed authority gets returned.
+            var demoted = await target.PromoteAsync(
+                janitor.Username, AccountRole.Player, cancellationToken);
+
             // The janitor's own character cannot be deleted by the janitor, so it is the one thing
             // every run leaves. Named in the summary rather than hidden, because a row that
             // appears from nowhere is worse than one that was announced.
-            return $"Deleted {characters.Count} character(s). " +
-                   $"{janitor.CharacterName} remains — a janitor cannot delete itself.";
+            var remains = $"Deleted {characters.Count} character(s). " +
+                          $"{janitor.CharacterName} remains — a janitor cannot delete itself.";
+
+            return demoted.Granted
+                ? remains
+                : $"{remains} WARNING: it is still an Admin — {demoted.Reason}";
         }
         catch (PlaytestException ex)
         {
