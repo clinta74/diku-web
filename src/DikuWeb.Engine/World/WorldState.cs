@@ -633,4 +633,16 @@ public sealed class WorldState(IRandomSource random)
 
         quests[questKey] = quest;
     }
+
+    /// <summary>
+    /// Forgets a character's state for one quest, returning it to "never started".
+    /// </summary>
+    /// <remarks>
+    /// §6: no row means not started, and Status is only Active or Completed. So abandoning is a
+    /// removal rather than a third status - which is what makes the quest offerable again with no
+    /// migration, no new enum member, and nothing else in the code needing to learn a new state.
+    /// </remarks>
+    public bool RemoveQuestState(Guid characterId, string questKey) =>
+        _questsByCharacter.TryGetValue(characterId, out var quests)
+        && quests.Remove(questKey);
 }

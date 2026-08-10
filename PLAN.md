@@ -1732,7 +1732,34 @@ One deferred nice-to-have remains below, and it is not what the phase goal asks 
 - [x] `give` hook: strict match on item and count, otherwise the NPC refuses and keeps nothing
 - [x] Prerequisite chains, enforced on offer — the mechanism storylines are built from
 - [x] Repeatable quests with a `TimesCompleted` counter
-- [x] `quests` journal and `quest <name>` detail
+- [x] `quests` journal and `quest <name>` detail. **`quest <name>` did not reach the detail view
+      for four months** — a verb matches on any prefix of its name and `Find` takes the first
+      definition that matches, so with `quests` registered ahead of it and asking for only three
+      characters, `"quests".StartsWith("quest")` sent every `quest fresh` to the journal.
+      `QuestDetail` had no reachable input at all: dead from the day it was written, advertised in
+      `help`, and symptomless except that the output was wrong. The §12 lesson again, in the one
+      form a call-site audit misses — the code *was* called, by nothing a player could type.
+      `quest` is registered first now, and bare `quest` falls through to the journal so no
+      abbreviation is wasted on a "Which quest?" prompt.
+      The other prefix pairs were safe by accident of their numbers rather than by design:
+      `whois` demands five characters so `who` cannot reach it, `stats` demands five so `stat`
+      cannot. That is now a test over the whole table rather than a property nobody had noticed
+      holding.
+- [x] **`abandon <name>`** — a way out of a quest, which a chain turns from a convenience into a
+      necessity: prerequisites mean an abandoned leg blocks everything behind it, and before this
+      the journal listed it Active for ever while the giver answered with its in-progress line.
+      A soft-lock built out of dialogue rather than code, which is the hardest kind to see.
+      It **removes the state** rather than marking it, because §6 already spells "not started" as
+      the absence of a row — so no `QuestStatus.Abandoned`, no migration, and nothing else has to
+      learn a third state. The delete reaches storage, since forgetting it in memory alone would
+      have the quest reappear Active at the next restart. The one exception is a repeatable quest
+      already finished at least once: deleting that row would erase `TimesCompleted`, so it
+      reverts to Completed and keeps the count.
+      **Items are left alone.** Taking them back would destroy player property on a verb typed by
+      mistake, and the item may have come from an earlier leg that is no longer repeatable —
+      which would make the chain permanently unfinishable rather than merely abandoned. Nothing
+      is stranded either: only `destroy` and `sell` refuse quest items, so a held one can be put
+      down and picked back up.
 - [x] `CharacterQuestSaveQueue` so progress survives restart
 - [x] Builder API: quest CRUD, reachability (`GET /quests/{key}/reachability`), and the
       storyline graph with cycle detection (`GET /zones/{zoneKey}/storyline`)
@@ -2074,6 +2101,8 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Room flags | Resolution is room → zone → world → default; an unknown key survives a save/load round-trip; a wrong-typed value resolves to the default; `peaceful` beats `pvp`. The load-bearing test is that **a room with no flags at all is not PvP** — that is the property every other safety claim rests on. |
 | PvP | Refused in an unflagged room, allowed in a flagged one, ends the round after either combatant leaves, and never targets a party member — including a duel already under way, which ends the round the two players group up. AoE in a mixed room hits mobs and skips players. Every hostile action — swing, single-target cast, area effect, taunt — answers through the one gate, so the coverage is that they agree rather than that each was remembered. *Pet laundering is not tested because there are no pets; it is §13's blocking constraint, not a gap here.* |
 | Death | XP loss floors at the level threshold and never de-levels; no loss below the min level or on a PvP death; dying at the exact threshold costs nothing. Respawn falls through all three candidates, including when the bind room was deleted mid-session. Nothing leaves the inventory. |
+| Verbs | **Every registered verb is reachable by something a player can type.** A verb whose name is a strict prefix of an earlier one is shadowed completely — no input reaches it and nothing reports that, which is how `quest` sat behind `quests` for four months. Asserted over the whole table rather than on the pair that broke, plus the shortest allowed abbreviation of each verb resolving to something. |
+| Abandoning a quest | An active quest returns to never-started, in the world *and* in storage — the delete has to reach the row or a restart brings the quest back Active. A repeatable one already finished reverts to Completed with `TimesCompleted` intact rather than being deleted, since the row is the history. The refusals: a finished quest, a quest you never had, and a bare verb, none of which change any state. |
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
 | Spawners | A mob that wandered out still counts; ten sweeps that scatter what they made never exceed the target; a kill is replaced; two spawners of the same template do not count each other's work; a mob a builder placed by hand satisfies nobody's target. |
 | Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |

@@ -168,6 +168,14 @@ public interface ICharacterQuestRepository
 public interface ICharacterQuestSaveQueue
 {
     void Enqueue(CharacterQuestSnapshot snapshot);
+
+    /// <summary>
+    /// Forgets a character's row for one quest. Abandoning returns a quest to "never started",
+    /// which §6 spells as the absence of a row - so it has to reach storage as a delete. Doing it
+    /// in memory only would have the quest reappear Active at the next restart, which is the same
+    /// bug the turn-in path already carries a comment about.
+    /// </summary>
+    void EnqueueDelete(Guid characterId, string questKey);
 }
 
 public sealed record CharacterQuestSnapshot(

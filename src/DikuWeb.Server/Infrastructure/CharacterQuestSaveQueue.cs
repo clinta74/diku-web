@@ -6,21 +6,39 @@ using Microsoft.EntityFrameworkCore;
 namespace DikuWeb.Server.Infrastructure;
 
 /// <summary>
+/// One unit of work for the quest save queue. Shaped like <see cref="ItemSaveJob"/> because
+/// abandoning a quest deletes its row rather than setting a status: §6 says no row means not
+/// started, so the queue has to carry deletes as well as snapshots.
+/// </summary>
+public abstract record QuestSaveJob(Guid CharacterId, string QuestKey);
+
+public sealed record SaveQuestJob(CharacterQuestSnapshot Snapshot)
+    : QuestSaveJob(Snapshot.CharacterId, Snapshot.QuestKey);
+
+/// <summary>Carries only the pair: the state is already gone from the world by this point.</summary>
+public sealed record DeleteQuestJob(Guid CharacterId, string QuestKey)
+    : QuestSaveJob(CharacterId, QuestKey);
+
+/// <summary>
 /// The write side of the quest state persistence hand-off. The game loop calls
-/// <see cref="Enqueue"/> and moves on; nothing here blocks it.
+/// <see cref="Enqueue"/> or <see cref="EnqueueDelete"/> and moves on; nothing here blocks it.
 /// </summary>
 public sealed class CharacterQuestSaveQueue : ICharacterQuestSaveQueue
 {
-    private readonly Channel<CharacterQuestSnapshot> _channel =
-        Channel.CreateUnbounded<CharacterQuestSnapshot>(new UnboundedChannelOptions
+    private readonly Channel<QuestSaveJob> _channel =
+        Channel.CreateUnbounded<QuestSaveJob>(new UnboundedChannelOptions
         {
             SingleReader = true,
             SingleWriter = true,
         });
 
-    public ChannelReader<CharacterQuestSnapshot> Reader => _channel.Reader;
+    public ChannelReader<QuestSaveJob> Reader => _channel.Reader;
 
-    public void Enqueue(CharacterQuestSnapshot snapshot) => _channel.Writer.TryWrite(snapshot);
+    public void Enqueue(CharacterQuestSnapshot snapshot) =>
+        _channel.Writer.TryWrite(new SaveQuestJob(snapshot));
+
+    public void EnqueueDelete(Guid characterId, string questKey) =>
+        _channel.Writer.TryWrite(new DeleteQuestJob(characterId, questKey));
 
     public void Complete() => _channel.Writer.TryComplete();
 }
@@ -41,13 +59,15 @@ public sealed class CharacterQuestSaveWorker(
         // through disposal. Normal shutdown must not look like a fault.
         try
         {
-            await foreach (var snapshot in queue.Reader.ReadAllAsync(stoppingToken))
+            await foreach (var job in queue.Reader.ReadAllAsync(stoppingToken))
             {
                 // Coalesce anything already queued for the same character/quest: during shutdown or
                 // a busy autosave the same pair can appear several times, and only the last matters.
-                var batch = new Dictionary<(Guid, string), CharacterQuestSnapshot>
+                // Keying deletes the same way is what makes accept-then-abandon in one batch settle
+                // on the abandon rather than racing.
+                var batch = new Dictionary<(Guid, string), QuestSaveJob>
                 {
-                    [(snapshot.CharacterId, snapshot.QuestKey)] = snapshot
+                    [(job.CharacterId, job.QuestKey)] = job
                 };
 
                 while (queue.Reader.TryRead(out var extra))
@@ -71,17 +91,31 @@ public sealed class CharacterQuestSaveWorker(
         }
     }
 
-    private async Task SaveBatchAsync(IEnumerable<CharacterQuestSnapshot> snapshots, CancellationToken ct)
+    private async Task SaveBatchAsync(IEnumerable<QuestSaveJob> jobs, CancellationToken ct)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
 
-        foreach (var snapshot in snapshots)
+        foreach (var job in jobs)
         {
             // Find the existing character_quests row
             var existing = await db.CharacterQuests
                 .FirstOrDefaultAsync(
-                    cq => cq.CharacterId == snapshot.CharacterId && cq.QuestKey == snapshot.QuestKey,
+                    cq => cq.CharacterId == job.CharacterId && cq.QuestKey == job.QuestKey,
                     ct);
+
+            if (job is DeleteQuestJob)
+            {
+                // Absence is the state being written. Nothing to do when there is no row - a
+                // quest abandoned before its first save has never reached storage at all.
+                if (existing is not null)
+                {
+                    db.CharacterQuests.Remove(existing);
+                }
+
+                continue;
+            }
+
+            var snapshot = ((SaveQuestJob)job).Snapshot;
 
             if (existing is not null)
             {

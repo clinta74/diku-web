@@ -68,7 +68,13 @@ internal sealed class RecordingQuestSaveQueue : ICharacterQuestSaveQueue
 {
     public List<CharacterQuestSnapshot> Saved { get; } = [];
 
+    /// <summary>Abandoned quests, as (character, quest key) pairs.</summary>
+    public List<(Guid CharacterId, string QuestKey)> Deleted { get; } = [];
+
     public void Enqueue(CharacterQuestSnapshot snapshot) => Saved.Add(snapshot);
+
+    public void EnqueueDelete(Guid characterId, string questKey) =>
+        Deleted.Add((characterId, questKey));
 
     public Task FlushAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

@@ -22,11 +22,22 @@ public static class QuestCommands
         commands.Add(new CommandDefinition(
             "talk", 1, "talk <npc> (t) - speak with an NPC about quests", Talk));
 
+        // "quest" goes in FIRST, and the order is load-bearing. A verb matches on any prefix of
+        // its name, and Find takes the first definition that matches - so with "quests" ahead of
+        // it, typing `quest` matched *quests* ("quests".StartsWith("quest")) and QuestDetail had
+        // no reachable input at all. It was dead from the day it was written.
+        //
+        // What keeps the other prefix pairs safe is that the longer verb demands more characters
+        // than the shorter one has: `whois` needs 5, so "who" can never reach it, and `stats`
+        // needs 5, so "stat" cannot. "quests" asking for only 3 is what broke the symmetry.
+        commands.Add(new CommandDefinition(
+            "quest", 3, "quest [name] - your journal, or one quest in detail", QuestDetail));
+
         commands.Add(new CommandDefinition(
             "quests", 3, "quests - list your active quests", Quests));
 
         commands.Add(new CommandDefinition(
-            "quest", 3, "quest <name> - show quest details", QuestDetail));
+            "abandon", 3, "abandon <name> - give up an active quest", Abandon));
     }
 
     private static void Talk(CommandContext ctx)
@@ -247,21 +258,102 @@ public static class QuestCommands
         }
     }
 
-    private static void QuestDetail(CommandContext ctx)
+    /// <summary>
+    /// Gives up an active quest, returning it to never-started so the giver will offer it again.
+    /// </summary>
+    /// <remarks>
+    /// A chain is the reason this exists. Prerequisites mean an abandoned leg blocks every quest
+    /// behind it, and before this there was no way out of one: the journal listed it Active for
+    /// ever and the giver answered with its in-progress line. That is a soft-lock made of
+    /// dialogue rather than of code, which is the hardest kind to notice.
+    ///
+    /// It removes the state rather than marking it, because §6 spells "not started" as the
+    /// absence of a row - so no new status, no migration, and nothing else has to learn a third
+    /// state. The one exception is a repeatable quest already finished at least once: deleting
+    /// that row would erase the history in <c>TimesCompleted</c>, so it reverts to Completed and
+    /// keeps the count.
+    ///
+    /// Items are deliberately left alone. Taking them back would be destroying player property on
+    /// a verb typed by mistake, and worse, the item may have come from an earlier leg that is no
+    /// longer repeatable - which would make the chain permanently unfinishable rather than merely
+    /// abandoned. A held item is not dead weight either: <c>drop</c> carries no quest-item guard,
+    /// only <c>destroy</c> and <c>sell</c> do, so it can be put down and picked back up if the
+    /// quest is taken again.
+    /// </remarks>
+    private static void Abandon(CommandContext ctx)
     {
         if (!ctx.HasArgument)
         {
-            ctx.Reply("Which quest?");
+            ctx.Reply("Abandon which quest?");
             return;
         }
 
-        var questName = ctx.Argument;
         var character = ctx.Actor.Character;
-        var questList = ctx.World.QuestsFor(character.Id);
 
-        // Find quest by name or partial name match
-        var questState = questList.FirstOrDefault(q =>
-            ctx.Quests?.Get(q.QuestKey)?.Name.Contains(questName, StringComparison.OrdinalIgnoreCase) == true);
+        var questState = FindQuestByName(ctx, character.Id, ctx.Argument);
+
+        if (questState is null)
+        {
+            ctx.Reply("You don't have that quest.");
+            return;
+        }
+
+        var name = ctx.Quests?.Get(questState.QuestKey)?.Name ?? questState.QuestKey;
+
+        if (questState.Status != QuestStatus.Active)
+        {
+            // Named rather than generic: "you don't have that quest" would be a lie about
+            // something sitting in the journal two lines above.
+            ctx.Reply($"You have already finished {name}.");
+            return;
+        }
+
+        if (questState.TimesCompleted > 0)
+        {
+            questState.Status = QuestStatus.Completed;
+            ctx.World.SetQuestState(character.Id, questState.QuestKey, questState);
+            ctx.QuestSaveQueue?.Enqueue(new CharacterQuestSnapshot(
+                character.Id,
+                questState.QuestKey,
+                QuestStatus.Completed,
+                questState.StartedAt,
+                questState.CompletedAt,
+                questState.TimesCompleted));
+        }
+        else
+        {
+            ctx.World.RemoveQuestState(character.Id, questState.QuestKey);
+            ctx.QuestSaveQueue?.EnqueueDelete(character.Id, questState.QuestKey);
+        }
+
+        ctx.Reply($"You give up on {name}. You can ask for it again.");
+    }
+
+    /// <summary>
+    /// Finds one of a character's quests by a fragment of its display name.
+    /// </summary>
+    /// <remarks>
+    /// Shared by <c>quest</c> and <c>abandon</c> so the two agree about what a player means -
+    /// two copies of a fuzzy match is two chances to disagree about which quest was named.
+    /// </remarks>
+    private static CharacterQuest? FindQuestByName(CommandContext ctx, Guid characterId, string name) =>
+        ctx.World.QuestsFor(characterId).FirstOrDefault(q =>
+            ctx.Quests?.Get(q.QuestKey)?.Name.Contains(name, StringComparison.OrdinalIgnoreCase) == true);
+
+    private static void QuestDetail(CommandContext ctx)
+    {
+        // Bare `quest` shows the journal rather than asking "Which quest?". The two verbs are one
+        // family and the argument is what distinguishes them, so a player who types the shorter
+        // word gets the more useful answer instead of a question. It also means every
+        // abbreviation from "que" up stays useful now that this definition is matched first.
+        if (!ctx.HasArgument)
+        {
+            Quests(ctx);
+            return;
+        }
+
+        var character = ctx.Actor.Character;
+        var questState = FindQuestByName(ctx, character.Id, ctx.Argument);
 
         if (questState is null)
         {
