@@ -2278,6 +2278,9 @@ changed:
   `consider`) are not.
 - Autocomplete and alias lists moved to §13 — both want a protocol or schema addition rather than
   a command tweak, so neither is the small fix its one-line description suggests.
+- **Authored lines that mean exactly what they say** — §13. Emotes are formatted for them today,
+  which is right for a predicate and wrong for anything else a builder might want to write. Two
+  answers there, and the token half is mostly written already and wired to nothing.
 
 **Two lessons from the audits, worth carrying forward:**
 
@@ -2341,3 +2344,46 @@ Matching is derived from the name, which covers the common case. Nothing reaches
 called "Fang" whose key is `grey-wolf`. An explicit alias list on the template is the fix; the
 matcher (`NameMatch`) already ranks candidates, so it is a new source of candidates rather than a
 new algorithm.
+
+### Authored lines that mean exactly what they say
+
+**The question.** Emotes go through `NarrationHelper.BuildSentence`, which supplies the article,
+the capital, and the full stop — so an authored *"laughs at something said three tables away"*
+becomes *"An old man laughs at something said three tables away."* That is right for the shape
+emotes have today, where the line is a predicate and the subject is always the mob. It is wrong
+the moment a builder wants a line the helper cannot express:
+
+- a line that starts with something other than the mob — *"A draught goes through the room as the
+  old man shifts in his seat"*;
+- a mob referred to twice, or possessively — *"turns his cup"* works only because the pronoun is
+  hardcoded into the authored text, and it is wrong for a rat;
+- a line addressed to a specific player, which needs a name the template cannot know.
+
+**Two ways out, and they compose rather than compete.**
+
+*Exact mode:* a per-line opt-out, so the authored text is emitted verbatim and the builder owns
+the whole sentence. Cheap, and it makes the awkward cases possible immediately. The cost is that
+every line opting out also opts out of the article handling that made this consistent in the
+first place, so a builder can reintroduce *"old man laughs"* by ticking a box.
+
+*Tokens:* the better long-term answer, and **most of it is already written**.
+`NarrationHelper.FormatProse` supports `{entity:key}`, `{player:key}`, `{direction:key}` and bare
+`{key}`, articles the entity forms, capitalises the line, and leaves an unknown token untouched
+rather than blanking it. It has tests. It has **no production callers at all** — §12's lesson in
+its usual form, and the reason to check before building: the work here is likely *wiring and a
+token vocabulary*, not a formatter.
+
+What a token vocabulary would have to answer, which is the actual design work:
+
+- `{self}` for the emoting mob, articled — the current behaviour, spelled explicitly.
+- Possessives and pronouns, which is where it gets hard. `{their}` needs a mob to declare its
+  pronouns, and nothing in a template does. That is a content-model question, not a formatter
+  one, and it is the same question `examine` dodged by naming the subject instead of pronouning
+  it (§9, *Examining a mob*).
+- `{someone}` for a player in the room, which needs a rule for *which* player, and a fallback for
+  when the room is empty of them.
+
+**Why it is parked.** Nothing needs it yet: the tavern lines all fit the predicate shape, and the
+one that looked like a counter-example — *"turns his cup a quarter-turn"* — only reads oddly if
+the same line is given to something that is not a man. Build it when a second mob wants one of
+the shapes above, and let that mob decide the token vocabulary rather than guessing it now.
