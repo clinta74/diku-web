@@ -147,7 +147,8 @@ public sealed class MobAiSystem(
         {
             foreach (var player in world.OccupantsOf(roomKey))
             {
-                player.SendText($"{template.Name} {due.Text}.", "mob-action");
+                player.SendText(
+                    NarrationHelper.BuildSentence(template.Name, due.Text), "mob-action");
             }
 
             schedule[due.Text] = due.NextPulseAfter(pulse, random);
@@ -368,12 +369,15 @@ public sealed class MobAiSystem(
         target.Character.CombatState = CombatState.Fighting;
         // Note: Don't set target.Character.CurrentTarget — player must `kill` to fight back
 
-        target.SendText($"{template.Name} attacks you!", "combat");
+        target.SendText(
+            NarrationHelper.BuildSentence(template.Name, "attacks you!"), "combat");
         foreach (var other in world.OccupantsOf(roomKey))
         {
             if (other.CharacterId != target.CharacterId)
             {
-                other.SendText($"{template.Name} attacks {target.Name}!", "combat");
+                other.SendText(
+                    NarrationHelper.BuildSentence(template.Name, $"attacks {target.Name}!"),
+                    "combat");
             }
         }
     }

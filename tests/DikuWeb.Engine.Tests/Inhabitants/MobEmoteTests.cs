@@ -191,7 +191,10 @@ public sealed class MobEmoteTests
         harness.Clock.AdvancePulses(8);
         await ai.RunAsync(harness.World, CancellationToken.None);
 
-        Assert.Contains("a rat squeaks.", harness.DrainText(kael), StringComparison.Ordinal);
+        // Capitalised, and the authored "a rat" is not given a second article. This assertion
+        // read "a rat squeaks." until the emote path went through NarrationHelper: the name
+        // already carried its article, so the only thing wrong was the capital and nobody saw it.
+        Assert.Contains("A rat squeaks.", harness.DrainText(kael), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -303,5 +306,72 @@ public sealed class MobEmoteTests
 
         Assert.Equal(before, after);
         Assert.NotEmpty(after);
+    }
+
+    /// <summary>
+    /// A mob whose name carries no article of its own, which is the ordinary case.
+    /// </summary>
+    private static MobTemplate OldMan(params object[] emotes) => new()
+    {
+        Key = "oldman",
+        Name = "old man",
+        Icon = "o",
+        Level = 1,
+        Behavior = WorldHarness.AsPersisted(new Dictionary<string, object>
+        {
+            ["emotes"] = emotes.ToList(),
+        }),
+    };
+
+    [Fact]
+    public async Task A_name_with_no_article_of_its_own_is_given_one()
+    {
+        // Reported from play: "old man laughs at something said three tables away." The emote
+        // path built its sentence by hand while every other line about a mob went through
+        // NarrationHelper, so this was the one place in the game a mob lost its article.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var template = OldMan(Row("laughs at something said three tables away", 1, 1));
+        var mob = harness.AddMob("oldman", West, name: "old man");
+        mob.State["sentinel"] = true;
+
+        var kael = harness.AddPlayer("Kael", West);
+        harness.Drain(kael);
+
+        var ai = AiFor(harness, template);
+        await ai.RunAsync(harness.World, CancellationToken.None);
+        harness.Clock.AdvancePulses(8);
+        await ai.RunAsync(harness.World, CancellationToken.None);
+
+        Assert.Contains(
+            "An old man laughs at something said three tables away.",
+            harness.DrainText(kael),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_line_that_already_ends_a_sentence_gains_no_second_full_stop()
+    {
+        // The old code appended "." unconditionally, so an authored line ending in "!" read
+        // "shouts!." - which nobody had written a line to notice.
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var template = OldMan(Row("bangs the table and shouts for another!", 1, 1));
+        var mob = harness.AddMob("oldman", West, name: "old man");
+        mob.State["sentinel"] = true;
+
+        var kael = harness.AddPlayer("Kael", West);
+        harness.Drain(kael);
+
+        var ai = AiFor(harness, template);
+        await ai.RunAsync(harness.World, CancellationToken.None);
+        harness.Clock.AdvancePulses(8);
+        await ai.RunAsync(harness.World, CancellationToken.None);
+
+        var text = harness.DrainText(kael);
+        Assert.Contains("shouts for another!", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("!.", text, StringComparison.Ordinal);
     }
 }

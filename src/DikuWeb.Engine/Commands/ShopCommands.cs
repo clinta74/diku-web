@@ -1,4 +1,4 @@
-﻿using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
@@ -86,7 +86,8 @@ public static class ShopCommands
             var stock = MobBehavior.SellsOf(template.Behavior);
             if (stock.Count == 0)
             {
-                ctx.Reply($"{template.Name} has nothing to sell.");
+                ctx.Reply(
+                    $"{NarrationHelper.WithDefiniteArticle(template.Name, capitalize: true)} has nothing to sell.");
                 continue;
             }
 
