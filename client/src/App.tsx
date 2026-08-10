@@ -106,6 +106,9 @@ export default function App() {
                 setStage({ name: 'choosing', account: stage.account })
               }}
               focusInputRef={focusInputRef}
+              // Hidden is not unmounted, so the game has to be told to stop listening for
+              // keystrokes - otherwise typing a room name in the builder would type it here.
+              active={!inBuilder}
             />
           </div>
 

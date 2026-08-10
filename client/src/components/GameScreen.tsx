@@ -3,6 +3,7 @@ import { api } from '../net/api'
 import { connectStream } from '../net/stream'
 import { gameReducer, initialGameState } from '../state/gameReducer'
 import type { ContentEntry, MapPayload, TextSpan, VitalsPayload } from '../net/protocol'
+import { shouldRedirectToInput } from './typeAnywhere'
 
 interface Props {
   characterId: string
@@ -17,6 +18,12 @@ interface Props {
   onOpenBuilder?: (path?: string) => void
   /** Ref to focus the command input from parent (used when closing builder). */
   focusInputRef?: React.RefObject<(() => void) | null>
+  /**
+   * False while something else owns the screen - today, the builder, which hides this component
+   * without unmounting it. Only the keyboard cares: an invisible session must not be reading the
+   * document's keystrokes.
+   */
+  active?: boolean
 }
 
 export function GameScreen({
@@ -26,6 +33,7 @@ export function GameScreen({
   onRoomChange,
   onOpenBuilder,
   focusInputRef,
+  active = true,
 }: Props) {
   const [state, dispatch] = useReducer(gameReducer, initialGameState)
   const roomKey = state.room?.key ?? null
@@ -77,7 +85,12 @@ export function GameScreen({
         onKeyword={(keyword) => insertKeyword.current?.(keyword)}
       />
       <Scrollback lines={state.scrollback} onOpenBuilder={onOpenBuilder} />
-      <InputBar onSend={send} insertRef={insertKeyword} focusRef={focusInputRef ?? focusInput} />
+      <InputBar
+        onSend={send}
+        insertRef={insertKeyword}
+        focusRef={focusInputRef ?? focusInput}
+        active={active}
+      />
       <VitalsBar
         vitals={state.vitals}
         characterName={characterName}
@@ -224,10 +237,12 @@ function InputBar({
   onSend,
   insertRef,
   focusRef,
+  active,
 }: {
   onSend: (input: string) => void
   insertRef: React.RefObject<((keyword: string) => void) | null>
   focusRef: React.RefObject<(() => void) | null>
+  active: boolean
 }) {
   const [value, setValue] = useState('')
   const [history, setHistory] = useState<string[]>([])
@@ -254,6 +269,33 @@ function InputBar({
       ref.current = null
     }
   }, [focusRef])
+
+  // Typing anywhere on the page types here, and coming back to the tab puts the caret back.
+  // Both are bound to the document rather than to the game panel because the whole point is to
+  // catch keystrokes aimed at nothing in particular.
+  //
+  // `active` is what keeps this from being a document-wide keyboard hijack: the game is hidden
+  // rather than unmounted while the builder is open (App.tsx), so without the guard this handler
+  // would still be listening and would pull every keystroke out of the builder's forms.
+  useEffect(() => {
+    if (!active) return
+
+    function focusInput() {
+      const input = inputRef.current
+      if (input && document.activeElement !== input) input.focus()
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (shouldRedirectToInput(event)) focusInput()
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    window.addEventListener('focus', focusInput)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('focus', focusInput)
+    }
+  }, [active])
 
   function submit() {
     const input = value.trim()
