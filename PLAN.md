@@ -2169,6 +2169,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Roles | Promotion reaches an open session without a relog, and demotion revokes builder access within the revalidation interval rather than at cookie expiry. A banned account is rejected while still connected. Self-demotion refused. An offline target can be promoted. Every change writes an `admin_audit` row. |
 | Server | `WebApplicationFactory` + Testcontainers Postgres, including an SSE test that opens the stream, POSTs a command, and asserts events arrive in order. |
 | Client | Vitest for the protocol/state layer; Playwright for login → move → see-map, and build-a-room → walk-into-it. |
+| The prompt | Each of the three quality-of-life rules is pinned by what it must *not* take. Typing anywhere focuses the input, but not Ctrl+C over selected scrollback, not Tab, not Enter or Space over a focused button, and not while the builder is up — the game is hidden rather than unmounted, so an unguarded document listener would read the builder's own forms. Tab completes a name in the room and is *reported rather than swallowed* when nothing matches, because taking it unconditionally leaves the keyboard no way off the input. History survives a reload, stays per-character, and treats whatever is under its storage key as hostile — a throw while reading it would take the game screen down, not just the history. The scrollback follows the newest line only while it is already at the bottom. |
 
 Determinism is not polish here — a game loop you cannot replay exactly is a game loop you cannot
 debug. `IGameClock` and `IRandomSource` go in from the first commit.
@@ -2277,7 +2278,12 @@ changed:
 - `examine` and `stats` are builder-aware; the other inspection commands (`look`, `inventory`,
   `consider`) are not.
 - Autocomplete and alias lists moved to §13 — both want a protocol or schema addition rather than
-  a command tweak, so neither is the small fix its one-line description suggests.
+  a command tweak, so neither is the small fix its one-line description suggests. The half that
+  needed neither is now shipped: Tab completes names in the room from the contents frame. The
+  half that needed the protocol — carried items — is still open, and §13 says why it must not be
+  folded into the frame that already exists.
+- **Claude in the builder** — §13. Assistance with authored prose, starting with descriptions,
+  built so that it proposes and never writes. Would be the first outbound HTTP call in `src/`.
 - **Authored lines that mean exactly what they say** — §13. Emotes are formatted for them today,
   which is right for a predicate and wrong for anything else a builder might want to write. Two
   answers there, and the token half is mostly written already and wired to nothing.
@@ -2333,10 +2339,24 @@ being a paragraph.
 Until then this is blocked, not deferred: **no partial pet support should land**, because a pet
 that can attack before the gate understands ownership is a PvP bypass shipped by accident.
 
-### Command-line autocomplete
+### Command-line autocomplete — the half that needs the protocol
 
-Item and mob names on the command line, and `spawn` completing against real keys. Wants a
-protocol addition — the client cannot complete what it has never been sent.
+**Shipped:** Tab completes names of things *in the room*, from the contents frame the client is
+already sent. The fragment is searched for rather than taken as the last word, so a multi-word
+name completes from the middle of one. No verb list ships to the client and none should: the
+engine already prefix-matches verbs, so a copy in the browser would be a second list to keep in
+step, to save keystrokes that are already saved.
+
+**Still open, and this was always the part that wanted a protocol addition:** carried items.
+`drop`, `wear`, and the item half of `give` all name something in the pack, and inventory is not on
+the wire at all. It must not be bolted onto the contents frame — that frame is sent when a *room*
+changes, so a list that also claimed to describe the pack would be stale after every `buy`. It
+wants a frame of its own, sent when the pack changes. `spawn` completing against real template keys
+is the builder-side version of the same gap.
+
+One asymmetry to resolve when this is next touched: clicking a room keyword inserts the *template
+key* (`bar-maiden`), while Tab inserts the *label* (`a bar maiden`). Both target correctly, because
+`NameMatch` accepts either, but they disagree about what the player is being taught to type.
 
 ### Per-template alias lists
 
@@ -2387,3 +2407,70 @@ What a token vocabulary would have to answer, which is the actual design work:
 one that looked like a counter-example — *"turns his cup a quarter-turn"* — only reads oddly if
 the same line is given to something that is not a man. Build it when a second mob wants one of
 the shapes above, and let that mob decide the token vocabulary rather than guessing it now.
+
+### Claude in the builder
+
+**The idea.** A builder writing a room, a mob, or a quest is doing two jobs at once: deciding what
+exists, and writing the prose that makes it exist. The first is the interesting one. An assistant
+in the builder UI would take the second when it is wanted, starting with the smallest and safest
+case — descriptions.
+
+**The decision that makes it safe: it proposes, it never writes.** The endpoint returns text and
+touches nothing. The builder reads it, edits it, and saves through the same `PATCH` every other
+edit goes through, so `WorldEditor` stays the only path into the world and `content_audit` still
+records a human account as the author of the change. Nothing new can corrupt a zone, because
+nothing new can write to one. A bad suggestion is a paragraph in a textarea that gets deleted.
+
+This also means the client work is genuinely small, because the commit point already exists.
+`RoomDetailsTab` has a dirty flag, an explicit Save, and `NavGuard` behind it — a *Suggest* button
+fills the same buffer a keystroke would, and everything downstream already behaves. The same is
+true of the description fields on mob and item templates.
+
+**Why descriptions first, and not because they are easy.** They are the only case whose output
+needs no validation beyond "it is prose". A mob or a quest is a *shape*: stats, a behaviour bag, an
+attack list, dialogue keyed by state. Generating one means a model emitting JSON that has to
+satisfy the same contracts `BuilderContracts` enforces, and an endpoint that refuses anything that
+does not — including the quiet failures, like a quest whose required item nothing can obtain
+(`reachability` already knows how to ask that). That is a real project. Descriptions are a week and teach us
+whether the assistance is wanted at all.
+
+**Where the quality actually comes from.** Not the model — the context. "Write a room description"
+is worthless; "write a room description for *the Cellar Stair* in *Millbrook*, exits down and
+north, adjacent to the tavern common room, in a zone whose other rooms read like *this*" is the
+feature. All of that is already server-side in `BuilderQueries`. So the request should name an
+**entity**, not carry a prompt: `{ kind, key, instruction? }`, with the server assembling context.
+The client stays thin, and the prompt stays one thing in one place to tune.
+
+The best few-shot examples are the zone's own existing rooms. That needs no schema change, costs
+nothing to assemble, and gets better as the zone grows — a zone with fifteen rooms teaches its own
+voice. A `tone` field on the world or zone is the obvious alternative and should wait: it is a
+migration, and sibling rooms may make it unnecessary.
+
+**What the server has to grow.** Four things, and one of them is a first.
+
+- An `IContentAssistant` with one implementation calling the Messages API, registered through
+  `IHttpClientFactory`. **This would be the first outbound HTTP call anywhere in `src/`** — every
+  other thing this server talks to is Postgres, in process. That is worth noticing rather than
+  discovering: it introduces a dependency that can be slow, down, or rate-limited, in a codebase
+  that has never had one.
+- Configuration for the key, which must never reach the browser: the browser calls us, we call
+  Anthropic. `appsettings.json` is committed and already keeps the connection string empty, so the
+  same rule applies — user secrets in development, environment variable in deployment.
+- Its own rate-limit policy. `RateLimiting.Builder` is 120 burst at 20/second, deliberately loose
+  because a tree view issues a burst of reads. Every one of those reads is free and local; an
+  assist call costs money and takes seconds. Same trusted role, completely different budget, so it
+  needs a separate policy partitioned by account rather than a share of that one.
+- A timeout, a bounded output size, and cancellation tied to the request. Nothing here goes near
+  the game loop — it is an ordinary request thread, and §2.1's rule about the loop is untouched —
+  but a builder who navigates away should not leave a call running.
+
+**The open question: does the audit record that a model drafted it?** `content_audit` exists to
+answer "who changed this, when, and what did it say before", and "was this written by a person" is
+the same class of question, asked a year later when nobody remembers. Recording it means the save
+contract carries a provenance flag on every entity that can be assisted, which is not free. Not
+deciding this before building is fine; not noticing it would not be.
+
+**How it fails, and what that must look like.** Upstream is down, slow, or refusing. The rule is
+that the builder degrades to a plain textarea: Save is never gated on the assistant, a failed
+suggestion is a message beside the field, and no state is left half-applied. The feature is a
+convenience, and the moment it can block authoring it has cost more than it gave.
