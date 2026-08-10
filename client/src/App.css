@@ -338,6 +338,35 @@ input:focus {
   word-break: break-word;
 }
 
+/*
+ * Appears only while the player has scrolled away from the newest line, so it is never chrome
+ * over a transcript they are already at the end of. Sticky keeps it inside the scroll container
+ * without a wrapper: as the last child it rests below the fold and rides the bottom edge instead.
+ */
+.jump-to-bottom {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding-top: 0.5rem;
+  /* Above the lines it overlaps as it sticks. */
+  z-index: 1;
+}
+
+.jump-to-bottom button {
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 0.2rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--accent);
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.jump-to-bottom button:hover {
+  color: var(--text);
+}
+
 .line .echo {
   color: var(--dim);
 }

@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { api } from '../net/api'
 import { connectStream } from '../net/stream'
 import { gameReducer, initialGameState } from '../state/gameReducer'
 import type { ContentEntry, MapPayload, TextSpan, VitalsPayload } from '../net/protocol'
 import { shouldRedirectToInput } from './typeAnywhere'
+import { applyCompletion, completionsFor, type Completions } from './completion'
+import { loadHistory, remember, saveHistory } from './commandHistory'
+import { isAtBottom } from './scrollFollow'
 
 interface Props {
   characterId: string
@@ -62,6 +65,24 @@ export function GameScreen({
     return close
   }, [characterId])
 
+  // What Tab can complete to. The contents frame is already the room's own answer to "what is
+  // here", so nothing new has to be sent for this.
+  //
+  // Carried items are the gap, and a real one - `drop`, `wear` and the item half of `give` all
+  // name something in the pack. Inventory is not on the wire at all today, and piggy-backing it
+  // on this frame would be wrong rather than merely incomplete: contents is sent when a room
+  // changes, so a list that also claimed to describe the pack would be stale after every buy.
+  const candidates = useMemo(() => {
+    const entries = [...(state.contents?.occupants ?? []), ...(state.contents?.items ?? [])]
+
+    return entries
+      // The viewer is sent as "you", which is not a name anything answers to.
+      .filter((entry) => entry.label !== 'you')
+      // A parenthetical is presentation - "Mira (link-dead)" is targeted as "Mira".
+      .map((entry) => entry.label.replace(/\s*\(.*\)\s*$/, '').trim())
+      .filter(Boolean)
+  }, [state.contents])
+
   const send = useCallback(
     (input: string) => {
       // Echo locally so the player sees what they typed immediately. The result itself still
@@ -90,6 +111,8 @@ export function GameScreen({
         insertRef={insertKeyword}
         focusRef={focusInputRef ?? focusInput}
         active={active}
+        characterId={characterId}
+        candidates={candidates}
       />
       <VitalsBar
         vitals={state.vitals}
@@ -196,14 +219,25 @@ function Scrollback({
   lines: { id: number; spans: TextSpan[] }[]
   onOpenBuilder?: (path?: string) => void
 }) {
-  const endRef = useRef<HTMLDivElement>(null)
+  const boxRef = useRef<HTMLElement>(null)
+
+  // Following the bottom is the normal state, and it is the state a player leaves by scrolling up
+  // to read something. It used to scroll to the bottom on every line unconditionally, which meant
+  // reading back through a fight that was still going yanked you away four times a second.
+  const [following, setFollowing] = useState(true)
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: 'end' })
-  }, [lines])
+    const box = boxRef.current
+    if (box && following) box.scrollTop = box.scrollHeight
+  }, [lines, following])
 
   return (
-    <section className="scrollback" aria-live="polite">
+    <section
+      className="scrollback"
+      aria-live="polite"
+      ref={boxRef}
+      onScroll={(e) => setFollowing(isAtBottom(e.currentTarget))}
+    >
       {lines.map((line) => (
         <div key={line.id} className="line">
           {line.spans.map((span, i) =>
@@ -228,7 +262,24 @@ function Scrollback({
           )}
         </div>
       ))}
-      <div ref={endRef} />
+
+      {/* Sticky rather than absolutely positioned, so it needs no wrapper around the scroll
+          container: as the last child its resting place is below the fold, and sticking to the
+          bottom edge is exactly where a jump-to-bottom control belongs. */}
+      {!following && (
+        <div className="jump-to-bottom">
+          <button
+            type="button"
+            onClick={() => {
+              const box = boxRef.current
+              if (box) box.scrollTop = box.scrollHeight
+              setFollowing(true)
+            }}
+          >
+            ↓ Jump to newest
+          </button>
+        </div>
+      )}
     </section>
   )
 }
@@ -238,16 +289,24 @@ function InputBar({
   insertRef,
   focusRef,
   active,
+  characterId,
+  candidates,
 }: {
   onSend: (input: string) => void
   insertRef: React.RefObject<((keyword: string) => void) | null>
   focusRef: React.RefObject<(() => void) | null>
   active: boolean
+  characterId: string
+  candidates: string[]
 }) {
   const [value, setValue] = useState('')
-  const [history, setHistory] = useState<string[]>([])
+  const [history, setHistory] = useState<string[]>(() => loadHistory(characterId))
   const [cursor, setCursor] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Which completion of the current fragment is showing, so a second Tab offers the next one
+  // rather than recomputing against the text the first one just wrote.
+  const cycle = useRef<{ typed: string; completions: Completions; index: number } | null>(null)
 
   useEffect(() => {
     const ref = insertRef
@@ -302,12 +361,53 @@ function InputBar({
     if (!input) return
 
     onSend(input)
-    setHistory((h) => [...h, input])
+
+    // Written outside the updater rather than inside it: an updater must stay pure, and under
+    // StrictMode React runs it twice.
+    const next = remember(history, input)
+    setHistory(next)
+    saveHistory(characterId, next)
+
     setCursor(-1)
     setValue('')
   }
 
+  /**
+   * Grows the trailing name, cycling on repeated presses.
+   *
+   * Tab is reported rather than swallowed when nothing matches, so it still moves focus out of
+   * the input. Taking it unconditionally would leave the keyboard with no way off this control,
+   * which combined with the type-anywhere handler would make the page unnavigable without a mouse.
+   */
+  function complete(backwards: boolean): boolean {
+    // A cycle is still live only while the box still holds exactly what the last press put there.
+    // That one comparison is the whole staleness rule: anything the player does in between -
+    // typing, deleting, arrowing through history - changes the value and starts the search again,
+    // so no separate "the fragment moved on" reset is needed on the other keys.
+    const previous = cycle.current
+    const state =
+      previous && applyCompletion(previous.typed, previous.completions, previous.index) === value
+        ? { ...previous, index: previous.index + (backwards ? -1 : 1) }
+        : { typed: value, completions: completionsFor(value, candidates), index: 0 }
+
+    const count = state.completions.matches.length
+    if (count === 0) {
+      cycle.current = null
+      return false
+    }
+
+    state.index = ((state.index % count) + count) % count
+    cycle.current = state
+    setValue(applyCompletion(state.typed, state.completions, state.index))
+    return true
+  }
+
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Tab') {
+      if (complete(event.shiftKey)) event.preventDefault()
+      return
+    }
+
     if (event.key === 'Enter') {
       submit()
       return
