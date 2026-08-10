@@ -46,7 +46,7 @@ public sealed class AutoStartQuestTests
             TurninMobKey = "oldman",
             RequiredItemKey = "beer",
             IsRepeatable = repeatable,
-            Dialogue = { ["turninReady"] = "He drinks, and sets the old one in your hand." },
+            Dialogue = { ["turninReady"] = "He sets it down untouched and presses the old glass into your hand." },
         });
 
         harness.Quests.Put(new Quest
@@ -95,7 +95,7 @@ public sealed class AutoStartQuestTests
         harness.Execute(player, "give beer old man");
 
         var text = harness.DrainText(player);
-        Assert.Contains("He drinks, and sets the old one in your hand", text, StringComparison.Ordinal);
+        Assert.Contains("presses the old glass into your hand", text, StringComparison.Ordinal);
         Assert.Contains("She'll want that back", text, StringComparison.Ordinal);
 
         Assert.Equal(
@@ -115,7 +115,7 @@ public sealed class AutoStartQuestTests
 
         var text = harness.DrainText(player);
         Assert.True(
-            text.IndexOf("He drinks", StringComparison.Ordinal)
+            text.IndexOf("He sets it down", StringComparison.Ordinal)
             < text.IndexOf("She'll want that back", StringComparison.Ordinal));
     }
 
