@@ -2278,10 +2278,10 @@ changed:
 - `examine` and `stats` are builder-aware; the other inspection commands (`look`, `inventory`,
   `consider`) are not.
 - Autocomplete and alias lists moved to §13 — both want a protocol or schema addition rather than
-  a command tweak, so neither is the small fix its one-line description suggests. The half that
-  needed neither is now shipped: Tab completes names in the room from the contents frame. The
-  half that needed the protocol — carried items — is still open, and §13 says why it must not be
-  folded into the frame that already exists.
+  a command tweak, so neither is the small fix its one-line description suggests. Autocomplete is
+  now **closed**: Tab completes names in the room from the contents frame, and carried items are
+  out of scope by decision — §13 records why the protocol addition they would need is not worth
+  the convenience, so the next person to notice finds the reasoning rather than re-deriving it.
 - **Claude in the builder** — §13. Assistance with authored prose, starting with descriptions,
   built so that it proposes and never writes. Would be the first outbound HTTP call in `src/`.
 - **Authored lines that mean exactly what they say** — §13. Emotes are formatted for them today,
@@ -2339,24 +2339,26 @@ being a paragraph.
 Until then this is blocked, not deferred: **no partial pet support should land**, because a pet
 that can attack before the gate understands ownership is a PvP bypass shipped by accident.
 
-### Command-line autocomplete — the half that needs the protocol
+### Command-line autocomplete — done, and deliberately stopping here
 
-**Shipped:** Tab completes names of things *in the room*, from the contents frame the client is
-already sent. The fragment is searched for rather than taken as the last word, so a multi-word
-name completes from the middle of one. No verb list ships to the client and none should: the
-engine already prefix-matches verbs, so a copy in the browser would be a second list to keep in
-step, to save keystrokes that are already saved.
+**Shipped, and considered finished.** Tab completes names of things *in the room*, from the
+contents frame the client is already sent. The fragment is searched for rather than taken as the
+last word, so a multi-word name completes from the middle of one. No verb list ships to the client
+and none should: the engine already prefix-matches verbs, so a copy in the browser would be a
+second list to keep in step, to save keystrokes that are already saved.
 
-**Still open, and this was always the part that wanted a protocol addition:** carried items.
-`drop`, `wear`, and the item half of `give` all name something in the pack, and inventory is not on
-the wire at all. It must not be bolted onto the contents frame — that frame is sent when a *room*
-changes, so a list that also claimed to describe the pack would be stale after every `buy`. It
-wants a frame of its own, sent when the pack changes. `spawn` completing against real template keys
-is the builder-side version of the same gap.
+**Carried items are out of scope by decision, not by omission.** `drop`, `wear`, and the item half
+of `give` all name something in the pack, and inventory is not on the wire at all. Completing them
+would need a frame of its own, sent when the pack changes — it must *not* be folded into the
+contents frame, which is sent when a *room* changes, so a list that also claimed to describe the
+pack would be stale after every `buy`. That is a protocol addition to buy a small convenience, and the convenience is
+not wanted enough. Recorded so the next person to notice the gap finds the reasoning rather than
+re-deriving it. `spawn` completing against real template keys is the same trade on the builder
+side.
 
-One asymmetry to resolve when this is next touched: clicking a room keyword inserts the *template
-key* (`bar-maiden`), while Tab inserts the *label* (`a bar maiden`). Both target correctly, because
-`NameMatch` accepts either, but they disagree about what the player is being taught to type.
+One asymmetry, noted rather than scheduled: clicking a room keyword inserts the *template key*
+(`bar-maiden`), while Tab inserts the *label* (`a bar maiden`). Both target correctly, because
+`NameMatch` accepts either.
 
 ### Per-template alias lists
 
