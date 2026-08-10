@@ -68,14 +68,24 @@ public sealed class Actor : IAsyncDisposable
     public bool IsStreaming => _pump is { IsCompleted: false };
 
     /// <summary>
-    /// Registers an account, creates a character, enters the world, and opens the stream.
+    /// Registers an account, grants any role it needs, creates a character, and enters the world.
     /// </summary>
+    /// <param name="accountRole">
+    /// A role to hold before entering. <b>Before</b> matters: the loop is told an actor's role on
+    /// the <c>EnterWorld</c> message and does not look at it again, so promoting somebody already
+    /// standing in the world leaves the loop believing the role they arrived with. Doing it here,
+    /// between registering and entering, is the only ordering where one trip through gets it
+    /// right — and the alternative, leaving and re-entering to refresh it, is a reconnect in the
+    /// middle of a plan for no reason a reader of the transcript could infer.
+    /// </param>
     public static async Task<Actor> ArriveAsync(
         IGameTarget target,
         Transcript transcript,
         string role,
         CharacterPath path,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        AccountRole? accountRole = null,
+        Action<string>? onProblem = null)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(transcript);
@@ -84,7 +94,8 @@ public sealed class Actor : IAsyncDisposable
         var username = Names.Unique();
         const string password = "correcthorse";
 
-        var register = await client.PostAsJsonAsync(
+        var register = await PostPatientlyAsync(
+            client,
             "/api/auth/register",
             new { email = $"{username}@playtest.invalid", username, password },
             cancellationToken);
@@ -94,6 +105,24 @@ public sealed class Actor : IAsyncDisposable
             throw new PlaytestException(
                 $"Could not register an account for '{role}': " +
                 $"{(int)register.StatusCode} {await Body(register, cancellationToken)}");
+        }
+
+        if (accountRole is { } wanted)
+        {
+            var promotion = await target.PromoteAsync(username, wanted, cancellationToken);
+
+            if (promotion.Granted)
+            {
+                // The role is a claim minted at sign-in, so it is not in the cookie until they
+                // sign in again. Learned the hard way in BuilderClient.
+                await SignInAsync(client, username, password, role, cancellationToken);
+                transcript.Add(role, EntryKind.Meta, $"promoted to {wanted}");
+            }
+            else
+            {
+                transcript.Add(role, EntryKind.Meta, $"not promoted: {promotion.Reason}");
+                onProblem?.Invoke(promotion.Reason ?? $"Could not make '{role}' a {wanted}.");
+            }
         }
 
         var (characterId, characterName) =
@@ -254,24 +283,60 @@ public sealed class Actor : IAsyncDisposable
     }
 
     /// <summary>
-    /// Signs in again, so a role granted since the last sign-in is actually in the cookie.
+    /// Signs in, so a role granted since registration is actually in the cookie.
     /// </summary>
-    /// <remarks>
-    /// Not optional after a promotion. The role is a claim minted at sign-in, so an account
-    /// promoted to Builder mid-session keeps a cookie that says Player until it signs in again —
-    /// which reads as the promotion having silently failed.
-    /// </remarks>
-    public async Task RefreshRoleAsync(CancellationToken cancellationToken)
+    private static async Task SignInAsync(
+        HttpClient client,
+        string username,
+        string password,
+        string role,
+        CancellationToken cancellationToken)
     {
-        var login = await _client.PostAsJsonAsync(
-            "/api/auth/login",
-            new { username = Username, password = Password },
-            cancellationToken);
+        var login = await PostPatientlyAsync(
+            client, "/api/auth/login", new { username, password }, cancellationToken);
 
         if (!login.IsSuccessStatusCode)
         {
             throw new PlaytestException(
-                $"'{Role}' could not sign in again after promotion: {(int)login.StatusCode}.");
+                $"'{role}' could not sign in again after promotion: {(int)login.StatusCode}.");
+        }
+    }
+
+    /// <summary>
+    /// Posts, waiting out a rate limiter rather than treating it as a failure.
+    /// </summary>
+    /// <remarks>
+    /// The auth policy allows ten attempts a minute <em>per remote address</em>, and every actor
+    /// registers an account of its own — so one run of a six-plan library spends eleven of them and
+    /// a second run straight afterwards is refused. That is the limiter working as designed; the
+    /// apparatus is simply a heavier client than a person, and arriving is not something it should
+    /// give up on because it arrived recently.
+    ///
+    /// It is also the coarse-partition weakness of BUGS.md #4 seen from the inside: everything on
+    /// one address shares one bucket, which is exactly what makes it a site-wide cap behind a
+    /// proxy. Waiting is the honest response from a client either way.
+    /// </remarks>
+    private static async Task<HttpResponseMessage> PostPatientlyAsync(
+        HttpClient client,
+        string path,
+        object body,
+        CancellationToken cancellationToken)
+    {
+        HttpResponseMessage response;
+
+        for (var attempt = 0; ; attempt++)
+        {
+            response = await client.PostAsJsonAsync(path, body, cancellationToken);
+
+            if (response.StatusCode != HttpStatusCode.TooManyRequests || attempt >= 3)
+            {
+                return response;
+            }
+
+            // The bucket refills over a minute, so Retry-After is usually tens of seconds. Trust
+            // the server's number rather than guessing at it.
+            var wait = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(20);
+            await Task.Delay(wait, cancellationToken);
         }
     }
 

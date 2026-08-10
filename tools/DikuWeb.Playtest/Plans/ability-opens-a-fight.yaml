@@ -13,10 +13,19 @@ about: |
   can run it. That is deliberate: the plan guarding the most-reported bug should have the fewest
   reasons not to run.
 
-  One thing this plan cannot check is that the Warden's *own weapon* starts swinging after the
-  ability, which was the other half of the note. A level-1 kick one-shots a city rat, so there is
-  never anything left to swing at. That half needs a mob tougher than anything the starter world
-  contains, and until fixtures can build one it is covered by the engine tests instead.
+  Whether the kick kills outright is a dice roll — it is 1.1x damage with a floor of 3, against a
+  city rat with barely more health than that. Both outcomes are worth having, so the plan waits for
+  the rat to fall rather than assuming which one killed it:
+
+    * one-shot, and the closing half of the note is on display — experience, gold, and a fight that
+      ends;
+    * survived, and so is the opening half, because the Warden's own weapon carries on and finishes
+      it. A run where the kick rolled 9 instead of 10 caught exactly that: "Your Kick hits a rat for
+      9." and then, two seconds later, "You hit a rat for 2 damage. A rat falls."
+
+  An earlier version assumed the one-shot and flagged four expectations the first time the dice
+  disagreed. Fixtures will make this deterministic by building a mob that reliably survives an
+  opener; until then, waiting for the outcome rather than predicting it is the honest shape.
 
 cast:
   - name: Theron
@@ -56,8 +65,9 @@ steps:
 
   - actor: Theron
     note: |
-      The kill has to be a whole kill. Experience and gold arriving is the visible half of
-      HandleDeath having run at all — when an ability killed something, none of it used to.
+      The kill has to be a whole kill, whichever blow lands it. Experience arriving is the visible
+      half of HandleDeath having run at all — when an ability killed something, none of it used to.
+    wait: { text: "a rat falls", timeout: 60 }
     expect:
       - "a rat falls"
       - "xp 25"

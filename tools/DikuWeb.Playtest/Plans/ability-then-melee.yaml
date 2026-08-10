@@ -1,0 +1,67 @@
+name: An ability then melee
+about: |
+  The half of the 2026-08-09 note that nothing could check against a live world: after a hostile
+  ability lands, the Warden's *own weapon* should start swinging. Before the fix, `kick rat` hurt
+  the rat and left the player standing there — the mob was engaged and swung back, but nothing had
+  pointed the player's attacks at anything.
+
+  It could not be observed because a level-1 Kick one-shots a city rat, so there was never anything
+  left to swing at. `ability-opens-a-fight` waits for whichever blow lands the kill and is honest
+  about not knowing which; this plan uses a target that cannot die to the opener, so the melee has
+  to show up.
+
+  Needs the `test-dummy` in The Well Yard: 400 health, no attacks, no experience, and spawned by a
+  sentinel spawner so it never wanders off. It hits nothing back, which is the point — a plan that
+  has to survive its own target is measuring the balance rather than the thing under test.
+
+cast:
+  - name: Theron
+    path: Warden
+
+steps:
+  - actor: Theron
+    do: south
+    wait: { text: "You walk south" }
+  - actor: Theron
+    do: south
+    wait: { text: "The Well Yard" }
+    expect: "test dummy"
+
+  - actor: Theron
+    note: |
+      Open with the ability, from standing. Nothing has been attacked yet, so anything that
+      happens next is the ability's doing.
+    do: kick dummy
+    wait: { text: "Your Kick" }
+    expect:
+      - "You use Kick"
+      - "Your Kick hits a test dummy for"
+    expect-not: "takes effect"
+
+  - actor: Theron
+    note: |
+      The whole plan. Left alone, the Warden's weapon should now be swinging at the thing the
+      ability hit — and because the dummy cannot die to one kick, "You hit" can only have come
+      from the opener having started a fight properly.
+    wait: { text: "You hit a test dummy", timeout: 30 }
+    expect: "You hit a test dummy"
+
+  - actor: Theron
+    note: |
+      And the dummy should be fighting back in the sense that matters: the fight exists. Movement
+      is refused while in one, which is the cheapest proof that this is a real engagement rather
+      than a sequence of unrelated blows.
+    do: north
+    expect: "while in combat"
+
+  - actor: Theron
+    note: Leaving properly ends it, and then walking works again.
+    do: flee
+    wait: { text: "escape" }
+    expect: "You manage to escape"
+
+  - actor: Theron
+    do: north
+    wait: { text: "You walk north" }
+    expect: "You walk north"
+    expect-not: "while in combat"

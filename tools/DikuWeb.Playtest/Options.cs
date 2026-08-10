@@ -33,6 +33,15 @@ public sealed record Options
     /// <summary>Print the transcript as it happens as well as writing it.</summary>
     public bool Follow { get; init; }
 
+    /// <summary>
+    /// Leave the characters this run created in the world.
+    /// </summary>
+    /// <remarks>
+    /// Cleaning up is the default whenever an admin credential makes it possible, because the
+    /// litter is real and compounds — but it is a deletion, so there has to be a way to say no.
+    /// </remarks>
+    public bool NoCleanup { get; init; }
+
     public static Options Parse(IReadOnlyList<string> args)
     {
         ArgumentNullException.ThrowIfNull(args);
@@ -75,6 +84,10 @@ public sealed record Options
 
                 case "--follow":
                     options = options with { Follow = true };
+                    break;
+
+                case "--no-cleanup":
+                    options = options with { NoCleanup = true };
                     break;
 
                 default:
@@ -122,6 +135,7 @@ public sealed record Options
           --admin-password <pw>
           --no-fixtures           Play the world as it stands, ignoring plans' world: blocks
           --follow                Print the transcript as it happens
+          --no-cleanup            Leave the characters this run created in the world
 
         Examples:
           dotnet run --project tools/DikuWeb.Playtest -- --server http://localhost:5010

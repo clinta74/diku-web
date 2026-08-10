@@ -12,7 +12,7 @@ this codebase keeps its reasoning.
 | 2 | A mob you are fighting can wander out of the room | **Blocking** | Live transcript | **Fixed** |
 | 3 | Nothing tells you your fight ended | Moderate | Live transcript | **Fixed** with #1 |
 | 4 | The auth rate limiter is site-wide behind a proxy | Moderate | By inspection | Known, deliberate |
-| 5 | "Melee starts after an ability" is unverified live | Coverage gap | — | Blocked on fixtures |
+| 5 | "Melee starts after an ability" is unverified live | Coverage gap | — | **Closed** by the test dummy |
 
 ---
 
@@ -120,14 +120,24 @@ to it, then partition on the resolved client address.
 
 ---
 
-## 5. "Melee starts after an ability" is unverified live — coverage gap
+## 5. "Melee starts after an ability" is unverified live — **closed**
 
-Half of the 2026-08-09 note is guarded only by engine tests. A level-1 Kick one-shots a city rat,
-so `ability-opens-a-fight` can never observe the Warden's own weapon starting to swing afterwards —
-there is never anything left to swing at, and the starter world contains nothing tougher.
+Half of the 2026-08-09 note was guarded only by engine tests, because a level-1 Kick one-shots a
+city rat and there was never anything left to swing at.
 
-Not a bug. It becomes coverage the moment plans can build their own content, which is the hosted
-target and world fixtures (`PLAYTEST.md`, milestone 4).
+Closed by a **test dummy**: `test-dummy` in The Well Yard, 400 health, no attacks, no experience,
+spawned by a *sentinel* spawner so it never wanders. `ability-then-melee` now opens on it with a
+kick and watches the Warden's own weapon come round — deterministically, because the target cannot
+die to the opener.
+
+```
+Your Kick hits a test dummy for 10.
+You hit a test dummy for 1 damage.
+```
+
+A target that cannot die and does not meaningfully fight back is worth more here than a realistic
+one: a plan that has to survive its own opponent is measuring the balance rather than the thing
+under test.
 
 ---
 
@@ -173,23 +183,44 @@ dotnet run --project tools/DikuWeb.Playtest -- --server http://localhost:5050 \
     --plans tools/DikuWeb.Playtest/plans
 ```
 
-### Step 4 — Hosted target and world fixtures (#5)
+### Step 4 — Hosted target and world fixtures — **partly done, and partly overtaken**
 
-`PLAYTEST.md` milestone 4: boot the server in-process against a throwaway Postgres, and let a plan's
-`world:` block build its own mobs through the builder API. This is what closes #5 and what makes
-every content-dependent plan reproducible rather than a race against a spawner.
+The *purpose* of fixtures was determinism, and a permanent `test-dummy` bought most of it for a
+fraction of the work — see #5. A standing dummy is arguably the better answer anyway: it is content
+a human can also walk up to and hit.
 
-It also removes the reason `combat-basics` had to go to the crypt in the first place.
+**Still outstanding: the hosted target itself** — booting the server in-process against a throwaway
+Postgres (`PLAYTEST.md`, milestone 4). What it would still buy:
 
-### Step 5 — Have the apparatus tidy up after itself
+- a run that needs no server started by hand, and no admin credential, since it owns the database;
+- no litter at all, because the database goes with the run;
+- reproducibility from empty, which the dummy does not give — it lives in one dev world and nothing
+  recreates it elsewhere. **If that database is ever reset, `test-dummy` and its sentinel spawner
+  have to be rebuilt**, and today the only record of how is the `about:` block in
+  `ability-then-melee` and this paragraph.
 
-`deletecharacter <name>` now exists for admins, which gives the apparatus a way to retire the
-characters it creates. A plan with an Admin in its cast can already call it; the better shape is
-the runner doing it at teardown whenever an admin is available, so the world stops accumulating
-`Theronqxbfm`s.
+That last point is the real argument for finishing it.
 
-The accounts still remain — there is no delete-account verb and there should not be one lightly —
-but characters are what clutter `who` and the room listings. See PLAN.md for the SQL purge.
+### Step 5 — Have the apparatus tidy up after itself ✅ **done**
+
+A janitor runs after every run: one Admin actor that deletes every character the run created, by
+the name the world actually gave it. Default on wherever an admin credential makes it possible,
+`--no-cleanup` to opt out. Ten characters a run now become one — the janitor's own, which it cannot
+delete, and which the summary names rather than hides.
+
+Reviewing it turned up two things worth having:
+
+- **`role:` never worked.** The loop is told an actor's role on the `EnterWorld` message and never
+  looks again, so promoting somebody already standing in the world left the loop believing the role
+  they arrived with. Promotion now happens between registering and entering. `shopping` was the
+  plan that would have caught it and had been degrading gracefully past it the whole time.
+- **The apparatus outgrew the auth limiter.** Ten attempts a minute per address; a seven-plan run
+  spends eleven. Two runs back to back and the second one's janitor is refused. Registration and
+  sign-in now wait out a 429 the way commands do — see #4, of which this is the same coarse
+  partition seen from the client side.
+
+The accounts still remain: there is no delete-account verb and there should not be one lightly.
+See `PLAYTEST.md` for the SQL purge.
 
 ### Not in this queue
 

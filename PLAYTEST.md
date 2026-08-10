@@ -138,10 +138,15 @@ tears it down; that is the only mode that should.
 child and killing the wrapper does not take the child with it. That orphan is what locks build
 outputs into MSB3021. `Get-Process DikuWeb.Server | Stop-Process -Force`.)*
 
-**It does leave accounts.** Every actor registers a real account and character against the real
-database, and there is no delete endpoint — deliberately. So a dev database accumulates one account
-per actor per run, for ever. They all carry the `playtest_` prefix precisely so they can be told
-apart from a person's at a glance:
+**It cleans up its own characters.** A janitor runs after every run — one Admin actor that deletes
+every character the run created, by the name the world actually gave it. On wherever an admin
+credential makes it possible; `--no-cleanup` opts out. It cannot delete the character it is playing,
+so each run leaves exactly one janitor behind rather than one character per actor, and the summary
+names it rather than hiding it.
+
+**It still leaves accounts.** Every actor registers a real account, and there is no delete-account
+endpoint — deliberately. They all carry the `playtest_` prefix precisely so they can be told apart
+from a person's at a glance:
 
 ```sql
 -- What the apparatus has left behind
@@ -154,6 +159,21 @@ delete from accounts where username like 'playtest\_%';
 Hosted mode makes the question moot, because the database is thrown away with the run. Against a
 long-lived server, purge occasionally — and never point the apparatus at production, which the
 account-per-actor design makes obvious enough to state once.
+
+## The test dummy
+
+`ability-then-melee` needs a target that survives an opening ability, and the starter world has
+nothing tougher than a city rat. So there is one, built through the builder API:
+
+| | |
+|---|---|
+| Template | `test-dummy` — 400 health, no attacks, no experience, no gold, `passive` |
+| Spawner | Zone `aldenmoor.millbrook`, room `aldenmoor.millbrook.well-yard`, target 1, **sentinel** |
+
+Sentinel so it never wanders off mid-plan; no attacks and no rewards so a plan measures the thing
+under test rather than the balance. **It exists only in the dev world.** If that database is reset
+it has to be rebuilt from the table above — which is the strongest remaining argument for finishing
+the hosted target, where a plan's `world:` block would carry its own content.
 
 ## The apparatus is a client
 

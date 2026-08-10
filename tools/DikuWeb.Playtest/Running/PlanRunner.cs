@@ -18,6 +18,16 @@ public sealed record PlanOutcome(
 {
     /// <summary>Whether anything at all wants a human's attention.</summary>
     public bool NeedsReview => Unmet > 0 || Problems.Count > 0;
+
+    /// <summary>
+    /// The names the world actually gave this plan's cast, for the cleanup pass.
+    /// </summary>
+    /// <remarks>
+    /// Not the same as <see cref="Actors"/>, which holds the names the <em>plan</em> used. A
+    /// janitor deleting "Theron" would delete whoever happens to be called that; it has to delete
+    /// "Theronqxbfm", which is the one this run created.
+    /// </remarks>
+    public IReadOnlyList<string> CharacterNames { get; init; } = [];
 }
 
 /// <summary>
@@ -41,6 +51,7 @@ public sealed class PlanRunner(IGameTarget target, Transcript transcript, RunSet
 
         var problems = new List<string>();
         var actors = new Dictionary<string, Actor>(StringComparer.OrdinalIgnoreCase);
+        var created = new List<string>();
 
         transcript.Add(Apparatus, EntryKind.Note, $"Plan: {plan.Name}");
 
@@ -62,6 +73,7 @@ public sealed class PlanRunner(IGameTarget target, Transcript transcript, RunSet
             {
                 var actor = await CastAsync(member, problems, cancellationToken);
                 actors[member.Name] = actor;
+                created.Add(actor.CharacterName);
             }
 
             // Let the arrival burst land before the first command, so a plan's opening line is
@@ -96,7 +108,10 @@ public sealed class PlanRunner(IGameTarget target, Transcript transcript, RunSet
             [.. plan.Cast.Select(c => c.Name)],
             observations.Count(o => o.Met == true),
             observations.Count(o => o.Met == false),
-            problems);
+            problems)
+        {
+            CharacterNames = created,
+        };
     }
 
     /// <summary>Brings one cast member into the world and sets them up as the plan asked.</summary>
@@ -112,42 +127,24 @@ public sealed class PlanRunner(IGameTarget target, Transcript transcript, RunSet
                 $"'{member.Name}' has path '{member.Path}', which is not one of: {valid}.");
         }
 
-        var actor = await Actor.ArriveAsync(target, transcript, member.Name, path, cancellationToken);
+        AccountRole? accountRole = null;
 
-        if (member.Role is not null)
+        if (member.Role is { } roleName)
         {
-            await GrantRoleAsync(actor, member.Role, problems, cancellationToken);
+            if (Enum.TryParse<AccountRole>(roleName, ignoreCase: true, out var parsed))
+            {
+                accountRole = parsed;
+            }
+            else
+            {
+                problems.Add($"'{member.Name}' asked for role '{roleName}', which does not exist.");
+            }
         }
 
-        return actor;
-    }
-
-    private async Task GrantRoleAsync(
-        Actor actor,
-        string roleName,
-        List<string> problems,
-        CancellationToken cancellationToken)
-    {
-        if (!Enum.TryParse<AccountRole>(roleName, ignoreCase: true, out var role))
-        {
-            problems.Add($"'{actor.Role}' asked for role '{roleName}', which does not exist.");
-            return;
-        }
-
-        var result = await target.PromoteAsync(actor.Username, role, cancellationToken);
-
-        if (!result.Granted)
-        {
-            problems.Add(result.Reason ?? $"Could not make '{actor.Role}' a {role}.");
-            transcript.Add(actor.Role, EntryKind.Meta, $"not promoted: {result.Reason}");
-            return;
-        }
-
-        // The role is a claim minted at sign-in, so it is not in the cookie until they sign in
-        // again — and the character has to re-enter, because the loop was told the old role when
-        // the session opened.
-        await actor.RefreshRoleAsync(cancellationToken);
-        transcript.Add(actor.Role, EntryKind.Meta, $"promoted to {role}");
+        // The role is granted inside arriving rather than after it, because the loop is told an
+        // actor's role on the EnterWorld message and never looks again.
+        return await Actor.ArriveAsync(
+            target, transcript, member.Name, path, cancellationToken, accountRole, problems.Add);
     }
 
     private async Task RunStepsAsync(

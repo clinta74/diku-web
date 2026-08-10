@@ -117,6 +117,21 @@ foreach (var plan in plans)
     }
 }
 
+// After every plan, and only ever the characters this run made. A janitor per plan would leave one
+// behind each time, because the verb refuses to delete the character being played.
+if (!options.NoCleanup)
+{
+    var made = reported.SelectMany(r => r.Outcome.CharacterNames).ToList();
+    var transcript = new Transcript();
+
+    Console.WriteLine(await Janitor.SweepAsync(target, transcript, made, CancellationToken.None));
+
+    await File.WriteAllTextAsync(
+        Path.Combine(runDirectory, "cleanup.log"),
+        TranscriptWriter.Interleaved(transcript, ["Janitor"]),
+        CancellationToken.None);
+}
+
 var indexPath = Path.Combine(runDirectory, "index.html");
 
 await File.WriteAllTextAsync(
