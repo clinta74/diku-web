@@ -161,6 +161,46 @@ public sealed class GiveParsingTests
     }
 
     [Fact]
+    public void A_mob_that_will_not_take_it_says_so_rather_than_denying_it_is_there()
+    {
+        // "There is no one named bar maiden here." while she is standing in front of you reads
+        // as "you typed the name wrong", and sends the player off checking their spelling.
+        var harness = Loaded();
+        QuestTakerCalled(harness, "maiden", "bar maiden", "empty-glass");
+        var kael = Holding(harness, "Kael", "sharp stick");
+        harness.Drain(kael);
+
+        harness.Execute(kael, "give sharp stick bar maiden");
+
+        var text = harness.DrainText(kael);
+        Assert.DoesNotContain("no one named", text, StringComparison.Ordinal);
+        Assert.Contains(
+            "The bar maiden has no use for the sharp stick right now. Try talking first.",
+            text,
+            StringComparison.Ordinal);
+
+        // And it is refused rather than quietly swallowed.
+        Assert.Single(harness.World.InventoryOf(kael.Character.Id));
+    }
+
+    [Fact]
+    public void A_mob_in_no_quest_at_all_is_not_told_to_talk()
+    {
+        // Sending the player off to have a conversation that does not exist is worse than saying
+        // nothing, so the hint is only for a mob quests actually run through.
+        var harness = Loaded();
+        harness.AddMob("rat", Room, name: "rat");
+        var kael = Holding(harness, "Kael", "sharp stick");
+        harness.Drain(kael);
+
+        harness.Execute(kael, "give sharp stick rat");
+
+        var text = harness.DrainText(kael);
+        Assert.Contains("The rat has no use for the sharp stick.", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Try talking", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Give_with_only_one_word_still_asks_for_both()
     {
         var harness = Loaded();

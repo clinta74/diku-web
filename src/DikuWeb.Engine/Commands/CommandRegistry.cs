@@ -1036,6 +1036,20 @@ public sealed class CommandRegistry
         var targetPlayer = ctx.World.FindPlayerByName(targetName);
         if (targetPlayer is null)
         {
+            // A mob standing right here is not "no one". Only players and quest turn-ins can be
+            // handed anything, and the turn-in above has already declined, so the honest answer
+            // is that this one does not want it - not that nobody of that name is present, which
+            // is what a player reads as "I typed the name wrong".
+            if (NameMatch.Best(
+                    ctx.World.MobsIn(ctx.Actor.RoomKey),
+                    targetName,
+                    m => m.TemplateName,
+                    m => m.TemplateKey) is { } mob)
+            {
+                ctx.Reply(RefuseGiftTo(ctx, mob, targetItem), "bad");
+                return;
+            }
+
             ctx.Reply($"There is no one named {targetName} here.", "bad");
             return;
         }
@@ -1282,6 +1296,33 @@ public sealed class CommandRegistry
 
         return itemFound
             ?? (string.Join(' ', parts[..^1]), parts[^1]);
+    }
+
+    /// <summary>
+    /// Why a mob will not take the thing you are holding out to it.
+    /// </summary>
+    /// <remarks>
+    /// Two answers rather than one, because the two situations want different things from the
+    /// player. A mob mixed up in quests at all is one you should be talking to — the usual reason
+    /// a turn-in is declined is that the quest is not active yet, which no amount of holding the
+    /// item out will fix. A mob in no quest whatsoever is simply not a recipient, and saying
+    /// "try talking" there would send the player off to have a conversation that does not exist.
+    ///
+    /// Named rather than pronouned, for the reason <c>examine</c> is: no pronoun is right for
+    /// both a bar maiden and a rat.
+    /// </remarks>
+    private static string RefuseGiftTo(CommandContext ctx, Mob mob, ItemInstance item)
+    {
+        var who = NarrationHelper.WithDefiniteArticle(mob.TemplateName, capitalize: true);
+        var what = NarrationHelper.WithDefiniteArticle(item.TemplateName);
+
+        var inQuests = ctx.Quests is not null
+            && (ctx.Quests.GetByGiverMobKey(mob.TemplateKey).Count > 0
+                || ctx.Quests.GetByTurninMobKey(mob.TemplateKey).Count > 0);
+
+        return inQuests
+            ? $"{who} has no use for {what} right now. Try talking first."
+            : $"{who} has no use for {what}.";
     }
 
     /// <summary>
