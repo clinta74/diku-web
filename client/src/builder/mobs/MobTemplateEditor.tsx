@@ -12,8 +12,7 @@ import { readBehavior, writeBehavior, type BehaviorDraft } from './behavior'
 import { MobStatsEditor } from './MobStatsEditor'
 import { LootEditor } from './LootEditor'
 import { readLoot, writeLoot, type LootRow } from './mobStats'
-import { Select } from '../../ui/Select'
-import { ATTACK_EFFECTS, effectOption, pruneParams } from './attackEffects'
+import { AttackEditor } from './AttackEditor'
 
 interface Props {
   templateKey: string
@@ -125,51 +124,6 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
     setDirty(true)
   }
 
-  function editAttack(index: number, patch: Partial<MobAttack>) {
-    setAttacks((current) => current.map((a, i) => (i === index ? { ...a, ...patch } : a)))
-    setDirty(true)
-  }
-
-  /**
-   * Changing the effect discards the previous one's parameters. The executors skip what they do
-   * not recognise, so a stale `tickDamage` left on a stun would be invisible rather than wrong -
-   * until someone reads the row and cannot tell what it was meant to do.
-   */
-  function editAttackEffect(index: number, effectKey: string) {
-    setAttacks((current) =>
-      current.map((a, i) =>
-        i === index
-          ? { ...a, effectKey: effectKey || null, effectParams: pruneParams(effectKey, a.effectParams) }
-          : a,
-      ),
-    )
-    setDirty(true)
-  }
-
-  function editAttackParam(index: number, key: string, value: string) {
-    setAttacks((current) =>
-      current.map((a, i) => {
-        if (i !== index) return a
-        const next = { ...(a.effectParams ?? {}), [key]: value }
-        return { ...a, effectParams: pruneParams(a.effectKey, next) }
-      }),
-    )
-    setDirty(true)
-  }
-
-  function addAttack() {
-    setAttacks((current) => [
-      ...current,
-      { verb: 'hit', delayPulses: 8, damageMultiplier: null, effectKey: null, effectParams: null },
-    ])
-    setDirty(true)
-  }
-
-  function removeAttack(index: number) {
-    setAttacks((current) => current.filter((_, i) => i !== index))
-    setDirty(true)
-  }
-
   if (error && !template) return <p className="bad">{error}</p>
   if (!template) return <p className="dim">Loading…</p>
 
@@ -246,90 +200,13 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         }}
       />
 
-      <fieldset className="attack-list">
-        <legend>Attacks</legend>
-        <p className="dim">
-          Each attack runs on its own timer, so two attacks means two independent swings. Leave
-          the list empty and this mob hits once every 8 pulses.
-        </p>
-
-        {attacks.map((attack, index) => (
-          <div className="field-row" key={index}>
-            <Field label="Message" hint="Base form: bite, claw, gore.">
-              <input
-                value={attack.verb}
-                onChange={(e) => editAttack(index, { verb: e.target.value })}
-              />
-            </Field>
-            <Field label="Delay (pulses)" hint="Minimum 4 ≈ 1s.">
-              <NumberInput
-                min={4}
-                value={attack.delayPulses}
-                onChange={(v) => editAttack(index, { delayPulses: v })}
-              />
-            </Field>
-            <Field label="Damage ×" hint="Blank = same as the mob's damage.">
-              <input
-                type="text"
-                inputMode="decimal"
-                value={attack.damageMultiplier ?? ''}
-                onChange={(e) => {
-                  const raw = e.target.value.trim()
-                  editAttack(index, {
-                    damageMultiplier: raw === '' || Number.isNaN(Number(raw)) ? null : Number(raw),
-                  })
-                }}
-              />
-            </Field>
-            <button type="button" className="danger" onClick={() => removeAttack(index)}>
-              Remove
-            </button>
-          </div>
-        ))}
-
-        {attacks.map((attack, index) => {
-          const option = effectOption(attack.effectKey)
-          return (
-            <div className="attack-effect" key={`effect-${index}`}>
-              <Field
-                label={`“${attack.verb || 'hit'}” also…`}
-                hint={option?.summary ?? 'Nothing beyond its damage.'}
-              >
-                <Select
-                  value={attack.effectKey ?? ''}
-                  onChange={(v) => editAttackEffect(index, v)}
-                >
-                  <option value="">— nothing —</option>
-                  {ATTACK_EFFECTS.map((effect) => (
-                    <option key={effect.key} value={effect.key}>
-                      {effect.label}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-
-              {option && (
-                <div className="stat-grid">
-                  {option.params.map((param) => (
-                    <Field key={param.key} label={param.label} hint={param.hint}>
-                      <input
-                        value={attack.effectParams?.[param.key] ?? ''}
-                        placeholder={param.fallback}
-                        inputMode={param.integer ? 'numeric' : 'text'}
-                        onChange={(e) => editAttackParam(index, param.key, e.target.value)}
-                      />
-                    </Field>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
-
-        <button type="button" onClick={addAttack}>
-          Add attack
-        </button>
-      </fieldset>
+      <AttackEditor
+        attacks={attacks}
+        onChange={(next) => {
+          setAttacks(next)
+          setDirty(true)
+        }}
+      />
 
       <div className="row">
         <button type="button" className="primary" disabled={!dirty || busy} onClick={() => void save()}>

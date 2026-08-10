@@ -1083,13 +1083,25 @@ API client, and types with the game.
 | **Room** | Title, description, **flags** (rendered from the registry, §4.10), ASCII grid painter, legend, exits. |
 | **Zone canvas** | Rooms as boxes, exits as lines. Drag to arrange, drag between boxes to link. |
 | **Item templates** | Name, description, icon, slot, weight, base value, base stats. |
-| **Mob templates** | Name, description, icon, level, base stats, base xp/gold, behavior, loot. |
+| **Mob templates** | Name, description, icon, level, base stats, base xp/gold, behavior, loot, **attacks and the effect each one carries**. |
 | **Spawners** | Template, target rooms, count, respawn seconds. |
 | **Quests** | Giver mob, turn-in mob, required item and count, rewards, prerequisites, and the four dialogue strings (§4.9). Reachability warnings shown inline. |
 | **Storyline graph** | The chain as an indented list — depth is what a builder needs to see, and indentation *is* "how far in is this". Flags cycles, unreachable quests, and prerequisites naming a quest that does not exist. |
 
 Placing a one-off object in a room is just a spawner with `target_count: 1` — the builder offers
 it as *Place item here* rather than making you think about spawners.
+
+**An attack is edited as one thing, because it is one thing.** The attack editor was two lists
+over the same array — every attack's timing in the first, every attack's effect in the second —
+so adding a third attack put its effect three blocks below its own timing, and the only thing
+tying the two halves together was a heading quoting the verb. That heading is ambiguous exactly
+when it matters: a new attack defaults to `hit`, so clicking *Add attack* twice produced two
+effect blocks both labelled *"hit" also…*. Now one card per attack holds what it says, how often,
+how hard, and what it carries, with the effect's parameters indented under the effect that owns
+them — one of the four reads five parameters, which is enough to read as a section of its own if
+nothing says otherwise. The select is labelled *On a hit, also…* rather than *also*, because
+**when** a rider applies is the part that is not obvious: it rides the swing's damage, so it
+inherits the miss chance and the parry and lands only on someone the blow left standing (§12).
 
 ### 7.2 The grid painter and zone canvas
 
@@ -2029,7 +2041,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Emotes | Both authored shapes read, and mixed in one list; a row with no text is dropped; an inverted range reads as its lower number. A fresh mob is silent on its first sweep, a fast line talks while a slow one stays quiet, one line lands per tick, and renaming a line prunes the old key rather than accruing it. The schedule survives the jsonb round trip — the one bug class this codebase keeps rediscovering. |
 | Parties | Forming, expiry, leadership passing, and the dissolve at one member. Leaving the world drops you from the group — asserted through `WorldState.Remove`, which is the one door out. The split pays only members standing where the mob died, and an odd remainder goes to whoever landed the blow rather than evaporating. |
 | Travel | `recall` reaches the bind point and falls through to the starting room when unbound or when a builder deleted it. Every refusal has a test, because the value of `noRecall` having exactly one reader is entirely in that reader being consulted. |
-| Builder | Mutation → loop → persist → occupants notified, end to end. Audit row written on every write. |
+| Builder | Mutation → loop → persist → occupants notified, end to end. Audit row written on every write. An attack's effect stays on the attack it was chosen for, and two attacks sharing a verb are still tellable apart — the two properties the old two-list layout correlated only by position and by a quoted word. |
 | Roles | Promotion reaches an open session without a relog, and demotion revokes builder access within the revalidation interval rather than at cookie expiry. A banned account is rejected while still connected. Self-demotion refused. An offline target can be promoted. Every change writes an `admin_audit` row. |
 | Server | `WebApplicationFactory` + Testcontainers Postgres, including an SSE test that opens the stream, POSTs a command, and asserts events arrive in order. |
 | Client | Vitest for the protocol/state layer; Playwright for login → move → see-map, and build-a-room → walk-into-it. |

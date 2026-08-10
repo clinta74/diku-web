@@ -207,10 +207,29 @@
   gap: 0.6rem;
 }
 
-/* Each attack is a row; the remove button sits with the fields rather than below them. */
 .attack-list .field-row,
 .behavior-editor .field-row {
   align-items: flex-end;
+}
+
+/* An attack is one thing - what it says, how often, how hard, and what it carries - so it is one
+   card. It used to be two rows in two different lists, which put a third attack's effect three
+   blocks below its own timing. */
+.attack-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  padding: 0.6rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.attack-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .attack-list > button,
@@ -375,12 +394,16 @@
 
 /* Set apart from the attack rows above it. An effect is a property of one attack, but it needs
    several fields of its own, so inlining it into that row would make every row unreadable. */
+/* The effect's parameters are meaningless without the effect, so they are indented under it
+   rather than separated from it by a rule - one of the four reads five of them, which is enough
+   to look like a section of its own if nothing says otherwise. */
 .attack-effect {
-  border-top: 1px solid var(--border);
-  padding-top: 0.6rem;
+  border-left: 2px solid var(--border);
+  padding-left: 0.7rem;
+  margin-left: 0.15rem;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 /* --- Quest chain -------------------------------------------------- */

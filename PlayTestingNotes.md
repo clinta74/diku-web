@@ -35,5 +35,7 @@ that ends. Two things that sweep found which were not in the note:
   death. A hostile ability now opens the duel the way `kill` does.
 
 
-- the mob attacks section has the attack also section split a pary as you add more attack types. This section should
-be combined with the attack section as well and layed out to make it more intuitive on how to use it.
+The mob attacks editor no longer splits an attack in two. It was two lists over the same array —
+all the timings, then all the effects — so the more attack types a mob had, the further an
+attack's effect sat from the attack it belonged to. One card per attack now, and the effect's
+parameters are indented under the effect that owns them. See §7.1.
