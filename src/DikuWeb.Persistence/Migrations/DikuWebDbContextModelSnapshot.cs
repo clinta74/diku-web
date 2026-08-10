@@ -580,6 +580,10 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("key");
 
+                    b.Property<bool>("AutoStart")
+                        .HasColumnType("boolean")
+                        .HasColumnName("auto_start");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text")

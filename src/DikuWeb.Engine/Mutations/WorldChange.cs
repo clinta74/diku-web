@@ -307,6 +307,7 @@ public sealed record UpsertQuest(
     int RewardItemCount,
     List<string> PrerequisiteQuestKeys,
     bool IsRepeatable,
+    bool AutoStart,
     Dictionary<string, string> Dialogue,
     int SortOrder) : WorldChange
 {

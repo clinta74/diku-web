@@ -223,6 +223,7 @@ export interface Quest {
   rewardItemCount: number
   prerequisiteQuestKeys: string[]
   isRepeatable: boolean
+  autoStart: boolean
   dialogue: Record<string, string>
   sortOrder: number
 }

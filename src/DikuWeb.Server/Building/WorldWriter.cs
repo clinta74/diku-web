@@ -425,6 +425,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         RewardItemCount = c.RewardItemCount,
                         PrerequisiteQuestKeys = new List<string>(c.PrerequisiteQuestKeys),
                         IsRepeatable = c.IsRepeatable,
+                        AutoStart = c.AutoStart,
                         Dialogue = new Dictionary<string, string>(c.Dialogue, StringComparer.Ordinal),
                         SortOrder = c.SortOrder,
                     });
@@ -445,6 +446,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 entity.RewardItemCount = c.RewardItemCount;
                 entity.PrerequisiteQuestKeys = new List<string>(c.PrerequisiteQuestKeys);
                 entity.IsRepeatable = c.IsRepeatable;
+                entity.AutoStart = c.AutoStart;
                 entity.Dialogue = new Dictionary<string, string>(c.Dialogue, StringComparer.Ordinal);
                 entity.SortOrder = c.SortOrder;
                 return ContentAction.Update;
@@ -611,6 +613,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                     ["prerequisiteQuestKeys"] =
                         new JsonArray([.. entity.PrerequisiteQuestKeys.Select(k => (JsonNode?)k)]),
                     ["isRepeatable"] = entity.IsRepeatable,
+                    ["autoStart"] = entity.AutoStart,
                     ["dialogue"] = ToJson(entity.Dialogue),
                     ["sortOrder"] = entity.SortOrder,
                 }.ToJsonString();

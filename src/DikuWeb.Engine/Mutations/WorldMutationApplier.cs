@@ -1055,6 +1055,7 @@ public sealed class WorldMutationApplier(
             RewardItemCount = change.RewardItemCount,
             PrerequisiteQuestKeys = [.. change.PrerequisiteQuestKeys],
             IsRepeatable = change.IsRepeatable,
+            AutoStart = change.AutoStart,
             Dialogue = new Dictionary<string, string>(change.Dialogue, StringComparer.Ordinal),
             SortOrder = change.SortOrder,
         });

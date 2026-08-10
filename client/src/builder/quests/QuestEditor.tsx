@@ -48,6 +48,7 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
   const [rewardItemCount, setRewardItemCount] = useState(1)
   const [prerequisites, setPrerequisites] = useState('')
   const [isRepeatable, setIsRepeatable] = useState(false)
+  const [autoStart, setAutoStart] = useState(false)
   const [dialogue, setDialogue] = useState<Record<string, string>>({})
   const [sortOrder, setSortOrder] = useState(0)
 
@@ -81,6 +82,7 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
         setRewardItemCount(loaded.rewardItemCount)
         setPrerequisites(formatKeyList(loaded.prerequisiteQuestKeys))
         setIsRepeatable(loaded.isRepeatable)
+        setAutoStart(loaded.autoStart)
         setDialogue({ ...loaded.dialogue })
         setSortOrder(loaded.sortOrder)
         setDirty(false)
@@ -138,6 +140,7 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
         rewardItemCount,
         prerequisiteQuestKeys: parseKeyList(prerequisites),
         isRepeatable,
+        autoStart,
         dialogue: strippedDialogue(),
         sortOrder,
       })
@@ -381,6 +384,27 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
             }}
           />
         </Field>
+
+        <label className="field-check">
+          <input
+            type="checkbox"
+            checked={autoStart}
+            disabled={prerequisites.trim() === ''}
+            onChange={(e) => {
+              setAutoStart(e.target.checked)
+              touch()
+            }}
+          />
+          Starts by itself when its prerequisites are done — no <code>talk</code> needed
+        </label>
+
+        <p className="dim">
+          {prerequisites.trim() === ''
+            ? 'Needs a prerequisite first: a quest with nothing in front of it has no moment to start at, so it always waits for a talk.'
+            : autoStart
+              ? 'Hand in the quest above and this one opens on the spot, with its own offer line — which reads best when the same NPC takes the turn-in and gives this one. It still refuses everything a talk would refuse, so it can never reach a state a player could not have reached by asking.'
+              : 'The player has to seek out the giver and talk. Right for a chain that should send them somewhere.'}
+        </p>
 
         <label className="field-check">
           <input

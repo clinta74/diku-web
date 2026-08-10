@@ -1,4 +1,4 @@
-﻿using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Worlds;
@@ -101,25 +101,7 @@ public static class QuestCommands
 
             if (questState is null && prerequisitesMet)
             {
-                // No quest row and prerequisites are met - offer the quest
-                var offer = quest.Dialogue.TryGetValue("giverOffer", out var offerText)
-                    ? offerText
-                    : $"I have a job for you: {quest.Summary}";
-                narrations.Add(offer);
-
-                // Create an active quest row
-                var newQuestState = new CharacterQuest
-                {
-                    CharacterId = character.Id,
-                    QuestKey = quest.Key,
-                    Status = QuestStatus.Active,
-                    StartedAt = DateTimeOffset.UtcNow
-                };
-                ctx.World.SetQuestState(character.Id, quest.Key, newQuestState);
-
-                // Persist the state change
-                ctx.QuestSaveQueue?.Enqueue(new CharacterQuestSnapshot(
-                    character.Id, quest.Key, QuestStatus.Active, DateTimeOffset.UtcNow, null, 0));
+                narrations.Add(Begin(ctx, character.Id, quest, timesCompleted: 0));
             }
             else if (questState?.Status == QuestStatus.Active)
             {
@@ -157,25 +139,8 @@ public static class QuestCommands
             }
             else if (questState?.Status == QuestStatus.Completed && quest.IsRepeatable)
             {
-                // Repeatable quest can be re-offered
-                var offer = quest.Dialogue.TryGetValue("giverOffer", out var offerText)
-                    ? offerText
-                    : $"I have another job for you: {quest.Summary}";
-                narrations.Add(offer);
-
-                // Reset the quest for re-acceptance
-                var resetQuestState = new CharacterQuest
-                {
-                    CharacterId = character.Id,
-                    QuestKey = quest.Key,
-                    Status = QuestStatus.Active,
-                    StartedAt = DateTimeOffset.UtcNow
-                };
-                ctx.World.SetQuestState(character.Id, quest.Key, resetQuestState);
-
-                // Persist the state change
-                ctx.QuestSaveQueue?.Enqueue(new CharacterQuestSnapshot(
-                    character.Id, quest.Key, QuestStatus.Active, DateTimeOffset.UtcNow, null, questState.TimesCompleted));
+                // Repeatable quest can be re-offered, keeping the count of earlier runs.
+                narrations.Add(Begin(ctx, character.Id, quest, questState.TimesCompleted));
             }
             else if (!prerequisitesMet)
             {
@@ -345,6 +310,94 @@ public static class QuestCommands
         }
 
         ctx.Reply($"You give up on {name}. You can ask for it again.");
+    }
+
+    /// <summary>
+    /// Puts a quest in a character's journal as Active and returns the line the giver says.
+    /// </summary>
+    /// <remarks>
+    /// One place, because there are now three ways in — a first offer, a repeat, and a chain step
+    /// starting itself — and three copies of "set Active, keep the count, enqueue the snapshot"
+    /// is three chances to forget the count. <paramref name="timesCompleted"/> is carried rather
+    /// than reset because it is the history the repeat gates read.
+    /// </remarks>
+    private static string Begin(
+        CommandContext ctx, Guid characterId, Quest quest, int timesCompleted)
+    {
+        var startedAt = DateTimeOffset.UtcNow;
+
+        ctx.World.SetQuestState(characterId, quest.Key, new CharacterQuest
+        {
+            CharacterId = characterId,
+            QuestKey = quest.Key,
+            Status = QuestStatus.Active,
+            StartedAt = startedAt,
+            TimesCompleted = timesCompleted,
+        });
+
+        ctx.QuestSaveQueue?.Enqueue(new CharacterQuestSnapshot(
+            characterId, quest.Key, QuestStatus.Active, startedAt, null, timesCompleted));
+
+        return quest.Dialogue.TryGetValue("giverOffer", out var offer)
+            ? offer
+            : $"I have a job for you: {quest.Summary}";
+    }
+
+    /// <summary>
+    /// Starts any quest that follows the one just finished and has asked to begin by itself.
+    /// </summary>
+    /// <remarks>
+    /// Driven off <see cref="Quest.PrerequisiteQuestKeys"/> rather than a list of triggers on the
+    /// quest that completed, so there is still exactly one description of what follows what — the
+    /// one the storyline panel already draws. A second set of edges would be invisible there, and
+    /// nothing would keep the two in agreement.
+    ///
+    /// Called after the turn-in has marked its own quest Completed, which is what lets the
+    /// ordinary prerequisite check do the work here: a step whose other prerequisites are still
+    /// open simply does not qualify yet. Every rule a <c>talk</c> would apply is applied — the
+    /// dormancy check, both repeat gates — because a quest that starts itself must not be able to
+    /// reach a state a player could not have reached by asking for it.
+    ///
+    /// It does not cascade: the quest it starts is Active, not Completed, so nothing downstream of
+    /// <em>that</em> qualifies until it is finished in turn.
+    /// </remarks>
+    private static void StartFollowOnQuests(CommandContext ctx, Guid characterId, string completedKey)
+    {
+        if (ctx.Quests is null)
+        {
+            return;
+        }
+
+        foreach (var next in ctx.Quests.All.Values
+            .Where(q => q.AutoStart
+                && q.PrerequisiteQuestKeys.Contains(completedKey, StringComparer.OrdinalIgnoreCase))
+            .OrderBy(q => q.SortOrder))
+        {
+            if (IsDormant(ctx, next) || !CheckPrerequisites(ctx.World, characterId, next))
+            {
+                continue;
+            }
+
+            var state = ctx.World.GetQuestState(characterId, next.Key);
+
+            if (state is null)
+            {
+                ctx.Reply(Begin(ctx, characterId, next, timesCompleted: 0));
+                continue;
+            }
+
+            // Already in the journal. Only a finished, repeatable one may start again, and only
+            // under the same two gates a talk would apply.
+            if (state.Status != QuestStatus.Completed
+                || !next.IsRepeatable
+                || ChainStillRunning(ctx, characterId, next.Key) is not null
+                || !UpstreamHasRunAgain(ctx, characterId, next, state))
+            {
+                continue;
+            }
+
+            ctx.Reply(Begin(ctx, characterId, next, state.TimesCompleted));
+        }
     }
 
     /// <summary>
@@ -630,6 +683,11 @@ public static class QuestCommands
             character.Vitals = result.NewVitals;
             ctx.Reply($"You advance to level {result.NewLevel}!", "levelup");
         }
+
+        // Last, so the next step's offer reads as the consequence of the turn-in rather than
+        // arriving in the middle of its rewards. By this point the quest is Completed, which is
+        // what lets the ordinary prerequisite check decide whether anything follows.
+        StartFollowOnQuests(ctx, character.Id, matchingQuest.Key);
 
         return true;
     }

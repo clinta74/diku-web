@@ -243,6 +243,7 @@ public sealed record QuestResponse(
     int RewardItemCount,
     List<string> PrerequisiteQuestKeys,
     bool IsRepeatable,
+    bool AutoStart,
     Dictionary<string, string> Dialogue,
     int SortOrder);
 
@@ -277,6 +278,7 @@ public sealed record SaveQuestRequest(
     int? RewardItemCount,
     List<string>? PrerequisiteQuestKeys,
     bool? IsRepeatable,
+    bool? AutoStart,
     Dictionary<string, string>? Dialogue,
     int? SortOrder);
 

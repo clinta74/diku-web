@@ -53,6 +53,19 @@ public sealed class Quest
     /// <summary>Whether this quest can be completed multiple times.</summary>
     public bool IsRepeatable { get; set; }
 
+    /// <summary>
+    /// Starts by itself the moment its prerequisites are all complete, with no <c>talk</c>.
+    /// </summary>
+    /// <remarks>
+    /// Declared by the quest that would be started rather than as a list on the one that starts
+    /// it, so <see cref="PrerequisiteQuestKeys"/> stays the only description of what follows
+    /// what. A second list of chain edges would be a second graph over the same quests, invisible
+    /// to the storyline panel and with nothing making the two agree.
+    /// It also matches the direction content is authored in (PLAN.md §7.4): a builder writes this
+    /// quest knowing what it follows, not the earlier one knowing what comes after it.
+    /// </remarks>
+    public bool AutoStart { get; set; }
+
     /// <summary>Dialogue strings: giverOffer, giverInProgress, giverComplete, turninReady.</summary>
     public Dictionary<string, string> Dialogue { get; set; } = [];
 

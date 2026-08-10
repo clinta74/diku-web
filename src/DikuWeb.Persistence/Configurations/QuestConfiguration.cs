@@ -66,6 +66,9 @@ public sealed class QuestConfiguration : IEntityTypeConfiguration<Quest>
         builder.Property(q => q.IsRepeatable)
             .HasColumnName("is_repeatable");
 
+        builder.Property(q => q.AutoStart)
+            .HasColumnName("auto_start");
+
         builder.Property(q => q.Dialogue)
             .HasColumnName("dialogue")
             .HasColumnType("jsonb");

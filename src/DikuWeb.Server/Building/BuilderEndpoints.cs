@@ -745,6 +745,7 @@ public static class BuilderEndpoints
             request.RewardItemCount ?? 1,
             request.PrerequisiteQuestKeys ?? [],
             request.IsRepeatable ?? false,
+            request.AutoStart ?? false,
             request.Dialogue ?? [],
             request.SortOrder ?? 0);
 
@@ -780,6 +781,7 @@ public static class BuilderEndpoints
             request.RewardItemCount ?? existing.RewardItemCount,
             request.PrerequisiteQuestKeys ?? existing.PrerequisiteQuestKeys,
             request.IsRepeatable ?? existing.IsRepeatable,
+            request.AutoStart ?? existing.AutoStart,
             request.Dialogue ?? existing.Dialogue,
             request.SortOrder ?? existing.SortOrder);
 

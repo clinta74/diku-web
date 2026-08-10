@@ -1731,6 +1731,26 @@ One deferred nice-to-have remains below, and it is not what the phase goal asks 
       offer / in-progress / complete / turn-in
 - [x] `give` hook: strict match on item and count, otherwise the NPC refuses and keeps nothing
 - [x] Prerequisite chains, enforced on offer — the mechanism storylines are built from
+- [x] **A chain step can start itself**, so handing in one leg opens the next with no second
+      `talk`. Optional per quest, since a chain that should send the player somewhere wants the
+      walk to matter.
+      **Declared by the quest that gets started, not as a list of triggers on the one that starts
+      it.** The obvious shape is `triggers: [next-quest]`, and it is the wrong one: it would be a
+      *second* set of chain edges over the same quests, while `/zones/{zone}/storyline` draws
+      `prerequisite_quest_keys` and nothing else. Two graphs, one of them invisible in the panel
+      built to show chains, and nothing making them agree. `auto_start` on the follow-on quest
+      keeps prerequisites the only answer to "what follows what" — and matches the direction
+      content is authored in (§7.4): a builder writes this quest knowing what it follows, not the
+      earlier one knowing what comes after it. Two quests behind the same step decide
+      independently, so one can open by itself while the other still needs a conversation.
+      It fires after the turn-in has marked its own quest Completed, which is what lets the
+      ordinary prerequisite check do the work: a step with another prerequisite still open simply
+      does not qualify. **Every rule a `talk` would apply is applied** — dormancy, and both repeat
+      gates — because a quest that starts itself must not reach a state a player could not have
+      reached by asking for it. It does not cascade: what it starts is Active, not Completed.
+      Reads best when the same NPC takes the turn-in and gives the next one, which is the case
+      worth having: the old man takes the beer, hands over the glass, and asks for it back in one
+      exchange.
 - [x] Repeatable quests with a `TimesCompleted` counter. **Repeatable is a property of the chain,
       not of the leg** — which only became visible once a chain existed to test it on.
       Two gates, both on the re-offer only, since a first offer has no history to consult:
@@ -2121,6 +2141,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | PvP | Refused in an unflagged room, allowed in a flagged one, ends the round after either combatant leaves, and never targets a party member — including a duel already under way, which ends the round the two players group up. AoE in a mixed room hits mobs and skips players. Every hostile action — swing, single-target cast, area effect, taunt — answers through the one gate, so the coverage is that they agree rather than that each was remembered. *Pet laundering is not tested because there are no pets; it is §13's blocking constraint, not a gap here.* |
 | Death | XP loss floors at the level threshold and never de-levels; no loss below the min level or on a PvP death; dying at the exact threshold costs nothing. Respawn falls through all three candidates, including when the bind room was deleted mid-session. Nothing leaves the inventory. |
 | Verbs | **Every registered verb is reachable by something a player can type.** A verb whose name is a strict prefix of an earlier one is shadowed completely — no input reaches it and nothing reports that, which is how `quest` sat behind `quests` for four months. Asserted over the whole table rather than on the pair that broke, plus the shortest allowed abbreviation of each verb resolving to something. |
+| A step that starts itself | Handing in the leg before it opens it, with its offer line, *after* the turn-in rather than inside it — the ordering is the whole readability argument. The refusals are most of it, and they are the same ones `talk` applies: content that has gone, another prerequisite still open, a quest already in the journal (restarting would reset the clock on one the player is part-way through), a finished non-repeatable leg, and a repeatable one only on a genuine next lap with its `TimesCompleted` carried rather than reset. Without the flag the next leg still waits for a conversation, which is the point of it being per-quest. |
 | Repeating a chain | A three-link chain, so downstream is tested as transitive rather than as one hop. The chain reruns once all of it is finished; a leg one step down and a leg two steps down both block the head; `abandon` on the open leg releases it; a middle leg is not re-offered until the head has run again, and is once the counters say so. Against those, the two shapes that must not change: a non-repeatable quest stays finished whatever the chain does, and a chain nobody has started is offered normally. |
 | Abandoning a quest | An active quest returns to never-started, in the world *and* in storage — the delete has to reach the row or a restart brings the quest back Active. A repeatable one already finished reverts to Completed with `TimesCompleted` intact rather than being deleted, since the row is the history. The refusals: a finished quest, a quest you never had, and a bare verb, none of which change any state. |
 | Quests | The full loop: talk → drop → give → rewards. Plus the refusals — wrong NPC, no active quest, wrong item, insufficient count — each leaves the item in the player's inventory. Chains unlock in order and cannot be short-circuited by pre-holding the item. Deleting a referenced mob leaves an Active quest in the journal rather than wiping it. |
