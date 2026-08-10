@@ -124,6 +124,51 @@ public sealed class BuilderDetailTests
         Assert.Contains("bound to a quest", harness.DrainText(kael), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void A_quest_item_is_tagged_in_the_inventory_list()
+    {
+        // The refusals already existed - a quest item cannot be sold or destroyed - but nothing
+        // said which items those were until you examined them one at a time. A pack with three
+        // things in it that will not shift should be readable at a glance.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        var letter = harness.DefineItem("sealed-letter", "sealed letter", slot: null);
+        var stick = harness.DefineItem("sharp-stick", "sharp stick", slot: null);
+        harness.GiveItem(
+            kael,
+            letter,
+            WorldHarness.AsPersisted(new Dictionary<string, object> { ["questItem"] = true }));
+        harness.GiveItem(kael, stick);
+        harness.Drain(kael);
+
+        harness.Execute(kael, "inventory");
+
+        var text = harness.DrainText(kael);
+        Assert.Contains("sealed letter (quest)", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("sharp stick (quest)", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_worn_quest_item_keeps_its_tag()
+    {
+        // A quest reward with a slot is ordinary content, and the tag disappearing the moment it
+        // is put on would be the same gap one layer down.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        var circlet = harness.DefineItem("circlet", "plain circlet", ItemSlot.Head);
+        harness.GiveItem(
+            kael,
+            circlet,
+            WorldHarness.AsPersisted(new Dictionary<string, object> { ["questItem"] = true }));
+        harness.Drain(kael);
+
+        harness.Execute(kael, "wear circlet");
+        harness.Drain(kael);
+        harness.Execute(kael, "inventory");
+
+        Assert.Contains("plain circlet (quest)", harness.DrainText(kael), StringComparison.Ordinal);
+    }
+
     // -----------------------------------------------------------------------
     // Examining a mob
     // -----------------------------------------------------------------------

@@ -390,6 +390,13 @@ public sealed class CommandRegistry
                 var slot = item.EquippedSlot?.ToString() ?? "Unknown";
                 var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
                 spans.Add(new TextSpan($"\n  [{slot}] {displayName}"));
+
+                // Worn quest items are tagged too. A quest reward with a slot is ordinary
+                // content, and it would be odd for the tag to disappear the moment it is put on.
+                if (ItemState.IsQuestItem(item))
+                {
+                    spans.Add(new TextSpan(" (quest)", "dim"));
+                }
             }
         }
 
@@ -408,6 +415,15 @@ public sealed class CommandRegistry
             {
                 var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
                 spans.Add(new TextSpan($"\n  {displayName}"));
+
+                // Marked in the list rather than only on examine. A quest item cannot be sold or
+                // destroyed, so a player wondering why the shopkeeper refuses it should be able
+                // to see the reason in the same breath as the refusal - and a pack with three
+                // things in it that will not shift is worth being able to read at a glance.
+                if (ItemState.IsQuestItem(item))
+                {
+                    spans.Add(new TextSpan(" (quest)", "dim"));
+                }
             }
         }
 
@@ -1000,10 +1016,9 @@ public sealed class CommandRegistry
             return;
         }
 
-        var itemName = parts[0];
-        var targetName = parts[1];
-
         var inventory = ctx.World.InventoryOf(ctx.Actor.CharacterId);
+        var (itemName, targetName) = SplitGive(ctx, parts, inventory);
+
         var targetItem = FindItemByName(inventory, itemName);
 
         if (targetItem is null)
@@ -1216,6 +1231,73 @@ public sealed class CommandRegistry
     /// "old coin" and "old-coin" and nothing else - <c>get coin</c> failed on the only thing in
     /// the room. See <see cref="NameMatch"/> for what counts as a match now.
     /// </remarks>
+    /// <summary>
+    /// Decides where the item name ends and the recipient begins in <c>give a b c</c>.
+    /// </summary>
+    /// <remarks>
+    /// Both halves can be several words — "empty glass", "bar maiden" — and there is no
+    /// separator, so the split has to be *found* rather than assumed. This used to take the first
+    /// two whitespace-separated words and throw the rest away: <c>give empty glass maiden</c>
+    /// became item "empty", recipient "glass", and answered "There is no one named glass here."
+    /// while silently ignoring the word that named the actual recipient. <c>give beer old man</c>
+    /// worked only because "old" happens to prefix-match the old man.
+    ///
+    /// Every split point is tried, shortest item name first, and the first one where *both*
+    /// halves resolve wins. Left to right because the item is the half the player is more likely
+    /// to abbreviate — they are holding it, and they can see the recipient's full name in the
+    /// room.
+    ///
+    /// When nothing resolves, the split chosen is the one that produces the most useful
+    /// complaint: the *longest* item name that still resolves, so the leftover recipient is as
+    /// small as the input allows. Given "give empty glass bar maiden" with nobody there, the
+    /// shortest match would complain about "glass bar maiden" — technically the truth, and
+    /// useless. And failing even that, everything-but-the-last-word as the item, which is how a
+    /// player reading "You don't have purple banana" would have meant it.
+    /// </remarks>
+    private static (string ItemName, string TargetName) SplitGive(
+        CommandContext ctx, string[] parts, IReadOnlyList<ItemInstance> inventory)
+    {
+        (string, string)? itemFound = null;
+
+        for (var i = 1; i < parts.Length; i++)
+        {
+            var candidate = (
+                string.Join(' ', parts[..i]),
+                string.Join(' ', parts[i..]));
+
+            if (FindItemByName(inventory, candidate.Item1) is null)
+            {
+                continue;
+            }
+
+            if (RecipientExists(ctx, candidate.Item2))
+            {
+                return candidate;
+            }
+
+            // Kept rather than kept-first: the last one to get here is the longest item name
+            // that resolves, which leaves the smallest possible leftover to complain about.
+            itemFound = candidate;
+        }
+
+        return itemFound
+            ?? (string.Join(' ', parts[..^1]), parts[^1]);
+    }
+
+    /// <summary>
+    /// Whether anything in the room answers to this name — a player, or a mob.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately side-effect free, unlike <c>TryTurnInQuest</c>, which resolves a recipient
+    /// and hands the item over in one step. Choosing where to split the argument has to be able
+    /// to ask the question without answering it.
+    /// </remarks>
+    private static bool RecipientExists(CommandContext ctx, string name) =>
+        ctx.World.FindPlayerByName(name) is not null
+        || NameMatch.Best(
+            ctx.World.MobsIn(ctx.Actor.RoomKey), name, m => m.TemplateName, m => m.TemplateKey)
+            is not null;
+
     private static ItemInstance? FindItemByName(IEnumerable<ItemInstance> items, string name) =>
         NameMatch.Best(items, name, i => i.TemplateName, i => i.TemplateKey);
 
