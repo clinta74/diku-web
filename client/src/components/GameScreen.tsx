@@ -6,7 +6,7 @@ import type { ContentEntry, MapPayload, TextSpan, VitalsPayload } from '../net/p
 import { shouldRedirectToInput } from './typeAnywhere'
 import { applyCompletion, completionsFor, type Completions } from './completion'
 import { loadHistory, remember, saveHistory } from './commandHistory'
-import { isAtBottom } from './scrollFollow'
+import { followSlack, isAtBottom } from './scrollFollow'
 
 interface Props {
   characterId: string
@@ -236,7 +236,7 @@ function Scrollback({
       className="scrollback"
       aria-live="polite"
       ref={boxRef}
-      onScroll={(e) => setFollowing(isAtBottom(e.currentTarget))}
+      onScroll={(e) => setFollowing(isAtBottom(e.currentTarget, followSlack(e.currentTarget)))}
     >
       {lines.map((line) => (
         <div key={line.id} className="line">

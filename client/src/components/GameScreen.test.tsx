@@ -267,6 +267,22 @@ describe('following the newest line', () => {
     expect(screen.getByRole('button', { name: /jump to newest/i })).toBeTruthy()
   })
 
+  it('keeps following through a couple of lines of movement', () => {
+    // The drift. A reading taken while the view has not caught up with the newest line is the
+    // page moving under the player, not the player leaving, and it used to stop the transcript.
+    play()
+    scrollTo(scrollback(), { top: 1750, height: 2000 })
+
+    expect(screen.queryByRole('button', { name: /jump to newest/i })).toBeNull()
+  })
+
+  it('lets go once the player has scrolled back more than five lines', () => {
+    play()
+    scrollTo(scrollback(), { top: 1600, height: 2000 })
+
+    expect(screen.getByRole('button', { name: /jump to newest/i })).toBeTruthy()
+  })
+
   it('stops dragging the player back down while they are reading', () => {
     // The whole complaint: a fight still going pulled you to the bottom four times a second.
     play()

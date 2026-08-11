@@ -331,6 +331,14 @@ input:focus {
   overflow-y: auto;
   padding: 0.75rem 1rem;
   line-height: 1.5;
+
+  /*
+   * Scroll anchoring is wrong for a log that is pinned to its own end. The browser picks a node
+   * to hold still when content changes; for a transcript that only ever grows downward, holding
+   * a node still is exactly the drift away from the bottom we do not want, and it moves scrollTop
+   * behind our back - which then reads as the player having scrolled away.
+   */
+  overflow-anchor: none;
 }
 
 .line {
