@@ -60,14 +60,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # Port 5000 is only exposed internally; nginx proxies to it
+    # Port 8080 is only exposed internally; nginx proxies to it. Do not move it without also
+    # setting BACKEND_ORIGIN on the client service - the client image defaults to http://web:8080,
+    # and a mismatch here is a 502 from nginx with nothing wrong on either side individually.
     # For debugging, uncomment and set WEB_DEBUG_PORT:
     # ports:
-    #   - "${WEB_DEBUG_PORT}:5000"
+    #   - "${WEB_DEBUG_PORT}:8080"
     environment:
-      # ASP.NET Core runtime
+      # ASP.NET Core runtime. No ASPNETCORE_URLS: the aspnet base image already listens on 8080,
+      # which is what the client's proxy target and this file's health check both assume.
       ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://+:5000
       # Database connection parts - builder constructs from these in appsettings
       # Edit these to match postgres service above
       DatabaseConnection__Host: postgres
@@ -95,7 +97,7 @@ services:
       - ./logs:/app/logs:rw
     healthcheck:
       # Health endpoint provided by ASP.NET Core
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -54,9 +54,10 @@ COPY --from=build --chown=$APP_UID:$APP_UID /app/publish .
 USER $APP_UID
 
 # 8080, which is what the aspnet base image already listens on. This used to say 5000 in both
-# places while the app listened on 8080, so the image's own health check could never pass; it only
-# looked right because docker-compose.prod.yml sets ASPNETCORE_URLS to 5000 explicitly, which
-# still overrides this for anyone using that file.
+# places while the app listened on 8080, so the image's own health check could never pass. The
+# compose files used to paper over that by setting ASPNETCORE_URLS to 5000 - which then did not
+# match the client image's BACKEND_ORIGIN default of http://web:8080, so every /api call 502'd.
+# 8080 is now the single answer in the app image, the client image, and the compose files.
 EXPOSE 8080
 
 # Health check endpoint
