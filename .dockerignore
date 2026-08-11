@@ -1,11 +1,19 @@
+# A leading-directory pattern here matches only at the root: `obj/` does NOT match
+# `src/DikuWeb.Server/obj/`. Every directory that occurs at more than one depth therefore needs
+# `**/`, and the two that went wrong were the expensive ones. The host's per-project `obj/` was
+# being copied over the container's own restore output, so `project.assets.json` arrived naming
+# Windows package paths and the publish died inside FallbackPackagePathResolver. And
+# `client/node_modules` was shipping in the build context, which is most of a third of a gigabyte
+# sent to the daemon on every build.
+
 # Git
 .git
 .gitignore
 .gitattributes
 
 # Build artifacts
-bin/
-obj/
+**/bin/
+**/obj/
 *.dll
 *.pdb
 
@@ -25,8 +33,8 @@ obj/
 *.iml
 
 # Test results
-TestResults/
-coverage/
+**/TestResults/
+**/coverage/
 *.trx
 
 # Docker
@@ -47,16 +55,18 @@ README.md
 LICENSE
 
 # Root level files
-.editorconfig
+# .editorconfig is deliberately NOT ignored: Directory.Build.props sets EnforceCodeStyleInBuild,
+# which makes it build input rather than an editor preference. Excluding it would compile the
+# image under a different rule set from CI and from a developer's machine.
 .env
 .env.*.local
 appsettings.local.json
 
 # Node/npm (if using frontend build)
-node_modules/
+**/node_modules/
 npm-debug.log
 yarn-error.log
-dist/
+**/dist/
 
 # Backups
 *.bak

@@ -12,15 +12,15 @@ on:
       - main
       - develop
 
+# Docker Hub rather than ghcr.io: these images are pulled by compose files on hosts that already
+# authenticate to Docker Hub. Credentials come from the DOCKER_USERNAME / DOCKER_PASSWORD repo
+# secrets, and the namespace is derived from the username so there is one place to change it.
 env:
-  REGISTRY: ghcr.io
+  IMAGE_NAMESPACE: ${{ secrets.DOCKER_USERNAME }}
 
 jobs:
   build-backend:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: Checkout repository
@@ -29,19 +29,20 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Container Registry
+      # Skipped on pull requests, which do not push. A fork's PR has no access to the secrets
+      # anyway, so attempting the login there fails for a reason unrelated to the change.
+      - name: Log in to Docker Hub
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Extract metadata (backend)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          images: ${{ env.IMAGE_NAMESPACE }}/dikuweb-server
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
@@ -57,14 +58,11 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/dikuweb-server:buildcache
+          cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}/dikuweb-server:buildcache,mode=max', env.IMAGE_NAMESPACE) || '' }}
 
   build-client:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: Checkout repository
@@ -73,19 +71,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Container Registry
+      - name: Log in to Docker Hub
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Extract metadata (client)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}-client
+          images: ${{ env.IMAGE_NAMESPACE }}/dikuweb-client
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
@@ -96,10 +93,14 @@ jobs:
       - name: Build and push client
         uses: docker/build-push-action@v5
         with:
-          context: .
+          # ./client, not the repo root. client/Dockerfile copies package.json and tsconfig*.json
+          # from the context root, and there is no package.json at the top of this repo - with the
+          # root as context the very first COPY fails. It also means client/.dockerignore is the
+          # one that applies, which is the file written for this image.
+          context: ./client
           file: ./client/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}-client:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}-client:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/dikuweb-client:buildcache
+          cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}/dikuweb-client:buildcache,mode=max', env.IMAGE_NAMESPACE) || '' }}

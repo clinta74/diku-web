@@ -1,10 +1,19 @@
 # Minimal nginx configuration for DikuWeb SPA + API proxy
 # Serves React app on / and proxies /api to backend
+#
+# A template, not a finished config. The nginx image's entrypoint runs envsubst over everything in
+# /etc/nginx/templates, so ${BACKEND_ORIGIN} below is filled in at container start - which is what
+# lets one published image serve a compose file that named its API something other than `web`.
+# Only ${BACKEND_ORIGIN} and ${NGINX_LOCAL_RESOLVERS} are substituted; nginx's own $variables are
+# left alone, because envsubst only replaces names that exist in the environment.
 
-user nginx-app;
+# No `user` directive: the container already runs as nginx-app (see Dockerfile), and the directive
+# is only meaningful to a master process running as root - nginx warns and ignores it otherwise.
 worker_processes auto;
 error_log /var/log/nginx/error.log warn;
-pid /var/run/nginx.pid;
+
+# /var/run is root-owned, so a non-root master cannot write its pid file there.
+pid /tmp/nginx.pid;
 
 events {
     worker_connections 1024;
@@ -14,9 +23,11 @@ http {
     include /etc/nginx/mime.types;
     default_type application/octet-stream;
 
-    log_format main ''$remote_addr - $remote_user [$time_local] "$request" ''
-                    ''$status $body_bytes_sent "$http_referer" ''
-                    ''"$http_user_agent" "$http_x_forwarded_for"'';
+    # One quote per side. These were doubled - `''$remote_addr` - which nginx rejects outright as
+    # `unexpected "$"`, so the container never started at all.
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
 
     access_log /var/log/nginx/access.log main;
 
@@ -36,11 +47,15 @@ http {
                application/x-javascript application/xml+rss 
                application/javascript application/json;
 
-    upstream backend {
-        # Reference backend container by service name (docker-compose networking)
-        server web:5000;
-        keepalive 32;
-    }
+    # Deliberately not an `upstream` block. nginx resolves an upstream host once, at startup, and
+    # refuses to start at all if it does not resolve - so the UI container could not boot unless
+    # the API was already up, and died on any compose file that named the API something else.
+    # Passing the origin through a variable defers the lookup to request time instead, which is
+    # what makes a resolver necessary.
+    #
+    # 127.0.0.11 is Docker's embedded DNS, which every compose stack gets because compose always
+    # creates a user-defined network. Set DNS_RESOLVER if that is ever not true.
+    resolver ${DNS_RESOLVER} valid=10s ipv6=off;
 
     server {
         listen 80 default_server;
@@ -59,7 +74,11 @@ http {
 
         # API proxy - forward all /api requests to backend
         location /api/ {
-            proxy_pass http://backend;
+            # Through a variable on purpose - see the resolver note above. The trailing $request_uri
+            # is required once proxy_pass carries a variable, because nginx then stops appending the
+            # matched path itself and would otherwise proxy every /api/... call to the API's root.
+            set $backend "${BACKEND_ORIGIN}";
+            proxy_pass $backend$request_uri;
             proxy_http_version 1.1;
             
             # Preserve original request info

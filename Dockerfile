@@ -4,7 +4,18 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
 WORKDIR /src
 
-# Copy project files
+# The build configuration comes first, and it is not optional. None of the csproj files below
+# declares a TargetFramework, and none pins a package version: those live in Directory.Build.props
+# and Directory.Packages.props, which apply to every project by sitting at the root. Restoring
+# without them fails as NETSDK1013, "The TargetFramework value '' was not recognized" - which
+# reads like a broken project file and is really a missing COPY.
+#
+# .editorconfig is build input here rather than editor preference, because Directory.Build.props
+# turns on EnforceCodeStyleInBuild. Without it the container compiles under a different rule set
+# from CI and from a developer's machine, which is the one thing a container build should not do.
+COPY ["Directory.Build.props", "Directory.Packages.props", ".editorconfig", "./"]
+
+# Project files next, so that editing source does not invalidate the restore layer.
 COPY ["src/DikuWeb.Server/DikuWeb.Server.csproj", "src/DikuWeb.Server/"]
 COPY ["src/DikuWeb.Engine/DikuWeb.Engine.csproj", "src/DikuWeb.Engine/"]
 COPY ["src/DikuWeb.Persistence/DikuWeb.Persistence.csproj", "src/DikuWeb.Persistence/"]
@@ -16,19 +27,17 @@ RUN dotnet restore "src/DikuWeb.Server/DikuWeb.Server.csproj"
 # Copy source code
 COPY . .
 
-# Build in Release mode
-RUN dotnet build "src/DikuWeb.Server/DikuWeb.Server.csproj" -c Release -o /app/build
-
-# Stage 2: Publish
-FROM build AS publish
-
+# One publish, rather than a build followed by a --no-build publish. `dotnet build -o` moves
+# OutputPath, which is not where a later `--no-build` publish looks for the assemblies - so that
+# pair would have failed the moment the restore above started working. Publish builds by default,
+# and the separate build step bought nothing.
 RUN dotnet publish "src/DikuWeb.Server/DikuWeb.Server.csproj" \
     -c Release \
     -o /app/publish \
-    --no-build \
+    --no-restore \
     --self-contained=false
 
-# Stage 3: Runtime
+# Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 
 WORKDIR /app
@@ -36,23 +45,26 @@ WORKDIR /app
 # Install dumb-init for proper signal handling
 RUN apt-get update && apt-get install -y --no-install-recommends dumb-init curl && rm -rf /var/lib/apt/lists/*
 
-# Copy published app from publish stage
-COPY --from=publish /app/publish .
+# Copy published app from build stage, owned by the user that will run it.
+COPY --from=build --chown=$APP_UID:$APP_UID /app/publish .
 
-# Non-root user for security
-RUN groupadd -g 1000 dotnet && \
-    useradd -u 1000 -g dotnet -s /sbin/nologin dotnet && \
-    chown -R dotnet:dotnet /app
+# Non-root user for security. The base image already ships one for exactly this purpose - `app`,
+# at $APP_UID (1654) - so there is nothing to create. Creating one by hand at uid/gid 1000 failed
+# outright, because 1000 is already the `ubuntu` account in this image.
+USER $APP_UID
 
-USER dotnet
-
-# Expose port
-EXPOSE 5000
+# 8080, which is what the aspnet base image already listens on. This used to say 5000 in both
+# places while the app listened on 8080, so the image's own health check could never pass; it only
+# looked right because docker-compose.prod.yml sets ASPNETCORE_URLS to 5000 explicitly, which
+# still overrides this for anyone using that file.
+EXPOSE 8080
 
 # Health check endpoint
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=20s \
-    CMD curl -f http://localhost:5000/health || exit 1
+    CMD curl -f http://localhost:8080/health || exit 1
 
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["/sbin/dumb-init", "--"]
+# Use dumb-init to handle signals properly. The Debian package installs to /usr/bin, not /sbin -
+# the wrong path here is not a startup warning, it is the container failing to create a process
+# at all, with an error from runc rather than from anything in this application.
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["dotnet", "DikuWeb.Server.dll"]
