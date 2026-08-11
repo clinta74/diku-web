@@ -1,6 +1,10 @@
 # Multi-stage build for DikuWeb React client
 # Stage 1: Build
-FROM node:22-alpine AS build
+#
+# Node 24 is the current Active LTS. Nothing from this stage is shipped - only /src/dist crosses
+# into the runtime image below - so a vulnerability here is a supply-chain concern about what
+# built the bundle, not something reachable in a running container.
+FROM node:24-alpine AS build
 
 WORKDIR /src
 
@@ -21,7 +25,13 @@ COPY public ./public
 RUN npm run build
 
 # Stage 2: Runtime (nginx)
-FROM nginx:1.27-alpine
+#
+# This is the image that actually ships, so it is the one whose CVE count means anything. 1.27 was
+# four mainline releases behind, and most of what a scanner flags on these is the Alpine base
+# rather than nginx itself - which is why moving forward a minor is worth more than it looks.
+# Mainline (odd minor) to match what this file already tracked; 1.30-alpine is the stable branch
+# if that is ever preferred.
+FROM nginx:1.31-alpine
 
 WORKDIR /usr/share/nginx/html
 
