@@ -187,17 +187,17 @@ public static class AbilityCatalogue
         // a staff, or empty hands was still being told they slashed.
         new(CharacterPath.Warden, 1, "warden.kick", "Kick",
             "A boot to the knee. Nothing elegant, and it does not care what you are holding.",
-            CostType.Stamina, 10, 12, null, TargetingType.SingleTarget,
+            CostType.Stamina, 10, 20, null, TargetingType.SingleTarget,
             "damage.physical", Damage("1.1", "3")),
 
         new(CharacterPath.Warden, 3, "warden.bash", "Bash",
             "Put your shoulder behind it. Slower, and it lands heavier.",
-            CostType.Stamina, 15, 20, null, TargetingType.SingleTarget,
+            CostType.Stamina, 15, 24, null, TargetingType.SingleTarget,
             "damage.physical", Damage("1.4", "5")),
 
         new(CharacterPath.Warden, 5, "warden.battle-fury", "Battle Fury",
             "Anger sharpens the next stretch of a fight.",
-            CostType.Stamina, 18, 60, null, TargetingType.Self,
+            CostType.Stamina, 18, 160, null, TargetingType.Self,
             "buff.damage-up", Buff("1.25", "80", "battle fury")),
 
         // Parry used to sit here as a castable self-heal. It is a passive now (PassiveKeys.Parry,
@@ -206,7 +206,7 @@ public static class AbilityCatalogue
         // spent *before* the blow it was meant to stop.
         new(CharacterPath.Warden, 7, "warden.sunder", "Sunder",
             "Batter the guard apart. What comes next lands on what is left of it.",
-            CostType.Stamina, 16, 44, null, TargetingType.SingleTarget,
+            CostType.Stamina, 16, 144, null, TargetingType.SingleTarget,
             "debuff.weaken", Vulnerable("1.3", "80", "sundered")),
 
         // The Warden's window-opener, and the one thing no amount of damage scaling expresses.
@@ -215,7 +215,7 @@ public static class AbilityCatalogue
         // tempo tool.
         new(CharacterPath.Warden, 9, "warden.shield-bash", "Shield Bash",
             "The flat of the shield, hard, into whatever is nearest to a jaw.",
-            CostType.Stamina, 20, 72, null, TargetingType.SingleTarget,
+            CostType.Stamina, 20, 172, null, TargetingType.SingleTarget,
             "control.stun", Stun("10", "reeling")),
 
         // The Warden's reason to exist in a group. Everything else on this Path survives damage;
@@ -229,7 +229,7 @@ public static class AbilityCatalogue
 
         new(CharacterPath.Warden, 10, "warden.rally", "Rally",
             "Find your feet again in the middle of it.",
-            CostType.Stamina, 22, 48, 4, TargetingType.Self,
+            CostType.Stamina, 22, 120, 4, TargetingType.Self,
             "heal.restore", Heal("40")),
 
         new(CharacterPath.Warden, 13, "warden.shield-wall", "Shield Wall",
