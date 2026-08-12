@@ -969,6 +969,13 @@ input:focus {
   background: linear-gradient(135deg, var(--bg) 0%, var(--panel) 100%);
   border-bottom: 1px solid var(--border);
   user-select: none;
+
+  /*
+   * Every touch gesture on this surface is ours. Without it the browser claims the drag first —
+   * one finger scrolls the page and two zoom the whole document — and the pointer handlers never
+   * see the moves, because the browser cancels the pointer once it starts scrolling.
+   */
+  touch-action: none;
 }
 
 .zone-canvas {
@@ -1110,6 +1117,28 @@ input:focus {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Pinch does this on touch; the buttons are for a mouse and for the keyboard, which otherwise
+   have no zoom at all. */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.zoom-controls button {
+  min-width: 2.2rem;
+}
+
+.zoom-level {
+  min-width: 3.2rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
 }
 
 .canvas-help {
@@ -1335,6 +1364,12 @@ code.dim {
 .grid-painter .swatch,
 .grid-painter .cell {
   letter-spacing: 0;
+}
+
+/* Drag-to-paint is the whole point of the control, and a drag on touch is a page scroll unless
+   the surface claims it. */
+.grid-painter .canvas {
+  touch-action: none;
 }
 
 .swatch {

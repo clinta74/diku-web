@@ -123,13 +123,14 @@ export function GridPainter({ grid, legend, onChange }: Props) {
         )}
       </div>
 
-      {/* onMouseLeave ends a drag that left the canvas, so the mouse-up never arrives and
+      {/* onPointerLeave ends a drag that left the canvas, so the release never arrives and
           the grid would otherwise keep painting on the next hover. */}
       <div
         className="canvas"
-        onMouseDown={() => setPainting(true)}
-        onMouseUp={() => setPainting(false)}
-        onMouseLeave={() => setPainting(false)}
+        onPointerDown={() => setPainting(true)}
+        onPointerUp={() => setPainting(false)}
+        onPointerCancel={() => setPainting(false)}
+        onPointerLeave={() => setPainting(false)}
       >
         {rows.map((row, y) => (
           <div key={y} className="grid-row">
@@ -139,8 +140,15 @@ export function GridPainter({ grid, legend, onChange }: Props) {
                 type="button"
                 className="cell"
                 title={legend[cell] ?? cell}
-                onMouseDown={() => paint(x, y)}
-                onMouseEnter={() => painting && paint(x, y)}
+                onPointerDown={(e) => {
+                  // Touch gives the first cell implicit pointer capture, which sends every later
+                  // move to that same cell — so a drag across the grid would paint one square and
+                  // nothing else. Releasing it puts the events back on the element under the
+                  // finger, which is what makes onPointerEnter below fire at all.
+                  e.currentTarget.releasePointerCapture?.(e.pointerId)
+                  paint(x, y)
+                }}
+                onPointerEnter={() => painting && paint(x, y)}
               >
                 {cell}
               </button>
