@@ -177,11 +177,20 @@ phone it is a normal interruption.
   is, instead of returning them to the character list.
 - A longer grace window — which needs a server change first.
 
-> **Found while checking this.** `docker-compose.prod.yml` sets `Engine__LinkDeadGraceSeconds` and
-> `Engine__StartingRoom`, but `Program.cs` configures the engine options in code and never binds the
-> `Engine` configuration section. Both environment variables are currently no-ops, and the real
-> grace window is the hardcoded default — `LinkDeadGracePulses = 360` at 250ms per pulse, so 90
-> seconds. Worth fixing regardless of mobile; it is also the knob this section wants to turn.
+> **Found while checking this.** `docker-compose.prod.yml` set `Engine__LinkDeadGraceSeconds` and
+> `Engine__StartingRoom`, but `Program.cs` configured the engine options in code and never bound the
+> `Engine` configuration section. Both environment variables were no-ops, and the real grace window
+> was the hardcoded default — `LinkDeadGracePulses = 360` at 250ms per pulse, so 90 seconds. Worth
+> fixing regardless of mobile; it was also the knob this section wanted to turn.
+>
+> **Fixed by reading the section key by key, not by `Bind`** — and the first explanation committed
+> for that was wrong, so it is worth stating what is actually true. `Bind` does not throw on
+> `StartingRoom`: it finds no type converter for `RoomKey` and silently leaves the property alone,
+> which would have kept that setting a no-op. What it *does* throw on is a scalar it cannot
+> convert, so `LinkDeadGraceSeconds: "5m"` would take the host down at startup. Explicit reads make
+> the room setting work for the first time and let a typo fall back to a default that is already
+> correct. `EngineConfigurationBindingTests` pins all three behaviours, since they are the kind
+> that change quietly when a dependency moves.
 
 ---
 

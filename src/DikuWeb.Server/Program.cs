@@ -44,11 +44,16 @@ builder.Services.AddDikuWebEngine(options =>
     // silently ignored — a knob that reads as configured and does nothing is worse than one that
     // does not exist, because nobody goes looking for it when the value appears not to apply.
     //
-    // Read key by key rather than `.Bind(options)`. Bind would try to convert the StartingRoom
-    // string into a RoomKey, which is a readonly record struct with no type converter, and throw
-    // during startup — turning a cosmetic misconfiguration into a server that will not boot. Each
-    // value below is validated and ignored when it is nonsense, which is the right failure for
-    // settings whose defaults are already correct.
+    // Read key by key rather than `.Bind(options)`, for two reasons that EngineConfigurationBinding
+    // tests pin down, because both are the sort that change quietly under a dependency upgrade:
+    //
+    //  - Bind cannot set StartingRoom at all. RoomKey is a readonly record struct with no type
+    //    converter, so the binder leaves the property untouched rather than reporting that it
+    //    could not convert — which would have left Engine__StartingRoom exactly as it was, a
+    //    setting that reads as configured and does nothing.
+    //  - Bind throws on a scalar it cannot convert, so a typo in the grace window takes the host
+    //    down at startup. Fail-fast is right for a value with no default; this one has a correct
+    //    default already, and refusing to boot over it trades a cosmetic mistake for an outage.
     var engine = builder.Configuration.GetSection("Engine");
 
     if (int.TryParse(engine["LinkDeadGraceSeconds"], out var graceSeconds) && graceSeconds > 0)
