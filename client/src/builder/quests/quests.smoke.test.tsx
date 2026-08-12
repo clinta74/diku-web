@@ -21,6 +21,7 @@ const quest = vi.hoisted(
     rewardItemCount: 1,
     prerequisiteQuestKeys: [],
     isRepeatable: false,
+    autoStart: false,
     dialogue: {},
     sortOrder: 0,
   }),

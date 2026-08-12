@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { api } from '../net/api'
 import { connectStream } from '../net/stream'
 import { gameReducer, initialGameState } from '../state/gameReducer'
 import type { ContentEntry, MapPayload, TextSpan, VitalsPayload } from '../net/protocol'
 import { shouldRedirectToInput } from './typeAnywhere'
+import { useCoarsePointer, usePhoneLayout } from './pointer'
+import { exitPad, recentCommands, verbsFor } from './touchVerbs'
 import { applyCompletion, completionsFor, type Completions } from './completion'
 import { loadHistory, remember, saveHistory } from './commandHistory'
 import { followSlack, isAtBottom } from './scrollFollow'
@@ -29,6 +32,47 @@ interface Props {
   active?: boolean
 }
 
+/**
+ * Publishes how much of the viewport the on-screen keyboard is covering, as `--keyboard-inset` on
+ * the document element. Zero when there is no keyboard, which is every desktop and every phone
+ * that is not currently typing.
+ *
+ * `interactive-widget=resizes-content` in the viewport meta already does this on Chrome and
+ * Android by shrinking the viewport itself, and there the inset stays at zero. Safari ignores the
+ * hint and overlays the keyboard instead, leaving the layout convinced it still has the full
+ * height — so the command input, the last row of the grid, ends up underneath the keyboard the
+ * moment it is tapped. VisualViewport is the only thing that reports that overlap.
+ */
+function useKeyboardInset() {
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+
+    const sync = () => {
+      // How much of the layout viewport the visual one no longer covers. `offsetTop` matters on
+      // Safari, which scrolls the page up behind the keyboard rather than resizing it.
+      const covered = window.innerHeight - viewport.height - viewport.offsetTop
+
+      // A pixel or two of disagreement is normal and constant; only a real keyboard is worth
+      // reflowing the grid for.
+      document.documentElement.style.setProperty(
+        '--keyboard-inset',
+        covered > 40 ? `${Math.round(covered)}px` : '0px',
+      )
+    }
+
+    sync()
+    viewport.addEventListener('resize', sync)
+    viewport.addEventListener('scroll', sync)
+
+    return () => {
+      viewport.removeEventListener('resize', sync)
+      viewport.removeEventListener('scroll', sync)
+      document.documentElement.style.removeProperty('--keyboard-inset')
+    }
+  }, [])
+}
+
 export function GameScreen({
   characterId,
   characterName,
@@ -40,6 +84,15 @@ export function GameScreen({
 }: Props) {
   const [state, dispatch] = useReducer(gameReducer, initialGameState)
   const roomKey = state.room?.key ?? null
+  const phone = usePhoneLayout()
+
+  // Layout is a width question; whether a tap should offer verbs is a pointer question. They are
+  // asked separately because they disagree on a tablet and on a narrow desktop window.
+  const coarse = useCoarsePointer()
+
+  // The room panel and map, on a phone. Closed by default: the transcript is the game, and this
+  // is the reference material you consult rather than the thing you watch.
+  const [sheetOpen, setSheetOpen] = useState(false)
 
   // Reported upward rather than read from the builder, because the stream is the only thing
   // that knows where the character actually is - including after a goto or a rename.
@@ -54,6 +107,12 @@ export function GameScreen({
   // Exposed so parent can focus input when returning from builder
   const focusInput = useRef<(() => void) | null>(null)
 
+  /**
+   * Bumped to force a fresh stream. The only thing that does it is Rejoin, below.
+   */
+  const [epoch, setEpoch] = useState(0)
+  const [rejoining, setRejoining] = useState(false)
+
   // Keyed by character, so a second tab on a different character opens its own stream
   // rather than evicting this one.
   useEffect(() => {
@@ -63,6 +122,49 @@ export function GameScreen({
       onError: () => dispatch({ kind: 'connection', connected: false }),
     })
     return close
+  }, [characterId, epoch])
+
+  /**
+   * Whether to admit to being disconnected.
+   *
+   * Not simply `!connected`: the stream has not opened yet on the first render, and every ordinary
+   * page load would flash "Disconnected" before the connection it is complaining about had been
+   * given a chance to happen. A dropped stream also usually comes back within a second or two on
+   * its own, and a bar that appears for that long teaches players to ignore it — which is a
+   * problem the one time it stays.
+   */
+  const [admitDisconnected, setAdmitDisconnected] = useState(false)
+
+  useEffect(() => {
+    if (state.connected) {
+      setAdmitDisconnected(false)
+      return
+    }
+
+    const timer = setTimeout(() => setAdmitDisconnected(true), 2000)
+    return () => clearTimeout(timer)
+  }, [state.connected])
+
+  /**
+   * Walks back into the world after being dropped out of it (MOBILE.md §6).
+   *
+   * The stream reconnects itself, and that is enough while the character is still *in* the world —
+   * the server replays what was missed and play carries on. It is not enough once the link-dead
+   * window has passed, because by then the character has been removed and there is nothing for a
+   * stream to attach to. Only `enter` puts them back, and before this the only way to reach it was
+   * to leave to the character screen and pick the same character again.
+   */
+  const rejoin = useCallback(async () => {
+    setRejoining(true)
+    try {
+      await api.enter(characterId)
+      setEpoch((current) => current + 1)
+    } catch {
+      // Left to the player to try again: the button is still there, and the reason it failed is
+      // usually that the network is still down, which retrying by itself would not fix.
+    } finally {
+      setRejoining(false)
+    }
   }, [characterId])
 
   // What Tab can complete to. The contents frame is already the room's own answer to "what is
@@ -83,6 +185,21 @@ export function GameScreen({
       .filter(Boolean)
   }, [state.contents])
 
+  useKeyboardInset()
+
+  // Escape closes the sheet, as it would any overlay. Bound while it is open rather than always,
+  // so Escape means whatever it usually means the rest of the time.
+  useEffect(() => {
+    if (!sheetOpen) return
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSheetOpen(false)
+    }
+
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [sheetOpen])
+
   const send = useCallback(
     (input: string) => {
       // Echo locally so the player sees what they typed immediately. The result itself still
@@ -96,16 +213,84 @@ export function GameScreen({
   )
 
   return (
-    <div className="game">
-      <MapPanel map={state.map} />
-      <RoomPanel
+    <div className="game" data-layout={phone ? 'phone' : 'desktop'}>
+      {/*
+        The phone header. Hidden on desktop, where the room panel is on screen and says all of
+        this already — this is that panel collapsed to one line, plus the way back to it.
+      */}
+      <RoomHeader
         title={state.room?.title ?? '...'}
-        description={state.room?.description ?? ''}
         exits={state.room?.exits ?? []}
-        contents={state.contents?.occupants ?? []}
-        onKeyword={(keyword) => insertKeyword.current?.(keyword)}
+        connected={state.connected}
+        open={sheetOpen}
+        onToggle={() => setSheetOpen((open) => !open)}
       />
+
+      {/*
+        On desktop this wrapper is `display: contents`, so the map and room panels are grid items
+        exactly as they were. On a phone it becomes the sheet that slides over the transcript.
+        One tree, two shapes — rendering different children per layout would mean the map unmounts
+        and remounts every time the window crosses 600px.
+      */}
+      <div
+        className="room-sheet"
+        data-open={sheetOpen}
+        // Only meaningful on a phone, where the sheet is genuinely hidden. On desktop the panels
+        // are on screen and hiding them from assistive tech would be a lie.
+        aria-hidden={phone && !sheetOpen}
+        // Keeps the closed sheet out of the tab order. Without it the map and the contents list
+        // are still focusable behind the transcript, so tabbing wanders into an invisible panel.
+        inert={phone && !sheetOpen}
+      >
+        <div className="sheet-head">
+          <button type="button" className="sheet-close" onClick={() => setSheetOpen(false)}>
+            ✕ Close
+          </button>
+        </div>
+
+        <MapPanel map={state.map} />
+        <RoomPanel
+          title={state.room?.title ?? '...'}
+          description={state.room?.description ?? ''}
+          exits={state.room?.exits ?? []}
+          contents={state.contents?.occupants ?? []}
+          onKeyword={(keyword) => insertKeyword.current?.(keyword)}
+          onCommand={(command) => {
+            send(command)
+
+            // The sheet has done its job the moment a verb is chosen, and the answer arrives in
+            // the transcript behind it. Leaving it open would hide the result of the tap.
+            setSheetOpen(false)
+          }}
+          touch={coarse}
+        />
+      </div>
       <Scrollback lines={state.scrollback} onOpenBuilder={onOpenBuilder} />
+
+      {/*
+        Shown whenever the stream is down. The stream retries on its own and usually wins, so this
+        is not an error so much as a way back for the case it cannot fix: once the link-dead window
+        has passed the character has left the world, and no amount of reconnecting a stream brings
+        them back — only entering again does.
+      */}
+      {admitDisconnected && (
+        <div className="reconnect-bar" role="status">
+          <span className="dim">Disconnected. Trying to reconnect…</span>
+          <button type="button" onClick={() => void rejoin()} disabled={rejoining}>
+            {rejoining ? 'Rejoining…' : 'Rejoin the world'}
+          </button>
+        </div>
+      )}
+
+      {/*
+        Touch verbs (MOBILE.md M2). Part of the phone layout rather than gated on the pointer:
+        they occupy a row of the phone grid, and a narrow desktop window that gets the layout
+        should get the row that goes with it.
+      */}
+      {phone && (
+        <ExitPad exits={state.room?.exits ?? []} onGo={send} />
+      )}
+
       <InputBar
         onSend={send}
         insertRef={insertKeyword}
@@ -113,6 +298,7 @@ export function GameScreen({
         active={active}
         characterId={characterId}
         candidates={candidates}
+        showChips={phone}
       />
       <VitalsBar
         vitals={state.vitals}
@@ -162,18 +348,73 @@ function MapPanel({ map }: { map: MapPayload | null }) {
   )
 }
 
+/**
+ * The phone header: where you are, whether the stream is up, and the way into the room sheet.
+ *
+ * Rendered on every layout and hidden by the stylesheet on desktop, where the room panel is
+ * already on screen saying all of it. The exit count rather than the exits themselves — the names
+ * do not fit on one line, and M2's exit pad is where they become useful anyway.
+ */
+function RoomHeader({
+  title,
+  exits,
+  connected,
+  open,
+  onToggle,
+}: {
+  title: string
+  exits: string[]
+  connected: boolean
+  open: boolean
+  onToggle: () => void
+}) {
+  return (
+    <header className="room-header">
+      <span className="room-header-title">{title}</span>
+
+      {/*
+        The connection dot lives here as well as in the vitals row, because the vitals row wraps on
+        a narrow screen and the status can end up on a second line below the fold. Losing sight of
+        whether the game is connected is the one thing that must not happen quietly.
+      */}
+      <span
+        className={connected ? 'room-header-dot good' : 'room-header-dot bad'}
+        title={connected ? 'Connected' : 'Reconnecting…'}
+        aria-label={connected ? 'Connected' : 'Reconnecting'}
+      >
+        ●
+      </span>
+
+      <button
+        type="button"
+        className="room-header-toggle"
+        onClick={onToggle}
+        aria-expanded={open}
+      >
+        ▤ room
+        {exits.length > 0 && <span className="dim"> · {exits.length}</span>}
+      </button>
+    </header>
+  )
+}
+
 function RoomPanel({
   title,
   description,
   exits,
   contents,
   onKeyword,
+  onCommand,
+  touch,
 }: {
   title: string
   description: string
   exits: string[]
   contents: ContentEntry[]
   onKeyword: (keyword: string) => void
+  onCommand: (command: string) => void
+  /** Offers verbs on a tap instead of typing the keyword. See `verbsFor`. */
+  touch: boolean
 }) {
   // Group items by keyword and count duplicates
   const grouped = new Map<string, { entry: ContentEntry; count: number }>()
@@ -199,14 +440,54 @@ function RoomPanel({
       <h2>Here</h2>
       <ul className="contents">
         {displayItems.length === 0 && <li className="dim">Nobody else.</li>}
-        {displayItems.map(({ entry, count }) => (
-          <li key={entry.keyword}>
-            <button type="button" onClick={() => onKeyword(entry.keyword)}>
+        {displayItems.map(({ entry, count }) => {
+          const name = (
+            <>
               <span className="glyph">{entry.icon}</span> {entry.label}
               {count > 1 && <span className="dim"> ×{count}</span>}
-            </button>
-          </li>
-        ))}
+            </>
+          )
+
+          // On a desktop the click types the keyword and the player finishes the sentence, which
+          // is a good trade when a keyboard is one key away. On touch it costs a keyboard over the
+          // game, so the same tap offers the verbs instead — with "Type its name" kept as the last
+          // item, so nothing that was possible before has become unreachable.
+          return (
+            <li key={entry.keyword}>
+              {touch ? (
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <button type="button">{name}</button>
+                  </DropdownMenu.Trigger>
+
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content className="menu" align="start" sideOffset={4}>
+                      {verbsFor(entry.keyword).map((verb) => (
+                        <DropdownMenu.Item
+                          key={verb.label}
+                          className="menu-item"
+                          onSelect={() => onCommand(verb.command)}
+                        >
+                          {verb.label}
+                        </DropdownMenu.Item>
+                      ))}
+                      <DropdownMenu.Item
+                        className="menu-item"
+                        onSelect={() => onKeyword(entry.keyword)}
+                      >
+                        Type its name
+                      </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+              ) : (
+                <button type="button" onClick={() => onKeyword(entry.keyword)}>
+                  {name}
+                </button>
+              )}
+            </li>
+          )
+        })}
       </ul>
     </section>
   )
@@ -284,6 +565,32 @@ function Scrollback({
   )
 }
 
+/**
+ * Six direction keys, under the thumb (MOBILE.md M2).
+ *
+ * The reason this exists: the main verb of a MUD is walking, and walking meant typing `north` on
+ * a phone keyboard that covers half the screen. Every direction is drawn whether or not the room
+ * has it — see `exitPad` for why the row must not reflow.
+ */
+function ExitPad({ exits, onGo }: { exits: string[]; onGo: (command: string) => void }) {
+  return (
+    <div className="exit-pad" role="group" aria-label="Exits">
+      {exitPad(exits).map((key) => (
+        <button
+          key={key.direction}
+          type="button"
+          className={key.available ? 'exit-key' : 'exit-key unavailable'}
+          disabled={!key.available}
+          aria-label={key.direction}
+          onClick={() => onGo(key.direction)}
+        >
+          {key.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function InputBar({
   onSend,
   insertRef,
@@ -291,6 +598,7 @@ function InputBar({
   active,
   characterId,
   candidates,
+  showChips,
 }: {
   onSend: (input: string) => void
   insertRef: React.RefObject<((keyword: string) => void) | null>
@@ -298,11 +606,15 @@ function InputBar({
   active: boolean
   characterId: string
   candidates: string[]
+  /** Draws the recent-command row above the input. The phone stand-in for the up arrow. */
+  showChips?: boolean
 }) {
   const [value, setValue] = useState('')
   const [history, setHistory] = useState<string[]>(() => loadHistory(characterId))
   const [cursor, setCursor] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
+  const coarse = useCoarsePointer()
+  const chips = useMemo(() => (showChips ? recentCommands(history) : []), [showChips, history])
 
   // Which completion of the current fragment is showing, so a second Tab offers the next one
   // rather than recomputing against the text the first one just wrote.
@@ -336,8 +648,11 @@ function InputBar({
   // `active` is what keeps this from being a document-wide keyboard hijack: the game is hidden
   // rather than unmounted while the builder is open (App.tsx), so without the guard this handler
   // would still be listening and would pull every keystroke out of the builder's forms.
+  //
+  // Off entirely on touch. There are no stray keystrokes to catch when the keyboard only exists
+  // while a field is focused, and stealing focus would summon it over the game unasked.
   useEffect(() => {
-    if (!active) return
+    if (!active || coarse) return
 
     function focusInput() {
       const input = inputRef.current
@@ -354,12 +669,13 @@ function InputBar({
       document.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('focus', focusInput)
     }
-  }, [active])
+  }, [active, coarse])
 
-  function submit() {
-    const input = value.trim()
-    if (!input) return
-
+  /**
+   * Sends a command and files it in history, whatever typed it — the input box, a chip, or the
+   * exit pad by way of `onSend`.
+   */
+  function run(input: string) {
     onSend(input)
 
     // Written outside the updater rather than inside it: an updater must stay pure, and under
@@ -369,6 +685,13 @@ function InputBar({
     saveHistory(characterId, next)
 
     setCursor(-1)
+  }
+
+  function submit() {
+    const input = value.trim()
+    if (!input) return
+
+    run(input)
     setValue('')
   }
 
@@ -439,13 +762,41 @@ function InputBar({
 
   return (
     <div className="input-bar">
+      {/*
+        The phone's up arrow. Tapping runs the command rather than loading it into the box: on a
+        desktop, loading it is right because Enter is one key away, but here sending it would
+        otherwise mean summoning the keyboard to press a return key you did not need.
+      */}
+      {showChips && chips.length > 0 && (
+        <div className="command-chips" role="group" aria-label="Recent commands">
+          {chips.map((command) => (
+            <button
+              key={command}
+              type="button"
+              className="command-chip"
+              onClick={() => run(command)}
+            >
+              {command}
+            </button>
+          ))}
+        </div>
+      )}
+
       <span className="prompt">&gt;</span>
       <input
         ref={inputRef}
         value={value}
-        autoFocus
+        // Focusing on arrival is right on a desktop and wrong on a phone, where it throws up the
+        // keyboard over half the screen before the player has read the room they are standing in.
+        autoFocus={!coarse}
         spellCheck={false}
         autoComplete="off"
+        // A phone otherwise sends `North` and helpfully corrects `n` to `no`. The parser is
+        // case-insensitive, but autocorrect rewriting whole words is not something it can survive.
+        autoCapitalize="none"
+        autoCorrect="off"
+        // "Send" on the return key rather than "Go". The form is not going anywhere.
+        enterKeyHint="send"
         placeholder="look, north, say hello, help"
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={onKeyDown}

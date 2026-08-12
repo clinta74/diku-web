@@ -2,6 +2,7 @@ using System.Text.Json;
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Accounts;
+using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine;
 using DikuWeb.Engine.Systems;
 using DikuWeb.Persistence;
@@ -37,6 +38,33 @@ builder.Services.AddDikuWebPersistence(connectionString);
 builder.Services.AddDikuWebEngine(options =>
 {
     options.StartingRoom = StarterWorldSeeder.StartingRoom;
+
+    // The Engine section was never read at all. docker-compose.prod.yml has set
+    // Engine__LinkDeadGraceSeconds and Engine__StartingRoom since it was written, and both were
+    // silently ignored — a knob that reads as configured and does nothing is worse than one that
+    // does not exist, because nobody goes looking for it when the value appears not to apply.
+    //
+    // Read key by key rather than `.Bind(options)`, for two reasons that EngineConfigurationBinding
+    // tests pin down, because both are the sort that change quietly under a dependency upgrade:
+    //
+    //  - Bind cannot set StartingRoom at all. RoomKey is a readonly record struct with no type
+    //    converter, so the binder leaves the property untouched rather than reporting that it
+    //    could not convert — which would have left Engine__StartingRoom exactly as it was, a
+    //    setting that reads as configured and does nothing.
+    //  - Bind throws on a scalar it cannot convert, so a typo in the grace window takes the host
+    //    down at startup. Fail-fast is right for a value with no default; this one has a correct
+    //    default already, and refusing to boot over it trades a cosmetic mistake for an outage.
+    var engine = builder.Configuration.GetSection("Engine");
+
+    if (int.TryParse(engine["LinkDeadGraceSeconds"], out var graceSeconds) && graceSeconds > 0)
+    {
+        options.LinkDeadGraceSeconds = graceSeconds;
+    }
+
+    if (RoomKey.TryParse(engine["StartingRoom"], out var startingRoom))
+    {
+        options.StartingRoom = startingRoom;
+    }
 });
 
 // The Engine does not reference EF Core, so the Server supplies adapters.

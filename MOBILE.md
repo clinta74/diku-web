@@ -1,15 +1,17 @@
 # Mobile client plan
 
-**Status: proposal.** Nothing here is built. Findings were read out of `client/src` and
-`src/DikuWeb.Engine` at commit `1a5fe83`; line references are from that commit and will drift.
+**Status: built, unverified on hardware.** Every phase below is implemented and under test on the
+`mobile-client` branch. What has *not* happened is a real device: jsdom cannot prove a layout and
+emulation cannot prove a keyboard, so §8 is the part still owed.
 
-A MUD is the most phone-shaped game there is — a column of text and one line of input. The current
-client is not phone-shaped at all: it is a five-panel desktop grid pinned to `100vh`, driven by a
-keyboard that a phone does not have. This is what closing that gap costs, in the order the work
-wants to happen.
+Findings were read out of `client/src` and `src/DikuWeb.Engine` at commit `1a5fe83`, and the line
+references are from that commit — most have since moved, being the lines this work changed. They
+are kept as written because a record of what was wrong is worth more than a set of citations that
+tracks the fix.
 
-Estimates are solo-developer days including tests: **6–9 days to playable**, **10–15** with the
-builder.
+A MUD is the most phone-shaped game there is — a column of text and one line of input. The client
+was not phone-shaped at all: a five-panel desktop grid pinned to `100vh`, driven by a keyboard a
+phone does not have. This is what closing that gap took, in the order the work wanted to happen.
 
 ---
 
@@ -44,16 +46,17 @@ Worth stating, because it changes the size of the job.
 - The stream reconnects itself: `EventSource` replays `Last-Event-ID` against the server's ring
   buffer (§3.4), which is what a flaky mobile network needs.
 
-**One divergence to note.** §5 already says the map "collapses to a toggle so the text still
-dominates on mobile". That was never built — the 900px breakpoint caps the map at 12rem and leaves
-it on screen. The plan was right the first time; §4 below is that toggle, finally.
+**One divergence to note.** §5 already said the map "collapses to a toggle so the text still
+dominates on mobile". That was never built — the 900px breakpoint capped the map at 12rem and left
+it on screen. The plan was right the first time, and §4 below is that toggle, finally.
 
 ---
 
-## 3. What breaks on a phone
+## 3. What broke on a phone
 
-Severity is about play, not tidiness. **Blocks** means you cannot reasonably play, **degrades**
-means you can but it is unpleasant, **polish** is the rest.
+The state of things before this work, kept as the record of what the phases were for. Severity is
+about play, not tidiness: **blocks** means you could not reasonably play, **degrades** means you
+could but it was unpleasant, **polish** is the rest.
 
 | What happens | Where | Severity | Fix |
 | --- | --- | --- | --- |
@@ -174,11 +177,20 @@ phone it is a normal interruption.
   is, instead of returning them to the character list.
 - A longer grace window — which needs a server change first.
 
-> **Found while checking this.** `docker-compose.prod.yml` sets `Engine__LinkDeadGraceSeconds` and
-> `Engine__StartingRoom`, but `Program.cs` configures the engine options in code and never binds the
-> `Engine` configuration section. Both environment variables are currently no-ops, and the real
-> grace window is the hardcoded default — `LinkDeadGracePulses = 360` at 250ms per pulse, so 90
-> seconds. Worth fixing regardless of mobile; it is also the knob this section wants to turn.
+> **Found while checking this.** `docker-compose.prod.yml` set `Engine__LinkDeadGraceSeconds` and
+> `Engine__StartingRoom`, but `Program.cs` configured the engine options in code and never bound the
+> `Engine` configuration section. Both environment variables were no-ops, and the real grace window
+> was the hardcoded default — `LinkDeadGracePulses = 360` at 250ms per pulse, so 90 seconds. Worth
+> fixing regardless of mobile; it was also the knob this section wanted to turn.
+>
+> **Fixed by reading the section key by key, not by `Bind`** — and the first explanation committed
+> for that was wrong, so it is worth stating what is actually true. `Bind` does not throw on
+> `StartingRoom`: it finds no type converter for `RoomKey` and silently leaves the property alone,
+> which would have kept that setting a no-op. What it *does* throw on is a scalar it cannot
+> convert, so `LinkDeadGraceSeconds: "5m"` would take the host down at startup. Explicit reads make
+> the room setting work for the first time and let a typo fall back to a default that is already
+> correct. `EngineConfigurationBindingTests` pins all three behaviours, since they are the kind
+> that change quietly when a dependency moves.
 
 ---
 
@@ -189,63 +201,63 @@ shipping alone.
 
 ### M0 — Stop the bleeding · 0.5–1 day
 
-- [ ] `100dvh` with a `100vh` fallback, plus `viewport-fit=cover` and
+- [x] `100dvh` with a `100vh` fallback, plus `viewport-fit=cover` and
       `interactive-widget=resizes-content`
-- [ ] Safe-area padding on the input and vitals rows
-- [ ] 16px command input, and the four missing input attributes
-- [ ] No autofocus and no type-anywhere under `(pointer: coarse)`
+- [x] Safe-area padding on the input and vitals rows
+- [x] 16px command input, and the four missing input attributes
+- [x] No autofocus and no type-anywhere under `(pointer: coarse)`
 
 Nothing structural. After this the game is usable on a phone the way a badly-fitting shirt is
 wearable.
 
 ### M1 — The phone layout · 2–3 days
 
-- [ ] A ≤600px breakpoint: header strip, transcript, input, vitals, and nothing else competing for
+- [x] A ≤600px breakpoint: header strip, transcript, input, vitals, and nothing else competing for
       height
-- [ ] Room panel and map into a slide-over sheet, toggled from the header (the §5 toggle)
-- [ ] Input pinned above the keyboard via VisualViewport
-- [ ] Coarse-pointer hit areas for contents, legend, and tabs
+- [x] Room panel and map into a slide-over sheet, toggled from the header (the §5 toggle)
+- [x] Input pinned above the keyboard via VisualViewport
+- [x] Coarse-pointer hit areas for contents, legend, and tabs
 
 ### M2 — Touch verbs · 2–3 days
 
-- [ ] Exit pad from the room payload
-- [ ] Verb menu on a contents tap
-- [ ] Recent-command chips over the existing history store
+- [x] Exit pad from the room payload
+- [x] Verb menu on a contents tap
+- [x] Recent-command chips over the existing history store
 
 The phase that makes it a game you would *choose* to play on a phone rather than one you can.
 
 ### M3 — Survive being backgrounded · 1–2 days
 
-- [ ] Bind the `Engine` configuration section so the grace window is configurable at all
-- [ ] Reconnect on resume; re-entry offer when the character was dropped
-- [ ] Connection state in the header strip, not only in the vitals row
+- [x] Bind the `Engine` configuration section so the grace window is configurable at all
+- [x] Reconnect on resume; re-entry offer when the character was dropped
+- [x] Connection state in the header strip, not only in the vitals row
 
 ### M4a — Canvas without modifiers · 2–3 days
 
-- [ ] Pointer Events for `ZoneCanvas` and `GridPainter`, replacing the mouse handlers
-- [ ] Plain drag-to-pan behind a ~4px threshold; the Ctrl requirement and its keyboard listener come
+- [x] Pointer Events for `ZoneCanvas` and `GridPainter`, replacing the mouse handlers
+- [x] Plain drag-to-pan behind a ~4px threshold; the Ctrl requirement and its keyboard listener come
       out
-- [ ] Link-mode toggle in the canvas header, replacing Shift+click
-- [ ] Pinch-zoom, which the current canvas has no equivalent of at all
+- [x] Link-mode toggle in the canvas header, replacing Shift+click
+- [x] Pinch-zoom, which the current canvas has no equivalent of at all
 
 Ships on its own as a desktop improvement, with or without the rest of this plan. Touch support
 falls out of it rather than being added to it.
 
 ### M4b — Builder on small screens · 2–3 days
 
-- [ ] Three panes to two below ~1100px, two to one below ~768px, tree as a drawer rather than a
+- [x] Three panes to two below ~1100px, two to one below ~768px, tree as a drawer rather than a
       stacked column
-- [ ] Zone canvas behind a control in the world tab header on phones, opening as a full-screen
+- [x] Zone canvas behind a control in the world tab header on phones, opening as a full-screen
       overlay
-- [ ] Touch-sized controls through the editors — tree rows, flag lists, and sub-tabs are all
+- [x] Touch-sized controls through the editors — tree rows, flag lists, and sub-tabs are all
       text-sized today
 
 ### M5 — Installable · 0.5–1 day
 
-- [ ] Manifest, icons, theme colour, Apple meta tags
-- [ ] Standalone display, which removes the browser chrome that makes viewport height awkward in the
+- [x] Manifest, icons, theme colour, Apple meta tags
+- [x] Standalone display, which removes the browser chrome that makes viewport height awkward in the
       first place
-- [ ] A service worker only if the Android install prompt is wanted; there is no offline story to
+- [x] A service worker only if the Android install prompt is wanted; there is no offline story to
       tell
 
 ---
@@ -265,18 +277,34 @@ needs one real device each way, once per phase.
 
 ---
 
-## 9. Open questions
+## 9. Decisions taken
 
-1. **Is pinch-zoom in scope for the canvas?** Once it is on Pointer Events, two-finger zoom is a
-   modest addition — and there is no zoom on desktop today either, so it is a new capability rather
-   than parity. It is also the easiest thing to get subtly wrong.
-   *Recommend: yes, in M4a, while the pointer plumbing is open.*
-2. **How long should a backgrounded phone keep its character?** Ninety seconds today. Five minutes
-   covers a normal interruption; it also means a genuinely disconnected player lingers that much
-   longer. *Recommend: five minutes, once the setting actually binds.*
-3. **Does the exit pad stay visible on desktop?** Useful there too, but it competes with the
-   transcript and duplicates typing that desktop players already do faster.
-   *Recommend: coarse pointers only, at least to begin with.*
-4. **Install now or later?** The manifest is cheap and makes the viewport problems easier, which
-   argues for early — but it also puts an icon on a home screen before the thing behind it is good.
-   *Recommend: after M2.*
+Each of these was an open question when the plan was written. They are recorded rather than
+deleted, because the reasoning is what to argue with if one of them turns out wrong on a device.
+
+1. **Pinch-zoom is in.** It came free with the Pointer Events rewrite, and there was no zoom at all
+   before at any input, so the ± buttons are a gain for the desktop too. Limits are 0.35× to 1.4×:
+   out far enough to see a large zone whole, in only slightly past life size, since the boxes are
+   text and past that they are merely large.
+2. **The link-dead window is five minutes**, up from ninety seconds, set through the configuration
+   that now actually binds. A phone backgrounded for two minutes has been interrupted rather than
+   disconnected. The cost is that a player who really has gone lingers that much longer.
+3. **The exit pad follows the layout, not the pointer** — it is drawn whenever the phone layout is
+   active, including in a narrow desktop window. The earlier recommendation was coarse pointers
+   only; the pad occupies a row of the phone grid, and a layout with a hole in it where a control
+   should be is worse than a control a mouse user can ignore. Whether a *tap offers verbs* is still
+   a pointer question, and that one stayed separate.
+4. **Install shipped last**, as recommended — after the thing behind the icon was worth keeping.
+
+## 10. Still owed
+
+- **A real device, each way.** Everything here passes in jsdom, which has no layout and no media
+  queries and cannot fail the way a phone fails. The keyboard behaviour in particular — M0's
+  `--keyboard-inset`, the 16px input, `interactive-widget` — is asserted by construction and by
+  reading specifications, not by watching a keyboard open.
+- **Playwright.** §8 argues for it and it is not written; the pure functions are tested, the layouts
+  are not.
+- **Everything below M0 in the stack is unchanged**, which is the point: the exit pad sends `north`
+  because that is the name the command is registered under (`CommandRegistry`, from
+  `Direction.ToLowerName()`), and no server code needed to learn that a phone existed. The one
+  server change in this whole plan was reading a configuration section that was already being set.

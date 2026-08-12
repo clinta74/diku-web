@@ -6,6 +6,7 @@ using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Time;
 
 namespace DikuWeb.Engine;
 
@@ -238,6 +239,30 @@ public sealed class EngineOptions
 
     /// <summary>PLAN.md §3.6: 90 seconds, expressed in pulses.</summary>
     public int LinkDeadGracePulses { get; set; } = 360;
+
+    /// <summary>
+    /// The same window in seconds, which is the unit a deployment sets it in.
+    /// </summary>
+    /// <remarks>
+    /// <c>docker-compose.prod.yml</c> has set <c>Engine__LinkDeadGraceSeconds</c> since it was
+    /// written, and nothing read it: the option was pulses-only, and the <c>Engine</c>
+    /// configuration section was never bound at all (fixed in <c>Program.cs</c>). Rather than
+    /// correct the compose file to speak pulses, the option now speaks the unit the decision is
+    /// actually made in — nobody chooses "360 quarter-seconds", they choose a minute and a half.
+    ///
+    /// Pulses remain the stored form because the loop counts in them; this is a view over that,
+    /// so setting either one is coherent and reading back reflects whichever was set last.
+    ///
+    /// Mobile is what made this matter (MOBILE.md §6). Ninety seconds is generous on a desktop
+    /// and short on a phone, where switching apps for two minutes is an ordinary interruption
+    /// rather than a disconnection.
+    /// </remarks>
+    public int LinkDeadGraceSeconds
+    {
+        get => (int)Math.Round(LinkDeadGracePulses * GameTiming.PulseInterval.TotalSeconds);
+        set => LinkDeadGracePulses =
+            (int)Math.Round(Math.Max(0, value) / GameTiming.PulseInterval.TotalSeconds);
+    }
 
     /// <summary>Bound on the inbound queue; a full queue produces backpressure, not growth.</summary>
     public int InboundCapacity { get; set; } = 4096;

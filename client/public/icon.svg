@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="diku-web">
+  <!--
+    The app icon, in the game's own terms: the terminal ground (#0e1116) and the amber the client
+    reserves for "this is you" (#d9a441). The glyph is @ — the character the map has always drawn
+    the player as — set in the same monospace stack as the UI, inside the box-drawing frame the
+    room map is built from.
+
+    Deliberately not a logo. The icon a player looks for on a home screen should be the thing they
+    see when they open it.
+  -->
+  <rect width="512" height="512" fill="#0e1116"/>
+
+  <!-- The room frame, at the weight the map's box-drawing glyphs render at. -->
+  <rect x="72" y="72" width="368" height="368" fill="none" stroke="#2a3038" stroke-width="14"/>
+
+  <!-- A doorway in the north wall, so the frame reads as a room rather than a border. -->
+  <rect x="226" y="58" width="60" height="28" fill="#0e1116"/>
+
+  <text
+    x="256"
+    y="256"
+    fill="#d9a441"
+    font-family="ui-monospace, 'Cascadia Code', Consolas, 'Liberation Mono', monospace"
+    font-size="248"
+    font-weight="600"
+    text-anchor="middle"
+    dominant-baseline="central"
+  >@</text>
+</svg>

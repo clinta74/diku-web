@@ -238,16 +238,33 @@ input:focus {
 /* Game: the five panels of PLAN.md §5                                 */
 /* ------------------------------------------------------------------ */
 
+/*
+ * 100dvh, not 100vh. On a phone `vh` is the *largest* the viewport ever gets — it counts the
+ * browser chrome that is showing right now — so a 100vh layout puts its last two rows below the
+ * fold, which here is the command input and the vitals. `dvh` tracks the viewport as it actually
+ * is. The 100vh line stays as the fallback for anything that does not know `dvh`; browsers that
+ * do simply take the second declaration.
+ *
+ * When the keyboard opens, --keyboard-inset takes over (set by GameScreen from the VisualViewport
+ * API, and 0px everywhere else). Chrome shrinks the viewport itself via interactive-widget, so the
+ * inset stays 0 there; Safari does not, and this is what stands in for it.
+ */
 .game {
   height: 100vh;
+  height: calc(100dvh - var(--keyboard-inset, 0px));
   display: grid;
   gap: 1px;
   background: var(--border);
   grid-template-columns: minmax(16rem, 22rem) 1fr;
-  grid-template-rows: minmax(11rem, auto) 1fr auto auto;
+  grid-template-rows: minmax(11rem, auto) 1fr auto auto auto;
+
+  /* `notice` carries the reconnect bar. The row is `auto`, so it is zero-height whenever nothing
+     is in it — which is almost always — and the layout does not have to change shape to make
+     room for a bar that only appears when the connection drops. */
   grid-template-areas:
     "map room"
     "scroll scroll"
+    "notice notice"
     "input input"
     "vitals vitals";
 }
@@ -477,6 +494,23 @@ input:focus {
   padding: 0.2rem 0;
 }
 
+/*
+ * Safari zooms into any field it considers too small to read, and never zooms back out — so a
+ * 14px command box means the whole layout is left magnified after the first command, with the map
+ * off the side of the screen. 16px is the threshold, and it is the field only: the rest of the UI
+ * is a monospace terminal and looks wrong scaled up for no reason.
+ */
+@media (pointer: coarse) {
+  .input-bar input {
+    font-size: 16px;
+  }
+}
+
+/*
+ * The bottom row, so it owns the home-bar inset. The inset is zero on every device that does not
+ * have one, which is why this needs no media query — and it is added to the padding rather than
+ * replacing it, or the row would sit flush against the bar on the devices that do.
+ */
 .vitals-bar {
   grid-area: vitals;
   display: flex;
@@ -484,6 +518,9 @@ input:focus {
   gap: 1.25rem;
   flex-wrap: wrap;
   padding: 0.5rem 1rem;
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+  padding-right: calc(1rem + env(safe-area-inset-right, 0px));
   font-size: 0.8rem;
 }
 
@@ -529,11 +566,12 @@ input:focus {
 @media (max-width: 900px) {
   .game {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr auto auto;
+    grid-template-rows: auto auto 1fr auto auto auto;
     grid-template-areas:
       "room"
       "map"
       "scroll"
+      "notice"
       "input"
       "vitals";
   }
@@ -541,6 +579,243 @@ input:focus {
   .map-panel {
     max-height: 12rem;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Phone layout (MOBILE.md M1)                                         */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Keyed off data-layout rather than a media query of its own. GameScreen already has to know
+ * which layout it is in — the sheet's aria-hidden depends on it — and one source for the
+ * breakpoint is better than two that can drift. It also wins over the 900px block above on
+ * specificity alone, whatever order the rules end up in.
+ *
+ * The whole layout is one decision: the transcript is the game, so the transcript gets the
+ * screen. §5 called for exactly this ("the map collapses to a toggle") and only the stacking
+ * half was ever built.
+ */
+
+/* Desktop: the wrapper is not a box. Its children are the grid items, as they were before the
+   sheet existed. */
+.room-sheet {
+  display: contents;
+}
+
+.room-header,
+.sheet-head {
+  display: none;
+}
+
+.game[data-layout='phone'] {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto auto auto auto;
+  grid-template-areas:
+    "header"
+    "scroll"
+    "notice"
+    "pad"
+    "input"
+    "vitals";
+}
+
+.game[data-layout='phone'] .room-header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.8rem;
+  padding-top: calc(0.45rem + env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.room-header-title {
+  flex: 1;
+  min-width: 0;
+  color: var(--accent);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-header-dot {
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+.room-header-dot.good { color: var(--good); }
+.room-header-dot.bad { color: var(--bad); }
+
+/* 44px tall, which is the smallest a thumb hits reliably. */
+.room-header-toggle {
+  min-height: 44px;
+  padding: 0 0.7rem;
+  white-space: nowrap;
+}
+
+/* The sheet itself: a full-screen overlay rather than a panel sharing the height, because a room
+   description and a map cut to a third of a phone screen are worse than either one whole. */
+.game[data-layout='phone'] .room-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: var(--border);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  transform: translateY(-100%);
+  visibility: hidden;
+  transition: transform 0.18s ease, visibility 0.18s;
+}
+
+.game[data-layout='phone'] .room-sheet[data-open='true'] {
+  transform: none;
+  visibility: visible;
+}
+
+/* The panels are no longer children of .game here, so they no longer pick up its background. */
+.game[data-layout='phone'] .room-sheet > * {
+  background: var(--bg);
+}
+
+.game[data-layout='phone'] .sheet-head {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem 0.8rem;
+  padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+}
+
+.sheet-close {
+  min-height: 44px;
+  padding: 0 0.9rem;
+}
+
+.game[data-layout='phone'] .map-panel {
+  max-height: none;
+}
+
+/* Room contents are the one control a player uses constantly on a phone — it is how you name the
+   thing you are about to act on. Text-sized rows are not hittable. */
+.game[data-layout='phone'] .contents button {
+  min-height: 44px;
+  padding: 0.35rem 0;
+}
+
+.game[data-layout='phone'] .legend li,
+.game[data-layout='phone'] .contents li {
+  font-size: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game[data-layout='phone'] .room-sheet {
+    transition: none;
+  }
+}
+
+/*
+ * The reconnect bar (MOBILE.md §6). Sits in the input row's grid area alongside the input rather
+ * than above the transcript: a bar that pushed the transcript down would move the text the player
+ * is reading at the exact moment they are trying to work out what happened.
+ */
+.reconnect-bar {
+  grid-area: notice;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 1rem;
+  border-top: 1px solid var(--bad);
+  background: var(--panel);
+  font-size: 0.85rem;
+}
+
+.reconnect-bar button {
+  min-height: 36px;
+  white-space: nowrap;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* --- Touch verbs (MOBILE.md M2) ----------------------------------- */
+
+/*
+ * The exit pad sits between the transcript and the input, which is where the thumb already is.
+ * It is its own grid row rather than part of the input bar: the input can grow to two lines when
+ * a long command is typed, and the pad must not move when it does.
+ */
+.exit-pad {
+  grid-area: pad;
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+}
+
+.exit-key {
+  flex: 1;
+  min-height: 44px;
+  padding: 0;
+  font-size: 0.95rem;
+  color: var(--accent);
+  border-color: var(--border);
+}
+
+/*
+ * Unavailable directions stay on the pad, dimmed. See `exitPad` — a row that only drew the exits
+ * a room happens to have would put a different direction under the thumb on every arrival.
+ */
+.exit-key.unavailable {
+  color: var(--border);
+  border-color: var(--panel);
+}
+
+.exit-key:disabled {
+  cursor: default;
+}
+
+/* The chips scroll sideways rather than wrapping: a second row would push the input down, and the
+   input is the one thing on this screen whose position must not move. */
+.command-chips {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.1rem;
+}
+
+.command-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.command-chip {
+  min-height: 34px;
+  padding: 0 0.6rem;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  color: var(--dim);
+  border-radius: 999px;
+}
+
+.command-chip:hover {
+  color: var(--accent);
+}
+
+/* The chips live inside the input bar, which is a row — they need the column above the field. */
+.game[data-layout='phone'] .input-bar {
+  flex-wrap: wrap;
+  padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+  padding-right: calc(1rem + env(safe-area-inset-right, 0px));
+}
+
+.game[data-layout='phone'] .command-chips {
+  flex-basis: 100%;
 }
 
 /* ------------------------------------------------------------------ */
@@ -694,6 +969,13 @@ input:focus {
   background: linear-gradient(135deg, var(--bg) 0%, var(--panel) 100%);
   border-bottom: 1px solid var(--border);
   user-select: none;
+
+  /*
+   * Every touch gesture on this surface is ours. Without it the browser claims the drag first —
+   * one finger scrolls the page and two zoom the whole document — and the pointer handlers never
+   * see the moves, because the browser cancels the pointer once it starts scrolling.
+   */
+  touch-action: none;
 }
 
 .zone-canvas {
@@ -835,6 +1117,28 @@ input:focus {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Pinch does this on touch; the buttons are for a mouse and for the keyboard, which otherwise
+   have no zoom at all. */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.zoom-controls button {
+  min-width: 2.2rem;
+}
+
+.zoom-level {
+  min-width: 3.2rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
 }
 
 .canvas-help {
@@ -1062,6 +1366,12 @@ code.dim {
   letter-spacing: 0;
 }
 
+/* Drag-to-paint is the whole point of the control, and a drag on touch is a page scroll unless
+   the surface claims it. */
+.grid-painter .canvas {
+  touch-action: none;
+}
+
 .swatch {
   width: 1.6rem;
   height: 1.6rem;
@@ -1173,10 +1483,39 @@ code.dim {
   color: var(--accent);
 }
 
+/* ------------------------------------------------------------------ */
+/* Builder on small screens (MOBILE.md M4b)                            */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Three panes to two, then two to one. The old rule here collapsed the whole builder to a single
+ * scrolling column below 1100px, which put the tree, the editor, and the properties panel end to
+ * end — three screens of scrolling to change one field.
+ */
 @media (max-width: 1100px) {
-  .builder {
+  /* The properties panel drops under the editor rather than squeezing it. The tree spans both
+     rows, so it keeps its full height beside them. */
+  .builder-columns {
+    grid-template-columns: 14rem 1fr;
+  }
+
+  .builder-columns > :nth-child(1) {
+    grid-row: 1 / -1;
+  }
+
+  .builder-columns > :nth-child(3) {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 768px) {
+  /* One pane. The tree becomes a drawer over it — see .builder[data-nav] in builder.css. */
+  .builder-columns,
+  .builder-columns-2 {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
-    overflow-y: auto;
+  }
+
+  .builder-columns > :nth-child(3) {
+    grid-column: 1;
   }
 }

@@ -26,6 +26,14 @@ const PAN_STEP = CELL
 const DRAG_THRESHOLD = 4
 
 /**
+ * Zoom limits. Out far enough to see a large zone whole, in only slightly past life size — the
+ * boxes are text, and past this they are simply large rather than more legible.
+ */
+const MIN_SCALE = 0.35
+const MAX_SCALE = 1.4
+const ZOOM_STEP = 1.25
+
+/**
  * The zone map. Rooms auto-layout from their exit topology (see layout.ts); this draws the
  * boxes and the edges between them, and lets a builder pan and link.
  *
@@ -40,7 +48,25 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
   const [linkFrom, setLinkFrom] = useState<string | null>(null)
   const [linkTo, setLinkTo] = useState<{ from: string; to: string; direction: string } | null>(null)
   const [offset, setOffset] = useState({ x: 24, y: 24 })
+  const [scale, setScale] = useState(1)
   const [panning, setPanning] = useState(false)
+
+  /**
+   * Every pointer currently down on the surface, by id.
+   *
+   * One is a pan, two are a pinch. A Map rather than a count because the pinch needs both
+   * positions, and because pointers do not always report their release — leaving a stale id in a
+   * count would make the canvas believe a finger was still down forever.
+   */
+  const pointers = useRef(new Map<number, { x: number; y: number }>())
+
+  /** The pinch in progress: how far apart the fingers started, and about what point. */
+  const pinchStart = useRef<{
+    distance: number
+    scale: number
+    midpointX: number
+    midpointY: number
+  } | null>(null)
 
   /**
    * Where the press landed and what the offset was then, or null when no button is down.
@@ -62,15 +88,25 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
   const width = (Math.max(...placed.map((r) => r.x), 4) + 2) * CELL
   const height = (Math.max(...placed.map((r) => r.y), 3) + 2) * CELL
 
-  // Keep at least a margin of the map on screen, so it can never be dragged fully out of view.
-  function clamp(x: number, y: number) {
+  /** The viewport the map is drawn into, with a fallback for a surface not laid out yet. */
+  function viewport() {
     const rect = surface.current?.getBoundingClientRect()
-    const vw = rect?.width ?? 600
-    const vh = rect?.height ?? 400
+    return { width: rect?.width || 600, height: rect?.height || 400 }
+  }
+
+  /**
+   * Keep at least a margin of the map on screen, so it can never be dragged fully out of view.
+   *
+   * Takes the scale it is clamping *for* rather than reading state, because a pinch changes the
+   * scale and the offset in the same gesture and state has not caught up yet.
+   */
+  function clamp(x: number, y: number, atScale = scale) {
+    const view = viewport()
     const margin = 80
+
     return {
-      x: Math.max(margin - width, Math.min(vw - margin, x)),
-      y: Math.max(margin - height, Math.min(vh - margin, y)),
+      x: Math.max(margin - width * atScale, Math.min(view.width - margin, x)),
+      y: Math.max(margin - height * atScale, Math.min(view.height - margin, y)),
     }
   }
 
@@ -80,24 +116,77 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
 
   function recenter() {
     const target = selected ? byKey.get(selected) : null
-    const rect = surface.current?.getBoundingClientRect()
-    const viewW = rect?.width ?? 600
-    const viewH = rect?.height ?? 400
+    const view = viewport()
 
     if (target) {
-      // Centre the selected room in the viewport.
+      // Centre the selected room in the viewport. Scaled, or zooming out would leave "recenter"
+      // pointing at where the room used to be.
       setOffset(
-        clamp(viewW / 2 - (target.x * CELL + BOX_W / 2), viewH / 2 - (target.y * CELL + BOX_H / 2)),
+        clamp(
+          view.width / 2 - (target.x * CELL + BOX_W / 2) * scale,
+          view.height / 2 - (target.y * CELL + BOX_H / 2) * scale,
+        ),
       )
     } else {
       setOffset({ x: 24, y: 24 })
     }
   }
 
-  const handlePanStart = (e: React.MouseEvent) => {
+  /**
+   * Zooms about a fixed point on the surface, so whatever is under the fingers stays under them.
+   *
+   * The screen point `p` shows canvas coordinate `(p - offset) / scale`. Holding that coordinate
+   * still across a scale change is what the second line solves for. Zooming about the top-left
+   * instead — which is what scaling without this does — sends the room you were looking at off
+   * the edge, and is the reason zoom is easy to get subtly wrong.
+   */
+  function zoomAbout(nextScale: number, pointX: number, pointY: number) {
+    const target = Math.min(MAX_SCALE, Math.max(MIN_SCALE, nextScale))
+    if (target === scale) return
+
+    const ratio = target / scale
+
+    setOffset((current) =>
+      clamp(
+        pointX - (pointX - current.x) * ratio,
+        pointY - (pointY - current.y) * ratio,
+        target,
+      ),
+    )
+    setScale(target)
+  }
+
+  /** Zoom from the buttons: about the middle of the view, since there is no pointer to anchor to. */
+  function zoomBy(factor: number) {
+    const view = viewport()
+    zoomAbout(scale * factor, view.width / 2, view.height / 2)
+  }
+
+  /** Pointer coordinates relative to the surface, which is what the zoom maths is in terms of. */
+  function local(e: { clientX: number; clientY: number }) {
+    const rect = surface.current?.getBoundingClientRect()
+    return { x: e.clientX - (rect?.left ?? 0), y: e.clientY - (rect?.top ?? 0) }
+  }
+
+  const handlePointerDown = (e: React.PointerEvent) => {
     // A press that lands on a room box belongs to that box. This is the check that made the Ctrl
     // requirement unnecessary, and removing it would bring back the reason the modifier existed.
     if ((e.target as HTMLElement).closest('.room-box')) return
+
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+    // Keeps the gesture alive when a finger or the cursor leaves the surface mid-drag. Guarded
+    // because jsdom has no pointer capture.
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+
+    if (pointers.current.size === 2) {
+      // A second finger turns the drag into a pinch. The pan is abandoned rather than continued,
+      // or the map would lurch as the anchor changed from one finger to the midpoint of two.
+      panStart.current = null
+      setPanning(false)
+      pinchStart.current = beginPinch()
+      return
+    }
 
     // Stops the drag from selecting the room titles as text on its way across the canvas.
     e.preventDefault()
@@ -110,7 +199,37 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
     }
   }
 
-  const handlePan = (e: React.MouseEvent) => {
+  /** The distance and midpoint between the two active pointers, as the pinch begins. */
+  function beginPinch() {
+    const [a, b] = [...pointers.current.values()]
+    const midpoint = local({ clientX: (a.x + b.x) / 2, clientY: (a.y + b.y) / 2 })
+
+    return {
+      distance: Math.hypot(a.x - b.x, a.y - b.y),
+      scale,
+      midpointX: midpoint.x,
+      midpointY: midpoint.y,
+    }
+  }
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (pointers.current.has(e.pointerId)) {
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    }
+
+    const pinch = pinchStart.current
+    if (pinch && pointers.current.size >= 2) {
+      const [a, b] = [...pointers.current.values()]
+      const distance = Math.hypot(a.x - b.x, a.y - b.y)
+
+      // A pinch that starts as a tap can report zero distance; dividing by it would produce
+      // Infinity and blank the canvas.
+      if (distance > 0 && pinch.distance > 0) {
+        zoomAbout(pinch.scale * (distance / pinch.distance), pinch.midpointX, pinch.midpointY)
+      }
+      return
+    }
+
     const start = panStart.current
     if (!start) return
 
@@ -125,7 +244,27 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
     setOffset(clamp(start.offsetX + dx, start.offsetY + dy))
   }
 
-  const endPan = () => {
+  const handlePointerUp = (e: React.PointerEvent) => {
+    pointers.current.delete(e.pointerId)
+
+    if (pointers.current.size < 2) {
+      pinchStart.current = null
+    }
+
+    if (pointers.current.size === 0) {
+      panStart.current = null
+      setPanning(false)
+    }
+  }
+
+  /**
+   * Ends everything. Bound to pointer *leave* as well as up, because a mouse released outside the
+   * window never reports the release, and the map would follow the cursor again the next time it
+   * wandered back with no button held.
+   */
+  const endGesture = () => {
+    pointers.current.clear()
+    pinchStart.current = null
     panStart.current = null
     setPanning(false)
   }
@@ -184,16 +323,25 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
         className="zone-canvas-wrapper"
         ref={surface}
         tabIndex={0}
-        onMouseDown={handlePanStart}
-        onMouseMove={handlePan}
-        onMouseUp={endPan}
-        onMouseLeave={endPan}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onPointerLeave={endGesture}
         onKeyDown={handleKeyDown}
         style={{ cursor }}
       >
         <div
           className="zone-canvas"
-          style={{ width, height, transform: `translate(${offset.x}px, ${offset.y}px)` }}
+          style={{
+            width,
+            height,
+            // Translate before scale, and the origin at the top left, so the offset stays in
+            // screen pixels and the zoom maths above holds. The other order would scale the
+            // offset too, and every pan would move further the further in you were zoomed.
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+            transformOrigin: '0 0',
+          }}
         >
           <svg className="edges" width={width} height={height}>
             <Edges placed={placed} byKey={byKey} />
@@ -245,9 +393,31 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
             ↓
           </button>
         </div>
+
+        {/* Pinch covers this on touch; these are for everyone else, and for the keyboard. */}
+        <div className="zoom-controls" role="group" aria-label="Zoom">
+          <button
+            type="button"
+            onClick={() => zoomBy(1 / ZOOM_STEP)}
+            disabled={scale <= MIN_SCALE}
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+          <span className="zoom-level">{Math.round(scale * 100)}%</span>
+          <button
+            type="button"
+            onClick={() => zoomBy(ZOOM_STEP)}
+            disabled={scale >= MAX_SCALE}
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+        </div>
         <p className="canvas-help">
           <span className="help-icon">?</span>
-          <strong>Drag</strong> or use the arrows to pan • <strong>Shift-click</strong> two rooms to link
+          <strong>Drag</strong> or use the arrows to pan • <strong>Pinch</strong> or ± to zoom •{' '}
+          <strong>Shift-click</strong> two rooms to link
         </p>
       </div>
 

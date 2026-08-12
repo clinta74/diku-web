@@ -88,8 +88,17 @@ services:
       Auth__CookieName: dikuweb.session
       Auth__SessionTimeoutMinutes: "20160"
       # Game engine
-      Engine__LinkDeadGraceSeconds: "30"
-      Engine__StartingRoom: hall@0.0.0
+      #
+      # These two did nothing until the Engine section was actually read (Program.cs). The old
+      # values are worth knowing about rather than quietly replacing: 30 seconds was a shorter
+      # grace than the engine's own 90-second default, and the starting room was "hall@0.0.0",
+      # which is not a room key this build can parse — an invalid value is now ignored in favour
+      # of the seeded starting room rather than crashing the host.
+      #
+      # 300 seconds because a phone that has been backgrounded for two minutes has been
+      # interrupted, not disconnected (MOBILE.md §6). The cost is that a player who really has
+      # gone stays in the world that much longer.
+      Engine__LinkDeadGraceSeconds: "300"
       # Swagger (disable in production)
       SwaggerEnabled: "false"
     volumes:

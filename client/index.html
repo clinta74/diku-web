@@ -2,8 +2,42 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+
+    <!--
+      Installable (MOBILE.md M5). Standalone display is worth more than a home-screen shortcut
+      sounds: it removes the browser chrome, which is the thing that makes viewport height awkward
+      in the first place, and it is why the dvh work in App.css has less to fight against here.
+
+      No service worker. One is only needed for Android's install prompt, and there is no offline
+      story to tell — the game is a live connection to a world running somewhere else.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0e1116" />
+
+    <!-- iOS reads none of the manifest. These are the same three settings again, its way. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="diku-web" />
+
+    <!--
+      black-translucent puts the page under the status bar rather than beside it, which is only
+      safe because viewport-fit=cover and the safe-area padding below already account for it.
+    -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!--
+      viewport-fit=cover lets the page paint under the notch and the home bar; the bars that would
+      otherwise sit beneath them take env(safe-area-inset-*) padding instead (App.css).
+
+      interactive-widget=resizes-content is the one that matters most: without it the on-screen
+      keyboard overlays the viewport rather than shrinking it, so the command input — the whole
+      point of the screen — ends up behind the keyboard. Chrome and Android honour it; Safari does
+      not, and is handled with the VisualViewport listener in GameScreen.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
+    />
     <title>diku-web</title>
   </head>
   <body>
