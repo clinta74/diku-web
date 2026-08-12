@@ -52,7 +52,7 @@ services:
     #   - REGISTRY (default: ghcr.io)
     #   - IMAGE_REPO (default: your-org/diku-web)
     #   - DIKUWEB_IMAGE_TAG (default: latest)
-    image: ${REGISTRY}/${IMAGE_REPO}:${DIKUWEB_IMAGE_TAG}
+    image: candrews74/dikuweb-server:latest
     container_name: dikuweb-web
     restart: always
     networks:
@@ -115,7 +115,7 @@ services:
     build:
       context: .
       dockerfile: client/Dockerfile
-    image: ghcr.io/your-org/diku-web-client:latest
+    image: candrews74/dikuweb-client:latest
     container_name: dikuweb-client
     restart: always
     networks:
@@ -138,32 +138,6 @@ services:
         max-size: "50m"
         max-file: "3"
         labels: "service=client"
-
-  # Database admin: DISABLED for production security
-  # Use `docker-compose exec postgres psql` instead for CLI access
-  # Or connect with your PostgreSQL client:
-  #   psql -h localhost -U dikuweb -d dikuweb
-  #
-  # To re-enable Adminer for development, uncomment below:
-  # adminer:
-  #   image: adminer:5
-  #   container_name: dikuweb-adminer
-  #   restart: unless-stopped
-  #   networks:
-  #     - dikuweb-network
-  #   ports:
-  #     - "127.0.0.1:8080:8080"
-  #   environment:
-  #     ADMINER_DEFAULT_SERVER: postgres
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   logging:
-  #     driver: json-file
-  #     options:
-  #       max-size: "10m"
-  #       max-file: "2"
-
 
 networks:
   dikuweb-network:
