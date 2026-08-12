@@ -107,6 +107,12 @@ export function GameScreen({
   // Exposed so parent can focus input when returning from builder
   const focusInput = useRef<(() => void) | null>(null)
 
+  /**
+   * Bumped to force a fresh stream. The only thing that does it is Rejoin, below.
+   */
+  const [epoch, setEpoch] = useState(0)
+  const [rejoining, setRejoining] = useState(false)
+
   // Keyed by character, so a second tab on a different character opens its own stream
   // rather than evicting this one.
   useEffect(() => {
@@ -116,6 +122,49 @@ export function GameScreen({
       onError: () => dispatch({ kind: 'connection', connected: false }),
     })
     return close
+  }, [characterId, epoch])
+
+  /**
+   * Whether to admit to being disconnected.
+   *
+   * Not simply `!connected`: the stream has not opened yet on the first render, and every ordinary
+   * page load would flash "Disconnected" before the connection it is complaining about had been
+   * given a chance to happen. A dropped stream also usually comes back within a second or two on
+   * its own, and a bar that appears for that long teaches players to ignore it — which is a
+   * problem the one time it stays.
+   */
+  const [admitDisconnected, setAdmitDisconnected] = useState(false)
+
+  useEffect(() => {
+    if (state.connected) {
+      setAdmitDisconnected(false)
+      return
+    }
+
+    const timer = setTimeout(() => setAdmitDisconnected(true), 2000)
+    return () => clearTimeout(timer)
+  }, [state.connected])
+
+  /**
+   * Walks back into the world after being dropped out of it (MOBILE.md §6).
+   *
+   * The stream reconnects itself, and that is enough while the character is still *in* the world —
+   * the server replays what was missed and play carries on. It is not enough once the link-dead
+   * window has passed, because by then the character has been removed and there is nothing for a
+   * stream to attach to. Only `enter` puts them back, and before this the only way to reach it was
+   * to leave to the character screen and pick the same character again.
+   */
+  const rejoin = useCallback(async () => {
+    setRejoining(true)
+    try {
+      await api.enter(characterId)
+      setEpoch((current) => current + 1)
+    } catch {
+      // Left to the player to try again: the button is still there, and the reason it failed is
+      // usually that the network is still down, which retrying by itself would not fix.
+    } finally {
+      setRejoining(false)
+    }
   }, [characterId])
 
   // What Tab can complete to. The contents frame is already the room's own answer to "what is
@@ -217,6 +266,21 @@ export function GameScreen({
         />
       </div>
       <Scrollback lines={state.scrollback} onOpenBuilder={onOpenBuilder} />
+
+      {/*
+        Shown whenever the stream is down. The stream retries on its own and usually wins, so this
+        is not an error so much as a way back for the case it cannot fix: once the link-dead window
+        has passed the character has left the world, and no amount of reconnecting a stream brings
+        them back — only entering again does.
+      */}
+      {admitDisconnected && (
+        <div className="reconnect-bar" role="status">
+          <span className="dim">Disconnected. Trying to reconnect…</span>
+          <button type="button" onClick={() => void rejoin()} disabled={rejoining}>
+            {rejoining ? 'Rejoining…' : 'Rejoin the world'}
+          </button>
+        </div>
+      )}
 
       {/*
         Touch verbs (MOBILE.md M2). Part of the phone layout rather than gated on the pointer:

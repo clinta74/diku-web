@@ -2,6 +2,7 @@ using System.Text.Json;
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Accounts;
+using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine;
 using DikuWeb.Engine.Systems;
 using DikuWeb.Persistence;
@@ -37,6 +38,28 @@ builder.Services.AddDikuWebPersistence(connectionString);
 builder.Services.AddDikuWebEngine(options =>
 {
     options.StartingRoom = StarterWorldSeeder.StartingRoom;
+
+    // The Engine section was never read at all. docker-compose.prod.yml has set
+    // Engine__LinkDeadGraceSeconds and Engine__StartingRoom since it was written, and both were
+    // silently ignored — a knob that reads as configured and does nothing is worse than one that
+    // does not exist, because nobody goes looking for it when the value appears not to apply.
+    //
+    // Read key by key rather than `.Bind(options)`. Bind would try to convert the StartingRoom
+    // string into a RoomKey, which is a readonly record struct with no type converter, and throw
+    // during startup — turning a cosmetic misconfiguration into a server that will not boot. Each
+    // value below is validated and ignored when it is nonsense, which is the right failure for
+    // settings whose defaults are already correct.
+    var engine = builder.Configuration.GetSection("Engine");
+
+    if (int.TryParse(engine["LinkDeadGraceSeconds"], out var graceSeconds) && graceSeconds > 0)
+    {
+        options.LinkDeadGraceSeconds = graceSeconds;
+    }
+
+    if (RoomKey.TryParse(engine["StartingRoom"], out var startingRoom))
+    {
+        options.StartingRoom = startingRoom;
+    }
 });
 
 // The Engine does not reference EF Core, so the Server supplies adapters.

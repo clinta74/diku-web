@@ -5,6 +5,7 @@ import { GameScreen } from './GameScreen'
 import type { GameEvent } from '../net/protocol'
 
 const sent: string[] = []
+const entered: string[] = []
 
 vi.mock('../net/api', () => ({
   api: {
@@ -12,16 +13,35 @@ vi.mock('../net/api', () => ({
       sent.push(input)
       return Promise.resolve()
     },
+    enter: (id: string) => {
+      entered.push(id)
+      return Promise.resolve({})
+    },
   },
 }))
 
-const stream = vi.hoisted(() => ({ emit: null as ((event: GameEvent) => void) | null }))
+const stream = vi.hoisted(() => ({
+  emit: null as ((event: GameEvent) => void) | null,
+  fail: null as (() => void) | null,
+  open: null as (() => void) | null,
+}))
 
 vi.mock('../net/stream', () => ({
-  connectStream: (_id: string, handlers: { onEvent: (event: GameEvent) => void }) => {
+  connectStream: (
+    _id: string,
+    handlers: {
+      onEvent: (event: GameEvent) => void
+      onError?: () => void
+      onOpen?: () => void
+    },
+  ) => {
     stream.emit = handlers.onEvent
+    stream.fail = () => handlers.onError?.()
+    stream.open = () => handlers.onOpen?.()
     return () => {
       stream.emit = null
+      stream.fail = null
+      stream.open = null
     }
   },
 }))
@@ -42,6 +62,7 @@ function pretendToBe(kind: 'phone' | 'desktop') {
 
 beforeEach(() => {
   sent.length = 0
+  entered.length = 0
   localStorage.clear()
 })
 
@@ -154,6 +175,47 @@ it('re-runs a command from a chip without opening the keyboard', () => {
 
   fireEvent.click(screen.getByRole('button', { name: 'attack wolf' }))
   expect(sent).toEqual(['attack wolf', 'attack wolf'])
+})
+
+it('offers a way back into the world once the stream is down', () => {
+  // The stream retries on its own and usually wins. This is for the case it cannot fix: after the
+  // link-dead window the character has been removed from the world, and reconnecting a stream has
+  // nothing to attach to — only entering again does. Before this, the only route was leaving to
+  // the character screen and picking the same character.
+  vi.useFakeTimers()
+  try {
+    pretendToBe('phone')
+    play()
+
+    // Nothing yet: the stream has not opened on the first render, and every ordinary page load
+    // would otherwise flash "Disconnected" before the connection had a chance to happen.
+    act(() => stream.fail?.())
+    expect(screen.queryByRole('button', { name: /rejoin/i })).toBeNull()
+
+    act(() => vi.advanceTimersByTime(2500))
+
+    fireEvent.click(screen.getByRole('button', { name: /rejoin/i }))
+    expect(entered).toEqual(['c1'])
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+it('takes the reconnect bar away as soon as the stream is back', () => {
+  vi.useFakeTimers()
+  try {
+    pretendToBe('phone')
+    play()
+
+    act(() => stream.fail?.())
+    act(() => vi.advanceTimersByTime(2500))
+    expect(screen.queryByRole('button', { name: /rejoin/i })).not.toBeNull()
+
+    act(() => stream.open?.())
+    expect(screen.queryByRole('button', { name: /rejoin/i })).toBeNull()
+  } finally {
+    vi.useRealTimers()
+  }
 })
 
 it('does not steal keystrokes aimed elsewhere on a touch device', () => {
