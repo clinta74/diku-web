@@ -3,7 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      viewport-fit=cover lets the page paint under the notch and the home bar; the bars that would
+      otherwise sit beneath them take env(safe-area-inset-*) padding instead (App.css).
+
+      interactive-widget=resizes-content is the one that matters most: without it the on-screen
+      keyboard overlays the viewport rather than shrinking it, so the command input — the whole
+      point of the screen — ends up behind the keyboard. Chrome and Android honour it; Safari does
+      not, and is handled with the VisualViewport listener in GameScreen.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
+    />
     <title>diku-web</title>
   </head>
   <body>

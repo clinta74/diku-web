@@ -238,8 +238,20 @@ input:focus {
 /* Game: the five panels of PLAN.md §5                                 */
 /* ------------------------------------------------------------------ */
 
+/*
+ * 100dvh, not 100vh. On a phone `vh` is the *largest* the viewport ever gets — it counts the
+ * browser chrome that is showing right now — so a 100vh layout puts its last two rows below the
+ * fold, which here is the command input and the vitals. `dvh` tracks the viewport as it actually
+ * is. The 100vh line stays as the fallback for anything that does not know `dvh`; browsers that
+ * do simply take the second declaration.
+ *
+ * When the keyboard opens, --keyboard-inset takes over (set by GameScreen from the VisualViewport
+ * API, and 0px everywhere else). Chrome shrinks the viewport itself via interactive-widget, so the
+ * inset stays 0 there; Safari does not, and this is what stands in for it.
+ */
 .game {
   height: 100vh;
+  height: calc(100dvh - var(--keyboard-inset, 0px));
   display: grid;
   gap: 1px;
   background: var(--border);
@@ -477,6 +489,23 @@ input:focus {
   padding: 0.2rem 0;
 }
 
+/*
+ * Safari zooms into any field it considers too small to read, and never zooms back out — so a
+ * 14px command box means the whole layout is left magnified after the first command, with the map
+ * off the side of the screen. 16px is the threshold, and it is the field only: the rest of the UI
+ * is a monospace terminal and looks wrong scaled up for no reason.
+ */
+@media (pointer: coarse) {
+  .input-bar input {
+    font-size: 16px;
+  }
+}
+
+/*
+ * The bottom row, so it owns the home-bar inset. The inset is zero on every device that does not
+ * have one, which is why this needs no media query — and it is added to the padding rather than
+ * replacing it, or the row would sit flush against the bar on the devices that do.
+ */
 .vitals-bar {
   grid-area: vitals;
   display: flex;
@@ -484,6 +513,9 @@ input:focus {
   gap: 1.25rem;
   flex-wrap: wrap;
   padding: 0.5rem 1rem;
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+  padding-right: calc(1rem + env(safe-area-inset-right, 0px));
   font-size: 0.8rem;
 }
 

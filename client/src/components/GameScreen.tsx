@@ -4,6 +4,7 @@ import { connectStream } from '../net/stream'
 import { gameReducer, initialGameState } from '../state/gameReducer'
 import type { ContentEntry, MapPayload, TextSpan, VitalsPayload } from '../net/protocol'
 import { shouldRedirectToInput } from './typeAnywhere'
+import { useCoarsePointer } from './pointer'
 import { applyCompletion, completionsFor, type Completions } from './completion'
 import { loadHistory, remember, saveHistory } from './commandHistory'
 import { followSlack, isAtBottom } from './scrollFollow'
@@ -27,6 +28,47 @@ interface Props {
    * document's keystrokes.
    */
   active?: boolean
+}
+
+/**
+ * Publishes how much of the viewport the on-screen keyboard is covering, as `--keyboard-inset` on
+ * the document element. Zero when there is no keyboard, which is every desktop and every phone
+ * that is not currently typing.
+ *
+ * `interactive-widget=resizes-content` in the viewport meta already does this on Chrome and
+ * Android by shrinking the viewport itself, and there the inset stays at zero. Safari ignores the
+ * hint and overlays the keyboard instead, leaving the layout convinced it still has the full
+ * height — so the command input, the last row of the grid, ends up underneath the keyboard the
+ * moment it is tapped. VisualViewport is the only thing that reports that overlap.
+ */
+function useKeyboardInset() {
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+
+    const sync = () => {
+      // How much of the layout viewport the visual one no longer covers. `offsetTop` matters on
+      // Safari, which scrolls the page up behind the keyboard rather than resizing it.
+      const covered = window.innerHeight - viewport.height - viewport.offsetTop
+
+      // A pixel or two of disagreement is normal and constant; only a real keyboard is worth
+      // reflowing the grid for.
+      document.documentElement.style.setProperty(
+        '--keyboard-inset',
+        covered > 40 ? `${Math.round(covered)}px` : '0px',
+      )
+    }
+
+    sync()
+    viewport.addEventListener('resize', sync)
+    viewport.addEventListener('scroll', sync)
+
+    return () => {
+      viewport.removeEventListener('resize', sync)
+      viewport.removeEventListener('scroll', sync)
+      document.documentElement.style.removeProperty('--keyboard-inset')
+    }
+  }, [])
 }
 
 export function GameScreen({
@@ -82,6 +124,8 @@ export function GameScreen({
       .map((entry) => entry.label.replace(/\s*\(.*\)\s*$/, '').trim())
       .filter(Boolean)
   }, [state.contents])
+
+  useKeyboardInset()
 
   const send = useCallback(
     (input: string) => {
@@ -303,6 +347,7 @@ function InputBar({
   const [history, setHistory] = useState<string[]>(() => loadHistory(characterId))
   const [cursor, setCursor] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
+  const coarse = useCoarsePointer()
 
   // Which completion of the current fragment is showing, so a second Tab offers the next one
   // rather than recomputing against the text the first one just wrote.
@@ -336,8 +381,11 @@ function InputBar({
   // `active` is what keeps this from being a document-wide keyboard hijack: the game is hidden
   // rather than unmounted while the builder is open (App.tsx), so without the guard this handler
   // would still be listening and would pull every keystroke out of the builder's forms.
+  //
+  // Off entirely on touch. There are no stray keystrokes to catch when the keyboard only exists
+  // while a field is focused, and stealing focus would summon it over the game unasked.
   useEffect(() => {
-    if (!active) return
+    if (!active || coarse) return
 
     function focusInput() {
       const input = inputRef.current
@@ -354,7 +402,7 @@ function InputBar({
       document.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('focus', focusInput)
     }
-  }, [active])
+  }, [active, coarse])
 
   function submit() {
     const input = value.trim()
@@ -443,9 +491,17 @@ function InputBar({
       <input
         ref={inputRef}
         value={value}
-        autoFocus
+        // Focusing on arrival is right on a desktop and wrong on a phone, where it throws up the
+        // keyboard over half the screen before the player has read the room they are standing in.
+        autoFocus={!coarse}
         spellCheck={false}
         autoComplete="off"
+        // A phone otherwise sends `North` and helpfully corrects `n` to `no`. The parser is
+        // case-insensitive, but autocorrect rewriting whole words is not something it can survive.
+        autoCapitalize="none"
+        autoCorrect="off"
+        // "Send" on the return key rather than "Go". The form is not going anywhere.
+        enterKeyHint="send"
         placeholder="look, north, say hello, help"
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={onKeyDown}
