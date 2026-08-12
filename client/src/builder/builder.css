@@ -390,6 +390,120 @@
   gap: 0.35rem;
 }
 
+/* --- Small screens (MOBILE.md M4b) ---------------------------------- */
+
+/*
+ * The tree drawer. Only the *first* column becomes one, whichever tab it belongs to — the world
+ * tree, the template lists, the account list — because in every tab that column is the same
+ * thing: a list you pick from and then stop looking at.
+ */
+.builder-nav-toggle {
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0 0.6rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.builder-nav-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 768px) {
+  .builder-columns > .builder-col:first-child {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    width: min(17rem, 82vw);
+    border-right: 1px solid var(--border);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 0.18s ease, visibility 0.18s;
+  }
+
+  .builder[data-nav='open'] .builder-columns > .builder-col:first-child {
+    transform: none;
+    visibility: visible;
+  }
+
+  /* The topbar wraps rather than crushing the tab labels into each other. */
+  .builder-topbar {
+    flex-wrap: wrap;
+    gap: 0.6rem 0.9rem;
+  }
+
+  .builder-topbar-right {
+    margin-left: auto;
+  }
+
+  /* Tree rows and tab triggers are the two things tapped constantly in here. */
+  .tree li button,
+  .tab {
+    min-height: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .builder-columns > .builder-col:first-child {
+    transition: none;
+  }
+}
+
+/* The zone map, summoned. Full screen, because a map worth opening is worth the whole screen —
+   and because sharing a narrow one with the room editor leaves neither usable. */
+.map-summon {
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 0.6rem;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.canvas-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.canvas-overlay-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.8rem;
+  padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--border);
+}
+
+.canvas-overlay-head button {
+  min-height: 40px;
+}
+
+/* The canvas sizes itself to a fixed 28rem in the pane; in the overlay it takes what is left. */
+.canvas-overlay .zone-canvas-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-overlay .zone-canvas-wrapper {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
 /* --- Account administration ----------------------------------------- */
 
 /* Read-only facts about an account, as label/value pairs. A definition list rather than a table:

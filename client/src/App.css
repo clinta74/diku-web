@@ -1483,10 +1483,39 @@ code.dim {
   color: var(--accent);
 }
 
+/* ------------------------------------------------------------------ */
+/* Builder on small screens (MOBILE.md M4b)                            */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Three panes to two, then two to one. The old rule here collapsed the whole builder to a single
+ * scrolling column below 1100px, which put the tree, the editor, and the properties panel end to
+ * end — three screens of scrolling to change one field.
+ */
 @media (max-width: 1100px) {
-  .builder {
+  /* The properties panel drops under the editor rather than squeezing it. The tree spans both
+     rows, so it keeps its full height beside them. */
+  .builder-columns {
+    grid-template-columns: 14rem 1fr;
+  }
+
+  .builder-columns > :nth-child(1) {
+    grid-row: 1 / -1;
+  }
+
+  .builder-columns > :nth-child(3) {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 768px) {
+  /* One pane. The tree becomes a drawer over it — see .builder[data-nav] in builder.css. */
+  .builder-columns,
+  .builder-columns-2 {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
-    overflow-y: auto;
+  }
+
+  .builder-columns > :nth-child(3) {
+    grid-column: 1;
   }
 }

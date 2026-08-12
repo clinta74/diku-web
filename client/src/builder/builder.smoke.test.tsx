@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Navigate, Route, Routes } from 'react-router'
 import type { RoomDetail } from '../net/builderApi'
 
@@ -92,6 +92,8 @@ interface RenderOpts {
   initialPath?: string
   occupiedRoom?: string | null
   follow?: boolean
+  /** Admins get the Accounts tab; the default here is the ordinary builder. */
+  isAdmin?: boolean
 }
 
 function renderBuilder({
@@ -99,6 +101,7 @@ function renderBuilder({
   initialPath = '/builder/world',
   occupiedRoom = null,
   follow = false,
+  isAdmin = false,
 }: RenderOpts = {}) {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
@@ -110,6 +113,7 @@ function renderBuilder({
               occupiedRoom={occupiedRoom}
               follow={follow}
               onFollowChange={() => {}}
+              isAdmin={isAdmin}
               onClose={onClose}
             />
           }
@@ -233,5 +237,59 @@ describe('builder shell', () => {
     // Still on the original room until the user decides.
     const editor = document.querySelector('.room-editor')
     expect(editor?.textContent).toContain('north-gate')
+  })
+})
+
+describe('on a small screen (MOBILE.md M4b)', () => {
+  /**
+   * jsdom implements no media queries, so the builder has to be told it is narrow. Answering every
+   * query the same way is accurate here: the only one asked in the builder is the compact one.
+   */
+  function pretendNarrow(narrow: boolean) {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: narrow,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+  }
+
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('summons the zone map instead of keeping it on screen', async () => {
+    // The canvas is the one part of the builder that genuinely needs a large pointer-driven
+    // surface. Everything else is a form. Unmounted rather than hidden, so a map nobody can see
+    // is not laying out a zone's worth of boxes on every edit.
+    pretendNarrow(true)
+    renderBuilder({ initialPath: '/builder/world/aldenmoor/millbrook' })
+
+    const summon = await screen.findByRole('button', { name: /zone map/i })
+    expect(document.querySelector('.zone-canvas')).toBeNull()
+
+    fireEvent.click(summon)
+    expect(document.querySelector('.zone-canvas')).not.toBeNull()
+  })
+
+  it('closes the map once a room has been picked from it', async () => {
+    // Picking a room is what the map was opened for, and the editor it opens is underneath.
+    pretendNarrow(true)
+    renderBuilder({ initialPath: '/builder/world/aldenmoor/millbrook' })
+
+    fireEvent.click(await screen.findByRole('button', { name: /zone map/i }))
+
+    // Scoped to the overlay: the tree lists the same rooms, and picking one there is a different
+    // interaction that this test is not about.
+    const overlay = document.querySelector('.canvas-overlay') as HTMLElement
+    fireEvent.click(await within(overlay).findByRole('button', { name: /The North Gate/ }))
+
+    await waitFor(() => expect(document.querySelector('.canvas-overlay')).toBeNull())
+  })
+
+  it('keeps the canvas on screen when there is room for it', async () => {
+    pretendNarrow(false)
+    renderBuilder({ initialPath: '/builder/world/aldenmoor/millbrook' })
+
+    await waitFor(() => expect(document.querySelector('.zone-canvas')).not.toBeNull())
+    expect(screen.queryByRole('button', { name: /zone map/i })).toBeNull()
   })
 })

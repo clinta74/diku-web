@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useOutletContext, useParams } from 'react-router'
+import { useCompactBuilder } from '../../components/pointer'
 import { useBuilderData } from '../BuilderData'
 import { useNavGuard } from '../NavGuard'
 import { keysFromParams, toWorldPath, type Section } from '../routes'
@@ -23,6 +24,8 @@ export function WorldTab() {
   const { worlds, rooms, validation, loadZones, loadZone } = useBuilderData()
   const { occupiedRoom, follow } = useOutletContext<BuilderOutletContext>()
   const guard = useNavGuard()
+  const compact = useCompactBuilder()
+  const [mapOpen, setMapOpen] = useState(false)
 
   // No world in the URL yet: land on the first one, replacing so Back does not trap here.
   useEffect(() => {
@@ -76,7 +79,16 @@ export function WorldTab() {
       </aside>
 
       <main className="builder-col">
-        {zoneKey && (
+        {/*
+          On a narrow screen the canvas is summoned rather than resident (MOBILE.md §5). It is the
+          one part of the builder that genuinely needs a large pointer-driven surface, and sharing
+          a 390px screen with the room editor would leave neither usable. Everything else here is
+          a form, and forms are the one thing a phone has always been good at.
+
+          Unmounted while closed, not hidden: a canvas nobody can see should not be laying out a
+          zone's worth of boxes on every edit.
+        */}
+        {zoneKey && !compact && (
           <ZoneCanvas
             rooms={rooms}
             selected={roomKey}
@@ -84,6 +96,38 @@ export function WorldTab() {
             onSelect={goRoom}
             onChanged={() => void loadZone(zoneKey)}
           />
+        )}
+
+        {zoneKey && compact && (
+          <button type="button" className="map-summon" onClick={() => setMapOpen(true)}>
+            ▦ Zone map
+            <span className="dim"> · {rooms.length} rooms</span>
+          </button>
+        )}
+
+        {zoneKey && compact && mapOpen && (
+          <div className="canvas-overlay">
+            <div className="canvas-overlay-head">
+              <span className="dim">{zoneKey}</span>
+              <button type="button" onClick={() => setMapOpen(false)}>
+                ✕ Close map
+              </button>
+            </div>
+
+            <ZoneCanvas
+              rooms={rooms}
+              selected={roomKey}
+              occupied={occupiedRoom}
+              onSelect={(key) => {
+                goRoom(key)
+
+                // Choosing a room is what the map was opened for, and the editor it opens is
+                // underneath. Leaving the map up would hide the answer to the tap.
+                setMapOpen(false)
+              }}
+              onChanged={() => void loadZone(zoneKey)}
+            />
+          </div>
         )}
 
         {roomKey ? (

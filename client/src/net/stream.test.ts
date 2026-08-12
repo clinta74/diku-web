@@ -15,7 +15,12 @@ class FakeEventSource {
   onerror: (() => void) | null = null
   closed = false
 
-  constructor(public url: string) {
+  // A plain field rather than a constructor parameter property: the tsconfig sets
+  // erasableSyntaxOnly, so only syntax that strips cleanly to JavaScript is allowed.
+  readonly url: string
+
+  constructor(url: string) {
+    this.url = url
     FakeEventSource.opened.push(this)
   }
 

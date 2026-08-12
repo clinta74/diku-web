@@ -27,8 +27,22 @@ const COARSE = '(pointer: coarse) and (hover: none)'
  */
 const PHONE = '(max-width: 600px)'
 
+/**
+ * Below this the builder drops to a single pane, the tree becomes a drawer, and the zone canvas
+ * stops being on screen at all until it is asked for.
+ *
+ * Wider than the game's phone breakpoint on purpose. The game needs a phone layout only when the
+ * screen is genuinely phone-sized; the builder is a three-pane editor and runs out of room a good
+ * deal sooner — a 700px window has nowhere to put a tree, a canvas, and a properties panel.
+ */
+const COMPACT_BUILDER = '(max-width: 768px)'
+
 export function isCoarsePointer(): boolean {
   return matchesMedia(COARSE)
+}
+
+export function useCompactBuilder(): boolean {
+  return useMediaQuery(COMPACT_BUILDER)
 }
 
 export function useCoarsePointer(): boolean {

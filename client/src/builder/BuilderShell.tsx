@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router'
+import { useCompactBuilder } from '../components/pointer'
 import { BuilderDataProvider } from './BuilderData'
 import { NavGuardProvider, useNavGuard } from './NavGuard'
 import { ToastProvider } from '../ui/Toast'
@@ -64,13 +66,35 @@ function ShellBody({ occupiedRoom, follow, onFollowChange, isAdmin, onClose }: B
   const guard = useNavGuard()
   const tab = tabFromPath(location.pathname)
 
+  // Below ~768px the three panes cannot share the width, so the first one — the tree, whichever
+  // tab it belongs to — becomes a drawer over the editor.
+  const compact = useCompactBuilder()
+  const [navOpen, setNavOpen] = useState(false)
+
+  // Picking something from the tree is the end of what the drawer is for. Closing on every
+  // navigation is cruder than watching the selection and exactly as correct here, since the only
+  // things in the drawer are links.
+  useEffect(() => setNavOpen(false), [location.pathname])
+
   // Hiding the tab is presentation, not access control - the route and the API both refuse a
   // non-admin independently, so a hand-typed /builder/accounts gets nowhere.
   const tabs = isAdmin ? [...WORLD_TABS, ACCOUNTS_TAB] : WORLD_TABS
 
   return (
-    <div className="builder">
+    <div className="builder" data-nav={compact && navOpen ? 'open' : 'closed'}>
       <div className="builder-topbar">
+        {compact && (
+          <button
+            type="button"
+            className="builder-nav-toggle"
+            onClick={() => setNavOpen((open) => !open)}
+            aria-expanded={navOpen}
+            aria-label="Show the list"
+          >
+            ☰
+          </button>
+        )}
+
         <h2 className="builder-brand">World builder</h2>
 
         <Tabs
@@ -102,6 +126,17 @@ function ShellBody({ occupiedRoom, follow, onFollowChange, isAdmin, onClose }: B
           </button>
         </div>
       </div>
+
+      {/* Tapping beside the open drawer closes it, which is what every drawer does and what a
+          thumb reaches for before it finds the ☰ again. */}
+      {compact && navOpen && (
+        <button
+          type="button"
+          className="builder-nav-scrim"
+          aria-label="Close the list"
+          onClick={() => setNavOpen(false)}
+        />
+      )}
 
       <Outlet context={{ occupiedRoom, follow, setFollow: onFollowChange } satisfies BuilderOutletContext} />
     </div>
