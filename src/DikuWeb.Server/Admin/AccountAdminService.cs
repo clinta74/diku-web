@@ -1,5 +1,7 @@
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Persistence;
+using DikuWeb.Server.Auth;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace DikuWeb.Server.Admin;
@@ -31,6 +33,30 @@ public sealed record RoleChangeResult(
 }
 
 /// <summary>
+/// Why a moderation action did not happen, at the granularity HTTP cares about.
+/// </summary>
+/// <remarks>
+/// Exists because the in-game commands and the admin API want different things from a failure:
+/// a command only ever prints <see cref="ModerationResult.Message"/>, while an endpoint has to
+/// choose a status code, and "no such account" and "already banned" are not the same answer.
+/// Kept as a small enum rather than a status code so the service stays free of HTTP.
+/// </remarks>
+public enum ModerationFailure
+{
+    /// <summary>The action succeeded, or failed in a way no caller distinguishes.</summary>
+    None = 0,
+
+    /// <summary>No account or character by that name — a 404.</summary>
+    NoSuchTarget = 1,
+
+    /// <summary>The request itself was malformed, e.g. a password that fails policy — a 400.</summary>
+    Invalid = 2,
+
+    /// <summary>Well-formed and understood, but refused: self-targeting, or already in that state.</summary>
+    Refused = 3,
+}
+
+/// <summary>
 /// The outcome of a moderation action (PLAN.md §8, Phase 6).
 /// </summary>
 /// <param name="TargetAccountId">
@@ -43,7 +69,25 @@ public sealed record ModerationResult(
     Guid? TargetAccountId = null,
     DateTimeOffset? MutedUntil = null)
 {
-    public static ModerationResult Failed(string message) => new(false, message);
+    public ModerationFailure Failure { get; init; } = ModerationFailure.None;
+
+    public static ModerationResult NoSuchAccount(string username) =>
+        new(false, $"There is no account named '{username}'.")
+        {
+            Failure = ModerationFailure.NoSuchTarget,
+        };
+
+    public static ModerationResult NoSuchCharacter(string name) =>
+        new(false, $"There is no character named '{name}'.")
+        {
+            Failure = ModerationFailure.NoSuchTarget,
+        };
+
+    public static ModerationResult Invalid(string message) =>
+        new(false, message) { Failure = ModerationFailure.Invalid };
+
+    public static ModerationResult Refused(string message) =>
+        new(false, message) { Failure = ModerationFailure.Refused };
 }
 
 public sealed record AccountSummary(
@@ -54,14 +98,29 @@ public sealed record AccountSummary(
     bool IsBanned,
     DateTimeOffset CreatedAt,
     DateTimeOffset? LastLoginAt,
-    IReadOnlyList<string> Characters);
+    IReadOnlyList<string> Characters)
+{
+    /// <summary>Why they were banned, when they are. Null otherwise.</summary>
+    public string? BanReason { get; init; }
+
+    /// <summary>
+    /// Present whether or not it has expired, because the admin panel decides that against its
+    /// own clock — a value in the past is how "not muted any more" looks, and hiding it here
+    /// would leave the panel unable to tell that from "never muted".
+    /// </summary>
+    public DateTimeOffset? MutedUntil { get; init; }
+}
 
 /// <summary>
-/// Role administration (PLAN.md §7.7). Shared by the HTTP endpoints and by the worker that
-/// drains in-game <c>promote</c> commands, so both paths enforce the same rules and write the
-/// same audit row - two copies of "who may do what" is how they end up disagreeing.
+/// Account administration: roles (PLAN.md §7.7), moderation (§8), and passwords (§7.8). Shared by
+/// the HTTP endpoints and by the worker that drains in-game <c>promote</c> commands, so both paths
+/// enforce the same rules and write the same audit row - two copies of "who may do what" is how
+/// they end up disagreeing.
 /// </summary>
-public sealed class AccountAdminService(DikuWebDbContext db, TimeProvider clock)
+public sealed class AccountAdminService(
+    DikuWebDbContext db,
+    TimeProvider clock,
+    IPasswordHasher<Account> hasher)
 {
     public async Task<RoleChangeResult> SetRoleAsync(
         Guid actorAccountId,
@@ -143,17 +202,17 @@ public sealed class AccountAdminService(DikuWebDbContext db, TimeProvider clock)
 
         if (target is null)
         {
-            return ModerationResult.Failed($"There is no account named '{targetUsername}'.");
+            return ModerationResult.NoSuchAccount(targetUsername);
         }
 
         if (target.Id == actorAccountId)
         {
-            return ModerationResult.Failed("You cannot ban yourself.");
+            return ModerationResult.Refused("You cannot ban yourself.");
         }
 
         if (target.IsBanned == banned)
         {
-            return ModerationResult.Failed(
+            return ModerationResult.Refused(
                 $"{target.Username} is already {(banned ? "banned" : "not banned")}.");
         }
 
@@ -197,19 +256,19 @@ public sealed class AccountAdminService(DikuWebDbContext db, TimeProvider clock)
 
         if (target is null)
         {
-            return ModerationResult.Failed($"There is no account named '{targetUsername}'.");
+            return ModerationResult.NoSuchAccount(targetUsername);
         }
 
         if (target.Id == actorAccountId)
         {
-            return ModerationResult.Failed("You cannot mute yourself.");
+            return ModerationResult.Refused("You cannot mute yourself.");
         }
 
         var before = target.MutedUntil;
 
         if (until is null && (before is null || before <= clock.GetUtcNow()))
         {
-            return ModerationResult.Failed($"{target.Username} is not muted.");
+            return ModerationResult.Refused($"{target.Username} is not muted.");
         }
 
         target.MutedUntil = until;
@@ -261,7 +320,7 @@ public sealed class AccountAdminService(DikuWebDbContext db, TimeProvider clock)
 
         if (character is null)
         {
-            return ModerationResult.Failed($"There is no character named '{characterName}'.");
+            return ModerationResult.NoSuchCharacter(characterName);
         }
 
         character.DeletedAt = clock.GetUtcNow();
@@ -284,6 +343,74 @@ public sealed class AccountAdminService(DikuWebDbContext db, TimeProvider clock)
             true,
             $"{character.Name} has been deleted.",
             character.AccountId);
+    }
+
+    /// <summary>
+    /// Sets someone else's password, for a player who cannot sign in to change it themselves.
+    /// </summary>
+    /// <remarks>
+    /// <b>Why an admin does this at all.</b> There is no email sender in this deployment, so there
+    /// is no self-service recovery — an admin setting the password and telling the player out of
+    /// band is the whole of the recovery story. The alternative was hand-written SQL, which is the
+    /// thing §7.7 exists to eliminate.
+    ///
+    /// <b>Self-reset is refused</b>, in the same spirit as self-demotion and self-banning, though
+    /// for a softer reason: an admin who is signed in can already change their own password on the
+    /// account screen, and that path proves they know the current one. Routing themselves through
+    /// here would only skip that proof — and would sign them out of their own session a moment
+    /// later, via <see cref="Account.PasswordChangedAt"/>.
+    ///
+    /// <b>The audit row records the act, never the password</b> — not the new one, not its hash,
+    /// not its length.
+    /// </remarks>
+    public async Task<ModerationResult> SetPasswordAsync(
+        Guid actorAccountId,
+        string targetUsername,
+        string? newPassword,
+        CancellationToken cancellationToken)
+    {
+        var target = await db.Accounts
+            .FirstOrDefaultAsync(a => a.Username == targetUsername, cancellationToken);
+
+        if (target is null)
+        {
+            return ModerationResult.NoSuchAccount(targetUsername);
+        }
+
+        if (target.Id == actorAccountId)
+        {
+            return ModerationResult.Refused(
+                "Change your own password from the account screen, where the current one is required.");
+        }
+
+        if (!PasswordPolicy.IsAcceptable(newPassword, out var error))
+        {
+            return ModerationResult.Invalid(error);
+        }
+
+        // Truncated to what the column can hold, so the stamp in a freshly issued cookie and the
+        // stamp read back out of the database are the same instant (see PasswordStamp).
+        var now = PasswordStamp.At(clock);
+
+        target.PasswordHash = hasher.HashPassword(target, newPassword!);
+        target.PasswordChangedAt = now;
+
+        db.AdminAudits.Add(new AdminAudit
+        {
+            ActorAccountId = actorAccountId,
+            TargetAccountId = target.Id,
+            Action = AdminAction.PasswordReset,
+            Before = "set by administrator",
+            After = "set by administrator",
+            At = now,
+        });
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new ModerationResult(
+            true,
+            $"{target.Username}'s password has been set. Their other sessions are signed out.",
+            target.Id);
     }
 
     public async Task<AccountSummary?> FindAsync(string username, CancellationToken cancellationToken)
@@ -338,6 +465,10 @@ public sealed class AccountAdminService(DikuWebDbContext db, TimeProvider clock)
             account.IsBanned,
             account.CreatedAt,
             account.LastLoginAt,
-            characters);
+            characters)
+        {
+            BanReason = account.BanReason,
+            MutedUntil = account.MutedUntil,
+        };
     }
 }

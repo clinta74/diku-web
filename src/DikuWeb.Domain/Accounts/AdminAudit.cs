@@ -63,4 +63,16 @@ public enum AdminAction
     /// level, because after the fact there is nothing left to look it up from.
     /// </remarks>
     CharacterDeleted = 4,
+
+    /// <summary>
+    /// An administrator set someone else's password (PLAN.md §7.7).
+    /// </summary>
+    /// <remarks>
+    /// There is no email sender in this deployment, so a locked-out player has no self-service
+    /// route back in — an admin setting the password is the only one. That makes this the single
+    /// administrative act that hands over an account outright, so it is audited hardest:
+    /// <see cref="AdminAudit.Before"/> and <see cref="AdminAudit.After"/> carry no password
+    /// material of any kind, only the fact and the hour.
+    /// </remarks>
+    PasswordReset = 5,
 }

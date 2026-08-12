@@ -73,6 +73,17 @@ export const api = {
 
   logout: () => request<void>('/api/auth/logout', { method: 'POST' }),
 
+  /**
+   * Changing your own password signs out every *other* session for the account and drops its
+   * characters out of the world - including your own elsewhere, since the server cannot tell one
+   * holder of the password from another. This session survives, re-cookied by the response.
+   */
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<void>('/api/auth/password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+
   characters: () => request<Character[]>('/api/characters'),
 
   createCharacter: (name: string, path: string) =>

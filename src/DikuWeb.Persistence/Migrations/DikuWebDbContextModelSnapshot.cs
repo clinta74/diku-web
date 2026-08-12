@@ -115,6 +115,10 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("muted_until");
 
+                    b.Property<DateTimeOffset?>("PasswordChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("password_changed_at");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(256)

@@ -390,6 +390,38 @@
   gap: 0.35rem;
 }
 
+/* --- Account administration ----------------------------------------- */
+
+/* Read-only facts about an account, as label/value pairs. A definition list rather than a table:
+   there is one account per panel, so the rows have nothing to align against. */
+.account-facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.3rem 0.9rem;
+}
+
+.account-facts > div {
+  display: contents;
+}
+
+.account-facts dt {
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
+.account-facts dd {
+  margin: 0;
+}
+
+/* Ban and mute sit on one row; the mute duration picker joins them when there is one. */
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 /* --- Mob attack effects -------------------------------------------- */
 
 /* Set apart from the attack rows above it. An effect is a property of one attack, but it needs

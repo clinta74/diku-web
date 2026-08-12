@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, type Account, type Character } from '../net/api'
+import { ChangePasswordPanel } from './ChangePasswordPanel'
 
 const PATHS = ['Warden', 'Adept', 'Shade', 'Hallow'] as const
 
@@ -210,6 +211,8 @@ export function CharacterScreen({
           {busy ? 'Working…' : 'Create'}
         </button>
       </form>
+
+      <ChangePasswordPanel />
 
       <button type="button" className="link" onClick={onLogout}>
         Log out

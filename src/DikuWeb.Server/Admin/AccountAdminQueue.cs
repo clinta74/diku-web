@@ -90,7 +90,7 @@ public sealed class AccountAdminWorker(
 
                     // Reaches a character already playing, so the verbs change immediately -
                     // which matters most when the change is a revocation.
-                    gateway.TrySubmit(new SetActorRole { AccountId = id, Role = change.Role });
+                    AdminLiveEffects.AfterRoleChange(gateway, id, change.Role);
                 }
 
                 break;
@@ -103,18 +103,9 @@ public sealed class AccountAdminWorker(
 
                 Reply(request, result.Message, result.Ok ? SysKinds.Info : SysKinds.Warning);
 
-                if (result.Ok && ban.Banned && result.TargetAccountId is { } bannedId)
+                if (result.Ok && result.TargetAccountId is { } bannedId)
                 {
-                    // Cookie revalidation stops their next request (§7.7), but an SSE stream is
-                    // one long-lived request that was authorised before the ban existed - so
-                    // without this the banned player stays in the world until they choose to go.
-                    gateway.TrySubmit(new EvictAccount
-                    {
-                        AccountId = bannedId,
-                        Message = ban.Reason is null
-                            ? "Your account has been banned."
-                            : $"Your account has been banned: {ban.Reason}",
-                    });
+                    AdminLiveEffects.AfterBan(gateway, bannedId, ban.Banned, ban.Reason);
                 }
 
                 break;
@@ -129,14 +120,7 @@ public sealed class AccountAdminWorker(
 
                 if (result.Ok && result.TargetAccountId is { } mutedId)
                 {
-                    // Pushed live for the same reason a role change is: the value is read at
-                    // EnterWorld, so otherwise a mute would not reach the person it was aimed at
-                    // until they logged out, which is the one moment it stops mattering.
-                    gateway.TrySubmit(new SetActorMute
-                    {
-                        AccountId = mutedId,
-                        MutedUntil = result.MutedUntil,
-                    });
+                    AdminLiveEffects.AfterMute(gateway, mutedId, result.MutedUntil);
                 }
 
                 break;

@@ -37,6 +37,8 @@ internal sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
             .HasMaxLength(256)
             .IsRequired();
 
+        builder.Property(a => a.PasswordChangedAt).HasColumnName("password_changed_at");
+
         // Stored as text rather than an int so the column is readable in Adminer and
         // so inserting a new role in the middle of the enum cannot silently reassign rows.
         builder.Property(a => a.Role)

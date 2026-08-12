@@ -18,26 +18,31 @@ interface BuilderShellProps {
   occupiedRoom: string | null
   follow: boolean
   onFollowChange: (value: boolean) => void
+  /** Admins get the Accounts tab; builders do not, and the route refuses them as well. */
+  isAdmin: boolean
   onClose: () => void
 }
 
-const TABS: TabItem[] = [
+const WORLD_TABS: TabItem[] = [
   { value: 'world', label: 'World' },
   { value: 'mobs', label: 'Mobs' },
   { value: 'items', label: 'Items' },
   { value: 'quests', label: 'Quests' },
 ]
 
+const ACCOUNTS_TAB: TabItem = { value: 'accounts', label: 'Accounts' }
+
 function tabFromPath(pathname: string): BuilderTab {
   if (pathname.startsWith('/builder/mobs')) return 'mobs'
   if (pathname.startsWith('/builder/items')) return 'items'
   if (pathname.startsWith('/builder/quests')) return 'quests'
+  if (pathname.startsWith('/builder/accounts')) return 'accounts'
   return 'world'
 }
 
 /**
- * The builder chrome: header, the World/Mobs/Items/Quests tab bar, and a router Outlet the tabs
- * fill.
+ * The builder chrome: header, the tab bar (World/Mobs/Items/Quests, plus Accounts for admins),
+ * and a router Outlet the tabs fill.
  * The data provider, toast host, and unsaved-changes guard live here so every tab and dialog
  * shares them.
  */
@@ -53,11 +58,15 @@ export function BuilderShell(props: BuilderShellProps) {
   )
 }
 
-function ShellBody({ occupiedRoom, follow, onFollowChange, onClose }: BuilderShellProps) {
+function ShellBody({ occupiedRoom, follow, onFollowChange, isAdmin, onClose }: BuilderShellProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const guard = useNavGuard()
   const tab = tabFromPath(location.pathname)
+
+  // Hiding the tab is presentation, not access control - the route and the API both refuse a
+  // non-admin independently, so a hand-typed /builder/accounts gets nowhere.
+  const tabs = isAdmin ? [...WORLD_TABS, ACCOUNTS_TAB] : WORLD_TABS
 
   return (
     <div className="builder">
@@ -67,7 +76,7 @@ function ShellBody({ occupiedRoom, follow, onFollowChange, onClose }: BuilderShe
         <Tabs
           value={tab}
           onValueChange={(value) => guard.run(() => navigate(`/builder/${value}`))}
-          tabs={TABS}
+          tabs={tabs}
           aria-label="Builder sections"
         />
 

@@ -7,6 +7,7 @@ import { WorldTab } from './builder/world/WorldTab'
 import { MobsTab } from './builder/mobs/MobsTab'
 import { ItemsTab } from './builder/items/ItemsTab'
 import { QuestsTab } from './builder/quests/QuestsTab'
+import { AccountsTab } from './builder/accounts/AccountsTab'
 import { api, type Account, type Character } from './net/api'
 import './App.css'
 
@@ -73,6 +74,7 @@ export default function App() {
 
     case 'playing': {
       const canBuild = BUILDER_ROLES.includes(stage.account.role)
+      const isAdmin = stage.account.role === 'Admin'
 
       return (
         <>
@@ -121,6 +123,7 @@ export default function App() {
                     occupiedRoom={currentRoom}
                     follow={follow}
                     onFollowChange={setFollow}
+                    isAdmin={isAdmin}
                     onClose={() => navigate('/')}
                   />
                 ) : (
@@ -133,6 +136,15 @@ export default function App() {
               <Route path="mobs/:templateKey?" element={<MobsTab />} />
               <Route path="items/:templateKey?" element={<ItemsTab />} />
               <Route path="quests/:questKey?" element={<QuestsTab />} />
+
+              {/* Admin-only, and refused here as well as in the tab bar - hiding a tab is not
+                  access control, and this route is reachable by typing it. The API refuses a
+                  non-admin independently, so this redirect is a courtesy rather than the
+                  boundary. */}
+              <Route
+                path="accounts/:username?"
+                element={isAdmin ? <AccountsTab /> : <Navigate to="/builder/world" replace />}
+              />
             </Route>
           </Routes>
         </>

@@ -1378,6 +1378,42 @@ admins at all, and there is no recovery path from that state except the SQL this
 to remove. Promotion to Admin is permitted but confirmed, since Admin is the only role that can
 grant Admin.
 
+### 7.8 Passwords, and the Accounts tab
+
+Passwords are stored as ASP.NET Core `PasswordHasher<Account>` V3 hashes — PBKDF2-HMAC-SHA512,
+100 000 iterations, with a 128-bit salt generated per password and carried inside the encoded
+string. There is no site-wide pepper, which is worth stating plainly because it has a
+consequence: an `accounts` row is portable. Copy it to another installation and the password
+still verifies, because nothing outside the row takes part in the check.
+
+**Two ways to set one, because there is no third.** This deployment sends no email, so there is
+no self-service recovery for somebody who has forgotten theirs:
+
+- `POST /api/auth/password` — the account changes its own, proving it knows the current one. The
+  cookie is not proof enough on its own: it is `SameSite=Lax` and lasts a fortnight, so without
+  the check a borrowed laptop converts into permanent ownership in one request.
+- `POST /api/admin/accounts/{username}/password` — an admin sets someone else's outright and
+  tells them out of band. Admin only, audited as `PasswordReset`, and refused when an admin aims
+  it at themselves: that path exists on the account screen, where the current password is asked
+  for. The audit row records the act and the hour, never the password.
+
+**A password change invalidates the other sessions.** The case it exists for is that somebody
+else knows the old password, and a change that left their fortnight-long cookie working would not
+address it. Each ticket carries a stamp of the password it was issued against
+(`PasswordStamp`), compared during the same `OnValidatePrincipal` revalidation the role and ban
+checks use; a mismatch rejects the cookie. The ticket's own `IssuedUtc` looks like it would serve
+and does not — sliding expiry re-issues a cookie roughly weekly, so an old session would quietly
+acquire a timestamp newer than the change and survive it. The account is evicted from the world
+at the same moment, because an SSE stream was authorised when it opened and does not re-check.
+
+**The Accounts tab** is the admin-only fifth tab in the builder. It searches accounts and, for
+one of them, changes role, bans and unbans, mutes for a duration and lifts it, retires a
+character, and sets a password. It drives the same `AccountAdminService` the in-game verbs do, so
+the two cannot disagree — and the live effects each action pushes into the loop are shared
+(`AdminLiveEffects`) for the same reason. Its tab is hidden from non-admins, its route redirects
+them, and the API refuses them: the first two are presentation, and only the third is the
+boundary.
+
 ---
 
 ## 8. Phases
@@ -2112,7 +2148,52 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 - [ ] Exporter and dashboard — the numbers in §11 are still unverified against a real deployment.
       The instruments now exist to verify them; nothing yet collects them.
 - [ ] Scheduled `pg_dump` backups + a rehearsed restore drill
-- [ ] World export/import (JSON) for moving content between environments
+- [x] **World export/import (JSON) for moving content between environments.**
+      `GET /api/builder/export` and `POST /api/builder/import`, builder-authorised like every
+      other content route. Carries the same eight tables `tools/export-content.sql` covers, for
+      the same reasons — accounts, characters, item instances, and the audit tables are player
+      data and history, and a content restore that resurrected deleted characters would be a bug.
+      Abilities stay out because `ReconcileAbilitiesAsync` rebuilds them from `AbilityCatalogue`
+      on every startup, so importing them would write rows the next boot only has to correct.
+      - **A scoped export is closed over its references, not merely filtered.** Rooms, spawners,
+        and quests belong to a zone, so scoping those is a `where`. Templates are global — so a
+        zone bundle that filtered them the same way would import cleanly and then *spawn nothing*.
+        `?zone=` therefore also carries every template its spawners place, every mob and item its
+        quests name, and every item those mobs drop. That last hop is the one worth naming: a
+        required quest item usually arrives through a loot table rather than a spawner, and
+        without it the target environment gets a quest nobody can finish — §10's silent failure,
+        shipped by the tool meant to move content safely. The world above a zone travels with it
+        too, because multipliers resolve through the world (§4.4), so a zone imported without its
+        world would have *wrong* numbers rather than missing ones.
+      - **Every entity goes through `WorldEditor`, one primitive at a time.** Nothing writes to
+        Postgres directly. That keeps the loop the single writer (§2.1), makes imported content
+        visible to players already standing in the rooms, and leaves a `content_audit` row per
+        entity — for a change this size, *"who replaced the crypt"* has to be one query.
+      - **An import is a merge, not a mirror.** Keys in the bundle are upserted; keys this
+        environment has and the bundle does not are left alone. There is deliberately no
+        "replace" mode that deletes the difference: §10 already carries *a bad live edit is
+        visible instantly with no rollback* as a standing risk, and a mode whose failure is
+        deleting a zone somebody else authored is that risk with a bigger blast radius and no
+        better recovery. Removing content stays a deliberate, per-entity act.
+      - **Spawners travel with their id.** A spawner has no content key to collide on, so an
+        import that minted a fresh one would double the population of every zone it touched on
+        the second run — invisible in the editor, obvious only in play.
+      - **Unknown flags are carried, not dropped.** The builder API drops a flag the registry
+        does not know on the way in, deliberately (§4.10). The importer does the opposite,
+        because this is transport rather than authoring: the flag already exists in another
+        environment, and quietly rewriting content in transit between two builds is worse than
+        keeping a key nothing reads.
+      - **Known weakness, named rather than hidden: an import is not atomic.** One mutation per
+        entity is one loop round trip and one transaction, so a failure part way through leaves
+        what came before it applied. Making the whole bundle atomic needs a batch primitive the
+        loop does not have. The mitigation is cheaper and honest — `?dryRun=true` reports every
+        collision and dangling reference while changing nothing, a partial import answers **207**
+        rather than 200, and the report names exactly which entities did not land.
+      - Everything else is advisory, as `/validate` is (§7.4): a quest whose giver is in another
+        zone, an exit pointing somewhere not here yet. Refusing those would make the
+        zone-at-a-time workflow the scoped export exists for impossible. The **format version is
+        the one hard refusal** — a bundle this build cannot read would otherwise apply the fields
+        that happened to match and silently drop the rest, which is what a version number is for.
 - [ ] Deployment pipeline:
       - [x] Dockerfile (multi-stage: publish layer, runtime layer, `dumb-init` entrypoint)
       - [x] Migration strategy settled: applied at startup rather than by an init container,
@@ -2166,6 +2247,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
 | Parties | Forming, expiry, leadership passing, and the dissolve at one member. Leaving the world drops you from the group — asserted through `WorldState.Remove`, which is the one door out. The split pays only members standing where the mob died, and an odd remainder goes to whoever landed the blow rather than evaporating. |
 | Travel | `recall` reaches the bind point and falls through to the starting room when unbound or when a builder deleted it. Every refusal has a test, because the value of `noRecall` having exactly one reader is entirely in that reader being consulted. |
 | Builder | Mutation → loop → persist → occupants notified, end to end. Audit row written on every write. An attack's effect stays on the attack it was chosen for, and two attacks sharing a verb are still tellable apart — the two properties the old two-list layout correlated only by position and by a quoted word. |
+| Moving a world | The closure is most of it, because a bundle that is merely filtered *looks* complete: a zone export carries the template its spawner places, the item its quest requires, the item reachable only through that mob's loot table, and the world above the zone — and none of another zone's rooms. Then the round trip against edits made after the export: a retitled room and a deleted exit both come back, so exits are proved to travel at all rather than the room list looking right on its own. A second import creates nothing and doubles no spawner, which is the id travelling. A dry run reports two updated rooms and *leaves the edit in place* — a rehearsal that also performs is worth nothing. A flag the registry does not know survives a round trip, written straight to the row because the builder API refuses to create one, which is the situation being simulated. A dangling exit is a warning and not a failure; a foreign format version is a 400. The audit row is asserted, since an unanswerable import of this size is the thing §10 warns about. Authorization is asserted on these two routes by name rather than trusted to the group — a route mapped one line outside `MapGroup` would be an unauthenticated dump of the whole world, and nothing else in the suite would notice. |
 | Roles | Promotion reaches an open session without a relog, and demotion revokes builder access within the revalidation interval rather than at cookie expiry. A banned account is rejected while still connected. Self-demotion refused. An offline target can be promoted. Every change writes an `admin_audit` row. |
 | Server | `WebApplicationFactory` + Testcontainers Postgres, including an SSE test that opens the stream, POSTs a command, and asserts events arrive in order. |
 | Client | Vitest for the protocol/state layer; Playwright for login → move → see-map, and build-a-room → walk-into-it. |
@@ -2223,16 +2305,22 @@ XP split, `tell`/`reply`/channels, and `recall` have landed. **Every content typ
 now be authored in the browser with no SQL**, the effect vocabulary runs in both directions, and
 nothing in §4.11 is approximated any more.
 
-**Next: Phase 6 (ops).** The deployment pipeline landed early; what is left is the part that
-matters when something goes wrong.
+**Phase 6 is most of the way in.** Admin commands, moderation, the three rate-limit policies,
+`EngineMetrics`, the deployment pipeline, and world export/import have all landed. What is left is
+the half that only matters once something has already gone wrong, which is why it is last and why
+it is the least tested:
 
-1. **Admin commands** — `teleport`, `stat`, `set`, `mute`, `kick`, `ban`. `Travel` is already the
-   seam an admin `teleport` moves through, and `goto` deliberately bypasses it.
-2. **Rate limiting and flood protection.** Only `DigThrottle` exists, covering one endpoint.
-3. **Telemetry.** Nothing is instrumented; the slow-pulse watchdog logs but does not measure, so
-   the §11 targets cannot currently be checked against reality.
-4. **Backups and the recovery runbook** — `DOCKER.md` and `DEPLOY_NO_ENV.md` cover setup, not
-   rollback or incident response.
+1. **An exporter and a dashboard.** Six instruments exist on the `DikuWeb.Engine` meter and
+   nothing collects them, so every number in §11 is still a target rather than a measurement.
+   The code change is an OpenTelemetry exporter pointed at the meter name; the work is standing
+   up somewhere to point it.
+2. **Scheduled `pg_dump` backups and a *rehearsed* restore.** The rehearsal is the point. An
+   untested restore is a belief about a file, and §10 already names losing the world as the price
+   of the Postgres-only choice — export/import narrows that to content a builder thought to
+   export, not to everything.
+3. **The recovery runbook** — rollback when a startup migration fails, and incident response.
+   `DOCKER.md` and `DEPLOY_NO_ENV.md` cover setup, which is the half that gets written because it
+   is the half somebody needs while things are going well.
 
 Also logged from playtesting and not yet in a phase: an admin-triggered shutdown with a warning
 and a delay, delay 0 meaning immediate.

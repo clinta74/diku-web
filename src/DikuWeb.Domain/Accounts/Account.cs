@@ -20,6 +20,21 @@ public sealed class Account
     /// <summary>PBKDF2 via ASP.NET Core PasswordHasher. Never logged (PLAN.md §2.4).</summary>
     public required string PasswordHash { get; set; }
 
+    /// <summary>
+    /// When the password last changed. Every auth cookie issued before this moment stops being a
+    /// credential (PLAN.md §7.7).
+    /// </summary>
+    /// <remarks>
+    /// A password change that leaves other sessions signed in is not much of a password change —
+    /// the case it exists for is "somebody else has my password", and a fortnight-long cookie
+    /// would outlive the fix. A timestamp rather than a random stamp because the cookie already
+    /// carries its issue time, so the comparison needs nothing new in the ticket.
+    ///
+    /// Null for accounts whose password has never changed since registration, which is the same
+    /// thing as "no cookie can be too old".
+    /// </remarks>
+    public DateTimeOffset? PasswordChangedAt { get; set; }
+
     public AccountRole Role { get; set; } = AccountRole.Player;
 
     public required DateTimeOffset CreatedAt { get; init; }

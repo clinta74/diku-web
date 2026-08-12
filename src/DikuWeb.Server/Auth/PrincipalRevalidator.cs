@@ -21,6 +21,9 @@ namespace DikuWeb.Server.Auth;
 /// weeks.</description></item>
 /// <item><description>Worse, <c>is_banned</c> was only ever read at login - so banning someone
 /// who was already connected did nothing at all until they chose to reconnect.</description></item>
+/// <item><description>And a password change would leave every session opened with the old
+/// password signed in, which is no use at all when the reason for the change is that somebody
+/// else knows it (§7.8).</description></item>
 /// </list>
 ///
 /// One mechanism covers all three. The interval is the trade: a promotion taking up to a minute
@@ -65,6 +68,15 @@ internal static class PrincipalRevalidator
         // Deleted out from under the session, or banned since sign-in. Either way the cookie
         // stops being a credential right now rather than at its natural expiry.
         if (account is null || account.IsBanned)
+        {
+            await RejectAsync(context);
+            return;
+        }
+
+        // Issued against a password that has since been changed - by them, or by an admin resetting
+        // it for them. A password change that left the other sessions alone would not fix the case
+        // it exists for, which is that somebody else knows the old one.
+        if (!PasswordStamp.Matches(context.Properties, account))
         {
             await RejectAsync(context);
             return;

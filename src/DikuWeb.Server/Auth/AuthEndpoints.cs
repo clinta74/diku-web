@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 using DikuWeb.Domain.Accounts;
+using DikuWeb.Engine;
+using DikuWeb.Engine.Protocol;
 using DikuWeb.Persistence;
 using DikuWeb.Server.Infrastructure;
 using Microsoft.AspNetCore.Authentication;
@@ -13,6 +15,8 @@ namespace DikuWeb.Server.Auth;
 public sealed record RegisterRequest(string Email, string Username, string Password);
 
 public sealed record LoginRequest(string Username, string Password);
+
+public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
 public sealed record AccountResponse(Guid Id, string Username, string Email, string Role);
 
@@ -43,6 +47,14 @@ public static partial class AuthEndpoints
         // IResult is silently discarded - the endpoint would return an empty 200 and never
         // run the result. ASP0016 catches this.
         group.MapPost("/logout", (Delegate)LogoutAsync);
+
+        // Rate limited alongside login, not with the authenticated endpoints: it takes a password
+        // and answers whether that password was right, which is the shape login has and the reason
+        // login is limited. The limit is per address, so guessing here costs the same as guessing
+        // there.
+        group.MapPost("/password", ChangePasswordAsync)
+            .RequireAuthorization()
+            .RequireRateLimiting(RateLimiting.Auth);
     }
 
     private static async Task<IResult> RegisterAsync(
@@ -152,6 +164,70 @@ public static partial class AuthEndpoints
         return Results.Ok(ToResponse(account));
     }
 
+    /// <summary>
+    /// Changes the signed-in account's own password (PLAN.md §7.7).
+    /// </summary>
+    /// <remarks>
+    /// The current password is required even though the caller is already authenticated, because
+    /// the cookie is <c>SameSite=Lax</c> and long-lived: without it, a borrowed laptop or a stolen
+    /// cookie converts into permanent ownership of the account in one request.
+    /// </remarks>
+    private static async Task<IResult> ChangePasswordAsync(
+        ChangePasswordRequest request,
+        DikuWebDbContext db,
+        IPasswordHasher<Account> hasher,
+        GameGateway gateway,
+        HttpContext http,
+        TimeProvider clock,
+        CancellationToken cancellationToken)
+    {
+        if (!http.TryGetAccountId(out var accountId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == accountId, cancellationToken);
+
+        if (account is null)
+        {
+            return Results.Unauthorized();
+        }
+
+        if (hasher.VerifyHashedPassword(
+                account, account.PasswordHash, request.CurrentPassword ?? string.Empty)
+            == PasswordVerificationResult.Failed)
+        {
+            return Results.BadRequest(new { error = "That is not your current password." });
+        }
+
+        if (!PasswordPolicy.IsAcceptable(request.NewPassword, out var error))
+        {
+            return Results.BadRequest(new { error });
+        }
+
+        account.PasswordHash = hasher.HashPassword(account, request.NewPassword);
+        account.PasswordChangedAt = PasswordStamp.At(clock);
+        await db.SaveChangesAsync(cancellationToken);
+
+        // Every other cookie for this account is now stale (§7.7), including this caller's - so
+        // re-sign them in with the new stamp. Without this the person who just changed their
+        // password would be the first one signed out by it.
+        await SignInAsync(http, account);
+
+        // An SSE stream was authorised when it opened and does not re-check, so revalidation alone
+        // would leave an intruder watching the world - unable to act, since every command is a
+        // fresh authenticated POST, but watching. Eviction is by account and therefore catches the
+        // legitimate owner's own characters too; they can walk back in, and the case this exists
+        // for is "somebody else has my password".
+        gateway.TrySubmit(new EvictAccount
+        {
+            AccountId = account.Id,
+            Message = "Your password changed. Sign in again to continue.",
+        });
+
+        return Results.NoContent();
+    }
+
     private static async Task<IResult> LogoutAsync(HttpContext http)
     {
         await http.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -175,10 +251,18 @@ public static partial class AuthEndpoints
         return account is null ? Results.Unauthorized() : Results.Ok(ToResponse(account));
     }
 
-    private static Task SignInAsync(HttpContext http, Account account) =>
-        http.SignInAsync(
+    private static Task SignInAsync(HttpContext http, Account account)
+    {
+        // The ticket records which password it was issued against, so a later change can
+        // invalidate it (PLAN.md §7.7).
+        var properties = new AuthenticationProperties();
+        PasswordStamp.Apply(properties, account);
+
+        return http.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
-            BuildPrincipal(account.Id, account.Username, account.Role));
+            BuildPrincipal(account.Id, account.Username, account.Role),
+            properties);
+    }
 
     /// <summary>
     /// The one place the claim set is defined. Shared with

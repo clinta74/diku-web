@@ -13,7 +13,12 @@ export type Section = (typeof SECTIONS)[number]
 /** Rooms open on their prose first; a bare room URL redirects here. */
 export const DEFAULT_SECTION: Section = 'details'
 
-export type BuilderTab = 'world' | 'mobs' | 'items' | 'quests'
+/**
+ * `accounts` is the odd one out: the other four edit the world and open to any Builder, while
+ * this one administers people and is Admin-only. It lives here rather than in a separate app
+ * because it is the same audience, the same chrome, and one more screen to build otherwise.
+ */
+export type BuilderTab = 'world' | 'mobs' | 'items' | 'quests' | 'accounts'
 
 /** The route params react-router extracts from the `world` branch, each a single slug. */
 export interface WorldRouteParams {
@@ -97,4 +102,8 @@ export function toItemsPath(templateKey?: string | null): string {
 
 export function toQuestsPath(questKey?: string | null): string {
   return questKey ? `/builder/quests/${questKey}` : '/builder/quests'
+}
+
+export function toAccountsPath(username?: string | null): string {
+  return username ? `/builder/accounts/${encodeURIComponent(username)}` : '/builder/accounts'
 }
