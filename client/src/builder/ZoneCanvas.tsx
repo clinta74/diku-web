@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { type RoomDetail } from '../net/builderApi'
 import { layoutZone, stepX, stepY, type PlacedRoom } from './layout'
 import { LinkRoomsDialog } from './dialogs/LinkRoomsDialog'
@@ -17,19 +17,43 @@ const BOX_H = 80
 const PAN_STEP = CELL
 
 /**
+ * How far the pointer must travel before a press becomes a pan rather than a click.
+ *
+ * Not load-bearing - a press on bare canvas has nothing else to mean, since only room boxes are
+ * selectable. It is there so the tremor in an ordinary click cannot nudge the map a pixel or two,
+ * which reads as the view drifting on its own.
+ */
+const DRAG_THRESHOLD = 4
+
+/**
  * The zone map. Rooms auto-layout from their exit topology (see layout.ts); this draws the
  * boxes and the edges between them, and lets a builder pan and link.
  *
- * Panning is Ctrl-drag (or the arrow controls), never a plain drag - a plain drag used to
- * start whenever a click missed a box, which fought with selecting. There is no zoom.
+ * Dragging the canvas pans it. This used to require Ctrl, because an earlier version started a
+ * pan from anywhere including a room box, so dragging a box moved the map instead of selecting it.
+ * The fix for that is the check in `handlePanStart` below - a press that lands on a box is that
+ * box's - and once it was there the modifier was guarding nothing. A modifier the UI has to
+ * explain is worse than one it does not need, and there is no key to hold on a touch screen.
+ * There is no zoom.
  */
 export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: Props) {
   const [linkFrom, setLinkFrom] = useState<string | null>(null)
   const [linkTo, setLinkTo] = useState<{ from: string; to: string; direction: string } | null>(null)
   const [offset, setOffset] = useState({ x: 24, y: 24 })
   const [panning, setPanning] = useState(false)
-  const [ctrlHeld, setCtrlHeld] = useState(false)
-  const panStart = useRef({ x: 0, y: 0 })
+
+  /**
+   * Where the press landed and what the offset was then, or null when no button is down.
+   *
+   * The offset is captured at press time rather than read during the drag, so the map follows the
+   * pointer exactly however far it travels.
+   */
+  const panStart = useRef<{
+    pointerX: number
+    pointerY: number
+    offsetX: number
+    offsetY: number
+  } | null>(null)
   const surface = useRef<HTMLDivElement>(null)
 
   const placed = useMemo(() => layoutZone(rooms), [rooms])
@@ -37,17 +61,6 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
 
   const width = (Math.max(...placed.map((r) => r.x), 4) + 2) * CELL
   const height = (Math.max(...placed.map((r) => r.y), 3) + 2) * CELL
-
-  // Track the modifier so the cursor can advertise that Ctrl pans, without a drag in progress.
-  useEffect(() => {
-    const sync = (e: KeyboardEvent) => setCtrlHeld(e.ctrlKey || e.metaKey)
-    window.addEventListener('keydown', sync)
-    window.addEventListener('keyup', sync)
-    return () => {
-      window.removeEventListener('keydown', sync)
-      window.removeEventListener('keyup', sync)
-    }
-  }, [])
 
   // Keep at least a margin of the map on screen, so it can never be dragged fully out of view.
   function clamp(x: number, y: number) {
@@ -82,19 +95,40 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
   }
 
   const handlePanStart = (e: React.MouseEvent) => {
-    if (!(e.ctrlKey || e.metaKey)) return
+    // A press that lands on a room box belongs to that box. This is the check that made the Ctrl
+    // requirement unnecessary, and removing it would bring back the reason the modifier existed.
     if ((e.target as HTMLElement).closest('.room-box')) return
+
+    // Stops the drag from selecting the room titles as text on its way across the canvas.
     e.preventDefault()
-    setPanning(true)
-    panStart.current = { x: e.clientX - offset.x, y: e.clientY - offset.y }
+
+    panStart.current = {
+      pointerX: e.clientX,
+      pointerY: e.clientY,
+      offsetX: offset.x,
+      offsetY: offset.y,
+    }
   }
 
   const handlePan = (e: React.MouseEvent) => {
-    if (!panning) return
-    setOffset(clamp(e.clientX - panStart.current.x, e.clientY - panStart.current.y))
+    const start = panStart.current
+    if (!start) return
+
+    const dx = e.clientX - start.pointerX
+    const dy = e.clientY - start.pointerY
+
+    if (!panning) {
+      if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return
+      setPanning(true)
+    }
+
+    setOffset(clamp(start.offsetX + dx, start.offsetY + dy))
   }
 
-  const endPan = () => setPanning(false)
+  const endPan = () => {
+    panStart.current = null
+    setPanning(false)
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
@@ -128,7 +162,9 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
     onSelect(key)
   }
 
-  const cursor = panning ? 'grabbing' : ctrlHeld ? 'grab' : 'default'
+  // The surface always advertises that it can be dragged. Room boxes set their own pointer cursor,
+  // so this does not claim the boxes are draggable when they are not.
+  const cursor = panning ? 'grabbing' : 'grab'
 
   return (
     <div className="zone-canvas-container">
@@ -211,7 +247,7 @@ export function ZoneCanvas({ rooms, selected, occupied, onSelect, onChanged }: P
         </div>
         <p className="canvas-help">
           <span className="help-icon">?</span>
-          <strong>Ctrl-drag</strong> or the arrows to pan • <strong>Shift-click</strong> two rooms to link
+          <strong>Drag</strong> or use the arrows to pan • <strong>Shift-click</strong> two rooms to link
         </p>
       </div>
 
