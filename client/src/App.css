@@ -576,6 +576,140 @@ input:focus {
 }
 
 /* ------------------------------------------------------------------ */
+/* Phone layout (MOBILE.md M1)                                         */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Keyed off data-layout rather than a media query of its own. GameScreen already has to know
+ * which layout it is in — the sheet's aria-hidden depends on it — and one source for the
+ * breakpoint is better than two that can drift. It also wins over the 900px block above on
+ * specificity alone, whatever order the rules end up in.
+ *
+ * The whole layout is one decision: the transcript is the game, so the transcript gets the
+ * screen. §5 called for exactly this ("the map collapses to a toggle") and only the stacking
+ * half was ever built.
+ */
+
+/* Desktop: the wrapper is not a box. Its children are the grid items, as they were before the
+   sheet existed. */
+.room-sheet {
+  display: contents;
+}
+
+.room-header,
+.sheet-head {
+  display: none;
+}
+
+.game[data-layout='phone'] {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto auto;
+  grid-template-areas:
+    "header"
+    "scroll"
+    "input"
+    "vitals";
+}
+
+.game[data-layout='phone'] .room-header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.8rem;
+  padding-top: calc(0.45rem + env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.room-header-title {
+  flex: 1;
+  min-width: 0;
+  color: var(--accent);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-header-dot {
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+.room-header-dot.good { color: var(--good); }
+.room-header-dot.bad { color: var(--bad); }
+
+/* 44px tall, which is the smallest a thumb hits reliably. */
+.room-header-toggle {
+  min-height: 44px;
+  padding: 0 0.7rem;
+  white-space: nowrap;
+}
+
+/* The sheet itself: a full-screen overlay rather than a panel sharing the height, because a room
+   description and a map cut to a third of a phone screen are worse than either one whole. */
+.game[data-layout='phone'] .room-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: var(--border);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  transform: translateY(-100%);
+  visibility: hidden;
+  transition: transform 0.18s ease, visibility 0.18s;
+}
+
+.game[data-layout='phone'] .room-sheet[data-open='true'] {
+  transform: none;
+  visibility: visible;
+}
+
+/* The panels are no longer children of .game here, so they no longer pick up its background. */
+.game[data-layout='phone'] .room-sheet > * {
+  background: var(--bg);
+}
+
+.game[data-layout='phone'] .sheet-head {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem 0.8rem;
+  padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+}
+
+.sheet-close {
+  min-height: 44px;
+  padding: 0 0.9rem;
+}
+
+.game[data-layout='phone'] .map-panel {
+  max-height: none;
+}
+
+/* Room contents are the one control a player uses constantly on a phone — it is how you name the
+   thing you are about to act on. Text-sized rows are not hittable. */
+.game[data-layout='phone'] .contents button {
+  min-height: 44px;
+  padding: 0.35rem 0;
+}
+
+.game[data-layout='phone'] .legend li,
+.game[data-layout='phone'] .contents li {
+  font-size: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game[data-layout='phone'] .room-sheet {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* World builder (PLAN.md §7)                                          */
 /* ------------------------------------------------------------------ */
 

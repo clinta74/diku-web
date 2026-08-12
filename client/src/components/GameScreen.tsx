@@ -4,7 +4,7 @@ import { connectStream } from '../net/stream'
 import { gameReducer, initialGameState } from '../state/gameReducer'
 import type { ContentEntry, MapPayload, TextSpan, VitalsPayload } from '../net/protocol'
 import { shouldRedirectToInput } from './typeAnywhere'
-import { useCoarsePointer } from './pointer'
+import { useCoarsePointer, usePhoneLayout } from './pointer'
 import { applyCompletion, completionsFor, type Completions } from './completion'
 import { loadHistory, remember, saveHistory } from './commandHistory'
 import { followSlack, isAtBottom } from './scrollFollow'
@@ -82,6 +82,11 @@ export function GameScreen({
 }: Props) {
   const [state, dispatch] = useReducer(gameReducer, initialGameState)
   const roomKey = state.room?.key ?? null
+  const phone = usePhoneLayout()
+
+  // The room panel and map, on a phone. Closed by default: the transcript is the game, and this
+  // is the reference material you consult rather than the thing you watch.
+  const [sheetOpen, setSheetOpen] = useState(false)
 
   // Reported upward rather than read from the builder, because the stream is the only thing
   // that knows where the character actually is - including after a goto or a rename.
@@ -127,6 +132,19 @@ export function GameScreen({
 
   useKeyboardInset()
 
+  // Escape closes the sheet, as it would any overlay. Bound while it is open rather than always,
+  // so Escape means whatever it usually means the rest of the time.
+  useEffect(() => {
+    if (!sheetOpen) return
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSheetOpen(false)
+    }
+
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [sheetOpen])
+
   const send = useCallback(
     (input: string) => {
       // Echo locally so the player sees what they typed immediately. The result itself still
@@ -140,15 +158,50 @@ export function GameScreen({
   )
 
   return (
-    <div className="game">
-      <MapPanel map={state.map} />
-      <RoomPanel
+    <div className="game" data-layout={phone ? 'phone' : 'desktop'}>
+      {/*
+        The phone header. Hidden on desktop, where the room panel is on screen and says all of
+        this already — this is that panel collapsed to one line, plus the way back to it.
+      */}
+      <RoomHeader
         title={state.room?.title ?? '...'}
-        description={state.room?.description ?? ''}
         exits={state.room?.exits ?? []}
-        contents={state.contents?.occupants ?? []}
-        onKeyword={(keyword) => insertKeyword.current?.(keyword)}
+        connected={state.connected}
+        open={sheetOpen}
+        onToggle={() => setSheetOpen((open) => !open)}
       />
+
+      {/*
+        On desktop this wrapper is `display: contents`, so the map and room panels are grid items
+        exactly as they were. On a phone it becomes the sheet that slides over the transcript.
+        One tree, two shapes — rendering different children per layout would mean the map unmounts
+        and remounts every time the window crosses 600px.
+      */}
+      <div
+        className="room-sheet"
+        data-open={sheetOpen}
+        // Only meaningful on a phone, where the sheet is genuinely hidden. On desktop the panels
+        // are on screen and hiding them from assistive tech would be a lie.
+        aria-hidden={phone && !sheetOpen}
+        // Keeps the closed sheet out of the tab order. Without it the map and the contents list
+        // are still focusable behind the transcript, so tabbing wanders into an invisible panel.
+        inert={phone && !sheetOpen}
+      >
+        <div className="sheet-head">
+          <button type="button" className="sheet-close" onClick={() => setSheetOpen(false)}>
+            ✕ Close
+          </button>
+        </div>
+
+        <MapPanel map={state.map} />
+        <RoomPanel
+          title={state.room?.title ?? '...'}
+          description={state.room?.description ?? ''}
+          exits={state.room?.exits ?? []}
+          contents={state.contents?.occupants ?? []}
+          onKeyword={(keyword) => insertKeyword.current?.(keyword)}
+        />
+      </div>
       <Scrollback lines={state.scrollback} onOpenBuilder={onOpenBuilder} />
       <InputBar
         onSend={send}
@@ -203,6 +256,56 @@ function MapPanel({ map }: { map: MapPayload | null }) {
         </ul>
       )}
     </section>
+  )
+}
+
+/**
+ * The phone header: where you are, whether the stream is up, and the way into the room sheet.
+ *
+ * Rendered on every layout and hidden by the stylesheet on desktop, where the room panel is
+ * already on screen saying all of it. The exit count rather than the exits themselves — the names
+ * do not fit on one line, and M2's exit pad is where they become useful anyway.
+ */
+function RoomHeader({
+  title,
+  exits,
+  connected,
+  open,
+  onToggle,
+}: {
+  title: string
+  exits: string[]
+  connected: boolean
+  open: boolean
+  onToggle: () => void
+}) {
+  return (
+    <header className="room-header">
+      <span className="room-header-title">{title}</span>
+
+      {/*
+        The connection dot lives here as well as in the vitals row, because the vitals row wraps on
+        a narrow screen and the status can end up on a second line below the fold. Losing sight of
+        whether the game is connected is the one thing that must not happen quietly.
+      */}
+      <span
+        className={connected ? 'room-header-dot good' : 'room-header-dot bad'}
+        title={connected ? 'Connected' : 'Reconnecting…'}
+        aria-label={connected ? 'Connected' : 'Reconnecting'}
+      >
+        ●
+      </span>
+
+      <button
+        type="button"
+        className="room-header-toggle"
+        onClick={onToggle}
+        aria-expanded={open}
+      >
+        ▤ room
+        {exits.length > 0 && <span className="dim"> · {exits.length}</span>}
+      </button>
+    </header>
   )
 }
 

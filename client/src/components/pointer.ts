@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { matchesMedia, useMediaQuery } from './media'
 
 /**
  * Whether the primary input is a finger rather than a mouse.
@@ -12,42 +12,29 @@ import { useEffect, useState } from 'react'
  * laptops, which do have a mouse and should keep behaving like desktops. Requiring both means
  * "a finger, and no mouse to fall back on".
  */
-const QUERY = '(pointer: coarse) and (hover: none)'
+const COARSE = '(pointer: coarse) and (hover: none)'
 
 /**
- * Read once, outside React, for the cases that need an answer before first paint.
+ * The width at which the game switches to the phone layout — the transcript taking the screen and
+ * the room panel moving into a sheet.
  *
- * Returns false when `matchMedia` is missing rather than throwing — that is jsdom under Vitest,
- * where "is this a phone" is not a meaningful question and the desktop answer is the right one.
+ * A width and not the pointer query above, because this one really is about how much room there
+ * is: a narrow desktop window has the same problem a phone does, and the layout that solves it is
+ * no worse there. The pointer query decides behaviour; this decides shape.
+ *
+ * `GameScreen` stamps the answer onto the game element as `data-layout`, so the stylesheet keys off
+ * that attribute rather than repeating the number.
  */
+const PHONE = '(max-width: 600px)'
+
 export function isCoarsePointer(): boolean {
-  return typeof window !== 'undefined'
-    && typeof window.matchMedia === 'function'
-    && window.matchMedia(QUERY).matches
+  return matchesMedia(COARSE)
 }
 
-/**
- * The same answer as state, updated if it changes.
- *
- * It does change: plugging a mouse into a tablet flips it, and so does a browser's device
- * emulation, which is how this gets tested. Subscribing is a few lines and saves a class of bug
- * where the UI is stuck in whichever mode the page happened to load in.
- */
 export function useCoarsePointer(): boolean {
-  const [coarse, setCoarse] = useState(isCoarsePointer)
+  return useMediaQuery(COARSE)
+}
 
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return
-
-    const query = window.matchMedia(QUERY)
-    const sync = (event: MediaQueryListEvent) => setCoarse(event.matches)
-
-    // Re-read on mount as well as subscribing: the initial state was computed during the first
-    // render, and under StrictMode's double render that is not necessarily the same moment.
-    setCoarse(query.matches)
-    query.addEventListener('change', sync)
-    return () => query.removeEventListener('change', sync)
-  }, [])
-
-  return coarse
+export function usePhoneLayout(): boolean {
+  return useMediaQuery(PHONE)
 }
