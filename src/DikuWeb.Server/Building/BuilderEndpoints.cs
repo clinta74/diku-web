@@ -54,6 +54,9 @@ public static class BuilderEndpoints
 
         group.MapGet("/audit", AuditAsync);
 
+        group.MapGet("/export", ExportAsync);
+        group.MapPost("/import", ImportAsync);
+
         // Live edit feed: a second builder's saved change lands here so open panels refresh.
         group.MapGet("/stream", StreamChangesAsync);
 
@@ -397,6 +400,82 @@ public static class BuilderEndpoints
         BuilderQueries queries,
         CancellationToken ct) =>
         Results.Ok(await queries.AuditAsync(kind, key, limit ?? 50, ct));
+
+    // -----------------------------------------------------------------------
+    // Export and import (PLAN.md §6, Phase 6)
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// The authored world as one JSON document: everything, or one world, or one zone.
+    /// </summary>
+    /// <remarks>
+    /// Sent as an attachment with a dated filename, because the thing a builder does with this is
+    /// save it - and a bundle that arrives as an untitled browser tab is one nobody keeps.
+    /// </remarks>
+    private static async Task<IResult> ExportAsync(
+        string? world,
+        string? zone,
+        WorldExporter exporter,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (await exporter.ExportAsync(world, zone, ct) is not { } bundle)
+        {
+            return Results.NotFound(new
+            {
+                error = string.IsNullOrWhiteSpace(zone)
+                    ? $"No world '{world}'."
+                    : $"No zone '{zone}'.",
+            });
+        }
+
+        var name = bundle.Scope.Key ?? "world";
+        http.Response.Headers.ContentDisposition =
+            $"attachment; filename=\"{name}-{bundle.ExportedAt:yyyy-MM-dd}.json\"";
+
+        return Results.Ok(bundle);
+    }
+
+    /// <summary>
+    /// Applies a bundle to this environment. <c>?dryRun=true</c> reports what would happen and
+    /// changes nothing.
+    /// </summary>
+    /// <remarks>
+    /// The format version is the one hard refusal here. Everything else - a dangling exit, a
+    /// quest whose giver is somewhere else - comes back as an advisory warning, because those are
+    /// states the world already tolerates (§7.4) and refusing them would make importing one zone
+    /// of several impossible.
+    /// </remarks>
+    private static async Task<IResult> ImportAsync(
+        WorldBundle? bundle,
+        bool? dryRun,
+        WorldImporter importer,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (bundle is null)
+        {
+            return Invalid("An import needs a bundle.");
+        }
+
+        if (bundle.FormatVersion != WorldBundle.CurrentFormatVersion)
+        {
+            return Invalid(
+                $"This is a version {bundle.FormatVersion} bundle; this server reads version "
+                + $"{WorldBundle.CurrentFormatVersion}.");
+        }
+
+        http.TryGetAccountId(out var accountId);
+
+        var report = await importer.ImportAsync(bundle, accountId, dryRun ?? false, ct);
+
+        // A partial import is not a success, and reporting one as 200 is how a half-applied zone
+        // gets noticed a week later. The report is the body either way, since which entities
+        // failed is the whole answer.
+        return report.Ok
+            ? Results.Ok(report)
+            : Results.Json(report, statusCode: StatusCodes.Status207MultiStatus);
+    }
 
     // -----------------------------------------------------------------------
     // Mob Templates

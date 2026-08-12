@@ -6,9 +6,14 @@
 -- at which point the world goes with it and the only record of the Sunken Crypt is somebody's
 -- memory of having dug it.
 --
--- This is the stopgap until Phase 6's world export/import (JSON) exists. It is deliberately
--- *SQL*, not a dump: the output is readable, diffable, and can be applied to a database that has
--- already been seeded.
+-- Phase 6's world export/import now exists, and for moving content *between environments* it is
+-- the better tool: GET /api/builder/export closes a zone over the templates it needs, and
+-- POST /api/builder/import replays the result through the game loop, so live players see it and
+-- every entity leaves an audit row. This script is still the right answer to the other question -
+-- getting content out when the server will not start, or when what you want back is the exact
+-- rows rather than the world they describe. It is deliberately *SQL*, not a dump: the output is
+-- readable, diffable, and can be applied to a database that has already been seeded, with no
+-- running application in the picture at all.
 --
 -- What it exports: worlds, zones, rooms, room_exits, mob_templates, item_templates, spawners,
 -- quests. What it does not: accounts, characters, item_instances, character_quests, and the two

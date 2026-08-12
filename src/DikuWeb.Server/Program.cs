@@ -145,6 +145,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddScoped<BuilderQueries>();
 builder.Services.AddScoped<WorldWriter>();
 builder.Services.AddScoped<WorldEditor>();
+builder.Services.AddScoped<WorldExporter>();
+builder.Services.AddScoped<WorldImporter>();
 builder.Services.AddSingleton<DigThrottle>();
 builder.Services.AddSingleton<BuilderChangeFeed>();
 
