@@ -897,6 +897,11 @@ Five regions. The map is a monospace `<pre>` grid; everything else is ordinary D
 Responsive: below ~900 px the map and room panels stack above the scrollback, and the map
 collapses to a toggle so the text still dominates on mobile.
 
+**Half of that shipped.** The stacking exists; the toggle does not, so on a phone the map still
+holds 12 rem of a screen the transcript needs. That gap and the rest of the mobile story — the
+keyboard covering the input bar, movement with no direction control, the builder's modifier-key
+canvas — are worked through in [MOBILE.md](MOBILE.md), which is a proposal rather than a record.
+
 ---
 
 ## 6. Data model
@@ -2205,6 +2210,25 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
             and a GitHub Actions image build/push to ghcr.io
       - [ ] Runbook: rollback procedure if migration fails, monitoring dashboard, incident response
             — `DOCKER.md` and `DEPLOY_NO_ENV.md` cover setup, not recovery
+
+### Phase 7 — Mobile client
+
+Not started, and deliberately after Operations: a game nobody can deploy is not improved by being
+playable on a phone. Planned in full in [MOBILE.md](MOBILE.md) — findings, the layout it argues for,
+and the reasoning behind each phase. The checklist there is the authority; this is the pointer.
+
+- [ ] **M0–M3, the game.** Viewport and keyboard handling, a phone layout where the transcript owns
+      the screen, touch verbs in place of a keyboard, and surviving a backgrounded tab. Roughly six
+      to nine days, and worth shipping in pieces.
+- [ ] **M4a, the zone canvas off its modifier keys.** Plain drag-to-pan behind a movement threshold,
+      on Pointer Events. A desktop improvement first — touch support falls out of it rather than
+      being added to it, which is why it is separated from the rest of the builder work.
+- [ ] **M4b, the builder on small screens**, with the canvas summoned rather than resident.
+- [ ] **M5, installable.** A manifest, once there is something behind the icon worth keeping.
+- [ ] **One server change**, listed here because it is not client work: `Program.cs` never binds the
+      `Engine` configuration section, so `Engine__LinkDeadGraceSeconds` and `Engine__StartingRoom` in
+      `docker-compose.prod.yml` are no-ops today and the link-dead window is the hardcoded 90
+      seconds. Mobile wants that window longer; every deployment wants it bound.
 
 ---
 
