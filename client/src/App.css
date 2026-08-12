@@ -603,10 +603,11 @@ input:focus {
 
 .game[data-layout='phone'] {
   grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr auto auto;
+  grid-template-rows: auto 1fr auto auto auto;
   grid-template-areas:
     "header"
     "scroll"
+    "pad"
     "input"
     "vitals";
 }
@@ -707,6 +708,83 @@ input:focus {
   .game[data-layout='phone'] .room-sheet {
     transition: none;
   }
+}
+
+/* --- Touch verbs (MOBILE.md M2) ----------------------------------- */
+
+/*
+ * The exit pad sits between the transcript and the input, which is where the thumb already is.
+ * It is its own grid row rather than part of the input bar: the input can grow to two lines when
+ * a long command is typed, and the pad must not move when it does.
+ */
+.exit-pad {
+  grid-area: pad;
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+}
+
+.exit-key {
+  flex: 1;
+  min-height: 44px;
+  padding: 0;
+  font-size: 0.95rem;
+  color: var(--accent);
+  border-color: var(--border);
+}
+
+/*
+ * Unavailable directions stay on the pad, dimmed. See `exitPad` — a row that only drew the exits
+ * a room happens to have would put a different direction under the thumb on every arrival.
+ */
+.exit-key.unavailable {
+  color: var(--border);
+  border-color: var(--panel);
+}
+
+.exit-key:disabled {
+  cursor: default;
+}
+
+/* The chips scroll sideways rather than wrapping: a second row would push the input down, and the
+   input is the one thing on this screen whose position must not move. */
+.command-chips {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.1rem;
+}
+
+.command-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.command-chip {
+  min-height: 34px;
+  padding: 0 0.6rem;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  color: var(--dim);
+  border-radius: 999px;
+}
+
+.command-chip:hover {
+  color: var(--accent);
+}
+
+/* The chips live inside the input bar, which is a row — they need the column above the field. */
+.game[data-layout='phone'] .input-bar {
+  flex-wrap: wrap;
+  padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+  padding-right: calc(1rem + env(safe-area-inset-right, 0px));
+}
+
+.game[data-layout='phone'] .command-chips {
+  flex-basis: 100%;
 }
 
 /* ------------------------------------------------------------------ */

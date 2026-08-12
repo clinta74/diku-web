@@ -1,11 +1,18 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { GameScreen } from './GameScreen'
 import type { GameEvent } from '../net/protocol'
 
+const sent: string[] = []
+
 vi.mock('../net/api', () => ({
-  api: { command: () => Promise.resolve() },
+  api: {
+    command: (_id: string, input: string) => {
+      sent.push(input)
+      return Promise.resolve()
+    },
+  },
 }))
 
 const stream = vi.hoisted(() => ({ emit: null as ((event: GameEvent) => void) | null }))
@@ -34,6 +41,7 @@ function pretendToBe(kind: 'phone' | 'desktop') {
 }
 
 beforeEach(() => {
+  sent.length = 0
   localStorage.clear()
 })
 
@@ -50,6 +58,16 @@ function play() {
 
 function sheet(container: HTMLElement) {
   return container.querySelector('.room-sheet') as HTMLElement
+}
+
+/** The exits only reach the component over the stream, so a test that wants a pad has to arrive. */
+function arriveIn(exits: string[]) {
+  act(() =>
+    stream.emit?.({
+      type: 'room',
+      data: { key: 'aldenmoor.millbrook.north-gate', title: 'The North Gate', description: '', exits },
+    }),
+  )
 }
 
 it('starts with the room sheet closed, so the transcript has the screen', () => {
@@ -94,6 +112,48 @@ it('leaves the panels visible and unhidden on a desktop', () => {
 
   expect(container.querySelector('.game')?.getAttribute('data-layout')).toBe('desktop')
   expect(sheet(container).getAttribute('aria-hidden')).toBe('false')
+})
+
+it('walks with a tap, and keeps the missing directions on the pad', () => {
+  // The reason M2 exists: the main verb of a MUD is walking, and walking used to mean typing
+  // `north` on a keyboard covering half the screen.
+  pretendToBe('phone')
+  play()
+
+  arriveIn(['north', 'east'])
+
+  fireEvent.click(screen.getByRole('button', { name: 'north' }))
+  expect(sent).toEqual(['north'])
+
+  // Present but disabled, rather than absent: a pad that only drew real exits would reflow on
+  // every arrival, moving the key out from under the thumb.
+  const west = screen.getByRole('button', { name: 'west' }) as HTMLButtonElement
+  expect(west.disabled).toBe(true)
+
+  fireEvent.click(west)
+  expect(sent).toEqual(['north'])
+})
+
+it('has no exit pad on a desktop', () => {
+  pretendToBe('desktop')
+  play()
+  arriveIn(['north'])
+
+  expect(screen.queryByRole('group', { name: 'Exits' })).toBeNull()
+})
+
+it('re-runs a command from a chip without opening the keyboard', () => {
+  // The phone's up arrow. Tapping runs it rather than loading it into the box, because sending it
+  // from there would mean summoning a keyboard to press a return key.
+  pretendToBe('phone')
+  const input = play().container.querySelector('input') as HTMLInputElement
+
+  fireEvent.change(input, { target: { value: 'attack wolf' } })
+  fireEvent.keyDown(input, { key: 'Enter' })
+  expect(sent).toEqual(['attack wolf'])
+
+  fireEvent.click(screen.getByRole('button', { name: 'attack wolf' }))
+  expect(sent).toEqual(['attack wolf', 'attack wolf'])
 })
 
 it('does not steal keystrokes aimed elsewhere on a touch device', () => {

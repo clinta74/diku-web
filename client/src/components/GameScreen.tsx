@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { api } from '../net/api'
 import { connectStream } from '../net/stream'
 import { gameReducer, initialGameState } from '../state/gameReducer'
 import type { ContentEntry, MapPayload, TextSpan, VitalsPayload } from '../net/protocol'
 import { shouldRedirectToInput } from './typeAnywhere'
 import { useCoarsePointer, usePhoneLayout } from './pointer'
+import { exitPad, recentCommands, verbsFor } from './touchVerbs'
 import { applyCompletion, completionsFor, type Completions } from './completion'
 import { loadHistory, remember, saveHistory } from './commandHistory'
 import { followSlack, isAtBottom } from './scrollFollow'
@@ -83,6 +85,10 @@ export function GameScreen({
   const [state, dispatch] = useReducer(gameReducer, initialGameState)
   const roomKey = state.room?.key ?? null
   const phone = usePhoneLayout()
+
+  // Layout is a width question; whether a tap should offer verbs is a pointer question. They are
+  // asked separately because they disagree on a tablet and on a narrow desktop window.
+  const coarse = useCoarsePointer()
 
   // The room panel and map, on a phone. Closed by default: the transcript is the game, and this
   // is the reference material you consult rather than the thing you watch.
@@ -200,9 +206,27 @@ export function GameScreen({
           exits={state.room?.exits ?? []}
           contents={state.contents?.occupants ?? []}
           onKeyword={(keyword) => insertKeyword.current?.(keyword)}
+          onCommand={(command) => {
+            send(command)
+
+            // The sheet has done its job the moment a verb is chosen, and the answer arrives in
+            // the transcript behind it. Leaving it open would hide the result of the tap.
+            setSheetOpen(false)
+          }}
+          touch={coarse}
         />
       </div>
       <Scrollback lines={state.scrollback} onOpenBuilder={onOpenBuilder} />
+
+      {/*
+        Touch verbs (MOBILE.md M2). Part of the phone layout rather than gated on the pointer:
+        they occupy a row of the phone grid, and a narrow desktop window that gets the layout
+        should get the row that goes with it.
+      */}
+      {phone && (
+        <ExitPad exits={state.room?.exits ?? []} onGo={send} />
+      )}
+
       <InputBar
         onSend={send}
         insertRef={insertKeyword}
@@ -210,6 +234,7 @@ export function GameScreen({
         active={active}
         characterId={characterId}
         candidates={candidates}
+        showChips={phone}
       />
       <VitalsBar
         vitals={state.vitals}
@@ -315,12 +340,17 @@ function RoomPanel({
   exits,
   contents,
   onKeyword,
+  onCommand,
+  touch,
 }: {
   title: string
   description: string
   exits: string[]
   contents: ContentEntry[]
   onKeyword: (keyword: string) => void
+  onCommand: (command: string) => void
+  /** Offers verbs on a tap instead of typing the keyword. See `verbsFor`. */
+  touch: boolean
 }) {
   // Group items by keyword and count duplicates
   const grouped = new Map<string, { entry: ContentEntry; count: number }>()
@@ -346,14 +376,54 @@ function RoomPanel({
       <h2>Here</h2>
       <ul className="contents">
         {displayItems.length === 0 && <li className="dim">Nobody else.</li>}
-        {displayItems.map(({ entry, count }) => (
-          <li key={entry.keyword}>
-            <button type="button" onClick={() => onKeyword(entry.keyword)}>
+        {displayItems.map(({ entry, count }) => {
+          const name = (
+            <>
               <span className="glyph">{entry.icon}</span> {entry.label}
               {count > 1 && <span className="dim"> ×{count}</span>}
-            </button>
-          </li>
-        ))}
+            </>
+          )
+
+          // On a desktop the click types the keyword and the player finishes the sentence, which
+          // is a good trade when a keyboard is one key away. On touch it costs a keyboard over the
+          // game, so the same tap offers the verbs instead — with "Type its name" kept as the last
+          // item, so nothing that was possible before has become unreachable.
+          return (
+            <li key={entry.keyword}>
+              {touch ? (
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <button type="button">{name}</button>
+                  </DropdownMenu.Trigger>
+
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content className="menu" align="start" sideOffset={4}>
+                      {verbsFor(entry.keyword).map((verb) => (
+                        <DropdownMenu.Item
+                          key={verb.label}
+                          className="menu-item"
+                          onSelect={() => onCommand(verb.command)}
+                        >
+                          {verb.label}
+                        </DropdownMenu.Item>
+                      ))}
+                      <DropdownMenu.Item
+                        className="menu-item"
+                        onSelect={() => onKeyword(entry.keyword)}
+                      >
+                        Type its name
+                      </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+              ) : (
+                <button type="button" onClick={() => onKeyword(entry.keyword)}>
+                  {name}
+                </button>
+              )}
+            </li>
+          )
+        })}
       </ul>
     </section>
   )
@@ -431,6 +501,32 @@ function Scrollback({
   )
 }
 
+/**
+ * Six direction keys, under the thumb (MOBILE.md M2).
+ *
+ * The reason this exists: the main verb of a MUD is walking, and walking meant typing `north` on
+ * a phone keyboard that covers half the screen. Every direction is drawn whether or not the room
+ * has it — see `exitPad` for why the row must not reflow.
+ */
+function ExitPad({ exits, onGo }: { exits: string[]; onGo: (command: string) => void }) {
+  return (
+    <div className="exit-pad" role="group" aria-label="Exits">
+      {exitPad(exits).map((key) => (
+        <button
+          key={key.direction}
+          type="button"
+          className={key.available ? 'exit-key' : 'exit-key unavailable'}
+          disabled={!key.available}
+          aria-label={key.direction}
+          onClick={() => onGo(key.direction)}
+        >
+          {key.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function InputBar({
   onSend,
   insertRef,
@@ -438,6 +534,7 @@ function InputBar({
   active,
   characterId,
   candidates,
+  showChips,
 }: {
   onSend: (input: string) => void
   insertRef: React.RefObject<((keyword: string) => void) | null>
@@ -445,12 +542,15 @@ function InputBar({
   active: boolean
   characterId: string
   candidates: string[]
+  /** Draws the recent-command row above the input. The phone stand-in for the up arrow. */
+  showChips?: boolean
 }) {
   const [value, setValue] = useState('')
   const [history, setHistory] = useState<string[]>(() => loadHistory(characterId))
   const [cursor, setCursor] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const coarse = useCoarsePointer()
+  const chips = useMemo(() => (showChips ? recentCommands(history) : []), [showChips, history])
 
   // Which completion of the current fragment is showing, so a second Tab offers the next one
   // rather than recomputing against the text the first one just wrote.
@@ -507,10 +607,11 @@ function InputBar({
     }
   }, [active, coarse])
 
-  function submit() {
-    const input = value.trim()
-    if (!input) return
-
+  /**
+   * Sends a command and files it in history, whatever typed it — the input box, a chip, or the
+   * exit pad by way of `onSend`.
+   */
+  function run(input: string) {
     onSend(input)
 
     // Written outside the updater rather than inside it: an updater must stay pure, and under
@@ -520,6 +621,13 @@ function InputBar({
     saveHistory(characterId, next)
 
     setCursor(-1)
+  }
+
+  function submit() {
+    const input = value.trim()
+    if (!input) return
+
+    run(input)
     setValue('')
   }
 
@@ -590,6 +698,26 @@ function InputBar({
 
   return (
     <div className="input-bar">
+      {/*
+        The phone's up arrow. Tapping runs the command rather than loading it into the box: on a
+        desktop, loading it is right because Enter is one key away, but here sending it would
+        otherwise mean summoning the keyboard to press a return key you did not need.
+      */}
+      {showChips && chips.length > 0 && (
+        <div className="command-chips" role="group" aria-label="Recent commands">
+          {chips.map((command) => (
+            <button
+              key={command}
+              type="button"
+              className="command-chip"
+              onClick={() => run(command)}
+            >
+              {command}
+            </button>
+          ))}
+        </div>
+      )}
+
       <span className="prompt">&gt;</span>
       <input
         ref={inputRef}
