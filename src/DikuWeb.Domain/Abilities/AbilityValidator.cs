@@ -1,0 +1,350 @@
+using System.Globalization;
+using DikuWeb.Domain.Abilities.Effects;
+using DikuWeb.Domain.Characters;
+
+namespace DikuWeb.Domain.Abilities;
+
+/// <summary>How badly wrong an authored ability is.</summary>
+public enum AbilityProblemSeverity
+{
+    /// <summary>Worth saying, never worth refusing a save over.</summary>
+    Warning,
+
+    /// <summary>The ability would not work. The builder API refuses it.</summary>
+    Error,
+}
+
+/// <summary>One thing wrong with an authored ability, or with the set as a whole.</summary>
+/// <param name="Key">The ability it is about, or empty for a problem with the set.</param>
+public sealed record AbilityProblem(string Key, AbilityProblemSeverity Severity, string Message);
+
+/// <summary>
+/// What has to be true of an ability for it to work, checked against authored rows rather than
+/// against a list in code.
+/// </summary>
+/// <remarks>
+/// <b>This is the replacement for guardrails that used to be compile-time tests.</b> While
+/// <c>AbilityCatalogue</c> was the only source of abilities, twenty-odd invariants could be
+/// asserted over a static list and a violation failed the build. Abilities are rows now, so those
+/// same invariants have to be checked where rows are made: the builder API refuses an
+/// <see cref="AbilityProblemSeverity.Error"/> on save, and the whole set is validated on load so a
+/// row that arrived by import or by hand is complained about rather than discovered in play.
+///
+/// <b>Every check here exists because its absence failed silently.</b> That is the whole character
+/// of this class and the reason it is worth its length. An ability naming an effect that does not
+/// exist costs its resource, starts its cooldown, and does nothing. An effect reads its parameters
+/// by name and skips what it does not recognise, so <c>magnitude</c> where <c>outgoingMultiplier</c>
+/// was meant produces a buff that buffs nothing. A "weaken" written as <c>incomingMultiplier</c>
+/// below 1.0 reads perfectly and makes its target *harder* to kill — which shipped, to every
+/// debuff in the game, and was found by reading the code rather than by anything going wrong.
+///
+/// The split between error and warning follows §7.4: refuse what is definitely broken and cheap to
+/// fix at the point of authoring, and merely report what is a judgement about content shape. A
+/// Path with a four-level gap is a design question; an ability that costs nothing is a mistake.
+/// </remarks>
+public static class AbilityValidator
+{
+    /// <summary>The highest level a character reaches (PLAN.md §4.7), so unlocks must fit under it.</summary>
+    public const int MaxLevel = 50;
+
+    /// <summary>The level by which every Path should have finished unlocking (PLAN.md §4.5).</summary>
+    public const int ProgressionCompleteLevel = 20;
+
+    /// <summary>The largest gap between unlocks before levelling starts to feel empty.</summary>
+    public const int MaxLevelGap = 4;
+
+    /// <summary>
+    /// The parameter each effect actually reads. An effect skips what it does not recognise, so a
+    /// row missing its one meaningful key is an ability that runs and does nothing.
+    /// </summary>
+    private static readonly (string EffectKey, string Parameter)[] RequiredParams =
+    [
+        ("damage.physical", "scalingFactor"),
+        ("heal.restore", "baseHeal"),
+        ("buff.damage-up", "outgoingMultiplier"),
+        ("debuff.weaken", "durationPulses"),
+        ("damage.overtime", "tickDamage"),
+        ("damage.overtime", "tickIntervalPulses"),
+        ("damage.overtime", "durationPulses"),
+        ("control.stun", "durationPulses"),
+        ("control.root", "durationPulses"),
+        ("control.taunt", "leadFraction"),
+    ];
+
+    /// <summary>
+    /// Everything wrong with one ability, judged on its own. This is what the builder API runs on
+    /// save, so it must never need the rest of the table to answer.
+    /// </summary>
+    public static IReadOnlyList<AbilityProblem> ValidateOne(Ability ability, EffectRegistry effects)
+    {
+        ArgumentNullException.ThrowIfNull(ability);
+        ArgumentNullException.ThrowIfNull(effects);
+
+        var problems = new List<AbilityProblem>();
+        void Error(string message) => problems.Add(new(ability.Key, AbilityProblemSeverity.Error, message));
+        void Warn(string message) => problems.Add(new(ability.Key, AbilityProblemSeverity.Warning, message));
+
+        if (string.IsNullOrWhiteSpace(ability.Key))
+        {
+            Error("An ability needs a key.");
+            return problems;
+        }
+
+        // The key carries the Path in front of it, and that is load-bearing rather than tidy:
+        // AbilityLookup resolves "warden.shield-bash" as well as "shield bash", so a key naming
+        // the wrong Path is a name that resolves to somebody else's ability.
+        var expectedPrefix = PrefixFor(ability.Path);
+        if (!ability.Key.StartsWith(expectedPrefix, StringComparison.Ordinal))
+        {
+            Error($"A {ability.Path} ability's key must start with '{expectedPrefix}'.");
+        }
+
+        if (string.IsNullOrWhiteSpace(ability.Name))
+        {
+            Error("An ability needs a display name — it is what a player types.");
+        }
+
+        if (ability.CostValue <= 0)
+        {
+            Error("An ability that costs nothing can be used every time its cooldown allows.");
+        }
+
+        if (ability.CooldownPulses < 0)
+        {
+            Error("A cooldown cannot be negative.");
+        }
+
+        if (ability.CastTimePulses is < 0)
+        {
+            Error("A cast time cannot be negative.");
+        }
+
+        if (ability.UnlockLevel is < 1 or > MaxLevel)
+        {
+            Error($"Unlock level must be between 1 and {MaxLevel}. Level 0 is known by everyone.");
+        }
+
+        if (!effects.Contains(ability.EffectKey))
+        {
+            // The single most expensive thing to get wrong, because nothing reports it: the cast
+            // succeeds, the cost is spent, the cooldown starts, and no effect runs.
+            Error($"No effect executor is registered for '{ability.EffectKey}'.");
+            return problems;
+        }
+
+        foreach (var (effectKey, parameter) in RequiredParams)
+        {
+            if (ability.EffectKey == effectKey && !ability.EffectParams.ContainsKey(parameter))
+            {
+                Error($"'{effectKey}' reads '{parameter}', and this ability does not set it.");
+            }
+        }
+
+        ValidateDirection(ability, Error);
+        ValidateClamps(ability, Error, Warn);
+
+        return problems;
+    }
+
+    /// <summary>
+    /// Everything wrong across the whole set — the questions a single row cannot answer, like
+    /// whether a Path has anything at level 1.
+    /// </summary>
+    /// <remarks>
+    /// Run on load rather than on save. These are properties of the table, so a save that breaks
+    /// one is usually a save that is halfway through a change a builder is still making: refusing
+    /// it would make the editor impossible to use, which is the same argument §7.4 makes for
+    /// letting the world be temporarily invalid.
+    /// </remarks>
+    public static IReadOnlyList<AbilityProblem> ValidateSet(
+        IReadOnlyCollection<Ability> abilities,
+        EffectRegistry effects)
+    {
+        ArgumentNullException.ThrowIfNull(abilities);
+        ArgumentNullException.ThrowIfNull(effects);
+
+        var problems = new List<AbilityProblem>();
+
+        foreach (var ability in abilities)
+        {
+            problems.AddRange(ValidateOne(ability, effects));
+        }
+
+        foreach (var path in Enum.GetValues<CharacterPath>())
+        {
+            var forPath = abilities
+                .Where(a => a.Path == path)
+                .OrderBy(a => a.UnlockLevel)
+                .ToList();
+
+            if (forPath.Count == 0)
+            {
+                problems.Add(new("", AbilityProblemSeverity.Warning,
+                    $"{path} has no abilities at all."));
+                continue;
+            }
+
+            if (forPath[0].UnlockLevel != 1)
+            {
+                problems.Add(new("", AbilityProblemSeverity.Warning,
+                    $"{path} has nothing castable at level 1 — a new character of that Path has no ability."));
+            }
+
+            var duplicates = forPath
+                .GroupBy(a => a.UnlockLevel)
+                .Where(g => g.Count() > 1)
+                .Select(g => $"level {g.Key} ({string.Join(", ", g.Select(a => a.Key))})");
+
+            foreach (var duplicate in duplicates)
+            {
+                problems.Add(new("", AbilityProblemSeverity.Warning,
+                    $"{path} unlocks two abilities at {duplicate}, so one level gives twice and its neighbours give nothing."));
+            }
+
+            var previous = 0;
+            foreach (var ability in forPath.Where(a => a.UnlockLevel <= ProgressionCompleteLevel))
+            {
+                if (ability.UnlockLevel - previous > MaxLevelGap)
+                {
+                    problems.Add(new("", AbilityProblemSeverity.Warning,
+                        $"{path} goes from level {previous} to {ability.UnlockLevel} with nothing new."));
+                }
+
+                previous = ability.UnlockLevel;
+            }
+
+            if (previous < ProgressionCompleteLevel)
+            {
+                problems.Add(new("", AbilityProblemSeverity.Warning,
+                    $"{path} stops unlocking at level {previous}, short of {ProgressionCompleteLevel}."));
+            }
+        }
+
+        return problems;
+    }
+
+    /// <summary>
+    /// A buff must help and a debuff must harm. Both are multipliers around 1.0 and both read
+    /// plausibly on the wrong side of it.
+    /// </summary>
+    private static void ValidateDirection(Ability ability, Action<string> error)
+    {
+        switch (ability.EffectKey)
+        {
+            case "buff.damage-up":
+            {
+                var outgoing = Number(ability, "outgoingMultiplier");
+                if (outgoing is not null and <= 1.0m)
+                {
+                    error($"A damage buff of {outgoing} makes the caster weaker. Above 1.0 helps.");
+                }
+
+                break;
+            }
+
+            case "debuff.weaken":
+            {
+                // The bug this whole class is shaped around. `outgoingMultiplier` scales what the
+                // target deals and must go *below* 1.0; `incomingMultiplier` scales what it takes
+                // and must go *above*. Every weaken in the game was once written as the latter
+                // below 1.0, which made its target 25-45% harder to kill.
+                var outgoing = Number(ability, "outgoingMultiplier");
+                var incoming = Number(ability, "incomingMultiplier");
+
+                if (outgoing is null && incoming is null)
+                {
+                    error("A debuff must set outgoingMultiplier or incomingMultiplier, or it does nothing.");
+                    break;
+                }
+
+                if (outgoing is not null and >= 1.0m)
+                {
+                    error($"outgoingMultiplier {outgoing} does not weaken. Below 1.0 reduces what the target deals.");
+                }
+
+                if (incoming is not null and <= 1.0m)
+                {
+                    error($"incomingMultiplier {incoming} protects the target. Above 1.0 increases what it takes.");
+                }
+
+                break;
+            }
+
+            case "damage.overtime":
+            {
+                var tick = Number(ability, "tickDamage");
+                var interval = Number(ability, "tickIntervalPulses");
+                var duration = Number(ability, "durationPulses");
+
+                if (tick is not null and <= 0)
+                {
+                    error($"A wound ticking for {tick} does nothing.");
+                }
+
+                if (interval is not null and <= 0)
+                {
+                    error("A wound needs a positive tick interval.");
+                }
+
+                if (interval is > 0 && duration is > 0 && duration < interval)
+                {
+                    error($"A wound lasting {duration} pulses that ticks every {interval} expires before it ever ticks.");
+                }
+
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Control effects are clamped by their executors. An authored value past the ceiling is
+    /// silently reduced, so the number in the editor stops describing the game.
+    /// </summary>
+    private static void ValidateClamps(Ability ability, Action<string> error, Action<string> warn)
+    {
+        if (!ability.EffectKey.StartsWith("control.", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (Number(ability, "maxStacks") is > 1)
+        {
+            error("A control effect that stacks chains into a permanent lock.");
+        }
+
+        var ceiling = ability.EffectKey switch
+        {
+            "control.stun" => StunEffect.MaxDurationPulses,
+            "control.root" => RootEffect.MaxDurationPulses,
+            _ => (long?)null,
+        };
+
+        if (ceiling is null)
+        {
+            return;
+        }
+
+        var duration = Number(ability, "durationPulses");
+
+        if (duration is not null and <= 0)
+        {
+            error($"A control effect lasting {duration} pulses does nothing.");
+        }
+        else if (duration > ceiling)
+        {
+            warn($"Lasts {duration} pulses; the executor clamps it to {ceiling}, so the extra is not real.");
+        }
+    }
+
+    private static decimal? Number(Ability ability, string key) =>
+        ability.EffectParams.TryGetValue(key, out var raw)
+        && decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : null;
+
+    private static string PrefixFor(CharacterPath path) =>
+        path.ToString().ToLowerInvariant() + ".";
+}
