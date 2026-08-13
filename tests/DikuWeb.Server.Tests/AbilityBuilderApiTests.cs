@@ -79,6 +79,28 @@ public sealed class AbilityBuilderApiTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Enums_cross_the_wire_as_names_rather_than_ordinals()
+    {
+        // The gap that let a working API ship next to an empty screen. Every other test here
+        // asserted values and status codes, none asserted the *shape* of an enum - so `path` came
+        // back as 0, the client filtered `path === 'Warden'` against it, and the Abilities tab
+        // rendered nothing while the server was entirely correct.
+        //
+        // Asserted on the raw JSON rather than through a typed client, because a typed client is
+        // exactly what deserialises the difference away.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var raw = await client.GetStringAsync(
+            new Uri("/api/builder/abilities/warden.kick", UriKind.Relative));
+
+        Assert.Contains("\"path\":\"Warden\"", raw, StringComparison.Ordinal);
+        Assert.Contains("\"costType\":\"Stamina\"", raw, StringComparison.Ordinal);
+        Assert.Contains("\"targetingType\":\"SingleTarget\"", raw, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_retuned_cooldown_is_what_comes_back()
     {
         // The whole point of the exercise: change a number without touching code.

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Accounts;
@@ -162,10 +163,20 @@ builder.Services
 
 builder.Services.AddAuthorization(options => options.AddDikuWebPolicies());
 
-// Configure JSON serialization to handle enum string values for the builder API
+// Enums cross the wire as their names, not their ordinals.
+//
+// TemplateKindConverter came first and stays first, because converters are consulted in order and
+// it is stricter than the general one: it refuses a number outright. The general converter behind
+// it covers every other enum, which is what a bespoke converter per enum could not - an ability's
+// Path, cost type, and targeting mode all serialised as integers until it was added, so the
+// Abilities tab filtered `path === 'Warden'` against a 0 and rendered an empty list.
+//
+// Property-level [JsonConverter] attributes still win over both, so the nullable request enums
+// keep NullableEnumConverter and its tolerance for an unrecognised value.
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new TemplateKindConverter());
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
 // The world builder (PLAN.md §7). Queries and writes are scoped because they own a DbContext;
