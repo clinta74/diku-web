@@ -6,6 +6,7 @@ Add anything noticed while playing here. Cleared as items are done.
 
 - the ability cool downs are a bit to quick. it would be nice to have something show your pending cool downs.
 
-- let's create a UX evaulation. I want to look for best practices, style consistancy, letter casing and spacing, layout spacing, resizablity, and intuitive.
-I don't think we need the Follow my character aldenmoor.millbrook.tavern-common checkbox it can always be enabled.
+- the UX evaluation is written up in [UX.md](UX.md) — eight findings, one of them a live defect
+  (four Remove buttons that ask for a CSS class nobody wrote). The Follow my character checkbox is
+  gone. The rest is a fix list at the end of that document, not yet done.
 

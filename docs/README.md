@@ -11,6 +11,7 @@ stays in the root because it is the first thing a stranger reads.
 | [PlayTestingNotes.md](PlayTestingNotes.md) | The inbox. Anything noticed while playing goes here, and is cleared as it is dealt with. |
 | [PLAYTEST.md](PLAYTEST.md) | The playtesting apparatus: what it is, how a plan is written, and the content a plan builds for itself. |
 | [MOBILE.md](MOBILE.md) | The mobile client — findings, the layout they argue for, and the phases. A proposal rather than a record. |
+| [UX.md](UX.md) | A review of the client against best practice, style consistency, casing, spacing, resizability, and whether it is intuitive. Findings with evidence, ordered by what they cost a user. |
 | [DOCKER.md](DOCKER.md) | Containers and deployment. Setup rather than recovery; the recovery runbook is still Phase 6 work. |
 | [DOCKER_SETUP_SUMMARY.txt](DOCKER_SETUP_SUMMARY.txt) | A snapshot of what the Docker work added, from when it landed. Historical. |
 

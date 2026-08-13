@@ -22,7 +22,7 @@ export function WorldTab() {
   const params = useParams()
   const { worldKey, zoneKey, roomKey, section } = keysFromParams(params)
   const { worlds, rooms, validation, loadZones, loadZone } = useBuilderData()
-  const { occupiedRoom, follow } = useOutletContext<BuilderOutletContext>()
+  const { occupiedRoom } = useOutletContext<BuilderOutletContext>()
   const guard = useNavGuard()
   const compact = useCompactBuilder()
   const [mapOpen, setMapOpen] = useState(false)
@@ -42,22 +42,23 @@ export function WorldTab() {
     void loadZone(zoneKey)
   }, [zoneKey, loadZone])
 
-  // Follow mode: walking re-targets the editor. This must fire only on an *actual move* - a ref
-  // tracks the last room we followed to, so re-runs caused by the navigate identity changing
-  // (which happens on every navigation) do not yank you back off a room you just clicked.
+  // Walking re-targets the editor. This must fire only on an *actual move* - a ref tracks the last
+  // room we followed to, so re-runs caused by the navigate identity changing (which happens on
+  // every navigation) do not yank you back off a room you just clicked.
   // Replace, not push, so a walk does not bury the Back button one entry per room crossed.
+  //
+  // Always on, and it used to be a checkbox. The three things that would have made a switch worth
+  // having are already true of the effect: it moves you only when the character moves, it stands
+  // off a form with unsaved edits, and the ref means clicking a room keeps you there. What was
+  // left was a setting whose off position nobody wanted.
   const followedTo = useRef<string | null>(null)
   useEffect(() => {
-    if (!follow) {
-      followedTo.current = null
-      return
-    }
     if (!occupiedRoom || guard.isDirty()) return
     if (occupiedRoom === followedTo.current) return
     followedTo.current = occupiedRoom
     const [w, z] = occupiedRoom.split('.')
     navigate(toWorldPath(w, `${w}.${z}`, occupiedRoom, section), { replace: true })
-  }, [follow, occupiedRoom, section, navigate, guard])
+  }, [occupiedRoom, section, navigate, guard])
 
   // Room and world/zone changes route through the guard so unsaved prose prompts first.
   const goRoom = (key: string) => guard.run(() => navigate(toWorldPath(worldKey, zoneKey, key)))

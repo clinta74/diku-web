@@ -26,7 +26,6 @@ export default function App() {
   // another device sets it, and choosing a character clears it.
   const [notice, setNotice] = useState<string | null>(null)
   const [currentRoom, setCurrentRoom] = useState<string | null>(null)
-  const [follow, setFollow] = useState(true)
   const focusInputRef = useRef<(() => void) | null>(null)
   const navigate = useNavigate()
   const location = useLocation()
@@ -139,8 +138,6 @@ export default function App() {
                 canBuild ? (
                   <BuilderShell
                     occupiedRoom={currentRoom}
-                    follow={follow}
-                    onFollowChange={setFollow}
                     isAdmin={isAdmin}
                     onClose={() => navigate('/')}
                   />

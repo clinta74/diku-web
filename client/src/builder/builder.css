@@ -43,27 +43,26 @@
   color: #16110a;
 }
 
-/* Follow-my-character toggle, inline in the topbar (no divider/padding from its old spot). */
-.follow-toggle {
+/* Where the character is standing, inline in the topbar. This was a checkbox until following
+   became unconditional; it is a readout now, so it is not interactive and takes no cursor. */
+.follow-room {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.4rem;
   margin: 0;
   color: var(--dim);
   font-size: 0.85em;
   white-space: nowrap;
-  cursor: pointer;
 }
 
-.follow-toggle code {
+.follow-room code {
   max-width: 16rem;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Themed checkboxes wherever the builder uses them - topbar toggle and dialog rows. Dialogs
-   portal to <body>, so these class-scoped rules still reach them once builder.css is loaded. */
-.follow-toggle input[type='checkbox'],
+/* Themed checkboxes wherever the builder uses them. Dialogs portal to <body>, so these
+   class-scoped rules still reach them once builder.css is loaded. */
 .checkbox-row input[type='checkbox'] {
   appearance: none;
   width: 1rem;
@@ -78,19 +77,16 @@
   flex: none;
 }
 
-.follow-toggle input[type='checkbox']:hover,
 .checkbox-row input[type='checkbox']:hover {
   border-color: var(--accent);
 }
 
-.follow-toggle input[type='checkbox']:checked,
 .checkbox-row input[type='checkbox']:checked {
   background: var(--accent);
   border-color: var(--accent);
 }
 
 /* The tick, drawn with a clip-path so it needs no glyph font. */
-.follow-toggle input[type='checkbox']:checked::before,
 .checkbox-row input[type='checkbox']:checked::before {
   content: '';
   width: 0.62rem;
@@ -99,7 +95,6 @@
   clip-path: polygon(41% 68%, 79% 26%, 88% 35%, 41% 86%, 12% 55%, 21% 46%);
 }
 
-.follow-toggle input[type='checkbox']:focus-visible,
 .checkbox-row input[type='checkbox']:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;

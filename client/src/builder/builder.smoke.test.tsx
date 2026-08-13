@@ -91,7 +91,6 @@ interface RenderOpts {
   onClose?: () => void
   initialPath?: string
   occupiedRoom?: string | null
-  follow?: boolean
   /** Admins get the Accounts tab; the default here is the ordinary builder. */
   isAdmin?: boolean
 }
@@ -100,7 +99,6 @@ function renderBuilder({
   onClose = () => {},
   initialPath = '/builder/world',
   occupiedRoom = null,
-  follow = false,
   isAdmin = false,
 }: RenderOpts = {}) {
   return render(
@@ -111,8 +109,6 @@ function renderBuilder({
           element={
             <BuilderShell
               occupiedRoom={occupiedRoom}
-              follow={follow}
-              onFollowChange={() => {}}
               isAdmin={isAdmin}
               onClose={onClose}
             />
@@ -186,13 +182,13 @@ describe('builder shell', () => {
     expect(await screen.findByText(/Select an item template/)).toBeTruthy()
   })
 
-  it('does not snap back to the occupied room when follow is on', async () => {
-    // With follow enabled and the character standing in north-gate, manually selecting a
-    // different room must stick - the follow effect must only re-target on an actual move,
-    // not fight the click (the navigate identity changing must not trigger it).
+  it('does not snap back to the occupied room when a room is clicked', async () => {
+    // Following is unconditional now, so this is the property that replaced the off switch: with
+    // the character standing in north-gate, manually selecting a different room must stick. The
+    // effect may only re-target on an actual move, never fight the click - the navigate identity
+    // changing on every navigation must not trigger it.
     renderBuilder({
       occupiedRoom: 'aldenmoor.millbrook.north-gate',
-      follow: true,
       initialPath: '/builder/world/aldenmoor/millbrook',
     })
 

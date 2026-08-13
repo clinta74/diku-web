@@ -12,14 +12,10 @@ import '../ui/ui.css'
 /** Passed down to the routed tabs via the router Outlet. */
 export interface BuilderOutletContext {
   occupiedRoom: string | null
-  follow: boolean
-  setFollow: (value: boolean) => void
 }
 
 interface BuilderShellProps {
   occupiedRoom: string | null
-  follow: boolean
-  onFollowChange: (value: boolean) => void
   /** Admins get the Accounts tab; builders do not, and the route refuses them as well. */
   isAdmin: boolean
   onClose: () => void
@@ -60,7 +56,7 @@ export function BuilderShell(props: BuilderShellProps) {
   )
 }
 
-function ShellBody({ occupiedRoom, follow, onFollowChange, isAdmin, onClose }: BuilderShellProps) {
+function ShellBody({ occupiedRoom, isAdmin, onClose }: BuilderShellProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const guard = useNavGuard()
@@ -105,16 +101,16 @@ function ShellBody({ occupiedRoom, follow, onFollowChange, isAdmin, onClose }: B
         />
 
         <div className="builder-topbar-right">
-          {tab === 'world' && (
-            <label className="follow-toggle">
-              <input
-                type="checkbox"
-                checked={follow}
-                onChange={(e) => onFollowChange(e.target.checked)}
-              />
-              Follow my character
-              {occupiedRoom && <code className="dim"> {occupiedRoom}</code>}
-            </label>
+          {/* Where the character is standing, shown rather than offered as a setting. Following
+              used to be a checkbox and is now simply how the World tab behaves: it only moves you
+              when you walk, it will not pull you off a form with unsaved edits, and it will not
+              pull you off a room you clicked. With all three of those already true there was
+              nothing left for the checkbox to protect you from, and a setting that is correct in
+              one position is a question nobody needs asked. */}
+          {tab === 'world' && occupiedRoom && (
+            <span className="follow-room" title="The builder follows your character as you walk">
+              Following <code className="dim">{occupiedRoom}</code>
+            </span>
           )}
           <button
             type="button"
@@ -138,7 +134,7 @@ function ShellBody({ occupiedRoom, follow, onFollowChange, isAdmin, onClose }: B
         />
       )}
 
-      <Outlet context={{ occupiedRoom, follow, setFollow: onFollowChange } satisfies BuilderOutletContext} />
+      <Outlet context={{ occupiedRoom } satisfies BuilderOutletContext} />
     </div>
   )
 }

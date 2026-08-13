@@ -1786,9 +1786,10 @@ Then **Phase 7**, the mobile client, planned in full in [MOBILE.md](MOBILE.md).
 - A changelog, or GitHub releases — nothing records what changed between two builds.
 - **Ability cooldowns are too quick, and nothing shows a pending one.** Both halves are real: the
   numbers want a pass, and the client has no surface for them at all.
-- A **UX evaluation** across the client — best practice, style consistency, letter casing and
-  spacing, layout spacing, resizability, and whether it is intuitive. Includes dropping the
-  *Follow my character* checkbox in the builder, which can always be on.
+- The **UX evaluation** is written — [UX.md](UX.md), eight findings. The *Follow my character*
+  checkbox is gone, which is the part the note asked for outright. What is left is the fix list at
+  the end of that document; the top three are minutes each and the largest, resizable builder
+  rails, wants the Pointer Events work Phase 7's M4a is already going to do.
 - `examine` and `stats` are builder-aware; `look`, `inventory`, and `consider` are not.
 - **Claude in the builder** (§13) — assistance with authored prose, starting with descriptions,
   built so that it proposes and never writes. Would be the first outbound HTTP call in `src/`.
