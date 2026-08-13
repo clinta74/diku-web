@@ -25,16 +25,30 @@ public sealed class ShopCommandTests
 
     /// <summary>A shopkeeper stocking one item, authored the way the database delivers it.</summary>
     private static void AddShopkeeper(WorldHarness harness, params string[] sells) =>
-        harness.AddMob(
-            "barkeep",
-            Room,
-            name: "barkeep",
-            behavior: WorldHarness.AsPersisted(new Dictionary<string, object>
-            {
-                ["shopkeeper"] = true,
-                ["type"] = "npc",
-                ["sells"] = new List<object>(sells),
-            }));
+        AddShopkeeper(harness, markup: null, sells);
+
+    /// <summary>The same, priced over base value (PLAN.md §4.13).</summary>
+    /// <remarks>
+    /// The markup goes through <see cref="WorldHarness.AsPersisted"/> like the rest of the bag,
+    /// because a decimal out of jsonb arrives as a <c>JsonElement</c> - the same trap that had
+    /// killed shopkeeper detection, the stock list, and idle emotes.
+    /// </remarks>
+    private static void AddShopkeeper(WorldHarness harness, decimal? markup, params string[] sells)
+    {
+        var behavior = new Dictionary<string, object>
+        {
+            ["shopkeeper"] = true,
+            ["type"] = "npc",
+            ["sells"] = new List<object>(sells),
+        };
+
+        if (markup is not null)
+        {
+            behavior["markup"] = markup.Value;
+        }
+
+        harness.AddMob("barkeep", Room, name: "barkeep", behavior: WorldHarness.AsPersisted(behavior));
+    }
 
     [Fact]
     public void A_shopkeeper_loaded_from_storage_is_recognised_as_one()
@@ -295,6 +309,133 @@ public sealed class ShopCommandTests
 
         Assert.Equal(5, kael.Character.Gold);
         Assert.Empty(harness.World.InventoryOf(kael.CharacterId));
+    }
+
+    [Fact]
+    public void A_marked_up_shop_lists_the_raised_price()
+    {
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        harness.DefineItem("bread", "loaf of bread", slot: null, value: 1);
+        harness.DefineItem("torch", "pitch torch", slot: null, value: 10);
+        AddShopkeeper(harness, markup: 0.1m, "bread", "torch");
+        harness.Drain(kael);
+
+        harness.Execute(kael, "list");
+
+        // Rounded up, so the tenth is visible on the loaf rather than vanishing into it.
+        var text = harness.DrainText(kael);
+        Assert.Contains("loaf of bread: 2 gold", text, StringComparison.Ordinal);
+        Assert.Contains("pitch torch: 11 gold", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Buying_charges_what_the_list_quoted()
+    {
+        // The load-bearing property of the markup: one number reaches the player twice. A `list`
+        // and a `buy` that disagreed would be a bug the player pays for.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        kael.Character.Gold = 50;
+        harness.DefineItem("torch", "pitch torch", slot: null, value: 10);
+        AddShopkeeper(harness, markup: 0.25m, "torch");
+        harness.Drain(kael);
+
+        harness.Execute(kael, "list");
+        Assert.Contains("pitch torch: 13 gold", harness.DrainText(kael), StringComparison.Ordinal);
+
+        harness.Execute(kael, "buy torch");
+
+        Assert.Equal(37, kael.Character.Gold);
+        Assert.Contains(harness.World.InventoryOf(kael.CharacterId), i => i.TemplateKey == "torch");
+    }
+
+    [Fact]
+    public void The_refusal_quotes_the_marked_up_price_too()
+    {
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        kael.Character.Gold = 11;
+        harness.DefineItem("torch", "pitch torch", slot: null, value: 10);
+        AddShopkeeper(harness, markup: 0.25m, "torch");
+        harness.Drain(kael);
+
+        harness.Execute(kael, "buy torch");
+
+        // Affordable at base value, not at this shop's. Quoting the base here would tell a player
+        // they had enough while refusing them.
+        Assert.Equal(11, kael.Character.Gold);
+        Assert.Contains("You need 13 gold", harness.DrainText(kael), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_markup_does_not_move_what_the_shop_pays()
+    {
+        // §4.13: markup is a buy-side dial. "Expensive to buy from" and "pays well" have to stay
+        // two things a builder sets independently.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        var bread = harness.DefineItem("bread", "loaf of bread", slot: null, value: 10);
+        harness.GiveItem(kael, bread);
+        AddShopkeeper(harness, markup: 1.0m, "bread");
+
+        harness.Execute(kael, "sell bread");
+
+        Assert.Equal(5, kael.Character.Gold);
+    }
+
+    [Fact]
+    public void An_unmarked_shop_still_charges_base_value()
+    {
+        // Absence is the neutral value, as it is for every other key in the bag.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        kael.Character.Gold = 50;
+        harness.DefineItem("bread", "loaf of bread", slot: null, value: 5);
+        AddShopkeeper(harness, markup: null, "bread");
+
+        harness.Execute(kael, "buy bread");
+
+        Assert.Equal(45, kael.Character.Gold);
+    }
+
+    [Fact]
+    public void Each_shop_in_a_room_prices_its_own_stock()
+    {
+        // Two traders, one dear and one not. Pricing from the first shopkeeper in the room would
+        // put the smith's markup on the baker's bread.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        kael.Character.Gold = 100;
+        harness.DefineItem("anvil", "iron anvil", slot: null, value: 20);
+        harness.DefineItem("bread", "loaf of bread", slot: null, value: 10);
+
+        harness.AddMob(
+            "smith",
+            Room,
+            name: "smith",
+            behavior: WorldHarness.AsPersisted(new Dictionary<string, object>
+            {
+                ["shopkeeper"] = true,
+                ["sells"] = new List<object> { "anvil" },
+                ["markup"] = 0.5m,
+            }));
+
+        harness.AddMob(
+            "baker",
+            Room,
+            name: "baker",
+            behavior: WorldHarness.AsPersisted(new Dictionary<string, object>
+            {
+                ["shopkeeper"] = true,
+                ["sells"] = new List<object> { "bread" },
+            }));
+
+        harness.Drain(kael);
+
+        harness.Execute(kael, "buy bread");
+
+        Assert.Equal(90, kael.Character.Gold);
     }
 
     [Fact]

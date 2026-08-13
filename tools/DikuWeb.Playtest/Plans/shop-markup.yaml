@@ -1,0 +1,146 @@
+name: A shop that charges over the odds
+about: |
+  The markup a shopkeeper can carry (PLAN.md §4.13), read as a player meets it: a price list, a
+  refusal, a purchase, and a sale back.
+
+  The arithmetic is unit-tested and the shop verbs are engine-tested, so what this adds is the one
+  thing neither can: **the numbers a person reads in sequence**. A markup is only correct if `list`,
+  the refusal, and the receipt all quote the same figure — three separate sentences built in three
+  separate places, which is exactly the shape that drifts. A player who is told a horseshoe costs 10
+  and is then charged 12 has found a bug no assertion about any one of those lines would catch.
+
+  It also puts the rounding rule in front of a reader. A 1-gold nail at 1.25× costs 2, not 1: that
+  is the case from the play note, and the reason the rule rounds up rather than to nearest. On the
+  page it should look deliberate rather than like a shop that cannot count.
+
+  The smith below is built by the apparatus before anyone plays, so this plan carries its own
+  world. The two base values are chosen so the transcript is arithmetic a person can check: 8 gold
+  at 1.25x is 10, and 1 gold is 2.
+
+  Wants an admin for the second half, and degrades honestly without one: the price list and the
+  empty-pocket refusal both run on a character with no money, which is what a new one is. Note that
+  an admin credential is also what builds the fixtures — without one this plan meets an empty
+  smithy, and says so in `fixtures.log` rather than leaving a reader to guess.
+
+  The gold figures assume Millbrook's `itemValue` multiplier is the default 1.0, which is what
+  turns a base value of 8 into an instance worth 8 and a sale back worth 4. If somebody has since
+  tuned that zone the sale line will miss — a real observation about the plan rather than about the
+  shop, and worth reading as such before chasing it.
+
+world:
+  rooms:
+    - key: aldenmoor.millbrook.smithy
+
+  items:
+    - key: horseshoe
+      name: a horseshoe
+      description: A crescent of black iron, still smelling faintly of the forge.
+      icon: "n"
+      value: 8
+    - key: iron-nail
+      name: an iron nail
+      description: Hand-drawn, square in section, and slightly bent.
+      icon: "|"
+      value: 1
+
+  mobs:
+    - key: village-smith
+      name: the village smith
+      description: |
+        Shoulders like a door frame and an apron scorched through in three places. She sells what
+        the forge makes, at what the forge is worth plus what she thinks of you.
+      icon: "s"
+      room: aldenmoor.millbrook.smithy
+      disposition: npc
+      shopkeeper: true
+      markup: 0.25
+      sells: [horseshoe, iron-nail]
+
+cast:
+  - name: Overseer
+    path: Warden
+    role: Admin
+  - name: Trader
+    path: Warden
+
+steps:
+  - actor: Trader
+    do: south
+    wait: { text: "You walk south" }
+  - actor: Trader
+    do: west
+    wait: { text: "The Smithy" }
+    expect: "smith"
+
+  - actor: Trader
+    note: |
+      The price list is where the markup becomes visible at all. Both numbers are the dial doing
+      its job: the horseshoe's 8 gold at 1.25x is 10, and the nail's 1 gold is 2 rather than 1 —
+      rounding to nearest would have left a village smith's markup doing nothing to half the stock.
+    do: list
+    wait: { text: "Shop" }
+    expect:
+      - "horseshoe: 10 gold"
+      - "iron nail: 2 gold"
+
+  - actor: Trader
+    note: |
+      A new character has no money, so the refusal needs no setup. What it must quote is *this
+      shop's* price — telling a player they need 8 gold when 8 gold would still be refused is worse
+      than the refusal itself.
+    do: buy horseshoe
+    expect: "You need 10 gold"
+    expect-not: "You buy"
+
+  - actor: Overseer
+    note: Money by fiat, so the rest of the plan is about the shop rather than about rats.
+    do: set Trader gold 50
+    expect: "gold"
+
+  - actor: Trader
+    do: stats
+    wait: { text: "Gold" }
+    expect: "Gold: 50"
+
+  - actor: Trader
+    note: |
+      The whole plan, in two lines: the receipt has to say the same number the list did.
+    do: buy horseshoe
+    wait: { text: "You buy" }
+    expect: "for 10 gold"
+
+  - actor: Trader
+    note: And the purse has to agree with the receipt, which is the half a player checks later.
+    do: stats
+    wait: { text: "Gold" }
+    expect: "Gold: 40"
+
+  - actor: Trader
+    note: |
+      The rounding case on its own. A nail worth a single gold costs two here — the minimum
+      increase, which is what stops a markup vanishing into cheap stock.
+    do: buy nail
+    wait: { text: "You buy" }
+    expect: "for 2 gold"
+
+  - actor: Trader
+    do: stats
+    wait: { text: "Gold" }
+    expect: "Gold: 38"
+
+  - actor: Trader
+    note: |
+      Selling back is untouched by the markup: half of the item's own value, not half of what this
+      shop charges for it. A dear shop is not automatically a generous one, and a player who bought
+      at 10 and sold at 5 would have found the two dials wired together.
+    do: sell horseshoe
+    wait: { text: "You sell" }
+    expect: "for 4 gold"
+
+  - actor: Trader
+    note: |
+      42, not 43. The spread between 10 out and 4 back is what a markup costs a player who changes
+      their mind, and it is the number worth reading in a transcript rather than deriving.
+    do: stats
+    wait: { text: "Gold" }
+    expect: "Gold: 42"

@@ -48,6 +48,9 @@ public static class MobBehavior
     /// <summary>The behavior key holding the item template keys a shopkeeper sells.</summary>
     public const string SellsKey = "sells";
 
+    /// <summary>The behavior key holding how far over base value a shopkeeper prices its stock.</summary>
+    public const string MarkupKey = "markup";
+
     /// <summary>The behavior key letting a mob wander out of the zone it spawned in.</summary>
     public const string RoamsKey = "roams";
 
@@ -168,4 +171,16 @@ public static class MobBehavior
     /// <summary>The item template keys this shopkeeper offers. Empty when it stocks nothing.</summary>
     public static IReadOnlyList<string> SellsOf(IReadOnlyDictionary<string, object>? behavior) =>
         JsonBag.Strings(behavior, SellsKey);
+
+    /// <summary>
+    /// How far over base value this shopkeeper prices its stock, where <c>0.1</c> means 1.1x
+    /// (PLAN.md §4.13). Zero when it charges base price, which is what absence means.
+    /// </summary>
+    /// <remarks>
+    /// The arithmetic is <see cref="Domain.Items.ShopPricing.Price"/>; this only says what the mob
+    /// asked for. Kept apart because the bag is an Engine concern and the rounding rule is not -
+    /// what a shop charges should be answerable without a mob to hand.
+    /// </remarks>
+    public static decimal MarkupOf(IReadOnlyDictionary<string, object>? behavior) =>
+        JsonBag.Decimal(behavior, MarkupKey);
 }

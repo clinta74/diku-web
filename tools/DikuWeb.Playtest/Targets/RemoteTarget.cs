@@ -73,24 +73,13 @@ public sealed class RemoteTarget(Uri baseAddress, AdminCredentials? admin = null
                 "Pass --admin-user and --admin-password, or run this plan with --hosted.");
         }
 
-        if (_adminClient is null)
+        if (await SignedInAdminAsync(cancellationToken) is not { } signedIn)
         {
-            _adminClient = NewClient();
-
-            var login = await _adminClient.PostAsJsonAsync(
-                "/api/auth/login",
-                new { username = admin.Username, password = admin.Password },
-                cancellationToken);
-
-            if (!login.IsSuccessStatusCode)
-            {
-                _adminClient = null;
-                return PromotionResult.Refused(
-                    $"Could not sign in as '{admin.Username}': {(int)login.StatusCode} {login.StatusCode}.");
-            }
+            return PromotionResult.Refused(
+                $"Could not sign in as '{admin.Username}'.");
         }
 
-        var response = await _adminClient.PatchAsJsonAsync(
+        var response = await signedIn.PatchAsJsonAsync(
             $"/api/admin/accounts/{username}/role",
             new { role = role.ToString() },
             cancellationToken);
@@ -100,6 +89,53 @@ public sealed class RemoteTarget(Uri baseAddress, AdminCredentials? admin = null
             : PromotionResult.Refused(
                 $"The admin API refused to make '{username}' a {role}: " +
                 $"{(int)response.StatusCode} {response.StatusCode}.");
+    }
+
+    /// <inheritdoc />
+    public async Task<BuilderAccess> BuilderAccessAsync(CancellationToken cancellationToken)
+    {
+        if (admin is null)
+        {
+            return BuilderAccess.Refused(
+                "No admin credential was supplied, so a plan's world: fixtures cannot be created. " +
+                "Pass --admin-user and --admin-password, or build the content by hand.");
+        }
+
+        return await SignedInAdminAsync(cancellationToken) is { } client
+            ? BuilderAccess.Granted(client)
+            : BuilderAccess.Refused($"Could not sign in as '{admin.Username}'.");
+    }
+
+    /// <summary>
+    /// The admin's own client, signed in once and kept.
+    /// </summary>
+    /// <remarks>
+    /// One client for promotion and for authoring, because they are the same account: Admin is the
+    /// only role that satisfies a Builder requirement, so nothing needs a second identity. Signing
+    /// in is memoised on the client rather than on a flag — a failed sign-in drops the client so
+    /// the next caller retries rather than reusing a jar with no cookie in it.
+    /// </remarks>
+    private async Task<HttpClient?> SignedInAdminAsync(CancellationToken cancellationToken)
+    {
+        if (_adminClient is not null)
+        {
+            return _adminClient;
+        }
+
+        var client = NewClient();
+
+        var login = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { username = admin!.Username, password = admin.Password },
+            cancellationToken);
+
+        if (!login.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        _adminClient = client;
+        return _adminClient;
     }
 
     public ValueTask DisposeAsync()

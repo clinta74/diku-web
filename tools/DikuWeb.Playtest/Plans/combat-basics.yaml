@@ -11,9 +11,52 @@ about: |
 
   This plan was the one that found "a mob you are fighting can wander out of the room" — it used to
   flag "waited for falls and never saw it", because the rat left one swing into the fight. Fixed;
-  the transcript now shows an exchange running its full length, with another rat wandering *in*
-  partway through, which is the proof that the guard stopped the right mob rather than freezing
-  the zone.
+  the transcript now shows an exchange running its full length.
+
+  The crypt below is the one fixture that builds *geography*: a zone, and two rooms dug down out of
+  the chapel. A room can only be created by digging it, because a room made from nothing has no
+  exit into it — so the passage and the room arrive together, which is how the builder does it too
+  (§7.6). The rats are sentinels, so unlike the hand-built world they are reliably standing there;
+  the wander-out-of-a-fight guard has its own coverage in the suite and does not need a plan to be
+  flaky to prove it.
+
+world:
+  zones:
+    - key: aldenmoor.sunken-crypt
+      name: The Sunken Crypt
+      description: Older than Millbrook, and lower than the water table.
+
+  rooms:
+    - key: aldenmoor.sunken-crypt.crypt-hall
+      from: aldenmoor.millbrook.chapel-nave
+      direction: down
+      zone: aldenmoor.sunken-crypt
+      title: Crypt Hall
+      description: |
+        The stair ends in still air and a smell of wet stone. Bays run off into the dark on both
+        sides, most of them bricked up, one of them not.
+
+    - key: aldenmoor.sunken-crypt.crypt-chapel
+      from: aldenmoor.sunken-crypt.crypt-hall
+      direction: south
+      zone: aldenmoor.sunken-crypt
+      title: The Crypt Chapel
+      description: |
+        A low vault with a broken altar and a floor thick with droppings. Something down here has
+        been eating the candles.
+
+  mobs:
+    - key: crypt-rat
+      name: a rat
+      description: Bigger than the ones upstairs, and entirely unbothered by the light.
+      icon: "r"
+      room: aldenmoor.sunken-crypt.crypt-chapel
+      health: 14
+      level: 1
+      xp: 30
+      gold: 4
+      disposition: passive
+      count: 2
 
 cast:
   - name: Theron

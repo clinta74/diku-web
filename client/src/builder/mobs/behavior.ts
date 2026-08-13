@@ -30,7 +30,31 @@ export interface BehaviorDraft {
   emotes: EmoteDraft[]
   shopkeeper: boolean
   sells: string[]
+  /** How far over base value this shop prices its stock: 0.1 is 1.1x. Zero is base price. */
+  markup: number
   roams: boolean
+}
+
+/**
+ * The asking price for an item at a shop set to this markup — mirrors `ShopPricing.Price`
+ * (PLAN.md §4.13).
+ *
+ * Duplicated in the client on purpose, and only for the preview beside the stock list. The server
+ * is the authority on what a player pays; this exists so a builder turning the dial sees what it
+ * does before saving, which is the same argument §7.5 makes for the multiplier preview.
+ */
+export function shopPrice(baseValue: number, markup: number): number {
+  const base = Math.max(0, Math.trunc(baseValue))
+  if (!Number.isFinite(markup) || markup <= 0) return base
+
+  // Rounded to six places before the ceiling, which the server does not need to do: it holds the
+  // markup as a `decimal`, where 100 x 1.1 is 110. In binary floating point it is
+  // 110.00000000000001, and a ceiling turns that into 111 — a preview a gold over what the shop
+  // actually charges, which is worse than no preview at all. Six places is far below any markup
+  // a builder would type and far above the error being cancelled.
+  const raised = Number((base * (1 + markup)).toFixed(6))
+
+  return Math.max(Math.ceil(raised), base + 1)
 }
 
 export const DISPOSITIONS: Array<{ value: Disposition; label: string; hint: string }> = [
@@ -47,6 +71,12 @@ function asStrings(raw: unknown): string[] {
   if (Array.isArray(raw)) return raw.map((v) => String(v).trim()).filter((v) => v.length > 0)
   if (typeof raw === 'string' && raw.trim().length > 0) return [raw.trim()]
   return []
+}
+
+/** Reads the markup, which may have arrived as a JSON string. Anything else is base price. */
+function asMarkup(raw: unknown): number {
+  const value = typeof raw === 'number' ? raw : Number(raw)
+  return Number.isFinite(value) && value > 0 ? value : 0
 }
 
 /** Reads a number that may have arrived as a JSON string, falling back when it did not. */
@@ -107,6 +137,9 @@ export function readBehavior(behavior: Record<string, unknown> | undefined): Beh
     emotes: asEmotes(behavior?.emotes),
     shopkeeper: behavior?.shopkeeper === true || behavior?.shopkeeper === 'true',
     sells: asStrings(behavior?.sells),
+    // Absent, unreadable, or negative all mean base price, matching the engine: §4.13 keeps
+    // discounting out, so a negative is a typo rather than a cheaper shop.
+    markup: asMarkup(behavior?.markup),
     // Absent means confined, matching the engine: a mob stays in the zone it spawned in unless
     // something says otherwise, so forgetting the key is the safe direction.
     roams: behavior?.roams === true || behavior?.roams === 'true',
@@ -153,9 +186,15 @@ export function writeBehavior(
   if (draft.shopkeeper) {
     next.shopkeeper = true
     next.sells = draft.sells
+
+    // Written only when it says something, like `roams`. Persisting a zero would store the
+    // default as though a builder had decided on it.
+    if (draft.markup > 0) next.markup = draft.markup
+    else delete next.markup
   } else {
     delete next.shopkeeper
     delete next.sells
+    delete next.markup
   }
 
   // Written only when true. The engine reads a missing key as "stays home", so persisting

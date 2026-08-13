@@ -14,7 +14,7 @@ numbers rather than a new set of hand-authored content.
 Play is **PvE by default**; player-versus-player is opt-in per room, through the same extensible
 room-flag registry that carries every other room property (§4.10).
 
-Status: **Phase 5 complete (0–4 and 5.1–5.3). Remaining: Phase 6.**
+Status: **Phase 5 complete (0–4 and 5.1–5.4). Remaining: Phase 6.**
 
 *Playing* works end to end: register, create a character, walk a seeded zone, talk. Inventory,
 equipment, and items work; mob AI emotes and wanders; combat kills, loots, and levels, with XP
@@ -848,6 +848,62 @@ Every knob here is configuration, not a constant:
 | `Death:XpLossMinLevel` | `5` |
 | `Death:RespawnHealthPercent` | `0.25` |
 | `Death:PvpCostsXp` | `false` |
+
+### 4.13 Shop pricing — one markup dial per shopkeeper
+
+A shop sells at the item's base value, optionally raised by a **markup** the builder sets on the
+shopkeeper. `0.1` means 1.1× and `0.25` means 1.25×, so the number reads as *"how much over the
+odds this trader is"* rather than as a price factor to be mentally decremented.
+
+```
+markup <= 0  →  price = base
+markup >  0  →  price = max(ceil(base × (1 + markup)), base + 1)
+```
+
+Four decisions in that, each with a reason:
+
+- **It rounds up, not to nearest.** A shop rounds in its own favour, and a markup that vanishes on
+  cheap goods is a dial that does nothing where most of the stock is. At 1.1× a 1-gold loaf costs
+  2, which is the whole point of setting the dial on a village baker.
+- **A markup always costs at least a gold**, which is what the `base + 1` floor says. Ceiling
+  already guarantees it for any base of 1 or more, so the floor only does work on a base value of
+  zero — where it is still the right answer, because a trader charging nothing is not a trader.
+- **Absence is neutral, and negatives are read as absent.** No key means base price, as a fresh
+  shopkeeper should. A discount shop is a coherent idea and this is deliberately not it: the
+  minimum-increase rule contradicts a discount, so a shop that pays out on a purchase would need
+  its own rule rather than a sign flip on this one.
+- **Sellback is untouched.** What a shop *pays* stays `ShopSellbackPercent × item value`. Markup
+  is a buy-side dial, so a greedy trader is expensive to buy from without also being generous to
+  sell to — one dial for both would make "expensive shop" and "rich shop" the same word.
+
+Stored as `markup` in the mob behavior bag (§4.8), read through `JsonBag` like every other key in
+it, and edited beside the stock list in the mob editor. Not a column: it is one number a builder
+tunes on a mob, which is exactly what the bag is for.
+
+### 4.14 Reading your pack
+
+The inventory listing is prose a player scans, not a data structure, so it collapses:
+
+| Carried | Shown |
+|---|---|
+| one stone | `stone` |
+| three stones | `stone (x3)` |
+| one quest item | `a symbol of support (q)` |
+| two quest items | `a symbol of support (x2 q)` |
+
+- **The quest tag is `(q)`, not `(quest)`.** It sits at the end of every line it applies to and
+  competes with the item's own name for the eye; a single letter reads as a margin note, which is
+  what it is. `examine` still says the whole sentence — *"it is bound to a quest"* — because that
+  is where a player goes when the mark raises a question.
+- **A count and a tag share one parenthesis**, `(x2 q)`. Two brackets in a row on the same line
+  would read as two separate facts about two separate things.
+- **Grouping is by displayed name and by quest-ness, and it is display only.** Nothing about
+  the instances merges: `get`, `drop`, `sell`, and `examine` still act on one item and still match
+  the same way. Quest-ness splits a group because the tag is a statement about what you can *do*
+  with the thing — one sellable stone and one bound stone are not interchangeable, and a line
+  claiming otherwise would mislead about exactly the rule the tag exists to advertise.
+- **Equipped items never stack.** They are listed under their slots, and the slot is the
+  information — two identical rings worn in two places is two facts, not one fact twice.
 
 ---
 
@@ -2072,6 +2128,43 @@ one failed quietly, which is why they needed listing rather than assuming — an
       executor reading a room key and calling `Travel`, which is why that seam exists now rather
       than being invented alongside the spell.
 
+#### 5.4 — From play: the shop dial and the pack listing ✅ **complete**
+
+Three notes off `PlayTestingNotes.md`, all of them about content a builder cannot express or text a
+player cannot read at a glance. None is a bug; each is a system that shipped in its simplest form
+and has now been played long enough to want one more turn of the handle.
+
+- [x] **A shopkeeper carries a markup** (§4.13). One `markup` key in the behavior bag, `0.1`
+      meaning 1.1×, rounded up to the next whole gold with a floor of one gold over base. It moves
+      `list` and `buy` and leaves sellback alone, so *expensive to buy from* and *pays well* stay
+      two different things a builder can set independently. `ShopPricing` in Domain rather than in
+      the command, beside `Multipliers.Resolve`: it is arithmetic over two numbers with no world in
+      it, and the rounding rule wants a unit test rather than a shop.
+      **`buy` prices from the shop the item was matched in**, not from the first shopkeeper in the
+      room. `list` already walked every shop and `buy` already searched every stock list; with one
+      price in the world that was invisible, and with a markup it would put the smith's rates on
+      the baker's bread.
+- [x] **The markup is authorable**, in `MobBehaviorEditor` next to the stock it applies to, with
+      the asking price shown against each stocked item and the base value beside it — the same
+      argument the multiplier preview (§7.5) makes, that a builder tuning a number should see what
+      it does before saving rather than by walking into the shop.
+      **The preview reimplements the formula, and the interesting part is where it cannot.**
+      `decimal` is why the server's version is three lines: in binary floating point 100 × 1.1 is
+      110.00000000000001, so a ceiling in TypeScript charges a gold of representation error. The
+      client rounds to six places before the ceiling; both sides carry the same worked cases in
+      their tests, which is the only thing keeping a preview honest that is a copy by nature.
+- [x] **Quest items are tagged `(q)`** rather than `(quest)` (§4.14). Same rule, shorter mark.
+- [x] **Identical items collapse to one line with a count** — `stone (x3)`, and `(x2 q)` when
+      they are also quest items. Display only; every verb that takes an item still takes one item,
+      which is asserted rather than assumed: `drop stone` against three stones drops one.
+- [x] **Two playtest plans**, because both halves of this are presentation and the suite can only
+      assert that a substring appears (PLAYTEST.md). `shop-markup` walks a player through a price
+      list, a refusal, a purchase, and a sale back, so the *same figure* has to survive four
+      sentences built in four places — the shape that drifts. `the-pack` buys three of one thing
+      and reads the listing. The markup plan needs a shopkeeper that charges over base, which is
+      content rather than commands: it is documented beside the test dummy for a person to build,
+      since a plan cannot author a shop until the `world:` fixture block has something behind it.
+
 ### Phase 6 — Operations
 
 Partly done ahead of schedule — the deployment pipeline landed alongside Phase 5.
@@ -2254,7 +2347,9 @@ and the reasoning behind each phase. The checklist there is the authority; this 
 | Wandering | Turns back at a zone border, crosses it with `roams`, still moves freely inside its own zone, and a mob with no recorded home zone is confined rather than freed — absence resolves to the restrictive value, as it does for room flags. |
 | Giving a multi-word item | Both halves of `give <item> <recipient>` can be several words with no separator, so the split is *found* rather than assumed: every split point is tried and the first where both halves resolve wins. The old code took the first two words and discarded the rest, which `give beer old man` survived only because "old" prefix-matches the old man. Covered both ways round and both at once, plus the two failure messages — each has to quote what the player typed rather than the fragment a bad split left, which is what the reported *"There is no one named glass here."* was. |
 | Offering something a mob will not take | A mob standing in front of you is not "no one". `give` reaches a mob only through a quest turn-in, and the fall-through used to report the recipient as absent — which reads as *"you typed the name wrong"* and sends the player off checking their spelling. Two refusals now, because the situations want different things: a mob quests run through gets *"Try talking first"*, since the usual cause is a quest that is not active yet; a mob in no quest at all does not, because sending someone off to have a conversation that does not exist is worse than saying nothing. |
-| Quest items in the pack | Tagged `(quest)` in the inventory, carried and worn. The refusals already existed; nothing said which items they applied to without examining each one. |
+| Quest items in the pack | Tagged `(q)` in the inventory, carried and worn. The refusals already existed; nothing said which items they applied to without examining each one. |
+| Reading the pack | Identical items collapse with a count and separately when quest-bound, so `(x2)` and `(x2 q)` can both appear in one listing; a single item gains no count; worn items never merge however many share a name. The load-bearing assertion is that **grouping changed no verb** — `get`, `drop`, and `sell` still take one item out of a stack of three, because the collapse is a sentence and not a data structure. |
+| Shop markup | The rounding rule is unit-tested on `ShopPricing` rather than through a shop: up to the next whole gold at every fraction, never less than a gold over base, a base of zero still priced, and absent or negative reading as no markup at all. Through the shop, the two properties that pair with it: `list` and `buy` quote the *same* number — quoting different ones is the shape of bug a player pays for — and sellback is unmoved by any markup. Authored through `AsPersisted`, since a decimal out of jsonb is the same trap the rest of the bag was. |
 | Examining a mob | **Every line calls the mob the same thing.** The condition line said *"It is unhurt."* and the disposition line said *"They are not someone you can fight."* — two pronouns for one mob, a line apart. Picking one does not work: `It` is wrong for the bar maiden and the old man, `They` is wrong for a rat, and nothing in a template says which kind of thing it is. Every line names the subject instead, which reads for both and stays unambiguous with two mobs in the room. |
 | Mob narration | **Every line about a mob goes through `NarrationHelper`, not through string interpolation.** Reported from play: *"old man laughs at something said three tables away."* — the emote path built its sentence by hand, so it was the one place in the game a mob lost its article, and it appended a full stop to a line that already ended in "!". Two aggression lines and a shop refusal had the same shape. Tested on a name with no article of its own (gains one, capitalised), a name authored as "a rat" (not doubled — that assertion read lowercase until now, because the article was already there and only the capital was missing), and a line that ends its own sentence. |
 | Narration | A name authored as "a rat" does not become "an a rat" — asserted on the helper, since it feeds combat, the room listing, and every ability that names a target. A bare noun is unaffected, which is what every existing call site relies on. |
@@ -2322,7 +2417,14 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 
 ## 12. Next step
 
-**Phase 5 is closed, 5.3 included.** Multipliers, world and zone editors, spawners, `questItem`,
+**Phase 5.4 was what play asked for**, and it closed the last of Phase 5: a markup dial on a
+shopkeeper, and an inventory listing that collapses duplicates and marks quest items with a single
+letter. No new system — §4.13 and §4.14 carry the reasoning. One thing the build surfaced that the
+notes had not: **`buy` priced from the first shopkeeper in the room rather than from the one that
+stocks the item.** Invisible while every shop charged base value, and wrong the moment one of them
+did not — the same shape as the bug that made a second shop's stock unbuyable, one layer down.
+
+**Phase 5 is otherwise closed, 5.3 included.** Multipliers, world and zone editors, spawners, `questItem`,
 `baseStats`, ability progression, dormant quests, the cast targeting bugs, seven effect executors,
 all three targeting modes, threat accounting, the quest builder, mob attack effects, parties, the
 XP split, `tell`/`reply`/channels, and `recall` have landed. **Every content type §4 describes can

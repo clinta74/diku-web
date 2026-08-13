@@ -160,20 +160,112 @@ Hosted mode makes the question moot, because the database is thrown away with th
 long-lived server, purge occasionally — and never point the apparatus at production, which the
 account-per-actor design makes obvious enough to state once.
 
-## The test dummy
+## A plan brings its own world
 
-`ability-then-melee` needs a target that survives an opening ability, and the starter world has
-nothing tougher than a city rat. So there is one, built through the builder API:
+The starter seeder lays down rooms and nothing else, so every plan that meets a mob, buys
+something, or picks something up needs content that does not exist in a fresh database. Plans
+declare that content in a `world:` block, and the apparatus **checks it before anyone plays and
+builds what is missing**:
 
-| | |
-|---|---|
-| Template | `test-dummy` — 400 health, no attacks, no experience, no gold, `passive` |
-| Spawner | Zone `aldenmoor.millbrook`, room `aldenmoor.millbrook.well-yard`, target 1, **sentinel** |
+```yaml
+world:
+  zones:
+    - key: aldenmoor.sunken-crypt
+      name: The Sunken Crypt
 
-Sentinel so it never wanders off mid-plan; no attacks and no rewards so a plan measures the thing
-under test rather than the balance. **It exists only in the dev world.** If that database is reset
-it has to be rebuilt from the table above — which is the strongest remaining argument for finishing
-the hosted target, where a plan's `world:` block would carry its own content.
+  rooms:
+    - key: aldenmoor.millbrook.smithy            # verified: it must be there
+    - key: aldenmoor.sunken-crypt.crypt-hall     # dug, because it says where from
+      from: aldenmoor.millbrook.chapel-nave
+      direction: down
+      zone: aldenmoor.sunken-crypt
+      title: Crypt Hall
+
+  items:
+    - key: horseshoe
+      name: a horseshoe
+      value: 8
+    - key: river-stone
+      name: a river stone
+      room: aldenmoor.millbrook.chapel-nave      # a spawner lays them here
+      count: 3
+
+  mobs:
+    - key: village-smith
+      name: the village smith
+      room: aldenmoor.millbrook.smithy
+      disposition: npc
+      shopkeeper: true
+      markup: 0.25
+      sells: [horseshoe, iron-nail]
+```
+
+Every plan in the library now runs against an empty database. That was worth more than it sounds:
+the alternative was a footnote in this file that nobody reads until a plan fails, and the failure
+it produced was the confusing kind — a transcript of a player standing in an empty room typing at
+nobody, which reads exactly like a broken game.
+
+### The five rules
+
+- **Through the builder API, never SQL.** A running server plays an in-memory world owned by one
+  loop thread and loaded at boot (PLAN.md §2.1). A builder edit is a mutation queued into that
+  loop, applied, and written through to Postgres, so it reaches the live world at once. An
+  `INSERT` reaches storage and nothing else: the row would be invisible until a restart, and the
+  plan would then run against a server that really does not have the mob. Same door as the
+  builder, same guarantees, and the apparatus stays a client.
+- **Idempotent by key, and it never reconciles.** Anything already there is left exactly as it is,
+  *including where its numbers differ from the plan's*. A run that quietly re-pointed somebody's
+  hand-built shopkeeper at a plan's markup would be editing a world it was invited to observe. The
+  report says `found` or `made`, and a plan reading oddly against pre-existing content is a
+  question for a person — which is what the whole apparatus is for.
+- **A room is dug, or it is only checked.** A room created from nothing has no exit into it, so it
+  is a room no player can reach and no plan can walk into: a fixture that reports success and
+  leaves the plan exactly as broken. Give it `from` and `direction` and the passage and the room
+  arrive together, which is how the builder does it (§7.6). Without them, a missing room is
+  reported and the plan plays without it.
+- **Mobs are sentinels.** A fixture that wanders off between provisioning and the plan reaching it
+  fails for reasons about mob AI. Anything a plan stands next to and talks to should also be `npc`
+  — a killable quest giver or shopkeeper is a soft-lock (§7.4) — and anything it fights must not
+  be, which is why `test-dummy` is `passive`.
+- **Blocked is never fatal.** A world that could not be authored is one whose plans play against
+  what is actually there. The console says what was found, made, and refused; `fixtures.log` in the
+  run directory has all of it.
+
+It needs an admin credential, because there is no "promote me" endpoint (§7.7) — the same
+`--admin-user`/`--admin-password` a plan with an Admin actor already needs. Admin is the one role
+that satisfies a Builder requirement, so nothing extra is registered and provisioning leaves no
+account behind. Without one, nothing is built and the run says so. `--no-fixtures` skips the whole
+step and plays the world exactly as it stands.
+
+### One timing rule worth knowing
+
+**A spawner is a rule, not an instance.** The loop's spawn sweep runs every 60 pulses (15 s) and is
+what actually stands a mob in a room, so a run that started immediately after provisioning walked
+into an empty one. The first fixtured run showed it exactly: *"You don't see 'rat' here."* and then,
+two seconds later, *"A rat appears."* Nothing was wrong with the fixture, the plan, or the game —
+the run was simply faster than the world. Creating a spawner now costs one 17-second wait before
+the first plan, and only on a run that created one.
+
+### On the numbers a fixture chooses
+
+`shop-markup` prices a horseshoe at 8 and a nail at 1 so its transcript is arithmetic a person can
+check: at 1.25× those are 10 and **2**, and the 2 is the round-up-with-a-minimum rule from §4.13 —
+the half of that feature a reviewer should see land. Its sale-back figure assumes Millbrook keeps
+the default `itemValue` of 1.0, since sellback is half of the *instance's* value rather than half
+of what the smith charges. Tuning that zone moves one line of one plan, which is cheap — but it
+will look like a shop bug if nobody knows.
+
+## What is declared and not built
+
+**`--hosted`** — booting a server in-process against a throwaway database. It says so and exits 2,
+which is the right behaviour for an unbuilt flag. Fixtures took most of what it was for: a plan can
+now build its own content against any server, so the remaining case is wanting a database nobody
+else is using. Two things it would still buy: a run that leaves nothing behind at all (the
+accounts, below), and content authored *fresh* every time rather than found from a previous run.
+
+**Quests** are the one content type a fixture cannot author. Nothing in the library needs one yet —
+`the-pack` reads the quest-item mark off an item flag rather than off a quest, which is the flag's
+actual meaning — but a plan about the talk → fetch → deliver loop would need `quests:` here.
 
 ## The apparatus is a client
 

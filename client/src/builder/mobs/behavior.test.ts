@@ -3,6 +3,7 @@ import {
   DEFAULT_EMOTE_MAX_SECONDS,
   DEFAULT_EMOTE_MIN_SECONDS,
   readBehavior,
+  shopPrice,
   writeBehavior,
 } from './behavior'
 
@@ -20,6 +21,7 @@ describe('readBehavior', () => {
       emotes: [],
       shopkeeper: false,
       sells: [],
+      markup: 0,
       roams: false,
     })
   })
@@ -188,7 +190,14 @@ describe('writeBehavior', () => {
   it('writes the stock as an array of item keys', () => {
     const next = writeBehavior(
       {},
-      { disposition: 'npc', emotes: [], shopkeeper: true, sells: ['bread', 'torch'], roams: false },
+      {
+        disposition: 'npc',
+        emotes: [],
+        shopkeeper: true,
+        sells: ['bread', 'torch'],
+        markup: 0,
+        roams: false,
+      },
     )
 
     expect(next.sells).toEqual(['bread', 'torch'])
@@ -209,5 +218,62 @@ describe('writeBehavior', () => {
     const next = writeBehavior({ roams: true }, { ...readBehavior({ roams: true }), roams: false })
 
     expect(next.roams).toBeUndefined()
+  })
+
+  it('writes a markup only when it is a shop, and only when it says something', () => {
+    // Same rule as roams: a stored zero would record the default as though it were a decision,
+    // and a markup on a mob that keeps no shop is a key nothing will ever read.
+    expect(writeBehavior({}, { ...readBehavior({}), shopkeeper: true, markup: 0 }).markup)
+      .toBeUndefined()
+
+    expect(writeBehavior({}, { ...readBehavior({}), shopkeeper: true, markup: 0.25 }).markup)
+      .toBe(0.25)
+
+    expect(writeBehavior({}, { ...readBehavior({}), shopkeeper: false, markup: 0.25 }).markup)
+      .toBeUndefined()
+  })
+
+  it('clears the markup when a mob stops keeping a shop', () => {
+    const stored = { shopkeeper: true, sells: ['bread'], markup: 0.5 }
+
+    const next = writeBehavior(stored, { ...readBehavior(stored), shopkeeper: false })
+
+    expect(next.markup).toBeUndefined()
+  })
+})
+
+describe('the markup', () => {
+  it('reads a missing, unreadable, or negative markup as base price', () => {
+    // §4.13 keeps discounting out, so a negative is a typo rather than a cheaper shop.
+    expect(readBehavior({}).markup).toBe(0)
+    expect(readBehavior({ markup: 'dear' }).markup).toBe(0)
+    expect(readBehavior({ markup: -0.5 }).markup).toBe(0)
+  })
+
+  it('reads a markup that arrived as a JSON string', () => {
+    // The bag round-trips through jsonb, which is where every reader in this file has been bitten.
+    expect(readBehavior({ markup: '0.25' }).markup).toBe(0.25)
+  })
+
+  it('prices at base value when there is no markup', () => {
+    expect(shopPrice(5, 0)).toBe(5)
+    expect(shopPrice(5, -1)).toBe(5)
+  })
+
+  it('rounds up to the next whole gold and never adds less than one', () => {
+    // The case from play: at 1.1x a 1 gold loaf costs 2, not 1.
+    expect(shopPrice(1, 0.1)).toBe(2)
+    expect(shopPrice(5, 0.1)).toBe(6)
+    expect(shopPrice(10, 0.1)).toBe(11)
+    expect(shopPrice(100, 0.1)).toBe(110)
+    expect(shopPrice(0, 0.1)).toBe(1)
+  })
+
+  it('does not charge a gold of floating-point error', () => {
+    // 100 x 1.1 is 110.00000000000001 in binary floating point, and a bare ceiling makes that
+    // 111 — a preview a gold over what the server, which holds the markup as a decimal, charges.
+    expect(shopPrice(100, 0.1)).toBe(110)
+    expect(shopPrice(20, 0.15)).toBe(23)
+    expect(shopPrice(70, 0.7)).toBe(119)
   })
 })

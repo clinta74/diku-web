@@ -27,7 +27,14 @@ public sealed record Options
     /// <summary>An existing admin, for plans that need an elevated role.</summary>
     public AdminCredentials? Admin { get; init; }
 
-    /// <summary>Skip a plan's <c>world:</c> fixtures and play the world as it stands.</summary>
+    /// <summary>
+    /// Skip a plan's <c>world:</c> fixtures and play the world as it stands.
+    /// </summary>
+    /// <remarks>
+    /// For running against a world somebody built by hand, where the plan's own content would be
+    /// a second version of what is already there under a different key. Nothing is created and
+    /// nothing is checked — the plans simply meet whatever is in front of them.
+    /// </remarks>
     public bool NoFixtures { get; init; }
 
     /// <summary>Print the transcript as it happens as well as writing it.</summary>
@@ -134,6 +141,8 @@ public sealed record Options
           --admin-user <name>     An existing admin, for plans that need an elevated role
           --admin-password <pw>
           --no-fixtures           Play the world as it stands, ignoring plans' world: blocks
+                                  (by default, a plan's content is checked and built if missing —
+                                   which needs the admin credential above)
           --follow                Print the transcript as it happens
           --no-cleanup            Leave the characters this run created in the world
 

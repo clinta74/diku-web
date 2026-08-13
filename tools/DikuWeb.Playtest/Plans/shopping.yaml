@@ -1,13 +1,41 @@
 name: Shopping
 about: |
-  Buying and selling, and the accounting behind them. Needs the bar maiden in The Drowned Rat.
+  Buying and selling, and the accounting behind them.
 
-  This plan wants an admin, and degrades honestly without one: money is granted with `set`
-  rather than earned, because the alternative is killing rats and the starter world keeps exactly
-  one of them — a plan that competes with every other plan for the same mob is a plan that fails
-  for reasons that have nothing to do with shops. Run with --admin-user/--admin-password to get
-  the whole thing; without them the promotion is refused, it is recorded as a problem, and
-  everything up to the first purchase still runs.
+  The baseline of two shop plans, and deliberately the one with no numbers in it: this covers the
+  verbs existing at all and refusing properly. `shop-markup` covers what a shop *charges*, against
+  a smith that prices over base value. The bar maiden here carries **no markup**, which is what
+  makes the pair a contrast — leave her at base value.
+
+  This plan wants an admin, and degrades honestly without one: money is granted with `set` rather
+  than earned, because the alternative is killing rats for it and this world keeps one rat, in
+  this room — a plan that competes with every other plan for the same mob is a plan that fails for
+  reasons that have nothing to do with shops. Run with --admin-user/--admin-password to get the
+  whole thing; without them the promotion is refused, it is recorded as a problem, and everything
+  up to the first purchase still runs. Note that the same credential is what builds the shop.
+
+world:
+  rooms:
+    - key: aldenmoor.millbrook.tavern-common
+
+  items:
+    - key: beer
+      name: a mug of beer
+      description: Brown, warm, and topped with a finger of foam that is mostly optimism.
+      icon: "u"
+      value: 6
+
+  mobs:
+    - key: bar-maiden
+      name: the bar maiden
+      description: |
+        She has been pulling beer here since before the gate rusted, and can tell what you want
+        before you have finished sitting down.
+      icon: "b"
+      room: aldenmoor.millbrook.tavern-common
+      disposition: npc
+      shopkeeper: true
+      sells: [beer]
 
 cast:
   - name: Overseer

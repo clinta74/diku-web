@@ -1,0 +1,158 @@
+name: Reading your pack
+about: |
+  What `inventory` looks like once you are carrying more than one of something (PLAN.md §4.14).
+
+  The listing collapses duplicates to a line with a count — `(x3)` — and marks quest items `(q)`.
+  Both are presentation, which is precisely why they belong here rather than only in the suite: the
+  engine tests assert that the substring appears, and a person reading the transcript is the only
+  one who can say whether a pack of six things is now *readable*. That was the complaint the note
+  came from.
+
+  The load-bearing beat is the one after the listing collapses: `drop` still takes **one** item out
+  of the stack. A count that had become a real stack would look identical in the listing and be a
+  different game.
+
+  This plan carries its own world and needs nothing else — no admin, no money, and no content
+  anybody built by hand. Three stones on the chapel floor is the cheapest way to be holding three
+  identical things, and it beats buying them: a plan that needed gold would need an admin, and a
+  plan that needed a shop would fail for reasons about shops.
+
+world:
+  rooms:
+    - key: aldenmoor.millbrook.chapel-nave
+
+  items:
+    - key: river-stone
+      name: a river stone
+      description: Grey, flat, and worn smooth. The floor is scattered with them.
+      icon: "o"
+      value: 1
+      room: aldenmoor.millbrook.chapel-nave
+      count: 3
+
+    - key: symbol-of-support
+      name: a symbol of support
+      description: |
+        Two hands cut into a disc of pale wood, palms upward. Somebody meant it, and somebody
+        will want it back.
+      icon: "*"
+      value: 5
+      quest-item: true
+      room: aldenmoor.millbrook.chapel-nave
+      count: 1
+
+cast:
+  - name: Packrat
+    path: Warden
+
+steps:
+  - actor: Packrat
+    note: An empty pack should say so in words rather than printing a heading over nothing.
+    do: inventory
+    expect: "aren't carrying anything"
+
+  - actor: Packrat
+    do: south
+    wait: { text: "You walk south" }
+  - actor: Packrat
+    do: south
+    wait: { text: "The Well Yard" }
+  - actor: Packrat
+    do: west
+    wait: { text: "You walk west" }
+  - actor: Packrat
+    do: down
+    wait: { text: "You walk down" }
+    expect: "river stone"
+
+  - actor: Packrat
+    note: One of a thing carries no count. A lone "(x1)" would be noise on every line of every pack.
+    do: get stone
+    wait: { text: "You take" }
+  - actor: Packrat
+    do: inventory
+    wait: { text: "carrying" }
+    expect: "river stone"
+    expect-not: "(x1)"
+
+  - actor: Packrat
+    do: get stone
+    wait: { text: "You take" }
+  - actor: Packrat
+    do: get stone
+    wait: { text: "You take" }
+
+  - actor: Packrat
+    note: |
+      Three of one thing is one line and a count. This is the whole note: before it, a pack with
+      six stones in it was six identical lines pushing everything else off the screen.
+    do: inventory
+    wait: { text: "carrying" }
+    expect:
+      - "river stone"
+      - "(x3)"
+
+  - actor: Packrat
+    note: |
+      And the count is a sentence, not a stack. Dropping takes one — if the collapse had become a
+      real container, this would put all three on the floor and the listing would look the same
+      either way.
+    do: drop stone
+    wait: { text: "You drop" }
+  - actor: Packrat
+    do: inventory
+    wait: { text: "carrying" }
+    expect: "(x2)"
+    expect-not: "(x3)"
+
+  - actor: Packrat
+    note: Picking one back up puts the count where it was, which is the same claim from the other side.
+    do: get stone
+    wait: { text: "You take" }
+  - actor: Packrat
+    do: inventory
+    wait: { text: "carrying" }
+    expect: "(x3)"
+
+  - actor: Packrat
+    note: |
+      Examining reaches one of them and describes a thing rather than a heap — the collapse must
+      not have reached any verb that takes an item.
+    do: examine stone
+    wait: { text: "You examine" }
+    expect: "worn smooth"
+
+  - actor: Packrat
+    note: |
+      A quest item is marked `(q)` at the end of its line — one letter, because the mark sits
+      beside the item's own name and competes with it for the eye. The line the play note asked
+      for, verbatim: "a symbol of support (q)".
+    do: get symbol
+    wait: { text: "You take" }
+  - actor: Packrat
+    do: inventory
+    wait: { text: "carrying" }
+    expect:
+      - "a symbol of support (q)"
+      - "(x3)"
+
+  - actor: Packrat
+    note: The whole sentence lives on examine, which is where a player goes when the mark asks a question.
+    do: examine symbol
+    wait: { text: "You examine" }
+    expect: "bound to a quest"
+
+  - actor: Packrat
+    note: |
+      And the mark advertises a real rule, which is the reason it is worth printing at all: a
+      player who reads `(q)` and then finds the symbol destroyed anyway has been told something
+      false. (The other half of the rule — that a shop refuses to buy one — needs a shopkeeper,
+      and lives in `shop-markup` where there is one.)
+    do: destroy symbol
+    expect: "bound to a quest"
+
+  - actor: Packrat
+    note: Dropping is still allowed, which is the part of the rule people forget. It survives it.
+    do: drop symbol
+    wait: { text: "You drop" }
+    expect-not: "bound to a quest"

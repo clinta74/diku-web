@@ -117,21 +117,104 @@ public sealed class WaitSpec
     public double? Timeout { get; set; }
 }
 
-/// <summary>Content a plan needs, created through the builder API before anyone plays.</summary>
+/// <summary>
+/// Content a plan needs, checked before anyone plays and created where it is missing.
+/// </summary>
+/// <remarks>
+/// <b>Created through the builder API, never by writing rows.</b> The world a running server plays
+/// is an in-memory snapshot owned by one loop thread and loaded at boot (PLAN.md §2.1); a builder
+/// edit is a mutation queued into that loop and written through to Postgres afterwards. SQL run
+/// against the database therefore reaches the *storage* and not the *world* — the fixture would be
+/// invisible until a restart, which is the worst possible failure here, because the plan would run
+/// against a server that genuinely does not have the mob and report it as missing content. Using
+/// the same door the builder uses is also what keeps the apparatus a client (PLAYTEST.md).
+///
+/// Fixtures are matched by key and are idempotent: what is already there is left exactly as it is
+/// rather than reconciled. A plan must never quietly re-point somebody's hand-built content at its
+/// own numbers — if a `village-smith` already exists, the honest outcome is to play against it and
+/// say in the report that the fixture was found rather than made.
+/// </remarks>
 public sealed class WorldFixtures
 {
+    /// <summary>Zones this plan's rooms live in. Made before the rooms that name them.</summary>
+    public IList<ZoneFixture> Zones { get; init; } = [];
+
+    /// <summary>Rooms this plan walks into. Verified; dug only when told where from.</summary>
+    public IList<RoomFixture> Rooms { get; init; } = [];
+
     public IList<MobFixture> Mobs { get; init; } = [];
 
     public IList<ItemFixture> Items { get; init; } = [];
+
+    /// <summary>True when there is nothing here to do.</summary>
+    public bool IsEmpty =>
+        Zones.Count == 0 && Rooms.Count == 0 && Mobs.Count == 0 && Items.Count == 0;
 }
 
-/// <summary>A mob template plus one instance of it, standing somewhere.</summary>
+/// <summary>
+/// A zone a plan's rooms belong to.
+/// </summary>
+/// <remarks>
+/// Left at the default multipliers unless a plan says otherwise, which is the conservative
+/// choice: a zone is the unit difficulty is authored in (§4.4), and a fixture that quietly made
+/// somewhere 2.5x would change what every plan in it is measuring.
+/// </remarks>
+public sealed class ZoneFixture
+{
+    /// <summary>The <c>world.zone</c> key.</summary>
+    public string Key { get; set; } = string.Empty;
+
+    public string Name { get; set; } = string.Empty;
+
+    public string? Description { get; set; }
+}
+
+/// <summary>
+/// A room the plan needs to exist.
+/// </summary>
+/// <remarks>
+/// <b>Verified by default, and dug only when the plan says where from.</b> A room created out of
+/// nothing has no exits leading to it, so it is a room no player can reach and no plan can walk
+/// into — a fixture that reports success and leaves the plan just as broken. Digging is how the
+/// builder makes a room for exactly this reason (§7.6): the exit and the room arrive together.
+/// </remarks>
+public sealed class RoomFixture
+{
+    /// <summary>The full <c>world.zone.room</c> key.</summary>
+    public string Key { get; set; } = string.Empty;
+
+    /// <summary>An existing room to dig from. Null means verify only.</summary>
+    public string? From { get; set; }
+
+    /// <summary>Which way the new room lies from <see cref="From"/>.</summary>
+    public string? Direction { get; set; }
+
+    /// <summary>
+    /// The zone the dug room belongs to, when it is not the one dug from.
+    /// </summary>
+    /// <remarks>
+    /// This is how a plan crosses a zone boundary, which is a thing worth being able to play
+    /// through: the exit is an ordinary exit and the difficulty on the far side of it is not.
+    /// </remarks>
+    public string? Zone { get; set; }
+
+    public string? Title { get; set; }
+
+    public string? Description { get; set; }
+}
+
+/// <summary>A mob template, and a sentinel spawner standing one of them in a room.</summary>
 public sealed class MobFixture
 {
     public string Key { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;
 
+    public string? Description { get; set; }
+
+    public string? Icon { get; set; }
+
+    /// <summary>Where one of these stands. Null creates the template and no spawner.</summary>
     public string? Room { get; set; }
 
     public int Health { get; set; } = 20;
@@ -141,20 +224,46 @@ public sealed class MobFixture
     public int Xp { get; set; }
 
     public int Gold { get; set; }
+
+    /// <summary>passive, aggressive, or npc. Anything a plan stands next to wants npc.</summary>
+    public string Disposition { get; set; } = "passive";
+
+    /// <summary>Whether players can <c>list</c>, <c>buy</c>, and <c>sell</c> here.</summary>
+    public bool Shopkeeper { get; set; }
+
+    /// <summary>Item template keys this shop stocks.</summary>
+    public IList<string> Sells { get; init; } = [];
+
+    /// <summary>How far over base value it prices them: 0.1 is 1.1x (PLAN.md §4.13).</summary>
+    public decimal Markup { get; set; }
+
+    /// <summary>How many stand there. One unless a plan needs a crowd.</summary>
+    public int Count { get; set; } = 1;
 }
 
-/// <summary>An item template plus one instance of it, lying somewhere.</summary>
+/// <summary>An item template, and optionally a spawner laying some in a room.</summary>
 public sealed class ItemFixture
 {
     public string Key { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;
 
+    public string? Description { get; set; }
+
+    public string? Icon { get; set; }
+
+    /// <summary>Where these lie on the ground. Null creates the template and no spawner.</summary>
     public string? Room { get; set; }
 
     public string? Slot { get; set; }
 
     public int Value { get; set; }
+
+    /// <summary>Bound to a quest: cannot be sold or destroyed (PLAN.md §4.9).</summary>
+    public bool QuestItem { get; set; }
+
+    /// <summary>How many lie there. An item spawner counts by room, so this is a resupply target.</summary>
+    public int Count { get; set; } = 1;
 }
 
 /// <summary>

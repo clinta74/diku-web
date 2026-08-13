@@ -44,6 +44,32 @@ public interface IGameTarget : IAsyncDisposable
         string username,
         AccountRole role,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// A client signed in with authority over the builder API, or the reason there is none.
+    /// </summary>
+    /// <remarks>
+    /// This is how a plan's <c>world:</c> fixtures get built. It hands back the apparatus's own
+    /// admin rather than promoting a throwaway account, because Admin is the one role that
+    /// satisfies every requirement (<c>AccountRole.Satisfies</c>) — so the credential a run already
+    /// needs for its Admin actors is enough, and provisioning leaves no extra account behind.
+    ///
+    /// A missing credential is a result rather than a throw, for the same reason a refused
+    /// promotion is: playing a fixtured plan against a server the apparatus cannot author on is
+    /// perfectly ordinary, and the right answer is to say which content is missing and play anyway.
+    /// </remarks>
+    Task<BuilderAccess> BuilderAccessAsync(CancellationToken cancellationToken);
+}
+
+/// <summary>A signed-in client that may author content, or why there is not one.</summary>
+public sealed record BuilderAccess(HttpClient? Client, string? Reason)
+{
+    public static BuilderAccess Granted(HttpClient client) => new(client, null);
+
+    public static BuilderAccess Refused(string reason) => new(null, reason);
+
+    /// <summary>True when content can actually be created.</summary>
+    public bool IsGranted => Client is not null;
 }
 
 /// <summary>

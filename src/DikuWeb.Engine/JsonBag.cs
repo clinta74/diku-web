@@ -57,6 +57,22 @@ public static class JsonBag
             ? value
             : fallback;
 
+    /// <summary>
+    /// Reads a fractional number, falling back when the key is absent or is not one.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="decimal"/> rather than <see cref="double"/> to match the multipliers, which are
+    /// the other authored fractions in this codebase: these are numbers a builder types and then
+    /// expects to see again, and 0.1 that reads back as 0.100000001 is a support question.
+    /// Invariant culture is what makes it survive a machine whose decimal separator is a comma -
+    /// the bag stores JSON, and JSON has one separator.
+    /// </remarks>
+    public static decimal Decimal(IReadOnlyDictionary<string, object>? bag, string key, decimal fallback = 0m) =>
+        Text(bag, key) is { } text &&
+        decimal.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : fallback;
+
     /// <summary>Reads a 64-bit whole number, falling back when the key is absent or is not one.</summary>
     public static long Int64(IReadOnlyDictionary<string, object>? bag, string key, long fallback = 0) =>
         Text(bag, key) is { } text &&

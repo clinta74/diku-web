@@ -11,6 +11,28 @@ about: |
 
   Read the two columns side by side. Both players should be released at the same moment.
 
+  **One** rat, deliberately, and that is the fixture doing something a hand-built world could not
+  promise: two rats in the room would let `kill rat` resolve to a different one for each player,
+  and the plan would quietly stop being about three combatants in one fight — which is the only
+  shape that ever hung.
+
+world:
+  rooms:
+    - key: aldenmoor.millbrook.tavern-common
+
+  mobs:
+    - key: city-rat
+      name: a rat
+      description: Wet fur, a tail like a bootlace, and no fear of anybody at all.
+      icon: "r"
+      room: aldenmoor.millbrook.tavern-common
+      health: 12
+      level: 1
+      xp: 25
+      gold: 3
+      disposition: passive
+      count: 1
+
 cast:
   - name: Bram
     path: Warden

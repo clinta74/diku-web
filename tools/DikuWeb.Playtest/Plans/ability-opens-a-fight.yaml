@@ -9,9 +9,9 @@ about: |
       loot, no corpse, and the player was stuck Fighting: refused every later `kill`, and unable
       to walk out of the room.
 
-  Kick is the Warden's level-1 opener, so this needs no admin and no fixtures — a fresh character
-  can run it. That is deliberate: the plan guarding the most-reported bug should have the fewest
-  reasons not to run.
+  Kick is the Warden's level-1 opener, so a fresh character can run this with no admin and no
+  levelling. That is deliberate: the plan guarding the most-reported bug should have the fewest
+  reasons not to run. The one thing it does need is something to kick, and it builds that itself.
 
   Whether the kick kills outright is a dice roll — it is 1.1x damage with a floor of 3, against a
   city rat with barely more health than that. Both outcomes are worth having, so the plan waits for
@@ -24,8 +24,28 @@ about: |
       9." and then, two seconds later, "You hit a rat for 2 damage. A rat falls."
 
   An earlier version assumed the one-shot and flagged four expectations the first time the dice
-  disagreed. Fixtures will make this deterministic by building a mob that reliably survives an
-  opener; until then, waiting for the outcome rather than predicting it is the honest shape.
+  disagreed. `ability-then-melee` is the deterministic half — a dummy that reliably survives an
+  opener — so this one keeps waiting for the outcome rather than predicting it, which is the
+  honest shape for a plan about a real fight.
+
+  The rat below is the one both this plan and `group-fight-ends` want, declared by both and built
+  once: fixtures are matched by key, so the second plan to ask finds what the first one made.
+
+world:
+  rooms:
+    - key: aldenmoor.millbrook.tavern-common
+
+  mobs:
+    - key: city-rat
+      name: a rat
+      description: Wet fur, a tail like a bootlace, and no fear of anybody at all.
+      icon: "r"
+      room: aldenmoor.millbrook.tavern-common
+      health: 12
+      level: 1
+      xp: 25
+      gold: 3
+      disposition: passive
 
 cast:
   - name: Theron

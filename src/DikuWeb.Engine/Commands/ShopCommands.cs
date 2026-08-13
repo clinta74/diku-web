@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Inhabitants;
@@ -104,7 +105,7 @@ public static class ShopCommands
                     continue;
                 }
 
-                var price = (long)itemTemplate.BaseValue;
+                var price = ShopPricing.Price(itemTemplate.BaseValue, MobBehavior.MarkupOf(template.Behavior));
                 ctx.Reply($"{itemTemplate.Icon} {itemTemplate.Name}: {price} gold");
             }
         }
@@ -167,7 +168,12 @@ public static class ShopCommands
             return;
         }
 
-        var price = (long)itemTemplate.BaseValue;
+        // Priced by the shop that stocks it, not by the first one in the room: the markup belongs
+        // to the trader, so a smith beside a baker must not sell bread at the smith's prices.
+        // `shopkeeperTemplate` is the shop the match came from, which is what makes this hold.
+        var price = ShopPricing.Price(
+            itemTemplate.BaseValue, MobBehavior.MarkupOf(shopkeeperTemplate.Behavior));
+
         if (character.Gold < price)
         {
             ctx.Reply($"You need {price} gold, but only have {character.Gold}.");
@@ -223,6 +229,9 @@ public static class ShopCommands
 
         // Any shopkeeper will take it: sellback is a flat share of the item's value, so which
         // one buys it is not observable. Stock lists are what a shop sells, not what it accepts.
+        // A markup does not reach here either (§4.13) - it is a buy-side dial, so "expensive to
+        // buy from" and "pays well" stay two different things a builder sets independently, and
+        // the choice of which trader takes the item stays unobservable with markups in play.
         var shopkeeperTemplate = ShopkeepersIn(ctx).FirstOrDefault();
         if (shopkeeperTemplate is null)
         {

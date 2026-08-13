@@ -10,9 +10,29 @@ about: |
   about not knowing which; this plan uses a target that cannot die to the opener, so the melee has
   to show up.
 
-  Needs the `test-dummy` in The Well Yard: 400 health, no attacks, no experience, and spawned by a
-  sentinel spawner so it never wanders off. It hits nothing back, which is the point — a plan that
-  has to survive its own target is measuring the balance rather than the thing under test.
+  The dummy below is built by the apparatus before anyone plays: 400 health, no attacks, no
+  experience, and a sentinel spawner so it never wanders off. It hits nothing back, which is the
+  point — a plan that has to survive its own target is measuring the balance rather than the thing
+  under test. `npc` would make it unkillable *and* unattackable, so it is passive instead: the one
+  fixture in the set that has to be hittable.
+
+world:
+  rooms:
+    - key: aldenmoor.millbrook.well-yard
+
+  mobs:
+    - key: test-dummy
+      name: a test dummy
+      description: |
+        Straw, sacking, and a post. It does not fight back and it does not seem to mind, which is
+        more than can be said for anything else in Millbrook.
+      icon: "d"
+      room: aldenmoor.millbrook.well-yard
+      health: 400
+      level: 1
+      xp: 0
+      gold: 0
+      disposition: passive
 
 cast:
   - name: Theron

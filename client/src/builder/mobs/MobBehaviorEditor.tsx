@@ -7,6 +7,7 @@ import {
   DEFAULT_EMOTE_MAX_SECONDS,
   DEFAULT_EMOTE_MIN_SECONDS,
   DISPOSITIONS,
+  shopPrice,
   type BehaviorDraft,
   type Disposition,
   type EmoteDraft,
@@ -154,10 +155,29 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
 
       {draft.shopkeeper && (
         <div className="shop-stock">
+          <Field
+            label="Markup"
+            hint="0 is base price; 0.1 is 1.1×."
+          >
+            <NumberInput
+              min={0}
+              allowDecimal
+              value={draft.markup}
+              onChange={(v) => set({ markup: Math.max(0, v) })}
+            />
+          </Field>
+
+          <p className="dim">
+            {draft.markup > 0
+              ? `This shop charges ${Math.round((1 + draft.markup) * 100)}% of base value, rounded up to the next whole gold and never less than a gold over — so a 1 gold item costs 2.`
+              : 'This shop charges base value. Raise the markup to make it a trader rather than a price list.'}{' '}
+            Selling back always pays half of base value, whatever the markup — a shop that is
+            expensive to buy from is not automatically one that pays well.
+          </p>
+
           <span className="field-label">Sells</span>
           <p className="dim">
-            Priced at each item’s base value. Selling back pays half. Stock is unlimited — buying
-            spawns a fresh instance rather than moving one.
+            Stock is unlimited — buying spawns a fresh instance rather than moving one.
           </p>
 
           {draft.sells.length === 0 && <p className="dim">Nothing stocked yet.</p>}
@@ -169,7 +189,13 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
                 <span className="stock-row">
                   {template ? (
                     <>
-                      {template.name} <span className="dim">· {template.baseValue} gold</span>
+                      {template.name}{' '}
+                      <span className="dim">
+                        {/* The asking price, not the base value: a builder turning the dial should
+                            see what it does here rather than by walking into the shop. */}
+                        · {shopPrice(template.baseValue, draft.markup)} gold
+                        {draft.markup > 0 && ` (base ${template.baseValue})`}
+                      </span>
                     </>
                   ) : (
                     /* The template was deleted out from under the shop. Say so here rather than
@@ -193,7 +219,7 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
               value=""
               options={unstocked.map((t) => ({
                 key: t.key,
-                name: `${t.name || t.key} (${t.baseValue} gold)`,
+                name: `${t.name || t.key} (${shopPrice(t.baseValue, draft.markup)} gold)`,
               }))}
               onChange={(key) => {
                 // Only a real template is added: this field is an "add" action rather than a

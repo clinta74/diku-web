@@ -385,17 +385,20 @@ public sealed class CommandRegistry
         if (equipped.Count > 0)
         {
             spans.Add(new TextSpan("You are wearing/wielding:", "heading"));
+
+            // Worn items are never collapsed, however many share a name: they are listed under
+            // their slots and the slot is the information. Two identical rings in two places is
+            // two facts, not one fact twice (§4.14).
             foreach (var item in equipped.OrderBy(i => i.EquippedSlot))
             {
                 var slot = item.EquippedSlot?.ToString() ?? "Unknown";
-                var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
-                spans.Add(new TextSpan($"\n  [{slot}] {displayName}"));
+                spans.Add(new TextSpan($"\n  [{slot}] {DisplayNameOf(item)}"));
 
                 // Worn quest items are tagged too. A quest reward with a slot is ordinary
                 // content, and it would be odd for the tag to disappear the moment it is put on.
                 if (ItemState.IsQuestItem(item))
                 {
-                    spans.Add(new TextSpan(" (quest)", "dim"));
+                    spans.Add(new TextSpan(" (q)", "dim"));
                 }
             }
         }
@@ -411,18 +414,36 @@ public sealed class CommandRegistry
                 spans.Add(new TextSpan("You are carrying:", "heading"));
             }
 
-            foreach (var item in unequipped.OrderBy(i => i.TemplateKey))
+            // One line per kind of thing carried, with a count (§4.14). A pack holding six stones
+            // is six lines of "stone" otherwise, which pushes everything else off the screen and
+            // reads as a bug. The collapse is a sentence, not a data structure: nothing about the
+            // instances merges, and get / drop / sell / examine still act on one item.
+            foreach (var group in unequipped
+                .GroupBy(i => (Name: DisplayNameOf(i), Quest: ItemState.IsQuestItem(i)))
+                .OrderBy(g => g.Key.Name, StringComparer.OrdinalIgnoreCase))
             {
-                var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
-                spans.Add(new TextSpan($"\n  {displayName}"));
+                spans.Add(new TextSpan($"\n  {group.Key.Name}"));
 
                 // Marked in the list rather than only on examine. A quest item cannot be sold or
                 // destroyed, so a player wondering why the shopkeeper refuses it should be able
                 // to see the reason in the same breath as the refusal - and a pack with three
                 // things in it that will not shift is worth being able to read at a glance.
-                if (ItemState.IsQuestItem(item))
+                //
+                // One parenthesis carries both, because two brackets in a row would read as two
+                // separate facts about two separate things.
+                var count = group.Count();
+
+                if (count > 1 && group.Key.Quest)
                 {
-                    spans.Add(new TextSpan(" (quest)", "dim"));
+                    spans.Add(new TextSpan($" (x{count} q)", "dim"));
+                }
+                else if (count > 1)
+                {
+                    spans.Add(new TextSpan($" (x{count})", "dim"));
+                }
+                else if (group.Key.Quest)
+                {
+                    spans.Add(new TextSpan(" (q)", "dim"));
                 }
             }
         }
@@ -435,6 +456,18 @@ public sealed class CommandRegistry
 
         ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
     }
+
+    /// <summary>
+    /// What to call an item on screen, falling back to its key when the instance carries no name.
+    /// </summary>
+    /// <remarks>
+    /// The fallback matters more than it looks: a nameless line is unmatchable by every verb that
+    /// takes an item, so showing the key at least tells the player what to type. It is also the
+    /// grouping key the pack listing collapses on (§4.14) - by what is displayed rather than by
+    /// the template, because two things a player cannot tell apart should not read as two lines.
+    /// </remarks>
+    private static string DisplayNameOf(ItemInstance item) =>
+        string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
 
     private static void Examine(CommandContext ctx)
     {
@@ -1151,7 +1184,7 @@ public sealed class CommandRegistry
             foreach (var item in equipped.OrderBy(i => i.EquippedSlot))
             {
                 var slot = item.EquippedSlot?.ToString() ?? "Unknown";
-                var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
+                var displayName = DisplayNameOf(item);
                 var statsStr = string.Join(", ", item.ResolvedStats
                     .Where(kv => kv.Key.Contains("Multiplier", StringComparison.OrdinalIgnoreCase))
                     .Select(kv => $"{kv.Key}: {kv.Value}"));

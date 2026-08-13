@@ -1,5 +1,6 @@
 using System.Globalization;
 using DikuWeb.Playtest;
+using DikuWeb.Playtest.Building;
 using DikuWeb.Playtest.Plans;
 using DikuWeb.Playtest.Recording;
 using DikuWeb.Playtest.Running;
@@ -68,6 +69,17 @@ var runDirectory = Path.Combine(
     startedAt.ToString("yyyy-MM-dd'T'HH-mm-ss'Z'", CultureInfo.InvariantCulture));
 
 Directory.CreateDirectory(runDirectory);
+
+// Before anybody plays, not per plan. The content a plan needs is world state: two plans wanting
+// the same smith should find one smith, and a plan that walks past another plan's fixture should
+// see it. Doing this up front also means the whole answer to "is this world ready" arrives in one
+// block a reader can check, rather than dribbling out between transcripts.
+var fixtureLog = await ProvisionAsync(target, plans, options, stopping.Token);
+
+await File.WriteAllTextAsync(
+    Path.Combine(runDirectory, "fixtures.log"),
+    string.Join(Environment.NewLine, fixtureLog),
+    CancellationToken.None);
 
 var reported = new List<ReportedPlan>();
 
@@ -155,6 +167,103 @@ Console.WriteLine(new Uri(Path.GetFullPath(indexPath)).AbsoluteUri);
 // Zero regardless. A playtest is a recording, not a gate: exiting non-zero because a game did
 // something surprising would make this a second test suite, and CI would start ignoring it.
 return 0;
+
+/// <summary>
+/// Puts every plan's <c>world:</c> content in the world, and says what it found and what it made.
+/// </summary>
+/// <remarks>
+/// Never fatal. A world that could not be authored is one whose plans play against what is
+/// actually there, and the transcript of a player standing in a room the fixture never reached is
+/// worth more than a run that refused to start. What must not happen is that going *unsaid* — this
+/// prints, and writes `fixtures.log`, so a plan reading oddly has its explanation in the same run
+/// directory.
+/// </remarks>
+static async Task<IReadOnlyList<string>> ProvisionAsync(
+    IGameTarget target,
+    IReadOnlyList<PlanDocument> plans,
+    Options options,
+    CancellationToken cancellationToken)
+{
+    var wanted = plans
+        .Where(p => p.World is { IsEmpty: false })
+        .Select(p => (p.Name, World: p.World!))
+        .ToList();
+
+    if (wanted.Count == 0)
+    {
+        return [];
+    }
+
+    if (options.NoFixtures)
+    {
+        var skipped = $"--no-fixtures: playing the world as it stands, "
+            + $"and {wanted.Count} plan(s) declare content they may not find.";
+
+        Console.WriteLine(skipped);
+        Console.WriteLine();
+        return [skipped];
+    }
+
+    var access = await target.BuilderAccessAsync(cancellationToken);
+
+    if (!access.IsGranted)
+    {
+        var refused = $"Fixtures not built: {access.Reason}";
+
+        Console.WriteLine(refused);
+        Console.WriteLine();
+        return [refused];
+    }
+
+    var provisioner = new FixtureProvisioner(access.Client!);
+    var lines = new List<string>();
+    var outcomes = new List<FixtureOutcome>();
+
+    foreach (var (name, world) in wanted)
+    {
+        foreach (var outcome in await provisioner.EnsureAsync(world, cancellationToken))
+        {
+            outcomes.Add(outcome);
+            lines.Add($"{name}: {outcome}");
+        }
+    }
+
+    var made = outcomes.Count(o => o.State == FixtureState.Made);
+    var blocked = outcomes.Count(o => o.State == FixtureState.Blocked);
+
+    Console.WriteLine(
+        $"World: {outcomes.Count - made - blocked} fixture(s) already there, {made} made"
+        + (blocked > 0 ? $", {blocked} REFUSED" : string.Empty));
+
+    // Only the interesting halves on the console. Everything is in fixtures.log either way, and a
+    // list of twenty things that were already fine is a list nobody reads.
+    foreach (var line in lines.Where(
+        l => l.Contains(": made ", StringComparison.Ordinal)
+            || l.Contains("COULD NOT", StringComparison.Ordinal)))
+    {
+        Console.WriteLine($"  {line}");
+    }
+
+    // A spawner is a rule, not an instance — the loop's spawn sweep is what stands a mob in a
+    // room, and it runs every 60 pulses (GameTiming.SpawnSweepPulses, 15 s). The first fixtured
+    // run beat it and the transcript read "You don't see 'rat' here." followed two seconds later
+    // by "A rat appears." The number is duplicated rather than referenced because the apparatus
+    // is a client and does not see Engine; if it ever drifts, this waits too little and a plan
+    // says so in the only way it can.
+    if (outcomes.Any(o => o.SpawnPending))
+    {
+        var wait = TimeSpan.FromSeconds(17);
+
+        Console.WriteLine(
+            $"  waiting {wait.TotalSeconds:0}s for the spawn sweep to stand the new content up");
+
+        lines.Add($"waited {wait.TotalSeconds:0}s for the spawn sweep after creating spawners");
+        await Task.Delay(wait, cancellationToken);
+    }
+
+    Console.WriteLine();
+    return lines;
+}
 
 static string Slug(string name)
 {

@@ -143,9 +143,11 @@ public sealed class BuilderDetailTests
 
         harness.Execute(kael, "inventory");
 
+        // One letter, not the word: the tag ends every line it applies to and competes with the
+        // item's own name for the eye. `examine` is where the whole sentence lives.
         var text = harness.DrainText(kael);
-        Assert.Contains("sealed letter (quest)", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("sharp stick (quest)", text, StringComparison.Ordinal);
+        Assert.Contains("sealed letter (q)", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("sharp stick (q)", text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -166,7 +168,125 @@ public sealed class BuilderDetailTests
         harness.Drain(kael);
         harness.Execute(kael, "inventory");
 
-        Assert.Contains("plain circlet (quest)", harness.DrainText(kael), StringComparison.Ordinal);
+        Assert.Contains("plain circlet (q)", harness.DrainText(kael), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Identical_items_collapse_to_one_line_with_a_count()
+    {
+        // Six stones is six lines otherwise, which pushes everything else off the screen and
+        // reads as a bug. Display only - the instances are untouched.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        var stone = harness.DefineItem("stone", "stone", slot: null);
+        harness.GiveItem(kael, stone);
+        harness.GiveItem(kael, stone);
+        harness.GiveItem(kael, stone);
+        harness.Drain(kael);
+
+        harness.Execute(kael, "inventory");
+
+        var text = harness.DrainText(kael);
+        Assert.Contains("stone (x3)", text, StringComparison.Ordinal);
+        Assert.Equal(3, harness.World.InventoryOf(kael.CharacterId).Count);
+    }
+
+    [Fact]
+    public void A_single_item_carries_no_count()
+    {
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        var stone = harness.DefineItem("stone", "stone", slot: null);
+        harness.GiveItem(kael, stone);
+        harness.Drain(kael);
+
+        harness.Execute(kael, "inventory");
+
+        Assert.DoesNotContain("(x1)", harness.DrainText(kael), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_stack_of_quest_items_carries_one_bracket_holding_both()
+    {
+        // Two brackets in a row would read as two separate facts about two separate things.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        var symbol = harness.DefineItem("symbol", "a symbol of support", slot: null);
+        var quest = WorldHarness.AsPersisted(new Dictionary<string, object> { ["questItem"] = true });
+        harness.GiveItem(kael, symbol, quest);
+        harness.GiveItem(kael, symbol, quest);
+        harness.Drain(kael);
+
+        harness.Execute(kael, "inventory");
+
+        Assert.Contains("a symbol of support (x2 q)", harness.DrainText(kael), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Quest_bound_copies_are_counted_apart_from_ordinary_ones()
+    {
+        // The tag says what you may *do* with the thing, so one sellable stone and one bound
+        // stone are not interchangeable. A line claiming otherwise would mislead about exactly
+        // the rule the tag exists to advertise.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        var stone = harness.DefineItem("stone", "stone", slot: null);
+        harness.GiveItem(kael, stone);
+        harness.GiveItem(
+            kael,
+            stone,
+            WorldHarness.AsPersisted(new Dictionary<string, object> { ["questItem"] = true }));
+        harness.GiveItem(
+            kael,
+            stone,
+            WorldHarness.AsPersisted(new Dictionary<string, object> { ["questItem"] = true }));
+        harness.Drain(kael);
+
+        harness.Execute(kael, "inventory");
+
+        var text = harness.DrainText(kael);
+        Assert.Contains("stone (x2 q)", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("stone (x3", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Collapsing_the_listing_changed_no_verb()
+    {
+        // The property that makes the collapse safe: it is a sentence, not a data structure.
+        // `get`, `drop`, and `sell` still take one item out of a stack of three.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        var stone = harness.DefineItem("stone", "stone", slot: null);
+        harness.GiveItem(kael, stone);
+        harness.GiveItem(kael, stone);
+        harness.GiveItem(kael, stone);
+        harness.Drain(kael);
+
+        harness.Execute(kael, "drop stone");
+
+        Assert.Equal(2, harness.World.InventoryOf(kael.CharacterId).Count);
+        Assert.Single(harness.World.ItemsIn(Room));
+    }
+
+    [Fact]
+    public void Two_worn_copies_of_one_item_stay_two_lines()
+    {
+        // Worn items are listed under their slots and the slot is the information: two identical
+        // rings in two places is two facts, not one fact twice.
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        var glove = harness.DefineItem("glove", "leather glove", ItemSlot.Hands);
+        var boot = harness.DefineItem("boot", "leather glove", ItemSlot.Feet);
+        harness.Equip(kael, glove, ItemSlot.Hands);
+        harness.Equip(kael, boot, ItemSlot.Feet);
+        harness.Drain(kael);
+
+        harness.Execute(kael, "inventory");
+
+        var text = harness.DrainText(kael);
+        Assert.Contains("[Hands] leather glove", text, StringComparison.Ordinal);
+        Assert.Contains("[Feet] leather glove", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("(x2)", text, StringComparison.Ordinal);
     }
 
     // -----------------------------------------------------------------------
