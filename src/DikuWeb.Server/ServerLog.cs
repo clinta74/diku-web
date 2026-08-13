@@ -157,6 +157,24 @@ internal static partial class ServerLog
     public static partial void AbilitiesReconciled(ILogger logger, int added, int updated, int removed);
 
     [LoggerMessage(
+        EventId = 1024,
+        Level = LogLevel.Error,
+        Message = "Ability '{Key}' will not work as authored: {Problem}")]
+    public static partial void AbilityInvalid(ILogger logger, string key, string problem);
+
+    [LoggerMessage(
+        EventId = 1025,
+        Level = LogLevel.Warning,
+        Message = "Ability content warning ({Key}): {Problem}")]
+    public static partial void AbilityWarning(ILogger logger, string key, string problem);
+
+    [LoggerMessage(
+        EventId = 1026,
+        Level = LogLevel.Error,
+        Message = "{Count} ability rows would not work as authored. The game will run; those abilities will not.")]
+    public static partial void AbilitiesInvalid(ILogger logger, int count);
+
+    [LoggerMessage(
         EventId = 1020,
         Level = LogLevel.Information,
         Message = "Character '{Name}' was deleted by an administrator")]

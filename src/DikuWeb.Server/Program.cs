@@ -264,6 +264,16 @@ ServerLog.DatabaseConfigured(logger, csb.Host ?? "(unset)", csb.Database ?? "(un
         ServerLog.AbilitiesReconciled(logger, abilities.Added, abilities.Updated, abilities.Removed);
     }
 
+    // Validated on every boot, because the reconcile no longer guarantees the table's shape. A row
+    // can now arrive from a builder, from an import, or from a migration backfill that did not name
+    // it, and every way an ability can be wrong is a way that fails in silence: the cast succeeds,
+    // the cost is spent, and nothing happens.
+    //
+    // Reported, never fatal. A single mistyped effect key must not stop a server from starting -
+    // that trades one broken ability for a world nobody can reach, which is the worse of the two by
+    // a wide margin, and it is the same argument §7.4 makes about a broken world.
+    await ValidateAbilitiesAsync(db, app.Services, logger);
+
     // Seeding stays development-only: it writes starter content, which is a fixture, not schema.
     if (app.Environment.IsDevelopment())
     {
@@ -283,6 +293,48 @@ await app.RunAsync();
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/// <summary>
+/// Checks every ability row against <see cref="AbilityValidator"/> and reports what it finds.
+/// </summary>
+/// <remarks>
+/// This is the load-time half of the validator, and it exists because the reconcile stopped being
+/// authoritative: nothing else now guarantees that what is in the table can actually run. An
+/// ability naming an effect that does not exist, or missing the one parameter its effect reads,
+/// costs its resource and does nothing at all — so without a line in the log the first report is a
+/// player saying a spell feels weak.
+/// </remarks>
+static async Task ValidateAbilitiesAsync(
+    DikuWebDbContext db,
+    IServiceProvider services,
+    ILogger logger)
+{
+    var rows = await db.Abilities.AsNoTracking().ToListAsync();
+    var effects = services.GetRequiredService<EffectRegistry>();
+
+    var problems = AbilityValidator.ValidateSet(rows, effects);
+    var errors = 0;
+
+    foreach (var problem in problems)
+    {
+        var key = string.IsNullOrEmpty(problem.Key) ? "progression" : problem.Key;
+
+        if (problem.Severity == AbilityProblemSeverity.Error)
+        {
+            errors++;
+            ServerLog.AbilityInvalid(logger, key, problem.Message);
+        }
+        else
+        {
+            ServerLog.AbilityWarning(logger, key, problem.Message);
+        }
+    }
+
+    if (errors > 0)
+    {
+        ServerLog.AbilitiesInvalid(logger, errors);
+    }
+}
 
 static string BuildConnectionString(IConfiguration config)
 {
