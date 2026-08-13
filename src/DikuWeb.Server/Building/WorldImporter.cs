@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Persistence;
@@ -60,6 +61,7 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
         await ApplyAsync("zone", bundle.Zones, z => z.Key, ZoneChangeFor);
         await ApplyAsync("item-template", bundle.ItemTemplates, i => i.Key, ItemChangeFor);
         await ApplyAsync("mob-template", bundle.MobTemplates, m => m.Key, MobChangeFor);
+        await ApplyAsync("ability", bundle.Abilities, a => a.Key, AbilityChangeFor);
         await ApplyAsync("room", bundle.Rooms, r => r.Key, RoomChangeFor);
         await ApplyExitsAsync(bundle);
         await ApplyAsync("spawner", bundle.Spawners, s => s.Id.ToString(), SpawnerChangeFor);
@@ -211,6 +213,27 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
         new UpsertMobTemplate(m.Key, m.Name, m.Description, m.Icon, m.Level, m.WanderIntervalPulses,
             m.BaseStats ?? [], m.BaseXp, m.BaseGold, m.Behavior ?? [], m.Loot ?? [], m.Attacks ?? []);
 
+    /// <remarks>
+    /// A missing enum reads as its safe default rather than throwing: the bundle may have been
+    /// written by a build that spelled one differently, and the importer's job is to land what it
+    /// can and report the rest. A wrong Path is visible immediately - the validator refuses a key
+    /// whose prefix does not match it - where a thrown import leaves the whole bundle unapplied.
+    /// </remarks>
+    private static WorldChange AbilityChangeFor(BundleAbility a) =>
+        new UpsertAbility(
+            a.Key,
+            a.Path ?? CharacterPath.Warden,
+            a.UnlockLevel,
+            a.Name,
+            a.Description,
+            a.CostType ?? Domain.Abilities.CostType.Stamina,
+            a.CostValue,
+            a.CooldownPulses,
+            a.CastTimePulses,
+            a.TargetingType ?? Domain.Abilities.TargetingType.SingleTarget,
+            a.EffectKey,
+            new Dictionary<string, string>(a.EffectParams ?? [], StringComparer.Ordinal));
+
     private static WorldChange SpawnerChangeFor(BundleSpawner s) =>
         new UpsertSpawner(s.Id, s.ZoneKey, s.TemplateKey, s.TemplateKind,
             s.RoomKeys ?? [], s.TargetCount, s.RespawnSeconds, s.Wanders);
@@ -309,6 +332,13 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
             .Where(m => mobKeys.Contains(m.Key)).Select(m => m.Key).ToListAsync(cancellationToken))
         {
             found.Add(("mob-template", key));
+        }
+
+        var abilityKeys = Keys(bundle.Abilities, a => a.Key);
+        foreach (var key in await db.Abilities.AsNoTracking()
+            .Where(a => abilityKeys.Contains(a.Key)).Select(a => a.Key).ToListAsync(cancellationToken))
+        {
+            found.Add(("ability", key));
         }
 
         var questKeys = Keys(bundle.Quests, q => q.Key);

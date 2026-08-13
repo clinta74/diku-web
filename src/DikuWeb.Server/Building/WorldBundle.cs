@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Spawning;
@@ -16,10 +18,14 @@ namespace DikuWeb.Server.Building;
 /// This carries <em>content</em> and nothing else: the same eight tables
 /// <c>tools/export-content.sql</c> covers, for the same reasons. Accounts, characters, item
 /// instances, character quests, and the two audit tables are player data and history, and an
-/// import that resurrected deleted characters would be a bug rather than a feature. Abilities are
-/// absent for a different reason - <c>ReconcileAbilitiesAsync</c> rebuilds them from
-/// <c>AbilityCatalogue</c> on every startup, so importing them would write rows the next boot
-/// only has to correct.
+/// import that resurrected deleted characters would be a bug rather than a feature.
+/// </para>
+/// <para>
+/// <b>Abilities travel now, and used to be excluded.</b> The reason they were left out has
+/// expired: <c>ReconcileAbilitiesAsync</c> rebuilt them from <c>AbilityCatalogue</c> on every
+/// startup, so an imported row would have been corrected on the next boot. The reconcile now only
+/// plants what is missing, which makes the table authoritative - and makes this bundle the way a
+/// retune reaches another environment at all.
 /// </para>
 /// <para>
 /// Entities are stored flat and keyed rather than nested under their parents. A room names its
@@ -38,6 +44,7 @@ public sealed record WorldBundle(
     IReadOnlyList<BundleRoom> Rooms,
     IReadOnlyList<BundleItemTemplate> ItemTemplates,
     IReadOnlyList<BundleMobTemplate> MobTemplates,
+    IReadOnlyList<BundleAbility> Abilities,
     IReadOnlyList<BundleSpawner> Spawners,
     IReadOnlyList<BundleQuest> Quests)
 {
@@ -50,6 +57,11 @@ public sealed record WorldBundle(
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
     ///
+    /// <b>3 because abilities travel now.</b> A version 2 bundle carries no abilities at all, so
+    /// reading one as version 3 would import an empty ability list - and, if a "replace" mode ever
+    /// existed, would read as "this environment should have none". Refusing is the honest answer:
+    /// the older file genuinely cannot say what this one is being asked to.
+    ///
     /// <b>2 because a spawner's wander setting changed shape and meaning.</b> Version 1 carried
     /// <c>sentinel: bool</c>, where false was the value every spawner had by default and meant
     /// *"these mobs wander"*. Version 2 carries <c>wanders: bool?</c>, where absent means *"follow
@@ -57,7 +69,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 2;
+    public const int CurrentFormatVersion = 3;
 }
 
 /// <summary>
@@ -116,6 +128,33 @@ public sealed record BundleItemTemplate(
     int? AttackDelayPulses,
     string? AttackVerb,
     bool IsQuestItem);
+
+/// <summary>
+/// One ability, whole. Unlike a zone-scoped entity there is nothing to scope an ability *to* -
+/// abilities belong to a Path, not to a zone - so a scoped export carries all of them or none.
+/// </summary>
+/// <remarks>
+/// Carried in full rather than as a diff against the catalogue, for the reason the catalogue
+/// stopped being authoritative: the target environment's catalogue may not be this build's, and a
+/// bundle that only said "cooldown 48" would mean different things depending on what it landed
+/// beside.
+/// </remarks>
+public sealed record BundleAbility(
+    string Key,
+    [property: JsonConverter(typeof(NullableEnumConverter<CharacterPath>))]
+    CharacterPath? Path,
+    int UnlockLevel,
+    string Name,
+    string Description,
+    [property: JsonConverter(typeof(NullableEnumConverter<CostType>))]
+    CostType? CostType,
+    int CostValue,
+    long CooldownPulses,
+    long? CastTimePulses,
+    [property: JsonConverter(typeof(NullableEnumConverter<TargetingType>))]
+    TargetingType? TargetingType,
+    string EffectKey,
+    Dictionary<string, string>? EffectParams);
 
 public sealed record BundleMobTemplate(
     string Key,

@@ -328,11 +328,14 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
     [Fact]
     public async Task A_bundle_from_the_previous_format_version_is_refused()
     {
-        // Version 1 carried `sentinel: bool` on a spawner, where false was the value every row had
-        // by default and meant "these mobs wander". Version 2 carries `wanders: bool?`, where
-        // absent means "follow the template". Read as v2 a v1 bundle deserialises the missing key
-        // to null, so every spawner in it changes behaviour without a word - the silent partial
-        // apply the version number exists to refuse, arriving through a rename rather than
+        // Written against the version immediately behind the current one, so this keeps testing
+        // the real boundary as the format moves rather than an increasingly historical number.
+        //
+        // Each bump so far has been a case where the older file cannot say what the newer one is
+        // asked to. v1 -> v2: a spawner's `sentinel: bool` became `wanders: bool?`, so a v1 bundle
+        // read as v2 deserialises the missing key to null and every spawner in it changes
+        // behaviour without a word. v2 -> v3: abilities travel now, and a v2 bundle carries none,
+        // so reading one would import an empty ability list. Both are the silent partial
         // through a new field.
         var factory = postgres.App;
         using var client = NewClient(factory);
@@ -342,7 +345,7 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
         var json = (await ExportZoneJsonAsync(client, content.ZoneKey))
             .Replace(
                 $"\"formatVersion\":{WorldBundle.CurrentFormatVersion}",
-                "\"formatVersion\":1",
+                $"\"formatVersion\":{WorldBundle.CurrentFormatVersion - 1}",
                 StringComparison.Ordinal);
 
         var response = await client.PostAsync(
@@ -350,6 +353,94 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
             new StringContent(json, Encoding.UTF8, "application/json"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // -----------------------------------------------------------------------
+    // Abilities
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task A_bundle_carries_abilities_whatever_the_scope()
+    {
+        // An ability belongs to a Path, not to a zone, so there is nothing to scope it by - and a
+        // zone bundle that carried none would move a crypt into an environment where the abilities
+        // meant to fight through it are whatever that server happened to have.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var content = await AuthorZoneAsync(client);
+        var bundle = await ExportZoneAsync(client, content.ZoneKey);
+
+        var keys = KeysOf(bundle, "abilities");
+
+        Assert.Contains("warden.kick", keys);
+        Assert.Contains("hallow.intercession", keys);
+    }
+
+    [Fact]
+    public async Task An_import_restores_a_retuned_cooldown()
+    {
+        // The delivery path for a retune, end to end: export, change the number here, import, and
+        // the exported value is what comes back. This is what replaced the old arrangement where
+        // the startup reconcile pushed catalogue values over whatever was stored.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var content = await AuthorZoneAsync(client);
+        var json = await ExportZoneJsonAsync(client, content.ZoneKey);
+
+        var before = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri("/api/builder/abilities/warden.kick", UriKind.Relative)));
+        var exported = before.GetProperty("cooldownPulses").GetInt64();
+
+        (await client.PatchAsJsonAsync(
+            "/api/builder/abilities/warden.kick",
+            new { cooldownPulses = exported + 40 })).EnsureSuccessStatusCode();
+
+        var report = await ImportAsync(client, json);
+        Assert.True(report.GetProperty("failures").GetArrayLength() == 0, Raw(report));
+
+        var after = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri("/api/builder/abilities/warden.kick", UriKind.Relative)));
+
+        Assert.Equal(exported, after.GetProperty("cooldownPulses").GetInt64());
+    }
+
+    [Fact]
+    public async Task An_ability_authored_here_survives_an_import()
+    {
+        // An import is a merge, not a mirror (§6.1). A bundle that does not mention an ability
+        // must not be read as "this environment should not have it" - the same rule that keeps a
+        // zone import from deleting another zone.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var content = await AuthorZoneAsync(client);
+        var json = await ExportZoneJsonAsync(client, content.ZoneKey);
+
+        var key = $"shade.local{Guid.NewGuid():N}"[..22];
+        (await client.PostAsJsonAsync($"/api/builder/abilities/{key}", new
+        {
+            path = "Shade",
+            unlockLevel = 4,
+            name = "Local Only",
+            description = "Authored after the export.",
+            costType = "Stamina",
+            costValue = 9,
+            cooldownPulses = 16,
+            targetingType = "SingleTarget",
+            effectKey = "damage.physical",
+            effectParams = new Dictionary<string, string> { ["scalingFactor"] = "1.1" },
+        })).EnsureSuccessStatusCode();
+
+        await ImportAsync(client, json);
+
+        var still = await client.GetAsync(new Uri($"/api/builder/abilities/{key}", UriKind.Relative));
+
+        Assert.Equal(HttpStatusCode.OK, still.StatusCode);
     }
 
     [Fact]

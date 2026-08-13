@@ -60,6 +60,12 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
 
         var (items, mobs) = await TemplatesAsync(kind, spawners, quests, cancellationToken);
 
+        // Every ability, whatever the scope. An ability belongs to a Path rather than to a zone,
+        // so there is nothing to filter it by - and a zone bundle that carried none would move a
+        // crypt into an environment where the abilities meant to fight through it are whatever
+        // that server happened to have.
+        var abilities = await AbilitiesAsync(cancellationToken);
+
         return new WorldBundle(
             WorldBundle.CurrentFormatVersion,
             clock.GetUtcNow(),
@@ -69,8 +75,23 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
             rooms,
             items,
             mobs,
+            abilities,
             spawners,
             quests);
+    }
+
+    private async Task<IReadOnlyList<BundleAbility>> AbilitiesAsync(CancellationToken cancellationToken)
+    {
+        var abilities = await db.Abilities.AsNoTracking()
+            .OrderBy(a => a.Path)
+            .ThenBy(a => a.UnlockLevel)
+            .ThenBy(a => a.Key)
+            .ToListAsync(cancellationToken);
+
+        return [.. abilities.Select(a => new BundleAbility(
+            a.Key, a.Path, a.UnlockLevel, a.Name, a.Description, a.CostType, a.CostValue,
+            a.CooldownPulses, a.CastTimePulses, a.TargetingType, a.EffectKey,
+            new Dictionary<string, string>(a.EffectParams, StringComparer.Ordinal)))];
     }
 
     // -----------------------------------------------------------------------

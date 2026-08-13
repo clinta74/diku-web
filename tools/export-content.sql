@@ -4,12 +4,12 @@
 -- a hand-written copy of the schema, and nothing compiles or tests this file. When
 -- `spawners.sentinel` was renamed to `wanders`, this script went on emitting `sentinel` and would
 -- have produced an export that failed to load, and an existing backup that no longer applied. The
--- fault surfaced only because somebody went looking. **Rename a column in one of the eight tables
+-- fault surfaced only because somebody went looking. **Rename a column in one of the nine tables
 -- below and you must edit this file in the same commit.** The JSON path (§6.1) has tests behind it
 -- and should be preferred for anything that can use it; this one is guarded by nothing but reading.
 --
 -- PLAN.md §6 makes Postgres the only source of truth for content: there are no world files, so
--- everything a builder authored lives in these eight tables and nowhere else. That is fine until
+-- everything a builder authored lives in these nine tables and nowhere else. That is fine until
 -- the database has to be thrown away - a migration squash, a schema experiment, a fresh start -
 -- at which point the world goes with it and the only record of the Sunken Crypt is somebody's
 -- memory of having dug it.
@@ -23,21 +23,31 @@
 -- readable, diffable, and can be applied to a database that has already been seeded, with no
 -- running application in the picture at all.
 --
--- What it exports: worlds, zones, rooms, room_exits, mob_templates, item_templates, spawners,
--- quests. What it does not: accounts, characters, item_instances, character_quests, and the two
--- audit tables - those are player data and history, not content, and a content restore that
--- resurrected deleted characters would be a bug rather than a feature. Abilities are absent for
--- a different reason: `ReconcileAbilitiesAsync` rebuilds them from `AbilityCatalogue` on every
--- startup, so exporting them would restore rows the next boot only has to correct.
+-- What it exports: worlds, zones, rooms, room_exits, mob_templates, item_templates, abilities,
+-- spawners, quests. What it does not: accounts, characters, item_instances, character_quests, and
+-- the two audit tables - those are player data and history, not content, and a content restore
+-- that resurrected deleted characters would be a bug rather than a feature.
+--
+-- Abilities used to be excluded here too, because `ReconcileAbilitiesAsync` rebuilt them from
+-- `AbilityCatalogue` on every startup and an exported row would have been overwritten on the next
+-- boot. That reconcile now only plants what is missing, so the table is authoritative and an
+-- ability is content like everything else above.
 --
 -- Every statement is an upsert, which is what makes the output order-independent against the
 -- seeder. Apply it to a freshly seeded database and the twelve Millbrook rooms are updated in
 -- place with whatever they had actually become; apply it to a bare migrated one and they are
 -- inserted. Neither needs to know which happened.
 --
---   docker exec dikuweb-postgres psql -U dikuweb -d dikuweb -At -f /path/export-content.sql
+--   docker exec dikuweb-postgres psql -U dikuweb -d dikuweb -q -f /path/export-content.sql
 --
--- or, from the repo, `tools/export-content.ps1`.
+-- or, from the repo, `tools/export-content.ps1`, which is the same command.
+--
+-- **`-q` is not optional.** Without it psql echoes "Output format is unaligned." from the \pset
+-- below as the first line of the output, and that line is not SQL - re-applying the export then
+-- fails immediately with a syntax error, before a single row is restored. The header here
+-- documented `-At` for a long time and would have produced exactly that file. Found by running
+-- the round trip rather than by reading, which is the argument §6.1 makes for rehearsing a
+-- restore instead of believing in one.
 
 \pset tuples_only on
 \pset format unaligned
@@ -117,6 +127,24 @@ select format(
     key, name, description, icon, slot, weight, base_value,
     base_stats, attack_delay_pulses, attack_verb, is_quest_item)
 from item_templates order by key;
+
+select '';
+select '-- abilities';
+-- Carried since abilities became authoritative in the table rather than rebuilt from
+-- AbilityCatalogue on every startup. Before that an exported ability was noise: the next boot
+-- overwrote whatever was restored.
+select format(
+    'INSERT INTO abilities (key, path, unlock_level, name, description, cost_type, cost_value, '
+    || 'cooldown_pulses, cast_time_pulses, targeting_type, effect_key, effect_params) '
+    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L) ON CONFLICT (key) DO UPDATE SET '
+    || 'path = EXCLUDED.path, unlock_level = EXCLUDED.unlock_level, name = EXCLUDED.name, '
+    || 'description = EXCLUDED.description, cost_type = EXCLUDED.cost_type, '
+    || 'cost_value = EXCLUDED.cost_value, cooldown_pulses = EXCLUDED.cooldown_pulses, '
+    || 'cast_time_pulses = EXCLUDED.cast_time_pulses, targeting_type = EXCLUDED.targeting_type, '
+    || 'effect_key = EXCLUDED.effect_key, effect_params = EXCLUDED.effect_params;',
+    key, path, unlock_level, name, description, cost_type, cost_value,
+    cooldown_pulses, cast_time_pulses, targeting_type, effect_key, effect_params)
+from abilities order by path, unlock_level, key;
 
 select '';
 select '-- spawners';
