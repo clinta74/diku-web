@@ -369,6 +369,88 @@ public sealed class AbilityCatalogueTests
         Assert.DoesNotContain("shade.strike", warden);
     }
 
+    /// <summary>
+    /// Every cooldown is a whole number of two-second combat beats.
+    /// </summary>
+    /// <remarks>
+    /// A swing is 8 pulses (PLAN.md §2.3), so a cooldown that is not a multiple of it never lines
+    /// up with the fight: at 20 pulses an opener is ready at 5s, 10s, 15s while swings land at 2s,
+    /// 4s, 6s, and the two drift against each other for as long as the fight lasts. Fourteen of
+    /// the thirty-seven were fractional before the retune.
+    ///
+    /// Held on the shipped set rather than in <c>AbilityValidator</c> on purpose. It is a design
+    /// rule for the game's own abilities, not a law about all possible ones - warning a builder
+    /// who types 30 would be nagging about a number that works.
+    /// </remarks>
+    [Fact]
+    public void Every_cooldown_lands_on_the_combat_beat()
+    {
+        const int PulsesPerSwing = 8;
+
+        var offBeat = AbilityCatalogue.All
+            .Where(e => e.CooldownPulses % PulsesPerSwing != 0)
+            .Select(e => $"{e.Key} at {e.CooldownPulses} pulses ({e.CooldownPulses / 8.0:0.##} beats)")
+            .ToList();
+
+        Assert.True(offBeat.Count == 0, "Off the beat:\n  " + string.Join("\n  ", offBeat));
+    }
+
+    /// <summary>
+    /// Nothing with a duration outlasts its own cooldown.
+    /// </summary>
+    /// <remarks>
+    /// Buffs, debuffs, and wounds all refresh rather than stack, so a duration longer than the
+    /// cooldown means the effect can be held up permanently and the cooldown does nothing at all.
+    /// Ten of the eleven timed effects were in that state - Weaken at 200% uptime, Scorch at 225%
+    /// - which is why the retune's largest moves are all on this list rather than on the damage
+    /// abilities the original playtest note was about.
+    ///
+    /// Two exceptions, both deliberate rather than tolerated:
+    ///
+    /// <b>A wound may exactly equal its cooldown.</b> Re-applying a damage-over-time as it falls
+    /// off *is* the rotation, and 100% uptime on it is not free power the way a permanent buff is
+    /// - each application costs the resource and the turn again, and the damage is the whole
+    /// point of the ability. What is still wrong for a wound is a duration *longer* than the
+    /// cooldown, which lets a second application land on top of the first.
+    ///
+    /// <b>Ambush stacks to three</b>, so it is meant to be re-applied inside its own duration. At
+    /// its old 28-pulse cooldown it could never reach even two: the first expired before a third
+    /// could land.
+    /// </remarks>
+    [Fact]
+    public void No_timed_effect_can_be_maintained_permanently()
+    {
+        var permanent = new List<string>();
+
+        foreach (var entry in AbilityCatalogue.All)
+        {
+            if (Read(entry, "durationPulses") is not { } duration || duration <= 0)
+            {
+                continue;
+            }
+
+            if ((Read(entry, "maxStacks") ?? 1) > 1)
+            {
+                continue;
+            }
+
+            // A wound is allowed to be re-applied exactly as it expires; a buff or debuff at that
+            // point has a cooldown that does nothing.
+            var overlaps = entry.EffectKey == "damage.overtime"
+                ? duration > entry.CooldownPulses
+                : duration >= entry.CooldownPulses;
+
+            if (overlaps)
+            {
+                permanent.Add(
+                    $"{entry.Key} ({entry.EffectKey}) lasts {duration} on a " +
+                    $"{entry.CooldownPulses} cooldown ({duration / entry.CooldownPulses:P0} uptime)");
+            }
+        }
+
+        Assert.True(permanent.Count == 0, "Permanently maintainable:\n  " + string.Join("\n  ", permanent));
+    }
+
     [Fact]
     public void Every_ability_costs_something()
     {

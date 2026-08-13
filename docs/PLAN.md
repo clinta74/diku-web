@@ -527,6 +527,29 @@ Four Paths chosen at creation: **Warden** (armored frontline), **Adept** (focus-
 **Shade** (stealth/burst), **Hallow** (support/control). A Path grants an ability list and
 shapes stat growth; it does not hard-gate equipment.
 
+**Abilities are content, held in the `abilities` table.** `AbilityCatalogue` is the set a fresh
+database is seeded with — the same standing as the Millbrook rooms — and stops being consulted the
+moment a row exists; the startup reconcile plants what is missing and never updates or deletes, so
+a retune survives a restart. The table carries `path` and `unlock_level` as well as the mechanics,
+because *who learns this and when* is as much a tuning decision as a cooldown. **Passives are the
+exception and stay in code**: parry, dual-wield, and ambidextrous have no row, no cost, and nothing
+to target, so they are Path-and-level thresholds the combat system reads directly. That is two
+sources for "what does this Path get at level N", held apart by a rule rather than by memory — an
+ability key must begin with its Path's name, no Path is called `passive`, so the namespaces cannot
+collide.
+
+Because a free jsonb parameter bag fails silently — an effect skips a key it does not recognise, so
+a plausible misspelling produces an ability that costs its resource and does nothing —
+`AbilityValidator` runs on every save and on every boot. It refuses an unknown effect key, a
+missing required parameter, a buff below 1.0, a debuff on the wrong multiplier, and a wound that
+expires before it ticks; it warns about progression shape. This is the one place in the builder API
+that refuses on content grounds rather than following §7.4, and the reason is that a broken exit
+announces itself the moment somebody walks into it while a broken ability never does.
+
+**Cooldowns are whole numbers of the 2-second combat beat** (§2.3), and their length follows how
+much an ability changes the fight — for anything with a duration, *duration ÷ target uptime*, so
+nothing with a refresh rule can be held up permanently.
+
 *The fourth Path was called **Channeler** through Phase 5. "Hallow" says what it does — a name
 that reads as healing at a glance, while still covering Wither, Sap, and Enfeeble, which "Mender"
 would have misdescribed. Renamed while it was cheap: `characters.path` stores the enum's name, so
@@ -1784,8 +1807,19 @@ Then **Phase 7**, the mobile client, planned in full in [MOBILE.md](MOBILE.md).
 **Open, from playtesting** ([PlayTestingNotes.md](PlayTestingNotes.md) is the live inbox):
 
 - A changelog, or GitHub releases — nothing records what changed between two builds.
-- **Ability cooldowns are too quick, and nothing shows a pending one.** Both halves are real: the
-  numbers want a pass, and the client has no surface for them at all.
+- **Ability cooldowns are retuned; the pending-cooldown display is not built.** The numbers went
+  first because the note understated the problem: ten of the eleven timed effects had a duration
+  *longer than their own cooldown* and all of them refresh, so buffs and debuffs were permanently
+  maintainable and the cooldown was decorative — Weaken sat at 200% uptime. Every cooldown is now a
+  whole number of 2-second combat beats, since a swing is 8 pulses and anything else drifts against
+  the fight forever; 14 of 37 were fractional. Length follows impact, and for a timed effect that
+  means *duration ÷ target uptime*. Ambush moved *down*, because it is authored to stack three
+  times and at 28 pulses could never reach two.
+  What is left is the UI half, and it is the larger one: the client has never heard of abilities.
+  `EventTypes` is `text`/`room`/`map`/`contents`/`vitals`/`sys`, so a fire event would arrive at a
+  client with nothing to grey out. It needs an `abilities` roster event carrying remaining cooldown
+  per ability — which also resyncs a reconnect for free — and a `cooldown` event on cast, with the
+  client counting down locally rather than the server ticking one per pulse.
 - The **UX evaluation** is written — [UX.md](UX.md), eight findings. The *Follow my character*
   checkbox is gone, which is the part the note asked for outright. What is left is the fix list at
   the end of that document; the top three are minutes each and the largest, resizable builder

@@ -203,12 +203,12 @@ public static class AbilityCatalogue
         // a staff, or empty hands was still being told they slashed.
         new(CharacterPath.Warden, 1, "warden.kick", "Kick",
             "A boot to the knee. Nothing elegant, and it does not care what you are holding.",
-            CostType.Stamina, 10, 20, null, TargetingType.SingleTarget,
+            CostType.Stamina, 10, 24, null, TargetingType.SingleTarget,
             "damage.physical", Damage("1.1", "3")),
 
         new(CharacterPath.Warden, 3, "warden.bash", "Bash",
             "Put your shoulder behind it. Slower, and it lands heavier.",
-            CostType.Stamina, 15, 24, null, TargetingType.SingleTarget,
+            CostType.Stamina, 15, 32, null, TargetingType.SingleTarget,
             "damage.physical", Damage("1.4", "5")),
 
         new(CharacterPath.Warden, 5, "warden.battle-fury", "Battle Fury",
@@ -222,7 +222,7 @@ public static class AbilityCatalogue
         // spent *before* the blow it was meant to stop.
         new(CharacterPath.Warden, 7, "warden.sunder", "Sunder",
             "Batter the guard apart. What comes next lands on what is left of it.",
-            CostType.Stamina, 16, 144, null, TargetingType.SingleTarget,
+            CostType.Stamina, 16, 160, null, TargetingType.SingleTarget,
             "debuff.weaken", Vulnerable("1.3", "80", "sundered")),
 
         // The Warden's window-opener, and the one thing no amount of damage scaling expresses.
@@ -231,8 +231,8 @@ public static class AbilityCatalogue
         // tempo tool.
         new(CharacterPath.Warden, 9, "warden.shield-bash", "Shield Bash",
             "The flat of the shield, hard, into whatever is nearest to a jaw.",
-            CostType.Stamina, 20, 172, null, TargetingType.SingleTarget,
-            "control.stun", Stun("10", "reeling")),
+            CostType.Stamina, 20, 160, null, TargetingType.SingleTarget,
+            "control.stun", Stun("16", "reeling")),
 
         // The Warden's reason to exist in a group. Everything else on this Path survives damage;
         // this is the only thing that decides who *takes* it. Cheap and on a short cooldown,
@@ -245,17 +245,17 @@ public static class AbilityCatalogue
 
         new(CharacterPath.Warden, 10, "warden.rally", "Rally",
             "Find your feet again in the middle of it.",
-            CostType.Stamina, 22, 120, 4, TargetingType.Self,
+            CostType.Stamina, 22, 96, 4, TargetingType.Self,
             "heal.restore", Heal("40")),
 
         new(CharacterPath.Warden, 13, "warden.shield-wall", "Shield Wall",
             "Set yourself. Nothing moves you for a while.",
-            CostType.Stamina, 25, 90, null, TargetingType.Self,
+            CostType.Stamina, 25, 240, null, TargetingType.Self,
             "buff.damage-up", Buff("1.4", "100", "shield wall")),
 
         new(CharacterPath.Warden, 16, "warden.crushing-blow", "Crushing Blow",
             "One heavy swing, wound up and committed to.",
-            CostType.Stamina, 30, 36, 4, TargetingType.SingleTarget,
+            CostType.Stamina, 30, 48, 4, TargetingType.SingleTarget,
             "damage.physical", Damage("2.0", "12")),
 
         new(CharacterPath.Warden, 20, "warden.last-stand", "Last Stand",
@@ -268,7 +268,7 @@ public static class AbilityCatalogue
         // -------------------------------------------------------------------
         new(CharacterPath.Adept, 1, "adept.bolt", "Bolt",
             "A thrown splinter of raw force.",
-            CostType.Focus, 15, 12, 8, TargetingType.SingleTarget,
+            CostType.Focus, 15, 24, 8, TargetingType.SingleTarget,
             "damage.physical", Damage("1.2", "4")),
 
         new(CharacterPath.Adept, 3, "adept.shield", "Arcane Shield",
@@ -278,29 +278,29 @@ public static class AbilityCatalogue
 
         new(CharacterPath.Adept, 5, "adept.weaken", "Weaken",
             "Unpick the strength out of something.",
-            CostType.Focus, 16, 40, 4, TargetingType.SingleTarget,
+            CostType.Focus, 16, 160, 4, TargetingType.SingleTarget,
             "debuff.weaken", Weaken("0.75", "80", "weakened")),
 
         new(CharacterPath.Adept, 7, "adept.amplify", "Amplify",
             "Wind the next few strikes tighter.",
-            CostType.Focus, 20, 64, null, TargetingType.Self,
+            CostType.Focus, 20, 200, null, TargetingType.Self,
             "buff.damage-up", Buff("1.35", "80", "amplified")),
 
         // The Adept's burn: slower and heavier per tick than the Shade's bleed, and it does not
         // stack - one big fire rather than several small cuts.
         new(CharacterPath.Adept, 10, "adept.scorch", "Scorch",
             "Heat with intent behind it, and nowhere for the heat to go.",
-            CostType.Focus, 24, 32, 8, TargetingType.SingleTarget,
+            CostType.Focus, 24, 72, 8, TargetingType.SingleTarget,
             "damage.overtime", OverTime("9", "12", "72", "burning")),
 
         new(CharacterPath.Adept, 13, "adept.enfeeble", "Enfeeble",
             "Take the fight out of it at the root.",
-            CostType.Focus, 26, 56, 4, TargetingType.SingleTarget,
+            CostType.Focus, 26, 240, 4, TargetingType.SingleTarget,
             "debuff.weaken", Weaken("0.6", "100", "enfeebled")),
 
         new(CharacterPath.Adept, 16, "adept.disjunction", "Disjunction",
             "Pull something apart along the seams it did not know it had.",
-            CostType.Focus, 34, 40, 12, TargetingType.SingleTarget,
+            CostType.Focus, 34, 56, 12, TargetingType.SingleTarget,
             "damage.physical", Damage("2.2", "14")),
 
         // The first harmful area ability in the game, and the Adept's alone: a caster who can
@@ -315,7 +315,7 @@ public static class AbilityCatalogue
 
         new(CharacterPath.Adept, 20, "adept.cataclysm", "Cataclysm",
             "The long words. Slow to say, and worth saying.",
-            CostType.Focus, 45, 160, 16, TargetingType.SingleTarget,
+            CostType.Focus, 45, 192, 16, TargetingType.SingleTarget,
             "damage.physical", Damage("3.0", "25")),
 
         // -------------------------------------------------------------------
@@ -323,7 +323,7 @@ public static class AbilityCatalogue
         // -------------------------------------------------------------------
         new(CharacterPath.Shade, 1, "shade.strike", "Quick Strike",
             "In and out before it turns.",
-            CostType.Stamina, 12, 10, null, TargetingType.SingleTarget,
+            CostType.Stamina, 12, 24, null, TargetingType.SingleTarget,
             "damage.physical", Damage("1.25", "4")),
 
         new(CharacterPath.Shade, 3, "shade.evasion", "Evasion",
@@ -333,7 +333,7 @@ public static class AbilityCatalogue
 
         new(CharacterPath.Shade, 5, "shade.fortify", "Fortify",
             "Settle your grip and pick the angle.",
-            CostType.Stamina, 14, 56, null, TargetingType.Self,
+            CostType.Stamina, 14, 176, null, TargetingType.Self,
             "buff.damage-up", Buff("1.3", "72", "fortified")),
 
         // Shadowstep was a third flat damage number on a Path that already had several. A
@@ -341,7 +341,7 @@ public static class AbilityCatalogue
         // it decides whether the fight ends, rather than how fast.
         new(CharacterPath.Shade, 7, "shade.hamstring", "Hamstring",
             "Cut low. Whatever it was going to do next, it is not going anywhere.",
-            CostType.Stamina, 16, 60, null, TargetingType.SingleTarget,
+            CostType.Stamina, 16, 128, null, TargetingType.SingleTarget,
             "control.root", Root("32", "hamstrung")),
 
         // Ambush is the Shade's bleed rather than another number: applied early it out-damages
@@ -349,7 +349,7 @@ public static class AbilityCatalogue
         // the fast, cheap Path has something to spend its speed on.
         new(CharacterPath.Shade, 10, "shade.ambush", "Ambush",
             "Open something that will not close on its own.",
-            CostType.Stamina, 20, 28, null, TargetingType.SingleTarget,
+            CostType.Stamina, 20, 16, null, TargetingType.SingleTarget,
             "damage.overtime", OverTime("5", "8", "48", "bleeding", maxStacks: "3")),
 
         // A Shade's version: later, dearer, and a smaller lead than the Warden's. It is the
@@ -367,12 +367,12 @@ public static class AbilityCatalogue
 
         new(CharacterPath.Shade, 16, "shade.assassinate", "Assassinate",
             "One place, once, properly.",
-            CostType.Stamina, 28, 44, 4, TargetingType.SingleTarget,
+            CostType.Stamina, 28, 64, 4, TargetingType.SingleTarget,
             "damage.physical", Damage("2.4", "16")),
 
         new(CharacterPath.Shade, 20, "shade.death-mark", "Death Mark",
             "Decide how this ends, then make it true.",
-            CostType.Stamina, 35, 150, null, TargetingType.SingleTarget,
+            CostType.Stamina, 35, 192, null, TargetingType.SingleTarget,
             "damage.physical", Damage("2.8", "22")),
 
         // -------------------------------------------------------------------
@@ -385,7 +385,7 @@ public static class AbilityCatalogue
         // -------------------------------------------------------------------
         new(CharacterPath.Hallow, 1, "hallow.mend", "Mend",
             "Close what is open, on yourself or on someone beside you.",
-            CostType.Focus, 20, 20, 4, TargetingType.SingleTarget,
+            CostType.Focus, 20, 24, 4, TargetingType.SingleTarget,
             "heal.restore", Heal("25")),
 
         new(CharacterPath.Hallow, 3, "hallow.guidance", "Guidance",
@@ -398,7 +398,7 @@ public static class AbilityCatalogue
         // Path's weaken, so this does not cost it its control identity.
         new(CharacterPath.Hallow, 5, "hallow.wither", "Wither",
             "Set something going that will not stop on its own.",
-            CostType.Focus, 18, 44, 4, TargetingType.SingleTarget,
+            CostType.Focus, 18, 96, 4, TargetingType.SingleTarget,
             "damage.overtime", OverTime("6", "16", "96", "withering")),
 
         new(CharacterPath.Hallow, 7, "hallow.restore", "Restore",
@@ -408,7 +408,7 @@ public static class AbilityCatalogue
 
         new(CharacterPath.Hallow, 10, "hallow.blessing", "Blessing",
             "Lend the next while a better edge than it earned.",
-            CostType.Focus, 24, 72, null, TargetingType.SingleTarget,
+            CostType.Focus, 24, 240, null, TargetingType.SingleTarget,
             "buff.damage-up", Buff("1.3", "96", "blessed")),
 
         new(CharacterPath.Hallow, 13, "hallow.renewal", "Renewal",
@@ -418,7 +418,7 @@ public static class AbilityCatalogue
 
         new(CharacterPath.Hallow, 16, "hallow.sap", "Sap",
             "Take the strength and do not give it back.",
-            CostType.Focus, 30, 60, 4, TargetingType.SingleTarget,
+            CostType.Focus, 30, 240, 4, TargetingType.SingleTarget,
             "debuff.weaken", Weaken("0.55", "100", "sapped")),
 
         // The other half of area targeting, and the reason the filter has two directions: a
@@ -432,7 +432,7 @@ public static class AbilityCatalogue
 
         new(CharacterPath.Hallow, 20, "hallow.intercession", "Intercession",
             "Stand between someone and what was coming for them.",
-            CostType.Focus, 50, 180, 12, TargetingType.SingleTarget,
+            CostType.Focus, 50, 176, 12, TargetingType.SingleTarget,
             "heal.restore", Heal("120")),
     ];
 
