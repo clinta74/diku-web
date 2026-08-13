@@ -362,7 +362,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         RoomKeys = new List<string>(c.RoomKeys),
                         TargetCount = c.TargetCount,
                         RespawnSeconds = c.RespawnSeconds,
-                        Sentinel = c.Sentinel,
+                        Wanders = c.Wanders,
                     });
 
                     return ContentAction.Create;
@@ -379,7 +379,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                     RoomKeys = new List<string>(c.RoomKeys),
                     TargetCount = c.TargetCount,
                     RespawnSeconds = c.RespawnSeconds,
-                    Sentinel = c.Sentinel,
+                    Wanders = c.Wanders,
                 });
                 return ContentAction.Update;
             }

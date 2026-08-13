@@ -24,7 +24,7 @@ public sealed class MobSpawner
         Zone zone,
         global::DikuWeb.Domain.Worlds.World worldEntity,
         RoomKey roomKey,
-        bool sentinel = false,
+        bool wanders = false,
         Guid? spawnerId = null)
     {
         ArgumentNullException.ThrowIfNull(template);
@@ -88,7 +88,7 @@ public sealed class MobSpawner
                 Stamina = 100,
                 StaminaMax = 100,
             },
-            State = NewState(sentinel, roomKey),
+            State = NewState(wanders, roomKey),
         };
 
         return mob;
@@ -98,18 +98,24 @@ public sealed class MobSpawner
     /// The per-mob state a fresh spawn starts with.
     /// </summary>
     /// <remarks>
-    /// The home zone is recorded here, in the state bag beside <c>sentinel</c>, rather than as a
+    /// The home zone is recorded here, in the state bag beside <c>wanders</c>, rather than as a
     /// column on <c>mobs</c> - it is per-instance runtime state, which is what the bag is for, and
     /// it needs no migration. It has to be captured at spawn because the mob's own room moves:
     /// asking "which zone is it in" after it has wandered answers the wrong question.
+    ///
+    /// <b>Only a wandering mob is marked.</b> The key used to be <c>sentinel</c> and was written
+    /// when the mob should stay put, which put the default on the wrong side: a mob whose state
+    /// failed to round-trip, or that something built without going through here, came back
+    /// wandering. Absence now means standing still, so the failure is a dull room rather than a
+    /// quest giver that walked off (<see cref="MobBehavior.Wanders"/>).
     /// </remarks>
-    private static Dictionary<string, object> NewState(bool sentinel, RoomKey roomKey)
+    private static Dictionary<string, object> NewState(bool wanders, RoomKey roomKey)
     {
         var state = new Dictionary<string, object> { [MobState.HomeZoneKey] = roomKey.ZoneKey };
 
-        if (sentinel)
+        if (wanders)
         {
-            state["sentinel"] = true;
+            state[MobBehavior.WandersKey] = true;
         }
 
         return state;

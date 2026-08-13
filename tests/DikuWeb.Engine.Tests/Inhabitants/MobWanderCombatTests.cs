@@ -57,8 +57,11 @@ public sealed class MobWanderCombatTests
 
         var template = Zombie();
 
+        // Spelled out, because standing still is now the default and these tests are entirely
+        // about what stops a mob that would otherwise move.
         var mob = new MobSpawner().Spawn(
-            template, harness.World.FindZone("test.zone")!, harness.World.FindWorld("test")!, West);
+            template, harness.World.FindZone("test.zone")!, harness.World.FindWorld("test")!, West,
+            wanders: true);
 
         harness.World.AddMob(mob);
 

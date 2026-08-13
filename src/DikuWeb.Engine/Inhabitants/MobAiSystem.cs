@@ -174,8 +174,11 @@ public sealed class MobAiSystem(
             return false;
         }
 
-        // Check sentinel flag: some mobs don't wander
-        if (GetMobStateBool(mob, "sentinel"))
+        // Standing still is the default, so this asks for permission rather than for a veto. The
+        // answer was resolved once at spawn from the template and its spawner (PLAN.md §4.8) -
+        // reading it back here rather than re-deciding keeps a mob's behaviour stable for its
+        // whole life, the way its resolved stats are.
+        if (!GetMobStateBool(mob, MobBehavior.WandersKey))
         {
             return false;
         }

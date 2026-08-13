@@ -49,8 +49,15 @@ public sealed record WorldBundle(
     /// else is advisory (§7.4), but a bundle whose shape this build does not understand cannot
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
+    ///
+    /// <b>2 because a spawner's wander setting changed shape and meaning.</b> Version 1 carried
+    /// <c>sentinel: bool</c>, where false was the value every spawner had by default and meant
+    /// *"these mobs wander"*. Version 2 carries <c>wanders: bool?</c>, where absent means *"follow
+    /// the template"*. A v1 bundle read as v2 would deserialise the missing key to null and every
+    /// spawner in it would quietly change behaviour - which is the silent partial apply this
+    /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 1;
+    public const int CurrentFormatVersion = 2;
 }
 
 /// <summary>
@@ -137,7 +144,7 @@ public sealed record BundleSpawner(
     List<string> RoomKeys,
     int TargetCount,
     int RespawnSeconds,
-    bool Sentinel);
+    bool? Wanders);
 
 public sealed record BundleQuest(
     string Key,

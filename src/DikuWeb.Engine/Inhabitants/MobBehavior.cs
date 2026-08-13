@@ -54,6 +54,9 @@ public static class MobBehavior
     /// <summary>The behavior key letting a mob wander out of the zone it spawned in.</summary>
     public const string RoamsKey = "roams";
 
+    /// <summary>The behavior key saying whether this mob wanders between rooms at all.</summary>
+    public const string WandersKey = "wanders";
+
     /// <summary>The persisted string for a disposition, for writers and for the builder API.</summary>
     public static string NameOf(MobDisposition disposition) => disposition switch
     {
@@ -105,6 +108,29 @@ public static class MobBehavior
     /// </remarks>
     public static bool Roams(IReadOnlyDictionary<string, object>? behavior) =>
         JsonBag.Boolean(behavior, RoamsKey);
+
+    /// <summary>
+    /// True when this mob moves between rooms of its own accord. <b>False by default</b>, so a
+    /// template that says nothing stays where it is put.
+    /// </summary>
+    /// <remarks>
+    /// <b>The default is standing still, and that is the change.</b> Wandering used to be the
+    /// behaviour of anything whose spawner did not say otherwise, which is backwards twice over:
+    /// most authored mobs are shopkeepers, quest givers, and guards that belong somewhere
+    /// specific, and the ones that should roam are the minority worth naming. It also meant the
+    /// decision lived on the spawner, so the same shopkeeper placed by two spawners could wander
+    /// from one and not the other — the mob is the thing with an opinion about whether it moves.
+    ///
+    /// Absence resolving to the quieter behaviour is the same rule room flags follow (§4.10): a
+    /// key that was mistyped, or written by an older builder, must fail toward the harmless
+    /// answer. A mob that should have wandered and does not is a dull room; a quest giver that
+    /// wanders off is a player unable to finish a chain.
+    ///
+    /// This is the mob's own default. <see cref="Domain.Spawning.Spawner.Wanders"/> overrides it
+    /// per placement and has the last word.
+    /// </remarks>
+    public static bool Wanders(IReadOnlyDictionary<string, object>? behavior) =>
+        JsonBag.Boolean(behavior, WandersKey);
 
     /// <summary>The idle emote text this mob cycles through. Empty when it has none.</summary>
     /// <remarks>

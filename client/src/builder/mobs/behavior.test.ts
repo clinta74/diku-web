@@ -22,8 +22,17 @@ describe('readBehavior', () => {
       shopkeeper: false,
       sells: [],
       markup: 0,
+      wanders: false,
       roams: false,
     })
+  })
+
+  it('reads a missing wanders key as staying put', () => {
+    // The safe direction, and the one the engine takes. Most authored mobs are shopkeepers and
+    // quest givers, so a missing key that meant "wanders" would send exactly the mobs a player
+    // needs to find walking off.
+    expect(readBehavior({}).wanders).toBe(false)
+    expect(readBehavior({ wanders: true }).wanders).toBe(true)
   })
 
   it('reads a missing roams key as confined to its zone', () => {
@@ -196,6 +205,7 @@ describe('writeBehavior', () => {
         shopkeeper: true,
         sells: ['bread', 'torch'],
         markup: 0,
+        wanders: false,
         roams: false,
       },
     )
@@ -204,19 +214,46 @@ describe('writeBehavior', () => {
     expect(next.shopkeeper).toBe(true)
   })
 
-  it('writes roams only when it is on', () => {
-    // Absent is the engine's default, so storing `roams: false` would record the default as
+  it('writes wanders only when it is on', () => {
+    // Absent is the engine's default, so storing `wanders: false` would record the default as
     // though a builder had chosen it — and a later change of default would silently not apply.
+    const off = writeBehavior({}, readBehavior({}))
+    expect(off.wanders).toBeUndefined()
+
+    const on = writeBehavior({}, { ...readBehavior({}), wanders: true })
+    expect(on.wanders).toBe(true)
+  })
+
+  it('writes roams only when it is on, and only for a mob that wanders', () => {
     const off = writeBehavior({}, readBehavior({}))
     expect(off.roams).toBeUndefined()
 
-    const on = writeBehavior({}, { ...readBehavior({}), roams: true })
+    const on = writeBehavior({}, { ...readBehavior({}), wanders: true, roams: true })
     expect(on.roams).toBe(true)
   })
 
-  it('clears roams when a mob is told to stay home again', () => {
-    const next = writeBehavior({ roams: true }, { ...readBehavior({ roams: true }), roams: false })
+  it('does not write roams for a mob that does not wander', () => {
+    // Roaming says *where* a mob may wander, so it means nothing about one that never moves.
+    // Left set, it would come back into force the day somebody ticks "wanders" — a mob crossing
+    // zone borders on the strength of a tick nobody remembers making.
+    const next = writeBehavior({}, { ...readBehavior({}), wanders: false, roams: true })
 
+    expect(next.roams).toBeUndefined()
+  })
+
+  it('clears roams when a mob is told to stay home again', () => {
+    const stored = { wanders: true, roams: true }
+    const next = writeBehavior(stored, { ...readBehavior(stored), roams: false })
+
+    expect(next.roams).toBeUndefined()
+    expect(next.wanders).toBe(true)
+  })
+
+  it('clears roams when a wandering mob is told to stand still', () => {
+    const stored = { wanders: true, roams: true }
+    const next = writeBehavior(stored, { ...readBehavior(stored), wanders: false })
+
+    expect(next.wanders).toBeUndefined()
     expect(next.roams).toBeUndefined()
   })
 

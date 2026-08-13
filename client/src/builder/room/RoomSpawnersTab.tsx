@@ -79,7 +79,11 @@ export function RoomSpawnersTab({ room }: Props) {
                   <span className="dim">
                     {spawner.templateKind === 'Item' ? 'item · ' : ''}
                     {spawner.targetCount}× · respawn {spawner.respawnSeconds}s
-                    {spawner.sentinel ? ' · sentinel' : ''}
+                    {/* Only an override is worth a word here. "Follows the template" is the
+                        default on every spawner, so printing it would say nothing on most rows
+                        and bury the two that are actually unusual. */}
+                    {spawner.wander === 'never' ? ' · never wanders' : ''}
+                    {spawner.wander === 'always' ? ' · always wanders' : ''}
                     {/* Say so plainly: the count is shared across the whole set, so this room
                         does not necessarily get targetCount of them. */}
                     {elsewhere > 0 && ` · shared with ${elsewhere} other room${elsewhere === 1 ? '' : 's'}`}

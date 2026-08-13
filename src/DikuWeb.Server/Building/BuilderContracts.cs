@@ -208,6 +208,7 @@ public sealed record SaveItemTemplateRequest(
     string? AttackVerb,
     bool? IsQuestItem);
 
+/// <param name="Wander">One of <see cref="WanderMode"/>. Never null on the way out.</param>
 public sealed record SpawnerResponse(
     Guid Id,
     string ZoneKey,
@@ -216,8 +217,9 @@ public sealed record SpawnerResponse(
     List<string> RoomKeys,
     int TargetCount,
     int RespawnSeconds,
-    bool Sentinel);
+    string Wander);
 
+/// <param name="Wander">One of <see cref="WanderMode"/>, or null to leave it as it is.</param>
 public sealed record SaveSpawnerRequest(
     string? ZoneKey,
     string? TemplateKey,
@@ -225,7 +227,66 @@ public sealed record SaveSpawnerRequest(
     List<string>? RoomKeys,
     int? TargetCount,
     int? RespawnSeconds,
-    bool? Sentinel);
+    string? Wander);
+
+/// <summary>
+/// How a spawner answers "do these mobs wander": defer to the template, or override it.
+/// </summary>
+/// <remarks>
+/// <b>A word rather than a nullable bool, because null already means something on this API.</b>
+/// Every field of <see cref="SaveSpawnerRequest"/> is optional and a PATCH coalesces it against
+/// what is stored - <c>request.X ?? existing.X</c> - so null spells *"leave this alone"* on every
+/// other field. The stored value is genuinely three-valued
+/// (<see cref="Domain.Spawning.Spawner.Wanders"/>), and a nullable bool would have made
+/// "leave it alone" and "follow the template" the same request. Two meanings on one wire value is
+/// how a builder clears a setting by not touching it.
+/// </remarks>
+public static class WanderMode
+{
+    /// <summary>Whatever the mob template says. The default, and the usual answer.</summary>
+    public const string Template = "template";
+
+    /// <summary>These mobs wander, whatever the template says.</summary>
+    public const string Always = "always";
+
+    /// <summary>These mobs stay put, whatever the template says.</summary>
+    public const string Never = "never";
+
+    /// <summary>The stored tri-state as the word that describes it.</summary>
+    public static string From(bool? wanders) => wanders switch
+    {
+        true => Always,
+        false => Never,
+        null => Template,
+    };
+
+    /// <summary>
+    /// The word as a stored tri-state. False when it is not one of the three.
+    /// </summary>
+    /// <remarks>
+    /// Try-parse rather than a function returning the value, because what it parses to is itself
+    /// nullable: "follow the template" *is* null. A method returning <c>bool?</c> would have to
+    /// spell "that is not a mode" as null too, and a typo would silently mean the default.
+    /// </remarks>
+    public static bool TryParse(string? mode, out bool? wanders)
+    {
+        switch (mode)
+        {
+            case Template:
+                wanders = null;
+                return true;
+            case Always:
+                wanders = true;
+                return true;
+            case Never:
+                wanders = false;
+                return true;
+            default:
+                wanders = null;
+                return false;
+        }
+    }
+}
 
 public sealed record QuestResponse(
     string Key,

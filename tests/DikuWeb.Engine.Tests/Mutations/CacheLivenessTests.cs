@@ -140,7 +140,7 @@ public sealed class CacheLivenessTests
 
         var id = Guid.CreateVersion7();
         applier.Apply(new UpsertSpawner(
-            id, "test.zone", "rat", TemplateKind.Mob, ["test.zone.west"], 2, 30, false));
+            id, "test.zone", "rat", TemplateKind.Mob, ["test.zone.west"], 2, 30, null));
 
         Assert.Equal(2, spawners.Get(id)?.TargetCount);
 
@@ -149,7 +149,7 @@ public sealed class CacheLivenessTests
 
         Assert.Equal(5, spawners.Get(id)?.TargetCount);
         Assert.Equal(2, spawners.Get(id)?.RoomKeys.Count);
-        Assert.True(spawners.Get(id)?.Sentinel);
+        Assert.True(spawners.Get(id)?.Wanders);
         Assert.Single(spawners.All);
 
         applier.Apply(new DeleteSpawner(id));

@@ -196,6 +196,16 @@ export interface ItemTemplate {
   isQuestItem: boolean
 }
 
+/**
+ * Whether mobs from a spawner wander. `template` defers to the mob template, which carries the
+ * default (PLAN.md §4.8); the other two override it for this placement.
+ *
+ * A word rather than a boolean because the server's value is three-valued and every field of a
+ * spawner PATCH is optional — a nullable bool could not tell "leave this alone" from "follow the
+ * template".
+ */
+export type WanderMode = 'template' | 'always' | 'never'
+
 export interface Spawner {
   id: string
   zoneKey: string
@@ -204,7 +214,7 @@ export interface Spawner {
   roomKeys: string[]
   targetCount: number
   respawnSeconds: number
-  sentinel: boolean
+  wander: WanderMode
 }
 
 export interface Quest {

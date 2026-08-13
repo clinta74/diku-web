@@ -277,7 +277,7 @@ public sealed record UpsertSpawner(
     List<string> RoomKeys,
     int TargetCount,
     int RespawnSeconds,
-    bool Sentinel) : WorldChange
+    bool? Wanders) : WorldChange
 {
     public override string EntityKind => "spawner";
 

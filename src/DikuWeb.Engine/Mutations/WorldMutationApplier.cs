@@ -508,7 +508,7 @@ public sealed class WorldMutationApplier(
                 rooms,
                 spawner.TargetCount,
                 spawner.RespawnSeconds,
-                spawner.Sentinel);
+                spawner.Wanders);
 
             ApplyUpsertSpawner(change);
             changes.Add(change);
@@ -1020,7 +1020,7 @@ public sealed class WorldMutationApplier(
             RoomKeys = [.. change.RoomKeys],
             TargetCount = change.TargetCount,
             RespawnSeconds = change.RespawnSeconds,
-            Sentinel = change.Sentinel,
+            Wanders = change.Wanders,
         });
 
         return MutationResult.Ok([change]);

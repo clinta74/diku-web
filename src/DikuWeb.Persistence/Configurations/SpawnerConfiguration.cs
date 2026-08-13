@@ -19,7 +19,9 @@ internal sealed class SpawnerConfiguration : IEntityTypeConfiguration<Spawner>
         builder.Property(e => e.RoomKeys).HasColumnName("room_keys").HasColumnType("text[]");
         builder.Property(e => e.TargetCount).HasColumnName("target_count");
         builder.Property(e => e.RespawnSeconds).HasColumnName("respawn_seconds");
-        builder.Property(e => e.Sentinel).HasColumnName("sentinel");
+        // Nullable on purpose: null is "follow the template", which is a third answer rather than
+        // a missing one (PLAN.md §4.8).
+        builder.Property(e => e.Wanders).HasColumnName("wanders");
 
         builder.HasIndex(e => e.ZoneKey).HasDatabaseName("ix_spawners_zone_key");
     }

@@ -93,7 +93,11 @@ public sealed class MobWanderZoneTests
             template,
             harness.World.FindZone("test.zone")!,
             harness.World.FindWorld("test")!,
-            Home);
+            Home,
+            // These tests ask where a wandering mob may go, so it has to be one. Standing still
+            // is the default now, and a mob that never moves would pass every border assertion
+            // for the wrong reason.
+            wanders: true);
 
         harness.World.AddMob(mob);
         return mob;

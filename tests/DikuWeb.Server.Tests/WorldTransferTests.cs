@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Persistence;
+using DikuWeb.Server.Building;
 using DikuWeb.Server.Tests.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -303,8 +304,46 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
         var content = await AuthorZoneAsync(client);
+
+        // Rewritten off the current version rather than off the literal 1. Written as a literal
+        // this silently stopped testing anything the day the format went to 2: the replace matched
+        // nothing, the bundle stayed valid, and the assertion failed rather than passing wrongly -
+        // which is only luck, since a test asserting a refusal would have gone green if the import
+        // had happened to reject it for some other reason.
         var json = (await ExportZoneJsonAsync(client, content.ZoneKey))
-            .Replace("\"formatVersion\":1", "\"formatVersion\":99", StringComparison.Ordinal);
+            .Replace(
+                $"\"formatVersion\":{WorldBundle.CurrentFormatVersion}",
+                "\"formatVersion\":99",
+                StringComparison.Ordinal);
+
+        Assert.Contains("\"formatVersion\":99", json, StringComparison.Ordinal);
+
+        var response = await client.PostAsync(
+            new Uri("/api/builder/import", UriKind.Relative),
+            new StringContent(json, Encoding.UTF8, "application/json"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_bundle_from_the_previous_format_version_is_refused()
+    {
+        // Version 1 carried `sentinel: bool` on a spawner, where false was the value every row had
+        // by default and meant "these mobs wander". Version 2 carries `wanders: bool?`, where
+        // absent means "follow the template". Read as v2 a v1 bundle deserialises the missing key
+        // to null, so every spawner in it changes behaviour without a word - the silent partial
+        // apply the version number exists to refuse, arriving through a rename rather than
+        // through a new field.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var content = await AuthorZoneAsync(client);
+        var json = (await ExportZoneJsonAsync(client, content.ZoneKey))
+            .Replace(
+                $"\"formatVersion\":{WorldBundle.CurrentFormatVersion}",
+                "\"formatVersion\":1",
+                StringComparison.Ordinal);
 
         var response = await client.PostAsync(
             new Uri("/api/builder/import", UriKind.Relative),

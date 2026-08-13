@@ -51,7 +51,7 @@ public sealed class MobWanderCadenceTests
         for (var i = 0; i < count; i++)
         {
             var mob = new MobSpawner().Spawn(
-                template, harness.World.FindZone("test.zone")!, harness.World.FindWorld("test")!, Middle);
+                template, harness.World.FindZone("test.zone")!, harness.World.FindWorld("test")!, Middle, wanders: true);
 
             harness.World.AddMob(mob);
             pack.Add(mob);
@@ -170,7 +170,7 @@ public sealed class MobWanderCadenceTests
 
         var template = Rat();
         var mob = new MobSpawner().Spawn(
-            template, harness.World.FindZone("test.zone")!, harness.World.FindWorld("test")!, home.Key);
+            template, harness.World.FindZone("test.zone")!, harness.World.FindWorld("test")!, home.Key, wanders: true);
 
         harness.World.AddMob(mob);
 

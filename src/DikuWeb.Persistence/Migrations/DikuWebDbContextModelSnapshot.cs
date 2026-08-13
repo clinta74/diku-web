@@ -688,10 +688,6 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("text[]")
                         .HasColumnName("room_keys");
 
-                    b.Property<bool>("Sentinel")
-                        .HasColumnType("boolean")
-                        .HasColumnName("sentinel");
-
                     b.Property<int>("TargetCount")
                         .HasColumnType("integer")
                         .HasColumnName("target_count");
@@ -704,6 +700,10 @@ namespace DikuWeb.Persistence.Migrations
                     b.Property<int>("TemplateKind")
                         .HasColumnType("integer")
                         .HasColumnName("template_kind");
+
+                    b.Property<bool?>("Wanders")
+                        .HasColumnType("boolean")
+                        .HasColumnName("wanders");
 
                     b.Property<string>("ZoneKey")
                         .IsRequired()

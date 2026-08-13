@@ -5,6 +5,7 @@ import {
   type MobTemplate,
   type RoomDetail,
   type Spawner,
+  type WanderMode,
 } from '../../net/builderApi'
 import { Modal } from '../../ui/Modal'
 import { Field } from '../../ui/Field'
@@ -53,7 +54,7 @@ export function SpawnerDialog({
   const [roomKeys, setRoomKeys] = useState<string[]>([])
   const [targetCount, setTargetCount] = useState(1)
   const [respawnSeconds, setRespawnSeconds] = useState(60)
-  const [sentinel, setSentinel] = useState(false)
+  const [wander, setWander] = useState<WanderMode>('template')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -64,7 +65,7 @@ export function SpawnerDialog({
     setRoomKeys(editing?.roomKeys ?? [roomKey])
     setTargetCount(editing?.targetCount ?? 1)
     setRespawnSeconds(editing?.respawnSeconds ?? 60)
-    setSentinel(editing?.sentinel ?? false)
+    setWander(editing?.wander ?? 'template')
     setError(null)
     setBusy(false)
   }, [open, editing, roomKey])
@@ -102,7 +103,7 @@ export function SpawnerDialog({
           roomKeys,
           targetCount,
           respawnSeconds,
-          sentinel,
+          wander,
         })
       } else {
         await builderApi.createSpawner({
@@ -112,7 +113,7 @@ export function SpawnerDialog({
           roomKeys,
           targetCount,
           respawnSeconds,
-          sentinel,
+          wander,
         })
       }
       onSaved()
@@ -192,14 +193,20 @@ export function SpawnerDialog({
       </Field>
 
       {kind === 'Mob' && (
-        <label className="field-check">
-          <input
-            type="checkbox"
-            checked={sentinel}
-            onChange={(e) => setSentinel(e.target.checked)}
-          />
-          Sentinel (mobs don’t wander) — set this for shopkeepers and quest givers
-        </label>
+        <Field
+          label="Wandering"
+          hint={
+            wander === 'template'
+              ? 'The mob template decides. Set it there unless this placement is the exception.'
+              : 'Overrides the template for mobs from this spawner only.'
+          }
+        >
+          <Select value={wander} onChange={(v) => setWander(v as WanderMode)}>
+            <option value="template">Follow the mob template</option>
+            <option value="never">Never — stays where it is put</option>
+            <option value="always">Always — wanders between rooms</option>
+          </Select>
+        </Field>
       )}
     </Modal>
   )

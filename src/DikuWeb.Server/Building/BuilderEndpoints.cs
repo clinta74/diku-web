@@ -707,6 +707,12 @@ public static class BuilderEndpoints
             return Invalid("Template key is required.");
         }
 
+        // Absent means "follow the template", which is the default a fresh spawner should have.
+        if (!WanderMode.TryParse(request.Wander ?? WanderMode.Template, out var wanders))
+        {
+            return Invalid($"Unknown wander mode '{request.Wander}'.");
+        }
+
         var id = Guid.CreateVersion7();
         var change = new UpsertSpawner(
             id,
@@ -716,7 +722,7 @@ public static class BuilderEndpoints
             request.RoomKeys ?? new List<string>(),
             request.TargetCount ?? 1,
             request.RespawnSeconds ?? 60,
-            request.Sentinel ?? false);
+            wanders);
 
         return await SaveAsync(editor, change, http, ct, () => queries.SpawnerAsync(id, ct));
     }
@@ -740,6 +746,14 @@ public static class BuilderEndpoints
             return Invalid($"No zone '{zoneKey}'.");
         }
 
+        // An absent Wander leaves the stored answer alone, exactly as an absent TargetCount does.
+        // This is why the wire carries a word: the stored value is itself nullable, so a nullable
+        // bool here could not tell "leave it" from "follow the template" (see WanderMode).
+        if (!WanderMode.TryParse(request.Wander ?? existing.Wander, out var wanders))
+        {
+            return Invalid($"Unknown wander mode '{request.Wander}'.");
+        }
+
         var change = new UpsertSpawner(
             id,
             zoneKey,
@@ -748,7 +762,7 @@ public static class BuilderEndpoints
             request.RoomKeys ?? existing.RoomKeys,
             request.TargetCount ?? existing.TargetCount,
             request.RespawnSeconds ?? existing.RespawnSeconds,
-            request.Sentinel ?? existing.Sentinel);
+            wanders);
 
         return await SaveAsync(editor, change, http, ct, () => queries.SpawnerAsync(id, ct));
     }

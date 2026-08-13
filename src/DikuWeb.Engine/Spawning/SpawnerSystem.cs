@@ -138,10 +138,15 @@ public sealed class SpawnerSystem(
 
             var touched = new HashSet<RoomKey>();
 
+            // The template says what this mob normally does; the spawner overrides it for these
+            // placements and has the last word (PLAN.md §4.8). Both are phrased as "wanders", so
+            // the resolution is a coalesce rather than a polarity flip.
+            var wanders = spawner.Wanders ?? MobBehavior.Wanders(template.Behavior);
+
             for (var i = currentCount; i < spawner.TargetCount; i++)
             {
                 var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
-                var mob = mobSpawner.Spawn(template, zone, worldEnt, room, spawner.Sentinel, spawner.Id);
+                var mob = mobSpawner.Spawn(template, zone, worldEnt, room, wanders, spawner.Id);
                 world.AddMob(mob);
                 touched.Add(room);
 

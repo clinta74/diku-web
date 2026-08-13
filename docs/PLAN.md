@@ -669,6 +669,21 @@ and a second field for it would be a second source of truth to disagree with.
   than fixed intervals, so three rats spawned in one sweep do not fall into step and read as
   clockwork. At most one line per mob per tick, and a freshly spawned mob is *scheduled* rather
   than fired, so nothing greets the room the instant it appears.
+- **A mob stands still unless something says otherwise.** `wanders` on the template is the
+  default, and a spawner's three-valued `wanders` overrides it per placement — *follow the
+  template*, *always*, or *never* — with *follow the template* being what a fresh spawner has.
+  The old arrangement had no template field at all: wandering was what every mob did unless its
+  spawner ticked `sentinel`, which put the decision on the placement rather than on the thing
+  being placed, so one shopkeeper spawned by two spawners could wander from one and not the other.
+  It also defaulted the wrong way. Most authored mobs are shopkeepers, quest givers, and guards
+  that belong somewhere specific; the ones that should roam are the minority worth naming, and
+  absence should resolve to the harmless answer the way room flags do (§4.10). A rat that fails to
+  wander is a dull room; a quest giver that wanders off is a chain nobody can finish.
+  **Both ends are spelled `wanders`, in one direction.** The spawner's field used to be `sentinel`
+  — the same fact with the opposite sign — and a pair of flags meaning one thing in two directions
+  is the bug this codebase has already shipped once, when every `weaken` in the game made its
+  target harder to kill. The resolution is therefore a coalesce, `spawner.Wanders ?? template`,
+  with nothing to invert.
 - **A wandering mob stays in the zone it spawned in**, unless its template sets `roams`. A zone is
   the unit difficulty is authored in (§4.4), so a mob that crosses a border carries numbers
   resolved from somewhere else's multipliers. Fencing by geography meant flagging every border
@@ -1769,8 +1784,6 @@ Then **Phase 7**, the mobile client, planned in full in [MOBILE.md](MOBILE.md).
 **Open, from playtesting** ([PlayTestingNotes.md](PlayTestingNotes.md) is the live inbox):
 
 - A changelog, or GitHub releases — nothing records what changed between two builds.
-- Mob templates should carry a **default wander configuration, defaulting to not wandering**, with
-  the spawner still deciding in the end.
 - **Ability cooldowns are too quick, and nothing shows a pending one.** Both halves are real: the
   numbers want a pass, and the client has no surface for them at all.
 - A **UX evaluation** across the client — best practice, style consistency, letter casing and

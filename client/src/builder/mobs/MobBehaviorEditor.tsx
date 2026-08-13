@@ -58,8 +58,8 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
       {draft.disposition === 'npc' && (
         <p className="dim">
           Quest givers, quest turn-ins, and shopkeepers should all be NPCs. A killable quest
-          giver strands anyone mid-quest until it respawns. To stop one wandering off, set{' '}
-          <strong>Sentinel</strong> on its spawner.
+          giver strands anyone mid-quest until it respawns. They also want{' '}
+          <strong>Wanders between rooms</strong> left off, which is the default.
         </p>
       )}
 
@@ -132,17 +132,38 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
       <label className="field-check">
         <input
           type="checkbox"
-          checked={draft.roams}
-          onChange={(e) => set({ roams: e.target.checked })}
+          checked={draft.wanders}
+          onChange={(e) => set({ wanders: e.target.checked })}
         />
-        Wanders beyond its home zone
+        Wanders between rooms
       </label>
 
       <p className="dim">
-        {draft.roams
-          ? 'This mob will follow exits into neighbouring zones, carrying the stats it spawned with — which came from its own zone’s multipliers.'
-          : 'Off by default: this mob wanders freely inside the zone it spawned in and turns back at the border. Rooms flagged noMob still refuse it either way.'}
+        {draft.wanders
+          ? 'This mob moves room to room on its own. A spawner can still override it for a particular placement.'
+          : 'Off by default: this mob stays where it is spawned. Leave it off for shopkeepers, quest givers, and anything that should be findable.'}
       </p>
+
+      {/* Only offered once it wanders — "beyond its home zone" is a statement about where the
+          wandering may go, and it reads as a live setting on a mob that never moves. */}
+      {draft.wanders && (
+        <>
+          <label className="field-check">
+            <input
+              type="checkbox"
+              checked={draft.roams}
+              onChange={(e) => set({ roams: e.target.checked })}
+            />
+            …and beyond its home zone
+          </label>
+
+          <p className="dim">
+            {draft.roams
+              ? 'This mob will follow exits into neighbouring zones, carrying the stats it spawned with — which came from its own zone’s multipliers.'
+              : 'Off by default: this mob wanders freely inside the zone it spawned in and turns back at the border. Rooms flagged noMob still refuse it either way.'}
+          </p>
+        </>
+      )}
 
       <label className="field-check">
         <input

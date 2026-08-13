@@ -32,6 +32,9 @@ export interface BehaviorDraft {
   sells: string[]
   /** How far over base value this shop prices its stock: 0.1 is 1.1x. Zero is base price. */
   markup: number
+  /** Whether this mob moves between rooms at all. A spawner can override it per placement. */
+  wanders: boolean
+  /** Whether it may cross out of the zone it spawned in. Only meaningful when it wanders. */
   roams: boolean
 }
 
@@ -140,6 +143,10 @@ export function readBehavior(behavior: Record<string, unknown> | undefined): Beh
     // Absent, unreadable, or negative all mean base price, matching the engine: §4.13 keeps
     // discounting out, so a negative is a typo rather than a cheaper shop.
     markup: asMarkup(behavior?.markup),
+    // Absent means it stays put, matching the engine: most authored mobs are shopkeepers, quest
+    // givers, and guards that belong somewhere, and a quest giver that wandered off because a key
+    // was missing is worse than a rat that failed to.
+    wanders: behavior?.wanders === true || behavior?.wanders === 'true',
     // Absent means confined, matching the engine: a mob stays in the zone it spawned in unless
     // something says otherwise, so forgetting the key is the safe direction.
     roams: behavior?.roams === true || behavior?.roams === 'true',
@@ -197,9 +204,19 @@ export function writeBehavior(
     delete next.markup
   }
 
+  // Written only when true, for the same reason as `roams`: the engine reads a missing key as
+  // "stays put", so persisting `wanders: false` would store the default as though it were a
+  // decision somebody made.
+  if (draft.wanders) next.wanders = true
+  else delete next.wanders
+
   // Written only when true. The engine reads a missing key as "stays home", so persisting
   // `roams: false` would store the default as though it were a decision.
-  if (draft.roams) next.roams = true
+  //
+  // Cleared along with `wanders`, because roaming is a statement about *where* a mob may wander
+  // and means nothing about one that does not. Leaving it set would make a mob that is given
+  // wandering back later silently cross zone borders on the strength of a tick nobody remembers.
+  if (draft.wanders && draft.roams) next.roams = true
   else delete next.roams
 
   return next
