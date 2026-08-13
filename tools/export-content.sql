@@ -1,5 +1,13 @@
 -- Export the authored world as a re-runnable SQL script.
 --
+-- MAINTENANCE HAZARD, stated first because it has already bitten once: every column list below is
+-- a hand-written copy of the schema, and nothing compiles or tests this file. When
+-- `spawners.sentinel` was renamed to `wanders`, this script went on emitting `sentinel` and would
+-- have produced an export that failed to load, and an existing backup that no longer applied. The
+-- fault surfaced only because somebody went looking. **Rename a column in one of the eight tables
+-- below and you must edit this file in the same commit.** The JSON path (§6.1) has tests behind it
+-- and should be preferred for anything that can use it; this one is guarded by nothing but reading.
+--
 -- PLAN.md §6 makes Postgres the only source of truth for content: there are no world files, so
 -- everything a builder authored lives in these eight tables and nowhere else. That is fine until
 -- the database has to be thrown away - a migration squash, a schema experiment, a fresh start -
@@ -115,14 +123,14 @@ select '-- spawners';
 -- Keyed by id rather than by content, so re-applying an export does not double a population.
 select format(
     'INSERT INTO spawners (id, zone_key, template_key, template_kind, room_keys, target_count, '
-    || 'respawn_seconds, sentinel) '
+    || 'respawn_seconds, wanders) '
     || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L) ON CONFLICT (id) DO UPDATE SET '
     || 'zone_key = EXCLUDED.zone_key, template_key = EXCLUDED.template_key, '
     || 'template_kind = EXCLUDED.template_kind, room_keys = EXCLUDED.room_keys, '
     || 'target_count = EXCLUDED.target_count, respawn_seconds = EXCLUDED.respawn_seconds, '
-    || 'sentinel = EXCLUDED.sentinel;',
+    || 'wanders = EXCLUDED.wanders;',
     id, zone_key, template_key, template_kind, room_keys, target_count,
-    respawn_seconds, sentinel)
+    respawn_seconds, wanders)
 from spawners order by zone_key, template_key;
 
 select '';
