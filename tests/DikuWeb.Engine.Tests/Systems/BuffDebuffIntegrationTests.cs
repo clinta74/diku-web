@@ -440,6 +440,8 @@ public sealed class BuffDebuffIntegrationTests
         var buffAbility = new Ability
         {
             Key = "warden.damage-up",
+            Path = CharacterPath.Warden,
+            UnlockLevel = 1,
             Name = "Damage Boost",
             Description = "Increase outgoing damage",
             CostType = CostType.Focus,
@@ -492,6 +494,8 @@ public sealed class BuffDebuffIntegrationTests
         var debuffAbility = new Ability
         {
             Key = "adept.weaken",
+            Path = CharacterPath.Adept,
+            UnlockLevel = 5,
             Name = "Weaken",
             Description = "Weaken enemy defense",
             CostType = CostType.Focus,
@@ -540,6 +544,8 @@ public sealed class BuffDebuffIntegrationTests
         var selfBuffAbility = new Ability
         {
             Key = "warden.fortify",
+            Path = CharacterPath.Warden,
+            UnlockLevel = 5,
             Name = "Fortify",
             Description = "Increase defense",
             CostType = CostType.Focus,

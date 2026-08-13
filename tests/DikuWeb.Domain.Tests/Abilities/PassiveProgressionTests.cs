@@ -52,7 +52,7 @@ public sealed class PassiveProgressionTests
     [InlineData(CharacterPath.Hallow)]
     public void Passives_are_not_castable_abilities(CharacterPath path)
     {
-        var abilities = AbilityProgression.GetKnownAbilitiesForLevel(path, 50);
+        var abilities = AbilityProgression.GetKnownAbilitiesForLevel(AbilityCatalogue.AsAbilities, path, 50);
 
         Assert.DoesNotContain(PassiveKeys.DualWield, abilities);
         Assert.DoesNotContain(PassiveKeys.Ambidextrous, abilities);

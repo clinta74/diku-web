@@ -72,7 +72,7 @@ public sealed class ParryTests
         // A passive has no ability row, so letting one into the ability list would put a key in
         // front of `cast` that can never resolve - which is exactly what the old warden.parry
         // entry did at level 6.
-        var castable = AbilityProgression.GetAbilitiesForPath(CharacterPath.Warden)
+        var castable = AbilityProgression.GetAbilitiesForPath(AbilityCatalogue.AsAbilities, CharacterPath.Warden)
             .Select(x => x.AbilityKey)
             .ToList();
 

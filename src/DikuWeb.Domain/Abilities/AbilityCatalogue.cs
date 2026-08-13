@@ -425,6 +425,18 @@ public static class AbilityCatalogue
         [.. All.Where(e => e.Path == path).OrderBy(e => e.UnlockLevel)];
 
     /// <summary>Builds the <see cref="Ability"/> row for an entry.</summary>
+    /// <summary>
+    /// The whole starter set as <see cref="Ability"/> rows — what a fresh database is seeded with.
+    /// </summary>
+    /// <remarks>
+    /// <b>This is the starter set, not the live one.</b> Anything asking what abilities exist
+    /// *now* must read the <c>abilities</c> table (through <c>AbilityCache</c> at runtime), because
+    /// a builder can add, retune, and remove rows and none of that reaches this list. The
+    /// legitimate callers are the seeder, which plants these on first boot, and tests that assert
+    /// about the shipped set specifically.
+    /// </remarks>
+    public static IReadOnlyList<Ability> AsAbilities { get; } = [.. All.Select(ToAbility)];
+
     public static Ability ToAbility(Entry entry)
     {
         ArgumentNullException.ThrowIfNull(entry);
@@ -432,6 +444,8 @@ public static class AbilityCatalogue
         return new Ability
         {
             Key = entry.Key,
+            Path = entry.Path,
+            UnlockLevel = entry.UnlockLevel,
             Name = entry.Name,
             Description = entry.Description,
             CostType = entry.CostType,

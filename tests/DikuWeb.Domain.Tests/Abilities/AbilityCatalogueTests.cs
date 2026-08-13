@@ -50,7 +50,7 @@ public sealed class AbilityCatalogueTests
         var known = AbilityCatalogue.All.Select(e => e.Key).ToHashSet(StringComparer.Ordinal);
 
         var dangling = Paths
-            .SelectMany(AbilityProgression.GetAbilitiesForPath)
+            .SelectMany(p => AbilityProgression.GetAbilitiesForPath(AbilityCatalogue.AsAbilities, p))
             .Select(x => x.AbilityKey)
             .Where(key => !known.Contains(key))
             .ToList();
@@ -64,7 +64,7 @@ public sealed class AbilityCatalogueTests
         // The other direction. `warden.battle-fury`, `adept.weaken`, and `shade.fortify` were
         // seeded and unreachable - content that existed only in the database.
         var granted = Paths
-            .SelectMany(AbilityProgression.GetAbilitiesForPath)
+            .SelectMany(p => AbilityProgression.GetAbilitiesForPath(AbilityCatalogue.AsAbilities, p))
             .Select(x => x.AbilityKey)
             .ToHashSet(StringComparer.Ordinal);
 
@@ -352,8 +352,8 @@ public sealed class AbilityCatalogueTests
     [Fact]
     public void A_character_knows_only_what_their_level_has_reached()
     {
-        var atOne = AbilityProgression.GetKnownAbilitiesForLevel(CharacterPath.Warden, 1);
-        var atSeven = AbilityProgression.GetKnownAbilitiesForLevel(CharacterPath.Warden, 7);
+        var atOne = AbilityProgression.GetKnownAbilitiesForLevel(AbilityCatalogue.AsAbilities, CharacterPath.Warden, 1);
+        var atSeven = AbilityProgression.GetKnownAbilitiesForLevel(AbilityCatalogue.AsAbilities, CharacterPath.Warden, 7);
 
         Assert.Contains("warden.kick", atOne);
         Assert.DoesNotContain("warden.sunder", atOne);
@@ -363,7 +363,7 @@ public sealed class AbilityCatalogueTests
     [Fact]
     public void A_path_does_not_learn_another_paths_abilities()
     {
-        var warden = AbilityProgression.GetKnownAbilitiesForLevel(CharacterPath.Warden, 20);
+        var warden = AbilityProgression.GetKnownAbilitiesForLevel(AbilityCatalogue.AsAbilities, CharacterPath.Warden, 20);
 
         Assert.DoesNotContain("adept.bolt", warden);
         Assert.DoesNotContain("shade.strike", warden);

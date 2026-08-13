@@ -57,9 +57,11 @@ public static class AbilityCommands
             return;
         }
 
-        // Determine which abilities the character knows (at their level)
-        var knownAbilityKeys = AbilityProgression.GetKnownAbilitiesForLevel(character.Path, character.Level);
-        if (!knownAbilityKeys.Any())
+        // Determine which abilities the character knows (at their level). Read from the loaded
+        // table, so a retune or a newly authored ability takes effect without a restart.
+        var knownAbilityKeys = AbilityProgression.GetKnownAbilitiesForLevel(
+            cache?.All.Values ?? [], character.Path, character.Level);
+        if (knownAbilityKeys.Count == 0)
         {
             ctx.Reply("You don't know any abilities yet.");
             return;
@@ -297,7 +299,8 @@ public static class AbilityCommands
     private static void ListAbilities(CommandContext ctx, AbilityCache? cache)
     {
         var character = ctx.Actor.Character;
-        var knownAbilities = AbilityProgression.GetKnownAbilitiesForLevel(character.Path, character.Level);
+        var knownAbilities = AbilityProgression.GetKnownAbilitiesForLevel(
+            cache?.All.Values ?? [], character.Path, character.Level);
         var knownPassives = AbilityProgression.GetKnownPassivesForLevel(character.Path, character.Level);
 
         if (knownAbilities.Count == 0 && knownPassives.Count == 0)

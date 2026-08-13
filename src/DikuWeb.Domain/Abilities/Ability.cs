@@ -1,13 +1,32 @@
+using DikuWeb.Domain.Characters;
+
 namespace DikuWeb.Domain.Abilities;
 
 /// <summary>
 /// An ability (spell, skill, technique) that a character can cast or use.
-/// Abilities are defined in the database and characters learn them via level progression.
 /// </summary>
+/// <remarks>
+/// <b>The database is the source of truth, not <see cref="AbilityCatalogue"/>.</b> The catalogue
+/// is the starter set a fresh database is seeded from — the same standing as the Millbrook rooms
+/// (PLAN.md §6) — and stops being consulted the moment a row exists. Everything a builder can
+/// change about an ability lives on this row.
+///
+/// <see cref="Path"/> and <see cref="UnlockLevel"/> are here rather than only in the catalogue
+/// because *who learns this and when* is as much a tuning decision as its cooldown, and leaving
+/// them in code would have meant a table that could be edited into a shape the level curve had
+/// never heard of. Passives are the deliberate exception and stay in
+/// <see cref="AbilityProgression"/>: a passive has no row here, no cost, and nothing to target.
+/// </remarks>
 public sealed class Ability
 {
     /// <summary>Unique key: e.g., "warden.slash" or "adept.bolt".</summary>
     public required string Key { get; init; }
+
+    /// <summary>Which Path learns this ability.</summary>
+    public required CharacterPath Path { get; init; }
+
+    /// <summary>The level at which this Path is granted it.</summary>
+    public required int UnlockLevel { get; init; }
 
     /// <summary>Display name shown to players.</summary>
     public required string Name { get; init; }

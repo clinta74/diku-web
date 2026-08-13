@@ -13,6 +13,8 @@ internal sealed class AbilityConfiguration : IEntityTypeConfiguration<Ability>
         builder.HasKey(e => e.Key);
         builder.Property(e => e.Key).HasColumnName("key").ValueGeneratedNever();
 
+        builder.Property(e => e.Path).HasColumnName("path");
+        builder.Property(e => e.UnlockLevel).HasColumnName("unlock_level");
         builder.Property(e => e.Name).HasColumnName("name");
         builder.Property(e => e.Description).HasColumnName("description");
         builder.Property(e => e.CostType).HasColumnName("cost_type");
@@ -24,5 +26,10 @@ internal sealed class AbilityConfiguration : IEntityTypeConfiguration<Ability>
         builder.Property(e => e.EffectParams).HasColumnName("effect_params").HasColumnType("jsonb");
 
         builder.HasIndex(e => e.TargetingType).HasDatabaseName("ix_abilities_targeting_type");
+
+        // Every ability lookup a character makes is "what does my Path know by my level", so this
+        // is the one access pattern worth an index rather than a scan of the whole table.
+        builder.HasIndex(e => new { e.Path, e.UnlockLevel })
+            .HasDatabaseName("ix_abilities_path_unlock_level");
     }
 }

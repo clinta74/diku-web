@@ -337,28 +337,33 @@ public static class StarterWorldSeeder
     }
 
     /// <summary>
-    /// Makes the ability rows match <see cref="AbilityCatalogue"/> exactly: adds what is missing,
-    /// updates what has drifted, and deletes what the catalogue no longer defines.
+    /// Plants any ability from <see cref="AbilityCatalogue"/> that the database does not have.
+    /// Never updates and never deletes.
     /// </summary>
     /// <remarks>
-    /// Run on every startup and independent of the world check, because abilities are not starter
-    /// *content* - they are what the level table promises. Seeding them once meant an existing
-    /// database never received an ability added later, so a character levelling into it was
-    /// granted a key with no row behind it and could not cast what the game said they knew.
+    /// <b>This used to make the table match the catalogue exactly, and that is precisely what it
+    /// must no longer do.</b> The old version's own note said why: *"If abilities ever become
+    /// builder-editable, this has to become a merge instead — at that point a row differing from
+    /// the catalogue stops meaning stale."* Abilities are builder-editable now, so a row that
+    /// differs is somebody's retune, and updating or deleting it would throw their work away on
+    /// the next restart — silently, and on every restart after that.
     ///
-    /// The catalogue is authoritative in all three directions, which is safe precisely because
-    /// abilities are the one kind of content with no builder UI and no foreign keys pointing at
-    /// them. Nothing else can author a row, so any difference is the catalogue having moved:
+    /// What survives from the old behaviour is the half that fixed a real bug: **a missing row is
+    /// still planted**. Seeding once meant a database that already existed never received an
+    /// ability added later, so a character levelling into it was granted a key with nothing behind
+    /// it and could not cast what the game said they knew. Insert-if-absent keeps that fixed
+    /// without claiming authority over anything already there.
     ///
-    /// - **Missing** rows are the original bug - a promised ability that cannot be cast.
-    /// - **Drifted** rows are the same staleness one level down: retuning a cost or a cooldown
-    ///   here would otherwise never reach a database that already had the row.
-    /// - **Orphaned** rows are keys the catalogue dropped. <c>warden.slash</c> and
-    ///   <c>warden.parry</c> became <c>warden.kick</c> and a passive, and without this the old
-    ///   two would sit in the table forever, castable by nobody and confusing to read.
+    /// The two directions deliberately given up, and what replaces them:
     ///
-    /// If abilities ever become builder-editable, this has to become a merge instead - at that
-    /// point a row differing from the catalogue stops meaning "stale".
+    /// - **Retuning** no longer arrives this way. Editing the catalogue changes what a *fresh*
+    ///   database is born with and nothing else. An existing deployment gets a retune the way it
+    ///   gets any other content change — an import, or a migration when the change has to be
+    ///   automatic (PLAN.md §6.1).
+    /// - **Orphan cleanup** is now a deliberate delete through the builder. A key the catalogue
+    ///   drops stays in the table, because this code can no longer tell "the catalogue moved on"
+    ///   from "somebody authored an ability we have never heard of" — and guessing wrong deletes
+    ///   content.
     /// </remarks>
     public static async Task<AbilityReconciliation> ReconcileAbilitiesAsync(
         DikuWebDbContext db,
@@ -371,81 +376,22 @@ public static class StarterWorldSeeder
 
         var catalogue = AbilityCatalogue.All.ToDictionary(e => e.Key, StringComparer.Ordinal);
 
-        var toAdd = new List<AbilityCatalogue.Entry>();
-        var toRemove = new List<Ability>();
-        var updated = 0;
+        var toAdd = catalogue.Values
+            .Where(entry => !existing.ContainsKey(entry.Key))
+            .ToList();
 
-        foreach (var (key, entry) in catalogue)
-        {
-            if (!existing.TryGetValue(key, out var row))
-            {
-                toAdd.Add(entry);
-                continue;
-            }
-
-            if (Matches(entry, row))
-            {
-                continue;
-            }
-
-            // Replaced rather than edited: Ability is init-only because content rows are meant
-            // to be immutable. Rewriting one in place would mean opening every property up for
-            // anything to mutate, to save a delete and an insert on a table of thirty rows.
-            toRemove.Add(row);
-            toAdd.Add(entry);
-            updated++;
-        }
-
-        foreach (var (key, row) in existing)
-        {
-            if (!catalogue.ContainsKey(key))
-            {
-                toRemove.Add(row);
-            }
-        }
-
-        var removed = toRemove.Count - updated;
-
-        if (toRemove.Count == 0 && toAdd.Count == 0)
+        if (toAdd.Count == 0)
         {
             return new AbilityReconciliation(0, 0, 0);
         }
 
-        // Two passes, because a replaced row is deleted and re-inserted under the same primary
-        // key. In one SaveChanges the insert can be ordered before the delete and collide.
-        if (toRemove.Count > 0)
-        {
-            db.Abilities.RemoveRange(toRemove);
-            await db.SaveChangesAsync(cancellationToken);
-        }
+        db.Abilities.AddRange(toAdd.Select(AbilityCatalogue.ToAbility));
+        await db.SaveChangesAsync(cancellationToken);
 
-        if (toAdd.Count > 0)
-        {
-            db.Abilities.AddRange(toAdd.Select(AbilityCatalogue.ToAbility));
-            await db.SaveChangesAsync(cancellationToken);
-        }
-
-        return new AbilityReconciliation(toAdd.Count - updated, updated, removed);
+        // Updated and Removed stay on the result and stay zero. The shape is kept because the
+        // startup log line and its test read it, and because a future merge that *can* tell a
+        // stale row from an authored one would fill them in - reporting "0 updated" is a truthful
+        // statement about what this pass does, where dropping the fields would erase the question.
+        return new AbilityReconciliation(toAdd.Count, 0, 0);
     }
-
-    /// <summary>
-    /// Whether a stored row already says exactly what the catalogue says. A startup that finds
-    /// everything in agreement writes nothing and logs nothing.
-    /// </summary>
-    private static bool Matches(AbilityCatalogue.Entry entry, Ability row) =>
-        row.Name == entry.Name &&
-        row.Description == entry.Description &&
-        row.CostType == entry.CostType &&
-        row.CostValue == entry.CostValue &&
-        row.CooldownPulses == entry.CooldownPulses &&
-        row.CastTimePulses == entry.CastTimePulses &&
-        row.TargetingType == entry.TargetingType &&
-        row.EffectKey == entry.EffectKey &&
-        SameParams(row.EffectParams, entry.EffectParams);
-
-    private static bool SameParams(
-        IReadOnlyDictionary<string, string> a,
-        IReadOnlyDictionary<string, string> b) =>
-        a.Count == b.Count &&
-        a.All(kv => b.TryGetValue(kv.Key, out var other) && other == kv.Value);
 }

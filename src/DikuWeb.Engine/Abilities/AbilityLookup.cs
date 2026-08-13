@@ -48,10 +48,11 @@ public static class AbilityLookup
             return default;
         }
 
-        var known = AbilityProgression
-            .GetKnownAbilitiesForLevel(character.Path, character.Level)
-            .Select(cache.Get)
-            .OfType<Ability>()
+        // Filtered out of the cache rather than looked up key by key: the cache is now the source
+        // of the unlock table as well as of the abilities themselves, so there is no second list
+        // to reconcile a key against.
+        var known = cache.All.Values
+            .Where(a => a.Path == character.Path && a.UnlockLevel <= character.Level)
             .ToList();
 
         if (known.Count == 0)

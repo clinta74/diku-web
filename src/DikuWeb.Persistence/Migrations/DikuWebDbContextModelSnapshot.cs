@@ -67,15 +67,26 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
+                    b.Property<int>("Path")
+                        .HasColumnType("integer")
+                        .HasColumnName("path");
+
                     b.Property<int>("TargetingType")
                         .HasColumnType("integer")
                         .HasColumnName("targeting_type");
+
+                    b.Property<int>("UnlockLevel")
+                        .HasColumnType("integer")
+                        .HasColumnName("unlock_level");
 
                     b.HasKey("Key")
                         .HasName("pk_abilities");
 
                     b.HasIndex("TargetingType")
                         .HasDatabaseName("ix_abilities_targeting_type");
+
+                    b.HasIndex("Path", "UnlockLevel")
+                        .HasDatabaseName("ix_abilities_path_unlock_level");
 
                     b.ToTable("abilities", (string)null);
                 });
