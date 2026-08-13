@@ -37,6 +37,20 @@ public sealed class AbilityCache
         IsLoaded = true;
     }
 
+    /// <summary>
+    /// Drops one ability, so a builder deleting it stops being castable without a restart.
+    /// </summary>
+    /// <remarks>
+    /// Does not mark the cache loaded, unlike <see cref="Put"/>: removing the only entry from an
+    /// unloaded cache would otherwise leave it claiming to be a loaded empty one, and an empty
+    /// loaded cache is how every character ends up knowing nothing.
+    /// </remarks>
+    public void Remove(string key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        _abilities.Remove(key);
+    }
+
     /// <summary>Get an ability by its key.</summary>
     public DikuWeb.Domain.Abilities.Ability? Get(string key)
     {

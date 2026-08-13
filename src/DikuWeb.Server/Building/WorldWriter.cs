@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using DikuWeb.Domain.Building;
 using DikuWeb.Domain.Inhabitants;
@@ -232,6 +233,75 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 if (entity is not null)
                 {
                     db.RoomExits.Remove(entity);
+                }
+
+                return ContentAction.Delete;
+            }
+
+            case UpsertAbility c:
+            {
+                var exists = await db.Abilities
+                    .AsNoTracking()
+                    .AnyAsync(a => a.Key == c.Key, cancellationToken);
+
+                if (!exists)
+                {
+                    db.Abilities.Add(new Domain.Abilities.Ability
+                    {
+                        Key = c.Key,
+                        Path = c.Path,
+                        UnlockLevel = c.UnlockLevel,
+                        Name = c.Name,
+                        Description = c.Description,
+                        CostType = c.CostType,
+                        CostValue = c.CostValue,
+                        CooldownPulses = c.CooldownPulses,
+                        CastTimePulses = c.CastTimePulses,
+                        TargetingType = c.TargetingType,
+                        EffectKey = c.EffectKey,
+                        EffectParams = new Dictionary<string, string>(c.EffectParams, StringComparer.Ordinal),
+                    });
+
+                    return ContentAction.Create;
+                }
+
+                // ExecuteUpdate rather than mutating a tracked entity, because Ability is
+                // init-only on purpose: a content row is meant to be immutable, and opening every
+                // property up so the writer can assign them would give the rest of the codebase a
+                // mutable ability for the sake of one method. The other candidate - remove then
+                // add - is a delete and an insert on the same primary key inside one
+                // SaveChanges, where EF is free to order the insert first and collide.
+                await db.Abilities
+                    .Where(a => a.Key == c.Key)
+                    .ExecuteUpdateAsync(
+                        set => set
+                            .SetProperty(a => a.Path, c.Path)
+                            .SetProperty(a => a.UnlockLevel, c.UnlockLevel)
+                            .SetProperty(a => a.Name, c.Name)
+                            .SetProperty(a => a.Description, c.Description)
+                            .SetProperty(a => a.CostType, c.CostType)
+                            .SetProperty(a => a.CostValue, c.CostValue)
+                            .SetProperty(a => a.CooldownPulses, c.CooldownPulses)
+                            .SetProperty(a => a.CastTimePulses, c.CastTimePulses)
+                            .SetProperty(a => a.TargetingType, c.TargetingType)
+                            .SetProperty(a => a.EffectKey, c.EffectKey)
+                            .SetProperty(
+                                a => a.EffectParams,
+                                new Dictionary<string, string>(c.EffectParams, StringComparer.Ordinal)),
+                        cancellationToken);
+
+                return ContentAction.Update;
+            }
+
+            case DeleteAbility c:
+            {
+                var entity = await db.Abilities.FirstOrDefaultAsync(
+                    a => a.Key == c.Key,
+                    cancellationToken);
+
+                if (entity is not null)
+                {
+                    db.Abilities.Remove(entity);
                 }
 
                 return ContentAction.Delete;
@@ -488,6 +558,28 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
     {
         switch (change)
         {
+            case UpsertAbility or DeleteAbility:
+            {
+                var key = change.EntityKey;
+                var entity = await db.Abilities.AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.Key == key, cancellationToken);
+
+                return entity is null ? null : new JsonObject
+                {
+                    ["key"] = entity.Key,
+                    ["path"] = entity.Path.ToString(),
+                    ["unlockLevel"] = entity.UnlockLevel,
+                    ["name"] = entity.Name,
+                    ["costType"] = entity.CostType.ToString(),
+                    ["costValue"] = entity.CostValue,
+                    ["cooldownPulses"] = entity.CooldownPulses,
+                    ["castTimePulses"] = entity.CastTimePulses,
+                    ["targetingType"] = entity.TargetingType.ToString(),
+                    ["effectKey"] = entity.EffectKey,
+                    ["effectParams"] = JsonSerializer.SerializeToNode(entity.EffectParams),
+                }.ToJsonString();
+            }
+
             case UpsertWorld or DeleteWorld:
             {
                 var key = change.EntityKey;

@@ -1,4 +1,6 @@
 using System.Text.Json.Serialization;
+using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Spawning;
@@ -177,6 +179,50 @@ public sealed record SaveMobTemplateRequest(
     Dictionary<string, object>? Behavior,
     List<Dictionary<string, object>>? Loot,
     List<MobAttack>? Attacks);
+
+/// <param name="Problems">
+/// What the validator says about this ability as stored. Carried on the response rather than only
+/// returned from a save, so the editor can show a warning about a row somebody else authored, or
+/// one that arrived by import — the two cases where nobody saw a save-time refusal.
+/// </param>
+public sealed record AbilityResponse(
+    string Key,
+    CharacterPath Path,
+    int UnlockLevel,
+    string Name,
+    string Description,
+    CostType CostType,
+    int CostValue,
+    long CooldownPulses,
+    long? CastTimePulses,
+    TargetingType TargetingType,
+    string EffectKey,
+    Dictionary<string, string> EffectParams,
+    IReadOnlyList<AbilityProblemResponse> Problems);
+
+public sealed record AbilityProblemResponse(string Severity, string Message);
+
+/// <remarks>
+/// The three enums carry <see cref="NullableEnumConverter{T}"/> for the same reason
+/// <see cref="SaveItemTemplateRequest"/>'s slot does: a nullable enum sent as a string does not
+/// bind without it, so <c>"path": "Warden"</c> would arrive as null and the save would be refused
+/// for having no Path — a 400 that blames the caller for the server's deserialiser.
+/// </remarks>
+public sealed record SaveAbilityRequest(
+    [property: JsonConverter(typeof(NullableEnumConverter<CharacterPath>))]
+    CharacterPath? Path,
+    int? UnlockLevel,
+    string? Name,
+    string? Description,
+    [property: JsonConverter(typeof(NullableEnumConverter<CostType>))]
+    CostType? CostType,
+    int? CostValue,
+    long? CooldownPulses,
+    long? CastTimePulses,
+    [property: JsonConverter(typeof(NullableEnumConverter<TargetingType>))]
+    TargetingType? TargetingType,
+    string? EffectKey,
+    Dictionary<string, string>? EffectParams);
 
 public sealed record ItemTemplateResponse(
     string Key,

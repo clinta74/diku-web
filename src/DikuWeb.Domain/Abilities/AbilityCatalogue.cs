@@ -3,10 +3,26 @@ using DikuWeb.Domain.Characters;
 namespace DikuWeb.Domain.Abilities;
 
 /// <summary>
-/// Every ability in the game, with the Path and level that grants it.
+/// The ability set a <b>fresh database</b> is seeded with. Not the live one.
 /// </summary>
 /// <remarks>
-/// One list, rather than a seeder that writes ability rows and a progression table that names
+/// <b>Read this before changing a number here.</b> The <c>abilities</c> table is the source of
+/// truth; this list is what a database with no rows in it is born with, exactly as the twelve
+/// Millbrook rooms in <c>StarterWorldSeeder</c> are. Its one reader in the whole of <c>src</c> is
+/// that seeder, planting abilities a database does not already have. The Engine — the entire cast
+/// path — never touches it.
+///
+/// <b>So editing a cooldown here does not retune the game.</b> It changes what a *new* install
+/// starts with. Every database that already holds the row keeps its own value, because the
+/// reconcile only inserts what is missing — which is deliberate, and is what stops a restart from
+/// reverting a builder's work. A retune reaches an existing server as a migration or an imported
+/// bundle, never by editing this file.
+///
+/// The list stays in code rather than becoming a data file because a fresh install has to get
+/// abilities from somewhere before anything exists to import them from, and because it is the set
+/// the tests hold the validator against.
+///
+/// Below: one list, rather than a seeder that writes ability rows and a progression table that names
 /// them. Those were separate and had drifted in both directions: four abilities were unlocked at
 /// level 6 with no row behind them (<c>warden.parry</c>, <c>adept.amplify</c>,
 /// <c>shade.shadowstep</c>, <c>hallow.restore</c>) so reaching level 6 granted something that

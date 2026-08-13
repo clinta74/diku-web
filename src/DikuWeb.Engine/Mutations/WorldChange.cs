@@ -1,3 +1,5 @@
+using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Spawning;
@@ -240,6 +242,40 @@ public sealed record UpsertMobTemplate(
 public sealed record DeleteMobTemplate(string Key) : WorldChange
 {
     public override string EntityKind => "mob-template";
+
+    public override string EntityKey => Key;
+}
+
+/// <summary>
+/// Creates or retunes one ability (PLAN.md §4.5).
+/// </summary>
+/// <remarks>
+/// Carries the whole row rather than a patch, like every other upsert here: the loop replaces what
+/// it holds, so a partial change would have to be merged in two places and the two would disagree.
+/// The builder API is what fills in the fields a request left out, from what is stored.
+/// </remarks>
+public sealed record UpsertAbility(
+    string Key,
+    CharacterPath Path,
+    int UnlockLevel,
+    string Name,
+    string Description,
+    CostType CostType,
+    int CostValue,
+    long CooldownPulses,
+    long? CastTimePulses,
+    TargetingType TargetingType,
+    string EffectKey,
+    Dictionary<string, string> EffectParams) : WorldChange
+{
+    public override string EntityKind => "ability";
+
+    public override string EntityKey => Key;
+}
+
+public sealed record DeleteAbility(string Key) : WorldChange
+{
+    public override string EntityKind => "ability";
 
     public override string EntityKey => Key;
 }

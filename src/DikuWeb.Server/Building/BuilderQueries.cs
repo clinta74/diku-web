@@ -1,3 +1,5 @@
+using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine;
@@ -193,6 +195,65 @@ public sealed class BuilderQueries(DikuWebDbContext db)
     // -----------------------------------------------------------------------
     // Templates and Spawners (Phase 3)
     // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Every ability, each carrying whatever the validator says about it.
+    /// </summary>
+    /// <remarks>
+    /// Validated on read, not only on write. A row can reach the table from an import, from a
+    /// migration backfill, or from a build older than the check that would now refuse it — and in
+    /// none of those cases did anybody see a save-time error. Since every way an ability can be
+    /// broken is silent in play, the list is the only place a builder would ever find out.
+    /// </remarks>
+    public async Task<IReadOnlyList<AbilityResponse>> AbilitiesAsync(
+        EffectRegistry effects,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(effects);
+
+        var abilities = await db.Abilities.AsNoTracking()
+            .OrderBy(a => a.Path)
+            .ThenBy(a => a.UnlockLevel)
+            .ToListAsync(cancellationToken);
+
+        var setProblems = AbilityValidator.ValidateSet(abilities, effects);
+
+        return [.. abilities.Select(a => ToResponse(
+            a,
+            setProblems.Where(p => p.Key == a.Key)))];
+    }
+
+    public async Task<AbilityResponse?> AbilityAsync(
+        string key,
+        EffectRegistry effects,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(effects);
+
+        var ability = await db.Abilities.AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Key == key, cancellationToken);
+
+        return ability is null
+            ? null
+            : ToResponse(ability, AbilityValidator.ValidateOne(ability, effects));
+    }
+
+    private static AbilityResponse ToResponse(
+        Domain.Abilities.Ability ability,
+        IEnumerable<AbilityProblem> problems) =>
+        new(ability.Key,
+            ability.Path,
+            ability.UnlockLevel,
+            ability.Name,
+            ability.Description,
+            ability.CostType,
+            ability.CostValue,
+            ability.CooldownPulses,
+            ability.CastTimePulses,
+            ability.TargetingType,
+            ability.EffectKey,
+            new Dictionary<string, string>(ability.EffectParams, StringComparer.Ordinal),
+            [.. problems.Select(p => new AbilityProblemResponse(p.Severity.ToString(), p.Message))]);
 
     public async Task<IReadOnlyList<MobTemplateResponse>> MobTemplatesAsync(
         CancellationToken cancellationToken)

@@ -1,8 +1,11 @@
+using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Presentation;
 using DikuWeb.Engine.Protocol;
@@ -36,7 +39,8 @@ public sealed class WorldMutationApplier(
     MobTemplateCache? mobTemplateCache = null,
     ItemTemplateCache? itemTemplateCache = null,
     SpawnerCache? spawnerCache = null,
-    IItemSaveQueue? itemSaveQueue = null)
+    IItemSaveQueue? itemSaveQueue = null,
+    AbilityCache? abilityCache = null)
 {
     private const string UnfinishedTitle = "An Unfinished Room";
 
@@ -70,6 +74,8 @@ public sealed class WorldMutationApplier(
             DeleteItemTemplate change => ApplyDeleteItemTemplate(change),
             UpsertSpawner change => ApplyUpsertSpawner(change),
             DeleteSpawner change => ApplyDeleteSpawner(change),
+            UpsertAbility change => ApplyUpsertAbility(change),
+            DeleteAbility change => ApplyDeleteAbility(change),
             UpsertQuest change => ApplyUpsertQuest(change),
             DeleteQuest change => ApplyDeleteQuest(change),
             _ => MutationResult.Fail(MutationError.Invalid, "Unsupported change."),
@@ -955,6 +961,47 @@ public sealed class WorldMutationApplier(
     // loop thread, under the single-writer rule. Without this a builder's save reached the
     // spawner sweep (which reads repositories) but not shops or quest dialogue (which read these
     // caches) until the next restart, contradicting the "live immediate" decision in PLAN.md §1.
+
+    // -----------------------------------------------------------------------
+    // Abilities
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Puts a retuned ability into the cache, so the next cast uses it.
+    /// </summary>
+    /// <remarks>
+    /// The cache is what the cast path reads (<c>AbilityLookup</c>, <c>AbilityCommands</c>), and it
+    /// now also carries the unlock table, so this is what makes a change to a Path or a level take
+    /// effect without a restart as well. Applying to the cache and nothing else is deliberate:
+    /// characters mid-fight keep the cooldown they are already sitting on, because cooldowns are
+    /// keyed by (character, ability) and stored apart from the definition.
+    /// </remarks>
+    private MutationResult ApplyUpsertAbility(UpsertAbility change)
+    {
+        abilityCache?.Put(new Ability
+        {
+            Key = change.Key,
+            Path = change.Path,
+            UnlockLevel = change.UnlockLevel,
+            Name = change.Name,
+            Description = change.Description,
+            CostType = change.CostType,
+            CostValue = change.CostValue,
+            CooldownPulses = change.CooldownPulses,
+            CastTimePulses = change.CastTimePulses,
+            TargetingType = change.TargetingType,
+            EffectKey = change.EffectKey,
+            EffectParams = new Dictionary<string, string>(change.EffectParams, StringComparer.Ordinal),
+        });
+
+        return MutationResult.Ok([change]);
+    }
+
+    private MutationResult ApplyDeleteAbility(DeleteAbility change)
+    {
+        abilityCache?.Remove(change.Key);
+        return MutationResult.Ok([change]);
+    }
 
     private MutationResult ApplyUpsertMobTemplate(UpsertMobTemplate change)
     {

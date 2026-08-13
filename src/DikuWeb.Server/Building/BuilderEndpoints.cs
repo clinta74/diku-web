@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
@@ -65,6 +66,12 @@ public static class BuilderEndpoints
         group.MapPost("/mob-templates/{key}", CreateMobTemplateAsync);
         group.MapPatch("/mob-templates/{key}", UpdateMobTemplateAsync);
         group.MapDelete("/mob-templates/{key}", DeleteMobTemplateAsync);
+
+        group.MapGet("/abilities", ListAbilitiesAsync);
+        group.MapGet("/abilities/{key}", GetAbilityAsync);
+        group.MapPost("/abilities/{key}", CreateAbilityAsync);
+        group.MapPatch("/abilities/{key}", UpdateAbilityAsync);
+        group.MapDelete("/abilities/{key}", DeleteAbilityAsync);
 
         group.MapGet("/item-templates", ListItemTemplatesAsync);
         group.MapGet("/item-templates/{key}", GetItemTemplateAsync);
@@ -573,6 +580,167 @@ public static class BuilderEndpoints
         HttpContext http,
         CancellationToken ct) =>
         await SaveAsync(editor, new DeleteMobTemplate(key), http, ct, () => Task.FromResult<object?>(null));
+
+    // -----------------------------------------------------------------------
+    // Abilities
+    // -----------------------------------------------------------------------
+
+    private static async Task<IResult> ListAbilitiesAsync(
+        BuilderQueries queries,
+        EffectRegistry effects,
+        CancellationToken ct) =>
+        Results.Ok(await queries.AbilitiesAsync(effects, ct));
+
+    private static async Task<IResult> GetAbilityAsync(
+        string key,
+        BuilderQueries queries,
+        EffectRegistry effects,
+        CancellationToken ct) =>
+        await queries.AbilityAsync(key, effects, ct) is { } ability
+            ? Results.Ok(ability)
+            : Results.NotFound();
+
+    /// <summary>
+    /// Refuses anything <see cref="AbilityValidator"/> calls an error, and reports the rest.
+    /// </summary>
+    /// <remarks>
+    /// The one place in the builder API that refuses on content grounds rather than on shape.
+    /// Everything else here follows §7.4 and lets the world be temporarily broken, because a
+    /// dangling exit is visible the moment somebody walks into it. A broken ability is not: it
+    /// costs its resource, starts its cooldown, and does nothing, so the mistake surfaces as a
+    /// player thinking a spell is weak. The same argument already made mob attack effect keys a
+    /// refusal rather than a warning.
+    /// </remarks>
+    private static IResult? RefuseInvalid(Domain.Abilities.Ability candidate, EffectRegistry effects)
+    {
+        var errors = AbilityValidator.ValidateOne(candidate, effects)
+            .Where(p => p.Severity == AbilityProblemSeverity.Error)
+            .Select(p => p.Message)
+            .ToList();
+
+        return errors.Count == 0 ? null : Invalid(string.Join(" ", errors));
+    }
+
+    private static async Task<IResult> CreateAbilityAsync(
+        string key,
+        SaveAbilityRequest request,
+        BuilderQueries queries,
+        WorldEditor editor,
+        EffectRegistry effects,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        // Dotted, unlike a template key: an ability key is "<path>.<name>" and the validator
+        // enforces that the prefix matches the Path that learns it.
+        if (!IsAbilityKey(key))
+        {
+            return Invalid("An ability key looks like 'warden.shield-bash'.");
+        }
+
+        if (await queries.AbilityAsync(key, effects, ct) is not null)
+        {
+            return Results.Conflict(new { error = $"Ability '{key}' already exists." });
+        }
+
+        if (request.Path is not { } path)
+        {
+            return Invalid("An ability needs a Path.");
+        }
+
+        if (request.EffectKey is not { } effectKey)
+        {
+            return Invalid("An ability needs an effect.");
+        }
+
+        var candidate = new Domain.Abilities.Ability
+        {
+            Key = key,
+            Path = path,
+            UnlockLevel = request.UnlockLevel ?? 1,
+            Name = Trim(request.Name) ?? key,
+            Description = request.Description ?? string.Empty,
+            CostType = request.CostType ?? Domain.Abilities.CostType.Stamina,
+            CostValue = request.CostValue ?? 10,
+            CooldownPulses = request.CooldownPulses ?? 24,
+            CastTimePulses = request.CastTimePulses,
+            TargetingType = request.TargetingType ?? Domain.Abilities.TargetingType.SingleTarget,
+            EffectKey = effectKey,
+            EffectParams = request.EffectParams ?? [],
+        };
+
+        if (RefuseInvalid(candidate, effects) is { } refusal)
+        {
+            return refusal;
+        }
+
+        return await SaveAsync(editor, ChangeFor(candidate), http, ct,
+            () => queries.AbilityAsync(key, effects, ct));
+    }
+
+    private static async Task<IResult> UpdateAbilityAsync(
+        string key,
+        SaveAbilityRequest request,
+        BuilderQueries queries,
+        WorldEditor editor,
+        EffectRegistry effects,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (await queries.AbilityAsync(key, effects, ct) is not { } existing)
+        {
+            return Results.NotFound();
+        }
+
+        var candidate = new Domain.Abilities.Ability
+        {
+            Key = key,
+            Path = request.Path ?? existing.Path,
+            UnlockLevel = request.UnlockLevel ?? existing.UnlockLevel,
+            Name = Trim(request.Name) ?? existing.Name,
+            Description = request.Description ?? existing.Description,
+            CostType = request.CostType ?? existing.CostType,
+            CostValue = request.CostValue ?? existing.CostValue,
+            CooldownPulses = request.CooldownPulses ?? existing.CooldownPulses,
+
+            // Deliberately not coalesced against what is stored. A null cast time *means*
+            // instant, so `?? existing` would make an ability that is being made instant keep
+            // its old cast bar, with no way to clear one from the editor at all.
+            CastTimePulses = request.CastTimePulses,
+
+            TargetingType = request.TargetingType ?? existing.TargetingType,
+            EffectKey = request.EffectKey ?? existing.EffectKey,
+            EffectParams = request.EffectParams ?? existing.EffectParams,
+        };
+
+        if (RefuseInvalid(candidate, effects) is { } refusal)
+        {
+            return refusal;
+        }
+
+        return await SaveAsync(editor, ChangeFor(candidate), http, ct,
+            () => queries.AbilityAsync(key, effects, ct));
+    }
+
+    private static async Task<IResult> DeleteAbilityAsync(
+        string key,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct) =>
+        await SaveAsync(editor, new DeleteAbility(key), http, ct, () => Task.FromResult<object?>(null));
+
+    private static UpsertAbility ChangeFor(Domain.Abilities.Ability a) =>
+        new(a.Key, a.Path, a.UnlockLevel, a.Name, a.Description, a.CostType, a.CostValue,
+            a.CooldownPulses, a.CastTimePulses, a.TargetingType, a.EffectKey,
+            new Dictionary<string, string>(a.EffectParams, StringComparer.Ordinal));
+
+    /// <summary>
+    /// An ability key is two key-segments joined by a dot: <c>warden.shield-bash</c>.
+    /// </summary>
+    private static bool IsAbilityKey(string key)
+    {
+        var parts = key.Split('.');
+        return parts.Length == 2 && parts.All(IsKeySegment);
+    }
 
     // -----------------------------------------------------------------------
     // Item Templates
