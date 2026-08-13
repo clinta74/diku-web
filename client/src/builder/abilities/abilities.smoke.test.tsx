@@ -42,7 +42,7 @@ const broken = vi.hoisted(
   }),
 )
 
-const calls = vi.hoisted(() => ({ list: 0, updated: null as unknown }))
+const calls = vi.hoisted(() => ({ list: 0, updated: null as unknown, fail: false }))
 
 vi.mock('../../net/builderApi', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../net/builderApi')>()
@@ -51,7 +51,9 @@ vi.mock('../../net/builderApi', async (importOriginal) => {
     builderApi: {
       abilities: () => {
         calls.list++
-        return Promise.resolve([kick, broken])
+        return calls.fail
+          ? Promise.reject(new Error('Request failed: 404'))
+          : Promise.resolve([kick, broken])
       },
       ability: (key: string) => Promise.resolve(key === kick.key ? kick : broken),
       updateAbility: (_key: string, body: unknown) => {
@@ -68,6 +70,7 @@ import { AbilitiesTab } from './AbilitiesTab'
 beforeEach(() => {
   calls.list = 0
   calls.updated = null
+  calls.fail = false
 })
 
 afterEach(cleanup)
@@ -132,6 +135,17 @@ it('saves an edited cooldown', async () => {
 
   await waitFor(() => expect(calls.updated).not.toBeNull())
   expect((calls.updated as { cooldownPulses: number }).cooldownPulses).toBe(48)
+})
+
+it('says so when the list cannot be loaded', async () => {
+  // Reported from a dev server: the tab was empty and there was no way to tell an empty database
+  // from a request that failed. It was `.catch(() => [])`, so a 404 from a server started before
+  // this tab existed rendered as "this game has no abilities" - the exact silent-failure shape the
+  // ability validator exists to prevent, reintroduced in the screen built to show it.
+  calls.fail = true
+  renderTab()
+
+  expect(await screen.findByText(/404/)).toBeTruthy()
 })
 
 it('does not offer Save until something changed', async () => {

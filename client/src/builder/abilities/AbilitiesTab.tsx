@@ -24,11 +24,23 @@ export function AbilitiesTab() {
   const { abilityKey } = useParams()
   const [abilities, setAbilities] = useState<Ability[]>([])
   const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
 
+  // A failed load and an empty list must not look the same. This was `.catch(() => [])`, copied
+  // from the shared data provider, and it renders a 401, a 404, or a server that has not been
+  // restarted as "this game has no abilities" - with nothing on screen to suggest otherwise. That
+  // is the silent-failure shape the ability validator exists to prevent, reintroduced in the
+  // screen built to display it.
   const refresh = async () => {
-    setAbilities(await builderApi.abilities().catch(() => []))
-    setLoading(false)
+    try {
+      setAbilities(await builderApi.abilities())
+      setFailed(null)
+    } catch (e) {
+      setFailed(e instanceof Error ? e.message : 'Could not load abilities.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -49,7 +61,21 @@ export function AbilitiesTab() {
 
         {loading && <p className="dim">Loading…</p>}
 
+        {!loading && failed && (
+          <p className="bad">
+            {failed} If the server was started before the Abilities tab existed, restart it.
+          </p>
+        )}
+
+        {!loading && !failed && abilities.length === 0 && (
+          <p className="dim">
+            No abilities in the database. A fresh install seeds them on first boot from the starter
+            catalogue.
+          </p>
+        )}
+
         {!loading &&
+          !failed &&
           PATH_ORDER.map((path) => {
             const forPath = abilities
               .filter((a) => a.path === path)
