@@ -138,7 +138,9 @@ diku-web/
 ├─ DikuWeb.sln
 ├─ Directory.Build.props            # shared TFM (net10.0), nullable, warnings-as-errors
 ├─ docker-compose.yml               # postgres:18 + adminer
-├─ PLAN.md
+├─ README.md                        # the only document in the root
+├─ LICENSE
+├─ docs/                            # this file, and everything else written down
 ├─ src/
 │  ├─ DikuWeb.Domain/               # entities, rules, scaling math, validation.
 │  │                                # ZERO external deps. NO coordinates.

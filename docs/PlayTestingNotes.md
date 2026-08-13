@@ -80,3 +80,10 @@ One thing found on the way, left alone because it is a different mechanism: goin
 completes the session's channel, so `EventSource`'s automatic retry reconnects to a closed one and
 stays silent. Only entering again re-establishes output, which is what the Rejoin button does — the
 automatic retry recovers a *stream* but not a link-dead *character*. Worth deciding on separately.
+
+- let's create a UX evaulation. I want to look for best practices, style consistancy, letter casing and spacing, layout spacing, resizablity, and intuitive.
+I don't think we need the Follow my character aldenmoor.millbrook.tavern-common checkbox it can always be enabled.
+
+- mobs templates should have a default for the wandering configuration and which should be not wander as the default for the template. This should still be control in the end by the mob spawner.
+
+- the ability cool downs are a bit to quick. it would be nice to have something show your pending cool downs.

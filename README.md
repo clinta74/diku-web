@@ -3,7 +3,7 @@
 A browser-played, text-driven multi-user dungeon. C# / .NET 10 server, PostgreSQL 18,
 React client. Server→client push over Server-Sent Events; client→server commands over HTTP POST.
 
-See [PLAN.md](PLAN.md) for the full design.
+See [docs/PLAN.md](docs/PLAN.md) for the full design, and [docs/](docs/) for everything else.
 
 **Current status: Phase 2a complete.** You can register, create a character, walk a 12-room
 village, talk to other players in real time, **build new geography from the browser** — no SQL,
@@ -255,3 +255,23 @@ running. Stop it before rebuilding.
 
 **Server tests fail to start a container.** Docker is not running, or the CLI cannot reach the
 daemon. Check `docker ps`.
+
+## Licence
+
+Copyright (C) 2026 Clinton Andrews.
+
+This program is free software: you can redistribute it and/or modify it under the terms of the
+**GNU Affero General Public License** as published by the Free Software Foundation, either
+version 3 of the License, or (at your option) any later version. The full text is in
+[LICENSE](LICENSE).
+
+It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the licence for
+details.
+
+**What the Affero clause means for a MUD, since hosting is how this software is used rather than
+distributed.** Section 13 requires that anyone running a modified version as a public server
+offers its users the corresponding source. Running an *unmodified* copy carries no such
+obligation, and neither does playing on somebody's server. If you fork this and run it publicly,
+publish your fork — a link in the game's `help` output or on the login page is the usual way, and
+is a change worth making before the server goes up rather than after somebody asks.

@@ -203,5 +203,5 @@ docker push ghcr.io/your-org/diku-web-client:v1.0.0
 
 ## See Also
 
-- [README.md](README.md) - Project overview
+- [README.md](../README.md) - Project overview
 - [PLAN.md](PLAN.md) - Architecture and design
