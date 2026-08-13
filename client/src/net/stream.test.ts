@@ -24,10 +24,21 @@ class FakeEventSource {
     FakeEventSource.opened.push(this)
   }
 
-  addEventListener() {}
+  // Recorded rather than ignored, so a test can push a frame in. The displaced notice arrives
+  // as an ordinary `sys` event, which is the only way to exercise what the client does with it.
+  readonly listeners = new Map<string, (message: { data: string }) => void>()
+
+  addEventListener(type: string, handler: (message: { data: string }) => void) {
+    this.listeners.set(type, handler)
+  }
+
+  emit(type: string, data: unknown) {
+    this.listeners.get(type)?.({ data: JSON.stringify(data) })
+  }
 
   close() {
     this.closed = true
+    this.readyState = FakeEventSource.CLOSED
   }
 }
 
@@ -99,6 +110,92 @@ it('does nothing when the page is being hidden', () => {
   visibility('hidden')
 
   expect(FakeEventSource.opened).toHaveLength(1)
+})
+
+it('names its connection, and keeps the same name when it reopens', () => {
+  // The whole mechanism rests on this. Two devices on one character send identical requests, so
+  // the id is the only thing telling the replaced device from the one that replaced it — and it
+  // has to survive a reconnect, or every dropped packet would look like a takeover.
+  connect()
+  const first = new URL(FakeEventSource.opened[0].url, 'http://x').searchParams.get('connection')
+
+  expect(first).toBeTruthy()
+
+  FakeEventSource.opened[0].readyState = FakeEventSource.CLOSED
+  visibility('visible')
+
+  const second = new URL(FakeEventSource.opened[1].url, 'http://x').searchParams.get('connection')
+  expect(second).toBe(first)
+})
+
+it('gives a fresh name to a stream opened separately', () => {
+  // Taking a character back onto this screen is a new connectStream, and it must read as a new
+  // device rather than as the old one resuming - otherwise the takeover would be refused.
+  connect()
+  connect()
+
+  const ids = FakeEventSource.opened.map(
+    (source) => new URL(source.url, 'http://x').searchParams.get('connection'),
+  )
+
+  expect(ids[0]).not.toBe(ids[1])
+})
+
+it('stops for good when the server says another device took over', () => {
+  // Retrying is the bug: two devices that both keep reconnecting take the stream in turns and
+  // each ends up with about half the game's output.
+  const displaced: string[] = []
+  const events: unknown[] = []
+
+  connections.push(
+    connectStream('c1', {
+      onEvent: (event) => events.push(event),
+      onDisplaced: (message) => displaced.push(message),
+    }),
+  )
+
+  FakeEventSource.opened[0].emit('sys', {
+    message: 'This character was opened somewhere else.',
+    kind: 'displaced',
+  })
+
+  expect(displaced).toEqual(['This character was opened somewhere else.'])
+  expect(FakeEventSource.opened[0].closed).toBe(true)
+
+  // Not delivered as an ordinary sys line as well: it is about this connection rather than about
+  // the character, and the screen says it in its own words.
+  expect(events).toHaveLength(0)
+
+  // And looking at the page again must not walk straight back into the fight over the session.
+  visibility('visible')
+  expect(FakeEventSource.opened).toHaveLength(1)
+})
+
+it('does not report a displaced stream as a connection error', () => {
+  // EventSource fires onerror as it closes. Reporting that would put "Trying to reconnect…" on a
+  // screen that has deliberately stopped trying.
+  const errors: number[] = []
+
+  connections.push(
+    connectStream('c1', { onEvent: () => {}, onError: () => errors.push(1) }),
+  )
+
+  const source = FakeEventSource.opened[0]
+  source.emit('sys', { message: 'Opened elsewhere.', kind: 'displaced' })
+  source.onerror?.()
+
+  expect(errors).toHaveLength(0)
+})
+
+it('still reports an ordinary sys event to the caller', () => {
+  const events: Array<{ type: string }> = []
+
+  connections.push(connectStream('c1', { onEvent: (event) => events.push(event) }))
+
+  FakeEventSource.opened[0].emit('sys', { message: 'Welcome.', kind: 'info' })
+
+  expect(events).toHaveLength(1)
+  expect(FakeEventSource.opened[0].closed).toBe(false)
 })
 
 it('stops listening once the caller disconnects', () => {

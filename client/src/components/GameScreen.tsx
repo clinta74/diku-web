@@ -15,6 +15,15 @@ interface Props {
   characterId: string
   characterName: string
   onLeave: () => void
+  /**
+   * This character has been taken over by another device, and this screen is finished.
+   *
+   * Deliberately not `onLeave`: leaving removes the character from the world, and doing that here
+   * would evict the character the *other* device is now playing. Nothing is asked of the server —
+   * it has already handed the character over — so this only has to put the player somewhere that
+   * is not a dead game screen.
+   */
+  onDisplaced?: (message: string) => void
   /** Drives the builder's follow mode (PLAN.md §7.6). Ignored for ordinary players. */
   onRoomChange?: (roomKey: string) => void
   /**
@@ -77,6 +86,7 @@ export function GameScreen({
   characterId,
   characterName,
   onLeave,
+  onDisplaced,
   onRoomChange,
   onOpenBuilder,
   focusInputRef,
@@ -113,13 +123,39 @@ export function GameScreen({
   const [epoch, setEpoch] = useState(0)
   const [rejoining, setRejoining] = useState(false)
 
+  /**
+   * The takeover handler, held in a ref so the stream effect never depends on its identity.
+   *
+   * <b>This is load-bearing, not tidiness.</b> A callback passed inline by the parent is a new
+   * function on every one of the parent's renders, and App re-renders on every room change. With
+   * it in the dependency array below, the effect tore the stream down and reopened it constantly —
+   * and each teardown tells the server the connection dropped, which marks the character link-dead
+   * and completes its event channel, so the stream that replaced it read a closed one. The screen
+   * ended up permanently "Disconnected. Trying to reconnect…", which is precisely the state a
+   * player reported on the device that had just *won* the character.
+   *
+   * The same trap is why `onRoomChange` is wrapped in `useCallback` by the caller. A ref is the
+   * stronger fix: it holds for any caller, rather than for callers who remember.
+   */
+  const displacedHandler = useRef(onDisplaced)
+  displacedHandler.current = onDisplaced
+
   // Keyed by character, so a second tab on a different character opens its own stream
   // rather than evicting this one.
+  //
+  // A takeover ends this screen rather than offering to fight back for the character. Two screens
+  // that can each reclaim it is the tug-of-war in a politer costume: the loser reconnects, wins,
+  // and the other device becomes the loser. One of them has to be finished, and it is the older
+  // one — the player is at the device they just picked up.
   useEffect(() => {
     const close = connectStream(characterId, {
       onEvent: (event) => dispatch({ kind: 'event', event }),
       onOpen: () => dispatch({ kind: 'connection', connected: true }),
       onError: () => dispatch({ kind: 'connection', connected: false }),
+      onDisplaced: (message) => {
+        dispatch({ kind: 'connection', connected: false })
+        displacedHandler.current?.(message)
+      },
     })
     return close
   }, [characterId, epoch])
@@ -157,7 +193,11 @@ export function GameScreen({
   const rejoin = useCallback(async () => {
     setRejoining(true)
     try {
+      // Still needed when the character has actually left the world: only `enter` puts them back.
+      // When the screen was merely displaced they are already in it, and this is a rebind - the
+      // takeover is really the epoch below, which opens a stream under a new connection id.
       await api.enter(characterId)
+      setDisplaced(null)
       setEpoch((current) => current + 1)
     } catch {
       // Left to the player to try again: the button is still there, and the reason it failed is

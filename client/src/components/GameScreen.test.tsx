@@ -12,18 +12,37 @@ vi.mock('../net/api', () => ({
       sent.push(input)
       return Promise.resolve()
     },
+    // Only Rejoin reaches this. The stream names itself with an id of its own minting, so
+    // nothing about opening one goes through the API.
+    enter: () => Promise.resolve({}),
   },
 }))
 
 // Holds the stream's own callback so a test can push frames in, which is the only way the room's
 // contents - and therefore the completion candidates - ever reach the component.
-const stream = vi.hoisted(() => ({ emit: null as ((event: GameEvent) => void) | null }))
+const stream = vi.hoisted(() => ({
+  emit: null as ((event: GameEvent) => void) | null,
+  displace: null as ((message: string) => void) | null,
+
+  // Counted, because reopening the stream is not a harmless extra render: each teardown tells the
+  // server the connection dropped, which marks the character link-dead and closes its channel.
+  opened: 0,
+}))
 
 vi.mock('../net/stream', () => ({
-  connectStream: (_id: string, handlers: { onEvent: (event: GameEvent) => void }) => {
+  connectStream: (
+    _id: string,
+    handlers: {
+      onEvent: (event: GameEvent) => void
+      onDisplaced?: (message: string) => void
+    },
+  ) => {
+    stream.opened += 1
     stream.emit = handlers.onEvent
+    stream.displace = (message: string) => handlers.onDisplaced?.(message)
     return () => {
       stream.emit = null
+      stream.displace = null
     }
   },
 }))
@@ -34,17 +53,29 @@ Element.prototype.scrollIntoView = () => {}
 
 beforeEach(() => {
   sent.length = 0
+  stream.opened = 0
   localStorage.clear()
 })
 
 afterEach(cleanup)
 
-function play({ active = true, characterId = 'c1' } = {}) {
+function play({
+  active = true,
+  characterId = 'c1',
+  onLeave = () => {},
+  onDisplaced,
+}: {
+  active?: boolean
+  characterId?: string
+  onLeave?: () => void
+  onDisplaced?: (message: string) => void
+} = {}) {
   render(
     <GameScreen
       characterId={characterId}
       characterName="Kael"
-      onLeave={() => {}}
+      onLeave={onLeave}
+      onDisplaced={onDisplaced}
       active={active}
     />,
   )
@@ -310,5 +341,104 @@ describe('following the newest line', () => {
     scrollTo(scrollback(), { top: 1800, height: 2000 })
 
     expect(screen.queryByRole('button', { name: /jump to newest/i })).toBeNull()
+  })
+})
+
+describe('another device taking the character', () => {
+  it('hands the screen back rather than offering to fight for it', () => {
+    // Two screens that can each reclaim the character is the tug-of-war in a politer costume:
+    // the loser reconnects, wins, and the other becomes the loser. The older screen is finished.
+    const displaced: string[] = []
+    play({ onDisplaced: (message) => displaced.push(message) })
+
+    act(() => stream.displace?.('This character was opened somewhere else.'))
+
+    expect(displaced).toEqual(['This character was opened somewhere else.'])
+  })
+
+  it('does not leave the world on the way out', () => {
+    // Leaving removes the character from the world, which would pull it out from under the
+    // device that has just taken it - this screen's tidiness costing somebody else their session.
+    const left: number[] = []
+    play({ onLeave: () => left.push(1), onDisplaced: () => {} })
+
+    act(() => stream.displace?.('Opened elsewhere.'))
+
+    expect(left).toHaveLength(0)
+  })
+
+  it('offers no reconnect bar, because nothing is going to reconnect', () => {
+    play({ onDisplaced: () => {} })
+
+    act(() => stream.displace?.('Opened elsewhere.'))
+
+    expect(screen.queryByRole('button', { name: /rejoin|play here/i })).toBeNull()
+  })
+})
+
+describe('holding on to the stream', () => {
+  it('does not reopen when the parent hands it a new callback', () => {
+    // The bug a player hit on the device that had just *won* the character. A callback passed
+    // inline is a new function on every parent render, and the parent re-renders on every room
+    // change - so the stream was torn down and reopened continuously. Each teardown reports a
+    // dropped connection, which marks the character link-dead and completes its event channel, so
+    // the replacement stream read a closed one and the screen sat on "Trying to reconnect…".
+    const { rerender } = render(
+      <GameScreen
+        characterId="c1"
+        characterName="Kael"
+        onLeave={() => {}}
+        onDisplaced={() => {}}
+      />,
+    )
+
+    expect(stream.opened).toBe(1)
+
+    // Three renders, three fresh callback identities, exactly as the parent produces them.
+    for (let i = 0; i < 3; i++) {
+      rerender(
+        <GameScreen
+          characterId="c1"
+          characterName="Kael"
+          onLeave={() => {}}
+          onDisplaced={() => {}}
+        />,
+      )
+    }
+
+    expect(stream.opened).toBe(1)
+  })
+
+  it('still reaches the newest callback after a rerender', () => {
+    // The cost of holding it in a ref would be calling a stale one, which would send the player
+    // nowhere when their character was taken.
+    const displaced: string[] = []
+
+    const { rerender } = render(
+      <GameScreen characterId="c1" characterName="Kael" onLeave={() => {}} onDisplaced={() => {}} />,
+    )
+
+    rerender(
+      <GameScreen
+        characterId="c1"
+        characterName="Kael"
+        onLeave={() => {}}
+        onDisplaced={(message) => displaced.push(message)}
+      />,
+    )
+
+    act(() => stream.displace?.('Opened elsewhere.'))
+
+    expect(displaced).toEqual(['Opened elsewhere.'])
+  })
+
+  it('opens a new stream when the character changes', () => {
+    const { rerender } = render(
+      <GameScreen characterId="c1" characterName="Kael" onLeave={() => {}} />,
+    )
+
+    rerender(<GameScreen characterId="c2" characterName="Mira" onLeave={() => {}} />)
+
+    expect(stream.opened).toBe(2)
   })
 })

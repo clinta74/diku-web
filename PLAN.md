@@ -342,6 +342,58 @@ the world for 90 s (and can still be attacked — classic MUD risk). A reconnect
 window rebinds the session and replays the ring buffer. After 90 s the character is saved and
 removed. A `sys` event warns the player as the window runs out.
 
+**One character, one live stream — the newest one.** A session's event channel is `SingleReader`,
+so two SSE responses draining it do not each get a copy of every event; they get roughly half
+each. That is not a race to be lost occasionally, it is what a channel read twice does, and it is
+what a player signing in on a second device reported: a fight legible on neither screen.
+
+- **The newest connection wins**, rather than the second being refused. Picking up a phone while
+  the desktop is still logged in is a thing people do on purpose, and a browser told *no* just
+  retries.
+- **Ownership is per character, not per session**, and this is the correction that made the rest
+  of it work. Entering builds a *new* `GameSession`, so ownership recorded on a session was thrown
+  away at exactly the moment a second device arrived: the older device's retry met a session that
+  had never heard of it, was served, and took the character back. `StreamOwnership` lives in the
+  registry, keyed by character, and outlives every session that character has.
+- **The hand-over happens at `enter`, not when the stream notices.** Entering is the act that says
+  which device is playing this character; the stream only carries the decision out. Left to the
+  stream, the older device saw its channel go quiet, could not tell that from a dropped network,
+  and reconnected — which is the tug-of-war, and it is what the first attempt at this shipped.
+- **The displaced screen is told, in words**, with a `sys` event of kind `displaced`, and the
+  client closes the stream on it rather than reconnecting. Retrying is the one reaction that must
+  not happen: two devices that both keep reconnecting take the stream in turns for ever.
+- **The older screen goes back to character select**, and is not offered the character back. Two
+  screens that can each reclaim it is the same tug-of-war in a politer costume — the loser
+  reconnects, wins, and the other becomes the loser. One of them has to be finished, and it is the
+  older one, because the player is at the device they just picked up. It does **not** call
+  `leave`: the character is in the world being played, and leaving would pull it out from under
+  the device that now has it.
+- **Being displaced is not going link-dead.** No `LeaveWorld` is submitted, because the character
+  is standing there being played on another screen — and narrating *"goes still, eyes unfocused"*
+  to the room about somebody who is very much present is exactly the confusion this started as.
+- **The client names its connection** with an id minted per stream, sent as `?connection=`. Two
+  devices playing one character send byte-identical requests, so nothing else tells the device
+  that was replaced from the device that replaced it. It works because `EventSource` retries the
+  *same URL*: a dropped connection returns under the id it already had and is recognised as a
+  screen resuming, while a takeover is a new `EventSource` with a new id. It is not a credential —
+  the cookie still authorises and ownership is rechecked per request (§3.2). A client that sends
+  none is served; it loses only the ability to be told apart from its successor.
+Getting the character back is choosing it again from the character list, which is one click and is
+also the honest description of what it does.
+
+**A stream must not be reopened by a re-render**, which is a client rule but belongs here because
+of what it costs on the server: tearing a stream down reports a dropped connection, and that marks
+the character link-dead and completes its event channel — so the stream that replaced it reads a
+closed one and the screen is stuck reconnecting for good. This cost a player the character they had
+just taken over. `GameScreen` holds its callbacks in refs rather than depending on their identity;
+a ref holds for every caller, where a `useCallback` at the call site holds only for callers who
+remember.
+
+*A separate thing this surfaced, unchanged and worth knowing: going link-dead completes the
+session's channel, so `EventSource`'s own retry reconnects to a closed one and stays silent. Only
+entering again re-establishes output, which is what the Rejoin button does. The automatic retry
+therefore recovers a stream but not a link-dead character.*
+
 ---
 
 ## 4. World and game design v0
@@ -2370,6 +2422,7 @@ and the reasoning behind each phase. The checklist there is the authority; this 
 | Roles | Promotion reaches an open session without a relog, and demotion revokes builder access within the revalidation interval rather than at cookie expiry. A banned account is rejected while still connected. Self-demotion refused. An offline target can be promoted. Every change writes an `admin_audit` row. |
 | Server | `WebApplicationFactory` + Testcontainers Postgres, including an SSE test that opens the stream, POSTs a command, and asserts events arrive in order. |
 | Client | Vitest for the protocol/state layer; Playwright for login → move → see-map, and build-a-room → walk-into-it. |
+| Two devices, one character | The reported sequence first, because the first fix passed every test it had and still lost: a second device **entering** turns the first out *at once*, before it has opened a stream — the case that was missed, since ownership then lived on a session that entering had just replaced. Then the whole symptom end to end: the turned-out device's retry is refused **and** the new device still has the character afterwards, which is the half that would pass on an implementation that simply broke both streams. Against those, the three shapes that must not change: a reconnect under the same id is not read as a takeover, a client sending no connection id is still served, and being displaced does not take the character out of the world. On the client: the id survives a reopen but a fresh `connectStream` mints a new one, a displaced stream closes and stays closed through a `visibilitychange`, it is not reported as a connection error — a screen that has deliberately stopped trying must not say "Trying to reconnect…" — and it hands the screen back **without** calling `leave`, which would evict the character the other device is playing. Plus the one that has nothing to do with sessions and cost more than any of them: **a re-render must not reopen the stream.** Counted across three re-renders that each pass a fresh inline callback, because that is what a parent does — and reopening reports a dropped connection, which marks the character link-dead and closes the channel the replacement stream then reads. Against it, the two properties a ref could break: the newest callback is still the one called, and a genuine character change *does* open a new stream. |
 | The prompt | Each of the three quality-of-life rules is pinned by what it must *not* take. Typing anywhere focuses the input, but not Ctrl+C over selected scrollback, not Tab, not Enter or Space over a focused button, and not while the builder is up — the game is hidden rather than unmounted, so an unguarded document listener would read the builder's own forms. Tab completes a name in the room and is *reported rather than swallowed* when nothing matches, because taking it unconditionally leaves the keyboard no way off the input. History survives a reload, stays per-character, and treats whatever is under its storage key as hostile — a throw while reading it would take the game screen down, not just the history. The scrollback follows the newest line only while it is already at the bottom. |
 
 Determinism is not polish here — a game loop you cannot replay exactly is a game loop you cannot

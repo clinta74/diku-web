@@ -21,6 +21,10 @@ const BUILDER_ROLES = ['Builder', 'Admin']
 
 export default function App() {
   const [stage, setStage] = useState<Stage>({ name: 'loading' })
+
+  // Why the player is back at the character list when it was not their idea. Only a takeover by
+  // another device sets it, and choosing a character clears it.
+  const [notice, setNotice] = useState<string | null>(null)
   const [currentRoom, setCurrentRoom] = useState<string | null>(null)
   const [follow, setFollow] = useState(true)
   const focusInputRef = useRef<(() => void) | null>(null)
@@ -67,7 +71,11 @@ export default function App() {
     case 'choosing':
       return (
         <CharacterScreen
-          onEnter={(character) => setStage({ name: 'playing', account: stage.account, character })}
+          notice={notice}
+          onEnter={(character) => {
+            setNotice(null)
+            setStage({ name: 'playing', account: stage.account, character })
+          }}
           onLogout={() => void logout()}
         />
       )
@@ -104,6 +112,16 @@ export default function App() {
                 // Frees the slot against the per-account cap straight away rather than waiting
                 // out the 90 s link-dead window.
                 void api.leave(stage.character.id).catch(() => undefined)
+                setNotice(null)
+                navigate('/')
+                setStage({ name: 'choosing', account: stage.account })
+              }}
+              // Another device took this character. Pointedly *not* calling `api.leave`: the
+              // character is in the world being played, and leaving would pull it out from under
+              // the device that now has it - this screen's own tidiness costing somebody else
+              // their session.
+              onDisplaced={(message) => {
+                setNotice(message)
                 navigate('/')
                 setStage({ name: 'choosing', account: stage.account })
               }}

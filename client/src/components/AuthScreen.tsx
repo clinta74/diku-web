@@ -95,9 +95,19 @@ export function AuthScreen({ onReady }: { onReady: (account: Account) => void })
 export function CharacterScreen({
   onEnter,
   onLogout,
+  notice,
 }: {
   onEnter: (character: Character) => void
   onLogout: () => void
+
+  /**
+   * Why the player is looking at this screen, when it was not their idea.
+   *
+   * Set when another device took the character over. Landing back on the character list with no
+   * explanation reads as the game having thrown you out for nothing — and the player is about to
+   * click the same character again, so the reason has to be in front of them before they do.
+   */
+  notice?: string | null
 }) {
   const [characters, setCharacters] = useState<Character[] | null>(null)
   const [active, setActive] = useState<Set<string>>(new Set())
@@ -151,6 +161,12 @@ export function CharacterScreen({
       <h1>diku-web</h1>
       <p className="tagline">Choose a character.</p>
 
+      {notice && (
+        <p className="panel bad" role="status">
+          {notice}
+        </p>
+      )}
+
       <section className="panel">
         <h2>Your characters</h2>
         {characters === null && <p className="dim">Loading…</p>}
@@ -171,7 +187,8 @@ export function CharacterScreen({
         </ul>
 
         <p className="detail dim">
-          You can play several characters at once — open each in its own browser tab.
+          You can play several characters at once — open each in its own browser tab. The same
+          character can only be played in one place: opening it somewhere else closes it here.
         </p>
       </section>
 

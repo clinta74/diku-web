@@ -81,4 +81,15 @@ public static class SysKinds
     public const string Info = "info";
     public const string Warning = "warning";
     public const string Disconnect = "disconnect";
+
+    /// <summary>
+    /// This character was opened somewhere else, and this connection is no longer the live one.
+    /// </summary>
+    /// <remarks>
+    /// Distinct from <see cref="Disconnect"/> because the client must react differently: a
+    /// disconnect is something to retry, and this is the one case where retrying is precisely
+    /// wrong. Two devices that both keep reconnecting take it in turns to hold the stream, and
+    /// each ends up with roughly half the game's output.
+    /// </remarks>
+    public const string Displaced = "displaced";
 }

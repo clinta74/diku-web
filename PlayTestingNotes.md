@@ -32,5 +32,51 @@ The collapse is display only, and that is the assertion that matters: `drop ston
 stones still drops one.
 
 
-- noticed if I sign in on two different devices for the same account and character it can cause an issue with the SSE not being sent to both devices.
-Options. You can be using the same account with different character at the same time, but not the same character. We may need to add something to the client to force kick a charceter out of the game. We need to track the most recent session for that character so we can replace it with a new one and remove all the old ones.
+**Two devices on one character now hand over cleanly.** You were right about the cause and about
+the fix. It was not a race: a session's event channel is `SingleReader`, so two streams reading it
+get roughly half the events each, every time — which is why neither screen showed a whole fight.
+
+The newest connection holds the stream, and the older one is *told* rather than just cut off: it
+gets a `sys` event of kind `displaced`, closes, stops retrying, and goes back to character select
+with the reason on screen. It is not offered the character back — two screens that can each reclaim
+it is the same tug-of-war in a politer costume, so the older one is simply finished. Picking the
+character off the list again is how you take it back, which is one click and is also an honest
+description of what it does.
+
+**The first version of this fix was wrong in the way you saw**, and worth writing down. Ownership
+of the stream lived on the session — but *entering* builds a new session, so the moment the second
+device arrived, everything the server knew about the first device was thrown away. The first
+device's stream simply went quiet, which from a browser is indistinguishable from a dropped
+network, so it reconnected, met a session that had never heard of it, was served, and took the
+character back. Then the second device got the takeover notice, and the two swapped roles for ever.
+
+Two changes fixed it. Ownership now lives in the session registry keyed by **character**, which
+outlives every session that character has. And the hand-over happens at `enter` rather than when
+the old stream notices it has gone quiet: entering is the act that decides which device is playing
+the character, so the old screen is told before the new one has even connected. There is nothing
+left for it to race.
+
+**A second thing went wrong on the way, and it is the more useful lesson.** The screenshot showed
+the device that had just *won* the character sitting on "Disconnected. Trying to reconnect…" —
+which had nothing to do with sessions at all. The takeover callback had been added to the stream
+effect's dependency list, and the parent passes it inline, so it was a new function on every render
+of `App` — and `App` re-renders on every room change. The stream was being torn down and reopened
+continuously, and each teardown reports a dropped connection, which marks the character link-dead
+and completes its event channel; the stream that replaced it then read a closed one.
+
+`App` already carried a comment about this for `onRoomChange` — *"Stable so GameScreen's effect
+does not re-fire on every render"* — and it did not stop it happening again. The handler is held in
+a ref now, so the effect cannot depend on its identity whatever a caller passes. There is a test
+that counts stream opens across three re-renders, and it fails loudly against the old code.
+
+Being displaced is deliberately not the same as going link-dead — the character is standing there
+being played on the other screen, so no grace window starts and the room is not told they have gone
+still. The displaced screen also does not `leave` on its way out, which would have pulled the
+character out from under the device that just took it.
+
+Different characters on one account are untouched: they always had their own sessions, and still do.
+
+One thing found on the way, left alone because it is a different mechanism: going link-dead
+completes the session's channel, so `EventSource`'s automatic retry reconnects to a closed one and
+stays silent. Only entering again re-establishes output, which is what the Rejoin button does — the
+automatic retry recovers a *stream* but not a link-dead *character*. Worth deciding on separately.

@@ -71,6 +71,12 @@ internal static partial class ServerLog
     public static partial void StreamClosed(ILogger logger, string character);
 
     [LoggerMessage(
+        EventId = 1021,
+        Level = LogLevel.Information,
+        Message = "SSE stream for {Character} displaced by a newer connection")]
+    public static partial void StreamDisplaced(ILogger logger, string character);
+
+    [LoggerMessage(
         EventId = 1007,
         Level = LogLevel.Error,
         Message = "Failed to save a batch of {Count} character(s); the worker continues")]

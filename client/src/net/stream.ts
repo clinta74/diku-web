@@ -4,6 +4,31 @@ export interface StreamHandlers {
   onEvent: (event: GameEvent) => void
   onOpen?: () => void
   onError?: () => void
+
+  /**
+   * This character is being played somewhere else and this screen is finished.
+   *
+   * Separate from `onError` because the two want opposite reactions: an error is retried, and
+   * this is the one case where retrying is the bug — two devices that both keep reconnecting
+   * take the stream in turns and each ends up with about half the game's output.
+   */
+  onDisplaced?: (message: string) => void
+}
+
+/**
+ * A name for this screen's connection, minted once and kept for its lifetime.
+ *
+ * It is not a credential — the cookie does all the authorising and ownership is rechecked on
+ * every request (PLAN.md §3.2). It exists because two devices playing one character send
+ * byte-identical requests, so the server has no other way to tell the device that was replaced
+ * from the device that replaced it.
+ *
+ * The whole trick is that `EventSource` retries the *same URL*: a dropped connection comes back
+ * carrying the id it already had and is recognised as the same screen resuming, while a genuine
+ * takeover is a new `EventSource` with a new id.
+ */
+function mintConnectionId(): string {
+  return crypto.randomUUID?.() ?? `c${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
 /**
@@ -14,21 +39,42 @@ export interface StreamHandlers {
  * It also cannot set request headers, which is exactly why auth is a cookie.
  */
 export function connectStream(characterId: string, handlers: StreamHandlers): () => void {
+  const connectionId = mintConnectionId()
+
+  // Set when the server says another device has taken over. Everything that would reopen the
+  // stream checks it, because reconnecting is precisely what must not happen.
+  let displaced = false
   let source = open()
 
   function open(): EventSource {
-    const stream = new EventSource(`/api/game/${characterId}/stream`)
+    const stream = new EventSource(
+      `/api/game/${characterId}/stream?connection=${encodeURIComponent(connectionId)}`,
+    )
 
     stream.onopen = () => handlers.onOpen?.()
 
     // Fired on a dropped connection too, where EventSource retries by itself. Reporting it is
     // useful for the status indicator; closing the source here would defeat the auto-retry.
-    stream.onerror = () => handlers.onError?.()
+    stream.onerror = () => {
+      if (displaced) return
+      handlers.onError?.()
+    }
 
     for (const type of EVENT_TYPES) {
       stream.addEventListener(type, (message) => {
         try {
           const data = JSON.parse((message as MessageEvent).data)
+
+          // Closed here rather than left to the caller: the server has already finished the
+          // response, so anything short of closing lets EventSource retry in three seconds and
+          // start the tug-of-war this frame exists to end.
+          if (type === 'sys' && data?.kind === 'displaced') {
+            displaced = true
+            stream.close()
+            handlers.onDisplaced?.(String(data.message ?? ''))
+            return
+          }
+
           handlers.onEvent({ type, data } as GameEvent)
         } catch {
           // A malformed frame must not tear down the stream.
@@ -56,6 +102,10 @@ export function connectStream(characterId: string, handlers: StreamHandlers): ()
   const onVisible = () => {
     if (document.visibilityState !== 'visible') return
     if (source.readyState !== EventSource.CLOSED) return
+
+    // A displaced stream is CLOSED on purpose. Reopening it here would walk straight back into
+    // the fight over the session every time the player glanced at the old device.
+    if (displaced) return
 
     source.close()
     source = open()

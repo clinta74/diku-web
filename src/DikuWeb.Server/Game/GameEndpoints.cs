@@ -152,7 +152,8 @@ public static class GameEndpoints
         HttpContext http,
         SessionRegistry sessions,
         GameGateway gateway,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory,
+        string? connection = null)
     {
         var logger = loggerFactory.CreateLogger("DikuWeb.Server.Sse");
 
@@ -164,8 +165,8 @@ public static class GameEndpoints
 
         // Returns null both for "not in the world" and "belongs to someone else", so a
         // wrong-account probe cannot be distinguished from an unopened session.
-        var session = sessions.Find(accountId, characterId);
-        if (session is null)
+        var live = sessions.Find(accountId, characterId);
+        if (live is null)
         {
             http.Response.StatusCode = StatusCodes.Status409Conflict;
             await http.Response.WriteAsync("Enter the world with this character before opening a stream.");
@@ -182,33 +183,93 @@ public static class GameEndpoints
         response.Headers["X-Accel-Buffering"] = "no";
         http.Features.Get<IHttpResponseBodyFeature>()?.DisableBuffering();
 
-        session.IsStreaming = true;
+        await response.WriteAsync("retry: 3000\n\n", http.RequestAborted);
+        await response.Body.FlushAsync(http.RequestAborted);
+
+        // Ownership is per character, not per session: entering builds a new session, so anything
+        // remembered on one is forgotten at exactly the moment a second device arrives.
+        var ownership = sessions.StreamFor(characterId);
+
+        // A connection this character has already moved past belongs to a device that was turned
+        // out while it was not looking, reconnecting on `EventSource`'s own three-second timer.
+        // Turned away here rather than served, which is what stops the two devices trading the
+        // stream back and forth for as long as both are open.
+        //
+        // Answered with a 200 carrying one `sys` frame rather than a 409: a status code has
+        // nowhere to put a sentence, and the browser has to be *told* to stop rather than merely
+        // stopped - a refusal it cannot read is a refusal it retries.
+        if (ownership.IsSuperseded(connection))
+        {
+            await SendDisplacedAsync(http, live);
+            ServerLog.StreamDisplaced(logger, live.CharacterName);
+            return;
+        }
+
+        // Sole possession, so a character's channel is never read by two responses at once.
+        using var claim = ownership.Claim(live, connection);
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(
+            http.RequestAborted, claim.Token);
 
         try
         {
-            await response.WriteAsync("retry: 3000\n\n", http.RequestAborted);
-            await response.Body.FlushAsync(http.RequestAborted);
-
-            await ReplayMissedEventsAsync(http, session);
-            await PumpAsync(http, session);
+            await ReplayMissedEventsAsync(http, live);
+            await PumpAsync(http, live, stop.Token);
         }
         catch (OperationCanceledException)
         {
-            // The client went away. Expected, and the finally block handles it.
+            // Either the client went away or a newer stream took over. Both are expected, and
+            // which one it was is answered below rather than here.
         }
-        finally
+
+        if (claim.Displaced)
         {
-            session.IsStreaming = false;
+            // Still connected, on another screen. No LeaveWorld: the character has not gone
+            // link-dead, and saying it had would narrate them going still to a room they are
+            // standing in and start a grace window against a live connection.
+            await SendDisplacedAsync(http, live);
+            ServerLog.StreamDisplaced(logger, live.CharacterName);
+            return;
+        }
 
-            // The character does NOT leave the world here. It goes link-dead and stays put
-            // for the grace window, so a dropped connection is survivable (PLAN.md §3.6).
-            gateway.TrySubmit(new LeaveWorld
-            {
-                SessionId = session.Id,
-                Reason = LeaveReason.LinkDead,
-            });
+        // The character does NOT leave the world here. It goes link-dead and stays put for the
+        // grace window, so a dropped connection is survivable (PLAN.md §3.6).
+        gateway.TrySubmit(new LeaveWorld
+        {
+            SessionId = live.Id,
+            Reason = LeaveReason.LinkDead,
+        });
 
-            ServerLog.StreamClosed(logger, session.CharacterName);
+        ServerLog.StreamClosed(logger, live.CharacterName);
+    }
+
+    /// <summary>
+    /// Tells a connection it is no longer the live one, and closes without a retry hint.
+    /// </summary>
+    /// <remarks>
+    /// Written on <see cref="HttpContext.RequestAborted"/> rather than on the pump's own token,
+    /// which is cancelled by definition every time this is called. The event is deliberately not
+    /// recorded into the ring buffer: it is about this connection rather than about the character,
+    /// and replaying it to the *next* stream would tell a healthy connection it had been replaced.
+    /// </remarks>
+    private static async Task SendDisplacedAsync(HttpContext http, GameSession session)
+    {
+        try
+        {
+            await WriteEventAsync(
+                http.Response,
+                session.PeekNextEventId(),
+                new OutboundEvent(
+                    EventTypes.Sys,
+                    new SysPayload(
+                        "This character was opened somewhere else. This screen is no longer live.",
+                        SysKinds.Displaced)),
+                http.RequestAborted);
+
+            await http.Response.Body.FlushAsync(http.RequestAborted);
+        }
+        catch (OperationCanceledException)
+        {
+            // The displaced client had already gone. Nothing left to tell.
         }
     }
 
@@ -228,10 +289,20 @@ public static class GameEndpoints
         await http.Response.Body.FlushAsync(http.RequestAborted);
     }
 
-    private static async Task PumpAsync(HttpContext http, GameSession session)
+    /// <summary>
+    /// Drains the session onto the wire until the client goes away or a newer stream takes over.
+    /// </summary>
+    /// <param name="token">
+    /// The client's <c>RequestAborted</c> linked with this stream's claim, so a displaced
+    /// response stops reading immediately rather than at its next heartbeat — the whole point
+    /// being that it must not still be competing for events when its successor starts.
+    /// </param>
+    private static async Task PumpAsync(
+        HttpContext http,
+        GameSession session,
+        CancellationToken token)
     {
         var reader = session.Events.Reader;
-        var token = http.RequestAborted;
 
         while (!token.IsCancellationRequested)
         {
