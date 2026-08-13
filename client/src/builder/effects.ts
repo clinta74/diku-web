@@ -1,16 +1,23 @@
 /**
- * What a mob attack may carry, and the parameters each one reads.
+ * Every ability effect and the parameters it reads — and, separately, the subset a mob attack may
+ * carry as a rider.
  *
  * Transcribed from the executors in `DikuWeb.Domain/Abilities/Effects`. They read parameters by
  * name and **skip anything they do not recognise**, so a plausible-but-wrong key produces an
  * effect that runs with defaults and reports nothing — which is why these are fields rather than
  * a free-text bag.
  *
- * Only harmful effects are offered. A rider applies to whoever the attack *hit*, so a helpful one
- * would mean a mob buffing or mending the player it just struck. That is almost never intended,
- * and offering it is how it happens by accident. The server validates that the key is *known*
- * rather than that it is harmful, which leaves the deliberate oddity possible without making it
- * easy — an authoring guardrail, not a rule of the world.
+ * `ATTACK_EFFECTS` offers only the harmful ones. A rider applies to whoever the attack *hit*, so a
+ * helpful one would mean a mob buffing or mending the player it just struck. That is almost never
+ * intended, and offering it is how it happens by accident. The server validates that the key is
+ * *known* rather than that it is harmful, which leaves the deliberate oddity possible without
+ * making it easy — an authoring guardrail, not a rule of the world.
+ *
+ * `ABILITY_EFFECTS` offers all eight, because an ability points either way by design and the
+ * executor's own `IsHarmful` is what decides which targets it gathers.
+ *
+ * One file rather than two because the parameter names are the same contract either way, and a
+ * second transcription of the executors is a second thing to forget when one changes.
  */
 
 export interface EffectParamField {
@@ -22,7 +29,7 @@ export interface EffectParamField {
   integer?: boolean
 }
 
-export interface AttackEffectOption {
+export interface EffectOption {
   key: string
   label: string
   summary: string
@@ -44,7 +51,84 @@ const label = (fallback: string): EffectParamField => ({
   fallback,
 })
 
-export const ATTACK_EFFECTS: AttackEffectOption[] = [
+/** Every effect an ability may use. Ordered as the catalogue reads: damage, heal, then riders. */
+export const ABILITY_EFFECTS: EffectOption[] = [
+  {
+    key: 'damage.physical',
+    label: 'Damage',
+    summary: 'A single hit, scaled off the caster rather than a flat number.',
+    params: [
+      {
+        key: 'scalingFactor',
+        label: 'Damage ×',
+        hint: 'Multiplies what the caster would otherwise hit for. 1.2 is a light opener.',
+        fallback: '1.0',
+      },
+      {
+        key: 'minDamage',
+        label: 'At least',
+        hint: 'A floor, so the ability is never worse than a poke.',
+        fallback: '1',
+        integer: true,
+      },
+    ],
+  },
+  {
+    key: 'heal.restore',
+    label: 'Heal',
+    summary: 'Restores health. Helpful abilities land on the caster when no target is named.',
+    params: [
+      {
+        key: 'baseHeal',
+        label: 'Heals',
+        hint: 'A flat amount of health.',
+        fallback: '20',
+        integer: true,
+      },
+    ],
+  },
+  {
+    key: 'buff.damage-up',
+    label: 'Damage buff',
+    summary: 'The target deals more damage for a while.',
+    params: [
+      {
+        key: 'outgoingMultiplier',
+        label: 'Their damage ×',
+        hint: 'Above 1.0 helps. 1.25 is a quarter more. Below 1.0 is refused — that is a weaken.',
+        fallback: '1.25',
+      },
+      duration('80'),
+      {
+        key: 'maxStacks',
+        label: 'Max stacks',
+        hint: 'Leave at 1 unless repeated casts are meant to pile up.',
+        fallback: '1',
+        integer: true,
+      },
+      label('emboldened'),
+    ],
+  },
+  {
+    key: 'control.taunt',
+    label: 'Taunt',
+    summary: 'Puts the caster at the top of the target\'s hate list — a lead, not a lock.',
+    params: [
+      {
+        key: 'leadFraction',
+        label: 'Lead',
+        hint: "A fraction of the target's max health, so it means the same on a rat and a dragon.",
+        fallback: '0.30',
+      },
+    ],
+  },
+]
+
+/**
+ * The harmful subset, for mob attack riders. Built from the list above rather than written out,
+ * so an effect cannot exist for abilities and quietly go missing here.
+ */
+export const ATTACK_EFFECTS: EffectOption[] = [
   {
     key: 'control.stun',
     label: 'Stun',
@@ -110,8 +194,11 @@ export const ATTACK_EFFECTS: AttackEffectOption[] = [
   },
 ]
 
-export function effectOption(key: string | null | undefined): AttackEffectOption | null {
-  return ATTACK_EFFECTS.find((e) => e.key === key) ?? null
+/** Every effect either surface can offer, keyed for lookup. */
+export const ALL_EFFECTS: EffectOption[] = [...ABILITY_EFFECTS, ...ATTACK_EFFECTS]
+
+export function effectOption(key: string | null | undefined): EffectOption | null {
+  return ALL_EFFECTS.find((e) => e.key === key) ?? null
 }
 
 /**

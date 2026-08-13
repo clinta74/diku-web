@@ -4,6 +4,7 @@ import { AuthScreen, CharacterScreen } from './components/AuthScreen'
 import { GameScreen } from './components/GameScreen'
 import { BuilderShell } from './builder/BuilderShell'
 import { WorldTab } from './builder/world/WorldTab'
+import { AbilitiesTab } from './builder/abilities/AbilitiesTab'
 import { MobsTab } from './builder/mobs/MobsTab'
 import { ItemsTab } from './builder/items/ItemsTab'
 import { QuestsTab } from './builder/quests/QuestsTab'
@@ -149,6 +150,7 @@ export default function App() {
               <Route index element={<Navigate to="world" replace />} />
               <Route path="world/:world?/:zone?/:room?/:section?" element={<WorldTab />} />
               <Route path="mobs/:templateKey?" element={<MobsTab />} />
+              <Route path="abilities/:abilityKey?" element={<AbilitiesTab />} />
               <Route path="items/:templateKey?" element={<ItemsTab />} />
               <Route path="quests/:questKey?" element={<QuestsTab />} />
 

@@ -2,7 +2,7 @@ import type { MobAttack } from '../../net/builderApi'
 import { Field } from '../../ui/Field'
 import { NumberInput } from '../../ui/NumberInput'
 import { Select } from '../../ui/Select'
-import { ATTACK_EFFECTS, effectOption, pruneParams } from './attackEffects'
+import { ATTACK_EFFECTS, effectOption, pruneParams } from '../effects'
 
 interface Props {
   attacks: MobAttack[]

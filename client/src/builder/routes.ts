@@ -18,7 +18,7 @@ export const DEFAULT_SECTION: Section = 'details'
  * this one administers people and is Admin-only. It lives here rather than in a separate app
  * because it is the same audience, the same chrome, and one more screen to build otherwise.
  */
-export type BuilderTab = 'world' | 'mobs' | 'items' | 'quests' | 'accounts'
+export type BuilderTab = 'world' | 'mobs' | 'items' | 'abilities' | 'quests' | 'accounts'
 
 /** The route params react-router extracts from the `world` branch, each a single slug. */
 export interface WorldRouteParams {
@@ -98,6 +98,10 @@ export function toMobsPath(templateKey?: string | null): string {
 
 export function toItemsPath(templateKey?: string | null): string {
   return templateKey ? `/builder/items/${templateKey}` : '/builder/items'
+}
+
+export function toAbilitiesPath(abilityKey?: string | null): string {
+  return abilityKey ? `/builder/abilities/${abilityKey}` : '/builder/abilities'
 }
 
 export function toQuestsPath(questKey?: string | null): string {

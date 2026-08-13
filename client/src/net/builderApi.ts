@@ -206,6 +206,36 @@ export interface ItemTemplate {
  */
 export type WanderMode = 'template' | 'always' | 'never'
 
+export type CharacterPath = 'Warden' | 'Adept' | 'Shade' | 'Hallow'
+export type CostType = 'Focus' | 'Stamina' | 'Health'
+export type TargetingType = 'SingleTarget' | 'Self' | 'Aoe'
+
+/** What the validator says about a stored ability. Errors are refused on save. */
+export interface AbilityProblem {
+  severity: 'Error' | 'Warning'
+  message: string
+}
+
+export interface Ability {
+  key: string
+  path: CharacterPath
+  unlockLevel: number
+  name: string
+  description: string
+  costType: CostType
+  costValue: number
+  cooldownPulses: number
+  castTimePulses: number | null
+  targetingType: TargetingType
+  effectParams: Record<string, string>
+  effectKey: string
+  /**
+   * Carried on every read, not just returned from a save. A row can arrive by import or by hand,
+   * and then nobody ever saw a refusal — so this list is the only place a builder finds out.
+   */
+  problems: AbilityProblem[]
+}
+
 export interface Spawner {
   id: string
   zoneKey: string
@@ -414,6 +444,25 @@ export const builderApi = {
 
   audit: (kind: string, key: string) =>
     request<AuditEntry[]>(`${base}/audit?kind=${kind}&key=${encodeURIComponent(key)}`),
+
+  abilities: () => request<Ability[]>(`${base}/abilities`),
+
+  ability: (key: string) => request<Ability>(`${base}/abilities/${key}`),
+
+  createAbility: (key: string, body: Partial<Ability>) =>
+    request<Ability>(`${base}/abilities/${key}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateAbility: (key: string, body: Partial<Ability>) =>
+    request<Ability>(`${base}/abilities/${key}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  deleteAbility: (key: string) =>
+    request<void>(`${base}/abilities/${key}`, { method: 'DELETE' }),
 
   mobTemplates: () => request<MobTemplate[]>(`${base}/mob-templates`),
 

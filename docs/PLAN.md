@@ -1257,15 +1257,19 @@ Upserts rather than inserts, so the file does not care whether the seeder has al
 to a seeded database the twelve Millbrook rooms are updated in place with whatever they had actually
 become, and to a bare one they are inserted. It exports **content only**: accounts, characters,
 items, quest progress, and the audit tables are player data and history, and a content restore that
-resurrected deleted characters would be a bug. Abilities are absent for a different reason —
-`ReconcileAbilitiesAsync` rebuilds them from the catalogue on every startup, so exporting them would
-restore rows the next boot only has to correct.
+resurrected deleted characters would be a bug. **Abilities are exported**, and used not to be: the
+reconcile rebuilt them from the catalogue on every startup, so a restored row was overwritten on the
+next boot. That reconcile now only plants what is missing, so the table is authoritative and an
+ability is content like everything else.
 
 The rehearsal is the part worth keeping: build a scratch database, migrate it, seed it, apply the
 export, then **regenerate the export from the rebuilt database and diff it against the original**.
 Identical output is the only check that proves the round trip is lossless rather than merely
-plausible, and it is cheap enough to run every time. This is the stopgap until Phase 6's world
-export/import (JSON), and finishing that is what would let a *plan* carry its own content.
+plausible, and it is cheap enough to run every time. **Run for real on 2026-08-13** and it earned
+its keep twice: it proved the round trip lossless with abilities in it, and it caught the header's
+own documented invocation being wrong — `psql` echoes `Output format is unaligned.` into the file
+without `-q`, and that line is not SQL, so a restore taken the documented way died on its first
+line before a single row landed.
 
 **What if migration fails?**
 
@@ -1290,6 +1294,7 @@ API client, and types with the game.
 | **Room** | Title, description, **flags** (rendered from the registry, §4.10), ASCII grid painter, legend, exits. |
 | **Zone canvas** | Rooms as boxes, exits as lines. Drag to arrange, drag between boxes to link. |
 | **Item templates** | Name, description, icon, slot, weight, base value, base stats. |
+| **Abilities** | Path, unlock level, cost, cooldown, cast time, targeting, and the effect with its own typed parameters. Grouped by Path in unlock order, since the question is nearly always the shape of a progression. Validator problems shown per ability; an error refuses the save (§4.5). |
 | **Mob templates** | Name, description, icon, level, base stats, base xp/gold, behavior, loot, **attacks and the effect each one carries**. |
 | **Spawners** | Template, target rooms, count, respawn seconds. |
 | **Quests** | Giver mob, turn-in mob, required item and count, rewards, prerequisites, and the four dialogue strings (§4.9). Reachability warnings shown inline. |

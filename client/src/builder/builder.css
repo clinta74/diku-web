@@ -600,3 +600,92 @@
   stroke-dasharray: 6 3;
   opacity: 0.75;
 }
+
+/* --- Abilities tab -------------------------------------------------- */
+
+/* Grouped by Path and ordered by level, because the question a builder brings here is nearly
+   always about the shape of a progression - where the gaps are, what level 1 has - and an
+   alphabetical list answers none of it. */
+.ability-group {
+  margin-bottom: 0.75rem;
+}
+
+.ability-group-head {
+  margin: 0 0 0.25rem;
+  color: var(--dim);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.ability-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ability-list .tree-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.25rem 0.4rem;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ability-list .tree-item:hover {
+  background: var(--panel);
+}
+
+.ability-list .tree-item.selected {
+  background: var(--panel);
+  color: var(--accent);
+}
+
+/* Tabular so the level column stays a column rather than jittering between 1 and 20. */
+.ability-level {
+  min-width: 1.5rem;
+  color: var(--dim);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ability-name {
+  flex: 1;
+}
+
+.ability-flag {
+  font-size: 0.75rem;
+}
+
+.ability-flag.bad {
+  color: var(--bad);
+}
+
+.ability-flag.warn {
+  color: var(--accent);
+}
+
+.ability-problems {
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85em;
+}
+
+.ability-problems .warn {
+  color: var(--accent);
+}

@@ -25,6 +25,7 @@ const WORLD_TABS: TabItem[] = [
   { value: 'world', label: 'World' },
   { value: 'mobs', label: 'Mobs' },
   { value: 'items', label: 'Items' },
+  { value: 'abilities', label: 'Abilities' },
   { value: 'quests', label: 'Quests' },
 ]
 
@@ -33,6 +34,7 @@ const ACCOUNTS_TAB: TabItem = { value: 'accounts', label: 'Accounts' }
 function tabFromPath(pathname: string): BuilderTab {
   if (pathname.startsWith('/builder/mobs')) return 'mobs'
   if (pathname.startsWith('/builder/items')) return 'items'
+  if (pathname.startsWith('/builder/abilities')) return 'abilities'
   if (pathname.startsWith('/builder/quests')) return 'quests'
   if (pathname.startsWith('/builder/accounts')) return 'accounts'
   return 'world'

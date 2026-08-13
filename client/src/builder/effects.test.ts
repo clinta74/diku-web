@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ATTACK_EFFECTS, effectOption, pruneParams } from './attackEffects'
+import { ATTACK_EFFECTS, effectOption, pruneParams } from './effects'
 
 describe('the offered effects', () => {
   /**
