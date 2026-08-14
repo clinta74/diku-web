@@ -7,6 +7,7 @@ import {
   type Spawner,
   type WanderMode,
 } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
 import { Modal } from '../../ui/Modal'
 import { Field } from '../../ui/Field'
 import { Select } from '../../ui/Select'
@@ -135,9 +136,9 @@ export function SpawnerDialog({
           <button type="button" onClick={() => onOpenChange(false)} disabled={busy}>
             Cancel
           </button>
-          <button type="button" className="primary" onClick={() => void submit()} disabled={busy}>
+          <Button variant="primary" onClick={() => void submit()} disabled={busy}>
             {busy ? 'Saving…' : editing ? 'Save' : 'Add'}
-          </button>
+          </Button>
         </>
       }
     >

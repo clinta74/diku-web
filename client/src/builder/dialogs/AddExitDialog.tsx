@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { builderApi, DIRECTIONS, type RoomDetail } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
 import { Modal } from '../../ui/Modal'
 import { Field } from '../../ui/Field'
 import { Select } from '../../ui/Select'
@@ -68,14 +69,14 @@ export function AddExitDialog({ open, onOpenChange, roomKey, taken, onChanged }:
           >
             Dig new
           </button>
-          <button
-            type="button"
-            className="primary"
+          <Button
+           
+            variant="primary"
             onClick={() => void run(builderApi.setExit(roomKey, direction, target.trim(), reciprocal))}
             disabled={busy || !target.trim()}
           >
             Link
-          </button>
+          </Button>
         </>
       }
     >

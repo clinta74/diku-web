@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button } from '../../ui/Button'
 import { useNavigate, useParams } from 'react-router'
 import { useBuilderData } from '../BuilderData'
 import { toQuestsPath } from '../routes'
@@ -45,9 +46,9 @@ export function QuestsTab() {
           <div className="tree-section">
             <div className="tree-head">
               <h3>Quests</h3>
-              <button type="button" className="link" onClick={() => setCreating(true)}>
+              <Button variant="link" onClick={() => setCreating(true)}>
                 + new
-              </button>
+              </Button>
             </div>
 
             <input

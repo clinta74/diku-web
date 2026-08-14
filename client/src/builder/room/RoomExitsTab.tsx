@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button } from '../../ui/Button'
 import { builderApi, type RoomDetail } from '../../net/builderApi'
 import { AddExitDialog } from '../dialogs/AddExitDialog'
 
@@ -32,9 +33,9 @@ export function RoomExitsTab({ room, onChanged, onNavigate }: Props) {
           <li key={exit.direction}>
             <strong>{exit.direction}</strong>
             {exit.targetExists ? (
-              <button type="button" className="link" onClick={() => onNavigate(exit.to)}>
+              <Button variant="link" onClick={() => onNavigate(exit.to)}>
                 {exit.to}
-              </button>
+              </Button>
             ) : (
               // A dangling link is legal, not an error - the target may just not be built yet.
               <>
@@ -44,13 +45,13 @@ export function RoomExitsTab({ room, onChanged, onNavigate }: Props) {
                 </button>
               </>
             )}
-            <button
-              type="button"
-              className="link"
+            <Button
+             
+              variant="link"
               onClick={() => run(builderApi.removeExit(room.key, exit.direction))}
             >
               unlink
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

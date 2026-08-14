@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { builderApi, DIRECTIONS } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
 import { Modal } from '../../ui/Modal'
 import { Field } from '../../ui/Field'
 import { Select } from '../../ui/Select'
@@ -66,9 +67,9 @@ export function LinkRoomsDialog({
           <button type="button" onClick={() => onOpenChange(false)} disabled={busy}>
             Cancel
           </button>
-          <button type="button" className="primary" onClick={() => void submit()} disabled={busy}>
+          <Button variant="primary" onClick={() => void submit()} disabled={busy}>
             {busy ? 'Linking…' : 'Link'}
-          </button>
+          </Button>
         </>
       }
     >

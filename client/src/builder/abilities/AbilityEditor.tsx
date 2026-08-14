@@ -7,6 +7,7 @@ import {
   type TargetingType,
 } from '../../net/builderApi'
 import { ABILITY_EFFECTS, effectOption, pruneParams } from '../effects'
+import { Button } from '../../ui/Button'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { Field } from '../../ui/Field'
 import { NumberInput } from '../../ui/NumberInput'
@@ -243,13 +244,13 @@ export function AbilityEditor({ abilityKey, onChanged, onDeleted }: Props) {
                     removed here — a control that produces a save the server will reject is worse
                     than one that is not offered. */}
                 {draft.effects.length > 1 && (
-                  <button
-                    type="button"
-                    className="danger-button"
+                  <Button
+                   
+                    variant="danger"
                     onClick={() => set({ effects: draft.effects.filter((_, i) => i !== index) })}
                   >
                     Remove
-                  </button>
+                  </Button>
                 )}
               </div>
 
@@ -303,15 +304,15 @@ export function AbilityEditor({ abilityKey, onChanged, onDeleted }: Props) {
       </fieldset>
 
       <div className="row">
-        <button type="button" className="primary" disabled={!dirty || busy} onClick={() => void save()}>
+        <Button variant="primary" disabled={!dirty || busy} onClick={() => void save()}>
           {busy ? 'Saving…' : 'Save'}
-        </button>
+        </Button>
         <button type="button" disabled={!dirty || busy} onClick={() => setDraft(ability)}>
           Revert
         </button>
-        <button type="button" className="danger-button" onClick={() => setConfirming(true)}>
+        <Button variant="danger" onClick={() => setConfirming(true)}>
           Delete
-        </button>
+        </Button>
       </div>
 
       <ConfirmDialog

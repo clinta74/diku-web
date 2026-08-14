@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Button } from '../../ui/Button'
 import { Modal } from '../../ui/Modal'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
@@ -88,9 +89,9 @@ export function EntityFormDialog({
           <button type="button" onClick={() => onOpenChange(false)} disabled={busy}>
             Cancel
           </button>
-          <button type="button" className="primary" onClick={() => void submit()} disabled={busy}>
+          <Button variant="primary" onClick={() => void submit()} disabled={busy}>
             {busy ? 'Creating…' : 'Create'}
-          </button>
+          </Button>
         </>
       }
     >

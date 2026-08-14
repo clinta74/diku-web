@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { builderApi, type RoomDetail } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
 import { Modal } from '../../ui/Modal'
 import { Field } from '../../ui/Field'
 
@@ -57,9 +58,9 @@ export function RenameRoomDialog({ open, onOpenChange, roomKey, onRenamed }: Ren
           <button type="button" onClick={() => onOpenChange(false)} disabled={busy}>
             Cancel
           </button>
-          <button type="button" className="primary" onClick={() => void submit()} disabled={busy}>
+          <Button variant="primary" onClick={() => void submit()} disabled={busy}>
             {busy ? 'Renaming…' : 'Rename'}
-          </button>
+          </Button>
         </>
       }
     >

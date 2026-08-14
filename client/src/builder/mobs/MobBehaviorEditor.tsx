@@ -1,4 +1,5 @@
 import type { ItemTemplate } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
 import { NumberInput } from '../../ui/NumberInput'
 import { Select } from '../../ui/Select'
@@ -94,13 +95,13 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
                 onChange={(v) => editEmote(index, { maxSeconds: v })}
               />
             </Field>
-            <button
-              type="button"
-              className="danger-button"
+            <Button
+             
+              variant="danger"
               onClick={() => set({ emotes: draft.emotes.filter((_, i) => i !== index) })}
             >
               Remove
-            </button>
+            </Button>
           </div>
         ))}
 
@@ -224,13 +225,13 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
                     <span className="bad">{itemKey} — no such item template</span>
                   )}
                 </span>
-                <button
-                  type="button"
-                  className="danger-button"
+                <Button
+                 
+                  variant="danger"
                   onClick={() => set({ sells: draft.sells.filter((_, i) => i !== index) })}
                 >
                   Remove
-                </button>
+                </Button>
               </div>
             )
           })}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { builderApi, type CharacterPath } from '../../net/builderApi'
 import { ABILITY_EFFECTS } from '../effects'
+import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
 import { Modal } from '../../ui/Modal'
 import { NumberInput } from '../../ui/NumberInput'
@@ -98,9 +99,9 @@ export function AbilityCreateDialog({ open, onOpenChange, onCreated }: Props) {
           <button type="button" onClick={() => onOpenChange(false)} disabled={busy}>
             Cancel
           </button>
-          <button type="button" className="primary" onClick={() => void submit()} disabled={busy}>
+          <Button variant="primary" onClick={() => void submit()} disabled={busy}>
             {busy ? 'Creating…' : 'Create'}
-          </button>
+          </Button>
         </>
       }
     >

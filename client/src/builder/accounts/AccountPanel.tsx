@@ -8,6 +8,7 @@ import {
   type AdminAccount,
   type Role,
 } from '../../net/adminApi'
+import { Button } from '../../ui/Button'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { Field } from '../../ui/Field'
 import { Select } from '../../ui/Select'
@@ -110,9 +111,9 @@ export function AccountPanel({ account, onChanged }: AccountPanelProps) {
             </Select>
           </Field>
 
-          <button
-            type="button"
-            className="primary"
+          <Button
+           
+            variant="primary"
             disabled={busy || role === account.role}
             onClick={() =>
               void run(
@@ -122,7 +123,7 @@ export function AccountPanel({ account, onChanged }: AccountPanelProps) {
             }
           >
             Change role
-          </button>
+          </Button>
         </div>
       </section>
 
@@ -219,14 +220,14 @@ export function AccountPanel({ account, onChanged }: AccountPanelProps) {
             />
           </Field>
 
-          <button
-            type="button"
-            className="danger-button"
+          <Button
+           
+            variant="danger"
             disabled={busy || password.length < MIN_PASSWORD_LENGTH}
             onClick={() => setConfirming('password')}
           >
             Set password
-          </button>
+          </Button>
         </div>
       </section>
 
@@ -241,14 +242,14 @@ export function AccountPanel({ account, onChanged }: AccountPanelProps) {
                 <li key={character}>
                   <span className="spawner-info">{character}</span>
                   <span className="spawner-actions">
-                    <button
-                      type="button"
-                      className="link"
+                    <Button
+                     
+                      variant="link"
                       disabled={busy}
                       onClick={() => setConfirming({ character })}
                     >
                       Retire
-                    </button>
+                    </Button>
                   </span>
                 </li>
               ))}

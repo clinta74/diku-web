@@ -1,3 +1,4 @@
+import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
 
@@ -40,9 +41,9 @@ export function RoomDetailsTab({
       </Field>
 
       <div className="row">
-        <button type="button" className="primary" disabled={busy || !dirty} onClick={onSave}>
+        <Button variant="primary" disabled={busy || !dirty} onClick={onSave}>
           {busy ? 'Saving…' : dirty ? 'Save' : 'Saved'}
-        </button>
+        </Button>
         <span className="dim detail">
           Saves reach anyone standing here immediately — there is no publish step.
         </span>

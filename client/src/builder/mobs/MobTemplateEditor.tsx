@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { builderApi, type MobAttack, type MobTemplate } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
 import { NumberInput } from '../../ui/NumberInput'
@@ -209,9 +210,9 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
       />
 
       <div className="row">
-        <button type="button" className="primary" disabled={!dirty || busy} onClick={() => void save()}>
+        <Button variant="primary" disabled={!dirty || busy} onClick={() => void save()}>
           {busy ? 'Saving…' : dirty ? 'Save' : 'Saved'}
-        </button>
+        </Button>
       </div>
 
       <ConfirmDialog

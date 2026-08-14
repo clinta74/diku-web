@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button } from '../../ui/Button'
 import { builderApi } from '../../net/builderApi'
 import { useBuilderData } from '../BuilderData'
 import { EntityFormDialog } from '../dialogs/EntityFormDialog'
@@ -33,9 +34,9 @@ export function WorldTree({ worldKey, zoneKey, roomKey, onWorld, onZone, onRoom 
       <div className="tree-section">
         <div className="tree-head">
           <h3>Worlds</h3>
-          <button type="button" className="link" onClick={() => setCreating('world')}>
+          <Button variant="link" onClick={() => setCreating('world')}>
             + new
-          </button>
+          </Button>
         </div>
         <ul>
           {worlds.map((world) => (
@@ -56,14 +57,14 @@ export function WorldTree({ worldKey, zoneKey, roomKey, onWorld, onZone, onRoom 
       <div className="tree-section">
         <div className="tree-head">
           <h3>Zones</h3>
-          <button
-            type="button"
-            className="link"
+          <Button
+           
+            variant="link"
             onClick={() => setCreating('zone')}
             disabled={!worldKey}
           >
             + new
-          </button>
+          </Button>
         </div>
         <ul>
           {zones.map((zone) => (
@@ -84,14 +85,14 @@ export function WorldTree({ worldKey, zoneKey, roomKey, onWorld, onZone, onRoom 
       <div className="tree-section">
         <div className="tree-head">
           <h3>Rooms</h3>
-          <button
-            type="button"
-            className="link"
+          <Button
+           
+            variant="link"
             onClick={() => setCreating('room')}
             disabled={!zoneKey}
           >
             + new
-          </button>
+          </Button>
         </div>
 
         <input

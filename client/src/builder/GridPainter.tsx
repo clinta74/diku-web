@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button } from '../ui/Button'
 import { NumberInput } from '../ui/NumberInput'
 import { PALETTE, PALETTE_GLYPHS, tileFor } from './palette'
 
@@ -166,9 +167,9 @@ export function GridPainter({ grid, legend, onChange }: Props) {
           h
           <NumberInput min={1} max={20} value={height} onChange={(h) => resize(width, h)} />
         </label>
-        <button type="button" className="link" onClick={() => onChange([], {})}>
+        <Button variant="link" onClick={() => onChange([], {})}>
           clear art
-        </button>
+        </Button>
       </div>
 
       <details className="legend-editor">

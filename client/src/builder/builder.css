@@ -13,8 +13,8 @@
 .builder-topbar {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  padding: 0.6rem 0.9rem;
+  gap: var(--space-5);
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--border);
 }
 
@@ -29,7 +29,7 @@
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .builder-exit {
@@ -48,7 +48,7 @@
 .follow-room {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.4rem;
+  gap: var(--space-2);
   margin: 0;
   color: var(--dim);
   font-size: 0.85em;
@@ -102,7 +102,7 @@
 
 /* Unsaved-changes marker on the Details sub-tab. */
 .tab-dot {
-  margin-left: 0.3rem;
+  margin-left: var(--space-2);
   color: var(--accent);
   font-size: 0.7em;
   vertical-align: middle;
@@ -124,7 +124,7 @@
 .builder-col {
   background: var(--bg);
   overflow-y: auto;
-  padding: 0.75rem;
+  padding: var(--space-3);
 }
 
 /* --- Room editor header + sub-tabs -------------------------------- */
@@ -133,7 +133,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .room-editor-head h2 {
@@ -141,13 +141,13 @@
 }
 
 .room-section {
-  margin-top: 0.9rem;
+  margin-top: var(--space-3);
 }
 
 .section-body {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: var(--space-3);
 }
 
 /* --- Dialog helpers ----------------------------------------------- */
@@ -155,7 +155,7 @@
 .prefixed-input {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: var(--space-2);
 }
 
 .prefixed-input code {
@@ -165,7 +165,7 @@
 .checkbox-row {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: var(--space-2);
   font-size: 0.9em;
 }
 
@@ -182,7 +182,7 @@
 .template-editor {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: var(--space-3);
 }
 
 .template-editor input,
@@ -196,10 +196,10 @@
 .behavior-editor {
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 0.75rem;
+  padding: var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: var(--space-2);
 }
 
 .attack-list .field-row,
@@ -214,17 +214,17 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--panel);
-  padding: 0.6rem 0.7rem;
+  padding: var(--space-2) var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: var(--space-2);
 }
 
 .attack-card-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .attack-list > button,
@@ -235,7 +235,7 @@
 .multiplier-set legend,
 .attack-list legend,
 .behavior-editor legend {
-  padding: 0 0.4rem;
+  padding: 0 var(--space-2);
   color: var(--dim);
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -249,7 +249,7 @@
 .room-picker {
   list-style: none;
   margin: 0;
-  padding: 0.4rem;
+  padding: var(--space-2);
   max-height: 11rem;
   overflow-y: auto;
   border: 1px solid var(--border);
@@ -257,7 +257,7 @@
 }
 
 .room-picker li {
-  padding: 0.1rem 0;
+  padding: var(--space-1) 0;
 }
 
 /* A picker holding a key no template matches. Allowed - content is routinely wired before the
@@ -273,7 +273,7 @@
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: 0.6rem;
+  gap: var(--space-2);
 }
 
 /* --- Difficulty multipliers ---------------------------------------- */
@@ -283,7 +283,7 @@
 .multiplier-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 0.6rem;
+  gap: var(--space-2);
 }
 
 /* The preview can be wider than the rail it sits in; scroll it rather than the page. */
@@ -302,7 +302,7 @@
 .preview-table th,
 .preview-table td {
   text-align: left;
-  padding: 0.25rem 0.5rem;
+  padding: var(--space-1) var(--space-2);
   border-bottom: 1px solid var(--border);
   vertical-align: top;
 }
@@ -331,7 +331,7 @@
 .shop-stock {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 /* The shop stock is a list of already-chosen items, so each row is a label plus its remove
@@ -345,7 +345,7 @@
 .field-check {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .field-check input[type='checkbox'] {
@@ -361,15 +361,15 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: var(--space-2);
 }
 
 .spawner-list li {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.4rem 0.5rem;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2);
   border: 1px solid var(--border);
   border-radius: 5px;
 }
@@ -377,12 +377,12 @@
 .spawner-info {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: var(--space-1);
 }
 
 .spawner-actions {
   display: flex;
-  gap: 0.35rem;
+  gap: var(--space-2);
 }
 
 /* --- Small screens (MOBILE.md M4b) ---------------------------------- */
@@ -395,7 +395,7 @@
 .builder-nav-toggle {
   min-height: 40px;
   min-width: 40px;
-  padding: 0 0.6rem;
+  padding: 0 var(--space-2);
   font-size: 1rem;
   line-height: 1;
 }
@@ -432,7 +432,7 @@
   /* The topbar wraps rather than crushing the tab labels into each other. */
   .builder-topbar {
     flex-wrap: wrap;
-    gap: 0.6rem 0.9rem;
+    gap: var(--space-2) var(--space-3);
   }
 
   .builder-topbar-right {
@@ -457,7 +457,7 @@
 .map-summon {
   width: 100%;
   min-height: 44px;
-  margin-bottom: 0.6rem;
+  margin-bottom: var(--space-2);
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -475,8 +475,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.5rem 0.8rem;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
   border-bottom: 1px solid var(--border);
 }
@@ -507,7 +507,7 @@
   margin: 0;
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 0.3rem 0.9rem;
+  gap: var(--space-2) var(--space-3);
 }
 
 .account-facts > div {
@@ -528,7 +528,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 /* --- Mob attack effects -------------------------------------------- */
@@ -540,11 +540,11 @@
    to look like a section of its own if nothing says otherwise. */
 .attack-effect {
   border-left: 2px solid var(--border);
-  padding-left: 0.7rem;
-  margin-left: 0.15rem;
+  padding-left: var(--space-3);
+  margin-left: var(--space-1);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 /* --- Quest chain -------------------------------------------------- */
@@ -560,7 +560,7 @@
 }
 
 .chain-list li {
-  padding: 0.15rem 0;
+  padding: var(--space-1) 0;
 }
 
 /* Inline so the badges that follow sit on the same line as the name. */
@@ -588,11 +588,11 @@
 .pan-pad {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: var(--space-2);
 }
 
 .pan-pad button {
-  padding: 0.2rem 0.5rem;
+  padding: var(--space-1) var(--space-2);
   line-height: 1;
 }
 
@@ -607,11 +607,11 @@
    always about the shape of a progression - where the gaps are, what level 1 has - and an
    alphabetical list answers none of it. */
 .ability-group {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
 }
 
 .ability-group-head {
-  margin: 0 0 0.25rem;
+  margin: 0 0 var(--space-1);
   color: var(--dim);
   font-size: 0.68rem;
   text-transform: uppercase;
@@ -627,10 +627,10 @@
 .ability-list .tree-item {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: var(--space-2);
   width: 100%;
   text-align: left;
-  padding: 0.25rem 0.4rem;
+  padding: var(--space-1) var(--space-2);
   border: 0;
   border-radius: 3px;
   background: none;
@@ -676,13 +676,13 @@
 .ability-problems {
   list-style: none;
   margin: 0;
-  padding: 0.6rem 0.75rem;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--panel);
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--space-2);
   font-size: 0.85em;
 }
 

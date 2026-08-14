@@ -1,4 +1,42 @@
+/* ------------------------------------------------------------------ */
+/* Design tokens                                                        */
+/*                                                                      */
+/* Colour was the only dimension that had any, which is exactly why it  */
+/* is the only one that stayed consistent. The others drifted: 24       */
+/* distinct spacing values with a run from 0.35 to 0.9 in steps of      */
+/* 0.05, 19 font sizes mixing rem and em for the same weight, and six   */
+/* radii doing the work of three. None of those were chosen against     */
+/* each other - each was chosen against whatever was on screen at the   */
+/* time (UX.md findings 3 and 4).                                       */
+/*                                                                      */
+/* Added ahead of adoption on purpose. They cost nothing until a rule   */
+/* uses one, so the migration can be incremental instead of one commit  */
+/* that touches every component and can only be reviewed by eye.        */
+/* ------------------------------------------------------------------ */
 :root {
+  /* Six steps, which absorb all 24 of the old values with no visible change.
+     Anything between two steps was a difference under a pixel. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  /* rem throughout. The old em sizes compounded inside nested components, so the
+     same intended weight rendered differently depending on where it sat. */
+  --text-xs: 0.7rem;
+  --text-sm: 0.8rem;
+  --text-base: 0.9rem;
+  --text-lg: 1rem;
+  --text-xl: 1.1rem;
+
+  /* Small for inputs and chips, medium for panels and cards, pill for anything
+     round. Three, where there were six. */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-pill: 999px;
+
   --bg: #0e1116;
   --panel: #161b22;
   --border: #2a3038;
@@ -45,7 +83,7 @@ body {
 .shell {
   max-width: 46rem;
   margin: 0 auto;
-  padding: 3rem 1.5rem;
+  padding: 3rem var(--space-5);
 }
 
 h1 {
@@ -56,7 +94,7 @@ h1 {
 }
 
 h2 {
-  margin: 0 0 0.6rem;
+  margin: 0 0 var(--space-2);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -65,7 +103,7 @@ h2 {
 }
 
 .tagline {
-  margin: 0.25rem 0 2rem;
+  margin: var(--space-1) 0 var(--space-6);
   color: var(--dim);
 }
 
@@ -73,8 +111,8 @@ h2 {
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--panel);
-  padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
+  padding: var(--space-4) var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .dim {
@@ -93,7 +131,7 @@ button {
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 0.4rem 0.8rem;
+  padding: var(--space-2) var(--space-3);
   cursor: pointer;
 }
 
@@ -121,7 +159,7 @@ input {
   background: #0b0e13;
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 0.45rem 0.6rem;
+  padding: var(--space-2) var(--space-2);
   width: 100%;
 }
 
@@ -139,19 +177,19 @@ input:focus {
    the Path rows nested inside the fieldset, and outspecified their own rule while doing it. */
 .form > label {
   display: block;
-  margin-bottom: 0.85rem;
+  margin-bottom: var(--space-3);
   color: var(--dim);
   font-size: 0.8rem;
 }
 
 .form > label input {
-  margin-top: 0.3rem;
+  margin-top: var(--space-2);
 }
 
 .tabs {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
 }
 
 .tabs button.active {
@@ -168,7 +206,7 @@ input:focus {
 }
 
 .character-list li {
-  margin-bottom: 0.4rem;
+  margin-bottom: var(--space-2);
 }
 
 .character-list button {
@@ -176,19 +214,19 @@ input:focus {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .paths {
   border: none;
   padding: 0;
-  margin: 0 0 1rem;
+  margin: 0 0 var(--space-4);
 }
 
 .paths legend {
   color: var(--dim);
   font-size: 0.8rem;
-  padding: 0 0 0.4rem;
+  padding: 0 0 var(--space-2);
 }
 
 /* Scoped through .paths deliberately. A Path row is a <label> inside .form, and `.form label`
@@ -202,9 +240,9 @@ input:focus {
      with the length of each Path name. */
   grid-template-columns: auto 5.5rem 1fr;
   align-items: center;
-  gap: 0.75rem;
-  margin: 0 0 0.2rem;
-  padding: 0.45rem 0.55rem;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-1);
+  padding: var(--space-2) var(--space-2);
   border: 1px solid transparent;
   border-radius: 4px;
   cursor: pointer;
@@ -279,13 +317,13 @@ input:focus {
 .map-panel {
   grid-area: map;
   overflow: auto;
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
 }
 
 .room-panel {
   grid-area: room;
   overflow: auto;
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
 }
 
 /*
@@ -294,7 +332,7 @@ input:focus {
  * and the border stops reading as a continuous line.
  */
 .map {
-  margin: 0 0 0.6rem;
+  margin: 0 0 var(--space-2);
   line-height: 1;
   letter-spacing: 0;
   color: var(--dim);
@@ -304,12 +342,12 @@ input:focus {
 .legend li,
 .contents li {
   font-size: 0.8rem;
-  padding: 0.1rem 0;
+  padding: var(--space-1) 0;
 }
 
 .contents button {
   border: none;
-  padding: 0.1rem 0;
+  padding: var(--space-1) 0;
   text-align: left;
   width: 100%;
 }
@@ -327,17 +365,17 @@ input:focus {
 .room-title {
   font-size: 1.05rem;
   color: var(--accent);
-  margin: 0 0 0.4rem;
+  margin: 0 0 var(--space-2);
   letter-spacing: 0.02em;
 }
 
 .room-description {
-  margin: 0 0 0.6rem;
+  margin: 0 0 var(--space-2);
   line-height: 1.5;
 }
 
 .exits {
-  margin: 0 0 1rem;
+  margin: 0 0 var(--space-4);
   color: var(--movement);
 }
 
@@ -346,7 +384,7 @@ input:focus {
 .scrollback {
   grid-area: scroll;
   overflow-y: auto;
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
   line-height: 1.5;
 
   /*
@@ -373,7 +411,7 @@ input:focus {
   bottom: 0;
   display: flex;
   justify-content: center;
-  padding-top: 0.5rem;
+  padding-top: var(--space-2);
   /* Above the lines it overlaps as it sticks. */
   z-index: 1;
 }
@@ -381,7 +419,7 @@ input:focus {
 .jump-to-bottom button {
   border: 1px solid var(--accent);
   border-radius: 999px;
-  padding: 0.2rem 0.9rem;
+  padding: var(--space-1) var(--space-3);
   font-size: 0.8rem;
   color: var(--accent);
   background: var(--panel);
@@ -480,8 +518,8 @@ input:focus {
   grid-area: input;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.5rem 1rem;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
 }
 
 .input-bar .prompt {
@@ -491,7 +529,7 @@ input:focus {
 .input-bar input {
   border: none;
   background: transparent;
-  padding: 0.2rem 0;
+  padding: var(--space-1) 0;
 }
 
 /*
@@ -515,9 +553,9 @@ input:focus {
   grid-area: vitals;
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: var(--space-4);
   flex-wrap: wrap;
-  padding: 0.5rem 1rem;
+  padding: var(--space-2) var(--space-4);
   padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
   padding-left: calc(1rem + env(safe-area-inset-left, 0px));
   padding-right: calc(1rem + env(safe-area-inset-right, 0px));
@@ -526,7 +564,7 @@ input:focus {
 
 .meter {
   display: inline-flex;
-  gap: 0.4rem;
+  gap: var(--space-2);
   align-items: baseline;
 }
 
@@ -623,8 +661,8 @@ input:focus {
   grid-area: header;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.45rem 0.8rem;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   padding-top: calc(0.45rem + env(safe-area-inset-top, 0px));
   border-bottom: 1px solid var(--border);
   background: var(--bg);
@@ -651,7 +689,7 @@ input:focus {
 /* 44px tall, which is the smallest a thumb hits reliably. */
 .room-header-toggle {
   min-height: 44px;
-  padding: 0 0.7rem;
+  padding: 0 var(--space-3);
   white-space: nowrap;
 }
 
@@ -686,13 +724,13 @@ input:focus {
 .game[data-layout='phone'] .sheet-head {
   display: flex;
   justify-content: flex-end;
-  padding: 0.5rem 0.8rem;
+  padding: var(--space-2) var(--space-3);
   padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
 }
 
 .sheet-close {
   min-height: 44px;
-  padding: 0 0.9rem;
+  padding: 0 var(--space-3);
 }
 
 .game[data-layout='phone'] .map-panel {
@@ -703,7 +741,7 @@ input:focus {
    thing you are about to act on. Text-sized rows are not hittable. */
 .game[data-layout='phone'] .contents button {
   min-height: 44px;
-  padding: 0.35rem 0;
+  padding: var(--space-2) 0;
 }
 
 .game[data-layout='phone'] .legend li,
@@ -727,8 +765,8 @@ input:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.4rem 1rem;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
   border-top: 1px solid var(--bad);
   background: var(--panel);
   font-size: 0.85rem;
@@ -751,8 +789,8 @@ input:focus {
 .exit-pad {
   grid-area: pad;
   display: flex;
-  gap: 0.3rem;
-  padding: 0.35rem 0.6rem;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2);
   background: var(--panel);
   border-top: 1px solid var(--border);
 }
@@ -783,11 +821,11 @@ input:focus {
    input is the one thing on this screen whose position must not move. */
 .command-chips {
   display: flex;
-  gap: 0.3rem;
+  gap: var(--space-2);
   overflow-x: auto;
   scrollbar-width: none;
-  padding-bottom: 0.35rem;
-  margin-bottom: 0.1rem;
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .command-chips::-webkit-scrollbar {
@@ -796,7 +834,7 @@ input:focus {
 
 .command-chip {
   min-height: 34px;
-  padding: 0 0.6rem;
+  padding: 0 var(--space-2);
   white-space: nowrap;
   font-size: 0.8rem;
   color: var(--dim);
@@ -834,7 +872,7 @@ input:focus {
    components and stay. */
 
 .tree-section {
-  margin-bottom: 1.1rem;
+  margin-bottom: var(--space-4);
 }
 
 .tree-head {
@@ -845,7 +883,7 @@ input:focus {
 
 .tree-head h3,
 .editor-section h3 {
-  margin: 0 0 0.35rem;
+  margin: 0 0 var(--space-2);
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -862,7 +900,7 @@ input:focus {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 0.25rem 0.4rem;
+  padding: var(--space-1) var(--space-2);
   border: 0;
   border-radius: 3px;
   background: none;
@@ -882,7 +920,7 @@ input:focus {
 
 .tree-filter {
   width: 100%;
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--space-2);
 }
 
 .room-list {
@@ -897,10 +935,10 @@ input:focus {
 /* --- Zone Canvas (Builder Map) -------------------------------------------------- */
 
 .zone-canvas-container {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-5);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
   background: var(--panel);
   border-radius: 8px;
   overflow: hidden;
@@ -908,17 +946,17 @@ input:focus {
 }
 
 .zone-canvas-header {
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
   min-height: 2.5rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .error-msg {
   margin: 0;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-2) var(--space-3);
   background-color: color-mix(in srgb, var(--bad) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--bad) 35%, transparent);
   border-radius: 4px;
@@ -928,7 +966,7 @@ input:focus {
 
 .link-status {
   margin: 0;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-2) var(--space-3);
   background-color: color-mix(in srgb, var(--accent) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   border-radius: 4px;
@@ -936,7 +974,7 @@ input:focus {
   font-size: 0.9rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .link-icon {
@@ -945,7 +983,7 @@ input:focus {
 
 .cancel-link {
   margin-left: auto;
-  padding: 0.25rem 0.5rem;
+  padding: var(--space-1) var(--space-2);
   background: color-mix(in srgb, var(--bad) 22%, transparent);
   border: 1px solid color-mix(in srgb, var(--bad) 45%, transparent);
   border-radius: 3px;
@@ -1041,8 +1079,8 @@ input:focus {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.15rem;
-  padding: 0.4rem;
+  gap: var(--space-1);
+  padding: var(--space-2);
   border: 2px solid var(--border);
   border-radius: 6px;
   background: var(--bg);
@@ -1111,13 +1149,13 @@ input:focus {
 }
 
 .zone-canvas-controls {
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
   background: var(--panel);
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 1rem;
+  gap: var(--space-4);
   flex-wrap: wrap;
 }
 
@@ -1126,7 +1164,7 @@ input:focus {
 .zoom-controls {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--space-2);
 }
 
 .zoom-controls button {
@@ -1148,7 +1186,7 @@ input:focus {
   color: var(--dim);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .help-icon {
@@ -1170,8 +1208,8 @@ input:focus {
 .mob-editor header {
   display: flex;
   align-items: baseline;
-  gap: 0.6rem;
-  margin-bottom: 0.6rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .room-editor header h2,
@@ -1192,7 +1230,7 @@ code.dim {
 .room-editor label,
 .mob-editor label {
   display: block;
-  margin-bottom: 0.6rem;
+  margin-bottom: var(--space-2);
 }
 
 .room-editor input,
@@ -1204,8 +1242,8 @@ code.dim {
 .tree-filter {
   display: block;
   width: 100%;
-  margin-top: 0.2rem;
-  padding: 0.35rem 0.5rem;
+  margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-2);
   border: 1px solid var(--border);
   border-radius: 3px;
   background: var(--bg);
@@ -1214,8 +1252,8 @@ code.dim {
 }
 
 .editor-section {
-  margin: 1.1rem 0;
-  padding-top: 0.8rem;
+  margin: var(--space-4) 0;
+  padding-top: var(--space-3);
   border-top: 1px solid var(--border);
 }
 
@@ -1226,7 +1264,7 @@ code.dim {
 .row {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -1247,7 +1285,7 @@ code.dim {
   background: none;
   color: var(--bad);
   font: inherit;
-  padding: 0.3rem 0.6rem;
+  padding: var(--space-2) var(--space-2);
   cursor: pointer;
 }
 
@@ -1258,11 +1296,11 @@ code.dim {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .flag {
-  padding: 0.4rem 0.5rem;
+  padding: var(--space-2) var(--space-2);
   border: 1px solid var(--border);
   border-radius: 3px;
 }
@@ -1277,7 +1315,7 @@ code.dim {
 .flag-head {
   display: flex;
   align-items: baseline;
-  gap: 0.4rem;
+  gap: var(--space-2);
 }
 
 .flag-head strong {
@@ -1285,16 +1323,16 @@ code.dim {
 }
 
 .flag p {
-  margin: 0.2rem 0 0.35rem;
+  margin: var(--space-1) 0 var(--space-2);
 }
 
 .flag-controls {
   display: flex;
-  gap: 0.25rem;
+  gap: var(--space-1);
 }
 
 .flag-controls button {
-  padding: 0.15rem 0.5rem;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--border);
   border-radius: 3px;
   background: none;
@@ -1313,15 +1351,15 @@ code.dim {
 
 .exit-list {
   list-style: none;
-  margin: 0 0 0.6rem;
+  margin: 0 0 var(--space-2);
   padding: 0;
 }
 
 .exit-list li {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.15rem 0;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
 }
 
 .exit-list strong {
@@ -1333,7 +1371,7 @@ code.dim {
 
 .grid-painter .palette {
   display: flex;
-  gap: 0.2rem;
+  gap: var(--space-1);
   flex-wrap: wrap;
 }
 
@@ -1342,14 +1380,14 @@ code.dim {
 .grid-painter .palette-groups {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 0.6rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .grid-painter .palette-group {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: var(--space-1);
 }
 
 .grid-painter .palette-label {
@@ -1420,8 +1458,8 @@ code.dim {
 .grid-size {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin-top: 0.4rem;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
   color: var(--dim);
 }
 
@@ -1431,21 +1469,21 @@ code.dim {
 }
 
 .legend-editor {
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
   color: var(--dim);
 }
 
 .legend-editor ul {
   list-style: none;
-  margin: 0.3rem 0 0;
+  margin: var(--space-2) 0 0;
   padding: 0;
 }
 
 .legend-editor li {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.2rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .legend-editor input {
@@ -1465,13 +1503,13 @@ code.dim {
 
 .warning-list li,
 .room-warnings li {
-  padding: 0.25rem 0;
+  padding: var(--space-1) 0;
   font-size: 0.85em;
   border-bottom: 1px solid var(--border);
 }
 
 .room-warnings {
-  margin-bottom: 0.8rem;
+  margin-bottom: var(--space-3);
 }
 
 .room-warnings li {
@@ -1526,10 +1564,10 @@ code.dim {
    abilities at level 20, and a second row would push the transcript up every time one unlocked. */
 .ability-bar {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
   list-style: none;
   margin: 0;
-  padding: 0.4rem 0.75rem;
+  padding: var(--space-2) var(--space-3);
   border-top: 1px solid var(--border);
   overflow-x: auto;
   scrollbar-width: thin;
@@ -1538,9 +1576,9 @@ code.dim {
 .ability-chip {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.4rem;
+  gap: var(--space-2);
   flex: none;
-  padding: 0.25rem 0.6rem;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--panel);

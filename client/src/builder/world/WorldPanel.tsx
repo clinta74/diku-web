@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { builderApi, type Multipliers } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { Field } from '../../ui/Field'
 import { NumberInput } from '../../ui/NumberInput'
@@ -161,14 +162,14 @@ export function WorldPanel({ worldKey, onDeleted }: Props) {
 
       {section !== 'flags' && (
         <div className="row">
-          <button
-            type="button"
-            className="primary"
+          <Button
+           
+            variant="primary"
             disabled={!dirty || busy}
             onClick={() => void save()}
           >
             {busy ? 'Saving…' : dirty ? 'Save' : 'Saved'}
-          </button>
+          </Button>
         </div>
       )}
 

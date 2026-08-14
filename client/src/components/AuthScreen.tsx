@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Button } from '../ui/Button'
 import { api, type Account, type Character } from '../net/api'
 import { ChangePasswordPanel } from './ChangePasswordPanel'
 
@@ -84,9 +85,9 @@ export function AuthScreen({ onReady }: { onReady: (account: Account) => void })
 
         {error && <p className="bad">{error}</p>}
 
-        <button type="submit" className="primary" disabled={busy}>
+        <Button type="submit" variant="primary" disabled={busy}>
           {busy ? 'Working…' : mode === 'login' ? 'Log in' : 'Create account'}
-        </button>
+        </Button>
       </form>
     </main>
   )
@@ -224,16 +225,16 @@ export function CharacterScreen({
 
         {error && <p className="bad">{error}</p>}
 
-        <button type="submit" className="primary" disabled={busy}>
+        <Button type="submit" variant="primary" disabled={busy}>
           {busy ? 'Working…' : 'Create'}
-        </button>
+        </Button>
       </form>
 
       <ChangePasswordPanel />
 
-      <button type="button" className="link" onClick={onLogout}>
+      <Button variant="link" onClick={onLogout}>
         Log out
-      </button>
+      </Button>
     </main>
   )
 }

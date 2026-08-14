@@ -1,4 +1,5 @@
 import type { ZoneValidation } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
 
 interface ValidationPanelProps {
   validation: ZoneValidation | null
@@ -21,9 +22,9 @@ export function ValidationPanel({ validation, onSelect }: ValidationPanelProps) 
       <ul className="warning-list">
         {validation.warnings.map((warning, i) => (
           <li key={i} className={`warning ${warning.kind}`}>
-            <button type="button" className="link" onClick={() => onSelect(warning.entityKey)}>
+            <Button variant="link" onClick={() => onSelect(warning.entityKey)}>
               {warning.entityKey.split('.').pop()}
-            </button>
+            </Button>
             <span className="dim"> {warning.message}</span>
           </li>
         ))}

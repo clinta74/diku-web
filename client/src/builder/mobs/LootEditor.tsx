@@ -1,4 +1,5 @@
 import type { ItemTemplate } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
 import { NumberField } from '../../ui/NumberField'
 import { TemplatePicker } from '../templates/TemplatePicker'
@@ -62,13 +63,13 @@ export function LootEditor({ rows, itemTemplates, onChange }: Props) {
               />
             </Field>
 
-            <button
-              type="button"
-              className="danger-button"
+            <Button
+             
+              variant="danger"
               onClick={() => onChange(rows.filter((_, i) => i !== index))}
             >
               Remove
-            </button>
+            </Button>
           </div>
         )
       })}

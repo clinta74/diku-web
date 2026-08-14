@@ -70,7 +70,7 @@ rails costs two lines and gets most of it.
 
 ---
 
-## 3. There is no shared Button, and no tokens for anything but colour
+## 3. There is no shared Button, and no tokens for anything but colour — FIXED
 
 **Severity: high — it is the cause of findings 1, 4, and 5.**
 
@@ -86,13 +86,17 @@ The token situation is the same shape. Seventeen custom properties are defined, 
 Colour is therefore the one dimension that is consistent everywhere. There are no tokens for
 spacing, type scale, or radius — and those are exactly the three dimensions that have drifted.
 
-**Fix:** a `Button` with `variant="primary" | "danger" | "quiet"`, and `--space-*`, `--text-*`,
-`--radius-*` tokens beside the colours. Adopt incrementally; the tokens can land first and cost
-nothing until used.
+**Fixed.** `ui/Button.tsx` takes `variant="quiet" | "primary" | "danger" | "link"`, and all 41
+variant call sites went through it. Neutral buttons stay bare `<button>` deliberately: the element
+rule already styles them, they have no variant to get wrong, and routing a hundred of them through
+a wrapper is churn with a regression surface and no defect behind it. What the component removes is
+the case where the intent was "destructive" and the output was "ordinary".
+
+`--space-*`, `--text-*` and `--radius-*` now sit beside the colours.
 
 ---
 
-## 4. Layout spacing: 24 distinct values, no scale
+## 4. Layout spacing: 24 distinct values, no scale — FIXED
 
 Every padding, margin, and gap in the client, by frequency:
 
@@ -116,8 +120,10 @@ two different ways in two components.
 
 Radius: `3px` ×9, `4px` ×8, `6px` ×7, `8px` ×2, `999px` ×2, `5px` ×1. Three values doing one job.
 
-**Fix:** a six-step scale (`0.25 / 0.5 / 0.75 / 1 / 1.5 / 2rem`) covers all 24 with no visible
-change to anything. Radius wants three: small, medium, pill.
+**Fixed:** the six-step scale went in and 214 declarations across the stylesheets moved onto it,
+covering 21 of the distinct values. Two literals remain on purpose — a `3rem` hero padding above
+the top step, and a `0.45rem` inside a `calc()` with `env(safe-area-inset-top)`, where a token
+would have to be resolved before the addition.
 
 ---
 
@@ -233,4 +239,5 @@ Worth recording so a later pass does not "fix" it:
    Events, so it belongs beside Phase 7's M4a rather than before it.
 6. **Finding 6** — seconds instead of pulses. Touches the API contract's field names, so it is the
    one worth a moment's thought rather than a quick pass.
-7. **Findings 3 and 4, adoption** — `Button`, and migrating to the scale. Incremental, no deadline.
+7. ~~**Findings 3 and 4, adoption**~~ Done in the same pass: 214 spacing declarations moved onto
+   the scale.

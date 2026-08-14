@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { builderApi, type ZoneSummary } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
 import { Modal } from '../../ui/Modal'
 import { Field } from '../../ui/Field'
 import { Select } from '../../ui/Select'
@@ -107,9 +108,9 @@ export function QuestCreateDialog({ open, onOpenChange, onCreated }: Props) {
           <button type="button" onClick={() => onOpenChange(false)} disabled={busy}>
             Cancel
           </button>
-          <button type="button" className="primary" onClick={() => void submit()} disabled={busy}>
+          <Button variant="primary" onClick={() => void submit()} disabled={busy}>
             {busy ? 'Creating…' : 'Create'}
-          </button>
+          </Button>
         </>
       }
     >

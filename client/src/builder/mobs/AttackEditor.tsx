@@ -1,4 +1,5 @@
 import type { MobAttack } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
 import { NumberInput } from '../../ui/NumberInput'
 import { Select } from '../../ui/Select'
@@ -63,13 +64,13 @@ export function AttackEditor({ attacks, onChange }: Props) {
                 Attack {index + 1}
                 {attack.verb && <span className="dim"> · “{attack.verb}”</span>}
               </span>
-              <button
-                type="button"
-                className="danger-button"
+              <Button
+               
+                variant="danger"
                 onClick={() => onChange(attacks.filter((_, i) => i !== index))}
               >
                 Remove
-              </button>
+              </Button>
             </div>
 
             <div className="field-row">

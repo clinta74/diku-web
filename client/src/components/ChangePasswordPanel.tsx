@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button } from '../ui/Button'
 import { api } from '../net/api'
 
 /** Matches PasswordPolicy on the server. Checked here only to save a round trip. */
@@ -67,9 +68,9 @@ export function ChangePasswordPanel() {
             Password changed. Everywhere else you were signed in has been signed out.
           </p>
         )}
-        <button type="button" className="link" onClick={() => setOpen(true)}>
+        <Button variant="link" onClick={() => setOpen(true)}>
           Change password
-        </button>
+        </Button>
       </section>
     )
   }
@@ -116,20 +117,20 @@ export function ChangePasswordPanel() {
 
       {error && <p className="bad">{error}</p>}
 
-      <button type="submit" className="primary" disabled={busy}>
+      <Button type="submit" variant="primary" disabled={busy}>
         {busy ? 'Working…' : 'Change password'}
-      </button>
+      </Button>
 
-      <button
-        type="button"
-        className="link"
+      <Button
+       
+        variant="link"
         onClick={() => {
           reset()
           setOpen(false)
         }}
       >
         Cancel
-      </button>
+      </Button>
     </form>
   )
 }

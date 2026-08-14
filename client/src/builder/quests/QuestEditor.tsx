@@ -4,6 +4,7 @@ import {
   type Quest,
   type ReachabilityWarning,
 } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
 import { NumberInput } from '../../ui/NumberInput'
@@ -456,9 +457,9 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
       </fieldset>
 
       <div className="field-row">
-        <button type="button" className="primary" onClick={() => void save()} disabled={busy}>
+        <Button variant="primary" onClick={() => void save()} disabled={busy}>
           {busy ? 'Saving…' : 'Save'}
-        </button>
+        </Button>
         {dirty && <span className="dim">Unsaved changes</span>}
       </div>
 

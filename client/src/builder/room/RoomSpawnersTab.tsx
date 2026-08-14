@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { builderApi, type RoomDetail, type Spawner } from '../../net/builderApi'
 import { useBuilderData } from '../BuilderData'
 import { SpawnerDialog } from '../dialogs/SpawnerDialog'
+import { Button } from '../../ui/Button'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { useToast } from '../../ui/Toast'
 
@@ -93,9 +94,9 @@ export function RoomSpawnersTab({ room }: Props) {
                   <button type="button" onClick={() => setEditing(spawner)}>
                     Edit
                   </button>
-                  <button type="button" className="danger-button" onClick={() => setRemoving(spawner)}>
+                  <Button variant="danger" onClick={() => setRemoving(spawner)}>
                     Remove
-                  </button>
+                  </Button>
                 </div>
               </li>
             )

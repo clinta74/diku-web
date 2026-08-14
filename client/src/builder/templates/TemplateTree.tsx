@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button } from '../../ui/Button'
 import { EntityFormDialog } from '../dialogs/EntityFormDialog'
 
 interface TemplateTreeProps<T> {
@@ -44,9 +45,9 @@ export function TemplateTree<T>({
       <div className="tree-section">
         <div className="tree-head">
           <h3>{heading}</h3>
-          <button type="button" className="link" onClick={() => setCreating(true)}>
+          <Button variant="link" onClick={() => setCreating(true)}>
             + new
-          </button>
+          </Button>
         </div>
 
         <input
