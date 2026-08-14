@@ -347,7 +347,7 @@ public sealed class CommandRegistry
         spans.Add(new TextSpan("\n  n / e / s / w / u / d - move between rooms"));
 
         foreach (var command in _commands.Where(
-            c => !IsDirection(c.Name) && c.VisibleTo(ctx.Actor.Role)))
+            c => !IsDirection(c.Name) && !c.Hidden && c.VisibleTo(ctx.Actor.Role)))
         {
             spans.Add(new TextSpan($"\n  {command.Help}"));
         }

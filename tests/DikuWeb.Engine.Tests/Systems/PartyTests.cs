@@ -296,7 +296,7 @@ public sealed class PartyTests
 
         Group(harness, killer, ally);
 
-        var mob = harness.AddMob("rat", West, health: 1);
+        var mob = harness.AddMob("rat", West, health: 1, level: 5);
         mob.ResolvedXp = 100;
         mob.ResolvedGold = 30;
 
@@ -321,7 +321,7 @@ public sealed class PartyTests
         Group(harness, killer, absent);
         harness.World.Move(absent, East);
 
-        var mob = harness.AddMob("rat", West, health: 1);
+        var mob = harness.AddMob("rat", West, health: 1, level: 5);
         mob.ResolvedXp = 100;
 
         harness.Execute(killer, "kill rat");
@@ -338,7 +338,7 @@ public sealed class PartyTests
         var killer = harness.AddPlayer("Bram", West, level: 5);
         harness.AddPlayer("Kael", West, level: 5);
 
-        var mob = harness.AddMob("rat", West, health: 1);
+        var mob = harness.AddMob("rat", West, health: 1, level: 5);
         mob.ResolvedXp = 100;
         mob.ResolvedGold = 30;
 
@@ -359,7 +359,7 @@ public sealed class PartyTests
 
         Group(harness, killer, ally);
 
-        var mob = harness.AddMob("rat", West, health: 1);
+        var mob = harness.AddMob("rat", West, health: 1, level: 5);
         mob.ResolvedXp = 7;
 
         harness.Execute(killer, "kill rat");

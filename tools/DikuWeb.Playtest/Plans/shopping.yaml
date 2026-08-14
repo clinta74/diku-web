@@ -59,7 +59,7 @@ steps:
     note: |
       A shopkeeper is not something you can fight. Refusing in words rather than silently is the
       difference between a rule and a bug.
-    do: kill bar maiden
+    do: attack bar maiden
     expect-not: "You begin attacking"
 
   - actor: Coin

@@ -107,5 +107,5 @@ steps:
     do: south
     wait: { text: "The Drowned Rat" }
   - actor: Theron
-    do: kill rat
+    do: attack rat
     expect-not: "already in combat"

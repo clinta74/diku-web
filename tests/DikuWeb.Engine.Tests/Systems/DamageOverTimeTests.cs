@@ -156,6 +156,10 @@ public sealed class DamageOverTimeTests
         var xpBefore = player.Character.Xp;
         rat.ResolvedXp = 50;
 
+        // At the player's level, so the assertion is about the bleed landing the kill rather than
+        // about whether the kill was worth anything (§5.3).
+        rat.Level = player.Character.Level;
+
         Wound(harness, rat, tickDamage: 20, interval: 4, duration: 100);
         harness.Pump(8);
 

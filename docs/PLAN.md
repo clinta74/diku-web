@@ -638,6 +638,45 @@ exploration, which is what a MUD is for. Each level grants attribute and ability
 deliberately: point-buy rather than use-based improvement, because use-based systems are
 notoriously hard to balance and invite grinding.
 
+**A kill has to be worth something, and something you could not already do is worth nothing.**
+`XpRelevance` holds both halves of that, as one window used twice:
+
+```
+Floor(level) = min(level / 2, 30)
+```
+
+- **The mob.** At or above your level pays in full; below `Floor` pays nothing; between the two it
+  tapers on a straight line, so there is no level at which one more level of mob is worth a jump.
+  A cliff would teach players to count levels instead of picking fights.
+- **The party.** A member below `Floor` of the highest level *present* earns nothing from the
+  kill — a level 50 can carry a level 25 and not a level 24. Members outside the window are
+  dropped **before** the split rather than zeroed after it, so bringing a friend who earns nothing
+  does not shrink anyone else's share.
+- **Gold is not level-gated.** Experience is credit for the fight and gold is payment for being
+  there, so a carried member walks away with coin. Two rules, tunable apart.
+- **Zero always says why.** Two rules produce the same zero and they have opposite fixes — hunt
+  something harder, or stop being carried — so the message names which one applied. Silent zero
+  reads as a broken reward, and a player who thinks the reward is broken reports it rather than
+  changing what they hunt.
+
+Two orderings carry the weight. **The window is applied after zone multipliers** (§4.4), so a
+generous zone scales a reward and can never resurrect a worthless one — reverse it and an
+8×-experience starter zone is the best farm in the game for a level 50. And **a mob's level is
+floored at its zone's `MinLevel`**, because one rat template placed in a level 40 zone with heavy
+multipliers is a level 40 encounter wearing a level 1 label, and reusing templates across
+difficulties is what multipliers are *for*. Not clamped at `MaxLevel`: a boss authored above its
+band is deliberate. This is the first thing in the codebase that reads `Zone.MinLevel`, which has
+been authored, stored and exported since Phase 3 and consulted by nothing — **a zone with a
+careless band now has consequences where it previously had none.**
+
+**The verb is `attack`, and `kill` still works.** The rename is about the word the game reaches
+for first, and there was never a mechanical reason for that word to be the harsher one — the old
+help line already read *"kill &lt;target&gt; (k) - attack target"*. `kill` stays registered and
+hidden from `help`, because unregistering it would have taken `k` with it, and thirty years of
+muscle memory is not a tone decision. `attack` asks for three characters: `a` and `ab` already
+belong to `abilities`. Older sections below say `kill` because they are describing bugs that
+happened when that was its name.
+
 **Spells are cast; skills are done.** `cast bolt rat` and `kick rat` — the verb matches what the
 character is doing, because *"cast kick"* describes a boot to the knee as though it were
 sorcery. The split is **derived, not authored**: the two caster Paths pay Focus for all eighteen

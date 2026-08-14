@@ -12,8 +12,23 @@ public static class CombatCommands
 {
     public static void Register(List<CommandDefinition> commands)
     {
+        // "attack" rather than "kill", because the word the game reaches for first sets its tone
+        // and there is no mechanical reason for that word to be the harsher one - the help text
+        // already described kill as "attack target".
+        //
+        // Three characters, not one: "a" and "ab" already belong to `abilities`, and taking them
+        // would shadow it. "att" is unambiguous and there is nothing else in the table it could be.
         commands.Add(new CommandDefinition(
-            "kill", 1, "kill <target> (k) - attack target", Kill));
+            "attack", 3, "attack <target> (att) - attack target", Attack));
+
+        // The old spelling, kept working and kept out of help.
+        //
+        // <b>Deleting it would have cost `k`</b>, which is thirty years of muscle memory in this
+        // genre and the single most typed verb in a fight. Renaming a verb is a tone change; taking
+        // away the keystroke people use without looking is a usability change, and only the first
+        // one was asked for. MinLength stays at 1 so `k` still lands where it always has.
+        commands.Add(new CommandDefinition(
+            "kill", 1, "kill <target> (k) - attack target", Attack, Hidden: true));
 
         commands.Add(new CommandDefinition(
             "consider", 1, "consider <target> (con) - estimate target strength", Consider));
@@ -25,11 +40,11 @@ public static class CombatCommands
             "bind", 0, "bind (b) - set respawn point in this room", Bind));
     }
 
-    private static void Kill(CommandContext ctx)
+    private static void Attack(CommandContext ctx)
     {
         if (!ctx.HasArgument)
         {
-            ctx.Reply("Kill what?");
+            ctx.Reply("Attack what?");
             return;
         }
 

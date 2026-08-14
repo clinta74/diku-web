@@ -78,8 +78,8 @@ steps:
 
   - note: Both attack the same rat. Three combatants, which is the shape that used to hang.
     together:
-      - { actor: Bram, do: kill rat }
-      - { actor: Kael, do: kill rat }
+      - { actor: Bram, do: attack rat }
+      - { actor: Kael, do: attack rat }
 
   - actor: Bram
     wait: { text: "falls", timeout: 120 }

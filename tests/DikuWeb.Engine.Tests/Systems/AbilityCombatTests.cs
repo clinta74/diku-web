@@ -217,7 +217,9 @@ public sealed class AbilityCombatTests
         // also a kill that never paid.
         var harness = Loaded();
         var warden = Fighter(harness, "warden.kick");
-        var rat = harness.AddMob("rat", West, health: 1);
+        // Level 12 to match the fighter: this test is about a kill paying at all, and a level 1
+        // rat would pay nothing for a reason that has nothing to do with abilities (§5.3).
+        var rat = harness.AddMob("rat", West, health: 1, level: 12);
         rat.ResolvedXp = 40;
         rat.ResolvedGold = 7;
 

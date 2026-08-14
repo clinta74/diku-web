@@ -1219,6 +1219,17 @@ public sealed class CombatSystem(
     /// The killer is the top of the hate list, which since threat accounting landed means the top
     /// of <em>all</em> damage - so the Adept who nuked from behind the Warden is credited, and the
     /// split then hands the Warden their share anyway.
+    ///
+    /// <b>Experience and gold no longer split the same way</b> (§5.3). Gold is payment for being
+    /// there and every present member gets a share of it. Experience is credit for the fight, so it
+    /// is divided only among the people the fight was actually within reach of
+    /// (<see cref="XpRelevance"/>), and each of their shares is then scaled by how far the mob was
+    /// beneath them individually. A level 50 and a level 25 killing a level 25 mob walk away with
+    /// very different amounts, which is the point.
+    ///
+    /// Members outside the window are dropped <em>before</em> the split rather than zeroed after
+    /// it, so bringing a friend who earns nothing does not also shrink everyone else's share. The
+    /// alternative punishes the group for the company it keeps.
     /// </remarks>
     private static void AwardKill(WorldState world, Character killer, Mob mob, RoomKey roomKey)
     {
@@ -1239,16 +1250,84 @@ public sealed class CombatSystem(
             }
         }
 
-        var xp = RewardShare.Split(mob.ResolvedXp, sharers.Count);
+        var mobLevel = EffectiveMobLevel(world, mob, roomKey);
+        var highestPresent = sharers.Max(c => c.Level);
+
+        // The killer stays first among the earners when they are one, so an odd remainder still
+        // goes to whoever landed the blow.
+        var earners = sharers.Where(c => XpRelevance.SharesExperience(c.Level, highestPresent)).ToList();
+
+        var xp = earners.Count > 0 ? RewardShare.Split(mob.ResolvedXp, earners.Count) : [];
         var gold = RewardShare.Split(mob.ResolvedGold, sharers.Count);
+
+        var earned = new Dictionary<Guid, long>();
+        for (var i = 0; i < earners.Count; i++)
+        {
+            earned[earners[i].Id] = XpRelevance.ShareOf(xp[i], earners[i].Level, mobLevel);
+        }
 
         for (var i = 0; i < sharers.Count; i++)
         {
-            Award(world, sharers[i], xp[i], gold[i], shared: sharers.Count > 1);
+            var share = earned.GetValueOrDefault(sharers[i].Id);
+
+            Award(
+                world,
+                sharers[i],
+                share,
+                gold[i],
+                shared: sharers.Count > 1,
+                note: share > 0 ? null : NoteFor(wasEligible: earned.ContainsKey(sharers[i].Id)));
         }
     }
 
-    private static void Award(WorldState world, Character character, long xp, long gold, bool shared)
+    /// <summary>
+    /// Why a kill paid no experience. Two rules produce the same zero and a player needs to know
+    /// which one they hit, because the two have opposite fixes: hunt something harder, or stop
+    /// being carried.
+    /// </summary>
+    private static string NoteFor(bool wasEligible) => wasEligible
+        ? "There is nothing left for you to learn from that."
+        : "The fight was far beyond you; you learn nothing from it.";
+
+    /// <summary>
+    /// The level a mob counts as for the purpose of deciding whether killing it meant anything.
+    /// </summary>
+    /// <remarks>
+    /// <b>Floored at the zone's declared minimum level</b>, because a mob's own level does not
+    /// describe how hard it hits once multipliers are applied (§4.4). One rat template placed in a
+    /// level 40 zone with eight times strength and damage is a level 40 encounter wearing a level 1
+    /// label - and rewarding it as level 1 content would mean the fight that nearly killed you paid
+    /// nothing. Reusing a template across zones of different difficulty is what multipliers are
+    /// for, so the template's level cannot be the whole answer.
+    ///
+    /// The zone's band is the author's own statement of who the content is for, which makes it the
+    /// right number and not a derived one. <b>This is the first thing that reads
+    /// <c>Zone.MinLevel</c></b> - it has been authored, stored and exported since Phase 3 and
+    /// consulted by nothing, so a zone with a wrong band that never mattered now does.
+    ///
+    /// Not clamped at <c>MaxLevel</c>: a boss authored above its zone's band is deliberate, and
+    /// pulling it down to the band would be this function overruling the author in the one
+    /// direction they were explicit about.
+    /// </remarks>
+    private static int EffectiveMobLevel(WorldState world, Mob mob, RoomKey roomKey)
+    {
+        if (world.FindRoom(roomKey) is { } room && world.FindZone(room.ZoneKey) is { } zone)
+        {
+            return Math.Max(mob.Level, zone.MinLevel);
+        }
+
+        // A mob standing in a room whose zone cannot be resolved is already a robustness case
+        // (§7.4); its own level is the honest answer rather than a reason to refuse the reward.
+        return mob.Level;
+    }
+
+    private static void Award(
+        WorldState world,
+        Character character,
+        long xp,
+        long gold,
+        bool shared,
+        string? note = null)
     {
         character.Xp += xp;
         character.Gold += gold;
@@ -1259,6 +1338,15 @@ public sealed class CombatSystem(
         {
             // Said out loud, because a share that arrived silently looks like the reward shrank.
             actor.SendText($"Your share: {xp} experience, {gold} gold.", "party");
+        }
+
+        // Zero experience needs a reason attached to it. Without one the two rules in §5.3 are
+        // indistinguishable from a broken reward, and a player who thinks the game is broken files
+        // that rather than adjusting what they hunt - which is the entire behaviour the rules are
+        // there to produce.
+        if (note is not null)
+        {
+            actor?.SendText(note, "xp");
         }
 
         while (CharacterProgression.TryLevelUp(

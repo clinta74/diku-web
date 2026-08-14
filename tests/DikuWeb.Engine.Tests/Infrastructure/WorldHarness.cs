@@ -577,6 +577,12 @@ internal sealed class WorldHarness
     /// <summary>
     /// Registers a mob template and puts one instance of it in a room, ready to fight.
     /// </summary>
+    /// <param name="level">
+    /// Matters to any test that asserts an experience award (§5.3): a mob below half the killer's
+    /// level pays nothing at all. The default of 1 stays, because most tests here are about combat
+    /// rather than reward and a level 1 mob is the simplest thing to fight - but a test that checks
+    /// experience must set this, or it is asserting the relevance rule by accident.
+    /// </param>
     public Mob AddMob(
         string templateKey,
         RoomKey at,
@@ -585,13 +591,15 @@ internal sealed class WorldHarness
         string name = "rat",
         int damageMin = 1,
         int damageMax = 1,
-        Dictionary<string, object>? behavior = null)
+        Dictionary<string, object>? behavior = null,
+        int level = 1)
     {
         MobTemplates.Put(new MobTemplate
         {
             Key = templateKey,
             Name = name,
             Icon = "r",
+            Level = level,
             Attacks = [.. attacks ?? []],
             Behavior = behavior ?? [],
         });
@@ -601,7 +609,7 @@ internal sealed class WorldHarness
             TemplateKey = templateKey,
             TemplateName = name,
             RoomKey = at.ToString(),
-            Level = 1,
+            Level = level,
             Vitals = new Vitals
             {
                 Health = health,

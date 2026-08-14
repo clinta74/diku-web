@@ -111,7 +111,7 @@ steps:
 
   - actor: Theron
     note: Opening a fight should say so, in the second person, naming what was attacked.
-    do: kill rat
+    do: attack rat
     wait: { text: "You begin attacking" }
     expect: "You begin attacking"
 
@@ -133,5 +133,5 @@ steps:
     note: |
       Two rats live here, so there should still be one — and being able to attack it is the proof
       that the first fight actually ended.
-    do: kill rat
+    do: attack rat
     expect-not: "already in combat"
