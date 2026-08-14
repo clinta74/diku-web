@@ -1519,3 +1519,62 @@ code.dim {
     grid-column: 1;
   }
 }
+
+/* --- Ability bar ---------------------------------------------------- */
+
+/* Sits above the input, scrolls sideways rather than wrapping into a wall: a Path has ten
+   abilities at level 20, and a second row would push the transcript up every time one unlocked. */
+.ability-bar {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  border-top: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.ability-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex: none;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ability-chip:hover {
+  border-color: var(--accent);
+}
+
+.ability-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Dimmed rather than disabled: the chip still fills the input, because typing the verb early and
+   pressing enter as it comes up is how a rotation is actually played. */
+.ability-chip.cooling {
+  color: var(--dim);
+  border-color: var(--rule, var(--border));
+}
+
+.ability-chip-cost {
+  color: var(--dim);
+  font-size: 0.75em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tabular, so a countdown does not jitter the chip's width as it passes 10. */
+.ability-chip-timer {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}

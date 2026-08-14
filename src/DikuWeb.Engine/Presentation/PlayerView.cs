@@ -1,7 +1,9 @@
+using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.World;
 
@@ -80,6 +82,111 @@ public sealed class PlayerView(RoomLayoutService layout)
             viewer.Send(new OutboundEvent(EventTypes.Map, _layout.BuildMap(room, occupants, mobs, items, viewer)));
             viewer.Send(new OutboundEvent(EventTypes.Contents, BuildContents(occupants, mobs, items, viewer, legend, contents)));
         }
+    }
+
+    /// <summary>
+    /// Sends the character's whole ability list, each with whatever is left of its cooldown.
+    /// </summary>
+    /// <remarks>
+    /// Sent on entering the world and whenever the set could have changed - a level-up grants
+    /// abilities, and a builder editing one changes what the rest of them say. Not sent per pulse:
+    /// the client counts the cooldowns down itself and only needs correcting when it has been
+    /// away, which is exactly when this arrives (see <see cref="AbilitiesPayload"/>).
+    ///
+    /// A cache-less host sends an empty list rather than throwing. That is a host that never
+    /// loaded abilities, which is a test harness rather than a game.
+    /// </remarks>
+    public static void SendAbilities(
+        PlayerActor actor,
+        WorldState world,
+        AbilityCache? cache,
+        long currentPulse)
+    {
+        ArgumentNullException.ThrowIfNull(actor);
+        ArgumentNullException.ThrowIfNull(world);
+
+        var character = actor.Character;
+
+        var known = cache is null
+            ? []
+            : cache.All.Values
+                .Where(a => a.Path == character.Path && a.UnlockLevel <= character.Level)
+                .OrderBy(a => a.UnlockLevel)
+                .ThenBy(a => a.Key, StringComparer.Ordinal)
+                .ToList();
+
+        var entries = known
+            .Select(a => new AbilityEntry(
+                a.Key,
+                a.Name,
+                // What a player actually types. `cast` refuses a skill (§4.7), so telling the
+                // client which word to use is the difference between a panel that teaches the
+                // vocabulary and one that lists keys.
+                AbilityKinds.Of(a) == AbilityKind.Spell
+                    ? $"cast {a.Name.ToLowerInvariant()}"
+                    : a.Name.ToLowerInvariant(),
+                a.CostType.ToString(),
+                a.CostValue,
+                a.CooldownPulses,
+                RemainingCooldown(world, character.Id, a, currentPulse),
+                AbilityKinds.Of(a) == AbilityKind.Spell))
+            .ToList();
+
+        actor.LastSentAbilityLevel = character.Level;
+        actor.Send(new OutboundEvent(EventTypes.Abilities, new AbilitiesPayload(entries)));
+    }
+
+    /// <summary>
+    /// Resends the roster when the character has levelled since the last one.
+    /// </summary>
+    /// <remarks>
+    /// Levelling is what changes the set, and it happens in three places. Comparing the level once
+    /// per pulse costs an int and cannot be forgotten by a new one, which is the same trade
+    /// <see cref="SendVitalsIfChanged"/> makes.
+    ///
+    /// A builder retuning an ability is deliberately *not* covered: that changes what the panel
+    /// says rather than which abilities exist, and the corrected roster arrives the next time the
+    /// character enters. Pushing it would mean the applier reaching every player of a Path on
+    /// every save.
+    /// </remarks>
+    public static void SendAbilitiesIfLevelled(
+        PlayerActor actor,
+        WorldState world,
+        AbilityCache? cache,
+        long currentPulse)
+    {
+        ArgumentNullException.ThrowIfNull(actor);
+
+        if (actor.LastSentAbilityLevel == actor.Character.Level)
+        {
+            return;
+        }
+
+        actor.LastSentAbilityLevel = actor.Character.Level;
+        SendAbilities(actor, world, cache, currentPulse);
+    }
+
+    /// <summary>Pulses left before this ability may be used again. Zero when it is ready.</summary>
+    private static long RemainingCooldown(
+        WorldState world,
+        Guid characterId,
+        Ability ability,
+        long currentPulse)
+    {
+        if (world.GetAbilityCooldown(characterId, ability.Key) is not { } startedAt)
+        {
+            return 0;
+        }
+
+        var remaining = (startedAt + ability.CooldownPulses) - currentPulse;
+        return remaining > 0 ? remaining : 0;
+    }
+
+    /// <summary>Tells one player that an ability of theirs has started cooling down.</summary>
+    public static void SendCooldown(PlayerActor actor, string abilityKey, long pulses)
+    {
+        ArgumentNullException.ThrowIfNull(actor);
+        actor.Send(new OutboundEvent(EventTypes.Cooldown, new CooldownPayload(abilityKey, pulses)));
     }
 
     public static void SendVitals(PlayerActor actor)

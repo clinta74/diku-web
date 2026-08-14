@@ -88,12 +88,22 @@ public sealed class AbilityBuilderApiTests(PostgresFixture postgres)
         //
         // Asserted on the raw JSON rather than through a typed client, because a typed client is
         // exactly what deserialises the difference away.
+        //
+        // Against an ability this test creates, not a seeded one. It first read warden.kick and
+        // failed only in a full run: AbilityReconcileTests deliberately overwrites
+        // AbilityCatalogue.All[0] - which is warden.kick - to prove a builder's edit survives a
+        // restart, and leaves it that way. The suite shares one database, so a seeded row is
+        // whatever the run has done to it by now.
         var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
+        var key = NewKey();
+        (await client.PostAsJsonAsync($"/api/builder/abilities/{key}", ValidBody()))
+            .EnsureSuccessStatusCode();
+
         var raw = await client.GetStringAsync(
-            new Uri("/api/builder/abilities/warden.kick", UriKind.Relative));
+            new Uri($"/api/builder/abilities/{key}", UriKind.Relative));
 
         Assert.Contains("\"path\":\"Warden\"", raw, StringComparison.Ordinal);
         Assert.Contains("\"costType\":\"Stamina\"", raw, StringComparison.Ordinal);

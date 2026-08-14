@@ -67,6 +67,39 @@ export interface VitalsPayload {
   gold: number
 }
 
+/**
+ * One pulse, in milliseconds (PLAN.md §2.3). The server speaks in pulses and the client counts
+ * cooldowns down in wall-clock time, so this is the one place the two units meet.
+ */
+export const PULSE_MS = 250
+
+/** One ability the character has, as the server describes it. */
+export interface AbilityEntry {
+  key: string
+  name: string
+  /** What to type. "cast bolt" for a spell, "kick" for a skill — `cast` refuses a skill. */
+  verb: string
+  costType: string
+  costValue: number
+  cooldownPulses: number
+  /**
+   * What was left of the cooldown when the server sent this. The client counts down from here
+   * rather than being told again each pulse, so this is only ever a starting point — and the
+   * reason the roster is resent on entry, which is how a reconnect resynchronises.
+   */
+  remainingPulses: number
+  isSpell: boolean
+}
+
+export interface AbilitiesPayload {
+  abilities: AbilityEntry[]
+}
+
+export interface CooldownPayload {
+  key: string
+  pulses: number
+}
+
 export interface SysPayload {
   message: string
   kind: 'info' | 'warning' | 'disconnect'
@@ -79,5 +112,16 @@ export type GameEvent =
   | { type: 'contents'; data: ContentsPayload }
   | { type: 'vitals'; data: VitalsPayload }
   | { type: 'sys'; data: SysPayload }
+  | { type: 'abilities'; data: AbilitiesPayload }
+  | { type: 'cooldown'; data: CooldownPayload }
 
-export const EVENT_TYPES = ['text', 'room', 'map', 'contents', 'vitals', 'sys'] as const
+export const EVENT_TYPES = [
+  'text',
+  'room',
+  'map',
+  'contents',
+  'vitals',
+  'sys',
+  'abilities',
+  'cooldown',
+] as const

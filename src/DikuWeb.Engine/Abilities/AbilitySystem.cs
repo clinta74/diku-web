@@ -114,6 +114,12 @@ public sealed class AbilitySystem(
         // Set cooldown
         world.SetAbilityCooldown(caster.Id, cast.AbilityKey, clock.CurrentPulse);
 
+        // Told to the client here rather than where the command was parsed, because this is the
+        // line that makes the cooldown true. Cost and cooldown are spent before the target is
+        // resolved on some paths, so announcing earlier would grey out a button for an ability
+        // that was then refused (PLAN.md §3.5).
+        PlayerView.SendCooldown(actor, cast.AbilityKey, ability.CooldownPulses);
+
         // Whether this cast should point the caster's weapon at what it hit, decided once for the
         // whole cast rather than per target - an area effect must never pick one victim out of the
         // room to swing at.

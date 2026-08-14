@@ -14,7 +14,62 @@ public static class EventTypes
     public const string Contents = "contents";
     public const string Vitals = "vitals";
     public const string Sys = "sys";
+
+    /// <summary>The whole ability list, with whatever is still cooling down.</summary>
+    public const string Abilities = "abilities";
+
+    /// <summary>One ability just went on cooldown.</summary>
+    public const string Cooldown = "cooldown";
 }
+
+/// <param name="RemainingPulses">
+/// What is left of this ability's cooldown right now, or 0 when it is ready.
+/// </param>
+public sealed record AbilityEntry(
+    string Key,
+    string Name,
+    string Verb,
+    string CostType,
+    int CostValue,
+    long CooldownPulses,
+    long RemainingPulses,
+    bool IsSpell);
+
+/// <summary>
+/// Everything the character can use, sent whole (PLAN.md §3.5).
+/// </summary>
+/// <remarks>
+/// <b>The roster is the half without which a cooldown event says nothing.</b> The client had never
+/// been told what abilities a character has, so an event naming <c>warden.kick</c> would have
+/// arrived somewhere with nothing to grey out.
+///
+/// <b>It carries remaining cooldown, and that is what makes a reconnect correct.</b> The client
+/// counts down locally between casts, so a reconnecting one has missed every
+/// <see cref="EventTypes.Cooldown"/> event that fired while it was away - or, worse, replays stale
+/// ones out of the ring buffer (§3.4) and shows a cooldown that expired minutes ago. Sending the
+/// remaining time with the roster, and sending the roster on entry, makes resynchronising a
+/// property of reconnecting rather than a thing to remember.
+///
+/// Sent whole rather than as a delta because it is small - thirty-seven abilities at most, of
+/// which one Path sees ten - and because a delta would need the client to already hold a correct
+/// list, which is the thing being established.
+/// </remarks>
+public sealed record AbilitiesPayload(IReadOnlyList<AbilityEntry> Abilities);
+
+/// <summary>
+/// One ability has just been used and is now cooling down.
+/// </summary>
+/// <remarks>
+/// <b>One event per cast, with the client doing the counting.</b> The alternative - a frame per
+/// pulse while anything is cooling - is four a second per player times however many abilities are
+/// down, which is exactly the traffic §11's pulse budget is careful about. This is the floor: one
+/// event when the state actually changes.
+///
+/// Emitted where the cooldown is *recorded* rather than where the command is parsed, because cost
+/// and cooldown are spent before the target resolves on some paths - a refusal must not grey out a
+/// button for an ability that was never used.
+/// </remarks>
+public sealed record CooldownPayload(string Key, long Pulses);
 
 /// <summary>
 /// Styled markup rather than raw ANSI, so the client owns the colour theme (PLAN.md §3.5).

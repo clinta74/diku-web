@@ -9,6 +9,7 @@ import { useCoarsePointer, usePhoneLayout } from './pointer'
 import { exitPad, recentCommands, verbsFor } from './touchVerbs'
 import { applyCompletion, completionsFor, type Completions } from './completion'
 import { loadHistory, remember, saveHistory } from './commandHistory'
+import { AbilityBar } from './AbilityBar'
 import { followSlack, isAtBottom } from './scrollFollow'
 
 interface Props {
@@ -301,6 +302,16 @@ export function GameScreen({
       {phone && (
         <ExitPad exits={state.room?.exits ?? []} onGo={send} />
       )}
+
+      {/*
+        Above the input, because it is a thing you read and then type - putting it under the input
+        would mean looking past what you are writing to see what you can write.
+      */}
+      <AbilityBar
+        abilities={state.abilities}
+        cooldownUntil={state.cooldownUntil}
+        onPick={(verb) => insertKeyword.current?.(verb)}
+      />
 
       <InputBar
         onSend={send}

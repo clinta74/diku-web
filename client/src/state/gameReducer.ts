@@ -1,4 +1,6 @@
+import { PULSE_MS } from '../net/protocol'
 import type {
+  AbilityEntry,
   ContentsPayload,
   GameEvent,
   MapPayload,
@@ -20,6 +22,16 @@ export interface GameState {
   map: MapPayload | null
   contents: ContentsPayload | null
   vitals: VitalsPayload | null
+  abilities: AbilityEntry[]
+  /**
+   * When each cooling ability becomes usable again, as a wall-clock timestamp. Absent means ready.
+   *
+   * An absolute instant rather than a remaining count, so nothing has to tick this state forward:
+   * the server says "24 pulses" once, this records the moment that lands on, and the panel derives
+   * the number on screen from the clock. A stored countdown would need a timer inside the reducer
+   * and would drift whenever the tab was backgrounded and the timer throttled.
+   */
+  cooldownUntil: Record<string, number>
   scrollback: ScrollbackLine[]
   nextLineId: number
   connected: boolean
@@ -30,6 +42,8 @@ export const initialGameState: GameState = {
   map: null,
   contents: null,
   vitals: null,
+  abilities: [],
+  cooldownUntil: {},
   scrollback: [],
   nextLineId: 1,
   connected: false,
@@ -71,6 +85,31 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
 
     case 'vitals':
       return { ...state, vitals: event.data }
+
+    case 'abilities': {
+      // Replaces both the list and the cooldowns. The roster is the authoritative picture - it
+      // arrives on entry precisely because the client has been away and its own countdowns are
+      // whatever they were when it left.
+      const now = Date.now()
+      const cooldownUntil: Record<string, number> = {}
+
+      for (const ability of event.data.abilities) {
+        if (ability.remainingPulses > 0) {
+          cooldownUntil[ability.key] = now + ability.remainingPulses * PULSE_MS
+        }
+      }
+
+      return { ...state, abilities: event.data.abilities, cooldownUntil }
+    }
+
+    case 'cooldown':
+      return {
+        ...state,
+        cooldownUntil: {
+          ...state.cooldownUntil,
+          [event.data.key]: Date.now() + event.data.pulses * PULSE_MS,
+        },
+      }
 
     case 'sys':
       return appendLine(state, [{ t: event.data.message, s: `sys-${event.data.kind}` }])

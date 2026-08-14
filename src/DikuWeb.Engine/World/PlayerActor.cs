@@ -65,6 +65,17 @@ public sealed class PlayerActor
     public VitalsPayload? LastSentVitals { get; set; }
 
     /// <summary>
+    /// The level this player's ability roster was built for, or null before one was ever sent.
+    /// </summary>
+    /// <remarks>
+    /// Levelling is the only thing that changes which abilities a character has, and it happens in
+    /// three places - a kill, a quest turn-in, and an admin `set`. Comparing here rather than
+    /// pushing from each of them is the argument <see cref="LastSentVitals"/> already makes: there
+    /// is no mutation site that can forget to announce itself.
+    /// </remarks>
+    public int? LastSentAbilityLevel { get; set; }
+
+    /// <summary>
     /// Who last sent this player a tell, so <c>reply</c> has something to answer (PLAN.md §5.3).
     /// Runtime only: a conversation does not outlive the session it happened in.
     /// </summary>
