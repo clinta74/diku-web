@@ -687,6 +687,39 @@ One ordering carries real weight: **the window is applied after the experience m
 so a generous zone scales a reward and can never resurrect a worthless one. Reverse it and an
 8×-experience starter zone is the best farm in the game for a level 50.
 
+**The window, as a table.** Percentage of the mob's resolved experience, by the level it fights at:
+
+| Player | m1 | m2 | m5 | m8 | m10 | m15 | m20 | m30 | m40 | m50 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **1** *(floor 0)* | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% |
+| **5** *(floor 2)* | — | 25% | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% |
+| **10** *(floor 5)* | — | — | 17% | 67% | 100% | 100% | 100% | 100% | 100% | 100% |
+| **20** *(floor 10)* | — | — | — | — | 9% | 55% | 100% | 100% | 100% | 100% |
+| **30** *(floor 15)* | — | — | — | — | — | 6% | 38% | 100% | 100% | 100% |
+| **40** *(floor 20)* | — | — | — | — | — | — | 5% | 52% | 100% | 100% |
+| **50** *(floor 25)* | — | — | — | — | — | — | — | 23% | 62% | 100% |
+
+Two things authors should read off it. **A level 1 has no floor**, so the first level of the game
+never punishes anyone for what they can find. And the window is *wide* — a level 50 still earns
+from a level 25 — so the rule retires content slowly rather than in steps.
+
+And the same kobold from §4.4, at 120 base experience, killed by four different players:
+
+| Zone | `strength` | `xp` | Resolved | Fights at | p10 | p20 | p30 | p48 |
+|---|---|---|---|---|---|---|---|---|
+| `millbrook` | 1.0 | 1.0 | 120 | 8 | **80** | — | — | — |
+| `sunken-crypt` | 2.5 | 1.0 | 120 | 20 | **120** | **120** | **45** | — |
+| `the-deep` | 6.0 | 2.0 | 240 | 48 | **240** | **240** | **240** | **240** |
+| a greedy starter zone | 1.0 | 8.0 | 960 | 8 | **640** | — | — | — |
+
+The last row is the ordering doing its job: eight times the experience is eight times the reward
+for someone the fight is still meant for, and **nothing at all** for a level 20 — the multiplier
+scales what the kill is worth, it does not decide whether it was worth anything.
+
+The first two rows are the reason effective level exists. Same authored row, same 120 experience,
+and the crypt version pays a level 20 in full while the Millbrook one pays them nothing — because
+the crypt version is a genuinely harder fight and the template could not say so.
+
 **`consider` reads the same two numbers** — the warning and the reward are one judgement shown
 twice, and both go through `WorldState.EffectiveLevelOf`. Above your level it still reports on
 absolute level differences, because danger does not scale the way relevance does: five levels up is
