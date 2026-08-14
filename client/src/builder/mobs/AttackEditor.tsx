@@ -1,9 +1,10 @@
 import type { MobAttack } from '../../net/builderApi'
 import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
-import { NumberInput } from '../../ui/NumberInput'
+import { SecondsInput } from '../../ui/SecondsInput'
 import { Select } from '../../ui/Select'
 import { ATTACK_EFFECTS, effectOption, pruneParams } from '../effects'
+import { ParamInput } from '../ParamInput'
 
 interface Props {
   attacks: MobAttack[]
@@ -77,10 +78,10 @@ export function AttackEditor({ attacks, onChange }: Props) {
               <Field label="Message" hint="Base form: bite, claw, gore.">
                 <input value={attack.verb} onChange={(e) => edit(index, { verb: e.target.value })} />
               </Field>
-              <Field label="Delay (pulses)" hint="Minimum 4 ≈ 1s.">
-                <NumberInput
-                  min={4}
-                  value={attack.delayPulses}
+              <Field label="Delay (seconds)" hint="Minimum 1.">
+                <SecondsInput
+                  minPulses={4}
+                  pulses={attack.delayPulses}
                   onChange={(v) => edit(index, { delayPulses: v })}
                 />
               </Field>
@@ -121,11 +122,10 @@ export function AttackEditor({ attacks, onChange }: Props) {
                 <div className="stat-grid">
                   {option.params.map((param) => (
                     <Field key={param.key} label={param.label} hint={param.hint}>
-                      <input
-                        value={attack.effectParams?.[param.key] ?? ''}
-                        placeholder={param.fallback}
-                        inputMode={param.integer ? 'numeric' : 'text'}
-                        onChange={(e) => editParam(index, param.key, e.target.value)}
+                      <ParamInput
+                        param={param}
+                        stored={attack.effectParams?.[param.key] ?? ''}
+                        onChange={(stored) => editParam(index, param.key, stored)}
                       />
                     </Field>
                   ))}

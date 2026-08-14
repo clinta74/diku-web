@@ -4,6 +4,7 @@ import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
 import { NumberInput } from '../../ui/NumberInput'
+import { SecondsInput } from '../../ui/SecondsInput'
 import { OverflowMenu } from '../../ui/OverflowMenu'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { useToast } from '../../ui/Toast'
@@ -161,8 +162,12 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
         <Field label="Level">
           <NumberInput min={1} value={level} onChange={change(setLevel)} />
         </Field>
-        <Field label="Wander (pulses)" hint="Lower = faster. 24 ≈ 6s.">
-          <NumberInput min={1} value={wanderIntervalPulses} onChange={change(setWanderIntervalPulses)} />
+        <Field label="Wanders every (seconds)" hint="Lower is more restless.">
+          <SecondsInput
+            minPulses={4}
+            pulses={wanderIntervalPulses}
+            onChange={change(setWanderIntervalPulses)}
+          />
         </Field>
       </div>
 

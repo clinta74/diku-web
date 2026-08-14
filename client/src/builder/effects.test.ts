@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { ALL_EFFECTS, ATTACK_EFFECTS, effectOption, pruneParams } from './effects'
+import {
+  ALL_EFFECTS,
+  ATTACK_EFFECTS,
+  effectOption,
+  paramToDisplay,
+  paramToStored,
+  pruneParams,
+} from './effects'
 
 describe('the offered effects', () => {
   /**
@@ -97,5 +104,51 @@ describe('pruneParams', () => {
 
   it('returns null when no effect is chosen', () => {
     expect(pruneParams(null, { durationPulses: '12' })).toBeNull()
+  })
+})
+
+describe('durations in seconds', () => {
+  const seconds = ATTACK_EFFECTS.find((e) => e.key === 'control.stun')!.params.find(
+    (p) => p.key === 'durationPulses',
+  )!
+  const plain = ATTACK_EFFECTS.find((e) => e.key === 'debuff.weaken')!.params.find(
+    (p) => p.key === 'outgoingMultiplier',
+  )!
+
+  it('shows a stored pulse count as seconds', () => {
+    // A pulse is 250ms and an engine detail. Five builder fields asked for pulses while two beside
+    // them asked for seconds, so authoring one mob meant converting between units mid-form.
+    expect(paramToDisplay(seconds, '8')).toBe('2')
+    expect(paramToDisplay(seconds, '24')).toBe('6')
+  })
+
+  it('stores what was typed back in pulses', () => {
+    expect(paramToStored(seconds, '2')).toBe('8')
+    expect(paramToStored(seconds, '6')).toBe('24')
+  })
+
+  it('keeps quarter-second precision rather than rounding to whole seconds', () => {
+    // 10 pulses is 2.5s. Rounding to whole seconds would silently retune anything authored on an
+    // odd pulse count.
+    expect(paramToDisplay(seconds, '10')).toBe('2.5')
+    expect(paramToStored(seconds, '2.5')).toBe('10')
+  })
+
+  it('leaves a parameter that is not a duration alone', () => {
+    expect(paramToDisplay(plain, '0.75')).toBe('0.75')
+    expect(paramToStored(plain, '0.75')).toBe('0.75')
+  })
+
+  it('passes a blank through untouched', () => {
+    // Converting "" to 0 would fight somebody clearing a field.
+    expect(paramToDisplay(seconds, '')).toBe('')
+    expect(paramToStored(seconds, '')).toBe('')
+  })
+
+  it('converts a half-typed decimal, which is why ParamInput holds the raw text', () => {
+    // Number("2.") is 2, not NaN, so this returns 8 pulses and the field would redisplay "2" -
+    // eating the dot as fast as it is typed and making "2.5" unreachable. The conversion is right;
+    // it is the round trip through a controlled input that cannot happen on every keystroke.
+    expect(paramToStored(seconds, '2.')).toBe('8')
   })
 })

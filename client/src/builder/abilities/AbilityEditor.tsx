@@ -7,10 +7,12 @@ import {
   type TargetingType,
 } from '../../net/builderApi'
 import { ABILITY_EFFECTS, effectOption, pruneParams } from '../effects'
+import { ParamInput } from '../ParamInput'
 import { Button } from '../../ui/Button'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { Field } from '../../ui/Field'
 import { NumberInput } from '../../ui/NumberInput'
+import { SecondsInput } from '../../ui/SecondsInput'
 import { Select } from '../../ui/Select'
 import { Textarea } from '../../ui/Textarea'
 import { useToast } from '../../ui/Toast'
@@ -182,26 +184,21 @@ export function AbilityEditor({ abilityKey, onChanged, onDeleted }: Props) {
 
       <div className="field-row">
         <Field
-          label="Cooldown (pulses)"
+          label="Cooldown (seconds)"
           hint={
             onBeat
-              ? `${draft.cooldownPulses * 0.25}s — ${beats} swing${beats === 1 ? '' : 's'}.`
-              : `${draft.cooldownPulses * 0.25}s. Not a whole number of 2s swings, so it drifts against the fight.`
+              ? `${beats} swing${beats === 1 ? '' : 's'} of the 2s combat beat.`
+              : 'Not a whole number of 2s swings, so it drifts against the fight.'
           }
         >
-          <NumberInput
-            min={0}
-            value={draft.cooldownPulses}
+          <SecondsInput
+            pulses={draft.cooldownPulses}
             onChange={(v) => set({ cooldownPulses: v })}
           />
         </Field>
-        <Field
-          label="Cast time (pulses)"
-          hint="Blank is instant. A cast can be interrupted."
-        >
-          <NumberInput
-            min={0}
-            value={draft.castTimePulses ?? 0}
+        <Field label="Cast time (seconds)" hint="Zero is instant. A cast can be interrupted.">
+          <SecondsInput
+            pulses={draft.castTimePulses ?? 0}
             onChange={(v) => set({ castTimePulses: v === 0 ? null : v })}
           />
         </Field>
@@ -258,13 +255,13 @@ export function AbilityEditor({ abilityKey, onChanged, onDeleted }: Props) {
                 <div className="stat-grid">
                   {option.params.map((param) => (
                     <Field key={param.key} label={param.label} hint={param.hint}>
-                      <input
-                        value={effect.params[param.key] ?? ''}
-                        placeholder={param.fallback}
-                        onChange={(e) =>
+                      <ParamInput
+                        param={param}
+                        stored={effect.params[param.key] ?? ''}
+                        onChange={(stored) =>
                           setEffect(index, {
                             key: effect.key,
-                            params: { ...effect.params, [param.key]: e.target.value },
+                            params: { ...effect.params, [param.key]: stored },
                           })
                         }
                       />

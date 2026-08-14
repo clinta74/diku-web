@@ -5,6 +5,7 @@ import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
 import { Select } from '../../ui/Select'
 import { NumberInput } from '../../ui/NumberInput'
+import { toPulses, toSeconds } from '../../ui/SecondsInput'
 import { NumberField } from '../../ui/NumberField'
 import { OverflowMenu } from '../../ui/OverflowMenu'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
@@ -225,14 +226,20 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
           pulses, in an off hand it never strikes at all.
         </p>
         <div className="field-row">
-          <Field label="Attack delay (pulses)" hint="Minimum 4 ≈ 1s. Lower = faster.">
+          {/* Free text rather than a stepper, because blank is a real value here - it means the
+              weapon declares no speed of its own and swings at the default. Seconds in, pulses
+              stored, like every other duration in the builder. */}
+          <Field label="Attack delay (seconds)" hint="Blank uses the default. Minimum 1.">
             <input
               type="text"
-              inputMode="numeric"
-              value={attackDelayPulses ?? ''}
+              inputMode="decimal"
+              value={attackDelayPulses === null ? '' : toSeconds(attackDelayPulses)}
               onChange={(e) => {
                 const raw = e.target.value.trim()
-                setAttackDelayPulses(raw === '' || Number.isNaN(Number(raw)) ? null : Number(raw))
+                const seconds = Number(raw)
+                setAttackDelayPulses(
+                  raw === '' || Number.isNaN(seconds) ? null : Math.max(4, toPulses(seconds)),
+                )
                 touch()
               }}
             />

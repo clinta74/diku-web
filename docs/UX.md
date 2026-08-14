@@ -6,6 +6,10 @@ resizability, and whether it is intuitive.
 
 Written 2026-08-13 against 2,457 lines of CSS across three files and 58 components.
 
+**All eight findings are now closed.** The detail below is kept as the record of what each was and
+how it was answered — several of the fixes are decisions rather than tidying, and the reasoning is
+the part worth having later.
+
 **The summary, before the detail.** The client is in better shape than a codebase of this age
 usually is, and the two things most reviews of a hobby project spend their length on — inconsistent
 capitalisation and unlabelled controls — are already right here. What it lacks is a *system*: there
@@ -151,7 +155,7 @@ this settles the *convention*, not finding 6: three fields still ask a builder f
 
 ---
 
-## 6. Pulses leak into the builder, and a pulse is not a unit anyone thinks in
+## 6. Pulses leak into the builder, and a pulse is not a unit anyone thinks in — FIXED
 
 **Severity: medium, and the clearest "intuitive" finding.**
 
@@ -241,7 +245,7 @@ Worth recording so a later pass does not "fix" it:
 3. ~~**Finding 5** — unit convention in labels.~~ Done: parenthetical everywhere.
 4. **Finding 3, tokens half** — add the spacing, type, and radius tokens without adopting them.
 5. ~~**Finding 2** — resizable builder rails.~~ Done, on Pointer Events and persisted.
-6. **Finding 6** — seconds instead of pulses. Touches the API contract's field names, so it is the
-   one worth a moment's thought rather than a quick pass.
+6. ~~**Finding 6** — seconds instead of pulses.~~ Done at the input rather than in the API, so no
+   field names, rows or bundles changed.
 7. ~~**Findings 3 and 4, adoption**~~ Done in the same pass: 214 spacing declarations moved onto
    the scale.

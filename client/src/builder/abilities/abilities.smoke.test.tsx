@@ -121,11 +121,14 @@ it('shows the reason on the ability itself', async () => {
   expect(await screen.findByText(/No effect executor is registered/)).toBeTruthy()
 })
 
-it('saves an edited cooldown', async () => {
+it('saves an edited cooldown, typed in seconds and stored in pulses', async () => {
+  // A pulse is an engine detail (PLAN.md §2.3) and had leaked into five builder fields while two
+  // beside them took seconds. The editor shows 6s for a 24-pulse cooldown and converts back on
+  // the way out, so the stored shape is unchanged.
   renderTab('/builder/abilities/warden.kick')
 
-  const cooldown = await screen.findByDisplayValue('24')
-  fireEvent.change(cooldown, { target: { value: '48' } })
+  const cooldown = await screen.findByDisplayValue('6')
+  fireEvent.change(cooldown, { target: { value: '12' } })
 
   const save = screen.getByRole('button', { name: 'Save' })
   await waitFor(() => expect(save.hasAttribute('disabled')).toBe(false))
@@ -151,6 +154,6 @@ it('does not offer Save until something changed', async () => {
   // row - so "who changed this ability" fills up with saves that changed nothing.
   renderTab('/builder/abilities/warden.kick')
 
-  await screen.findByDisplayValue('24')
+  await screen.findByDisplayValue('6')
   expect(screen.getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true)
 })

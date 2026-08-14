@@ -27,6 +27,12 @@ export interface EffectParamField {
   /** Shown as the placeholder: what the executor uses when the field is left blank. */
   fallback: string
   integer?: boolean
+  /**
+   * Stored in pulses, shown in seconds. A pulse is an engine detail (PLAN.md §2.3) and asking a
+   * builder to convert while authoring is UX.md finding 6 - the editors that take seconds sit
+   * beside the ones that took pulses.
+   */
+  pulses?: boolean
 }
 
 export interface EffectOption {
@@ -38,10 +44,11 @@ export interface EffectOption {
 
 const duration = (fallback: string, ceiling?: string): EffectParamField => ({
   key: 'durationPulses',
-  label: 'Duration (pulses)',
-  hint: ceiling ? `4 pulses ≈ 1s. Clamped to ${ceiling}.` : '4 pulses ≈ 1s.',
+  label: 'Lasts (seconds)',
+  hint: ceiling ? `Clamped to ${ceiling}.` : 'How long it stays on the target.',
   fallback,
   integer: true,
+  pulses: true,
 })
 
 const label = (fallback: string): EffectParamField => ({
@@ -195,10 +202,11 @@ export const ATTACK_EFFECTS: EffectOption[] = [
       },
       {
         key: 'tickIntervalPulses',
-        label: 'Tick every (pulses)',
+        label: 'Ticks every (seconds)',
         hint: 'Total damage is roughly damage × (duration ÷ interval).',
         fallback: '8',
         integer: true,
+        pulses: true,
       },
       duration('48'),
       {
@@ -259,6 +267,39 @@ export const ATTACK_EFFECTS: EffectOption[] = [
 
 /** Every effect either surface can offer, keyed for lookup. */
 export const ALL_EFFECTS: EffectOption[] = [...ABILITY_EFFECTS, ...ATTACK_EFFECTS]
+
+/** One pulse in seconds (PLAN.md §2.3). */
+const PULSE_SECONDS = 0.25
+
+/**
+ * The stored value as the builder should see it — seconds for a duration, verbatim otherwise.
+ *
+ * Kept beside the schema rather than in the two components that render params, so a field marked
+ * `pulses` cannot be converted on one screen and shown raw on the other.
+ */
+export function paramToDisplay(param: EffectParamField, stored: string): string {
+  if (!param.pulses || stored === '') return stored
+
+  const pulses = Number(stored)
+  if (!Number.isFinite(pulses)) return stored
+
+  return String(Math.round(pulses * PULSE_SECONDS * 100) / 100)
+}
+
+/** What was typed, back in the unit the engine stores. */
+export function paramToStored(param: EffectParamField, typed: string): string {
+  if (!param.pulses || typed.trim() === '') return typed
+
+  const seconds = Number(typed)
+  if (!Number.isFinite(seconds)) return typed
+
+  return String(Math.max(0, Math.round(seconds / PULSE_SECONDS)))
+}
+
+/** The placeholder, which is stored in pulses like everything else and shown in seconds. */
+export function paramPlaceholder(param: EffectParamField): string {
+  return paramToDisplay(param, param.fallback)
+}
 
 export function effectOption(key: string | null | undefined): EffectOption | null {
   return ALL_EFFECTS.find((e) => e.key === key) ?? null
