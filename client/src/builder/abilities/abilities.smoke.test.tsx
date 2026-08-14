@@ -16,8 +16,7 @@ const kick = vi.hoisted(
     cooldownPulses: 24,
     castTimePulses: null,
     targetingType: 'SingleTarget',
-    effectKey: 'damage.physical',
-    effectParams: { scalingFactor: '1.1', minDamage: '3' },
+    effects: [{ key: 'damage.physical', params: { scalingFactor: '1.1', minDamage: '3' } }],
     problems: [],
   }),
 )
@@ -34,8 +33,7 @@ const broken = vi.hoisted(
     cooldownPulses: 24,
     castTimePulses: null,
     targetingType: 'SingleTarget',
-    effectKey: 'damage.nonexistent',
-    effectParams: {},
+    effects: [{ key: 'damage.nonexistent', params: {} }],
     problems: [
       { severity: 'Error', message: "No effect executor is registered for 'damage.nonexistent'." },
     ],

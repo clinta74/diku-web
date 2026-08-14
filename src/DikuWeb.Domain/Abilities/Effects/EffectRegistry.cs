@@ -36,4 +36,22 @@ public sealed class EffectRegistry
 
     public bool Contains(string effectKey) =>
         !string.IsNullOrEmpty(effectKey) && _effects.ContainsKey(effectKey);
+
+    /// <summary>
+    /// Whether this ability points at somebody - true when *any* of its effects is harmful.
+    /// </summary>
+    /// <remarks>
+    /// One definition, because two places need the answer and they must not disagree: the cast
+    /// loop uses it to decide whether landing the ability opens a fight, and the command layer
+    /// uses it to decide who a bare `cast` should fall back to. An ability that damages and
+    /// debuffs is an attack whichever order it was written in.
+    ///
+    /// <see cref="AbilityValidator"/> refuses a list that mixes directions, so in practice this is
+    /// reading a decision rather than resolving a conflict.
+    /// </remarks>
+    public bool IsHarmful(Ability ability)
+    {
+        ArgumentNullException.ThrowIfNull(ability);
+        return ability.Effects.Exists(e => Get(e.Key)?.IsHarmful == true);
+    }
 }

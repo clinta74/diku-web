@@ -124,24 +124,63 @@ public static class AbilityValidator
             Error($"Unlock level must be between 1 and {MaxLevel}. Level 0 is known by everyone.");
         }
 
-        if (!effects.Contains(ability.EffectKey))
+        if (ability.Effects.Count == 0)
         {
-            // The single most expensive thing to get wrong, because nothing reports it: the cast
-            // succeeds, the cost is spent, the cooldown starts, and no effect runs.
-            Error($"No effect executor is registered for '{ability.EffectKey}'.");
+            Error("An ability with no effects costs its resource and does nothing.");
             return problems;
         }
 
-        foreach (var (effectKey, parameter) in RequiredParams)
+        // Checked per effect, because an ability is a list of them now. A single bad entry in an
+        // otherwise good list is the case worth catching: the ability half-works, which reads as
+        // a balance problem rather than as a mistake.
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var effect in ability.Effects)
         {
-            if (ability.EffectKey == effectKey && !ability.EffectParams.ContainsKey(parameter))
+            if (!seen.Add(effect.Key))
             {
-                Error($"'{effectKey}' reads '{parameter}', and this ability does not set it.");
+                // Both would run, and the second would refresh the first rather than stack with
+                // it, so the ability is quietly weaker than it reads.
+                Error($"'{effect.Key}' is listed twice.");
+                continue;
             }
+
+            if (!effects.Contains(effect.Key))
+            {
+                // The single most expensive thing to get wrong, because nothing reports it: the
+                // cast succeeds, the cost is spent, the cooldown starts, and no effect runs.
+                Error($"No effect executor is registered for '{effect.Key}'.");
+                continue;
+            }
+
+            foreach (var (effectKey, parameter) in RequiredParams)
+            {
+                if (effect.Key == effectKey && !effect.Params.ContainsKey(parameter))
+                {
+                    Error($"'{effectKey}' reads '{parameter}', and this ability does not set it.");
+                }
+            }
+
+            ValidateDirection(effect, Error);
+            ValidateClamps(effect, Error, Warn);
         }
 
-        ValidateDirection(ability, Error);
-        ValidateClamps(ability, Error, Warn);
+        // One ability points one way. The cast path gathers a single set of targets and treats the
+        // ability as harmful if any part of it is, so a list mixing a heal with a damage effect
+        // would either burn the people it meant to mend or mend the people it meant to burn -
+        // there is no target set that satisfies both. Refused here rather than resolved there,
+        // because the resolution would have to be a guess.
+        var directions = ability.Effects
+            .Select(e => effects.Get(e.Key))
+            .OfType<IAbilityEffect>()
+            .Select(e => e.IsHarmful)
+            .Distinct()
+            .Count();
+
+        if (directions > 1)
+        {
+            Error("An ability cannot be both harmful and helpful — it has one set of targets.");
+        }
 
         return problems;
     }
@@ -227,9 +266,9 @@ public static class AbilityValidator
     /// A buff must help and a debuff must harm. Both are multipliers around 1.0 and both read
     /// plausibly on the wrong side of it.
     /// </summary>
-    private static void ValidateDirection(Ability ability, Action<string> error)
+    private static void ValidateDirection(AbilityEffectSpec ability, Action<string> error)
     {
-        switch (ability.EffectKey)
+        switch (ability.Key)
         {
             case "buff.damage-up":
             {
@@ -303,9 +342,9 @@ public static class AbilityValidator
     /// Control effects are clamped by their executors. An authored value past the ceiling is
     /// silently reduced, so the number in the editor stops describing the game.
     /// </summary>
-    private static void ValidateClamps(Ability ability, Action<string> error, Action<string> warn)
+    private static void ValidateClamps(AbilityEffectSpec ability, Action<string> error, Action<string> warn)
     {
-        if (!ability.EffectKey.StartsWith("control.", StringComparison.Ordinal))
+        if (!ability.Key.StartsWith("control.", StringComparison.Ordinal))
         {
             return;
         }
@@ -315,7 +354,7 @@ public static class AbilityValidator
             error("A control effect that stacks chains into a permanent lock.");
         }
 
-        var ceiling = ability.EffectKey switch
+        var ceiling = ability.Key switch
         {
             "control.stun" => StunEffect.MaxDurationPulses,
             "control.root" => RootEffect.MaxDurationPulses,
@@ -339,8 +378,8 @@ public static class AbilityValidator
         }
     }
 
-    private static decimal? Number(Ability ability, string key) =>
-        ability.EffectParams.TryGetValue(key, out var raw)
+    private static decimal? Number(AbilityEffectSpec ability, string key) =>
+        ability.Params.TryGetValue(key, out var raw)
         && decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var value)
             ? value
             : null;

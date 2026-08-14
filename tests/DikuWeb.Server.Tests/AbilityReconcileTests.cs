@@ -36,8 +36,13 @@ public sealed class AbilityReconcileTests(PostgresFixture postgres)
         CooldownPulses = 1,
         CastTimePulses = null,
         TargetingType = TargetingType.Self,
-        EffectKey = "heal.restore",
-        EffectParams = new Dictionary<string, string>(StringComparer.Ordinal) { ["baseHeal"] = "1" },
+        Effects =
+        [
+            new("heal.restore", new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["baseHeal"] = "1",
+            }),
+        ],
     };
 
     [Fact]

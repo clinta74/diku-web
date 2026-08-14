@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Abilities;
 using System.Text.Json;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Worlds;
@@ -231,8 +232,8 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
             a.CooldownPulses,
             a.CastTimePulses,
             a.TargetingType ?? Domain.Abilities.TargetingType.SingleTarget,
-            a.EffectKey,
-            new Dictionary<string, string>(a.EffectParams ?? [], StringComparer.Ordinal));
+            [.. (a.Effects ?? []).Select(e =>
+                new AbilityEffectSpec(e.Key, new Dictionary<string, string>(e.Params, StringComparer.Ordinal)))]);
 
     private static WorldChange SpawnerChangeFor(BundleSpawner s) =>
         new UpsertSpawner(s.Id, s.ZoneKey, s.TemplateKey, s.TemplateKind,

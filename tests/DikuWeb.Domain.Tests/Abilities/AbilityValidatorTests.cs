@@ -25,7 +25,8 @@ public sealed class AbilityValidatorTests
         int unlockLevel = 5,
         int cost = 10,
         string effectKey = "damage.physical",
-        Dictionary<string, string>? effectParams = null) => new()
+        Dictionary<string, string>? effectParams = null,
+        List<AbilityEffectSpec>? effects = null) => new()
     {
         Key = key,
         Path = path,
@@ -37,9 +38,15 @@ public sealed class AbilityValidatorTests
         CooldownPulses = 24,
         CastTimePulses = null,
         TargetingType = TargetingType.SingleTarget,
-        EffectKey = effectKey,
-        EffectParams = effectParams
-            ?? new(StringComparer.Ordinal) { ["scalingFactor"] = "1.2", ["minDamage"] = "3" },
+        Effects = effects ??
+        [
+            new(effectKey, effectParams
+                ?? new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["scalingFactor"] = "1.2",
+                    ["minDamage"] = "3",
+                }),
+        ],
     };
 
     private static IReadOnlyList<AbilityProblem> Errors(Ability ability) =>
@@ -219,6 +226,83 @@ public sealed class AbilityValidatorTests
         Assert.Contains(
             Errors(Valid(key: "shade.kick", path: CharacterPath.Warden)),
             p => p.Message.Contains("must start with 'warden.'", StringComparison.Ordinal));
+
+    // -----------------------------------------------------------------------
+    // A list of effects
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void An_ability_with_several_effects_is_fine()
+    {
+        // The case the whole change exists for: Last Stand raising maximum health *and* hardening
+        // defence, rather than being written as a heal because one slot was all there was.
+        var ability = Valid(effects:
+        [
+            new("buff.damage-up", new(StringComparer.Ordinal)
+            {
+                ["outgoingMultiplier"] = "1.25",
+                ["durationPulses"] = "80",
+            }),
+            new("heal.restore", new(StringComparer.Ordinal) { ["baseHeal"] = "40" }),
+        ]);
+
+        Assert.Empty(Errors(ability));
+    }
+
+    [Fact]
+    public void An_ability_with_no_effects_is_refused()
+    {
+        Assert.Contains(
+            Errors(Valid(effects: [])),
+            p => p.Message.Contains("no effects", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void The_same_effect_twice_is_refused()
+    {
+        // Both would run and the second would refresh the first rather than stack with it, so the
+        // ability is quietly weaker than the list makes it look.
+        var ability = Valid(effects:
+        [
+            new("heal.restore", new(StringComparer.Ordinal) { ["baseHeal"] = "20" }),
+            new("heal.restore", new(StringComparer.Ordinal) { ["baseHeal"] = "20" }),
+        ]);
+
+        Assert.Contains(Errors(ability), p => p.Message.Contains("listed twice", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void An_ability_that_both_harms_and_helps_is_refused()
+    {
+        // There is one set of targets. A list mixing the two would either burn the people it meant
+        // to mend or mend the people it meant to burn, and the cast path cannot choose - it treats
+        // an ability as harmful if any part of it is.
+        var ability = Valid(effects:
+        [
+            new("damage.physical", new(StringComparer.Ordinal) { ["scalingFactor"] = "1.2" }),
+            new("heal.restore", new(StringComparer.Ordinal) { ["baseHeal"] = "20" }),
+        ]);
+
+        Assert.Contains(
+            Errors(ability),
+            p => p.Message.Contains("both harmful and helpful", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_bad_entry_in_an_otherwise_good_list_is_still_caught()
+    {
+        // The case worth catching: the ability half-works, which reads as a balance problem rather
+        // than a mistake.
+        var ability = Valid(effects:
+        [
+            new("heal.restore", new(StringComparer.Ordinal) { ["baseHeal"] = "20" }),
+            new("heal.nonexistent", new(StringComparer.Ordinal)),
+        ]);
+
+        Assert.Contains(
+            Errors(ability),
+            p => p.Message.Contains("No effect executor", StringComparison.Ordinal));
+    }
 
     // -----------------------------------------------------------------------
     // Set-wide shape

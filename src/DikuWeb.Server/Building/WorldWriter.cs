@@ -258,8 +258,9 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         CooldownPulses = c.CooldownPulses,
                         CastTimePulses = c.CastTimePulses,
                         TargetingType = c.TargetingType,
-                        EffectKey = c.EffectKey,
-                        EffectParams = new Dictionary<string, string>(c.EffectParams, StringComparer.Ordinal),
+                        Effects = [.. c.Effects.Select(e =>
+                            new Domain.Abilities.AbilityEffectSpec(
+                                e.Key, new Dictionary<string, string>(e.Params, StringComparer.Ordinal)))],
                     });
 
                     return ContentAction.Create;
@@ -284,10 +285,10 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                             .SetProperty(a => a.CooldownPulses, c.CooldownPulses)
                             .SetProperty(a => a.CastTimePulses, c.CastTimePulses)
                             .SetProperty(a => a.TargetingType, c.TargetingType)
-                            .SetProperty(a => a.EffectKey, c.EffectKey)
                             .SetProperty(
-                                a => a.EffectParams,
-                                new Dictionary<string, string>(c.EffectParams, StringComparer.Ordinal)),
+                                a => a.Effects,
+                                c.Effects.ConvertAll(e => new Domain.Abilities.AbilityEffectSpec(
+                                    e.Key, new Dictionary<string, string>(e.Params, StringComparer.Ordinal)))),
                         cancellationToken);
 
                 return ContentAction.Update;
@@ -575,8 +576,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                     ["cooldownPulses"] = entity.CooldownPulses,
                     ["castTimePulses"] = entity.CastTimePulses,
                     ["targetingType"] = entity.TargetingType.ToString(),
-                    ["effectKey"] = entity.EffectKey,
-                    ["effectParams"] = JsonSerializer.SerializeToNode(entity.EffectParams),
+                    ["effects"] = JsonSerializer.SerializeToNode(entity.Effects),
                 }.ToJsonString();
             }
 

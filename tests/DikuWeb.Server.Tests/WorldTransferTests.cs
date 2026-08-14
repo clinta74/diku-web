@@ -432,8 +432,14 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
             costValue = 9,
             cooldownPulses = 16,
             targetingType = "SingleTarget",
-            effectKey = "damage.physical",
-            effectParams = new Dictionary<string, string> { ["scalingFactor"] = "1.1" },
+            effects = new[]
+            {
+                new
+                {
+                    key = "damage.physical",
+                    @params = new Dictionary<string, string> { ["scalingFactor"] = "1.1" },
+                },
+            },
         })).EnsureSuccessStatusCode();
 
         await ImportAsync(client, json);

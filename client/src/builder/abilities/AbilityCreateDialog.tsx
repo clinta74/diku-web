@@ -64,15 +64,20 @@ export function AbilityCreateDialog({ open, onOpenChange, onCreated }: Props) {
         cooldownPulses: 24,
         castTimePulses: null,
         targetingType: 'SingleTarget',
-        effectKey,
-        // Seeded with each parameter's own fallback, so a freshly created ability is valid
-        // rather than being refused for a blank the builder has not reached yet.
-        effectParams: Object.fromEntries(
-          (ABILITY_EFFECTS.find((e) => e.key === effectKey)?.params ?? []).map((p) => [
-            p.key,
-            p.fallback,
-          ]),
-        ),
+        // One effect to begin with; more are added in the editor. Seeded with each parameter's
+        // own fallback, so a freshly created ability is valid rather than being refused for a
+        // blank the builder has not reached yet.
+        effects: [
+          {
+            key: effectKey,
+            params: Object.fromEntries(
+              (ABILITY_EFFECTS.find((e) => e.key === effectKey)?.params ?? []).map((p) => [
+                p.key,
+                p.fallback,
+              ]),
+            ),
+          },
+        ],
       })
       onCreated(key)
       onOpenChange(false)

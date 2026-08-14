@@ -265,8 +265,7 @@ public sealed record UpsertAbility(
     long CooldownPulses,
     long? CastTimePulses,
     TargetingType TargetingType,
-    string EffectKey,
-    Dictionary<string, string> EffectParams) : WorldChange
+    List<AbilityEffectSpec> Effects) : WorldChange
 {
     public override string EntityKind => "ability";
 

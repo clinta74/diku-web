@@ -57,6 +57,11 @@ public sealed record WorldBundle(
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
     ///
+    /// <b>4 because an ability carries a list of effects rather than one.</b> A version 3 bundle
+    /// has <c>effectKey</c> and <c>effectParams</c> where this one has <c>effects</c>, so read as
+    /// v4 every ability in it would arrive with an empty list - which is an ability that costs its
+    /// resource and does nothing, the exact silent failure the version number is here to refuse.
+    ///
     /// <b>3 because abilities travel now.</b> A version 2 bundle carries no abilities at all, so
     /// reading one as version 3 would import an empty ability list - and, if a "replace" mode ever
     /// existed, would read as "this environment should have none". Refusing is the honest answer:
@@ -69,7 +74,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 3;
+    public const int CurrentFormatVersion = 4;
 }
 
 /// <summary>
@@ -153,8 +158,7 @@ public sealed record BundleAbility(
     long? CastTimePulses,
     [property: JsonConverter(typeof(NullableEnumConverter<TargetingType>))]
     TargetingType? TargetingType,
-    string EffectKey,
-    Dictionary<string, string>? EffectParams);
+    List<AbilityEffectSpec>? Effects);
 
 public sealed record BundleMobTemplate(
     string Key,

@@ -216,6 +216,12 @@ export interface AbilityProblem {
   message: string
 }
 
+/** One effect an ability applies. PascalCase on the wire, matching the stored jsonb. */
+export interface AbilityEffectSpec {
+  key: string
+  params: Record<string, string>
+}
+
 export interface Ability {
   key: string
   path: CharacterPath
@@ -227,8 +233,12 @@ export interface Ability {
   cooldownPulses: number
   castTimePulses: number | null
   targetingType: TargetingType
-  effectParams: Record<string, string>
-  effectKey: string
+  /**
+   * What the ability does, in order. One entry is the ordinary case; several let one ability do
+   * several things — the reason Last Stand can raise maximum health *and* harden defence rather
+   * than being written as a heal.
+   */
+  effects: AbilityEffectSpec[]
   /**
    * Carried on every read, not just returned from a save. A row can arrive by import or by hand,
    * and then nobody ever saw a refusal — so this list is the only place a builder finds out.

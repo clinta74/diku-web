@@ -40,9 +40,19 @@ public sealed class AbilityBuilderApiTests(PostgresFixture postgres)
             costValue = cost,
             cooldownPulses = cooldown,
             targetingType = "SingleTarget",
-            effectKey,
-            effectParams = effectParams
-                ?? new Dictionary<string, string> { ["scalingFactor"] = "1.2", ["minDamage"] = "3" },
+            effects = new[]
+            {
+                new
+                {
+                    key = effectKey,
+                    @params = effectParams
+                        ?? new Dictionary<string, string>
+                        {
+                            ["scalingFactor"] = "1.2",
+                            ["minDamage"] = "3",
+                        },
+                },
+            },
         };
 
     private static string NewKey() => $"warden.t{Guid.NewGuid():N}"[..24];
@@ -189,14 +199,16 @@ public sealed class AbilityBuilderApiTests(PostgresFixture postgres)
 
         var broken = await client.PatchAsJsonAsync(
             $"/api/builder/abilities/{key}",
-            new { effectKey = "damage.nonexistent" });
+            new { effects = new[] { new { key = "damage.nonexistent", @params = new Dictionary<string, string>() } } });
 
         Assert.Equal(HttpStatusCode.BadRequest, broken.StatusCode);
 
         var read = await BuilderClient.JsonAsync(
             await client.GetAsync(new Uri($"/api/builder/abilities/{key}", UriKind.Relative)));
 
-        Assert.Equal("damage.physical", read.GetProperty("effectKey").GetString());
+        Assert.Equal(
+            "damage.physical",
+            read.GetProperty("effects")[0].GetProperty("key").GetString());
     }
 
     [Fact]

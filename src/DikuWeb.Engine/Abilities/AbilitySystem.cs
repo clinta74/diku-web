@@ -83,18 +83,45 @@ public sealed class AbilitySystem(
         // "takes effect!", deduct the cost, and start the cooldown, and only then look for a
         // target - so a rat that died during an eight-pulse Bolt cost the caster full price for
         // an effect that never ran, and told them it had worked.
-        var effect = effects?.Get(ability.EffectKey);
-        var targets = effect is null ? [] : ResolveTargets(world, caster, ability, cast, effect);
+        //
+        // Every effect is resolved before anything is spent, and a single missing executor
+        // fizzles the whole ability rather than running the rest of the list. Half of an ability
+        // is not a cheaper version of it - Last Stand without its defence is a heal, which is the
+        // shape this change exists to stop being the only option.
+        var resolved = new List<(AbilityEffectSpec Spec, IAbilityEffect Executor)>();
 
-        if (effect is null || targets.Count == 0)
+        foreach (var spec in ability.Effects)
+        {
+            if (effects?.Get(spec.Key) is not { } executor)
+            {
+                resolved.Clear();
+                break;
+            }
+
+            resolved.Add((spec, executor));
+        }
+
+        // The primary effect is the first, and it speaks for the ability where one of them has to:
+        // which targets to gather, and what to call the result when no health moved.
+        var primary = resolved.Count > 0 ? resolved[0].Executor : null;
+
+        var targets = primary is null
+            ? []
+            : ResolveTargets(world, caster, ability, cast, primary);
+
+        if (primary is null || targets.Count == 0)
         {
             actor.SendText(
-                effect is null
+                primary is null
                     ? $"Your {ability.Name} fizzles."
                     : $"Your {ability.Name} finds nothing to take hold of.",
                 "bad");
             return;
         }
+
+        // Asked of the registry rather than computed here, so the cast loop and the command layer
+        // cannot disagree about which way an ability points.
+        var harmful = effects?.IsHarmful(ability) == true;
 
         // Deduct cost
         var costAmount = ability.CostValue;
@@ -135,13 +162,20 @@ public sealed class AbilitySystem(
             // the one measure that is true of all of them and cannot drift from what landed.
             var before = HealthOf(target);
 
-            effect.Apply(caster, target, ability.EffectParams, world.Random);
+            foreach (var (spec, executor) in resolved)
+            {
+                executor.Apply(caster, target, spec.Params, world.Random);
+            }
 
             // Said per target, with the number, immediately after it landed. This used to be one
             // line before the loop - "Your Kick takes effect!" - which named no target, no amount,
             // and no outcome. A player could not tell a hit from a miss, an area effect that
             // caught four things from one that caught one, or a heal that was already at full.
-            Narrate(world, actor, caster, ability, effect, target, before);
+            //
+            // One line per target rather than one per effect, from the health delta across the
+            // whole list: a player reads "hits a rat for 7", not a line for the damage and
+            // another for the bleed it left behind.
+            Narrate(world, actor, caster, ability, primary, resolved[0].Spec, target, before);
 
             // Anything hostile starts the fight, whatever it did to the health bar. Keyed on the
             // effect's own IsHarmful rather than on damage dealt, because the abilities that move
@@ -149,30 +183,35 @@ public sealed class AbilitySystem(
             // inside a combat, so an opening Ambush on something not yet engaged used to apply a
             // wound that then never ticked, and a stun landed on a mob that carried on standing
             // there. The gate that decided this cast was allowed at all has already run.
-            if (effect.IsHarmful)
+            if (harmful)
             {
                 Engage(world, caster, target, mayRetarget);
             }
 
             CreditThreat(world, caster, target, before);
 
-            if (effect is IThreatEffect threatEffect)
+            foreach (var (spec, executor) in resolved)
             {
-                Taunt(world, actor, caster, target, threatEffect, ability);
-            }
+                if (executor is IThreatEffect threatEffect)
+                {
+                    Taunt(world, actor, caster, target, threatEffect, spec);
+                }
 
-            // If this is a buff/debuff effect, also create the ongoing active effect state
-            if (effect is IBuffEffect buffEffect)
-            {
-                var activeEffect = buffEffect.CreateActiveEffect(
-                    caster, target, ability.EffectParams, clock.CurrentPulse);
-                var targetEntityId = target is Character c ? c.Id : ((Mob)target).Id;
-                world.ApplyEffect(targetEntityId, activeEffect);
+                // A buff or debuff also leaves ongoing state behind. Each entry gets its own, so
+                // an ability that raises maximum health *and* hardens defence puts two effects on
+                // the target and each expires on its own clock.
+                if (executor is IBuffEffect buffEffect)
+                {
+                    var activeEffect = buffEffect.CreateActiveEffect(
+                        caster, target, spec.Params, clock.CurrentPulse);
+                    var targetEntityId = target is Character c ? c.Id : ((Mob)target).Id;
+                    world.ApplyEffect(targetEntityId, activeEffect);
 
-                // A stun interrupts, but that is handled by ShouldInterrupt on the next tick
-                // rather than here: driving it from the *state* means any stun breaks a cast
-                // however it arrived, where doing it at the point of application would only
-                // cover stuns delivered by a player's cast.
+                    // A stun interrupts, but that is handled by ShouldInterrupt on the next tick
+                    // rather than here: driving it from the *state* means any stun breaks a cast
+                    // however it arrived, where doing it at the point of application would only
+                    // cover stuns delivered by a player's cast.
+                }
             }
         }
     }
@@ -197,7 +236,7 @@ public sealed class AbilitySystem(
         Character caster,
         object target,
         IThreatEffect effect,
-        Ability ability)
+        AbilityEffectSpec spec)
     {
         if (target is not Mob mob)
         {
@@ -212,7 +251,7 @@ public sealed class AbilitySystem(
         var casterId = EntityId.ForCharacter(caster.Id);
 
         var lead = (int)Math.Ceiling(
-            Math.Max(1, mob.Vitals.HealthMax) * effect.LeadFraction(ability.EffectParams));
+            Math.Max(1, mob.Vitals.HealthMax) * effect.LeadFraction(spec.Params));
 
         combat.ForceTopHater(mobId, casterId, lead);
 
@@ -262,6 +301,7 @@ public sealed class AbilitySystem(
         Character caster,
         Ability ability,
         IAbilityEffect effect,
+        AbilityEffectSpec spec,
         object target,
         int before)
     {
@@ -286,7 +326,7 @@ public sealed class AbilitySystem(
             // No health moved. The effect's own name is what it is called in the fiction -
             // "reeling", "rooted" - and is the only thing that distinguishes a stun from a snare
             // in the scrollback.
-            _ => Held(actor, ability, effect, name, youText),
+            _ => Held(actor, ability, spec, name, youText),
         };
 
         actor.SendText(mine, "ability");
@@ -311,14 +351,14 @@ public sealed class AbilitySystem(
     private static (string Mine, string Theirs, string Room) Held(
         PlayerActor actor,
         Ability ability,
-        IAbilityEffect effect,
+        AbilityEffectSpec spec,
         string name,
         string youText)
     {
         // The effect's `name` parameter where it has one, so a builder who wrote "reeling" gets
         // "leaves the rat reeling" rather than a generic line that reads the same for every
         // control effect in the game.
-        var condition = ability.EffectParams.TryGetValue("name", out var authored) &&
+        var condition = spec.Params.TryGetValue("name", out var authored) &&
                         !string.IsNullOrWhiteSpace(authored)
             ? authored.Trim()
             : null;

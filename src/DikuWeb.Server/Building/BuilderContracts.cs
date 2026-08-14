@@ -196,8 +196,7 @@ public sealed record AbilityResponse(
     long CooldownPulses,
     long? CastTimePulses,
     TargetingType TargetingType,
-    string EffectKey,
-    Dictionary<string, string> EffectParams,
+    IReadOnlyList<AbilityEffectSpec> Effects,
     IReadOnlyList<AbilityProblemResponse> Problems);
 
 public sealed record AbilityProblemResponse(string Severity, string Message);
@@ -221,8 +220,7 @@ public sealed record SaveAbilityRequest(
     long? CastTimePulses,
     [property: JsonConverter(typeof(NullableEnumConverter<TargetingType>))]
     TargetingType? TargetingType,
-    string? EffectKey,
-    Dictionary<string, string>? EffectParams);
+    List<AbilityEffectSpec>? Effects);
 
 public sealed record ItemTemplateResponse(
     string Key,

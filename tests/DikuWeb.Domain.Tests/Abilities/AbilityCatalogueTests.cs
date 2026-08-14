@@ -80,9 +80,9 @@ public sealed class AbilityCatalogueTests
     public void Every_ability_names_an_effect_that_exists()
     {
         // An unknown effect key resolves to nothing and the cast silently does nothing.
-        var unknown = AbilityCatalogue.All
-            .Where(e => !KnownEffects.Contains(e.EffectKey))
-            .Select(e => $"{e.Key} -> {e.EffectKey}")
+        var unknown = AbilityCatalogue.AllEffects
+            .Where(x => !KnownEffects.Contains(x.Effect.Key))
+            .Select(x => $"{x.Entry.Key} -> {x.Effect.Key}")
             .ToList();
 
         Assert.Empty(unknown);
@@ -100,9 +100,9 @@ public sealed class AbilityCatalogueTests
     [InlineData("damage.overtime", "tickIntervalPulses")]
     public void Every_ability_carries_the_parameter_its_effect_reads(string effectKey, string parameter)
     {
-        var missing = AbilityCatalogue.All
-            .Where(e => e.EffectKey == effectKey && !e.EffectParams.ContainsKey(parameter))
-            .Select(e => e.Key)
+        var missing = AbilityCatalogue.AllEffects
+            .Where(x => x.Effect.Key == effectKey && !x.Effect.Params.ContainsKey(parameter))
+            .Select(x => x.Entry.Key)
             .ToList();
 
         Assert.Empty(missing);
@@ -121,10 +121,10 @@ public sealed class AbilityCatalogueTests
     [Fact]
     public void Every_debuff_actually_debuffs_its_target()
     {
-        foreach (var entry in AbilityCatalogue.All.Where(e => e.EffectKey == "debuff.weaken"))
+        foreach (var (entry, effect) in AbilityCatalogue.AllEffects.Where(x => x.Effect.Key == "debuff.weaken"))
         {
-            var incoming = Read(entry, "incomingMultiplier");
-            var outgoing = Read(entry, "outgoingMultiplier");
+            var incoming = Read(effect, "incomingMultiplier");
+            var outgoing = Read(effect, "outgoingMultiplier");
 
             Assert.True(
                 incoming is not null || outgoing is not null,
@@ -155,11 +155,11 @@ public sealed class AbilityCatalogueTests
     [Fact]
     public void Every_wound_ticks_at_least_once_before_it_expires()
     {
-        foreach (var entry in AbilityCatalogue.All.Where(e => e.EffectKey == "damage.overtime"))
+        foreach (var (entry, effect) in AbilityCatalogue.AllEffects.Where(x => x.Effect.Key == "damage.overtime"))
         {
-            var damage = Read(entry, "tickDamage");
-            var interval = Read(entry, "tickIntervalPulses");
-            var duration = Read(entry, "durationPulses");
+            var damage = Read(effect, "tickDamage");
+            var interval = Read(effect, "tickIntervalPulses");
+            var duration = Read(effect, "durationPulses");
 
             Assert.True(damage is > 0, $"{entry.Key} ticks for {damage}.");
             Assert.True(interval is > 0, $"{entry.Key} has a tick interval of {interval}.");
@@ -182,9 +182,9 @@ public sealed class AbilityCatalogueTests
     [Fact]
     public void No_stun_is_authored_longer_than_the_ceiling()
     {
-        foreach (var entry in AbilityCatalogue.All.Where(e => e.EffectKey == "control.stun"))
+        foreach (var (entry, effect) in AbilityCatalogue.AllEffects.Where(x => x.Effect.Key == "control.stun"))
         {
-            var duration = Read(entry, "durationPulses");
+            var duration = Read(effect, "durationPulses");
 
             Assert.True(duration is > 0, $"{entry.Key} stuns for {duration}.");
             Assert.True(
@@ -197,9 +197,9 @@ public sealed class AbilityCatalogueTests
     [Fact]
     public void No_snare_is_authored_longer_than_the_ceiling()
     {
-        foreach (var entry in AbilityCatalogue.All.Where(e => e.EffectKey == "control.root"))
+        foreach (var (entry, effect) in AbilityCatalogue.AllEffects.Where(x => x.Effect.Key == "control.root"))
         {
-            var duration = Read(entry, "durationPulses");
+            var duration = Read(effect, "durationPulses");
 
             Assert.True(duration is > 0, $"{entry.Key} snares for {duration}.");
             Assert.True(
@@ -215,9 +215,9 @@ public sealed class AbilityCatalogueTests
     [Fact]
     public void No_control_effect_stacks()
     {
-        foreach (var entry in AbilityCatalogue.All.Where(e => e.EffectKey.StartsWith("control.", StringComparison.Ordinal)))
+        foreach (var (entry, effect) in AbilityCatalogue.AllEffects.Where(x => x.Effect.Key.StartsWith("control.", StringComparison.Ordinal)))
         {
-            var maxStacks = Read(entry, "maxStacks");
+            var maxStacks = Read(effect, "maxStacks");
             Assert.True(
                 maxStacks is null or 1,
                 $"{entry.Key} stacks to {maxStacks}, which chains into a lock.");
@@ -227,9 +227,9 @@ public sealed class AbilityCatalogueTests
     [Fact]
     public void Every_buff_actually_buffs_its_caster()
     {
-        foreach (var entry in AbilityCatalogue.All.Where(e => e.EffectKey == "buff.damage-up"))
+        foreach (var (entry, effect) in AbilityCatalogue.AllEffects.Where(x => x.Effect.Key == "buff.damage-up"))
         {
-            var outgoing = Read(entry, "outgoingMultiplier");
+            var outgoing = Read(effect, "outgoingMultiplier");
 
             Assert.True(
                 outgoing is > 1.0m,
@@ -237,8 +237,8 @@ public sealed class AbilityCatalogueTests
         }
     }
 
-    private static decimal? Read(AbilityCatalogue.Entry entry, string key) =>
-        entry.EffectParams.TryGetValue(key, out var raw) &&
+    private static decimal? Read(AbilityEffectSpec effect, string key) =>
+        effect.Params.TryGetValue(key, out var raw) &&
         decimal.TryParse(raw, System.Globalization.CultureInfo.InvariantCulture, out var value)
             ? value
             : null;
@@ -286,7 +286,7 @@ public sealed class AbilityCatalogueTests
     public void Every_area_ability_has_an_executor_behind_it() =>
         Assert.All(
             AbilityCatalogue.All.Where(e => e.TargetingType == TargetingType.Aoe),
-            entry => Assert.NotNull(KnownEffects.Get(entry.EffectKey)));
+            entry => Assert.All(entry.Effects, e => Assert.NotNull(KnownEffects.Get(e.Key))));
 
     [Fact]
     public void Every_path_starts_with_something_castable_at_level_one()
@@ -422,28 +422,28 @@ public sealed class AbilityCatalogueTests
     {
         var permanent = new List<string>();
 
-        foreach (var entry in AbilityCatalogue.All)
+        foreach (var (entry, effect) in AbilityCatalogue.AllEffects)
         {
-            if (Read(entry, "durationPulses") is not { } duration || duration <= 0)
+            if (Read(effect, "durationPulses") is not { } duration || duration <= 0)
             {
                 continue;
             }
 
-            if ((Read(entry, "maxStacks") ?? 1) > 1)
+            if ((Read(effect, "maxStacks") ?? 1) > 1)
             {
                 continue;
             }
 
             // A wound is allowed to be re-applied exactly as it expires; a buff or debuff at that
             // point has a cooldown that does nothing.
-            var overlaps = entry.EffectKey == "damage.overtime"
+            var overlaps = effect.Key == "damage.overtime"
                 ? duration > entry.CooldownPulses
                 : duration >= entry.CooldownPulses;
 
             if (overlaps)
             {
                 permanent.Add(
-                    $"{entry.Key} ({entry.EffectKey}) lasts {duration} on a " +
+                    $"{entry.Key} ({effect.Key}) lasts {duration} on a " +
                     $"{entry.CooldownPulses} cooldown ({duration / entry.CooldownPulses:P0} uptime)");
             }
         }

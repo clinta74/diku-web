@@ -49,12 +49,44 @@ public sealed class Ability
     /// <summary>Who or what can be targeted: self, single target, or AoE.</summary>
     public required TargetingType TargetingType { get; init; }
 
-    /// <summary>Effect key: e.g., "damage.physical", "heal.restore". Resolved by EffectRegistry at runtime.</summary>
-    public required string EffectKey { get; init; }
-
-    /// <summary>Parameters passed to the effect executor as JSON strings: e.g., scalingFactor, minDamage, etc.</summary>
-    public Dictionary<string, string> EffectParams { get; init; } = [];
+    /// <summary>
+    /// What this ability does, in order. One entry is the ordinary case; several let a single
+    /// ability do several things.
+    /// </summary>
+    /// <remarks>
+    /// <b>A list because one slot could not describe half of what a Path wants.</b> Last Stand is
+    /// the example that forced it: it should raise the Warden's maximum health and harden their
+    /// defence, and with a single effect it had to be authored as a heal — a different thing that
+    /// happened to keep them alive for a moment.
+    ///
+    /// Applied in the order given, and every one of them lands: this is a list of things the
+    /// ability does, not a set of alternatives. Cost and cooldown are still charged once, for the
+    /// ability rather than per effect, because what a player spends is the ability.
+    ///
+    /// A concrete <c>List</c> rather than <c>IReadOnlyList</c> because Npgsql maps this straight to
+    /// jsonb as a POCO, the way a mob's <c>Attacks</c> already is, and an interface gives it
+    /// nothing to materialise into.
+    /// </remarks>
+    public required List<AbilityEffectSpec> Effects { get; init; }
 }
+
+/// <summary>One effect an ability applies, and the parameters that shape it.</summary>
+/// <param name="Key">
+/// The executor to run, as <c>EffectRegistry</c> knows it: <c>damage.physical</c>,
+/// <c>heal.restore</c>.
+/// </param>
+/// <param name="Params">
+/// Read by name and by the executor alone. Anything it does not recognise is skipped in silence,
+/// which is why <see cref="AbilityValidator"/> checks the keys rather than trusting them.
+/// </param>
+/// <remarks>
+/// <b>One constructor, deliberately.</b> A convenience overload taking just a key was here, and it
+/// made the record undeserialisable: System.Text.Json refuses a type with two parameterised
+/// constructors and no <c>[JsonConstructor]</c>, so every ability read back from jsonb threw. The
+/// column round-trips through that serialiser, so a second constructor is not a convenience worth
+/// having — write the empty dictionary at the call site if an executor ever needs no parameters.
+/// </remarks>
+public sealed record AbilityEffectSpec(string Key, Dictionary<string, string> Params);
 
 /// <summary>Resource consumed by an ability.</summary>
 public enum CostType

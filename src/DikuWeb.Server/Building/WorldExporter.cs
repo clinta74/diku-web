@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Abilities;
 using System.Text.Json;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Spawning;
@@ -90,8 +91,9 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
 
         return [.. abilities.Select(a => new BundleAbility(
             a.Key, a.Path, a.UnlockLevel, a.Name, a.Description, a.CostType, a.CostValue,
-            a.CooldownPulses, a.CastTimePulses, a.TargetingType, a.EffectKey,
-            new Dictionary<string, string>(a.EffectParams, StringComparer.Ordinal)))];
+            a.CooldownPulses, a.CastTimePulses, a.TargetingType,
+            [.. a.Effects.Select(e =>
+                new AbilityEffectSpec(e.Key, new Dictionary<string, string>(e.Params, StringComparer.Ordinal)))]))];
     }
 
     // -----------------------------------------------------------------------

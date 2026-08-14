@@ -647,9 +647,9 @@ public static class BuilderEndpoints
             return Invalid("An ability needs a Path.");
         }
 
-        if (request.EffectKey is not { } effectKey)
+        if (request.Effects is not { Count: > 0 } effectList)
         {
-            return Invalid("An ability needs an effect.");
+            return Invalid("An ability needs at least one effect.");
         }
 
         var candidate = new Domain.Abilities.Ability
@@ -664,8 +664,7 @@ public static class BuilderEndpoints
             CooldownPulses = request.CooldownPulses ?? 24,
             CastTimePulses = request.CastTimePulses,
             TargetingType = request.TargetingType ?? Domain.Abilities.TargetingType.SingleTarget,
-            EffectKey = effectKey,
-            EffectParams = request.EffectParams ?? [],
+            Effects = effectList,
         };
 
         if (RefuseInvalid(candidate, effects) is { } refusal)
@@ -708,8 +707,7 @@ public static class BuilderEndpoints
             CastTimePulses = request.CastTimePulses,
 
             TargetingType = request.TargetingType ?? existing.TargetingType,
-            EffectKey = request.EffectKey ?? existing.EffectKey,
-            EffectParams = request.EffectParams ?? existing.EffectParams,
+            Effects = request.Effects ?? [.. existing.Effects],
         };
 
         if (RefuseInvalid(candidate, effects) is { } refusal)
@@ -730,8 +728,9 @@ public static class BuilderEndpoints
 
     private static UpsertAbility ChangeFor(Domain.Abilities.Ability a) =>
         new(a.Key, a.Path, a.UnlockLevel, a.Name, a.Description, a.CostType, a.CostValue,
-            a.CooldownPulses, a.CastTimePulses, a.TargetingType, a.EffectKey,
-            new Dictionary<string, string>(a.EffectParams, StringComparer.Ordinal));
+            a.CooldownPulses, a.CastTimePulses, a.TargetingType,
+            [.. a.Effects.Select(e =>
+                new AbilityEffectSpec(e.Key, new Dictionary<string, string>(e.Params, StringComparer.Ordinal)))]);
 
     /// <summary>
     /// An ability key is two key-segments joined by a dot: <c>warden.shield-bash</c>.

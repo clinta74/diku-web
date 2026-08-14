@@ -22,8 +22,10 @@ internal sealed class AbilityConfiguration : IEntityTypeConfiguration<Ability>
         builder.Property(e => e.CooldownPulses).HasColumnName("cooldown_pulses");
         builder.Property(e => e.CastTimePulses).HasColumnName("cast_time_pulses");
         builder.Property(e => e.TargetingType).HasColumnName("targeting_type");
-        builder.Property(e => e.EffectKey).HasColumnName("effect_key");
-        builder.Property(e => e.EffectParams).HasColumnName("effect_params").HasColumnType("jsonb");
+        // One jsonb column holding the ordered list, rather than a child table. An ability's
+        // effects are only ever read as a whole, with the ability, and nothing joins to one - the
+        // same argument that keeps a mob's attacks in a bag (PLAN.md §4.8).
+        builder.Property(e => e.Effects).HasColumnName("effects").HasColumnType("jsonb");
 
         builder.HasIndex(e => e.TargetingType).HasDatabaseName("ix_abilities_targeting_type");
 

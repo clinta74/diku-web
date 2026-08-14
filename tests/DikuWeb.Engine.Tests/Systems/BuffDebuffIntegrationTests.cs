@@ -448,15 +448,17 @@ public sealed class BuffDebuffIntegrationTests
             CostValue = 10,
             CooldownPulses = 60,
             TargetingType = TargetingType.SingleTarget,
-            EffectKey = "buff.damage-up",
-            EffectParams = new()
-            {
-                { "outgoingMultiplier", "1.5" },
-                { "durationPulses", "240" },
-                { "maxStacks", "1" },
-                { "stackingRule", "Refresh" },
-                { "name", "battle fury" },
-            },
+            Effects =
+            [
+                new("buff.damage-up", new()
+                {
+                    { "outgoingMultiplier", "1.5" },
+                    { "durationPulses", "240" },
+                    { "maxStacks", "1" },
+                    { "stackingRule", "Refresh" },
+                    { "name", "battle fury" },
+                }),
+            ],
         };
 
         harness.LoadAbilitiesForTest(buffAbility);
@@ -502,15 +504,17 @@ public sealed class BuffDebuffIntegrationTests
             CostValue = 15,
             CooldownPulses = 60,
             TargetingType = TargetingType.SingleTarget,
-            EffectKey = "debuff.weaken",
-            EffectParams = new()
-            {
-                { "incomingMultiplier", "1.3" },
-                { "durationPulses", "240" },
-                { "maxStacks", "1" },
-                { "stackingRule", "Refresh" },
-                { "name", "weakness" },
-            },
+            Effects =
+            [
+                new("debuff.weaken", new()
+                {
+                    { "incomingMultiplier", "1.3" },
+                    { "durationPulses", "240" },
+                    { "maxStacks", "1" },
+                    { "stackingRule", "Refresh" },
+                    { "name", "weakness" },
+                }),
+            ],
         };
 
         harness.LoadAbilitiesForTest(debuffAbility);
@@ -552,15 +556,17 @@ public sealed class BuffDebuffIntegrationTests
             CostValue = 10,
             CooldownPulses = 60,
             TargetingType = TargetingType.Self,
-            EffectKey = "buff.damage-up",
-            EffectParams = new()
-            {
-                { "incomingMultiplier", "0.8" },
-                { "durationPulses", "240" },
-                { "maxStacks", "1" },
-                { "stackingRule", "Refresh" },
-                { "name", "fortified" },
-            },
+            Effects =
+            [
+                new("buff.damage-up", new()
+                {
+                    { "incomingMultiplier", "0.8" },
+                    { "durationPulses", "240" },
+                    { "maxStacks", "1" },
+                    { "stackingRule", "Refresh" },
+                    { "name", "fortified" },
+                }),
+            ],
         };
 
         harness.LoadAbilitiesForTest(selfBuffAbility);

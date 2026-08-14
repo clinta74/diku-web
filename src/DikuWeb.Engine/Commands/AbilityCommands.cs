@@ -151,7 +151,7 @@ public static class AbilityCommands
         // peaceful room, a non-combatant, and an unsanctioned duel; `cast` checked none of the
         // three, so a Bolt worked in a safe room and an Adept could kill the shopkeeper who hands
         // out the zone's quests. Refused here rather than at resolution, so nothing is spent.
-        if (effects.Get(ability.EffectKey)?.IsHarmful == true &&
+        if (effects.IsHarmful(ability) &&
             HostileRefusal(ctx, targetId) is { } refusal)
         {
             ctx.Reply(refusal, "bad");
@@ -291,7 +291,7 @@ public static class AbilityCommands
         // No name given. What that should mean depends on which way the ability points: a bolt
         // means "the thing I am fighting", a heal means "me". Falling back to the combat target
         // for both would have a Hallow mending the wolf that is biting them.
-        return effects.Get(ability.EffectKey)?.IsHarmful == true
+        return effects.IsHarmful(ability)
             ? actor.Character.CurrentTarget
             : EntityId.ForCharacter(actor.CharacterId);
     }

@@ -251,8 +251,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             ability.CooldownPulses,
             ability.CastTimePulses,
             ability.TargetingType,
-            ability.EffectKey,
-            new Dictionary<string, string>(ability.EffectParams, StringComparer.Ordinal),
+            [.. ability.Effects],
             [.. problems.Select(p => new AbilityProblemResponse(p.Severity.ToString(), p.Message))]);
 
     public async Task<IReadOnlyList<MobTemplateResponse>> MobTemplatesAsync(

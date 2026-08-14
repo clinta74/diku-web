@@ -990,8 +990,8 @@ public sealed class WorldMutationApplier(
             CooldownPulses = change.CooldownPulses,
             CastTimePulses = change.CastTimePulses,
             TargetingType = change.TargetingType,
-            EffectKey = change.EffectKey,
-            EffectParams = new Dictionary<string, string>(change.EffectParams, StringComparer.Ordinal),
+            Effects = [.. change.Effects.Select(e =>
+                new AbilityEffectSpec(e.Key, new Dictionary<string, string>(e.Params, StringComparer.Ordinal)))],
         });
 
         return MutationResult.Ok([change]);
