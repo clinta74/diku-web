@@ -197,7 +197,6 @@ export function GameScreen({
       // When the screen was merely displaced they are already in it, and this is a rebind - the
       // takeover is really the epoch below, which opens a stream under a new connection id.
       await api.enter(characterId)
-      setDisplaced(null)
       setEpoch((current) => current + 1)
     } catch {
       // Left to the player to try again: the button is still there, and the reason it failed is

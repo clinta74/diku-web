@@ -83,7 +83,7 @@ export function AbilityEditor({ abilityKey, onChanged, onDeleted }: Props) {
       })
       setAbility(saved)
       setDraft(saved)
-      toast.show(`Saved ${saved.name}.`)
+      toast.notify(`Saved ${saved.name}.`)
       onChanged()
     } catch (e) {
       // The server refuses anything that would not work, and its message names the reason. That
@@ -185,7 +185,6 @@ export function AbilityEditor({ abilityKey, onChanged, onDeleted }: Props) {
         >
           <NumberInput
             min={0}
-            step={PULSES_PER_BEAT}
             value={draft.cooldownPulses}
             onChange={(v) => set({ cooldownPulses: v })}
           />
@@ -267,16 +266,12 @@ export function AbilityEditor({ abilityKey, onChanged, onDeleted }: Props) {
         title={`Delete ${ability.name}?`}
         confirmLabel="Delete"
         destructive
+        description="Anyone whose Path and level granted it stops knowing it at once. Characters keep their levels; there is simply nothing at this one until something replaces it."
         onConfirm={async () => {
           await builderApi.deleteAbility(ability.key)
           onDeleted()
         }}
-      >
-        <p>
-          Anyone whose Path and level granted it stops knowing it at once. Characters keep their
-          levels; there is simply nothing at this one until something replaces it.
-        </p>
-      </ConfirmDialog>
+      />
     </div>
   )
 }
