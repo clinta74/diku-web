@@ -177,4 +177,139 @@ public sealed class MultiplierApiTests(PostgresFixture postgres)
         // 250 doubled, not the 40 fallback doubled.
         Assert.Equal(500, ogre.GetProperty("resolvedStats").GetProperty("health").GetInt32());
     }
+
+    /// <summary>
+    /// The preview reports the level a mob will fight at, not only the level it was authored as.
+    /// </summary>
+    /// <remarks>
+    /// The number that decides whether killing it teaches anyone anything (§4.7), and there was
+    /// nowhere to see it before a player felt it. Also pins that the damage dial reaches the
+    /// preview at all: it resolved health, xp and gold and nothing else, so the one dial that did
+    /// nothing in the engine also showed nothing in the panel that exists to tune it.
+    /// </remarks>
+    [Fact]
+    public async Task The_preview_reports_the_level_a_mob_will_fight_at()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var roomKey = await BuilderClient.NewRoomAsync(client, zoneKey, "hollow");
+
+        (await client.PostAsJsonAsync("/api/builder/mob-templates/dire-rat", new
+        {
+            name = "dire rat",
+            level = 5,
+            baseStats = new { health = 40, damage = "4-7" },
+        })).EnsureSuccessStatusCode();
+
+        (await client.PostAsJsonAsync("/api/builder/spawners", new
+        {
+            zoneKey,
+            templateKey = "dire-rat",
+            templateKind = "Mob",
+            roomKeys = new[] { roomKey },
+            targetCount = 1,
+            respawnSeconds = 60,
+        })).EnsureSuccessStatusCode();
+
+        (await client.PatchAsJsonAsync($"/api/builder/zones/{zoneKey}", new
+        {
+            multipliers = new { strength = 4.0 },
+        })).EnsureSuccessStatusCode();
+
+        var preview = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/zones/{zoneKey}/preview", UriKind.Relative)));
+
+        var rat = preview.GetProperty("templates").EnumerateArray()
+            .Single(t => t.GetProperty("templateKey").GetString() == "dire-rat");
+
+        Assert.Equal(5, rat.GetProperty("templateLevel").GetInt32());
+        Assert.Equal(20, rat.GetProperty("fightsAtLevel").GetInt32());
+
+        // Damage scaled, and reported as a pair because the resolved values are integers and the
+        // template wrote its dice as a range.
+        Assert.Equal(16, rat.GetProperty("resolvedStats").GetProperty("damageMin").GetInt32());
+        Assert.Equal(28, rat.GetProperty("resolvedStats").GetProperty("damageMax").GetInt32());
+
+        // And the unscaled counterpart, so the panel's Base column is not "—" for the one dial the
+        // panel exists to tune.
+        Assert.Equal(4, rat.GetProperty("baseValues").GetProperty("damageMin").GetInt32());
+        Assert.Equal(7, rat.GetProperty("baseValues").GetProperty("damageMax").GetInt32());
+    }
+
+    /// <summary>
+    /// A room's spawner list says what each placement will actually produce.
+    /// </summary>
+    [Fact]
+    public async Task A_spawner_reports_the_level_its_mobs_will_fight_at()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var roomKey = await BuilderClient.NewRoomAsync(client, zoneKey, "warren");
+
+        (await client.PostAsJsonAsync("/api/builder/mob-templates/mole", new
+        {
+            name = "mole",
+            level = 6,
+            baseStats = new { health = 30 },
+        })).EnsureSuccessStatusCode();
+
+        (await client.PatchAsJsonAsync($"/api/builder/zones/{zoneKey}", new
+        {
+            multipliers = new { strength = 3.0 },
+        })).EnsureSuccessStatusCode();
+
+        var created = await BuilderClient.JsonAsync(await client.PostAsJsonAsync(
+            "/api/builder/spawners",
+            new
+            {
+                zoneKey,
+                templateKey = "mole",
+                templateKind = "Mob",
+                roomKeys = new[] { roomKey },
+                targetCount = 1,
+                respawnSeconds = 60,
+            }));
+
+        var id = created.GetProperty("id").GetString();
+
+        var spawner = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/spawners/{id}", UriKind.Relative)));
+
+        Assert.Equal(18, spawner.GetProperty("fightsAtLevel").GetInt32());
+    }
+
+    /// <summary>An item has no level, and the field says so rather than guessing.</summary>
+    [Fact]
+    public async Task An_item_spawner_reports_no_level()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+        var (_, zoneKey) = await BuilderClient.NewZoneAsync(client);
+        var roomKey = await BuilderClient.NewRoomAsync(client, zoneKey, "cache");
+
+        (await client.PostAsJsonAsync("/api/builder/item-templates/lantern", new
+        {
+            name = "lantern",
+            baseValue = 12,
+        })).EnsureSuccessStatusCode();
+
+        var created = await BuilderClient.JsonAsync(await client.PostAsJsonAsync(
+            "/api/builder/spawners",
+            new
+            {
+                zoneKey,
+                templateKey = "lantern",
+                templateKind = "Item",
+                roomKeys = new[] { roomKey },
+                targetCount = 1,
+                respawnSeconds = 60,
+            }));
+
+        Assert.Equal(0, created.GetProperty("fightsAtLevel").GetInt32());
+    }
 }

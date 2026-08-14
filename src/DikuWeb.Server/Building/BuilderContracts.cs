@@ -261,7 +261,17 @@ public sealed record SpawnerResponse(
     List<string> RoomKeys,
     int TargetCount,
     int RespawnSeconds,
-    string Wander);
+    string Wander,
+    /// <summary>
+    /// The level mobs from this spawner will fight at (PLAN.md §4.7). Zero for an item spawner, or
+    /// for a mob spawner whose template or zone has since been deleted.
+    /// </summary>
+    /// <remarks>
+    /// Read-only: the server computes it, and a client sending one back is ignored. It is here so
+    /// the room's spawner list can say what a placement will actually produce, which a template's
+    /// authored level does not answer once a zone has scaled it.
+    /// </remarks>
+    int FightsAtLevel);
 
 /// <param name="Wander">One of <see cref="WanderMode"/>, or null to leave it as it is.</param>
 public sealed record SaveSpawnerRequest(
@@ -391,12 +401,34 @@ public sealed record SaveQuestRequest(
 /// Multiplier preview for a zone: shows how templates resolve with current multipliers.
 /// Used for difficulty tuning in the builder UI.
 /// </summary>
+/// <param name="TemplateLevel">The level as authored. Zero for an item, which has no level.</param>
+/// <param name="FightsAtLevel">
+/// The level a mob spawned here actually fights at (PLAN.md §4.7). The difference between this and
+/// <paramref name="TemplateLevel"/> is the whole point of the panel — a rat lifted to 20 by a zone's
+/// dials pays and reads as a level 20 fight, and there was previously nowhere to see that before a
+/// player felt it.
+/// </param>
+/// <param name="BaseStats">The template's own jsonb bag, verbatim.</param>
+/// <param name="BaseValues">
+/// The same numbers <paramref name="ResolvedStats"/> reports, before scaling, keyed identically.
+/// <para>
+/// It exists because the panel cannot do the join itself. A template may write its dice as
+/// <c>"damage": "4-7"</c>, so the resolved <c>damageMin</c> has no counterpart in
+/// <paramref name="BaseStats"/> and the Base column would read "—" for the one dial this whole
+/// panel is about. Synthesising the missing keys into the template's own bag was the alternative,
+/// and a bag that claims to be the template while carrying keys the template never had is a lie
+/// the next reader trips over.
+/// </para>
+/// </param>
 public sealed record MultiplierPreviewRow(
     string TemplateKey,
     string TemplateName,
     TemplateKind Kind,
     Dictionary<string, object> BaseStats,
-    Dictionary<string, int> ResolvedStats);
+    Dictionary<string, int> ResolvedStats,
+    int TemplateLevel,
+    int FightsAtLevel,
+    Dictionary<string, int> BaseValues);
 
 public sealed record MultiplierPreview(
     string ZoneKey,

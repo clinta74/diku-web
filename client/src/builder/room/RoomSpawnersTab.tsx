@@ -80,6 +80,13 @@ export function RoomSpawnersTab({ room }: Props) {
                   <span className="dim">
                     {spawner.templateKind === 'Item' ? 'item · ' : ''}
                     {spawner.targetCount}× · respawn {spawner.respawnSeconds}s
+                    {/* Unlike the wander note below, this is printed on every mob row rather than
+                        only when it is unusual. The level is not a setting with a quiet default —
+                        it is what the fight is, it decides whether killing it teaches anyone
+                        anything (§4.7), and it is not readable from the template once a zone has
+                        scaled it. */}
+                    {spawner.templateKind === 'Mob' && spawner.fightsAtLevel > 0 &&
+                      ` · fights at level ${spawner.fightsAtLevel}`}
                     {/* Only an override is worth a word here. "Follows the template" is the
                         default on every spawner, so printing it would say nothing on most rows
                         and bury the two that are actually unusual. */}

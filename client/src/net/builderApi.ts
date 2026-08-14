@@ -80,6 +80,12 @@ export interface MultiplierPreviewRow {
   kind: string
   baseStats: Record<string, unknown>
   resolvedStats: Record<string, number>
+  /** The same keys as `resolvedStats`, unscaled — `baseStats` cannot be joined against for a range. */
+  baseValues: Record<string, number>
+  /** Zero for an item, which has no level. */
+  templateLevel: number
+  /** What a mob spawned in this zone actually fights at (PLAN.md §4.7). */
+  fightsAtLevel: number
 }
 
 export interface MultiplierPreview {
@@ -255,7 +261,20 @@ export interface Spawner {
   targetCount: number
   respawnSeconds: number
   wander: WanderMode
+  /**
+   * What mobs from this spawner fight at (PLAN.md §4.7). Server-computed and read-only; zero for
+   * an item spawner. Sending it back is ignored — see `SpawnerSave`.
+   */
+  fightsAtLevel: number
 }
+
+/**
+ * The subset of a spawner a client may write.
+ *
+ * `createSpawner`/`updateSpawner` used to take `Partial<Spawner>`, which now advertises the
+ * server-computed `fightsAtLevel` as though setting it did something.
+ */
+export type SpawnerSave = Partial<Omit<Spawner, 'id' | 'fightsAtLevel'>>
 
 export interface Quest {
   key: string
@@ -517,13 +536,13 @@ export const builderApi = {
 
   spawner: (id: string) => request<Spawner>(`${base}/spawners/${id}`),
 
-  createSpawner: (body: Partial<Spawner>) =>
+  createSpawner: (body: SpawnerSave) =>
     request<Spawner>(`${base}/spawners`, {
       method: 'POST',
       body: JSON.stringify(body),
     }),
 
-  updateSpawner: (id: string, body: Partial<Spawner>) =>
+  updateSpawner: (id: string, body: SpawnerSave) =>
     request<Spawner>(`${base}/spawners/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(body),

@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
+using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine;
@@ -325,9 +326,12 @@ public sealed class BuilderQueries(DikuWebDbContext db)
         }
 
         var spawners = await query.OrderBy(s => s.Id).ToListAsync(cancellationToken);
+        var levels = await FightingLevelsAsync(spawners, cancellationToken);
+
         return [.. spawners.Select(s => new SpawnerResponse(
             s.Id, s.ZoneKey, s.TemplateKey, s.TemplateKind,
-            new List<string>(s.RoomKeys), s.TargetCount, s.RespawnSeconds, WanderMode.From(s.Wanders)))];
+            new List<string>(s.RoomKeys), s.TargetCount, s.RespawnSeconds, WanderMode.From(s.Wanders),
+            levels.GetValueOrDefault(s.Id)))];
     }
 
     public async Task<SpawnerResponse?> SpawnerAsync(
@@ -340,9 +344,76 @@ public sealed class BuilderQueries(DikuWebDbContext db)
         {
             return null;
         }
+
+        var levels = await FightingLevelsAsync([spawner], cancellationToken);
+
         return new SpawnerResponse(
             spawner.Id, spawner.ZoneKey, spawner.TemplateKey, spawner.TemplateKind,
-            new List<string>(spawner.RoomKeys), spawner.TargetCount, spawner.RespawnSeconds, WanderMode.From(spawner.Wanders));
+            new List<string>(spawner.RoomKeys), spawner.TargetCount, spawner.RespawnSeconds,
+            WanderMode.From(spawner.Wanders), levels.GetValueOrDefault(spawner.Id));
+    }
+
+    /// <summary>
+    /// The level each mob spawner's mobs will fight at, by spawner id.
+    /// </summary>
+    /// <remarks>
+    /// <b>Computed here rather than in the client.</b> The whole argument for
+    /// <see cref="DikuWeb.Domain.Inhabitants.MobScaling"/> being one type is that a second answer to
+    /// "what level is it" is how the label and the creature come apart; the browser already holds
+    /// the templates and could do this arithmetic for free, and that is exactly the temptation to
+    /// refuse.
+    ///
+    /// Batched into three round trips for the whole list — templates, zones, worlds — rather than
+    /// three per row. Item spawners are skipped: an item has no level.
+    /// </remarks>
+    private async Task<Dictionary<Guid, int>> FightingLevelsAsync(
+        IReadOnlyList<DikuWeb.Domain.Spawning.Spawner> spawners,
+        CancellationToken cancellationToken)
+    {
+        var mobs = spawners
+            .Where(s => s.TemplateKind == DikuWeb.Domain.Spawning.TemplateKind.Mob)
+            .ToList();
+
+        if (mobs.Count == 0)
+        {
+            return [];
+        }
+
+        var templateKeys = mobs.Select(s => s.TemplateKey).Distinct().ToList();
+        var zoneKeys = mobs.Select(s => s.ZoneKey).Distinct().ToList();
+
+        var templates = await db.MobTemplates.AsNoTracking()
+            .Where(t => templateKeys.Contains(t.Key))
+            .ToDictionaryAsync(t => t.Key, cancellationToken);
+
+        var zones = await db.Zones.AsNoTracking()
+            .Where(z => zoneKeys.Contains(z.Key))
+            .ToDictionaryAsync(z => z.Key, cancellationToken);
+
+        var worldKeys = zones.Values.Select(z => z.WorldKey).Distinct().ToList();
+        var worlds = await db.Worlds.AsNoTracking()
+            .Where(w => worldKeys.Contains(w.Key))
+            .ToDictionaryAsync(w => w.Key, cancellationToken);
+
+        var levels = new Dictionary<Guid, int>();
+
+        foreach (var spawner in mobs)
+        {
+            // A spawner pointing at a deleted template goes dormant rather than throwing (§7.4);
+            // reporting no level is the reading that matches.
+            if (!templates.TryGetValue(spawner.TemplateKey, out var template) ||
+                !zones.TryGetValue(spawner.ZoneKey, out var zone) ||
+                !worlds.TryGetValue(zone.WorldKey, out var world))
+            {
+                continue;
+            }
+
+            levels[spawner.Id] = DikuWeb.Domain.Inhabitants.MobScaling
+                .FromZone(template.Level, world.Multipliers, zone.Multipliers, zone.MinLevel)
+                .Level;
+        }
+
+        return levels;
     }
 
     public async Task<IReadOnlyList<QuestResponse>> QuestsAsync(CancellationToken cancellationToken)
@@ -441,13 +512,20 @@ public sealed class BuilderQueries(DikuWebDbContext db)
         // Add mob templates
         foreach (var mob in mobTemplates.OrderBy(t => t.Key))
         {
-            var resolved = ResolveMobStats(mob, world.Multipliers, zone.Multipliers);
+            var scaling = DikuWeb.Domain.Inhabitants.MobScaling.FromZone(
+                mob.Level, world.Multipliers, zone.Multipliers, zone.MinLevel);
+
             rows.Add(new MultiplierPreviewRow(
                 mob.Key,
                 mob.Name,
                 DikuWeb.Domain.Spawning.TemplateKind.Mob,
                 new Dictionary<string, object>(mob.BaseStats),
-                resolved));
+                ResolveMobStats(mob, scaling, world.Multipliers, zone.Multipliers),
+                mob.Level,
+                scaling.Level,
+                // The same keys unscaled, so the panel's Base column lines up with its Resolved one
+                // even where the template wrote its dice as a range.
+                ResolveMobStats(mob, Unscaled(mob.Level), NoMultipliers, NoMultipliers)));
         }
 
         // Add item templates
@@ -459,7 +537,13 @@ public sealed class BuilderQueries(DikuWebDbContext db)
                 item.Name,
                 DikuWeb.Domain.Spawning.TemplateKind.Item,
                 new Dictionary<string, object>(item.BaseStats),
-                resolved));
+                resolved,
+                TemplateLevel: 0,
+                FightsAtLevel: 0,
+                BaseValues: new Dictionary<string, int>(StringComparer.Ordinal)
+                {
+                    ["value"] = item.BaseValue,
+                }));
         }
 
         return new MultiplierPreview(
@@ -469,32 +553,65 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             rows);
     }
 
+    /// <summary>
+    /// What a mob template resolves to in this zone, as the numbers the panel shows.
+    /// </summary>
+    /// <remarks>
+    /// <b>Through <see cref="DikuWeb.Domain.Inhabitants.MobScaling"/>, the same type the spawner
+    /// uses.</b> This method previously did its own arithmetic — health through
+    /// <c>MultiplierType.Strength</c> alone, and no damage at all — which was a second
+    /// implementation of the resolution and had already drifted from the first: it missed the
+    /// <c>health</c> dial entirely, and a preview that cannot disagree with the spawner is the
+    /// only kind worth showing.
+    ///
+    /// Damage is reported as <c>damageMin</c>/<c>damageMax</c> whichever way the template wrote it,
+    /// because the row's resolved values are integers and the <c>"4-7"</c> range form is a string.
+    /// </remarks>
+    /// <summary>Every dial at 1.0 — the identity, for reporting a template's unscaled numbers.</summary>
+    private static DikuWeb.Domain.Worlds.Multipliers NoMultipliers => new();
+
+    /// <summary>The scaling that changes nothing, so one method can report both columns.</summary>
+    private static DikuWeb.Domain.Inhabitants.MobScaling Unscaled(int templateLevel) =>
+        DikuWeb.Domain.Inhabitants.MobScaling.FromZone(templateLevel, NoMultipliers, NoMultipliers, 1);
+
     private static Dictionary<string, int> ResolveMobStats(
         DikuWeb.Domain.Inhabitants.MobTemplate template,
+        DikuWeb.Domain.Inhabitants.MobScaling scaling,
         DikuWeb.Domain.Worlds.Multipliers worldMults,
         DikuWeb.Domain.Worlds.Multipliers zoneMults)
     {
         var resolved = new Dictionary<string, int>(StringComparer.Ordinal);
+        var stats = scaling.ResolveStats(template.BaseStats);
 
-        // Health: use Strength multiplier.
-        //
-        // Read through JsonBag, not by pattern-matching the runtime type. BaseStats is jsonb, so
-        // every value arrives as a JsonElement - `health is int` was false for every template
-        // that had ever been saved, and the preview reported 40 health for all of them.
-        if (template.BaseStats.ContainsKey("health"))
+        // Read through StatReader for the reason the old comment here gave: BaseStats is jsonb, so
+        // every value arrives as a JsonElement and `health is int` was false for every template
+        // that had ever been saved - the preview reported 40 health for all of them.
+        if (StatReader.TryReadInt(stats, "health", out var health))
         {
-            resolved["health"] = DikuWeb.Domain.Worlds.Multipliers.Resolve(
-                JsonBag.Int32(template.BaseStats, "health", 40),
-                worldMults,
-                zoneMults,
-                DikuWeb.Domain.Worlds.MultiplierType.Strength);
+            resolved["health"] = health;
         }
 
-        // XP: use Xp multiplier
+        if (StatReader.TryReadRange(stats, "damage", out var min, out var max))
+        {
+            resolved["damageMin"] = min;
+            resolved["damageMax"] = max;
+        }
+
+        if (StatReader.TryReadInt(stats, "damageMin", out var declaredMin))
+        {
+            resolved["damageMin"] = declaredMin;
+        }
+
+        if (StatReader.TryReadInt(stats, "damageMax", out var declaredMax))
+        {
+            resolved["damageMax"] = declaredMax;
+        }
+
+        // Xp and Gold are values scaled by their own dial rather than combat power, so they stay
+        // on Multipliers.Resolve. MobScaling deliberately says nothing about them (§4.7).
         resolved["xp"] = DikuWeb.Domain.Worlds.Multipliers.Resolve(
             template.BaseXp, worldMults, zoneMults, DikuWeb.Domain.Worlds.MultiplierType.Xp);
 
-        // Gold: use Gold multiplier
         resolved["gold"] = DikuWeb.Domain.Worlds.Multipliers.Resolve(
             template.BaseGold, worldMults, zoneMults, DikuWeb.Domain.Worlds.MultiplierType.Gold);
 
