@@ -43,7 +43,7 @@ for one variant is how this happened, and finding 3 is the real answer.
 
 ---
 
-## 2. Resizability: nothing is resizable except one textarea
+## 2. Resizability: nothing is resizable except one textarea — FIXED
 
 **Severity: high — it is the one axis the note named that the client does not address at all.**
 
@@ -63,10 +63,15 @@ in one place rather than to the cause.
 middle column, which cannot be widened. A four-sentence description is what §7.6 says a builder
 should not be typing on a command line; the form it was given instead is a fixed box.
 
-**Fix, cheapest first:** make the two builder rails drag-resizable and persist the widths to
-`localStorage`. A pointer-driven splitter is roughly the same work as the zone canvas pan already
-shipped, and M4a is about to touch Pointer Events anyway. Failing that, `resize: horizontal` on the
-rails costs two lines and gets most of it.
+**Fixed** the first way. Both rails drag, on Pointer Events like the zone canvas pan, with the
+widths in one `localStorage` entry shared across tabs — a tree widened to fit
+`aldenmoor.millbrook.tavern-common` stays wide when you switch to Mobs. Double-click or Home
+resets; the handles are `role="separator"` with arrow keys, because a control that only answers to
+dragging cannot be reached by the keyboard, and the whole point is that the shipped widths do not
+suit everybody.
+
+Hidden below 768px, where the first column is already a drawer over the editor and there is no
+boundary to drag.
 
 ---
 
@@ -235,8 +240,7 @@ Worth recording so a later pass does not "fix" it:
    keyboard a real 2px ring while a mouse click keeps the quiet border.
 3. ~~**Finding 5** — unit convention in labels.~~ Done: parenthetical everywhere.
 4. **Finding 3, tokens half** — add the spacing, type, and radius tokens without adopting them.
-5. **Finding 2** — resizable builder rails. The largest user-visible win, and it wants Pointer
-   Events, so it belongs beside Phase 7's M4a rather than before it.
+5. ~~**Finding 2** — resizable builder rails.~~ Done, on Pointer Events and persisted.
 6. **Finding 6** — seconds instead of pulses. Touches the API contract's field names, so it is the
    one worth a moment's thought rather than a quick pass.
 7. ~~**Findings 3 and 4, adoption**~~ Done in the same pass: 214 spacing declarations moved onto

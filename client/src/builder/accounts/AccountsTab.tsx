@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { BuilderColumns } from '../BuilderColumns'
 import { useNavigate, useParams } from 'react-router'
 import { adminApi, isMuted, type AdminAccount } from '../../net/adminApi'
 import { toAccountsPath } from '../routes'
@@ -58,56 +59,59 @@ export function AccountsTab() {
   }, [username, selected, accounts])
 
   return (
-    <div className="builder-columns builder-columns-2">
-      <aside className="builder-col">
-        <div className="tree">
-          <div className="tree-section">
-            <div className="tree-head">
-              <h3>Accounts</h3>
-              <span className="dim">{accounts?.length ?? 0}</span>
-            </div>
-
-            <input
-              className="tree-filter"
-              value={query}
-              placeholder="search by username"
-              spellCheck={false}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-
-            {error && <p className="bad">{error}</p>}
-            {accounts === null && <p className="dim">Loading…</p>}
-            {accounts?.length === 0 && !error && <p className="dim">Nobody matches that.</p>}
-
-            <ul className="template-list">
-              {accounts?.map((account) => (
-                <li key={account.id}>
-                  <button
-                    type="button"
-                    className={account.username === username ? 'selected' : ''}
-                    onClick={() => navigate(toAccountsPath(account.username))}
-                  >
-                    {account.username}
-                    <span className="dim"> · {account.role}</span>
-                    {account.isBanned && <span className="bad"> · banned</span>}
-                    {!account.isBanned && isMuted(account) && (
-                      <span className="dim"> · muted</span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </aside>
-
-      <main className="builder-col">
-        {selected ? (
-          <AccountPanel key={selected.id} account={selected} onChanged={replace} />
-        ) : (
-          <p className="dim">Select an account.</p>
-        )}
-      </main>
-    </div>
+    <BuilderColumns
+      left={
+        <aside className="builder-col">
+                <div className="tree">
+                  <div className="tree-section">
+                    <div className="tree-head">
+                      <h3>Accounts</h3>
+                      <span className="dim">{accounts?.length ?? 0}</span>
+                    </div>
+        
+                    <input
+                      className="tree-filter"
+                      value={query}
+                      placeholder="search by username"
+                      spellCheck={false}
+                      onChange={(e) => setQuery(e.target.value)}
+                    />
+        
+                    {error && <p className="bad">{error}</p>}
+                    {accounts === null && <p className="dim">Loading…</p>}
+                    {accounts?.length === 0 && !error && <p className="dim">Nobody matches that.</p>}
+        
+                    <ul className="template-list">
+                      {accounts?.map((account) => (
+                        <li key={account.id}>
+                          <button
+                            type="button"
+                            className={account.username === username ? 'selected' : ''}
+                            onClick={() => navigate(toAccountsPath(account.username))}
+                          >
+                            {account.username}
+                            <span className="dim"> · {account.role}</span>
+                            {account.isBanned && <span className="bad"> · banned</span>}
+                            {!account.isBanned && isMuted(account) && (
+                              <span className="dim"> · muted</span>
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </aside>
+      }
+      main={
+        <main className="builder-col">
+                {selected ? (
+                  <AccountPanel key={selected.id} account={selected} onChanged={replace} />
+                ) : (
+                  <p className="dim">Select an account.</p>
+                )}
+              </main>
+      }
+    />
   )
 }

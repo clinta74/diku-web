@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { BuilderColumns } from '../BuilderColumns'
 import { useNavigate, useOutletContext, useParams } from 'react-router'
 import { useCompactBuilder } from '../../components/pointer'
 import { useBuilderData } from '../BuilderData'
@@ -67,99 +68,103 @@ export function WorldTab() {
   const roomWarnings = validation?.warnings.filter((w) => w.entityKey === roomKey) ?? []
 
   return (
-    <div className="builder-columns">
-      <aside className="builder-col">
-        <WorldTree
-          worldKey={worldKey}
-          zoneKey={zoneKey}
-          roomKey={roomKey}
-          onWorld={goWorld}
-          onZone={goZone}
-          onRoom={goRoom}
-        />
-      </aside>
-
-      <main className="builder-col">
-        {/*
-          On a narrow screen the canvas is summoned rather than resident (MOBILE.md §5). It is the
-          one part of the builder that genuinely needs a large pointer-driven surface, and sharing
-          a 390px screen with the room editor would leave neither usable. Everything else here is
-          a form, and forms are the one thing a phone has always been good at.
-
-          Unmounted while closed, not hidden: a canvas nobody can see should not be laying out a
-          zone's worth of boxes on every edit.
-        */}
-        {zoneKey && !compact && (
-          <ZoneCanvas
-            rooms={rooms}
-            selected={roomKey}
-            occupied={occupiedRoom}
-            onSelect={goRoom}
-            onChanged={() => void loadZone(zoneKey)}
-          />
-        )}
-
-        {zoneKey && compact && (
-          <button type="button" className="map-summon" onClick={() => setMapOpen(true)}>
-            ▦ Zone map
-            <span className="dim"> · {rooms.length} rooms</span>
-          </button>
-        )}
-
-        {zoneKey && compact && mapOpen && (
-          <div className="canvas-overlay">
-            <div className="canvas-overlay-head">
-              <span className="dim">{zoneKey}</span>
-              <button type="button" onClick={() => setMapOpen(false)}>
-                ✕ Close map
-              </button>
-            </div>
-
-            <ZoneCanvas
-              rooms={rooms}
-              selected={roomKey}
-              occupied={occupiedRoom}
-              onSelect={(key) => {
-                goRoom(key)
-
-                // Choosing a room is what the map was opened for, and the editor it opens is
-                // underneath. Leaving the map up would hide the answer to the tap.
-                setMapOpen(false)
-              }}
-              onChanged={() => void loadZone(zoneKey)}
-            />
-          </div>
-        )}
-
-        {roomKey ? (
-          <RoomEditor
-            key={roomKey}
-            roomKey={roomKey}
-            section={section}
-            warnings={roomWarnings}
-            onSection={(s: Section) => navigate(toWorldPath(worldKey, zoneKey, roomKey, s))}
-            onChanged={() => void loadZone(zoneKey)}
-            onDeleted={() => navigate(toWorldPath(worldKey, zoneKey))}
-            onNavigate={goRoom}
-          />
-        ) : (
-          <p className="dim">Pick a room, or dig one from the room you are standing in.</p>
-        )}
-      </main>
-
-      <aside className="builder-col">
-        {/* The zone panel wins the slot when a zone is selected: it is the narrower scope, and
-            it carries the difficulty preview, which is what a builder is usually here for. The
-            world panel is how you reach a world's own properties at all. */}
-        {zoneKey ? (
-          <ZonePanel zoneKey={zoneKey} />
-        ) : (
-          worldKey && (
-            <WorldPanel worldKey={worldKey} onDeleted={() => navigate(toWorldPath(null))} />
-          )
-        )}
-        <ValidationPanel validation={validation} onSelect={goRoom} />
-      </aside>
-    </div>
+    <BuilderColumns
+      left={
+        <aside className="builder-col">
+                <WorldTree
+                  worldKey={worldKey}
+                  zoneKey={zoneKey}
+                  roomKey={roomKey}
+                  onWorld={goWorld}
+                  onZone={goZone}
+                  onRoom={goRoom}
+                />
+              </aside>
+      }
+      main={
+        <main className="builder-col">
+                {/*
+                  On a narrow screen the canvas is summoned rather than resident (MOBILE.md §5). It is the
+                  one part of the builder that genuinely needs a large pointer-driven surface, and sharing
+                  a 390px screen with the room editor would leave neither usable. Everything else here is
+                  a form, and forms are the one thing a phone has always been good at.
+        
+                  Unmounted while closed, not hidden: a canvas nobody can see should not be laying out a
+                  zone's worth of boxes on every edit.
+                */}
+                {zoneKey && !compact && (
+                  <ZoneCanvas
+                    rooms={rooms}
+                    selected={roomKey}
+                    occupied={occupiedRoom}
+                    onSelect={goRoom}
+                    onChanged={() => void loadZone(zoneKey)}
+                  />
+                )}
+        
+                {zoneKey && compact && (
+                  <button type="button" className="map-summon" onClick={() => setMapOpen(true)}>
+                    ▦ Zone map
+                    <span className="dim"> · {rooms.length} rooms</span>
+                  </button>
+                )}
+        
+                {zoneKey && compact && mapOpen && (
+                  <div className="canvas-overlay">
+                    <div className="canvas-overlay-head">
+                      <span className="dim">{zoneKey}</span>
+                      <button type="button" onClick={() => setMapOpen(false)}>
+                        ✕ Close map
+                      </button>
+                    </div>
+        
+                    <ZoneCanvas
+                      rooms={rooms}
+                      selected={roomKey}
+                      occupied={occupiedRoom}
+                      onSelect={(key) => {
+                        goRoom(key)
+        
+                        // Choosing a room is what the map was opened for, and the editor it opens is
+                        // underneath. Leaving the map up would hide the answer to the tap.
+                        setMapOpen(false)
+                      }}
+                      onChanged={() => void loadZone(zoneKey)}
+                    />
+                  </div>
+                )}
+        
+                {roomKey ? (
+                  <RoomEditor
+                    key={roomKey}
+                    roomKey={roomKey}
+                    section={section}
+                    warnings={roomWarnings}
+                    onSection={(s: Section) => navigate(toWorldPath(worldKey, zoneKey, roomKey, s))}
+                    onChanged={() => void loadZone(zoneKey)}
+                    onDeleted={() => navigate(toWorldPath(worldKey, zoneKey))}
+                    onNavigate={goRoom}
+                  />
+                ) : (
+                  <p className="dim">Pick a room, or dig one from the room you are standing in.</p>
+                )}
+              </main>
+      }
+      right={
+        <aside className="builder-col">
+                {/* The zone panel wins the slot when a zone is selected: it is the narrower scope, and
+                    it carries the difficulty preview, which is what a builder is usually here for. The
+                    world panel is how you reach a world's own properties at all. */}
+                {zoneKey ? (
+                  <ZonePanel zoneKey={zoneKey} />
+                ) : (
+                  worldKey && (
+                    <WorldPanel worldKey={worldKey} onDeleted={() => navigate(toWorldPath(null))} />
+                  )
+                )}
+                <ValidationPanel validation={validation} onSelect={goRoom} />
+              </aside>
+      }
+    />
   )
 }

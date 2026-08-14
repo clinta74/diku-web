@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BuilderColumns } from '../BuilderColumns'
 import { Button } from '../../ui/Button'
 import { useNavigate, useParams } from 'react-router'
 import { useBuilderData } from '../BuilderData'
@@ -40,85 +41,89 @@ export function QuestsTab() {
   })
 
   return (
-    <div className="builder-columns">
-      <aside className="builder-col">
-        <div className="tree">
-          <div className="tree-section">
-            <div className="tree-head">
-              <h3>Quests</h3>
-              <Button variant="link" onClick={() => setCreating(true)}>
-                + new
-              </Button>
-            </div>
-
-            <input
-              className="tree-filter"
-              value={filter}
-              placeholder="filter"
-              spellCheck={false}
-              onChange={(e) => setFilter(e.target.value)}
-            />
-
-            {quests.length === 0 && <p className="dim">None yet. Make one.</p>}
-
-            <ul className="template-list">
-              {visible.map((quest) => (
-                <li key={quest.key}>
-                  {/* Plain button inside .tree, like the mob and item lists - `.tree li button`
-                      already styles and highlights it. */}
-                  <button
-                    type="button"
-                    className={quest.key === selectedKey ? 'selected' : ''}
-                    onClick={() => navigate(toQuestsPath(quest.key))}
-                  >
-                    {quest.name || quest.key}
-                    <span className="dim"> · {quest.zoneKey}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </aside>
-
-      <main className="builder-col">
-        {selectedKey ? (
-          <QuestEditor
-            key={selectedKey}
-            questKey={selectedKey}
-            onChanged={() => {
-              void refreshQuests()
-              setRevision((n) => n + 1)
-            }}
-            onDeleted={() => {
-              void refreshQuests()
-              setRevision((n) => n + 1)
-              navigate(toQuestsPath())
-            }}
-          />
-        ) : (
-          <p className="dim">Select a quest, or create a new one.</p>
-        )}
-      </main>
-
-      <aside className="builder-col">
-        <h3>Chain</h3>
-        <StorylinePanel
-          zoneKey={selected?.zoneKey ?? null}
-          selectedKey={selectedKey}
-          onSelect={(key) => navigate(toQuestsPath(key))}
-          revision={revision}
-        />
-      </aside>
-
+    <BuilderColumns
+      left={
+        <aside className="builder-col">
+                <div className="tree">
+                  <div className="tree-section">
+                    <div className="tree-head">
+                      <h3>Quests</h3>
+                      <Button variant="link" onClick={() => setCreating(true)}>
+                        + new
+                      </Button>
+                    </div>
+        
+                    <input
+                      className="tree-filter"
+                      value={filter}
+                      placeholder="filter"
+                      spellCheck={false}
+                      onChange={(e) => setFilter(e.target.value)}
+                    />
+        
+                    {quests.length === 0 && <p className="dim">None yet. Make one.</p>}
+        
+                    <ul className="template-list">
+                      {visible.map((quest) => (
+                        <li key={quest.key}>
+                          {/* Plain button inside .tree, like the mob and item lists - `.tree li button`
+                              already styles and highlights it. */}
+                          <button
+                            type="button"
+                            className={quest.key === selectedKey ? 'selected' : ''}
+                            onClick={() => navigate(toQuestsPath(quest.key))}
+                          >
+                            {quest.name || quest.key}
+                            <span className="dim"> · {quest.zoneKey}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </aside>
+      }
+      main={
+        <main className="builder-col">
+                {selectedKey ? (
+                  <QuestEditor
+                    key={selectedKey}
+                    questKey={selectedKey}
+                    onChanged={() => {
+                      void refreshQuests()
+                      setRevision((n) => n + 1)
+                    }}
+                    onDeleted={() => {
+                      void refreshQuests()
+                      setRevision((n) => n + 1)
+                      navigate(toQuestsPath())
+                    }}
+                  />
+                ) : (
+                  <p className="dim">Select a quest, or create a new one.</p>
+                )}
+              </main>
+      }
+      right={
+        <aside className="builder-col">
+                <h3>Chain</h3>
+                <StorylinePanel
+                  zoneKey={selected?.zoneKey ?? null}
+                  selectedKey={selectedKey}
+                  onSelect={(key) => navigate(toQuestsPath(key))}
+                  revision={revision}
+                />
+              </aside>
+      }
+    >
       <QuestCreateDialog
-        open={creating}
-        onOpenChange={setCreating}
-        onCreated={(key) => {
-          void refreshQuests()
-          navigate(toQuestsPath(key))
-        }}
-      />
-    </div>
+              open={creating}
+              onOpenChange={setCreating}
+              onCreated={(key) => {
+                void refreshQuests()
+                navigate(toQuestsPath(key))
+              }}
+            />
+    </BuilderColumns>
   )
 }

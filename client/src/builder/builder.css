@@ -108,17 +108,42 @@
   vertical-align: middle;
 }
 
+/* The rails are draggable, so their widths come from custom properties BuilderColumns sets and
+   the handles occupy real grid tracks between them. The gap is gone: the handle *is* the divider
+   now, and a 1px gap beside a 5px handle reads as two lines. */
 .builder-columns {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 15rem 1fr 17rem;
-  gap: 1px;
+  grid-template-columns: var(--rail-left, 15rem) auto 1fr auto var(--rail-right, 17rem);
   background: var(--border);
 }
 
 .builder-columns-2 {
-  grid-template-columns: 15rem 1fr;
+  grid-template-columns: var(--rail-left, 15rem) auto 1fr;
+}
+
+/* Wider than it looks: the visible line is 1px but the grab target is 5, because a 1px target is
+   a thing you hunt for. */
+.rail-handle {
+  width: 5px;
+  background: var(--border);
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.rail-handle:hover,
+.rail-handle:focus-visible {
+  background: var(--accent);
+  outline: none;
+}
+
+/* Below the breakpoint the first column is a drawer over the editor (MOBILE.md §5), so there is
+   no boundary to drag and the handle would be a stripe with nothing on the other side. */
+@media (max-width: 768px) {
+  .rail-handle {
+    display: none;
+  }
 }
 
 .builder-col {

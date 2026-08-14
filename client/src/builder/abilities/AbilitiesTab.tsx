@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { BuilderColumns } from '../BuilderColumns'
 import { useNavigate, useParams } from 'react-router'
 import { builderApi, type Ability } from '../../net/builderApi'
 import { toAbilitiesPath } from '../routes'
@@ -50,103 +51,106 @@ export function AbilitiesTab() {
   const selectedKey = abilityKey ?? null
 
   return (
-    <div className="builder-columns builder-columns-2">
-      <aside className="builder-col">
-        <div className="tree-head">
-          <h3>Abilities</h3>
-          <button type="button" onClick={() => setCreating(true)}>
-            + New
-          </button>
-        </div>
-
-        {loading && <p className="dim">Loading…</p>}
-
-        {!loading && failed && (
-          <p className="bad">
-            {failed} If the server was started before the Abilities tab existed, restart it.
-          </p>
-        )}
-
-        {!loading && !failed && abilities.length === 0 && (
-          <p className="dim">
-            No abilities in the database. A fresh install seeds them on first boot from the starter
-            catalogue.
-          </p>
-        )}
-
-        {!loading &&
-          !failed &&
-          PATH_ORDER.map((path) => {
-            const forPath = abilities
-              .filter((a) => a.path === path)
-              .sort((a, b) => a.unlockLevel - b.unlockLevel)
-
-            if (forPath.length === 0) return null
-
-            return (
-              <section key={path} className="ability-group">
-                <h4 className="ability-group-head">{path}</h4>
-                <ul className="ability-list">
-                  {forPath.map((ability) => {
-                    // An error means the ability does not work at all, so it outranks the level
-                    // badge for attention. Warnings are quieter on purpose - they are usually
-                    // about progression shape, which is a judgement rather than a fault.
-                    const errors = ability.problems.filter((p) => p.severity === 'Error').length
-                    const warnings = ability.problems.length - errors
-
+    <BuilderColumns
+      left={
+        <aside className="builder-col">
+                <div className="tree-head">
+                  <h3>Abilities</h3>
+                  <button type="button" onClick={() => setCreating(true)}>
+                    + New
+                  </button>
+                </div>
+        
+                {loading && <p className="dim">Loading…</p>}
+        
+                {!loading && failed && (
+                  <p className="bad">
+                    {failed} If the server was started before the Abilities tab existed, restart it.
+                  </p>
+                )}
+        
+                {!loading && !failed && abilities.length === 0 && (
+                  <p className="dim">
+                    No abilities in the database. A fresh install seeds them on first boot from the starter
+                    catalogue.
+                  </p>
+                )}
+        
+                {!loading &&
+                  !failed &&
+                  PATH_ORDER.map((path) => {
+                    const forPath = abilities
+                      .filter((a) => a.path === path)
+                      .sort((a, b) => a.unlockLevel - b.unlockLevel)
+        
+                    if (forPath.length === 0) return null
+        
                     return (
-                      <li key={ability.key}>
-                        <button
-                          type="button"
-                          className={ability.key === selectedKey ? 'tree-item selected' : 'tree-item'}
-                          onClick={() => navigate(toAbilitiesPath(ability.key))}
-                        >
-                          <span className="ability-level">{ability.unlockLevel}</span>
-                          <span className="ability-name">{ability.name}</span>
-                          {errors > 0 && (
-                            <span className="ability-flag bad" title="This ability will not work">
-                              ✕
-                            </span>
-                          )}
-                          {errors === 0 && warnings > 0 && (
-                            <span className="ability-flag warn" title="Worth a look">
-                              !
-                            </span>
-                          )}
-                        </button>
-                      </li>
+                      <section key={path} className="ability-group">
+                        <h4 className="ability-group-head">{path}</h4>
+                        <ul className="ability-list">
+                          {forPath.map((ability) => {
+                            // An error means the ability does not work at all, so it outranks the level
+                            // badge for attention. Warnings are quieter on purpose - they are usually
+                            // about progression shape, which is a judgement rather than a fault.
+                            const errors = ability.problems.filter((p) => p.severity === 'Error').length
+                            const warnings = ability.problems.length - errors
+        
+                            return (
+                              <li key={ability.key}>
+                                <button
+                                  type="button"
+                                  className={ability.key === selectedKey ? 'tree-item selected' : 'tree-item'}
+                                  onClick={() => navigate(toAbilitiesPath(ability.key))}
+                                >
+                                  <span className="ability-level">{ability.unlockLevel}</span>
+                                  <span className="ability-name">{ability.name}</span>
+                                  {errors > 0 && (
+                                    <span className="ability-flag bad" title="This ability will not work">
+                                      ✕
+                                    </span>
+                                  )}
+                                  {errors === 0 && warnings > 0 && (
+                                    <span className="ability-flag warn" title="Worth a look">
+                                      !
+                                    </span>
+                                  )}
+                                </button>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      </section>
                     )
                   })}
-                </ul>
-              </section>
-            )
-          })}
-      </aside>
-
-      <main className="builder-col">
-        {selectedKey ? (
-          <AbilityEditor
-            key={selectedKey}
-            abilityKey={selectedKey}
-            onChanged={() => void refresh()}
-            onDeleted={() => {
-              void refresh()
-              navigate(toAbilitiesPath())
-            }}
-          />
-        ) : (
-          <p className="dim">Pick an ability, or add one.</p>
-        )}
-      </main>
-
+              </aside>
+      }
+      main={
+        <main className="builder-col">
+                {selectedKey ? (
+                  <AbilityEditor
+                    key={selectedKey}
+                    abilityKey={selectedKey}
+                    onChanged={() => void refresh()}
+                    onDeleted={() => {
+                      void refresh()
+                      navigate(toAbilitiesPath())
+                    }}
+                  />
+                ) : (
+                  <p className="dim">Pick an ability, or add one.</p>
+                )}
+              </main>
+      }
+    >
       <AbilityCreateDialog
-        open={creating}
-        onOpenChange={setCreating}
-        onCreated={(key) => {
-          void refresh()
-          navigate(toAbilitiesPath(key))
-        }}
-      />
-    </div>
+              open={creating}
+              onOpenChange={setCreating}
+              onCreated={(key) => {
+                void refresh()
+                navigate(toAbilitiesPath(key))
+              }}
+            />
+    </BuilderColumns>
   )
 }
