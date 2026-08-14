@@ -108,17 +108,42 @@ public sealed class XpRelevanceCombatTests
     [Fact]
     public void A_zone_that_declares_a_level_band_lifts_the_mobs_in_it()
     {
-        // One template reused across zones of different difficulty is what multipliers are for, so
-        // a level 1 rat in a level 40 zone with heavy multipliers is a level 40 encounter wearing
-        // a level 1 label. The zone's own band is the author's statement of who the content is
-        // for, and it is the number that decides.
-        //
-        // This is the first thing in the codebase that reads Zone.MinLevel.
+        // The band is the author's statement of who the content is for, and a flavour critter
+        // dropped into a level 40 zone should not read as prey. This is the first thing in the
+        // codebase that reads Zone.MinLevel.
         var harness = Loaded();
         harness.Zone.MinLevel = 40;
         var player = harness.AddPlayer("Bram", West, level: 40);
 
         Assert.Equal(1000, Kill(harness, player, mobLevel: 1));
+    }
+
+    [Fact]
+    public void Scaling_a_zone_raises_the_level_of_what_spawns_in_it()
+    {
+        // The other half, and the one the band cannot express: a zone that leaves its band alone
+        // and doubles strength has still made its mobs a harder fight, and the level has to follow
+        // or the reward is judged against a label nobody is fighting.
+        //
+        // Strength 4 scales health and damage together, so a level 5 mob is sixteen times the
+        // problem it was - four times the level, by the same quadratic the XP curve uses.
+        var harness = Loaded();
+        harness.Zone.Multipliers.Strength = 4m;
+        var player = harness.AddPlayer("Bram", West, level: 20);
+
+        Assert.Equal(1000, Kill(harness, player, mobLevel: 5));
+    }
+
+    [Fact]
+    public void An_unscaled_zone_leaves_the_authored_level_alone()
+    {
+        // Every multiplier at 1 has to be exactly the identity, or the derivation quietly retunes
+        // every zone nobody has touched.
+        var beneath = Loaded();
+        Assert.Equal(0, Kill(beneath, beneath.AddPlayer("Bram", West, level: 12), mobLevel: 5));
+
+        var matched = Loaded();
+        Assert.Equal(1000, Kill(matched, matched.AddPlayer("Ilse", West, level: 6), mobLevel: 6));
     }
 
     [Fact]
@@ -139,119 +164,75 @@ public sealed class XpRelevanceCombatTests
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void A_member_too_far_behind_earns_no_experience()
+    public void Help_with_a_fight_you_could_have_taken_is_worth_the_same()
     {
-        // Floor(50) is 25, so a level 24 is outside the window and a level 25 would not be.
+        // The example that removed the party floor. A level 9 beside a level 20 kills a level 19
+        // mob: the mob is above the level 9, so alone they would have been paid in full. Being
+        // helped cannot be worth less than that, and the earlier rule made it worth nothing.
         var harness = Loaded();
-        var killer = harness.AddPlayer("Bram", West, level: 50);
-        var carried = harness.AddPlayer("Kael", West, level: 24);
-        Group(harness, killer, carried);
+        var carrier = harness.AddPlayer("Bram", West, level: 20);
+        var junior = harness.AddPlayer("Kael", West, level: 9);
+        Group(harness, carrier, junior);
 
-        var mob = harness.AddMob("rat", West, health: 1, level: 50);
+        var mob = harness.AddMob("rat", West, health: 1, level: 19);
+        mob.ResolvedXp = 1000;
+
+        harness.Execute(carrier, "attack rat");
+        harness.Pump(20);
+
+        // Half the pot, undiminished: the mob is above the level 9's own level.
+        Assert.Equal(500, junior.Character.Xp);
+    }
+
+    [Fact]
+    public void Each_share_is_scaled_by_that_persons_own_distance_from_the_mob()
+    {
+        // The split is even; what differs is what the kill was worth to each of them. Level 30
+        // against a level 30 mob is full value; level 50 against the same mob is 6/26 of it.
+        var harness = Loaded();
+        var senior = harness.AddPlayer("Bram", West, level: 50);
+        var peer = harness.AddPlayer("Kael", West, level: 30);
+        Group(harness, senior, peer);
+
+        var mob = harness.AddMob("rat", West, health: 1, level: 30);
+        mob.ResolvedXp = 1000;
+
+        harness.Execute(senior, "attack rat");
+        harness.Pump(20);
+
+        Assert.Equal(500, peer.Character.Xp);
+        Assert.Equal(115, senior.Character.Xp);
+    }
+
+    [Fact]
+    public void Gold_is_split_evenly_whatever_the_levels()
+    {
+        // Gold is payment for being there and is not level-scaled at all, so it stays an even
+        // split even where the experience is wildly uneven.
+        var harness = Loaded();
+        var senior = harness.AddPlayer("Bram", West, level: 50);
+        var junior = harness.AddPlayer("Kael", West, level: 10);
+        Group(harness, senior, junior);
+
+        var mob = harness.AddMob("rat", West, health: 1, level: 10);
         mob.ResolvedXp = 1000;
         mob.ResolvedGold = 40;
 
-        harness.Execute(killer, "kill rat");
+        harness.Execute(senior, "attack rat");
         harness.Pump(20);
 
-        Assert.Equal(0, carried.Character.Xp);
+        Assert.Equal(20, junior.Character.Gold);
+        Assert.Equal(20, senior.Character.Gold);
+
+        // And the level 50 learns nothing from a level 10, group or no group.
+        Assert.Equal(500, junior.Character.Xp);
+        Assert.Equal(0, senior.Character.Xp);
     }
 
     [Fact]
-    public void A_member_just_inside_the_window_earns_their_share()
+    public void A_group_member_in_another_room_still_shares_nothing()
     {
-        // "a level 50 can group with a level 25 and the level 25 would get exp on kills but a
-        // level 24 would not" - PlayTestingNotes, and the reason the floor pays rather than being
-        // the first level that does not.
-        var harness = Loaded();
-        var killer = harness.AddPlayer("Bram", West, level: 50);
-        var ally = harness.AddPlayer("Kael", West, level: 25);
-        Group(harness, killer, ally);
-
-        var mob = harness.AddMob("rat", West, health: 1, level: 50);
-        mob.ResolvedXp = 1000;
-
-        harness.Execute(killer, "kill rat");
-        harness.Pump(20);
-
-        Assert.True(ally.Character.Xp > 0);
-
-        // Their half, then tapered by how far the mob was above... below them: the mob is level 50
-        // and they are 25, so it is at or above their level and pays in full.
-        Assert.Equal(500, ally.Character.Xp);
-    }
-
-    [Fact]
-    public void Carrying_somebody_does_not_shrink_your_own_share()
-    {
-        // Members outside the window are dropped before the split, not zeroed after it. Zeroing
-        // after would mean the level 50 keeps half of a kill they made alone, which punishes the
-        // group for the company it keeps and would make "leave your friend outside" the correct
-        // play.
-        var harness = Loaded();
-        var killer = harness.AddPlayer("Bram", West, level: 50);
-        var carried = harness.AddPlayer("Kael", West, level: 10);
-        Group(harness, killer, carried);
-
-        var mob = harness.AddMob("rat", West, health: 1, level: 50);
-        mob.ResolvedXp = 1000;
-
-        harness.Execute(killer, "kill rat");
-        harness.Pump(20);
-
-        Assert.Equal(1000, killer.Character.Xp);
-    }
-
-    [Fact]
-    public void Gold_is_still_split_with_everyone_who_was_there()
-    {
-        // Experience is credit for the fight; gold is payment for being present. Only the first
-        // is level-gated, so a carried member walks away with coin and no experience - which is
-        // also the shape that keeps the two rules independently tunable.
-        var harness = Loaded();
-        var killer = harness.AddPlayer("Bram", West, level: 50);
-        var carried = harness.AddPlayer("Kael", West, level: 10);
-        Group(harness, killer, carried);
-
-        var mob = harness.AddMob("rat", West, health: 1, level: 50);
-        mob.ResolvedXp = 1000;
-        mob.ResolvedGold = 40;
-
-        harness.Execute(killer, "kill rat");
-        harness.Pump(20);
-
-        Assert.Equal(20, carried.Character.Gold);
-        Assert.Equal(20, killer.Character.Gold);
-        Assert.Equal(0, carried.Character.Xp);
-    }
-
-    [Fact]
-    public void Being_carried_costs_the_low_level_even_when_they_land_the_blow()
-    {
-        // The window is set by the highest level present, not by the killer, so a level 24 who
-        // finishes a mob while a level 50 does the work still learns nothing. Without this the
-        // rule is one line of coordination away from doing nothing at all.
-        var harness = Loaded();
-        var killer = harness.AddPlayer("Kael", West, level: 24);
-        var carrier = harness.AddPlayer("Bram", West, level: 50);
-        Group(harness, carrier, killer);
-
-        var mob = harness.AddMob("rat", West, health: 1, level: 40);
-        mob.ResolvedXp = 1000;
-
-        harness.Execute(killer, "kill rat");
-        harness.Pump(20);
-
-        Assert.Equal(0, killer.Character.Xp);
-        Assert.Contains("far beyond you", harness.DrainText(killer), StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void A_high_level_in_another_room_does_not_set_the_window()
-    {
-        // Highest level *present*. A party member who is not at the fight already shares nothing,
-        // and letting them set the floor anyway would mean one level 50 sitting in town switches
-        // off their friends' experience across the whole map.
+        // Unchanged by any of this: present means standing where it died.
         var harness = Loaded();
         var killer = harness.AddPlayer("Kael", West, level: 20);
         var elsewhere = harness.AddPlayer("Bram", West, level: 50);
@@ -261,9 +242,10 @@ public sealed class XpRelevanceCombatTests
         var mob = harness.AddMob("rat", West, health: 1, level: 20);
         mob.ResolvedXp = 1000;
 
-        harness.Execute(killer, "kill rat");
+        harness.Execute(killer, "attack rat");
         harness.Pump(20);
 
         Assert.Equal(1000, killer.Character.Xp);
+        Assert.Equal(0, elsewhere.Character.Xp);
     }
 }

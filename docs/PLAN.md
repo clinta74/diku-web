@@ -492,7 +492,7 @@ All multipliers are fractional, default `1.0`, and apply as `world × zone`:
 
 | Multiplier | Scales | Notes |
 |---|---|---|
-| `strength` | Monster health **and** damage together | The master difficulty dial |
+| `strength` | Monster health **and** damage together | The master difficulty dial. Also moves the mob's *level* — see below |
 | `health` | Monster health | Fine-tune on top of `strength` |
 | `damage` | Monster damage | Fine-tune on top of `strength` |
 | `xp` | XP awarded on kill | Independent — a zone can be hard but stingy |
@@ -512,18 +512,24 @@ xp, gold, itemValue: max(0, …)     — a multiplier of 0.0 legitimately means 
 rounding: half away from zero
 ```
 
-Worked example — one `kobold-sentry` template with base 40 hp, 4–7 damage, 120 xp, 25 gold:
+Worked example — one **level 8** `kobold-sentry` template with base 40 hp, 4–7 damage, 120 xp,
+25 gold:
 
-| Zone | `strength` | `gold` | `xp` | Result |
-|---|---|---|---|---|
-| `millbrook` | 1.0 | 1.0 | 1.0 | 40 hp, 4–7 dmg, 120 xp, 25 gold |
-| `sunken-crypt` | 2.5 | 3.0 | 1.0 | 100 hp, 10–18 dmg, 120 xp, 75 gold |
-| `the-deep` | 6.0 | 8.0 | 2.0 | 240 hp, 24–42 dmg, 240 xp, 200 gold |
+| Zone | `strength` | `gold` | `xp` | Result | Fights at |
+|---|---|---|---|---|---|
+| `millbrook` | 1.0 | 1.0 | 1.0 | 40 hp, 4–7 dmg, 120 xp, 25 gold | level 8 |
+| `sunken-crypt` | 2.5 | 3.0 | 1.0 | 100 hp, 10–18 dmg, 120 xp, 75 gold | level 20 |
+| `the-deep` | 6.0 | 8.0 | 2.0 | 240 hp, 24–42 dmg, 240 xp, 200 gold | level 48 |
+
+**The last column is a resolved value like the others** (`MobLevel.Effective`, §4.7). The same
+template is a level 8 nuisance and a level 48 problem depending on where it stands, and nothing
+about the authored row changed — which is the point of templates, and the reason a mob's *authored*
+level cannot be what decides whether killing it taught you anything.
 
 **Multipliers bake in at spawn time**, not read time. When a spawner creates a mob it resolves
-the arithmetic once and stores concrete values on the instance, along with a
-`spawn_multipliers jsonb` snapshot recording what was applied — so "why does this kobold have
-137 hp?" is answerable from the row.
+the arithmetic once and stores concrete values on the instance — health, damage, xp, gold and the
+level it fights at — along with a `spawn_multipliers jsonb` snapshot recording what was applied,
+so "why does this kobold have 137 hp?" is answerable from the row.
 
 Two things follow. First, combat math (§4.6) never learns that zones exist; it stays a pure
 function of two combatants. Second, editing a multiplier affects **future** spawns only —
@@ -638,36 +644,56 @@ exploration, which is what a MUD is for. Each level grants attribute and ability
 deliberately: point-buy rather than use-based improvement, because use-based systems are
 notoriously hard to balance and invite grinding.
 
-**A kill has to be worth something, and something you could not already do is worth nothing.**
-`XpRelevance` holds both halves of that, as one window used twice:
+**A kill is worth what it cost you.** Two numbers decide that, and nothing else does: your level,
+and the level the mob actually fights at.
+
+**The mob's level** is `MobLevel.Effective`, resolved at spawn beside `ResolvedXp` and snapshotted
+there, so retuning a zone changes what spawns next rather than re-levelling what is already
+standing in it:
 
 ```
-Floor(level) = min(level / 2, 30)
+effective = max(level × strength × √(health × damage), zone.MinLevel)
 ```
 
-- **The mob.** At or above your level pays in full; below `Floor` pays nothing; between the two it
-  tapers on a straight line, so there is no level at which one more level of mob is worth a jump.
-  A cliff would teach players to count levels instead of picking fights.
-- **The party.** A member below `Floor` of the highest level *present* earns nothing from the
-  kill — a level 50 can carry a level 25 and not a level 24. Members outside the window are
-  dropped **before** the split rather than zeroed after it, so bringing a friend who earns nothing
-  does not shrink anyone else's share.
-- **Gold is not level-gated.** Experience is credit for the fight and gold is payment for being
-  there, so a carried member walks away with coin. Two rules, tunable apart.
-- **Zero always says why.** Two rules produce the same zero and they have opposite fixes — hunt
-  something harder, or stop being carried — so the message names which one applied. Silent zero
-  reads as a broken reward, and a player who thinks the reward is broken reports it rather than
-  changing what they hunt.
+Combat power is roughly "how long it survives" × "how hard it hits", so a zone scaling both by `s`
+makes a mob `s²` the problem — and the level has to move by the square root, or it stops meaning
+what every other level means. The exponent is not chosen freely: `XpForLevel` is `1000·L·(L−1)/2`,
+so **power ∝ L² is already what progression assumes**, and reusing it keeps one idea of what a
+level is worth. `Strength` appears un-rooted because it scales health *and* damage together and is
+therefore already the `s`; `Health` and `Damage` are one-sided and take the root. Four times the
+power is twice the level, at every level.
 
-Two orderings carry the weight. **The window is applied after zone multipliers** (§4.4), so a
-generous zone scales a reward and can never resurrect a worthless one — reverse it and an
-8×-experience starter zone is the best farm in the game for a level 50. And **a mob's level is
-floored at its zone's `MinLevel`**, because one rat template placed in a level 40 zone with heavy
-multipliers is a level 40 encounter wearing a level 1 label, and reusing templates across
-difficulties is what multipliers are *for*. Not clamped at `MaxLevel`: a boss authored above its
-band is deliberate. This is the first thing in the codebase that reads `Zone.MinLevel`, which has
-been authored, stored and exported since Phase 3 and consulted by nothing — **a zone with a
-careless band now has consequences where it previously had none.**
+The `MinLevel` floor sits underneath because the two say different things and both are the
+author's: **the multipliers are how hard they made it, the band is who they made it for.** Not
+clamped at `MaxLevel` — a boss above its band is deliberate. This is the first thing that reads
+`Zone.MinLevel`, authored and stored since Phase 3 and consulted by nothing until now.
+
+**Your side** is `XpRelevance`, one window on `Floor(level) = min(level / 2, 30)`. At or above your
+level pays in full; below `Floor` pays nothing; between the two it tapers on a straight line, so no
+single level of mob is ever worth a jump. A cliff teaches players to count levels instead of
+picking fights.
+
+- **Who you stand next to is not an input.** An earlier version floored the whole party on the
+  highest level present, and a level 9 beside a level 20 then earned nothing from a level 19 mob
+  they would have been paid in full for killing alone. *Help with a fight you could have taken
+  cannot be worth less than taking it.* Everyone present splits the pot; each share is then scaled
+  by **that person's own** distance from the mob.
+- **Gold is not level-scaled at all.** Experience is credit for the fight; gold is payment for
+  being there. An even split, whatever the levels.
+- **Zero says why**, because a silent zero reads as a broken reward, and a player who believes the
+  reward is broken reports it rather than hunting something else.
+
+One ordering carries real weight: **the window is applied after the experience multiplier** (§4.4),
+so a generous zone scales a reward and can never resurrect a worthless one. Reverse it and an
+8×-experience starter zone is the best farm in the game for a level 50.
+
+**`consider` reads the same two numbers** — the warning and the reward are one judgement shown
+twice, and both go through `WorldState.EffectiveLevelOf`. Above your level it still reports on
+absolute level differences, because danger does not scale the way relevance does: five levels up is
+a hard fight at 10 and at 50 alike. Below your level it reports the window, and says outright when
+there is nothing left to learn. They previously disagreed — a fixed ±5 band against half your level
+agrees around level 10 and does not at 50, where a level 44 mob read *"you are much stronger"* and
+then paid 77%.
 
 **The verb is `attack`, and `kill` still works.** The rename is about the word the game reaches
 for first, and there was never a mechanical reason for that word to be the harsher one — the old

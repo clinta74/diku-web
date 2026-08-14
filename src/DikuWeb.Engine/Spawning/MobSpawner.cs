@@ -57,6 +57,15 @@ public sealed class MobSpawner
             zoneMults,
             MultiplierType.Gold);
 
+        // Resolve the level the mob actually fights at. Not a Multipliers.Resolve: the others are
+        // a value scaled by one dial, and this is a level derived from how much combat power
+        // several dials added up to (MobLevel).
+        var effectiveLevel = MobLevel.Effective(
+            template.Level,
+            worldMults,
+            zoneMults,
+            zone.MinLevel);
+
         var mob = new Mob
         {
             Id = Guid.NewGuid(),
@@ -64,6 +73,7 @@ public sealed class MobSpawner
             SpawnerId = spawnerId,
             TemplateName = template.Name,
             Level = template.Level,
+            EffectiveLevel = effectiveLevel,
             RoomKey = roomKey.ToString(),
             ResolvedStats = new(template.BaseStats),
             SpawnMultipliers = new()

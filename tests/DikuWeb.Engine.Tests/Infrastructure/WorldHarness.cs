@@ -604,12 +604,23 @@ internal sealed class WorldHarness
             Behavior = behavior ?? [],
         });
 
+        // Resolved the way MobSpawner resolves it, so a test that sets a zone's band or its
+        // multipliers before adding a mob gets the level the running game would give it (§4.7).
+        // Snapshotted here for the same reason it is snapshotted there: retuning the zone
+        // afterwards changes what spawns next, not what is already standing in the room.
+        var zone = World.FindZone(at.ZoneKey);
+        var owningWorld = zone is null ? null : World.FindWorld(zone.WorldKey);
+        var effectiveLevel = zone is null || owningWorld is null
+            ? level
+            : MobLevel.Effective(level, owningWorld.Multipliers, zone.Multipliers, zone.MinLevel);
+
         var mob = new Mob
         {
             TemplateKey = templateKey,
             TemplateName = name,
             RoomKey = at.ToString(),
             Level = level,
+            EffectiveLevel = effectiveLevel,
             Vitals = new Vitals
             {
                 Health = health,

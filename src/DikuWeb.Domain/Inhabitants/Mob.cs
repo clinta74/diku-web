@@ -25,6 +25,24 @@ public sealed class Mob
     /// <summary>Level, unchanged from template (not stat-adjusted).</summary>
     public int Level { get; set; }
 
+    /// <summary>
+    /// The level this mob actually fights at, resolved from <see cref="Level"/> and its zone's
+    /// multipliers at spawn (<see cref="MobLevel.Effective"/>).
+    /// </summary>
+    /// <remarks>
+    /// <b>This is the level everything player-facing should read</b> — experience, <c>consider</c>,
+    /// anything that compares a mob to a person. <see cref="Level"/> is what the builder authored
+    /// and stays available for the builder's own views, but a zone doubling a mob's health and
+    /// damage has changed the fight without changing that number, so using it to judge the fight
+    /// is reading the label instead of the creature.
+    ///
+    /// Snapshotted at spawn like <see cref="ResolvedXp"/>, so retuning a zone changes what spawns
+    /// next rather than re-levelling everything already standing in it. Defaults to zero for a mob
+    /// built by hand; readers fall back to <see cref="Level"/> rather than treating that as a real
+    /// level.
+    /// </remarks>
+    public int EffectiveLevel { get; set; }
+
     /// <summary>Current room this mob is in. No x,y here (PLAN.md §4.2).</summary>
     public required string RoomKey { get; set; }
 

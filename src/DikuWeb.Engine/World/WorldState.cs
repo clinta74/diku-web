@@ -154,6 +154,33 @@ public sealed class WorldState(IRandomSource random)
 
     public Domain.Worlds.World? FindWorld(string worldKey) => _worlds.GetValueOrDefault(worldKey);
 
+    /// <summary>
+    /// The level a mob fights at (PLAN.md §4.7) — the snapshot taken at spawn, or its authored
+    /// level for a mob that never went through the spawner.
+    /// </summary>
+    /// <remarks>
+    /// <b>Reads the snapshot rather than recomputing.</b> <see cref="MobLevel.Effective"/> runs
+    /// once, in <c>MobSpawner</c>, alongside every other multiplier resolution — so retuning a zone
+    /// changes what spawns next rather than silently re-levelling everything already standing in
+    /// it. Recomputing here would quietly undo that and make a mob's level depend on when you
+    /// asked.
+    ///
+    /// <b>Lives here so that experience and <c>consider</c> cannot disagree.</b> They are the same
+    /// judgement shown two ways — one as a reward and one as a warning — and a copy of this lookup
+    /// in each caller would drift the first time either was touched, leaving <c>consider</c>
+    /// confidently describing a fight the reward rules score differently.
+    ///
+    /// A mob built by hand — a test, or the builder's <c>spawn</c> before it reaches the spawner —
+    /// has no snapshot, and its authored level is the honest answer rather than a reason to refuse
+    /// a reward or to lie in an assessment.
+    /// </remarks>
+    public int EffectiveLevelOf(Mob mob)
+    {
+        ArgumentNullException.ThrowIfNull(mob);
+
+        return mob.EffectiveLevel > 0 ? mob.EffectiveLevel : mob.Level;
+    }
+
     public IEnumerable<Domain.Worlds.World> AllWorlds => _worlds.Values;
 
     public IEnumerable<Zone> AllZones => _zones.Values;

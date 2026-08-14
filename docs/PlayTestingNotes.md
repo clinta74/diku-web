@@ -19,20 +19,31 @@ Add anything noticed while playing here. Cleared as items are done.
   refused the first version: one executor covering both directions had to declare itself harmful,
   which made every defensive ability using it mixed-direction.
 
-- **done**: all three. `XpRelevance` (§4.7) is one window used twice — `min(level / 2, 30)` sets
-  both the level below which a mob teaches you nothing and the level below which a party member
-  stops sharing, so there is one number to tune rather than two that drift. Between the floor and
-  your own level it tapers on a line rather than cutting off, and a zero always says which of the
-  two rules produced it.
-  Applied *after* zone multipliers, so a generous zone can scale a reward and never resurrect a
-  worthless one. A mob's level is floored at its zone's `MinLevel`, because a rat template in a
-  level 40 zone with heavy multipliers is a level 40 fight wearing a level 1 label — **the first
-  thing that has ever read `Zone.MinLevel`.**
-  `attack` is the verb now, with `kill` kept working and out of `help`; deleting it would have
-  taken `k` with it. The mobile client's Attack button sent `attack <target>` to a server that had
-  no such verb, so that button has been broken since it was written and now works.
+- **done**: all three, plus `consider`. A kill is now worth what it cost you, decided by exactly
+  two numbers (§4.7): your level, and the level the mob *fights* at.
+  `MobLevel.Effective` resolves the second one at spawn, beside `ResolvedXp` —
+  `level × strength × √(health × damage)`, floored at the zone's `MinLevel`. The exponent is the
+  one the XP curve already uses, so four times the combat power is twice the level. One level 8
+  kobold template is a level 8 nuisance in Millbrook and a level 48 problem in the Deep.
+  `XpRelevance` is your side of it: full value at or above your level, nothing below
+  `min(level / 2, 30)`, a straight line between.
+  **The party floor is gone.** Your level 9 / level 20 / level 19 mob example is exactly right —
+  help with a fight you could have taken cannot be worth less than taking it. Everyone present
+  splits the pot and each share is scaled by that person's own distance from the mob; gold is an
+  even split regardless.
+  `consider` reads the same two numbers, so the warning and the reward can no longer disagree —
+  they did, at high level: a level 44 mob told a level 50 *"you are much stronger"* and then paid
+  77%. Above your level it is untouched. It also stops printing the template key at players.
+  `attack` is the verb, with `kill` kept working and out of `help`. The mobile client's Attack
+  button sent `attack <target>` to a server that had no such verb, so it has been broken since it
+  was written.
 
-- **The world has nothing left to fight at level 6.** Not a bug in the above, but its consequence:
-  the only mobs authored are levels 1 and 2, and both zones declare `min_level` 1, so from level 6
-  the floor is 3 and every mob in the game pays nothing. Needs content, or bands that say what the
-  zones are actually for — `aldenmoor.sunken-crypt` is currently 1–50.
+- **The world has nothing left to fight at level 6.** Not a bug in the above, its consequence: the
+  only mobs authored are levels 1 and 2, both zones leave every multiplier at 1.0, and both declare
+  `min_level` 1 — so nothing gets lifted and from level 6 the floor is 3. Needs content, or bands
+  and dials that say what the zones are for. `aldenmoor.sunken-crypt` is currently 1–50.
+
+- **Power levelling is now possible again**, and worth a decision rather than a discovery. With the
+  party floor gone, a level 9 in a level 50 zone earns a full share of a level 50 mob. That is the
+  same rule that makes the level 19 case right, so it cannot be fixed by putting the floor back —
+  the honest lever is capping how far *above* your level a mob can pay.

@@ -30,7 +30,10 @@ public sealed class DamageOverTimeTests
         var player = harness.AddPlayer("Vex", West, path: CharacterPath.Shade, level: 10);
         player.Character.Vitals.Stamina = 500;
 
-        var rat = harness.AddMob("rat", West, health: ratHealth);
+        // At the player's level, so any test in here that checks a reward is measuring the wound
+        // rather than the relevance window (§4.7). The effective level is snapshotted when the mob
+        // is created, so setting Level afterwards would not reach it.
+        var rat = harness.AddMob("rat", West, health: ratHealth, level: 10);
 
         harness.Execute(player, "kill rat");
         harness.Drain(player);
@@ -155,10 +158,6 @@ public sealed class DamageOverTimeTests
         var (harness, player, rat) = Fight(ratHealth: 12);
         var xpBefore = player.Character.Xp;
         rat.ResolvedXp = 50;
-
-        // At the player's level, so the assertion is about the bleed landing the kill rather than
-        // about whether the kill was worth anything (§5.3).
-        rat.Level = player.Character.Level;
 
         Wound(harness, rat, tickDamage: 20, interval: 4, duration: 100);
         harness.Pump(8);

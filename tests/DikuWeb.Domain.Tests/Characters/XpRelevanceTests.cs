@@ -97,24 +97,19 @@ public sealed class XpRelevanceTests
         Assert.Equal(0, XpRelevance.ShareOf(80_000, killerLevel: 50, mobLevel: 3));
     }
 
-    [Theory]
-    [InlineData(50, 25, true)]
-    [InlineData(50, 24, false)]
-    [InlineData(50, 50, true)]
-    [InlineData(10, 5, true)]
-    [InlineData(10, 4, false)]
-    public void The_party_window_is_the_same_window(int highest, int member, bool shares) =>
-        Assert.Equal(shares, XpRelevance.SharesExperience(member, highest));
-
     [Fact]
-    public void Nobody_is_ever_excluded_from_their_own_kill()
+    public void Who_you_are_standing_next_to_is_not_an_input()
     {
-        // Floor(L) <= L for every level, so the highest level present always qualifies. If that
-        // ever stopped holding, a solo kill could pay nothing at all and the split would have no
-        // earners to divide between.
-        for (var level = XpProgression.MinLevel; level <= XpProgression.MaxLevel; level++)
-        {
-            Assert.True(XpRelevance.SharesExperience(level, level));
-        }
+        // There was briefly a party floor here: the highest level present set a minimum, and a
+        // level 9 beside a level 20 earned nothing from a level 19 mob they would have been paid
+        // in full for killing alone. Help with a fight you could have taken cannot be worth less
+        // than taking it.
+        //
+        // The rule takes two levels now, and there is nowhere for a third to be passed. Kept as a
+        // test rather than only as a deleted method, because the tempting fix for power levelling
+        // is to reach for that floor again.
+        var solo = XpRelevance.ShareOf(1000, killerLevel: 9, mobLevel: 19);
+
+        Assert.Equal(1000, solo);
     }
 }

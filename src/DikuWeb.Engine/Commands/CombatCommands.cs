@@ -1,4 +1,5 @@
-﻿using DikuWeb.Domain.Combat;
+﻿using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Narration;
@@ -157,19 +158,60 @@ public static class CombatCommands
         }
         else if (targetMob != null)
         {
-            var levelDiff = actor.Character.Level - targetMob.Level;
+            // The effective level, not the template's (§4.7). A rat lifted to level 40 by its
+            // zone's band is a level 40 fight and pays like one, so reporting "Level 1" here would
+            // be the game warning you about a different mob from the one it is about to reward you
+            // for. `examine` is the builder's view and still shows what was authored.
+            var level = ctx.World.EffectiveLevelOf(targetMob);
+            var name = string.IsNullOrEmpty(targetMob.TemplateName)
+                ? targetMob.TemplateKey
+                : targetMob.TemplateName;
 
-            var assessment = levelDiff switch
+            ctx.Reply(
+                $"{NarrationHelper.WithArticle(name, capitalize: true)} — Level {level}. " +
+                Assess(actor.Character.Level, level));
+        }
+    }
+
+    /// <summary>
+    /// How a fight looks, from the same numbers that decide what it pays (PLAN.md §4.7).
+    /// </summary>
+    /// <remarks>
+    /// <b>Above your level is unchanged</b>, and stays on absolute level differences. Danger does
+    /// not scale with your level the way relevance does: a mob five levels above you is a hard
+    /// fight at level 10 and a hard fight at level 50, and there is nothing to make proportional.
+    ///
+    /// <b>Below your level is the reward window</b>, because the two were quietly contradicting
+    /// each other. `consider` used a fixed ±5 band while experience uses half your level, so at
+    /// level 50 a level 44 mob read <em>"You are much stronger"</em> and then paid 77% of full
+    /// experience — the warning and the reward describing different fights. At level 10 the two
+    /// happened to agree, which is exactly why nobody noticed.
+    ///
+    /// The bottom tier is the one that earns its place: a mob that will teach you nothing says so
+    /// outright, so the answer to "is this worth my time" is available before the fight instead of
+    /// after it.
+    /// </remarks>
+    private static string Assess(int viewerLevel, int targetLevel)
+    {
+        var difference = viewerLevel - targetLevel;
+
+        if (difference <= 0)
+        {
+            return difference switch
             {
-                > 5 => "You are much stronger.",
-                > 2 => "You are stronger.",
                 > -2 => "It looks evenly matched.",
                 > -5 => "It looks stronger.",
                 _ => "It looks much stronger.",
             };
-
-            ctx.Reply($"A {targetMob.TemplateKey} — Level {targetMob.Level}. {assessment}");
         }
+
+        return XpRelevance.Fraction(viewerLevel, targetLevel) switch
+        {
+            <= 0 => "There is nothing left for you to learn from it.",
+            < 0.4 => "You are much stronger.",
+            < 0.75 => "You are stronger.",
+            _ => "It looks evenly matched.",
+        };
     }
 
     private static void Flee(CommandContext ctx)

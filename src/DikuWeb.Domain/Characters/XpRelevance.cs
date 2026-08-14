@@ -1,14 +1,19 @@
 namespace DikuWeb.Domain.Characters;
 
 /// <summary>
-/// Whether a kill was worth anything to the person who made it, and to the people standing next to
-/// them (PLAN.md §5.3).
+/// Whether a kill was worth anything, measured against the level of the person who made it
+/// (PLAN.md §4.7).
 /// </summary>
 /// <remarks>
-/// <b>One rule, two uses.</b> A mob far enough below you is not an accomplishment, and neither is
-/// standing beside someone who is clearing content you could not survive. Both questions are "is
-/// this within reach of that level", so both are answered by <see cref="Floor"/> rather than by two
-/// separately tuned numbers that would drift apart the first time either was adjusted.
+/// <b>One question, asked of one person about one mob.</b> Not of the party: an earlier version
+/// floored the whole group on the highest level present, and a level 9 beside a level 20 then
+/// earned nothing from a level 19 mob they would have been paid in full for killing alone. Help
+/// with a fight you could have taken cannot be worth less than taking it. What makes a fight free
+/// is the fight, so the mob is the only thing that decides — and each person is measured against
+/// it separately, the same way whether they came alone or not.
+///
+/// The mob's side of that comparison is <see cref="Inhabitants.MobLevel"/>, which is where the
+/// zone's scaling is accounted for. This type only ever sees two levels.
 ///
 /// <b>The taper is a slope, not a cliff.</b> The point is keeping effort and reward in line, and a
 /// hard cutoff does the opposite at the boundary — one level of difference either side of it would
@@ -55,9 +60,8 @@ public static class XpRelevance
 
         var floor = Floor(killerLevel);
 
-        // Strictly below the floor is beneath you. The floor itself still pays, which is what makes
-        // "a level 50 grouped with a level 25" work in ShareOf - 25 is the last level that counts,
-        // not the first that does not.
+        // Strictly below the floor is beneath you; the floor itself is the last level that still
+        // pays, rather than the first that does not.
         if (mobLevel < floor)
         {
             return 0.0;
@@ -93,19 +97,4 @@ public static class XpRelevance
         return Math.Max(1, (long)Math.Round(resolvedXp * fraction, MidpointRounding.AwayFromZero));
     }
 
-    /// <summary>
-    /// Whether a party member earns any experience from a kill, given the highest level present.
-    /// </summary>
-    /// <remarks>
-    /// The same window, pointed at a person instead of a mob: a level 24 earns nothing from a level
-    /// 50's kills, and a level 25 earns their share. It closes the obvious version of power
-    /// levelling without forbidding the useful one — carrying a friend who is close behind you is
-    /// still exactly as effective as it was.
-    ///
-    /// <b>Highest level <em>present</em>, not highest on the roster.</b> A party member who is not
-    /// at the fight already shares nothing (§5.3), and letting them set the floor anyway would mean
-    /// a level 50 standing in town could switch off their friends' experience across the map.
-    /// </remarks>
-    public static bool SharesExperience(int memberLevel, int highestLevelPresent) =>
-        memberLevel >= Floor(highestLevelPresent);
 }
