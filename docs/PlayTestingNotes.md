@@ -11,6 +11,10 @@ Add anything noticed while playing here. Cleared as items are done.
   (four Remove buttons that ask for a CSS class nobody wrote). The Follow my character checkbox is
   gone. The rest is a fix list at the end of that document, not yet done.
 
-- should have an ablity effect that changes defense. can be used to target players or mobs and increase or decrease there roll to hit modifier and or the damage mitigation while in effect.
-- ablitity effect that to increases max hp while in effect
-- can we now have an array of effects on a ability. example: warden.last-stand increase max hp and to hit armor and not a heal like it is now.
+- **done**: all three. An ability carries a list of effects now (§4.5), and two new executors —
+  `buff.defense` / `debuff.expose` for the to-hit and mitigation dials, and `buff.max-health`,
+  which grants the health with the ceiling on first cast only and clamps back under it when it
+  expires. `warden.last-stand` is authored as max-health plus guard rather than as a heal.
+  The defence effect is split in two rather than taking a signed number, because the validator
+  refused the first version: one executor covering both directions had to declare itself harmful,
+  which made every defensive ability using it mixed-direction.

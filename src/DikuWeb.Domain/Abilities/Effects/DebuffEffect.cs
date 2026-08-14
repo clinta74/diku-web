@@ -80,11 +80,7 @@ public sealed class DebuffEffect : IBuffEffect
             name = nameStr;
         }
 
-        var sourceId = caster is DikuWeb.Domain.Characters.Character c
-            ? $"c_{c.Id:N}"
-            : caster is DikuWeb.Domain.Inhabitants.Mob m
-                ? $"m_{m.Id:N}"
-                : "unknown";
+        var sourceId = EffectSource.Of(caster);
 
         return new ActiveEffect
         {

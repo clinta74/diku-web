@@ -110,6 +110,46 @@ export const ABILITY_EFFECTS: EffectOption[] = [
     ],
   },
   {
+    key: 'buff.defense',
+    label: 'Guard',
+    summary: 'Harder to hit, and blows that land cost less. Positive amounts only.',
+    params: [
+      {
+        key: 'defenseRating',
+        label: 'Harder to hit by',
+        hint: 'Added to what an attack roll must beat. Changes how often a blow lands.',
+        fallback: '4',
+        integer: true,
+      },
+      {
+        key: 'armorFlat',
+        label: 'Absorbs',
+        hint: 'Taken off each blow that does land. Changes what one costs.',
+        fallback: '3',
+        integer: true,
+      },
+      duration('80'),
+      label('guarded'),
+    ],
+  },
+  {
+    key: 'buff.max-health',
+    label: 'Maximum health',
+    summary:
+      'Raises the ceiling and hands over that much health with it — once, on the first cast. A refresh adds no more, so it is a buff rather than a heal on a short cooldown.',
+    params: [
+      {
+        key: 'maxHealth',
+        label: 'Extra health',
+        hint: 'Added to the maximum, and granted. Taken back when it expires, clamping current health under the new ceiling.',
+        fallback: '40',
+        integer: true,
+      },
+      duration('96'),
+      label('steeled'),
+    ],
+  },
+  {
     key: 'control.taunt',
     label: 'Taunt',
     summary: 'Puts the caster at the top of the target\'s hate list — a lead, not a lock.',
@@ -169,6 +209,29 @@ export const ATTACK_EFFECTS: EffectOption[] = [
         integer: true,
       },
       label('bleeding'),
+    ],
+  },
+  {
+    key: 'debuff.expose',
+    label: 'Expose',
+    summary: "Strips a target's guard: easier to hit, and blows land harder.",
+    params: [
+      {
+        key: 'defenseRating',
+        label: 'Easier to hit by',
+        hint: 'A positive amount, meaning how much guard to take away.',
+        fallback: '4',
+        integer: true,
+      },
+      {
+        key: 'armorFlat',
+        label: 'Armour stripped',
+        hint: 'A positive amount, taken off what their armour absorbs.',
+        fallback: '3',
+        integer: true,
+      },
+      duration('80'),
+      label('exposed'),
     ],
   },
   {

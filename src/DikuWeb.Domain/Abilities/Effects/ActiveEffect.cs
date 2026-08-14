@@ -23,6 +23,32 @@ public sealed class ActiveEffect
     public decimal IncomingDamageMultiplier { get; init; } = 1.0m;
 
     /// <summary>
+    /// Added to the bearer's defence rating, which is what an attack roll has to beat. Negative
+    /// makes them easier to hit.
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="IncomingDamageMultiplier"/> because they answer different
+    /// questions: this changes how often a blow lands, that changes how much it costs when one
+    /// does. A shield wall should do the first; being vulnerable is the second.
+    /// </remarks>
+    public int DefenseRatingDelta { get; init; }
+
+    /// <summary>
+    /// Added to the flat damage the bearer's armour subtracts from every blow that lands.
+    /// </summary>
+    public int ArmorFlatDelta { get; init; }
+
+    /// <summary>
+    /// Raises the bearer's maximum health while this is active, and lowers it again when it goes.
+    /// </summary>
+    /// <remarks>
+    /// The grant of current health happens once, when the effect is first applied - never on a
+    /// refresh. Otherwise re-casting is a heal on a short cooldown wearing a buff's clothes, which
+    /// is exactly what the ability this was built for was already being written as.
+    /// </remarks>
+    public int MaxHealthDelta { get; init; }
+
+    /// <summary>
     /// Damage dealt each time this effect ticks. Zero for anything that is not a bleed or a burn.
     /// </summary>
     public int TickDamage { get; init; }

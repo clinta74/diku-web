@@ -895,25 +895,61 @@ public sealed class CombatSystem(
     private static string DisplayNameOf(Mob mob) =>
         string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
 
+    /// <summary>
+    /// The defender's stats as equipment resolves them, with any active defence effects folded in.
+    /// </summary>
+    /// <remarks>
+    /// One place, for both characters and mobs, which is what lets a defence buff work on either.
+    /// Folded in here rather than inside <c>EquipmentResolver</c> because that is Domain and knows
+    /// nothing about who currently has what running on them.
+    /// </remarks>
     private static DefenderStats? ResolveDefenderStats(WorldState world, string targetId)
     {
+        DefenderStats? stats = null;
+
         if (EntityId.IsCharacter(targetId))
         {
             var character = world.GetCharacter(EntityId.ToGuid(targetId));
-            return character is null
+            stats = character is null
                 ? null
                 : EquipmentResolver.ResolveDefenderStats(
                     character.Attributes.AgilityModifier,
                     [.. world.InventoryOf(character.Id).Where(i => i.EquippedSlot is not null)]);
         }
-
-        if (EntityId.IsMob(targetId))
+        else if (EntityId.IsMob(targetId))
         {
             var mob = world.GetMob(EntityId.ToGuid(targetId));
-            return mob is null ? null : DamageCalculator.DefenderStatsFrom(mob);
+            stats = mob is null ? null : DamageCalculator.DefenderStatsFrom(mob);
         }
 
-        return null;
+        if (stats is null)
+        {
+            return null;
+        }
+
+        var effects = world.GetActiveEffects(EntityId.ToGuid(targetId));
+        var defense = 0;
+        var armor = 0;
+
+        foreach (var effect in effects)
+        {
+            defense += effect.DefenseRatingDelta;
+            armor += effect.ArmorFlatDelta;
+        }
+
+        if (defense == 0 && armor == 0)
+        {
+            return stats;
+        }
+
+        // Floored at zero rather than allowed negative. A stripped guard should make somebody
+        // easy to hit, not easier than a defenceless one - and a negative armour value would turn
+        // the subtraction in the damage formula into a bonus.
+        return stats with
+        {
+            DefenseRating = Math.Max(0, stats.DefenseRating + defense),
+            ArmorFlat = Math.Max(0, stats.ArmorFlat + armor),
+        };
     }
 
     private static decimal CalculateMultiplier(

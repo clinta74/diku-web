@@ -522,6 +522,15 @@ public sealed class WorldState(IRandomSource random)
         {
             // No existing effect, add new one
             effects.Add(effect);
+
+            // The one place a maximum-health buff grants the health that comes with it: on first
+            // application, never on a refresh. Raising the ceiling alone would be a buff that does
+            // nothing at the moment you need it - 40/100 becoming 40/150 is further from safety -
+            // and granting it again on every recast would make the ability a heal on a short
+            // cooldown, which is the shape it was written as before it could be two effects.
+            //
+            // Here rather than in the executor because only this method can tell the two apart.
+            GrantMaxHealth(entityId, effect);
         }
         else
         {
@@ -550,6 +559,39 @@ public sealed class WorldState(IRandomSource random)
     }
 
     /// <summary>Remove and return all expired effects across all entities.</summary>
+    /// <summary>Raises the bearer's ceiling and hands them the health to go under it.</summary>
+    private void GrantMaxHealth(Guid entityId, ActiveEffect effect)
+    {
+        if (effect.MaxHealthDelta <= 0 || VitalsOf(entityId) is not { } vitals)
+        {
+            return;
+        }
+
+        vitals.HealthMax += effect.MaxHealthDelta;
+        vitals.Health += effect.MaxHealthDelta;
+    }
+
+    /// <summary>Lowers the ceiling again, and never leaves health above it.</summary>
+    /// <remarks>
+    /// The floor of 1 is deliberate: an authored delta larger than the bearer's whole maximum
+    /// would otherwise expire them to zero and kill somebody with a buff running out, which is not
+    /// a death anything in §4.12 describes.
+    /// </remarks>
+    private void RevokeMaxHealth(Guid entityId, ActiveEffect effect)
+    {
+        if (effect.MaxHealthDelta <= 0 || VitalsOf(entityId) is not { } vitals)
+        {
+            return;
+        }
+
+        vitals.HealthMax = Math.Max(1, vitals.HealthMax - effect.MaxHealthDelta);
+        vitals.Health = Math.Min(vitals.Health, vitals.HealthMax);
+    }
+
+    /// <summary>The vitals behind an effect's entity id, whichever kind of thing it is.</summary>
+    private Domain.Characters.Vitals? VitalsOf(Guid entityId) =>
+        GetCharacter(entityId)?.Vitals ?? FindMob(entityId)?.Vitals;
+
     public IReadOnlyList<ActiveEffect> ExpireEffects(long currentPulse)
     {
         var expired = new List<ActiveEffect>();
@@ -563,6 +605,11 @@ public sealed class WorldState(IRandomSource random)
             {
                 effects.Remove(effect);
                 expired.Add(effect);
+
+                // The ceiling comes down with the effect, and health clamps under it: 150/150
+                // becomes 100/100, not 150/100. Done here rather than by the expiry system so a
+                // future path that removes an effect some other way cannot forget it.
+                RevokeMaxHealth(entityId, effect);
             }
 
             // Clean up empty lists

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ATTACK_EFFECTS, effectOption, pruneParams } from './effects'
+import { ALL_EFFECTS, ATTACK_EFFECTS, effectOption, pruneParams } from './effects'
 
 describe('the offered effects', () => {
   /**
@@ -25,9 +25,14 @@ describe('the offered effects', () => {
       'control.stun',
       'control.root',
       'control.taunt',
+      'buff.defense',
+      'debuff.expose',
+      'buff.max-health',
     ]
 
-    for (const effect of ATTACK_EFFECTS) {
+    // Both lists, not just the attack subset. An ability effect with no executor behind it is the
+    // same silent failure as an attack rider with none.
+    for (const effect of ALL_EFFECTS) {
       expect(known).toContain(effect.key)
     }
   })

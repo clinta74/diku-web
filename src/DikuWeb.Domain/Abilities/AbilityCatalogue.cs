@@ -58,8 +58,55 @@ public static class AbilityCatalogue
         List<AbilityEffectSpec> Effects);
 
     /// <summary>One effect, which is what all thirty-seven starter abilities have.</summary>
+    /// <summary>One effect, which is what most starter abilities have.</summary>
     private static List<AbilityEffectSpec> Effect(string key, Dictionary<string, string> parameters) =>
         [new(key, parameters)];
+
+    /// <summary>
+    /// Several effects, applied in order. All of them land - this is what the ability does, not a
+    /// choice between them.
+    /// </summary>
+    /// <remarks>
+    /// Named <c>Together</c> rather than <c>Effects</c> because that is the name of the namespace
+    /// the executors live in, and the collision reads as a compiler error rather than as a choice.
+    /// </remarks>
+    private static List<AbilityEffectSpec> Together(params AbilityEffectSpec[] specs) => [.. specs];
+
+    /// <summary>One entry in a multi-effect list.</summary>
+    private static AbilityEffectSpec Part(string key, Dictionary<string, string> parameters) =>
+        new(key, parameters);
+
+    /// <summary>
+    /// Raises the bearer's maximum health, and hands them that much health with it.
+    /// </summary>
+    /// <remarks>
+    /// The grant happens once, on first application - <c>WorldState.ApplyEffect</c> enforces that,
+    /// because only it can tell a fresh application from a refresh. Without the grant the buff
+    /// would do nothing at the moment it is cast: 40/100 becoming 40/150 is further from safety.
+    /// </remarks>
+    private static Dictionary<string, string> MaxHealth(string amount, string duration, string name) =>
+        new(StringComparer.Ordinal)
+        {
+            ["maxHealth"] = amount,
+            ["durationPulses"] = duration,
+            ["name"] = name,
+        };
+
+    /// <summary>
+    /// Harder to hit, and blows that land cost less. Negative values open a target up instead.
+    /// </summary>
+    private static Dictionary<string, string> Guard(
+        string defenseRating,
+        string armorFlat,
+        string duration,
+        string name) =>
+        new(StringComparer.Ordinal)
+        {
+            ["defenseRating"] = defenseRating,
+            ["armorFlat"] = armorFlat,
+            ["durationPulses"] = duration,
+            ["name"] = name,
+        };
 
     private static Dictionary<string, string> Damage(string scaling, string min) =>
         new(StringComparer.Ordinal) { ["scalingFactor"] = scaling, ["minDamage"] = min };
@@ -261,10 +308,17 @@ public static class AbilityCatalogue
             CostType.Stamina, 30, 48, 4, TargetingType.SingleTarget,
             (Effect("damage.physical", Damage("2.0", "12")))),
 
+        // Two effects, which is the ability this could not previously be. It was authored as a
+        // heal because one effect slot was all there was, and a heal is a different thing: it
+        // undoes damage already taken rather than making the next stretch survivable. Now it does
+        // what the name says - more health to lose, and harder to take it off you - and the
+        // maximum comes back down when it ends, taking anything above the new ceiling with it.
         new(CharacterPath.Warden, 20, "warden.last-stand", "Last Stand",
             "Refuse to fall. The refusal is most of it.",
             CostType.Stamina, 15, 200, null, TargetingType.Self,
-            (Effect("heal.restore", Heal("80")))),
+            Together(
+                Part("buff.max-health", MaxHealth("80", "96", "unbroken")),
+                Part("buff.defense", Guard("4", "3", "96", "unbroken")))),
 
         // -------------------------------------------------------------------
         // Adept - focus caster. Expensive, slow, and hits hardest at range.

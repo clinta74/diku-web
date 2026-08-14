@@ -19,6 +19,9 @@ public sealed class EffectRegistry
         Register(new StunEffect());
         Register(new RootEffect());
         Register(new TauntEffect());
+        Register(new DefenseEffect());
+        Register(new ExposeEffect());
+        Register(new MaxHealthEffect());
     }
 
     public void Register(IAbilityEffect effect)
