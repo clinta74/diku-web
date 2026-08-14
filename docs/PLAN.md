@@ -531,6 +531,21 @@ the arithmetic once and stores concrete values on the instance — health, damag
 level it fights at — along with a `spawn_multipliers jsonb` snapshot recording what was applied,
 so "why does this kobold have 137 hp?" is answerable from the row.
 
+`MobScaling` is the one place that knows how a placement is scaled: a factor on health, a factor on
+damage, and the level those add up to. The invariant it holds is that **a mob at effective level N
+has the stats of a mob authored at level N** — without it, a template that declares its own combat
+stats scales while one that stays silent falls back to level-derived defaults, and two mobs in one
+zone disagree about what the zone did to them purely by which fields their author filled in. Ratios
+(`damageMultiplier`, `armorMultiplier`, `armorPercent`) are never scaled; multiplying a factor by a
+factor applies the zone twice.
+
+*The table above was aspirational until 2026-08-14.* `Mob.ResolvedStats` was a verbatim copy of the
+template, so `damage`, `health`, `itemPower` and `spawnDensity` reached nothing at all and
+`strength` scaled only the health pool — the master difficulty dial made mobs tankier and never
+deadlier, and the worked example's damage column was false in every row. Worse, `DamageCalculator`
+read `Mob.Level` for the stats a silent template leaves to its level, so the most common kind of mob
+fought at its authored level whatever its zone said. The example rows are now test cases.
+
 Two things follow. First, combat math (§4.6) never learns that zones exist; it stays a pure
 function of two combatants. Second, editing a multiplier affects **future** spawns only —
 already-living mobs keep the numbers they were born with. The builder therefore gets an explicit

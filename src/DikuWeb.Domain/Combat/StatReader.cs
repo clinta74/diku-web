@@ -10,8 +10,14 @@ namespace DikuWeb.Domain.Combat;
 /// as an int, a long, a decimal, a double, a string, or a JsonElement depending on how it was
 /// authored and how it round-tripped. Every call site parsing that itself is how a stat ends up
 /// silently ignored - which reads as a balance problem rather than a bug, because nothing fails.
+///
+/// <b>Public so a test can read a bag the way the engine does.</b> It was internal, which left a
+/// test asserting on a resolved stat bag no honest way to inspect one — casting the boxed value
+/// works only for a bag the test hand-built in C#, and §12 is explicit that such a bag proves
+/// nothing about the running game, where every value has been through jsonb and comes back a
+/// <c>JsonElement</c>.
 /// </remarks>
-internal static class StatReader
+public static class StatReader
 {
     public static bool TryReadInt(IReadOnlyDictionary<string, object>? stats, string key, out int value)
     {

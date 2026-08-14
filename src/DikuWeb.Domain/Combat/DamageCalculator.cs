@@ -134,15 +134,16 @@ public static class DamageCalculator
         ArgumentNullException.ThrowIfNull(mob);
 
         var stats = mob.ResolvedStats;
+        var level = FightingLevel(mob);
 
-        // Level-derived defaults, unchanged from before, used wherever the template is silent.
+        // Level-derived defaults, used wherever the template is silent.
         var attackRating = StatReader.TryReadInt(stats, "attackRating", out var rating)
             ? rating
-            : mob.Level / 2;
+            : level / 2;
 
         var baseDamage = StatReader.TryReadInt(stats, "baseDamage", out var flat)
             ? flat
-            : mob.Level / 3;
+            : level / 3;
 
         var minDamage = 1;
         var maxDamage = 4;
@@ -182,6 +183,22 @@ public static class DamageCalculator
     }
 
     /// <summary>
+    /// The level a mob fights at, for the stats its template leaves to the level to decide.
+    /// </summary>
+    /// <remarks>
+    /// <b>Effective, not authored.</b> These fallbacks are what most mobs actually run on — a
+    /// template that declares no <c>attackRating</c>, <c>baseDamage</c> or <c>defense</c> is the
+    /// common case, and reading <see cref="Mob.Level"/> here meant such a mob fought at its
+    /// authored level no matter what its zone had done to it. Its health pool scaled and its punch
+    /// did not.
+    ///
+    /// Zero means the mob never went through the spawner — a test, or something hand-built — and
+    /// its authored level is then the only level there is.
+    /// </remarks>
+    private static int FightingLevel(Mob mob) =>
+        mob.EffectiveLevel > 0 ? mob.EffectiveLevel : mob.Level;
+
+    /// <summary>
     /// Build defender stats from a player character.
     /// No armor yet; defense is agility modifier + base 10.
     /// </summary>
@@ -205,7 +222,7 @@ public static class DamageCalculator
 
         var defense = StatReader.TryReadInt(stats, "defense", out var declared)
             ? declared
-            : mob.Level / 4;
+            : FightingLevel(mob) / 4;
 
         StatReader.TryReadInt(stats, "armorFlat", out var armorFlat);
         StatReader.TryReadDecimal(stats, "armorPercent", out var armorPercent);

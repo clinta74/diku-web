@@ -35,13 +35,17 @@ public sealed class MobSpawner
         var worldMults = worldEntity.Multipliers;
         var zoneMults = zone.Multipliers;
 
-        // Resolve Health via Strength multiplier
+        // How hard this placement is, in one object: the factor on health, the factor on damage,
+        // and the level those add up to. Everything combat-shaped below goes through it, so a mob
+        // scaled by a zone and one scaled by a spawner's own level travel the same arithmetic.
+        var scaling = MobScaling.FromZone(template.Level, worldMults, zoneMults, zone.MinLevel);
+
+        // Health has its own key because Vitals is a column, not part of the stat bag. The default
+        // of 40 is for a template that declares no health at all.
         var baseHealth = GetIntFromStats(template.BaseStats, "health", 40);
-        var resolvedHealth = Multipliers.Resolve(
-            baseHealth,
-            worldMults,
-            zoneMults,
-            MultiplierType.Strength);
+        var resolvedHealth = Math.Max(
+            1,
+            (int)Math.Round(baseHealth * scaling.Health, MidpointRounding.AwayFromZero));
 
         // Resolve Xp
         var resolvedXp = Multipliers.Resolve(
@@ -57,15 +61,6 @@ public sealed class MobSpawner
             zoneMults,
             MultiplierType.Gold);
 
-        // Resolve the level the mob actually fights at. Not a Multipliers.Resolve: the others are
-        // a value scaled by one dial, and this is a level derived from how much combat power
-        // several dials added up to (MobLevel).
-        var effectiveLevel = MobLevel.Effective(
-            template.Level,
-            worldMults,
-            zoneMults,
-            zone.MinLevel);
-
         var mob = new Mob
         {
             Id = Guid.NewGuid(),
@@ -73,9 +68,13 @@ public sealed class MobSpawner
             SpawnerId = spawnerId,
             TemplateName = template.Name,
             Level = template.Level,
-            EffectiveLevel = effectiveLevel,
+            EffectiveLevel = scaling.Level,
             RoomKey = roomKey.ToString(),
-            ResolvedStats = new(template.BaseStats),
+
+            // Actually resolved, which the name has claimed since it was written. It was a verbatim
+            // copy of the template, so a zone's damage dial reached nothing at all and its master
+            // strength dial made mobs tankier without ever making them hit harder.
+            ResolvedStats = scaling.ResolveStats(template.BaseStats),
             SpawnMultipliers = new()
             {
                 ["Strength"] = zoneMults.Strength,
