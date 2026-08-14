@@ -163,6 +163,19 @@ export default function App() {
                 element={isAdmin ? <AccountsTab /> : <Navigate to="/builder/world" replace />}
               />
             </Route>
+
+            {/*
+              Everything that is not the builder renders nothing *here*, because the game screen
+              lives outside <Routes> on purpose — unmounting it would close the SSE stream and mark
+              the character link-dead (see the workspace div above).
+
+              So `/` legitimately matches no route, and React Router says so on every render:
+              "No routes matched location /". Matching it explicitly with a null element is the
+              difference between a router that has been told the root is intentional and one that
+              is reporting a gap. It also covers a mistyped path, which shows the game rather than
+              a blank screen.
+            */}
+            <Route path="*" element={null} />
           </Routes>
         </>
       )

@@ -117,11 +117,6 @@ export function GameScreen({
   // Exposed so parent can focus input when returning from builder
   const focusInput = useRef<(() => void) | null>(null)
 
-  /**
-   * Bumped to force a fresh stream. The only thing that does it is Rejoin, below.
-   */
-  const [epoch, setEpoch] = useState(0)
-  const [rejoining, setRejoining] = useState(false)
 
   /**
    * The takeover handler, held in a ref so the stream effect never depends on its identity.
@@ -158,7 +153,7 @@ export function GameScreen({
       },
     })
     return close
-  }, [characterId, epoch])
+  }, [characterId])
 
   /**
    * Whether to admit to being disconnected.
@@ -180,31 +175,6 @@ export function GameScreen({
     const timer = setTimeout(() => setAdmitDisconnected(true), 2000)
     return () => clearTimeout(timer)
   }, [state.connected])
-
-  /**
-   * Walks back into the world after being dropped out of it (MOBILE.md §6).
-   *
-   * The stream reconnects itself, and that is enough while the character is still *in* the world —
-   * the server replays what was missed and play carries on. It is not enough once the link-dead
-   * window has passed, because by then the character has been removed and there is nothing for a
-   * stream to attach to. Only `enter` puts them back, and before this the only way to reach it was
-   * to leave to the character screen and pick the same character again.
-   */
-  const rejoin = useCallback(async () => {
-    setRejoining(true)
-    try {
-      // Still needed when the character has actually left the world: only `enter` puts them back.
-      // When the screen was merely displaced they are already in it, and this is a rebind - the
-      // takeover is really the epoch below, which opens a stream under a new connection id.
-      await api.enter(characterId)
-      setEpoch((current) => current + 1)
-    } catch {
-      // Left to the player to try again: the button is still there, and the reason it failed is
-      // usually that the network is still down, which retrying by itself would not fix.
-    } finally {
-      setRejoining(false)
-    }
-  }, [characterId])
 
   // What Tab can complete to. The contents frame is already the room's own answer to "what is
   // here", so nothing new has to be sent for this.
@@ -307,17 +277,19 @@ export function GameScreen({
       <Scrollback lines={state.scrollback} onOpenBuilder={onOpenBuilder} />
 
       {/*
-        Shown whenever the stream is down. The stream retries on its own and usually wins, so this
-        is not an error so much as a way back for the case it cannot fix: once the link-dead window
-        has passed the character has left the world, and no amount of reconnecting a stream brings
-        them back — only entering again does.
+        Shown whenever the stream is down. It says what is happening and nothing more.
+
+        There was a "Rejoin the world" button here, for the case the retry cannot fix: once the
+        link-dead window has passed the character has been removed, and reconnecting a stream
+        attaches to nothing — only entering again puts them back. It is gone because the character
+        list already does exactly that, in one click, and it is the way back from being displaced
+        by another device too. Two routes to one place is two things to keep working, and this was
+        the one that had quietly stopped: it called a setter that no longer existed, so pressing it
+        threw rather than rejoining.
       */}
       {admitDisconnected && (
         <div className="reconnect-bar" role="status">
           <span className="dim">Disconnected. Trying to reconnect…</span>
-          <button type="button" onClick={() => void rejoin()} disabled={rejoining}>
-            {rejoining ? 'Rejoining…' : 'Rejoin the world'}
-          </button>
         </div>
       )}
 

@@ -12,8 +12,9 @@ vi.mock('../net/api', () => ({
       sent.push(input)
       return Promise.resolve()
     },
-    // Only Rejoin reaches this. The stream names itself with an id of its own minting, so
-    // nothing about opening one goes through the API.
+    // Nothing in this component reaches this any more - the Rejoin button was the only caller,
+    // and getting back into the world is the character list's job now. Kept on the mock because
+    // the module needs the shape, not because a test drives it.
     enter: () => Promise.resolve({}),
   },
 }))

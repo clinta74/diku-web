@@ -398,8 +398,17 @@ remember.
 
 *A separate thing this surfaced, unchanged and worth knowing: going link-dead completes the
 session's channel, so `EventSource`'s own retry reconnects to a closed one and stays silent. Only
-entering again re-establishes output, which is what the Rejoin button does. The automatic retry
-therefore recovers a stream but not a link-dead character.*
+entering again re-establishes output. The automatic retry therefore recovers a stream but not a
+link-dead character.*
+
+**Getting back in is the character list, and only the character list.** There was a *Rejoin the
+world* button on the disconnected bar as a second route to the same `enter` call. It is gone.
+Choosing the character again does exactly what it did, in one click, and it is already the way back
+from being displaced by another device — so the button was a second implementation of a path that
+existed anyway. It is also the one that had quietly broken: it called a state setter that a
+refactor had moved to `App`, so pressing it threw rather than rejoining, and nothing noticed because
+the client typecheck was being run in a mode that checks nothing. The bar remains, and now only says
+what is happening.
 
 ---
 

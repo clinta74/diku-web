@@ -260,7 +260,7 @@ public static class AbilityCatalogue
 
         new(CharacterPath.Warden, 20, "warden.last-stand", "Last Stand",
             "Refuse to fall. The refusal is most of it.",
-            CostType.Health, 15, 200, null, TargetingType.Self,
+            CostType.Stamina, 15, 200, null, TargetingType.Self,
             "heal.restore", Heal("80")),
 
         // -------------------------------------------------------------------

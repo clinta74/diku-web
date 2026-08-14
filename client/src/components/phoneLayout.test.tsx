@@ -177,25 +177,25 @@ it('re-runs a command from a chip without opening the keyboard', () => {
   expect(sent).toEqual(['attack wolf', 'attack wolf'])
 })
 
-it('offers a way back into the world once the stream is down', () => {
-  // The stream retries on its own and usually wins. This is for the case it cannot fix: after the
-  // link-dead window the character has been removed from the world, and reconnecting a stream has
-  // nothing to attach to — only entering again does. Before this, the only route was leaving to
-  // the character screen and picking the same character.
+it('says nothing until a dropped stream has had a moment to come back', () => {
+  // The delay is the whole behaviour being pinned. The stream retries on its own and usually wins,
+  // so announcing every blip would make an ordinary page load flash "Disconnected" before the
+  // connection had a chance to happen.
+  //
+  // This used to assert a "Rejoin the world" button, which is gone: the character list already
+  // walks somebody back into the world in one click, and it is the way back from being displaced
+  // by another device too. Two routes to one place is two things to keep working, and this was the
+  // one that had quietly stopped working.
   vi.useFakeTimers()
   try {
     pretendToBe('phone')
     play()
 
-    // Nothing yet: the stream has not opened on the first render, and every ordinary page load
-    // would otherwise flash "Disconnected" before the connection had a chance to happen.
     act(() => stream.fail?.())
-    expect(screen.queryByRole('button', { name: /rejoin/i })).toBeNull()
+    expect(screen.queryByText(/Disconnected/i)).toBeNull()
 
     act(() => vi.advanceTimersByTime(2500))
-
-    fireEvent.click(screen.getByRole('button', { name: /rejoin/i }))
-    expect(entered).toEqual(['c1'])
+    expect(screen.queryByText(/Disconnected/i)).not.toBeNull()
   } finally {
     vi.useRealTimers()
   }
@@ -209,10 +209,10 @@ it('takes the reconnect bar away as soon as the stream is back', () => {
 
     act(() => stream.fail?.())
     act(() => vi.advanceTimersByTime(2500))
-    expect(screen.queryByRole('button', { name: /rejoin/i })).not.toBeNull()
+    expect(screen.queryByText(/Disconnected/i)).not.toBeNull()
 
     act(() => stream.open?.())
-    expect(screen.queryByRole('button', { name: /rejoin/i })).toBeNull()
+    expect(screen.queryByText(/Disconnected/i)).toBeNull()
   } finally {
     vi.useRealTimers()
   }
