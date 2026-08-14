@@ -188,7 +188,7 @@ export function SpawnerDialog({
         <NumberInput min={1} value={targetCount} onChange={setTargetCount} />
       </Field>
 
-      <Field label="Respawn seconds">
+      <Field label="Respawn (seconds)">
         <NumberInput min={0} value={respawnSeconds} onChange={setRespawnSeconds} />
       </Field>
 

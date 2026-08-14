@@ -99,9 +99,18 @@
   line-height: 1.45;
 }
 
+/* A quiet border for a mouse click, a real ring for the keyboard.
+   These were :focus with the outline removed and a 1px border tint as the only substitute, on the
+   two most common controls in the builder - too subtle to find by tabbing, which is the one case
+   it had to serve. :focus-visible splits the two so the ring appears only when it is needed. */
 .textarea:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .number-input {
@@ -145,6 +154,11 @@ input[type='number'] {
 .select:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .select-chevron {

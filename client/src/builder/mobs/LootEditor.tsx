@@ -64,7 +64,7 @@ export function LootEditor({ rows, itemTemplates, onChange }: Props) {
 
             <button
               type="button"
-              className="danger"
+              className="danger-button"
               onClick={() => onChange(rows.filter((_, i) => i !== index))}
             >
               Remove

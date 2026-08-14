@@ -80,14 +80,14 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
                 onChange={(e) => editEmote(index, { text: e.target.value })}
               />
             </Field>
-            <Field label="Every" hint="seconds, at least">
+            <Field label="Every (seconds)" hint="at least">
               <NumberInput
                 min={1}
                 value={emote.minSeconds}
                 onChange={(v) => editEmote(index, { minSeconds: v })}
               />
             </Field>
-            <Field label="to" hint="seconds, at most">
+            <Field label="to (seconds)" hint="at most">
               <NumberInput
                 min={1}
                 value={emote.maxSeconds}
@@ -96,7 +96,7 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
             </Field>
             <button
               type="button"
-              className="danger"
+              className="danger-button"
               onClick={() => set({ emotes: draft.emotes.filter((_, i) => i !== index) })}
             >
               Remove
@@ -226,7 +226,7 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
                 </span>
                 <button
                   type="button"
-                  className="danger"
+                  className="danger-button"
                   onClick={() => set({ sells: draft.sells.filter((_, i) => i !== index) })}
                 >
                   Remove

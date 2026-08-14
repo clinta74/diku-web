@@ -17,7 +17,7 @@ Findings are ordered by what they cost a user, not by effort.
 
 ---
 
-## 1. Four destructive buttons have no destructive styling — `className="danger"` matches nothing
+## 1. Four destructive buttons have no destructive styling — FIXED
 
 **Severity: defect.** This is not a style opinion; the class does not exist.
 
@@ -38,8 +38,8 @@ as ordinary buttons, visually identical to *Add emote* sitting beside them.
 The elsewhere-correct spelling is `.danger-button`, used in four other places including
 `ConfirmDialog`. So the product has two names for one variant and one of them is dead.
 
-**Fix:** rename the four to `danger-button`, and add `.danger` as an alias only if something wants
-it. Better, see finding 3.
+**Fixed** by renaming the four to `danger-button`. `.danger` was not added as an alias: two names
+for one variant is how this happened, and finding 3 is the real answer.
 
 ---
 
@@ -121,7 +121,7 @@ change to anything. Radius wants three: small, medium, pill.
 
 ---
 
-## 5. Letter casing is already right — the inconsistency is in units
+## 5. Letter casing is already right — the unit drift is FIXED
 
 **Casing needs no work.** Every one of ~80 `Field` labels is sentence case, buttons and tab labels
 agree, and the two-letter vitals (`HP`, `FO`, `ST`) and initialisms (`XP`) are correctly
@@ -135,7 +135,8 @@ capitalised against that. This is the axis the note worried about and the one th
 | Appended word | `Respawn seconds` |
 | Hint only | `Every` / `to` with `hint="seconds, at least"` |
 
-**Fix:** parenthetical everywhere — `Respawn (seconds)`, `Every (seconds)`.
+**Fixed:** parenthetical everywhere — `Respawn (seconds)`, `Every (seconds)`, `to (seconds)`. Note
+this settles the *convention*, not finding 6: three fields still ask a builder for pulses.
 
 ---
 
@@ -162,7 +163,7 @@ shape need not change.
 
 ---
 
-## 7. Keyboard focus on selects and textareas is a 1px border tint
+## 7. Keyboard focus on selects and textareas is a 1px border tint — FIXED
 
 **Severity: medium — accessibility, and it fails quietly.**
 
@@ -183,8 +184,9 @@ The rest is fine: `.dlg:focus { outline: none }` is correct for a dialog contain
 substitutes a background under Radix's roving focus, and the checkbox rules do use `:focus-visible`
 with a real 2px outline. That last one is the pattern the other two should copy.
 
-**Fix:** `:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }` on `.select`
-and `.textarea`, keeping the quiet `:focus` border for mouse users.
+**Fixed** exactly that way: `:focus-visible` gives the keyboard a real 2px ring, and the quiet
+`:focus` border stays for the mouse — which is why it was made subtle in the first place, so the two
+uses no longer have to share one treatment.
 
 ---
 
@@ -222,9 +224,10 @@ Worth recording so a later pass does not "fix" it:
 
 ## Suggested order
 
-1. **Finding 1** — four dead `danger` classes. Minutes, and it is a live defect.
-2. **Finding 7** — focus rings on select and textarea. Two rules.
-3. **Finding 5** — unit convention in labels. Five strings.
+1. ~~**Finding 1** — four dead `danger` classes.~~ Done: renamed to `danger-button`.
+2. ~~**Finding 7** — focus rings on select and textarea.~~ Done: `:focus-visible` gives the
+   keyboard a real 2px ring while a mouse click keeps the quiet border.
+3. ~~**Finding 5** — unit convention in labels.~~ Done: parenthetical everywhere.
 4. **Finding 3, tokens half** — add the spacing, type, and radius tokens without adopting them.
 5. **Finding 2** — resizable builder rails. The largest user-visible win, and it wants Pointer
    Events, so it belongs beside Phase 7's M4a rather than before it.

@@ -65,7 +65,7 @@ export function AttackEditor({ attacks, onChange }: Props) {
               </span>
               <button
                 type="button"
-                className="danger"
+                className="danger-button"
                 onClick={() => onChange(attacks.filter((_, i) => i !== index))}
               >
                 Remove
