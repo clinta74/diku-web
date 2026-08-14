@@ -14,7 +14,7 @@ numbers rather than a new set of hand-authored content.
 Play is **PvE by default**; player-versus-player is opt-in per room, through the same extensible
 room-flag registry that carries every other room property (§4.10).
 
-Status: **Phase 5 complete (0–4 and 5.1–5.4). Remaining: Phase 6.**
+Status: **Phases 0–6 complete. Remaining: Phase 7, the mobile client.**
 
 *Playing* works end to end: register, create a character, walk a seeded zone, talk. Inventory,
 equipment, and items work; mob AI emotes and wanders; combat kills, loots, and levels, with XP
@@ -31,8 +31,12 @@ quests — the last with reachability warnings and the prerequisite chain shown 
 will not let you aim at. `tell`, `reply`, a world channel, and a party channel carry a
 conversation between rooms; `recall` returns you to where you bound.
 
-Next: **the recovery half of Phase 6** — a metrics exporter, rehearsed backups, and the runbook.
-Then Phase 7, the mobile client.
+*Operating* it is covered: admin and moderation commands, three rate-limit policies, world
+export/import, a Prometheus dashboard against the §11 targets, nightly backups that are only kept
+once they have been restored, and a recovery runbook whose every procedure has been run
+([RUNBOOK.md](RUNBOOK.md)).
+
+Next: **Phase 7, the mobile client** ([MOBILE.md](MOBILE.md)).
 
 **This document is the design and the open work. [HISTORY.md](HISTORY.md) is the record of what is
 finished** — the phase checklists through 5, the notes from each build, and the postmortems. They
@@ -1668,20 +1672,48 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
       mirror**; there is deliberately no replace mode that deletes the difference. **It is not
       atomic** — one mutation per entity is one transaction — so `?dryRun=true` reports collisions
       while changing nothing and a partial import answers **207**.
-- [ ] Exporter and dashboard — the numbers in §11 are still unverified against a real deployment.
-      The instruments now exist to verify them; nothing yet collects them.
-- [ ] Scheduled `pg_dump` backups + a rehearsed restore drill
+- [x] **Exporter and dashboard.** A Prometheus scrape endpoint on the server
+      (`MetricsExport`), with Prometheus and Grafana in `docker-compose.prod.yml` and the
+      dashboard provisioned from `tools/monitoring/` so it lives in git rather than only in
+      Grafana's database. Pull rather than push, which buys the `up` series — the one that says
+      the process stopped answering at all. `/metrics` is unauthenticated and stays private
+      because nginx forwards only `/api/` and `/health`.
+      **Both histograms carry explicit buckets**: the OpenTelemetry defaults start 0, 5, 10, 25 ms
+      and a healthy pulse here is under a *tenth* of a millisecond, so every observation would land
+      in the first bucket and every quantile would be an interpolation inside it — a p99 panel
+      drawing a flat line at ~4.95 ms forever, looking like a measurement.
+      One trap worth naming: Prometheus 3 negotiates UTF-8 metric names and stores what the
+      exporter calls them, so it held `dikuweb.pulse.duration_…` with dots while `curl` of the same
+      endpoint showed underscores. Every panel read "No data". `metric_name_escaping_scheme:
+      underscores` in `prometheus.yml` is what fixes it, and only running the stack finds it.
+- [x] **Scheduled `pg_dump` backups + a rehearsed restore drill.** A `backup` sidecar takes a
+      nightly dump and **restores it into a scratch database and compares exact per-table row
+      counts before keeping it** — a dump that will not restore is deleted rather than kept,
+      because a file that looks like a backup and is not one is worse than no file. It refuses to
+      run at all if `/backups` is not on a volume, after dumps were found landing in a container's
+      writable layer where they look completely normal and vanish on recreate.
+      `tools/restore-drill.ps1` is the rehearsal: it restores a dump, **starts the server against
+      it**, and reads the room count out of the loop's own startup line. That is a different
+      question from "does it restore", and §6.1's `backups/dikuweb-full-2026-08-10.dump` answers
+      the two differently — it restores perfectly and the server will not start against it,
+      because it predates the migration squash. Procedure in
+      [RUNBOOK.md](RUNBOOK.md) §3b, tested.
 - [ ] Deployment pipeline:
       - [x] Dockerfile (multi-stage: publish layer, runtime layer, `dumb-init` entrypoint)
       - [x] Migration strategy settled: applied at startup rather than by an init container,
             because a single-writer loop with no backplane cannot run two instances (§6.1)
       - [x] Health checks gate readiness; `/health/ready` includes database check
-      - [x] Reverse proxy with SSE buffering off — `proxy_buffering off` in `client/nginx.conf`,
+      - [x] Reverse proxy with SSE buffering off — `proxy_buffering off` in
+            `client/nginx.conf.template`,
             `X-Accel-Buffering: no` set on the stream response
       - [x] Deployment automation: `docker-compose.prod.yml`, per-environment deploy configs,
             and a GitHub Actions image build/push to ghcr.io
-      - [ ] Runbook: rollback procedure if migration fails, monitoring dashboard, incident response
-            — `DOCKER.md` and `DEPLOY_NO_ENV.md` cover setup, not recovery
+      - [x] Runbook: [RUNBOOK.md](RUNBOOK.md) — backups, the drill, restoring for real, rollback
+            when a startup migration fails, a triage table, and the known gaps. Every procedure in
+            it has been run. The migration-failure section is short for a reason worth stating:
+            **no migration here suppresses its transaction**, so each is atomic under Npgsql and a
+            failure leaves the schema at the previous migration — making it a redeploy rather than
+            a restore.
 
 ### Phase 7 — Mobile client
 
@@ -1747,7 +1779,7 @@ codebase and their return.
 | Roles and moderation | Promotion reaches an open session without a relog; demotion revokes within the revalidation interval; a banned account is rejected while connected; self-demotion refused. A mute is refused on all six speech verbs and expires against the clock. Every change writes an `admin_audit` row. |
 | Admin | Every verb reads as unknown to a player *and to a builder* — content authority is not moderation authority. Shutdown warns before it acts, reschedules rather than refusing, and only reaches the host when the countdown runs out. |
 | Rate limits | A flood is refused once the bucket empties but early commands land; the 429 carries `Retry-After`; **one player's flood does not refuse another player**; the event stream is never limited. Asserted against a host with real numbers, since the shared test host lifts them. |
-| Telemetry | Every pulse recorded rather than only slow ones; meter and instrument names pinned, because renaming one breaks every dashboard silently. *The numbers themselves are not asserted: a p99 under an xUnit host is not the p99 §11 is about.* |
+| Telemetry | Every pulse recorded rather than only slow ones; meter and instrument names pinned, because renaming one breaks every dashboard silently. `/metrics` answers and carries the engine meter, with the sub-millisecond buckets still on it — a view silently reverting to defaults leaves a dashboard that draws a plausible line. *The numbers themselves are not asserted: a p99 under an xUnit host is not the p99 §11 is about. Neither is the name Prometheus stores, which is not the name this endpoint appears to serve — only running the two containers together shows that.* |
 | Moving a world | The closure is most of it, because a merely-filtered bundle *looks* complete. Then a round trip against edits made after the export, a second import creating nothing and doubling no spawner, a dry run that leaves the edit in place, an unknown flag surviving, and a foreign format version answering 400. Authorization asserted on these two routes **by name** — a route mapped one line outside `MapGroup` would be an unauthenticated dump of the whole world. |
 | Two devices, one character | A second device **entering** turns the first out at once, before it has opened a stream. The turned-out device's retry is refused *and* the new device still has the character. A reconnect under the same id is not a takeover; being displaced does not take the character out of the world. Plus the one that cost the most: **a re-render must not reopen the stream**, counted across three re-renders passing fresh inline callbacks. |
 | The prompt | Typing anywhere focuses the input — but not Ctrl+C over selected scrollback, not Tab, not Enter over a focused button, and not while the builder is up. Tab is *reported rather than swallowed* when nothing matches. History survives a reload, stays per-character, and treats its storage as hostile. The scrollback follows the newest line only while already at the bottom. |
@@ -1793,6 +1825,26 @@ debug. `IGameClock` and `IRandomSource` go in from the first commit.
 - Map redraw < 16 ms on a mid-range laptop
 - Zero character data loss on graceful shutdown; ≤ 5 min on hard crash (autosave interval)
 
+**First measurements**, once the exporter existed to take them (single player, idle world):
+
+| Target | Measured | |
+|---|---|---|
+| Pulse p99 < 25 ms | **0.21 ms** | p50 0.05 ms. Two orders of magnitude of headroom |
+| Command → first byte p95 < 150 ms | **238 ms in-process alone** | p50 126 ms |
+
+**The command target as written cannot be met, and not for a fixable reason.** A command waits for
+the next pulse before the loop touches it, so on a 250 ms pulse the wait is roughly uniform on
+[0, 250] ms — p50 near 125 and p95 near 237, which is what was measured, before a single byte
+crosses the network. The number is structural, not a symptom.
+
+Three honest options, none of them "optimise": drop the pulse (250 → 100 ms costs 2.5× the loop's
+wakeups and buys a p95 of ~95 ms), handle input-only commands off the pulse boundary at the cost of
+the single-writer simplicity §2.1 rests on, or **restate the target as what it is measuring**.
+Prefer the third for v1: the number that matters to a player is whether a keystroke feels answered,
+and a 250 ms tick is the game's heartbeat rather than latency to be shaved. Left as a decision to
+make rather than silently adjusted — it has been an unverified target from the start, and the
+useful thing about verifying it is finding out it was the wrong one.
+
 ---
 
 ## 12. Next step
@@ -1803,20 +1855,20 @@ export/import have all landed. Every content type §4 describes can be authored 
 no SQL, and nothing in §4.11 is approximated any more. [HISTORY.md](HISTORY.md) is the account of
 how that was arrived at.
 
-**What is left is the recovery half of Phase 6** — the part that only matters once something has
-already gone wrong, which is why it is last and why it is the least tested:
+**Phase 6 is closed too.** The recovery half — the metrics exporter and dashboard, verified
+backups, the rehearsed drill, and [RUNBOOK.md](RUNBOOK.md) — landed last because it only matters
+once something has already gone wrong, and it turned out to be the part that found the most:
 
-1. **An exporter and a dashboard.** Six instruments exist on the `DikuWeb.Engine` meter and
-   nothing collects them, so every number in §11 is still a target rather than a measurement.
-   The code change is an OpenTelemetry exporter pointed at the meter name; the work is standing
-   up somewhere to point it.
-2. **Scheduled `pg_dump` backups and a *rehearsed* restore.** The rehearsal is the point. An
-   untested restore is a belief about a file, and §10 already names losing the world as the price
-   of the Postgres-only choice — export/import narrows that to content a builder thought to
-   export, not to everything.
-3. **The recovery runbook** — rollback when a startup migration fails, and incident response.
-   `DOCKER.md` and `DEPLOY_NO_ENV.md` cover setup, which is the half that gets written because it
-   is the half somebody needs while things are going well.
+- The §11 command-latency target **cannot be met by construction** on a 250 ms pulse. Measured, not
+  reasoned about; see §11 for the three options.
+- A backup in `backups/` **restores cleanly and the server will not start against it**, because it
+  predates the migration squash. Repair procedure in RUNBOOK §3b, tested.
+- Dumps were landing **inside a container** rather than on a volume, which is invisible from
+  inside it.
+- Every Grafana panel read **"No data"** against a working exporter, because Prometheus 3 stores
+  UTF-8 metric names and `curl` shows you the other ones.
+
+None of the four is something reading the code would have found. All four came from running it.
 
 Then **Phase 7**, the mobile client, planned in full in [MOBILE.md](MOBILE.md).
 

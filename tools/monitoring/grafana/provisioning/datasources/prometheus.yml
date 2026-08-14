@@ -1,0 +1,16 @@
+# Provisioned rather than clicked. A dashboard that only exists in Grafana's own database is one
+# host rebuild away from gone, and PLAN.md §6 already made "it only lives in one place" the
+# problem this phase is about.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    # Pinned rather than generated, because the dashboard JSON references it by uid. Let Grafana
+    # invent one and every panel in a provisioned dashboard says "datasource not found".
+    uid: dikuweb-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

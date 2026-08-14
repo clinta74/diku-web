@@ -16,6 +16,24 @@
 
   <ItemGroup Label="Diagnostics">
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.10" />
+    <!--
+      The exporter half of PLAN.md §8. EngineMetrics itself depends on none of this - it is
+      System.Diagnostics.Metrics from the base library - and these packages only carry what it
+      already records out of the process. That separation is the reason the instruments could
+      land a phase before anywhere to send them existed.
+
+      Prometheus.AspNetCore is a beta, and knowingly. It has been beta for years because the
+      OpenTelemetry *specification* for Prometheus interop is not final, not because the exporter
+      is unfinished, and it is the most widely deployed metrics path in .NET. The stable
+      alternative is the OTLP exporter pushing to a collector, which trades a prerelease package
+      for a third container and gives up Prometheus's `up` series - the one that says the server
+      stopped answering, which is exactly what you want to know at 3am. Worth one honest comment
+      rather than the extra moving part.
+    -->
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.17.0-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.17.0" />
   </ItemGroup>
 
   <ItemGroup Label="Playtesting apparatus">
@@ -34,7 +52,15 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
-    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.13.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.14.0" />
+    <!--
+      Pinned, not referenced. Testcontainers pulls SSH.NET in transitively and the version it asks
+      for (2025.1.0) has a high-severity advisory, GHSA-q939-rpr3-3284 - which NuGet audit turns
+      into an error, so the solution stops building on the day the advisory is published rather
+      than on the day anything changes here. Transitive pinning is already on, so naming the fixed
+      version here is enough. Test-only either way; the build failure is the actual problem.
+    -->
+    <PackageVersion Include="SSH.NET" Version="2026.0.0" />
   </ItemGroup>
 
 </Project>

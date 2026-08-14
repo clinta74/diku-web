@@ -1,0 +1,230 @@
+{
+  "uid": "dikuweb-engine",
+  "title": "diku-web engine",
+  "description": "The PLAN.md §11 targets, measured. Panels are ordered the way an incident reads: is it up, is the loop keeping time, is anything queued behind it.",
+  "tags": ["dikuweb"],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "time": { "from": "now-3h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Server",
+      "description": "Prometheus's own view of whether the process answers. The one signal a push pipeline could not give us.",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "up{job=\"dikuweb\"}", "instant": true }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red", "index": 0 } } },
+            { "type": "value", "options": { "1": { "text": "up", "color": "green", "index": 1 } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Sessions",
+      "description": "§11 targets 200 concurrent sessions on one process.",
+      "gridPos": { "h": 4, "w": 5, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "dikuweb_sessions_active", "instant": true, "legendFormat": "in the world" }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 160 },
+              { "color": "red", "value": 200 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Rooms loaded",
+      "description": "The world the loop is actually holding. A drop here after a deploy means content did not come back.",
+      "gridPos": { "h": 4, "w": 5, "x": 9, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "dikuweb_rooms_loaded", "instant": true }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "none", "graphMode": "none" },
+      "fieldConfig": { "defaults": {}, "overrides": [] }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Pulses over budget (1h)",
+      "description": "Counted as well as logged. The log says which pulses were slow; this says how often, which is the question you ask when deciding whether it matters. Absent entirely until the first one happens — a counter with no observations is not exported.",
+      "gridPos": { "h": 4, "w": 5, "x": 14, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "sum(increase(dikuweb_pulse_over_budget_total[1h])) or vector(0)", "instant": true }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 20 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Commands / sec",
+      "description": "Load on the single writer.",
+      "gridPos": { "h": 4, "w": 5, "x": 19, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(dikuweb_commands_handled_total[5m])) or vector(0)", "instant": true }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "none", "graphMode": "area" },
+      "fieldConfig": { "defaults": { "decimals": 2, "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Pulse duration — §11 target: p99 under 25 ms",
+      "description": "The load-bearing panel. A healthy pulse is well under a millisecond against a 250 ms budget, so the y-axis is logarithmic: on a linear scale the whole distribution is a flat line along the bottom until the moment it is already too late. The red line is the budget.",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.99, sum(rate(dikuweb_pulse_duration_milliseconds_bucket[5m])) by (le))",
+          "legendFormat": "p99"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum(rate(dikuweb_pulse_duration_milliseconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.50, sum(rate(dikuweb_pulse_duration_milliseconds_bucket[5m])) by (le))",
+          "legendFormat": "median"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 5,
+            "scaleDistribution": { "type": "log", "log": 10 }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 25 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["max", "lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Command latency, in-process — §11 target: p95 under 150 ms end to end",
+      "description": "Gateway acceptance to handler completion: the half of 'command to first SSE byte' that this process controls. The network half is not measurable from in here, so this being under target is necessary and not sufficient.",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(dikuweb_command_latency_milliseconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.50, sum(rate(dikuweb_command_latency_milliseconds_bucket[5m])) by (le))",
+          "legendFormat": "median"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 5 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 150 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["max", "lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "GC pause and thread pool queue",
+      "description": "Here because the loop is one thread that must not be starved (§2.1). In a request/response service a GC pause costs one slow response; here it is the whole world stopping. A thread-pool queue that will not drain is the same symptom from the other direction.",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(dotnet_gc_pause_time_seconds_total[5m]) * 1000",
+          "legendFormat": "GC pause ms/s"
+        },
+        {
+          "refId": "B",
+          "expr": "dotnet_thread_pool_queue_length_total",
+          "legendFormat": "thread pool queue"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10 } },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    }
+  ]
+}

@@ -28,6 +28,21 @@ public sealed class EngineMetrics : IDisposable
     /// <summary>The name an exporter subscribes to. Stable: renaming it breaks every dashboard.</summary>
     public const string MeterName = "DikuWeb.Engine";
 
+    /// <summary>
+    /// The two instrument names an exporter has to configure by name, rather than string literals
+    /// repeated at the far end.
+    /// </summary>
+    /// <remarks>
+    /// Both histograms need explicit bucket boundaries to be worth reading — the default set is
+    /// far too coarse for a loop whose healthy pulse is under a millisecond — and a view is bound
+    /// to an instrument <em>by name</em>. Spelled here so a rename breaks the build instead of
+    /// silently reverting the dashboard to default buckets, which still draws a plausible line.
+    /// </remarks>
+    public const string PulseDurationInstrument = "dikuweb.pulse.duration";
+
+    /// <inheritdoc cref="PulseDurationInstrument"/>
+    public const string CommandLatencyInstrument = "dikuweb.command.latency";
+
     private readonly Meter _meter;
     private readonly Histogram<double> _pulseDuration;
     private readonly Histogram<double> _commandLatency;
@@ -42,7 +57,7 @@ public sealed class EngineMetrics : IDisposable
         // healthy pulse is well under a millisecond and the budget is 25 (§11). Integer
         // milliseconds would report almost every pulse as zero.
         _pulseDuration = _meter.CreateHistogram<double>(
-            "dikuweb.pulse.duration",
+            PulseDurationInstrument,
             unit: "ms",
             description: "Wall time for one game-loop pulse. §11 targets p99 under 25 ms.");
 
@@ -50,7 +65,7 @@ public sealed class EngineMetrics : IDisposable
         // command was accepted at the gateway to the moment the loop finished handling it. The
         // rest is network, which is not ours to measure from in here.
         _commandLatency = _meter.CreateHistogram<double>(
-            "dikuweb.command.latency",
+            CommandLatencyInstrument,
             unit: "ms",
             description: "Gateway acceptance to handler completion. The in-process part of the §11 command target.");
 

@@ -118,6 +118,42 @@ services:
         max-file: "5"
         labels: "service=web"
 
+  backup:
+    # Nightly pg_dump, verified by restoring it (PLAN.md §6, Phase 6).
+    #
+    # Plain postgres:18 rather than a backup image off the registry: the job needs pg_dump,
+    # pg_restore, psql and a clock, and this image has all four at exactly the server's version.
+    # A backup taken by an older pg_dump than the server is a restore that may not work.
+    #
+    # See tools/backup/backup.sh - it deletes any dump it could not restore, so a file in
+    # ./backups has been proven at least once rather than merely written.
+    image: postgres:18
+    container_name: dikuweb-backup
+    restart: always
+    networks:
+      - dikuweb-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: dikuweb
+      PGDATABASE: dikuweb
+      # Must match the postgres service above.
+      PGPASSWORD: change_this_password_in_production
+      BACKUP_AT_HOUR: "3"
+      BACKUP_KEEP: "30"
+    volumes:
+      - ./tools/backup:/scripts:ro
+      - ./backups:/backups:rw
+    entrypoint: ["/bin/sh", "/scripts/backup.sh"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=backup"
+
   client:
     # React SPA frontend with nginx reverse proxy
     # Built from client/Dockerfile
@@ -148,6 +184,66 @@ services:
         max-file: "3"
         labels: "service=client"
 
+  prometheus:
+    # Scrapes web:8080/metrics (PLAN.md §8, Phase 6). See tools/monitoring/prometheus.yml.
+    #
+    # Not published on a public port. /metrics is unauthenticated and so is this UI, and neither
+    # is reachable from outside the compose network - nginx forwards only /api/ and /health. To
+    # look at raw series, tunnel: ssh -L 9090:localhost:9090 <host>, after adding a
+    # 127.0.0.1:9090:9090 mapping here.
+    image: prom/prometheus:v3.6.0
+    container_name: dikuweb-prometheus
+    restart: always
+    networks:
+      - dikuweb-network
+    volumes:
+      - ./tools/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      # 90 days. The point of a histogram over a log line is answering "is it getting worse",
+      # and that question needs more history than an incident does.
+      - --storage.tsdb.retention.time=90d
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=prometheus"
+
+  grafana:
+    # The dashboard. Provisioned from tools/monitoring/grafana, so it survives a container
+    # recreate and lives in git rather than only in Grafana's own database.
+    image: grafana/grafana:12.2.0
+    container_name: dikuweb-grafana
+    restart: always
+    networks:
+      - dikuweb-network
+    depends_on:
+      - prometheus
+    ports:
+      # Bound to loopback: reach it over an SSH tunnel rather than exposing it. Grafana is not
+      # part of the game and has no business on the public interface.
+      - "127.0.0.1:3000:3000"
+    environment:
+      # CHANGE THIS. It is the admin account for everything the dashboard can see.
+      GF_SECURITY_ADMIN_PASSWORD: change_this_password_in_production
+      # Nobody is signing up for a metrics dashboard for one server.
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./tools/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./tools/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:rw
+      - grafana-data:/var/lib/grafana
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=grafana"
+
 networks:
   dikuweb-network:
     driver: bridge
@@ -157,4 +253,8 @@ networks:
 
 volumes:
   pgdata:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
     driver: local

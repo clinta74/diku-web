@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: dikuweb
+    type: file
+    # Edits made in the UI are written back here, so a panel someone improves during an incident
+    # survives to be committed rather than being lost on the next container recreate.
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

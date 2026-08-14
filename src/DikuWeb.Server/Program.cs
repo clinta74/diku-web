@@ -201,6 +201,10 @@ builder.Services.AddHealthChecks()
 // per-visitor one, and set it accordingly.
 builder.Services.AddDikuWebRateLimiting(builder.Configuration);
 
+// Ships EngineMetrics to Prometheus. All of the "where do the numbers go" decision is in
+// MetricsExport; EngineMetrics itself still knows nothing about any of it.
+builder.Services.AddDikuWebMetricsExport();
+
 var app = builder.Build();
 
 app.UseAuthentication();
@@ -233,6 +237,11 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
     Predicate = check => check.Tags.Contains("ready"),
     ResponseWriter = WriteHealthResponseAsync,
 });
+
+// Prometheus scrapes this. Mapped here beside the health checks because it is the same kind of
+// thing — an operator route, not a game one — and like them it takes no authentication. That is
+// safe only because nginx forwards /api/ and /health and nothing else; see MetricsExport.
+app.MapPrometheusScrapingEndpoint();
 
 // ---------------------------------------------------------------------------
 // Startup

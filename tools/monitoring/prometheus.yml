@@ -1,0 +1,44 @@
+# What Prometheus scrapes (PLAN.md §8, Phase 6).
+#
+# One target, because there is exactly one: the loop is single-writer by design (§2.1) and cannot
+# be scaled horizontally, so there is no fleet here and no service discovery to do.
+
+global:
+  # Faster than the usual 60s. The interesting instrument is pulse duration on a 250 ms loop, and
+  # a minute of that is 240 pulses collapsed into one point - fine for a trend, useless for
+  # "what happened at 03:14". 15s is still 60 pulses per sample; the histogram carries the
+  # distribution inside that, which is the whole reason §8 chose histograms over logs.
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+  # Store metrics under classic underscore names. Not cosmetic - without these two the dashboard
+  # is entirely "No data", and it took running the stack to find out.
+  #
+  # OpenTelemetry instruments are named with dots (`dikuweb.pulse.duration`). Prometheus 3
+  # supports UTF-8 metric names, negotiates for them at scrape time, and stores what the exporter
+  # calls them - so the series is `dikuweb.pulse.duration_milliseconds_bucket`, queryable only
+  # with the quoted syntax `{"dikuweb.pulse.duration_milliseconds_bucket"}`. Fetch /metrics with
+  # curl and you see underscores, because curl does not send the header that asks for UTF-8; the
+  # names Prometheus holds are not the names the endpoint appears to serve.
+  #
+  # Escaping to underscores here gives the conventional names instead, which is what every PromQL
+  # example, every imported dashboard and everyone's muscle memory expects.
+  metric_name_validation_scheme: legacy
+  metric_name_escaping_scheme: underscores
+
+scrape_configs:
+  - job_name: dikuweb
+    metrics_path: /metrics
+    static_configs:
+      # The compose service name. Port 8080 is the container port, not the published one - nginx
+      # does not forward /metrics and must not start (see MetricsExport), so this connection only
+      # works from inside the compose network. That is the intent.
+      - targets: ['web:8080']
+        labels:
+          service: dikuweb
+
+  # Prometheus scraping itself, kept because it costs nothing and answers "is the monitoring
+  # broken or is the thing it monitors broken" - which is the first question during an incident.
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
