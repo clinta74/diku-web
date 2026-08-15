@@ -67,6 +67,10 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
         // that server happened to have.
         var abilities = await AbilitiesAsync(cancellationToken);
 
+        // Every configuration too, and for the same reason: one belongs to a server rather than to
+        // a zone. Which one is live is left behind deliberately - see BundleGameConfiguration.
+        var configurations = await ConfigurationsAsync(cancellationToken);
+
         return new WorldBundle(
             WorldBundle.CurrentFormatVersion,
             clock.GetUtcNow(),
@@ -78,8 +82,17 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
             mobs,
             abilities,
             spawners,
-            quests);
+            quests,
+            configurations);
     }
+
+    private async Task<IReadOnlyList<BundleGameConfiguration>> ConfigurationsAsync(
+        CancellationToken cancellationToken) =>
+        await db.GameConfigurations.AsNoTracking()
+            .OrderBy(c => c.Key)
+            .Select(c => new BundleGameConfiguration(
+                c.Key, c.Name, c.Description, c.StartingRoomKey, c.WelcomeMessage))
+            .ToListAsync(cancellationToken);
 
     private async Task<IReadOnlyList<BundleAbility>> AbilitiesAsync(CancellationToken cancellationToken)
     {

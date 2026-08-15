@@ -71,6 +71,21 @@ internal static partial class ServerLog
     public static partial void StreamClosed(ILogger logger, string character);
 
     [LoggerMessage(
+        EventId = 1027,
+        Level = LogLevel.Information,
+        Message = "Active game configuration is '{Key}'; players begin at {StartingRoom}")]
+    public static partial void GameConfigurationLoaded(
+        ILogger logger, string key, string startingRoom);
+
+    [LoggerMessage(
+        EventId = 1028,
+        Level = LogLevel.Warning,
+        Message = "The stored starting room '{Stored}' is not a room key; falling back to {Fallback}. "
+            + "Set a valid one in the builder under Settings.")]
+    public static partial void StoredStartingRoomUnusable(
+        ILogger logger, string stored, string fallback);
+
+    [LoggerMessage(
         EventId = 1021,
         Level = LogLevel.Information,
         Message = "SSE stream for {Character} displaced by a newer connection")]

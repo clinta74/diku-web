@@ -486,7 +486,7 @@ public sealed class GameLoop(
             world.LoadCharacterItems(character.Id, message.Items);
         }
 
-        actor.SendSys($"Welcome to Aldenmoor, {actor.Name}.", SysKinds.Info);
+        actor.SendSys(GameConfiguration.Greet(options.WelcomeMessage, actor.Name), SysKinds.Info);
         PlayerView.SendVitals(actor);
         PlayerView.SendAbilities(actor, world, abilityCache, clock.CurrentPulse);
         view.SendRoom(world, actor, verbose: true);

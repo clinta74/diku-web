@@ -548,3 +548,38 @@ public sealed record MultiplierPreview(
     Dictionary<string, decimal> WorldMultipliers,
     Dictionary<string, decimal> ZoneMultipliers,
     List<MultiplierPreviewRow> Templates);
+
+// ---------------------------------------------------------------------------
+// Named starter configurations (PLAN.md §4.16)
+// ---------------------------------------------------------------------------
+
+/// <param name="StartingRoomExists">
+/// False when the starting room names a room this environment does not have. Advisory rather than
+/// an error: writing a configuration *before* importing the world it points into is the ordinary
+/// order of operations on a fresh server, so the panel warns and saves.
+/// </param>
+public sealed record GameConfigurationResponse(
+    string Key,
+    string Name,
+    string Description,
+    string StartingRoomKey,
+    string WelcomeMessage,
+    bool IsActive,
+    bool StartingRoomExists,
+    DateTimeOffset UpdatedAt);
+
+/// <param name="ActiveStartingRoomKey">
+/// What the running loop is obeying right now, which is not always what a row says. A database
+/// with no active configuration leaves the engine on its configured fallback, and a panel showing
+/// only an empty list would imply the server had no starting room at all.
+/// </param>
+public sealed record GameConfigurationList(
+    IReadOnlyList<GameConfigurationResponse> Configurations,
+    string ActiveStartingRoomKey,
+    string ActiveWelcomeMessage);
+
+public sealed record GameConfigurationRequest(
+    string Name,
+    string? Description,
+    string StartingRoomKey,
+    string? WelcomeMessage);

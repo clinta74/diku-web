@@ -306,6 +306,56 @@ ServerLog.DatabaseConfigured(logger, csb.Host ?? "(unset)", csb.Database ?? "(un
             ServerLog.SeedSkipped(logger);
         }
     }
+
+    // Last, and after any seeding, so a first boot can point at a room that now exists. The
+    // database is the authority for these two (§4.16); EngineOptions carries whatever came from
+    // configuration until this overwrites it, and stays as-is when nothing is active.
+    await LoadActiveConfigurationAsync(db, app.Services, logger);
+}
+
+/// <summary>
+/// Copies the active starter configuration into the running <see cref="EngineOptions"/>.
+/// </summary>
+/// <remarks>
+/// Read once at boot rather than per login, because the loop is the only thing that may change it
+/// afterwards — a builder activating a different configuration arrives as a mutation, which is what
+/// makes the swap take effect without a restart.
+///
+/// A stored room key that no longer parses is ignored rather than fatal, and loudly: the fallback
+/// is a starting room that at least exists in code, where refusing to boot would take the whole
+/// server down over one editable text field.
+/// </remarks>
+static async Task LoadActiveConfigurationAsync(
+    DikuWebDbContext db,
+    IServiceProvider services,
+    ILogger logger)
+{
+    var active = await db.GameConfigurations.AsNoTracking()
+        .FirstOrDefaultAsync(c => c.IsActive);
+
+    if (active is null)
+    {
+        return;
+    }
+
+    var options = services.GetRequiredService<EngineOptions>();
+
+    if (RoomKey.TryParse(active.StartingRoomKey, out var startingRoom))
+    {
+        options.StartingRoom = startingRoom;
+    }
+    else if (!string.IsNullOrWhiteSpace(active.StartingRoomKey))
+    {
+        ServerLog.StoredStartingRoomUnusable(
+            logger, active.StartingRoomKey, options.StartingRoom.ToString());
+    }
+
+    if (!string.IsNullOrWhiteSpace(active.WelcomeMessage))
+    {
+        options.WelcomeMessage = active.WelcomeMessage;
+    }
+
+    ServerLog.GameConfigurationLoaded(logger, active.Key, options.StartingRoom.ToString());
 }
 
 await app.RunAsync();

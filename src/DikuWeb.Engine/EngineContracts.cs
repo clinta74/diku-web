@@ -242,7 +242,25 @@ public sealed class EngineOptions
     /// Where new characters start, and where anyone whose saved room no longer exists is
     /// placed on login (PLAN.md §7.4).
     /// </summary>
+    /// <remarks>
+    /// <b>Seeded from the active <c>game_configurations</c> row at boot, and editable in the
+    /// builder while the server runs</b> (§4.16). The value here is the fallback for a database
+    /// with no active configuration — a first boot, or a test harness — and is the last thing
+    /// consulted rather than the first. It still names Millbrook because that is what a development
+    /// seed creates.
+    /// </remarks>
     public RoomKey StartingRoom { get; set; } = RoomKey.Parse("aldenmoor.millbrook.north-gate");
+
+    /// <summary>
+    /// What a character is told on entering the game, with <c>{name}</c> replaced by theirs.
+    /// </summary>
+    /// <remarks>
+    /// This was a literal in <c>GameLoop</c> that named a world by hand, so it greeted every
+    /// player in every world with the name of one of them and went stale the moment the world
+    /// changed. Same provenance as <see cref="StartingRoom"/>: authored in the builder, stored in
+    /// the database, and defaulted here only for an environment with no active configuration.
+    /// </remarks>
+    public string WelcomeMessage { get; set; } = GameConfiguration.DefaultWelcomeMessage;
 
     /// <summary>PLAN.md §3.6: 90 seconds, expressed in pulses.</summary>
     public int LinkDeadGracePulses { get; set; } = 360;

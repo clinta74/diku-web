@@ -78,6 +78,15 @@ public sealed class WorldMutationApplier(
             DeleteAbility change => ApplyDeleteAbility(change),
             UpsertQuest change => ApplyUpsertQuest(change),
             DeleteQuest change => ApplyDeleteQuest(change),
+            // Editing a configuration reaches the loop only when it is the live one; activating
+            // one always does. Deleting one never does - the endpoint refuses to delete the live
+            // one, so there is nothing here to undo.
+            UpsertGameConfiguration change => change.Live
+                ? ApplyConfiguration(change, change.StartingRoomKey, change.WelcomeMessage)
+                : MutationResult.Ok([change]),
+            ActivateGameConfiguration change =>
+                ApplyConfiguration(change, change.StartingRoomKey, change.WelcomeMessage),
+            DeleteGameConfiguration change => MutationResult.Ok([change]),
             _ => MutationResult.Fail(MutationError.Invalid, "Unsupported change."),
         };
     }
@@ -354,6 +363,35 @@ public sealed class WorldMutationApplier(
         {
             view.RefreshRoom(world, refuge);
         }
+
+        return MutationResult.Ok([change]);
+    }
+
+    /// <summary>
+    /// Points the running loop at a configuration's starting room and greeting (PLAN.md §4.16).
+    /// </summary>
+    /// <remarks>
+    /// <b>The room is not required to exist.</b> Writing a configuration before importing the world
+    /// it points into is the ordinary order of operations for a fresh server, and refusing here
+    /// would make that impossible. A starting room that resolves to nothing is already a state the
+    /// engine handles — <c>FindRefuge</c> and the login relocation both fall through — and the
+    /// builder panel is where somebody should hear about it, per §7.4. What is refused is a key
+    /// that is not a key at all, because that can never become valid by importing anything.
+    /// </remarks>
+    private MutationResult ApplyConfiguration(
+        WorldChange change,
+        string startingRoomKey,
+        string welcomeMessage)
+    {
+        if (!RoomKey.TryParse(startingRoomKey, out var starting))
+        {
+            return MutationResult.Fail(
+                MutationError.Invalid,
+                $"'{startingRoomKey}' is not a room key.");
+        }
+
+        options.StartingRoom = starting;
+        options.WelcomeMessage = welcomeMessage;
 
         return MutationResult.Ok([change]);
     }

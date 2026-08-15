@@ -68,6 +68,11 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
         await ApplyAsync("spawner", bundle.Spawners, s => s.Id.ToString(), SpawnerChangeFor);
         await ApplyAsync("quest", bundle.Quests, q => q.Key, QuestChangeFor);
 
+        // Last, because a configuration names a room and reads best once that room exists - and
+        // never activating anything, so importing a starter set cannot repoint a live server as a
+        // side effect. Activation is a separate, deliberate call (§4.16).
+        await ApplyAsync("configuration", bundle.Configurations, c => c.Key, ConfigurationChangeFor);
+
         return new ImportReport(bundle.FormatVersion, dryRun, counts, warnings, failures);
 
         // Shared per-kind loop: count what would happen, then - unless this is a rehearsal -
@@ -243,6 +248,18 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
             [.. (a.Effects ?? []).Select(e =>
                 new AbilityEffectSpec(e.Key, new Dictionary<string, string>(e.Params, StringComparer.Ordinal)))]);
 
+    /// <remarks>
+    /// <c>Live: false</c> always. An import writes what a configuration *means*; whether the
+    /// running loop obeys it is not a question a content file gets to answer. A configuration that
+    /// happens to be the active one is re-read at the next activation or restart.
+    /// </remarks>
+    private static WorldChange? ConfigurationChangeFor(BundleGameConfiguration c) =>
+        GameConfiguration.IsValidKey(c.Key)
+            ? new UpsertGameConfiguration(
+                c.Key, c.Name, c.Description ?? string.Empty,
+                c.StartingRoomKey, c.WelcomeMessage ?? string.Empty, Live: false)
+            : null;
+
     private static WorldChange SpawnerChangeFor(BundleSpawner s) =>
         new UpsertSpawner(s.Id, s.ZoneKey, s.TemplateKey, s.TemplateKind,
             s.RoomKeys ?? [], s.TargetCount, s.RespawnSeconds, s.Wanders, s.FightsAtLevel);
@@ -350,6 +367,13 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
             found.Add(("ability", key));
         }
 
+        var configurationKeys = Keys(bundle.Configurations, c => c.Key);
+        foreach (var key in await db.GameConfigurations.AsNoTracking()
+            .Where(c => configurationKeys.Contains(c.Key)).Select(c => c.Key).ToListAsync(cancellationToken))
+        {
+            found.Add(("configuration", key));
+        }
+
         var questKeys = Keys(bundle.Quests, q => q.Key);
         foreach (var key in await db.Quests.AsNoTracking()
             .Where(q => questKeys.Contains(q.Key)).Select(q => q.Key).ToListAsync(cancellationToken))
@@ -450,6 +474,15 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
             var kind = spawner.TemplateKind == Domain.Spawning.TemplateKind.Mob ? mobs : items;
             Check(kind, spawner.TemplateKey, "missing-template", "spawner", spawner.Id.ToString(),
                 $"places '{spawner.TemplateKey}', which is neither in this bundle nor here.");
+        }
+
+        // A configuration whose starting room is nowhere is the one dangling reference that
+        // strands *every* new character rather than one quest, so it is worth naming even though,
+        // like the rest, it does not block the import.
+        foreach (var configuration in bundle.Configurations ?? [])
+        {
+            Check(rooms, configuration.StartingRoomKey, "missing-room", "configuration", configuration.Key,
+                $"starts characters in '{configuration.StartingRoomKey}', which is neither in this bundle nor here.");
         }
 
         foreach (var quest in bundle.Quests ?? [])

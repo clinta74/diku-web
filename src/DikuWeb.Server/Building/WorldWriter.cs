@@ -550,6 +550,73 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 return ContentAction.Delete;
             }
 
+            case UpsertGameConfiguration c:
+            {
+                var entity = await db.GameConfigurations.FirstOrDefaultAsync(
+                    g => g.Key == c.Key,
+                    cancellationToken);
+
+                var created = entity is null;
+
+                if (entity is null)
+                {
+                    entity = new GameConfiguration { Key = c.Key, Name = c.Name };
+                    db.GameConfigurations.Add(entity);
+                }
+
+                entity.Name = c.Name;
+                entity.Description = c.Description;
+                entity.StartingRoomKey = c.StartingRoomKey;
+                entity.WelcomeMessage = c.WelcomeMessage;
+                entity.UpdatedAt = clock.GetUtcNow();
+
+                // IsActive is untouched on purpose. An edit says what a configuration means, never
+                // which one the server obeys - that only moves through ActivateGameConfiguration,
+                // so an import can bring a configuration in without repointing a live server.
+                return created ? ContentAction.Create : ContentAction.Update;
+            }
+
+            case DeleteGameConfiguration c:
+            {
+                var entity = await db.GameConfigurations.FirstOrDefaultAsync(
+                    g => g.Key == c.Key,
+                    cancellationToken);
+
+                if (entity is not null)
+                {
+                    db.GameConfigurations.Remove(entity);
+                }
+
+                return ContentAction.Delete;
+            }
+
+            case ActivateGameConfiguration c:
+            {
+                // Cleared first, as its own statement, and this ordering is load-bearing. The
+                // filtered unique index is checked per statement rather than per transaction, and
+                // a partial index cannot be made deferrable - so handing EF an "unset the old" and
+                // "set the new" pair in one batch lets it choose an order where two rows are
+                // briefly live, and Postgres rejects the whole write. It failed exactly that way,
+                // and surfaced as the second activation silently not taking.
+                await db.GameConfigurations
+                    .Where(g => g.IsActive && g.Key != c.Key)
+                    .ExecuteUpdateAsync(
+                        s => s.SetProperty(g => g.IsActive, false),
+                        cancellationToken);
+
+                var entity = await db.GameConfigurations.FirstOrDefaultAsync(
+                    g => g.Key == c.Key,
+                    cancellationToken);
+
+                if (entity is not null)
+                {
+                    entity.IsActive = true;
+                    entity.UpdatedAt = clock.GetUtcNow();
+                }
+
+                return ContentAction.Update;
+            }
+
             default:
                 // Every primitive the loop can produce needs an arm above. Quests reached
                 // production without one, so a builder's quest save applied to memory, threw
@@ -729,6 +796,30 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                     ["autoStart"] = entity.AutoStart,
                     ["dialogue"] = ToJson(entity.Dialogue),
                     ["sortOrder"] = entity.SortOrder,
+                }.ToJsonString();
+            }
+
+            // Worth an arm rather than the null default below: "who moved the starting room, and
+            // what was it before?" is exactly the question the content audit exists to answer, and
+            // this is the one setting whose being wrong strands every new character at once.
+            case UpsertGameConfiguration or DeleteGameConfiguration or ActivateGameConfiguration:
+            {
+                var key = change.EntityKey;
+                var entity = await db.GameConfigurations.AsNoTracking()
+                    .FirstOrDefaultAsync(g => g.Key == key, cancellationToken);
+
+                return entity is null ? null : new JsonObject
+                {
+                    ["key"] = entity.Key,
+                    ["name"] = entity.Name,
+                    ["description"] = entity.Description,
+                    ["startingRoomKey"] = entity.StartingRoomKey,
+                    ["welcomeMessage"] = entity.WelcomeMessage,
+
+                    // Included here though it never travels in a bundle: an activation's whole
+                    // content is this field moving, and an audit pair that showed no difference
+                    // would be a record of nothing having happened.
+                    ["isActive"] = entity.IsActive,
                 }.ToJsonString();
             }
 

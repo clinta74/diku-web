@@ -5,10 +5,13 @@ using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine;
 using DikuWeb.Engine.Mutations;
+using DikuWeb.Persistence;
 using DikuWeb.Server.Auth;
 using DikuWeb.Server.Infrastructure;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.EntityFrameworkCore;
 
 namespace DikuWeb.Server.Building;
 
@@ -33,6 +36,14 @@ public static class BuilderEndpoints
         // reaches the UI with no client change at all (PLAN.md §4.10).
         group.MapGet("/room-flags", () => Results.Ok(
             RoomFlags.All.Select(f => new RoomFlagResponse(f.Key, f.Default, f.Summary, f.Phase))));
+
+        // Named starter configurations (§4.16). Content, not deployment: an operator should not
+        // need a container restart to move where new characters wake up, and a server can hold
+        // several complete answers and swap between them.
+        group.MapGet("/configurations", ListConfigurationsAsync);
+        group.MapPost("/configurations/{key}", UpsertConfigurationAsync);
+        group.MapDelete("/configurations/{key}", DeleteConfigurationAsync);
+        group.MapPost("/configurations/{key}/activate", ActivateConfigurationAsync);
 
         group.MapGet("/worlds", ListWorldsAsync);
         group.MapGet("/worlds/{key}", GetWorldAsync);
@@ -176,6 +187,246 @@ public static class BuilderEndpoints
     // -----------------------------------------------------------------------
     // Worlds
     // -----------------------------------------------------------------------
+
+    // -----------------------------------------------------------------------
+    // Named starter configurations (PLAN.md §4.16)
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Every configuration, with which one is live and whether its starting room actually exists.
+    /// </summary>
+    /// <remarks>
+    /// Reports <c>startingRoomExists</c> rather than hiding or refusing a configuration that points
+    /// nowhere. Writing one before importing the world it names is the ordinary order of operations
+    /// on a fresh server, so a dangling value is a warning in the panel and not an error - the same
+    /// reading §7.4 takes of every other dangling reference.
+    /// </remarks>
+    private static async Task<IResult> ListConfigurationsAsync(
+        DikuWebDbContext db,
+        EngineOptions options,
+        CancellationToken ct)
+    {
+        var stored = await db.GameConfigurations.AsNoTracking()
+            .OrderBy(c => c.Name)
+            .ToListAsync(ct);
+
+        var rooms = await RoomsThatExistAsync(db, stored.Select(c => c.StartingRoomKey), ct);
+
+        var rows = stored
+            .Select(c => new GameConfigurationResponse(
+                c.Key,
+                c.Name,
+                c.Description,
+                c.StartingRoomKey,
+                c.WelcomeMessage,
+                c.IsActive,
+                rooms.Contains(c.StartingRoomKey),
+                c.UpdatedAt))
+            .ToList();
+
+        // What the loop is actually obeying, which is not always what the rows say: a database
+        // with no active row leaves EngineOptions on its configured fallback, and a panel that
+        // showed an empty list would imply the server had no starting room at all.
+        return Results.Ok(new GameConfigurationList(
+            rows,
+            options.StartingRoom.ToString(),
+            options.WelcomeMessage));
+    }
+
+    private static async Task<IResult> UpsertConfigurationAsync(
+        string key,
+        GameConfigurationRequest request,
+        WorldEditor editor,
+        DikuWebDbContext db,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (request is null)
+        {
+            return Results.BadRequest(new { error = "A configuration body is required." });
+        }
+
+        if (!GameConfiguration.IsValidKey(key))
+        {
+            return Results.BadRequest(new
+            {
+                error = $"'{key}' is not a configuration key "
+                    + "(lowercase letters, digits and inner hyphens, e.g. the-reaches).",
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            return Results.BadRequest(new { error = "A configuration needs a name." });
+        }
+
+        if (!RoomKey.TryParse(request.StartingRoomKey, out var startingRoom))
+        {
+            return Results.BadRequest(new
+            {
+                error = $"'{request.StartingRoomKey}' is not a room key "
+                    + "(three dot-separated segments, e.g. ossara.gatetown.the-gate-yard).",
+            });
+        }
+
+        var welcome = request.WelcomeMessage ?? string.Empty;
+
+        if (welcome.Length > GameConfiguration.MaxWelcomeLength)
+        {
+            return Results.BadRequest(new
+            {
+                error = $"The welcome message is limited to {GameConfiguration.MaxWelcomeLength} characters.",
+            });
+        }
+
+        // Whether this edit also moves the running loop. The applier has no database, so the
+        // question is answered here and carried on the mutation.
+        var live = await db.GameConfigurations.AsNoTracking()
+            .AnyAsync(c => c.Key == key && c.IsActive, ct);
+
+        http.TryGetAccountId(out var accountId);
+
+        var outcome = await editor.ApplyAsync(
+            new UpsertGameConfiguration(
+                key, request.Name, request.Description ?? string.Empty,
+                request.StartingRoomKey, welcome, live),
+            accountId,
+            ct);
+
+        if (!outcome.Ok)
+        {
+            return Results.BadRequest(new { error = Describe(outcome) });
+        }
+
+        var exists = await db.Rooms.AsNoTracking().AnyAsync(r => r.Key == startingRoom, ct);
+
+        return Results.Ok(new GameConfigurationResponse(
+            key, request.Name, request.Description ?? string.Empty,
+            request.StartingRoomKey, welcome, live, exists, DateTimeOffset.UtcNow));
+    }
+
+    /// <remarks>
+    /// The live one is refused. Deleting the configuration the server is currently obeying would
+    /// leave the loop pointing at values with no row behind them - fine until the next restart, and
+    /// then silently back to the compiled fallback, which is the sort of failure that surfaces
+    /// weeks later as "why do new characters start in Millbrook".
+    /// </remarks>
+    private static async Task<IResult> DeleteConfigurationAsync(
+        string key,
+        WorldEditor editor,
+        DikuWebDbContext db,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        var entity = await db.GameConfigurations.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Key == key, ct);
+
+        if (entity is null)
+        {
+            return Results.NotFound(new { error = $"No configuration '{key}'." });
+        }
+
+        if (entity.IsActive)
+        {
+            return Results.BadRequest(new
+            {
+                error = "This is the active configuration. Activate another one first.",
+            });
+        }
+
+        http.TryGetAccountId(out var accountId);
+
+        var outcome = await editor.ApplyAsync(new DeleteGameConfiguration(key), accountId, ct);
+
+        return outcome.Ok
+            ? Results.NoContent()
+            : Results.BadRequest(new { error = Describe(outcome) });
+    }
+
+    /// <summary>
+    /// Makes one configuration live, taking effect for the next character to enter the game.
+    /// </summary>
+    /// <remarks>
+    /// Its own endpoint rather than a field on the upsert, because editing what a configuration
+    /// says and choosing which one the server obeys are different decisions with very different
+    /// blast radii - and because an import that could set it would repoint a running server as a
+    /// side effect of loading content.
+    /// </remarks>
+    private static async Task<IResult> ActivateConfigurationAsync(
+        string key,
+        WorldEditor editor,
+        DikuWebDbContext db,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        var entity = await db.GameConfigurations.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Key == key, ct);
+
+        if (entity is null)
+        {
+            return Results.NotFound(new { error = $"No configuration '{key}'." });
+        }
+
+        http.TryGetAccountId(out var accountId);
+
+        var outcome = await editor.ApplyAsync(
+            new ActivateGameConfiguration(key, entity.StartingRoomKey, entity.WelcomeMessage),
+            accountId,
+            ct);
+
+        if (!outcome.Ok)
+        {
+            return Results.BadRequest(new { error = Describe(outcome) });
+        }
+
+        var exists = RoomKey.TryParse(entity.StartingRoomKey, out var parsed)
+            && await db.Rooms.AsNoTracking().AnyAsync(r => r.Key == parsed, ct);
+
+        return Results.Ok(new GameConfigurationResponse(
+            entity.Key, entity.Name, entity.Description, entity.StartingRoomKey,
+            entity.WelcomeMessage, IsActive: true, exists, DateTimeOffset.UtcNow));
+    }
+
+    /// <summary>
+    /// Why an edit did not stick, told apart properly.
+    /// </summary>
+    /// <remarks>
+    /// <c>Refused</c> and <c>NotSaved</c> are different failures with the same falsy <c>Ok</c>, and
+    /// collapsing them cost real time: a persistence error surfaced as the word "Refused." with no
+    /// message, which reads as a validation rule nobody could find. It was an audit column too
+    /// narrow for the entity kind - a thing the server knew exactly and declined to say.
+    /// </remarks>
+    private static string Describe(EditOutcome outcome) => outcome.Status switch
+    {
+        EditStatus.NotSaved =>
+            "Applied to the world but could not be persisted; it was rolled back. Check the server log.",
+        _ => outcome.Result.Message ?? "Refused.",
+    };
+
+    /// <summary>Which of these room keys this environment actually has.</summary>
+    private static async Task<HashSet<string>> RoomsThatExistAsync(
+        DikuWebDbContext db,
+        IEnumerable<string> keys,
+        CancellationToken ct)
+    {
+        var parsed = keys
+            .Select(k => RoomKey.TryParse(k, out var room) ? room : (RoomKey?)null)
+            .OfType<RoomKey>()
+            .Distinct()
+            .ToList();
+
+        if (parsed.Count == 0)
+        {
+            return [];
+        }
+
+        var found = await db.Rooms.AsNoTracking()
+            .Where(r => parsed.Contains(r.Key))
+            .Select(r => r.Key)
+            .ToListAsync(ct);
+
+        return [.. found.Select(k => k.ToString())];
+    }
 
     private static async Task<IResult> ListWorldsAsync(BuilderQueries queries, CancellationToken ct) =>
         Results.Ok(await queries.WorldsAsync(ct));

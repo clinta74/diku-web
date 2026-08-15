@@ -391,3 +391,68 @@ public sealed record DeleteQuest(string Key) : WorldChange
 
     public override string EntityKey => Key;
 }
+
+/// <summary>
+/// A named starter configuration: where a new character wakes up, and what they are told
+/// (PLAN.md §4.16).
+/// </summary>
+/// <remarks>
+/// A mutation rather than a plain database write, so a builder changing the active configuration
+/// takes effect for the next person to log in without a restart. The loop owns
+/// <see cref="EngineOptions"/> the same way it owns the world, and going around it would leave a
+/// running server disagreeing with its own database until somebody bounced it - precisely the
+/// failure this setting exists to end.
+///
+/// Carries no active flag. Which configuration is live is environment state rather than content,
+/// so it moves only through <see cref="ActivateGameConfiguration"/> - see the entity for why an
+/// import must never repoint a live server as a side effect.
+/// </remarks>
+/// <param name="Live">
+/// True when this is the configuration the server is currently obeying, in which case the edit
+/// applies to the running loop as well as to the row. The caller decides, because the applier has
+/// no database and asking it to know which row is active would mean giving it one.
+/// </param>
+public sealed record UpsertGameConfiguration(
+    string Key,
+    string Name,
+    string Description,
+    string StartingRoomKey,
+    string WelcomeMessage,
+    bool Live) : WorldChange
+{
+    public override string EntityKind => "configuration";
+
+    public override string EntityKey => Key;
+}
+
+public sealed record DeleteGameConfiguration(string Key) : WorldChange
+{
+    public override string EntityKind => "configuration";
+
+    public override string EntityKey => Key;
+}
+
+/// <summary>
+/// Makes one configuration the live one, and every other one not.
+/// </summary>
+/// <remarks>
+/// Separate from the upsert on purpose. Editing what a configuration says and choosing which one
+/// the server obeys are different decisions with different blast radii - the first is a typo away
+/// from a bad greeting, the second is a typo away from every new character waking up in the wrong
+/// world - and they audit better as two entries than as one.
+/// </remarks>
+/// <remarks>
+/// Carries the values as well as the key, rather than naming a row for the applier to go and read.
+/// The loop has no database by design (§2.1), and the alternative — a configuration cache beside
+/// the spawner and template caches — is a lot of machinery for two strings that only ever change
+/// when a person clicks a button.
+/// </remarks>
+public sealed record ActivateGameConfiguration(
+    string Key,
+    string StartingRoomKey,
+    string WelcomeMessage) : WorldChange
+{
+    public override string EntityKind => "configuration";
+
+    public override string EntityKey => Key;
+}

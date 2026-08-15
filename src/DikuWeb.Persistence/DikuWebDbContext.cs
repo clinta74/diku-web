@@ -22,6 +22,13 @@ public sealed class DikuWebDbContext(DbContextOptions<DikuWebDbContext> options)
 
     public DbSet<Ability> Abilities => Set<Ability>();
 
+    /// <summary>
+    /// Named starter configurations, at most one of them active. See <see cref="GameConfiguration"/>
+    /// for why the starting room and the greeting are content rather than deployment settings, and
+    /// why a server holds several and swaps between them.
+    /// </summary>
+    public DbSet<GameConfiguration> GameConfigurations => Set<GameConfiguration>();
+
     public DbSet<World> Worlds => Set<World>();
 
     public DbSet<Zone> Zones => Set<Zone>();

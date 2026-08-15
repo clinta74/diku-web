@@ -46,7 +46,8 @@ public sealed record WorldBundle(
     IReadOnlyList<BundleMobTemplate> MobTemplates,
     IReadOnlyList<BundleAbility> Abilities,
     IReadOnlyList<BundleSpawner> Spawners,
-    IReadOnlyList<BundleQuest> Quests)
+    IReadOnlyList<BundleQuest> Quests,
+    IReadOnlyList<BundleGameConfiguration> Configurations)
 {
     /// <summary>
     /// The only format this build writes, and the only one it reads.
@@ -56,6 +57,14 @@ public sealed record WorldBundle(
     /// else is advisory (§7.4), but a bundle whose shape this build does not understand cannot
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
+    ///
+    /// <b>7 because a bundle carries its own starter configurations.</b> A v6 bundle has no
+    /// <c>configurations</c>, so read as v7 it would arrive with none — which is survivable, unlike
+    /// the bumps below it, since a missing configuration is visible the moment somebody opens the
+    /// panel. It is here because the exporter now *writes* a key a v6 reader would drop, and a file
+    /// labelled 6 that carries a v7 field is a lie about its own shape. This is what lets a whole
+    /// starter set move between servers — the Aldenmoor configuration and the Reaches one are two
+    /// complete answers to "what does a new player meet", and swapping is the point (§4.16).
     ///
     /// <b>6 because an exit can refuse you and a quest can grant a capability.</b> A version 5
     /// bundle has no <c>requiredFlagKey</c>, <c>requiredItemKey</c> or <c>rewardFlagKey</c>, so
@@ -89,8 +98,29 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 6;
+    public const int CurrentFormatVersion = 7;
 }
+
+/// <summary>
+/// A named starter configuration: where a new character wakes up, and what they are told
+/// (PLAN.md §4.16).
+/// </summary>
+/// <remarks>
+/// <b>There is deliberately no <c>isActive</c>.</b> The definitions are content and belong beside
+/// the world they describe; which one a given server obeys is that environment's own state, like
+/// which room a character is standing in. An import is a merge that runs against a server with
+/// people on it, so a field arriving in a content file must never repoint where every new character
+/// wakes up — activation stays an explicit call, audited as its own act.
+///
+/// Carried whole rather than scoped, like abilities: a configuration belongs to a server, not to a
+/// zone, so a zone-scoped export carries all of them or none.
+/// </remarks>
+public sealed record BundleGameConfiguration(
+    string Key,
+    string Name,
+    string Description,
+    string StartingRoomKey,
+    string WelcomeMessage);
 
 /// <summary>
 /// What the export was asked for, recorded so a bundle can say what it is rather than leaving
