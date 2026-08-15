@@ -1165,6 +1165,81 @@ The inventory listing is prose a player scans, not a data structure, so it colla
 - **Equipped items never stack.** They are listed under their slots, and the slot is the
   information — two identical rings worn in two places is two facts, not one fact twice.
 
+### 4.15 Conditional exits — a locked door and a portal are one mechanism
+
+An exit may require a **character flag**, an **item in the character's inventory**, or both. That is
+the whole feature, and it covers the cellar door and the world-to-world portal with one rule,
+because they are one rule: *this way is open to some characters and not to others.*
+
+| Requirement | Field | What it is for |
+|---|---|---|
+| Character flag | `RoomExit.RequiredFlagKey` | A capability that cannot be lost — attunement to a realm, a rank, a pardon |
+| Inventory item | `RoomExit.RequiredItemKey` | A capability that can be — a key, a writ, a severed hand |
+
+**Two kinds because they fail differently, and that difference is the design.** A flag survives
+being robbed, killed, and reincarnated; an item does not. Attunement to a Reach must be permanent
+or the endgame is one pickpocket away from being unreachable. A vault key must be losable or it is
+not a key, it is a flag with a picture on it.
+
+- **Flags live on the Character, never the Account.** An account-level flag would let a fresh alt
+  inherit attunement to the last realm at level 1, which is the entire gate defeated by the
+  character-select screen. Per-character is the only scope that means anything here.
+- **`CharacterFlags` is an open registry**, exactly as `RoomFlags` is (§4.10): one `Register` call,
+  no migration, and **absence must be the safe value** — which for a gate means *closed*.
+  `Character.Flags` is a jsonb `FlagSet`, so an unrecognised flag round-trips rather than being
+  dropped, the same as everywhere else.
+- **A quest grants a flag as a reward** — `Quest.RewardFlagKey`, beside XP, gold, and item. This is
+  what makes the capability earnable through content rather than hardcoded, and it is why the exit
+  names a *flag* rather than a quest key: re-author the chain, split it, add a second route, and
+  the gate still works, because the gate never knew which quest it was waiting on.
+- **Requirements are ANDed.** There is no motivating example for OR, and adding it later is
+  additive.
+- **The item is held, not consumed.** A key is reusable. A consuming toll gate is a later field on
+  the same row, not a different feature.
+- **Held means `OwnerCharacterId`** — carried or equipped, via the existing
+  `WorldState.InventoryOf`. It is deliberately **not** recursive into containers, because an
+  `ItemInstance` carries exactly one of owner / container / room, so a key in a backpack has no
+  owner id. *This is a known limit rather than a decision:* no container content exists today, and
+  the day it does, a key that stops working when it is put away is a bug report. Revisit then.
+- **The refusal line is authored on the exit** — `RoomExit.RefusalMessage`, defaulting to a generic
+  line. *"The gate does not know you."* and *"It is locked."* are different sentences, and deriving
+  which to say from which requirement failed gets clumsy the moment an exit has both. The author
+  knows what the door is; let them say so.
+- **A requirement does not mirror to the reciprocal exit.** `dig` and `link` create both directions
+  (§7.6), but a lock is directional — you can always leave a vault. The builder offers mirroring as
+  a checkbox rather than doing it silently.
+- **A wandering mob never traverses a conditional exit.** Mobs have no flags and no inventory worth
+  interrogating, and the alternative is flagging `noMob` on every room behind every door and
+  remembering to do it again whenever a builder digs one — the exact failure mode §4.8 rejects when
+  it fences mobs by origin rather than by geography.
+
+**Enforced in `Move`, and only there.** `flee` ends combat in place and never relocates, so there is
+no escape path to tunnel through a lock. `recall`, death respawn, and builder `goto` teleport rather
+than walk, and bypassing by nature is correct — they do not use exits.
+
+That leaves one hole, and it is closed by authoring rather than by code: **never set `respawn` on a
+room behind a conditional exit.** Otherwise a player binds inside the vault, walks out, and recalls
+back in forever without the key. Binding already requires a `respawn`-flagged room (§4.12), so the
+rule has somewhere to live; `/validate` should warn when the two are combined.
+
+In practice the rule is nearly self-enforcing, because bind points are meant to be a handful of
+deliberate places — hub towns — and a hub is never behind a lock. The `/validate` warning is a
+backstop for the day someone flags a zone rather than a room, not the primary defence.
+
+**Note what is *not* a hole.** `noRecall` refuses `recall` (`Travel.Refuse`), but death respawn does
+not route through that check — it moves the character directly, so **dying always works, even where
+recall does not.** That is correct and load-bearing: a player who dies must go somewhere. It means a
+`noRecall` region is a restriction on convenient travel rather than a trap, and that dying is the
+guaranteed way out of one, paid for in experience.
+
+**Fails closed, and `/validate` is how a builder finds out** (§7.4). An exit naming a flag that is
+not in the registry refuses. The asymmetry justifies itself: a wall players cannot pass is reported
+within the hour, and a silently-open gate to the endgame is reported never.
+
+**This takes `WorldBundle.FormatVersion` to 5.** A v4 bundle read as v5 would deserialise every
+missing requirement to null and quietly open every gate in it — the silent partial apply the version
+number exists to refuse. Both fields land in one bump rather than two.
+
 ---
 
 ## 5. Game client layout
@@ -1539,6 +1614,9 @@ because of it. Failure is always closed and always narrated:
 | Quest references a deleted mob or item | Quest goes dormant: the giver stops offering it, and an already-Active copy stays in the journal marked *unavailable* rather than being deleted from the character. Never silently wipe player progress. |
 | Quest prerequisites form a cycle | Every quest in the cycle is unstartable. Reported by `/storyline`, not enforced at save time. |
 | Flag key is not in the registry | Preserved on save, ignored by the engine, reported by `/validate`. Covers both a typo and a flag written by a newer binary (§4.10). |
+| Exit requires a flag or item key that does not exist | Movement is refused with the exit's own message, and `/validate` reports it (§4.15). The one place an unknown key fails *closed* rather than being ignored: a wall is noticed within the hour, an accidentally-open gate to the endgame is not. |
+| A character holds a flag no longer in the registry | Preserved on the character, ignored by the engine. Same rule as room flags, for the same reason — a downgrade must not silently strip what a player earned. |
+| `respawn` set on a room behind a conditional exit | Allowed, and reported by `/validate`: it lets a character bind past the lock and recall in without the key ever after (§4.15). |
 | Flag value is the wrong type (`"pvp": "yes"`) | Treated as absent, so it resolves to the registry default — which is always the safe value. Advisory warning. |
 | `pvp` cleared on a room mid-fight | The fight ends on the next round, exactly as if the combatants had walked out (§4.11). A live edit can stop a duel; it can never start one retroactively. |
 | A character's bind room is deleted | Death falls through to the next respawn candidate (§4.12). The stale `respawn_room_key` is cleared the first time it fails to resolve. |
