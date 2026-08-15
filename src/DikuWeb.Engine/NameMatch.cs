@@ -42,6 +42,16 @@ public static class NameMatch
     /// The best match in <paramref name="candidates"/>, or null when nothing answers to it.
     /// Ties keep the earlier candidate, so room order still breaks a genuine draw.
     /// </summary>
+    /// <remarks>
+    /// <b>A trailing number picks between equals: <c>attack crow 2</c>.</b> This is what makes the
+    /// ordinals <see cref="MobLabel"/> shows typeable — a label a player can read and not act on
+    /// sends them to "you don't see that here", which is worse than not numbering them at all.
+    ///
+    /// <b>Tried only after the whole string fails.</b> A mob genuinely called "guard 2" matches
+    /// exactly on the first pass and is returned, so authored names that end in a digit keep
+    /// working; the ordinal reading is a fallback rather than a parse, which is the ordering that
+    /// makes it safe to apply to items and everything else as well.
+    /// </remarks>
     public static T? Best<T>(
         IEnumerable<T> candidates,
         string? typed,
@@ -53,12 +63,14 @@ public static class NameMatch
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(key);
 
+        var needle = typed?.Trim();
+
         T? best = null;
         var bestRank = NoMatch;
 
         foreach (var candidate in candidates)
         {
-            var rank = RankOf(typed?.Trim(), name(candidate), key(candidate));
+            var rank = RankOf(needle, name(candidate), key(candidate));
             if (rank < bestRank)
             {
                 best = candidate;
@@ -71,7 +83,50 @@ public static class NameMatch
             }
         }
 
-        return best;
+        return best ?? Nth(candidates, needle, name, key);
+    }
+
+    /// <summary>
+    /// Reads <paramref name="needle"/> as "<c>&lt;word&gt; &lt;n&gt;</c>" and returns the nth thing
+    /// that answers to the word, in rank order. Null when it does not read that way, or when there
+    /// is no nth one.
+    /// </summary>
+    private static T? Nth<T>(
+        IEnumerable<T> candidates,
+        string? needle,
+        Func<T, string?> name,
+        Func<T, string?> key)
+        where T : class
+    {
+        if (string.IsNullOrEmpty(needle))
+        {
+            return null;
+        }
+
+        var split = needle.LastIndexOf(' ');
+        if (split <= 0 ||
+            !int.TryParse(
+                needle.AsSpan(split + 1),
+                System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var wanted) ||
+            wanted < 1)
+        {
+            return null;
+        }
+
+        var word = needle[..split].TrimEnd();
+
+        // Ordered by rank, ties keeping room order - the same rule the single-match path uses, so
+        // "(2)" in the room listing and "crow 2" at the prompt agree about which one is second.
+        // OrderBy is stable, which is what carries the tie-break through.
+        var ranked = candidates
+            .Select(c => (Candidate: c, Rank: RankOf(word, name(c), key(c))))
+            .Where(x => x.Rank != NoMatch)
+            .OrderBy(x => x.Rank)
+            .ToList();
+
+        return wanted <= ranked.Count ? ranked[wanted - 1].Candidate : null;
     }
 
     private static int RankOf(string? needle, string? name, string? key)

@@ -6,6 +6,7 @@ using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Systems;
+using DikuWeb.Engine.World;
 
 namespace DikuWeb.Engine.Commands;
 
@@ -30,6 +31,10 @@ public static class CombatCommands
         // one was asked for. MinLength stays at 1 so `k` still lands where it always has.
         commands.Add(new CommandDefinition(
             "kill", 1, "kill <target> (k) - attack target", Attack, Hidden: true));
+
+        // Two characters, not one: "a" and "ab" belong to `abilities`, which sits at MinLength 0.
+        commands.Add(new CommandDefinition(
+            "assist", 2, "assist <player> (as) - attack whatever they are attacking", Assist));
 
         commands.Add(new CommandDefinition(
             "consider", 1, "consider <target> (con) - estimate target strength", Consider));
@@ -94,34 +99,162 @@ public static class CombatCommands
             return;
         }
 
-        // Get or create combat for this room
-        var combat = ctx.World.GetOrCreateCombat(character.RoomKey);
-
-        // Enter combat
         if (targetActor != null)
         {
-            var targetId = EntityId.ForCharacter(targetActor.CharacterId);
-            character.CombatState = CombatState.Fighting;
-            character.CurrentTarget = targetId;
-            combat.AddCombatant(EntityId.ForCharacter(character.Id));
-            combat.AddCombatant(targetId);
-            combat.PlayerTargets[character.Id] = targetId;
-
-            ctx.Reply($"You begin attacking {targetActor.Name}!");
-            ctx.Broadcast($"{actor.Name} attacks {targetActor.Name}!");
-            targetActor.Character.CombatState = CombatState.Fighting;
+            EngagePlayer(ctx, targetActor);
         }
         else if (targetMob != null)
         {
-            var displayName = targetMob.DisplayName;
-
-            // The six steps of starting a fight live in one place, because three things now do it
-            // - this verb, a taunt, and a damaging ability landing on something not yet engaged.
-            CombatEngagement.Engage(ctx.World, character, targetMob);
-
-            ctx.Reply($"You begin attacking {NarrationHelper.WithArticle(displayName)}!");
-            ctx.Broadcast($"{actor.Name} attacks {NarrationHelper.WithArticle(displayName)}!");
+            EngageMob(ctx, targetMob);
         }
+    }
+
+    /// <summary>
+    /// Attacks whatever another player in this room is attacking.
+    /// </summary>
+    /// <remarks>
+    /// <b>It exists because names cannot aim.</b> Two mobs of one kind in a room answer to the same
+    /// word, and <see cref="NameMatch"/> breaks that tie on arrival order — which has nothing to do
+    /// with which one your party is fighting. <see cref="MobLabel"/> makes the difference
+    /// <em>visible</em> and <c>attack crow 2</c> makes it typeable, but neither makes helping
+    /// somebody reliable: the ordinal shifts when one of them dies, and reading it off the screen
+    /// mid-fight is not a thing anyone does. Naming the person is stable, because the person is who
+    /// you actually meant.
+    ///
+    /// <b>It bypasses the target search entirely</b> rather than resolving a name near them. The
+    /// whole point is to inherit a target that has already been decided, so there is nothing left
+    /// to disambiguate and no way for this to land on a different mob than the one it copied.
+    ///
+    /// Refuses mid-fight exactly as <c>attack</c> does. Switching targets is a separate decision
+    /// from choosing one, and this verb is for joining a fight rather than for changing your mind
+    /// inside one.
+    /// </remarks>
+    private static void Assist(CommandContext ctx)
+    {
+        if (!ctx.HasArgument)
+        {
+            ctx.Reply("Assist whom?");
+            return;
+        }
+
+        var actor = ctx.Actor;
+        var character = actor.Character;
+
+        if (RestGate.Refuse(character) is { } resting)
+        {
+            ctx.Reply(resting, "bad");
+            return;
+        }
+
+        var ally = ctx.World.OthersIn(character.RoomKey, actor)
+            .FirstOrDefault(p => string.Equals(p.Name, ctx.Argument, StringComparison.OrdinalIgnoreCase));
+
+        if (ally is null)
+        {
+            ctx.Reply($"You don't see '{ctx.Argument}' here.");
+            return;
+        }
+
+        // Their chosen target, not the fight they happen to be standing in: a player dragged into
+        // combat by an aggressive mob has a CombatState but no CurrentTarget until they swing back,
+        // and inheriting the mob's choice would be assisting nobody's decision.
+        if (Assisted(ctx, ally) is not { } target)
+        {
+            ctx.Reply($"{ally.Name} isn't attacking anyone.");
+            return;
+        }
+
+        if (character.CombatState == CombatState.Fighting && character.CurrentTarget != null)
+        {
+            ctx.Reply("You're already in combat!");
+            return;
+        }
+
+        var refusal = target.Player is { } victim
+            ? HostileActionGate.RefusePlayer(
+                ctx.World, character.RoomKey, character.Id, victim.CharacterId, victim.Name)
+            : HostileActionGate.RefuseMob(
+                ctx.World, ctx.MobTemplates, character.RoomKey, target.Mob!);
+
+        if (refusal is not null)
+        {
+            ctx.Reply(refusal, "bad");
+            return;
+        }
+
+        if (target.Player is { } them)
+        {
+            EngagePlayer(ctx, them);
+        }
+        else
+        {
+            EngageMob(ctx, target.Mob!);
+        }
+    }
+
+    /// <summary>
+    /// What <paramref name="ally"/> is attacking, if it is still here to be attacked.
+    /// </summary>
+    /// <remarks>
+    /// A target in another room, or one that has since died, reads to the player as "they are not
+    /// attacking anyone" — which is true from where they are standing, and better than explaining
+    /// that a stale entity id is pointing at nothing.
+    /// </remarks>
+    private static (PlayerActor? Player, Mob? Mob)? Assisted(CommandContext ctx, PlayerActor ally)
+    {
+        if (ally.Character.CurrentTarget is not { } targetId)
+        {
+            return null;
+        }
+
+        var here = ctx.Actor.Character.RoomKey;
+
+        if (EntityId.IsMob(targetId))
+        {
+            return ctx.World.FindMob(EntityId.ToGuid(targetId)) is { } mob &&
+                   string.Equals(mob.RoomKey, here.ToString(), StringComparison.Ordinal)
+                ? (null, mob)
+                : null;
+        }
+
+        if (EntityId.IsCharacter(targetId))
+        {
+            return ctx.World.FindByCharacter(EntityId.ToGuid(targetId)) is { } victim &&
+                   victim.RoomKey == here
+                ? (victim, null)
+                : null;
+        }
+
+        return null;
+    }
+
+    private static void EngageMob(CommandContext ctx, Mob mob)
+    {
+        var displayName = MobLabel.For(ctx.World, mob);
+
+        // The six steps of starting a fight live in one place, because three things now do it
+        // - this verb, a taunt, and a damaging ability landing on something not yet engaged.
+        CombatEngagement.Engage(ctx.World, ctx.Actor.Character, mob);
+
+        ctx.Reply($"You begin attacking {NarrationHelper.WithArticle(displayName)}!");
+        ctx.Broadcast($"{ctx.Actor.Name} attacks {NarrationHelper.WithArticle(displayName)}!");
+    }
+
+    private static void EngagePlayer(CommandContext ctx, PlayerActor victim)
+    {
+        var character = ctx.Actor.Character;
+        var combat = ctx.World.GetOrCreateCombat(character.RoomKey);
+        var targetId = EntityId.ForCharacter(victim.CharacterId);
+
+        character.CombatState = CombatState.Fighting;
+        character.CurrentTarget = targetId;
+        combat.AddCombatant(EntityId.ForCharacter(character.Id));
+        combat.AddCombatant(targetId);
+        combat.PlayerTargets[character.Id] = targetId;
+
+        ctx.Reply($"You begin attacking {victim.Name}!");
+        ctx.Broadcast($"{ctx.Actor.Name} attacks {victim.Name}!");
+        victim.Character.CombatState = CombatState.Fighting;
     }
 
     private static void Consider(CommandContext ctx)
@@ -171,7 +304,7 @@ public static class CombatCommands
             // be the game warning you about a different mob from the one it is about to reward you
             // for. `examine` is the builder's view and still shows what was authored.
             var level = ctx.World.EffectiveLevelOf(targetMob);
-            var name = targetMob.DisplayName;
+            var name = MobLabel.For(ctx.World, targetMob);
 
             ctx.Reply(
                 $"{NarrationHelper.WithArticle(name, capitalize: true)} — Level {level}. " +

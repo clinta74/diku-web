@@ -1314,6 +1314,47 @@ missing requirement to null and quietly open every gate in it — the silent par
 number exists to refuse. Both fields land in one bump rather than two. (5 was already spent on the
 spawner level pin, which landed first.)
 
+### 4.16 Two of a kind in one room — labels, ordinals, and `assist`
+
+Reported from play as a question nobody could answer: one player attacks a crow, a second crow
+wanders in, another player attacks — did they hit the same bird? **They did**, and the reason is the
+composition of two rules that live apart: `NameMatch.Best` keeps the earlier candidate on a tie, and
+`WorldState.MoveMob` appends to the destination room's list, so a mob that walks in is always last
+and cannot win a tie against one already standing there. Nothing made the second player follow the
+first — they agreed because both resolved to the same earliest arrival.
+
+The defect was not the targeting. It was that **the transcript said "a terrace crow" four times and
+no line distinguished them**, so a correct answer was indistinguishable from a wrong one, and every
+group-targeting feature was unverifiable by hand.
+
+Three parts, and each is load-bearing:
+
+| | Rule |
+|---|---|
+| **Label** | A mob is shown as `a terrace crow (2)` **only when the room holds another mob of the same displayed name.** Numbered in arrival order — the order `NameMatch` resolves in |
+| **Ordinal** | `attack crow 2` reaches the one labelled `(2)`. Tried **only after the whole typed string fails to match**, so a mob genuinely named "guard 2" still resolves whole |
+| **`assist <player>`** | Attacks whatever that player is attacking, bypassing the name search entirely |
+
+- **Keyed on the displayed name, not the template.** A room holding a "cave rat" and a "barn rat"
+  needs no ordinals even though both are rats: what needs numbering is what a player cannot tell
+  apart.
+- **A label you cannot type at is worse than no label.** Numbering without the ordinal lookup sends
+  a player who reads `(2)` straight to *"you don't see that here"*, so the two ship together.
+- **The ordinal is positional, not an identity.** When (1) dies, (2) becomes (1). That is
+  unavoidable without permanent per-room names — and it is exactly why `assist` exists. The ordinal
+  is for *reading*; naming a person is for *aiming*, because the person is who you meant and they
+  do not renumber.
+- **`assist` inherits the target rather than resolving a name near it**, so there is nothing left to
+  disambiguate and no way for it to land on a different mob than the one it copied. It reads the
+  ally's `CurrentTarget` — their *choice* — not the fight they happen to be standing in: a player
+  dragged in by an aggressive mob has a combat state and no target until they swing back, and
+  inheriting that would be assisting nobody's decision.
+- **A target in another room, or one since killed, reads as "they aren't attacking anyone."** True
+  from where the assisting player stands, and better than explaining that a stale entity id points
+  at nothing.
+- **It refuses mid-fight exactly as `attack` does.** Switching targets is a separate decision from
+  choosing one; if that rule is ever relaxed it should be relaxed for both verbs together.
+
 ---
 
 ## 5. Game client layout

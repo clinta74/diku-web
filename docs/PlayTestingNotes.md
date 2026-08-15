@@ -167,4 +167,38 @@ Add anything noticed while playing here. Cleared as items are done.
   - **`mob(...)` in the generators now takes `wander=`**, defaulting to 24 and inert unless the
     behaviour says wanders. The default is what produced this bug, so a wandering mob is expected to
     override it — worth a glance whenever a new one is authored.
-  - chacters should be able to help others in combat. right now if 2 mobs of the same name are in a room and 1 character attacks 1 mob and a second character jumps the second one may attack the first. we may want an assist <character> command so they can concentrate on one mob. if you don't assist then picking a mob that is not in combat first would be the right choice.
+  - **helping in combat: done, and the premise was half wrong.** The second attacker *was* hitting
+    the same mob — `NameMatch.Best` keeps the earlier candidate on a tie and `MoveMob` appends, so a
+    crow that wanders in is always last and cannot steal the tie. Pinned by
+    `DuplicateTargetTests`. What was actually broken is that **nothing on screen could tell you
+    that**: two crows printed the same line, so a right answer and a wrong one looked identical.
+
+    Shipped as three parts (`PLAN.md` §4.16): a mob is labelled `a terrace crow (2)` **only** when
+    the room holds another of the same displayed name; `attack crow 2` reaches the one so labelled;
+    and `assist <player>` (`as`) attacks whatever that player is attacking, bypassing the name search
+    entirely. The ordinal is positional — when (1) dies, (2) becomes (1) — which is why `assist`
+    exists: the number is for reading, naming a person is for aiming.
+
+    **Not done, and deliberately:** the default was *not* changed to prefer a mob out of combat.
+    With `assist` in place the uncontested-first rule would make helping *harder* — the common case
+    becomes "join the fight", and a default that walks away from it pulls a second mob every time
+    somebody types the plain verb. Worth revisiting only if pulling deliberately turns out to be the
+    commoner intent in play.
+
+  - **`attack` still refuses to switch targets mid-fight** — *"You're already in combat!"* — and
+    `assist` now inherits that rule for consistency. Untested against play: if mis-targeting in a
+    group turns out to be common, the fix is relaxing it for both verbs at once, not for one.
+
+  - **An aggressive mob always jumps the same player.** `MobAiSystem.TryAggress` takes
+    `occupants.FirstOrDefault()`, so who gets attacked is decided by room-list order rather than by
+    anything about the party. Found while investigating the above; not fixed.
+
+  - incorrect messageing when not giving enough items.
+  Deacon Pell of Ilvaro's house is here.
+> give marker
+Give what to whom?
+> give marker pell
+You don't have enough ossara-fallen-marker.
+
+
+- when in a group we may want an autofollow <character> command. this command toggles on and off. when target charactor moves the auto following character should attempt to follow. if auto fallow fails in a move then it should go to its off state and have to be called again to start up.

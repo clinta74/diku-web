@@ -298,8 +298,7 @@ public sealed class PlayerView(RoomLayoutService layout)
 
         foreach (var mob in mobs.OrderBy(m => m.TemplateKey))
         {
-            var displayName = mob.DisplayName;
-            var prose = NarrationHelper.BuildSentence(displayName, "is here.");
+            var prose = NarrationHelper.BuildSentence(MobLabel.For(mobs, mob), "is here.");
             spans.Add(new TextSpan($"\n{prose}", "mob"));
         }
 
@@ -352,9 +351,8 @@ public sealed class PlayerView(RoomLayoutService layout)
         occupantEntries.AddRange(mobs
             .OrderBy(m => m.TemplateKey)
             .Select(m => {
-                var displayName = m.DisplayName;
-                var icon = displayName[0].ToString();
-                return new ContentEntry(icon, displayName, m.TemplateKey.ToLowerInvariant());
+                var icon = m.DisplayName[0].ToString();
+                return new ContentEntry(icon, MobLabel.For(mobs, m), m.TemplateKey.ToLowerInvariant());
             }));
 
         // Add items

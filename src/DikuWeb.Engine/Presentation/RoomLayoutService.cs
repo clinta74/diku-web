@@ -111,9 +111,8 @@ public sealed class RoomLayoutService
             }
 
             var (x, y) = placeable[index];
-            var displayName = mob.DisplayName;
-            var icon = displayName[0].ToString();
-            entities.Add(new MapEntity(entityId, icon, x, y, displayName, "mob"));
+            var icon = mob.DisplayName[0].ToString();
+            entities.Add(new MapEntity(entityId, icon, x, y, MobLabel.For(mobs, mob), "mob"));
         }
 
         // Items, sorted by their ID for stability.

@@ -552,7 +552,7 @@ public sealed class CommandRegistry
     private static void ExamineMob(CommandContext ctx, Mob mob)
     {
         var template = ctx.MobTemplates?.Get(mob.TemplateKey);
-        var displayName = mob.DisplayName;
+        var displayName = MobLabel.For(ctx.World, mob);
         var article = NarrationHelper.WithDefiniteArticle(displayName);
 
         var spans = new List<TextSpan>

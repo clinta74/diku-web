@@ -884,7 +884,10 @@ public sealed class CombatSystem(
             var mob = world.FindMob(EntityId.ToGuid(entityId));
             if (mob != null)
             {
-                return (CombatantType.Mob, DisplayNameOf(mob), mob);
+                // Labelled rather than plainly named: every combat line in the room flows through
+                // here, and "you hit a terrace crow" twice over is exactly the ambiguity that made
+                // two players unable to tell whether they were on the same bird.
+                return (CombatantType.Mob, MobLabel.For(world, mob), mob);
             }
         }
 
@@ -1214,7 +1217,7 @@ public sealed class CombatSystem(
         RollLoot(world, mob, mobRoomKey);
 
         // Narrate mob death to the room
-        var deathProse = NarrationHelper.BuildSentence(DisplayNameOf(mob), "falls.");
+        var deathProse = NarrationHelper.BuildSentence(MobLabel.For(world, mob), "falls.");
         foreach (var occupant in world.OccupantsOf(mobRoomKey))
         {
             occupant.SendText(deathProse, "death");
