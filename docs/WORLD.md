@@ -427,9 +427,22 @@ template — *"a quest giver that wanders off is a chain nobody can finish."*
 Eight slots exist (`ItemSlot`: Head, Chest, Hands, Legs, Feet, MainHand, OffHand, Trinket). The
 spine is **one full set per realm**, five sets, plus per-act quest rewards.
 
-Item stats scale by `itemPower`, so the same design trick applies: a realm's set is authored once at
-baseline and the realm's dial makes it appropriate. Azhen's `itemPower` 1.3 and the Unlit's 1.4 are
-where the good equipment is, which is correct — nobody living has picked it over.
+**`itemPower` does not scale item stats, and this section used to claim it did.**
+[ItemSpawner.cs:51](../src/DikuWeb.Engine/Spawning/ItemSpawner.cs#L51) copies `BaseStats` verbatim —
+`ItemValue` is resolved into the price and `ItemPower` is snapshotted into `SpawnMultipliers` and
+then never read. So the mob trick does not transfer: **each realm's set is authored at its own final
+numbers**, and the `itemPower` column in §3 is currently decoration. Azhen's 1.3 and the Unlit's 1.4
+record where the good equipment is meant to be; today they do not put it there (§10.3).
+
+Author flat values, not multipliers. Armour carries `armorFlat` (and `defense` for the to-hit dial);
+`armorMultiplier` is set-wide and multiplicative — every equipped piece's multiplier accumulates into
+one factor applied to the whole set's total flat reduction — so six pieces at 1.2 give 2.99, not 1.2.
+It is a lever for one deliberate item, never for a tier. Weapons are the exception and carry
+`damageMultiplier`, because that one scales the unarmed dice and so works on its own.
+
+**A `Trinket` is decorative today.** `IsArmorSlot` covers Head, Chest, Hands, Legs, Feet, and OffHand
+only, and the damage multiplier is read from the two hands, so nothing on a trinket is read by
+anything. Author them for flavour and value, and do not put the spine's numbers there.
 
 Quest items set `isQuestItem: true`, which means only *cannot be sold or destroyed* (`PLAN.md`
 §4.9). They still drop from ordinary spawners and loot tables; there is no separate pipeline.
@@ -548,7 +561,7 @@ room describes what is there, not how to feel about it.**
 
 ### 10.1 How content lands
 
-Content is authored as **v4 `WorldBundle` JSON** checked into the repository and applied through
+Content is authored as **v6 `WorldBundle` JSON** checked into the repository and applied through
 `POST /api/builder/import` ([WorldBundle.cs](../src/DikuWeb.Server/Building/WorldBundle.cs)). The
 bundle carries worlds, zones, rooms with nested exits, item templates, mob templates, abilities,
 spawners, and quests — everything this document specifies and nothing player-owned.
@@ -570,20 +583,39 @@ Three properties of that path worth knowing before authoring against it:
 plain rectangle, so art is an upgrade rather than a tax. Painting the hub and set-piece rooms is a
 later pass through the builder's `GridPainter`.
 
-### 10.2 Retiring Aldenmoor
+### 10.2 Retiring Aldenmoor — decided: leave it where it is
 
-`aldenmoor` and Millbrook are replaced by this design, and that has a bounded cost to be paid when
-authoring begins rather than now:
+**Aldenmoor is not deleted.** It is its own `World`, and reachability in this engine is the exit
+graph and nothing else: movement follows `RoomExit` rows, and the only key-addressed teleport is
+`goto`, which requires the Builder role. A world that nothing links to is sealed by not being linked
+to — the same mechanism that makes portals work, unused.
 
-- `DELETE /api/builder/worlds/aldenmoor` — importing the new world does not remove the old one.
-- The configured starting room in
-  [EngineContracts.cs](../src/DikuWeb.Engine/EngineContracts.cs) must move to `ossara.gatetown`.
-- Four playtest plans in [tools/DikuWeb.Playtest/Plans/](../tools/DikuWeb.Playtest/Plans/) reference
-  Millbrook rooms and need repointing.
-- `StarterWorldSeeder.cs` seeds Millbrook's twelve rooms in development.
+Three doors are worth having checked rather than assumed, and all three shut on one config change:
 
-Roughly thirty other references are illustrative key strings in tests and client fixtures; those
-parse regardless of whether the world exists and do not need touching.
+| Door | Where it leads | Why it shuts |
+|---|---|---|
+| A new character's first room | `options.StartingRoom` | Moves to `ossara.gatetown` |
+| `recall`, bound or not | bind point, else `StartingRoom` ([TravelCommands.cs:44](../src/DikuWeb.Engine/Commands/TravelCommands.cs#L44)) | Nobody is bound in Aldenmoor — production has no characters |
+| Death | `RespawnRoomKey ?? StartingRoom` ([CombatSystem.cs:1142](../src/DikuWeb.Engine/Systems/CombatSystem.cs#L1142)) | Same |
+
+So the cost is smaller than this section used to claim, in three ways:
+
+- **Production never seeds Aldenmoor at all.** Seeding is gated behind `IsDevelopment()`
+  ([Program.cs:297](../src/DikuWeb.Server/Program.cs#L297)) — *"starter content, which is a fixture,
+  not schema."* After the migration squash there is nothing on the production server to delete.
+- **Moving the starting room is configuration, not code.** `Engine__StartingRoom` is read at
+  [Program.cs:65](../src/DikuWeb.Server/Program.cs#L65) and overrides the default. The constant in
+  `EngineContracts.cs` stays as it is and remains correct for development and tests.
+- **The four playtest plans keep working**, and are better for it: a retired Millbrook stops changing,
+  which makes it a steadier regression fixture than a zone under active balance work.
+
+Keeping it also leaves a builder sandbox that is not authored content — somewhere to `goto` and test
+engine behaviour without spawning test mobs into a zone players will see.
+
+**One thing genuinely must change**, and it is unrelated to whether Aldenmoor stays:
+[GameLoop.cs:489](../src/DikuWeb.Engine/GameLoop.cs#L489) greets every player on every login with a
+hardcoded `"Welcome to Aldenmoor"`, whichever world they are standing in. Tracked in
+`PlayTestingNotes.md`, to be done when the Gatetown rooms exist to point at.
 
 ### 10.3 What this design asks of the engine, and what it leaves alone
 
@@ -592,7 +624,7 @@ attunement from a story beat into a gate: an exit may require a character flag, 
 or both, and a quest grants the flag. Attunement chains therefore need no further engine work.
 They took `WorldBundle.FormatVersion` to **6**.
 
-Two things beyond that are deliberately left as *later* rather than assumed:
+Four things beyond that are deliberately left as *later* rather than assumed:
 
 - **A faith or faction system.** Gods here are content. If standing, favour, or god-granted
   abilities are ever wanted, that is a phase of its own and it interacts with the Path system.
@@ -600,3 +632,11 @@ Two things beyond that are deliberately left as *later* rather than assumed:
   `BuilderEndpoints`. Until it is, editing a zone's multipliers only affects future spawns and
   tuning a zone means restarting the server. This will be felt immediately when the tables in §3 and
   §4 meet reality.
+- **`itemPower` is snapshotted and never applied.** `ItemSpawner` resolves `ItemValue` into the
+  price and copies `BaseStats` verbatim, so the dial records an intention it does not carry out
+  (§7.3). The design does not depend on it — every realm's set is authored at final numbers — so
+  this is a dial to either implement or delete, not a blocker. Deleting it is the smaller lie.
+- **`Trinket` is not wired to anything.** It is absent from `IsArmorSlot` and is not one of the two
+  hands the damage multiplier is read from, so the eighth slot equips and does nothing. Worth one
+  of: adding it to the armour sweep, giving it its own stat vocabulary, or dropping it from the
+  spine. Until then, trinkets are flavour and sale value.

@@ -48,6 +48,43 @@ Add anything noticed while playing here. Cleared as items are done.
   same rule that makes the level 19 case right, so it cannot be fixed by putting the floor back —
   the honest lever is capping how far *above* your level a mob can pay.
 
+- **When Gatetown is imported, do these three in one pass.** All of them are waiting on the rooms
+  existing to point at, and none of them is worth doing before that:
+
+  1. **The login greeting is hardcoded to the retired world.**
+     [GameLoop.cs:489](../src/DikuWeb.Engine/GameLoop.cs#L489) sends
+     `"Welcome to Aldenmoor, {name}."` to every player on every login, whichever world they are
+     actually standing in. Deriving it from the starting room's world is *not* the fix — "Welcome
+     to Ossara" is also wrong, because the setting is the Reaches and the realm you begin in is
+     incidental. It wants to be a configured greeting.
+  2. **Point `Engine__StartingRoom` at `ossara.gatetown.the-gate-yard`.** Configuration, not code
+     ([Program.cs:65](../src/DikuWeb.Server/Program.cs#L65)) — the `EngineContracts.cs` default
+     stays on Millbrook and stays correct for development and tests. Aldenmoor is **not** deleted;
+     see `WORLD.md` §10.2 for why leaving it costs nothing and buys a builder sandbox.
+  3. **Bind works again the moment this lands.** `bind` has been refusing everywhere because no
+     content sets the `respawn` flag; `ossara.gatetown` sets it at the zone level, so this is the
+     first import that makes the verb do anything. Worth actually typing it.
+
+- **Two item dials are recorded and never read.** Both found while authoring the Ossaran set, both
+  affect what content can assume, neither blocks anything:
+  - **`itemPower` does not scale item stats.**
+    [ItemSpawner.cs:51](../src/DikuWeb.Engine/Spawning/ItemSpawner.cs#L51) copies `BaseStats`
+    verbatim; only `ItemValue` is resolved, into the price. The dial is snapshotted into
+    `SpawnMultipliers` and then nothing reads it. `WORLD.md` §7.3 assumed the mob trick transferred —
+    author one baseline set, let the realm dial place it — and it does not, so every realm's set is
+    authored at final numbers instead. Implement it or delete it; carrying a dial that reads as
+    configured and does nothing is the failure mode `Engine__StartingRoom` already demonstrated.
+  - **`Trinket` equips and does nothing.** It is not in `IsArmorSlot`
+    ([EquipmentResolver.cs:243](../src/DikuWeb.Domain/Combat/EquipmentResolver.cs#L243)) and not one
+    of the two hands `damageMultiplier` is read from, so no stat on it is read by anything. The
+    eighth slot is currently cosmetic.
+  - Related and worth knowing before authoring more gear: **`armorMultiplier` is set-wide and
+    multiplicative.** Every equipped piece's multiplier accumulates into one factor applied to the
+    whole set's total `armorFlat`, so six pieces at 1.2 give 2.99. It is a lever for a single
+    deliberate item, never for a tier — and a piece carrying *only* a multiplier grants nothing,
+    since there is no flat value to scale. `simple-helmet` in the dev database is exactly that:
+    `armorMultiplier: 2`, no `armorFlat`, zero armour.
+
 - **Review solo and group balance for all four Paths, band by band.** Thirty-two abilities were
   added at levels 24–50 (`ABILITIES.md`) against no play data at all: every number in them is a
   first guess, and four Paths times eight new abilities is a lot of first guesses interacting.
