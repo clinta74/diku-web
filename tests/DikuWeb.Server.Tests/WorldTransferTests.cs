@@ -205,6 +205,38 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task A_pinned_level_survives_a_round_trip()
+    {
+        // The field is on the spawner rather than the template, so it travels only if every one of
+        // the entity, the change, the writer, the bundle, the exporter and the importer carries it
+        // - six places, and a bundle that quietly dropped it would land content that plays
+        // differently in the environment it was moved to.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var content = await AuthorZoneAsync(client);
+
+        var existing = await BuilderClient.JsonAsync(await client.GetAsync(
+            new Uri($"/api/builder/spawners?zone={content.ZoneKey}", UriKind.Relative)));
+        var id = existing[0].GetProperty("id").GetString();
+
+        (await client.PatchAsJsonAsync($"/api/builder/spawners/{id}", new { level = "27" }))
+            .EnsureSuccessStatusCode();
+
+        var json = await ExportZoneJsonAsync(client, content.ZoneKey);
+        Assert.Contains("\"fightsAtLevel\":27", json, StringComparison.Ordinal);
+
+        await ImportAsync(client, json);
+
+        var after = await BuilderClient.JsonAsync(await client.GetAsync(
+            new Uri($"/api/builder/spawners/{id}", UriKind.Relative)));
+
+        Assert.Equal("27", after.GetProperty("level").GetString());
+        Assert.Equal(27, after.GetProperty("fightsAtLevel").GetInt32());
+    }
+
+    [Fact]
     public async Task A_second_import_of_an_unchanged_bundle_updates_and_creates_nothing()
     {
         var factory = postgres.App;
@@ -331,12 +363,17 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
         // Written against the version immediately behind the current one, so this keeps testing
         // the real boundary as the format moves rather than an increasingly historical number.
         //
-        // Each bump so far has been a case where the older file cannot say what the newer one is
+        // Most bumps so far have been cases where the older file cannot say what the newer one is
         // asked to. v1 -> v2: a spawner's `sentinel: bool` became `wanders: bool?`, so a v1 bundle
         // read as v2 deserialises the missing key to null and every spawner in it changes
         // behaviour without a word. v2 -> v3: abilities travel now, and a v2 bundle carries none,
-        // so reading one would import an empty ability list. Both are the silent partial
-        // through a new field.
+        // so reading one would import an empty ability list. v3 -> v4: an ability carries a list of
+        // effects rather than one, so a v3 ability would arrive doing nothing at all.
+        //
+        // v4 -> v5 is the weaker kind, and worth naming as such: a v4 bundle has no
+        // `fightsAtLevel`, which reads correctly as "the zone decides" - exactly what a v4 spawner
+        // meant. It is refused anyway because the exporter now writes a key a v4 reader would drop,
+        // and a file labelled 4 carrying a v5 field is a lie about its own shape.
         var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);

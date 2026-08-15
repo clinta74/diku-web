@@ -237,7 +237,7 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
 
     private static WorldChange SpawnerChangeFor(BundleSpawner s) =>
         new UpsertSpawner(s.Id, s.ZoneKey, s.TemplateKey, s.TemplateKind,
-            s.RoomKeys ?? [], s.TargetCount, s.RespawnSeconds, s.Wanders);
+            s.RoomKeys ?? [], s.TargetCount, s.RespawnSeconds, s.Wanders, s.FightsAtLevel);
 
     private static WorldChange QuestChangeFor(BundleQuest q) =>
         new UpsertQuest(q.Key, q.ZoneKey, q.Name, q.Summary, q.Description,

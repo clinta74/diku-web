@@ -880,16 +880,29 @@ public static class BuilderEndpoints
             return Invalid($"Unknown wander mode '{request.Wander}'.");
         }
 
+        // Absent means "let the zone decide", likewise.
+        if (!SpawnLevel.TryParse(request.Level ?? SpawnLevel.Zone, out var fightsAt))
+        {
+            return Invalid(BadLevel(request.Level));
+        }
+
+        var kind = request.TemplateKind ?? TemplateKind.Mob;
+        if (RefuseLevelOnItem(kind, fightsAt) is { } refusal)
+        {
+            return refusal;
+        }
+
         var id = Guid.CreateVersion7();
         var change = new UpsertSpawner(
             id,
             request.ZoneKey,
             request.TemplateKey,
-            request.TemplateKind ?? TemplateKind.Mob,
+            kind,
             request.RoomKeys ?? new List<string>(),
             request.TargetCount ?? 1,
             request.RespawnSeconds ?? 60,
-            wanders);
+            wanders,
+            fightsAt);
 
         return await SaveAsync(editor, change, http, ct, () => queries.SpawnerAsync(id, ct));
     }
@@ -921,18 +934,58 @@ public static class BuilderEndpoints
             return Invalid($"Unknown wander mode '{request.Wander}'.");
         }
 
+        if (!SpawnLevel.TryParse(request.Level ?? existing.Level, out var fightsAt))
+        {
+            return Invalid(BadLevel(request.Level));
+        }
+
+        // Checked against the *resulting* kind, not the stored one: flipping a mob spawner to Item
+        // while it carries a pin would otherwise leave a value that means nothing, and comes back
+        // to life the day somebody flips it back.
+        var kind = request.TemplateKind ?? existing.TemplateKind;
+        if (RefuseLevelOnItem(kind, fightsAt) is { } refusal)
+        {
+            return refusal;
+        }
+
         var change = new UpsertSpawner(
             id,
             zoneKey,
             request.TemplateKey ?? existing.TemplateKey,
-            request.TemplateKind ?? existing.TemplateKind,
+            kind,
             request.RoomKeys ?? existing.RoomKeys,
             request.TargetCount ?? existing.TargetCount,
             request.RespawnSeconds ?? existing.RespawnSeconds,
-            wanders);
+            wanders,
+            fightsAt);
 
         return await SaveAsync(editor, change, http, ct, () => queries.SpawnerAsync(id, ct));
     }
+
+    /// <summary>
+    /// Why a pinned level was not accepted. Named rather than inlined because both handlers refuse
+    /// it identically, and because the message has to teach the two ways it can be wrong.
+    /// </summary>
+    private static string BadLevel(string? level) =>
+        $"'{level}' is not a level. Use a whole number of 1 or more, or '{SpawnLevel.Zone}' to let "
+        + "the zone decide.";
+
+    /// <summary>
+    /// An item has no level, so an item spawner cannot pin one.
+    /// </summary>
+    /// <remarks>
+    /// The spawn path already ignores the field for items, so this is not about the runtime. It is
+    /// about a stored value that means nothing today and becomes live the moment somebody changes
+    /// the kind to Mob — at which point the mob fights at a level nobody remembers choosing.
+    ///
+    /// A hard refusal rather than a §7.4 advisory: those cover content that is *incomplete*, and
+    /// this is a request that is malformed, alongside the endpoint's other refusals for a missing
+    /// zone key or an unknown wander mode.
+    /// </remarks>
+    private static IResult? RefuseLevelOnItem(TemplateKind kind, int? fightsAt) =>
+        kind == TemplateKind.Item && fightsAt is not null
+            ? Invalid("An item has no level, so an item spawner cannot pin one.")
+            : null;
 
     private static async Task<IResult> DeleteSpawnerAsync(
         Guid id,

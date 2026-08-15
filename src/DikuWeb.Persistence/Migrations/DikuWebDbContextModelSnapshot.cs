@@ -686,6 +686,10 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<int?>("FightsAtLevel")
+                        .HasColumnType("integer")
+                        .HasColumnName("fights_at_level");
+
                     b.Property<int>("RespawnSeconds")
                         .HasColumnType("integer")
                         .HasColumnName("respawn_seconds");

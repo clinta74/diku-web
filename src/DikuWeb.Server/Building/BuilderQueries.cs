@@ -331,7 +331,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
         return [.. spawners.Select(s => new SpawnerResponse(
             s.Id, s.ZoneKey, s.TemplateKey, s.TemplateKind,
             new List<string>(s.RoomKeys), s.TargetCount, s.RespawnSeconds, WanderMode.From(s.Wanders),
-            levels.GetValueOrDefault(s.Id)))];
+            levels.GetValueOrDefault(s.Id), SpawnLevel.From(s.FightsAtLevel)))];
     }
 
     public async Task<SpawnerResponse?> SpawnerAsync(
@@ -350,7 +350,8 @@ public sealed class BuilderQueries(DikuWebDbContext db)
         return new SpawnerResponse(
             spawner.Id, spawner.ZoneKey, spawner.TemplateKey, spawner.TemplateKind,
             new List<string>(spawner.RoomKeys), spawner.TargetCount, spawner.RespawnSeconds,
-            WanderMode.From(spawner.Wanders), levels.GetValueOrDefault(spawner.Id));
+            WanderMode.From(spawner.Wanders), levels.GetValueOrDefault(spawner.Id),
+            SpawnLevel.From(spawner.FightsAtLevel));
     }
 
     /// <summary>
@@ -408,9 +409,12 @@ public sealed class BuilderQueries(DikuWebDbContext db)
                 continue;
             }
 
-            levels[spawner.Id] = DikuWeb.Domain.Inhabitants.MobScaling
-                .FromZone(template.Level, world.Multipliers, zone.Multipliers, zone.MinLevel)
-                .Level;
+            // A pin replaces the zone's dials outright, so it is the answer rather than an input
+            // to one - the same branch MobSpawner takes.
+            levels[spawner.Id] = spawner.FightsAtLevel
+                ?? DikuWeb.Domain.Inhabitants.MobScaling
+                    .FromZone(template.Level, world.Multipliers, zone.Multipliers, zone.MinLevel)
+                    .Level;
         }
 
         return levels;

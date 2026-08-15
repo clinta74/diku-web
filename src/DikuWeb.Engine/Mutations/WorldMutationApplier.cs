@@ -506,6 +506,9 @@ public sealed class WorldMutationApplier(
                 .Distinct(StringComparer.Ordinal)
                 .ToList();
 
+            // Every field, because this rebuilds the whole spawner to change one list. A field
+            // added to UpsertSpawner and forgotten here is silently reset the first time somebody
+            // renames a room the spawner uses - which is a long way from the edit that caused it.
             var change = new UpsertSpawner(
                 spawner.Id,
                 spawner.ZoneKey,
@@ -514,7 +517,8 @@ public sealed class WorldMutationApplier(
                 rooms,
                 spawner.TargetCount,
                 spawner.RespawnSeconds,
-                spawner.Wanders);
+                spawner.Wanders,
+                spawner.FightsAtLevel);
 
             ApplyUpsertSpawner(change);
             changes.Add(change);
@@ -1068,6 +1072,7 @@ public sealed class WorldMutationApplier(
             TargetCount = change.TargetCount,
             RespawnSeconds = change.RespawnSeconds,
             Wanders = change.Wanders,
+            FightsAtLevel = change.FightsAtLevel,
         });
 
         return MutationResult.Ok([change]);

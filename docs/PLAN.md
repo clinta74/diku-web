@@ -683,6 +683,26 @@ author's: **the multipliers are how hard they made it, the band is who they made
 clamped at `MaxLevel` — a boss above its band is deliberate. This is the first thing that reads
 `Zone.MinLevel`, authored and stored since Phase 3 and consulted by nothing until now.
 
+**A spawner may pin the level instead** — `fights_at_level`, null to let the zone decide. A zone
+dial is zone-wide, and a zone is not uniform: scaling a 25–30 zone by two gives the level-20 content
+you wanted from a level-10 template *and* turns a level-25 template already written for that zone
+into a level-50 monster. Without a per-placement say the only ways out are authoring every template
+at its final level — losing the reuse §4.4 exists for — or keeping the dials at 1.0 and writing one
+template per tier.
+
+It **states an outcome**: "fights at 27" is what a builder means, and the factor `N / templateLevel`
+falls out (`MobScaling.FromTarget`). It **replaces** the zone's combat dials, world dials included —
+composing would make 27 into 54 in a doubled zone and the number typed would be a lie. It is **not**
+floored at `MinLevel`: the band catches mobs nobody said anything about, and the most explicit
+statement in the system must not be overruled by the least. `xp` and `gold` are untouched, because
+`strength` does not scale them either and a zone that is hard but stingy is a deliberate shape — the
+cost is that a lifted rat pays a rat's experience, which the preview shows side by side.
+
+On the wire it is a **word** — `"zone"` or the number as text — for the reason `wander` is one: on a
+PATCH null already spells *leave this alone*, so a nullable number could not also spell *clear it*.
+An item spawner is refused one; an item has no level, and a stored value would go live the day
+somebody flips the kind to Mob.
+
 **Your side** is `XpRelevance`, one window on `Floor(level) = min(level / 2, 30)`. At or above your
 level pays in full; below `Floor` pays nothing; between the two it tapers on a straight line, so no
 single level of mob is ever worth a jump. A cliff teaches players to count levels instead of

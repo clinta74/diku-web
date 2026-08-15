@@ -57,6 +57,13 @@ public sealed record WorldBundle(
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
     ///
+    /// <b>5 because a spawner can pin the level its mobs fight at.</b> This is the weaker kind of
+    /// bump, and worth saying so: a v4 bundle carries no pin, which reads correctly as "the zone
+    /// decides" - exactly what a v4 spawner meant. It is here because the exporter now *writes* a
+    /// key a v4 reader would drop, and a file labelled 4 that carries a v5 field is a lie about its
+    /// own shape. Omitting the key when null was the alternative; it buys nothing and costs a
+    /// serialisation special case.
+    ///
     /// <b>4 because an ability carries a list of effects rather than one.</b> A version 3 bundle
     /// has <c>effectKey</c> and <c>effectParams</c> where this one has <c>effects</c>, so read as
     /// v4 every ability in it would arrive with an empty list - which is an ability that costs its
@@ -74,7 +81,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 4;
+    public const int CurrentFormatVersion = 5;
 }
 
 /// <summary>
@@ -187,7 +194,16 @@ public sealed record BundleSpawner(
     List<string> RoomKeys,
     int TargetCount,
     int RespawnSeconds,
-    bool? Wanders);
+    bool? Wanders,
+    /// <summary>
+    /// The level these mobs fight at, or null to let the zone decide (PLAN.md §4.7).
+    /// </summary>
+    /// <remarks>
+    /// A nullable int rather than the word <c>SpawnerResponse.Level</c> carries. A bundle is a copy
+    /// of the database and has no PATCH semantics to disambiguate against, so null here means only
+    /// one thing - the same reason <see cref="Wanders"/> is a <c>bool?</c> here and a word there.
+    /// </remarks>
+    int? FightsAtLevel);
 
 public sealed record BundleQuest(
     string Key,

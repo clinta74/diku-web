@@ -23,6 +23,9 @@ internal sealed class SpawnerConfiguration : IEntityTypeConfiguration<Spawner>
         // a missing one (PLAN.md §4.8).
         builder.Property(e => e.Wanders).HasColumnName("wanders");
 
+        // Nullable for the same reason: null is "let the zone decide" (PLAN.md §4.7).
+        builder.Property(e => e.FightsAtLevel).HasColumnName("fights_at_level");
+
         builder.HasIndex(e => e.ZoneKey).HasDatabaseName("ix_spawners_zone_key");
     }
 }

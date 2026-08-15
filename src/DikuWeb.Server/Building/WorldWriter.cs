@@ -434,6 +434,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         TargetCount = c.TargetCount,
                         RespawnSeconds = c.RespawnSeconds,
                         Wanders = c.Wanders,
+                        FightsAtLevel = c.FightsAtLevel,
                     });
 
                     return ContentAction.Create;
@@ -451,6 +452,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                     TargetCount = c.TargetCount,
                     RespawnSeconds = c.RespawnSeconds,
                     Wanders = c.Wanders,
+                    FightsAtLevel = c.FightsAtLevel,
                 });
                 return ContentAction.Update;
             }

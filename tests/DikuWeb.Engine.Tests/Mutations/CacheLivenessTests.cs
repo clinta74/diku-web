@@ -140,12 +140,12 @@ public sealed class CacheLivenessTests
 
         var id = Guid.CreateVersion7();
         applier.Apply(new UpsertSpawner(
-            id, "test.zone", "rat", TemplateKind.Mob, ["test.zone.west"], 2, 30, null));
+            id, "test.zone", "rat", TemplateKind.Mob, ["test.zone.west"], 2, 30, null, null));
 
         Assert.Equal(2, spawners.Get(id)?.TargetCount);
 
         applier.Apply(new UpsertSpawner(
-            id, "test.zone", "rat", TemplateKind.Mob, ["test.zone.west", "test.zone.east"], 5, 30, true));
+            id, "test.zone", "rat", TemplateKind.Mob, ["test.zone.west", "test.zone.east"], 5, 30, true, null));
 
         Assert.Equal(5, spawners.Get(id)?.TargetCount);
         Assert.Equal(2, spawners.Get(id)?.RoomKeys.Count);
@@ -196,7 +196,7 @@ public sealed class CacheLivenessTests
 
         var spawnerId = Guid.CreateVersion7();
         applier.Apply(new UpsertSpawner(
-            spawnerId, "test.zone", "rat", TemplateKind.Mob, ["test.zone.west"], 1, 30, false));
+            spawnerId, "test.zone", "rat", TemplateKind.Mob, ["test.zone.west"], 1, 30, false, null));
 
         Assert.NotNull(provider.GetRequiredService<QuestCache>().Get("test.errand"));
         Assert.NotNull(provider.GetRequiredService<SpawnerCache>().Get(spawnerId));

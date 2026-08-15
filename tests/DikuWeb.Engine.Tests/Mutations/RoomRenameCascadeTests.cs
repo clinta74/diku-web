@@ -31,12 +31,15 @@ public sealed class RoomRenameCascadeTests
         return harness;
     }
 
-    private static Guid AddSpawner(WorldHarness harness, params string[] rooms)
+    private static Guid AddSpawner(WorldHarness harness, params string[] rooms) =>
+        AddSpawner(harness, fightsAtLevel: null, rooms);
+
+    private static Guid AddSpawner(WorldHarness harness, int? fightsAtLevel, params string[] rooms)
     {
         var id = Guid.CreateVersion7();
 
         harness.Mutate(new UpsertSpawner(
-            id, "test.zone", "rat", TemplateKind.Mob, [.. rooms], 2, 30, Wanders: null));
+            id, "test.zone", "rat", TemplateKind.Mob, [.. rooms], 2, 30, Wanders: null, fightsAtLevel));
 
         return id;
     }
@@ -177,5 +180,27 @@ public sealed class RoomRenameCascadeTests
         harness.Mutate(new RenameRoom(Middle, Renamed));
 
         Assert.Contains(blade, harness.ItemSaves.Saved);
+    }
+
+    [Fact]
+    public void A_renamed_room_does_not_cost_the_spawner_its_other_settings()
+    {
+        // RepointSpawners rebuilds the whole spawner to change one list, so every field it forgets
+        // is silently reset - and the reset happens a long way from the edit that caused it, on a
+        // room rename nobody connects to a mob's difficulty.
+        //
+        // Asserted on the two overrides rather than on the room list, because the room list is what
+        // the method is *for* and would be noticed immediately.
+        var harness = Loaded();
+        var id = AddSpawner(harness, fightsAtLevel: 27, Middle.ToString());
+
+        harness.Mutate(new RenameRoom(Middle, Renamed));
+
+        var spawner = Assert.Single(harness.Spawners.All, s => s.Id == id);
+
+        Assert.Equal(27, spawner.FightsAtLevel);
+        Assert.Equal(2, spawner.TargetCount);
+        Assert.Equal(30, spawner.RespawnSeconds);
+        Assert.Contains(Renamed.ToString(), spawner.RoomKeys);
     }
 }

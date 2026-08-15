@@ -45,6 +45,32 @@ public sealed class Spawner
     /// One direction, both places, so the resolution reads <c>spawner.Wanders ?? template</c>.
     /// </remarks>
     public bool? Wanders { get; set; }
+
+    /// <summary>
+    /// The level mobs from this spawner fight at. <b>Null lets the zone decide</b>, which is the
+    /// default and the usual answer; a value pins the level whatever the zone's dials say.
+    /// </summary>
+    /// <remarks>
+    /// <b>Because a zone dial is zone-wide, and a zone is not uniform.</b> Scaling a 25–30 zone by
+    /// two turns a level-10 template into the level-20 content you wanted <em>and</em> a level-25
+    /// template already written for that zone into a level-50 monster. Without a per-placement say,
+    /// the only ways out are to author every template at its final level — losing the reuse §4.4
+    /// exists for — or to leave the dials at 1.0 and hand-write a template per tier.
+    ///
+    /// <b>It states an outcome, not a factor.</b> "Fights at 27" is what a builder means; a
+    /// multiplier is what they would have to compute to say it. The factor falls out —
+    /// <c>N / templateLevel</c>, applied wherever <c>Strength</c> is applied
+    /// (<see cref="Inhabitants.MobScaling.FromTarget"/>).
+    ///
+    /// <b>It replaces the zone's combat dials rather than composing with them</b>, world dials
+    /// included. Composing would turn 27 in a doubled zone into 54, and the number a builder typed
+    /// would be a lie — which discards the entire reason for stating outcomes.
+    ///
+    /// Nullable for the reason <see cref="Wanders"/> is: null is a third answer, not a missing one.
+    /// Meaningless on an item spawner, which the builder API refuses — an item has no level, and a
+    /// stored value would go live the day someone flips the kind to Mob.
+    /// </remarks>
+    public int? FightsAtLevel { get; set; }
 }
 
 /// <summary>What kind of thing a spawner creates.</summary>

@@ -264,8 +264,18 @@ export interface Spawner {
   /**
    * What mobs from this spawner fight at (PLAN.md §4.7). Server-computed and read-only; zero for
    * an item spawner. Sending it back is ignored — see `SpawnerSave`.
+   *
+   * It reports the outcome whether the level was pinned or derived from the zone; `level` says
+   * which.
    */
   fightsAtLevel: number
+  /**
+   * Where `fightsAtLevel` came from: `'zone'`, or the pinned level as a decimal string.
+   *
+   * A word rather than a nullable number for the reason `wander` is one — on a PATCH, null already
+   * means "leave this alone", so a nullable number could not also spell "clear the pin".
+   */
+  level: string
 }
 
 /**

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
@@ -269,11 +270,21 @@ public sealed record SpawnerResponse(
     /// <remarks>
     /// Read-only: the server computes it, and a client sending one back is ignored. It is here so
     /// the room's spawner list can say what a placement will actually produce, which a template's
-    /// authored level does not answer once a zone has scaled it.
+    /// authored level does not answer once a zone has scaled it. It reports the outcome whether it
+    /// was pinned or derived — <see cref="Level"/> is the one that says which.
     /// </remarks>
-    int FightsAtLevel);
+    int FightsAtLevel,
+    /// <summary>
+    /// Where <see cref="FightsAtLevel"/> came from: <see cref="SpawnLevel.Zone"/>, or the pinned
+    /// number as text. Never null.
+    /// </summary>
+    string Level);
 
 /// <param name="Wander">One of <see cref="WanderMode"/>, or null to leave it as it is.</param>
+/// <param name="Level">
+/// <see cref="SpawnLevel.Zone"/> to let the zone decide, a positive integer as text to pin the
+/// level these mobs fight at, or null to leave it as it is.
+/// </param>
 public sealed record SaveSpawnerRequest(
     string? ZoneKey,
     string? TemplateKey,
@@ -281,7 +292,67 @@ public sealed record SaveSpawnerRequest(
     List<string>? RoomKeys,
     int? TargetCount,
     int? RespawnSeconds,
-    string? Wander);
+    string? Wander,
+    string? Level);
+
+/// <summary>
+/// How a spawner answers "what level do these mobs fight at": let the zone decide, or pin it
+/// (PLAN.md §4.7).
+/// </summary>
+/// <remarks>
+/// <b>A word for the same reason <see cref="WanderMode"/> is one.</b> Null already spells "leave
+/// this alone" on every field of <see cref="SaveSpawnerRequest"/>, and the stored value is
+/// genuinely optional — so a nullable int on the wire could not tell "do not touch it" from "clear
+/// the pin and go back to the zone". Two meanings on one wire value is how a builder clears a
+/// setting by not touching it.
+///
+/// Two states today. A third — <em>"always match the template, whatever it is retuned to"</em> — is
+/// one branch here and one option in the dialog, precisely because the wire carries a word rather
+/// than a number. It is deferred rather than dismissed: pinning 25 to match a level-25 template
+/// works until someone retunes that template to 30, and nothing says so. Until a builder has felt
+/// that drift, the preview showing <c>level 25 → fights at 25</c> side by side is the cheaper
+/// answer.
+/// </remarks>
+public static class SpawnLevel
+{
+    /// <summary>Whatever the zone's dials work out to. The default, and the usual answer.</summary>
+    public const string Zone = "zone";
+
+    /// <summary>The stored value as the word or number that describes it.</summary>
+    public static string From(int? level) =>
+        level is { } pinned ? pinned.ToString(CultureInfo.InvariantCulture) : Zone;
+
+    /// <summary>
+    /// The word or number as a stored value. False when it is neither.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="NumberStyles.None"/> and the invariant culture, so <c>"+27"</c>, <c>" 27"</c>,
+    /// <c>"27.0"</c> and <c>"1e2"</c> are all refused rather than quietly coerced into something
+    /// nearby. A level is typed by a person; a typo should bounce rather than be interpreted.
+    ///
+    /// Zero and negatives are refused here rather than floored. <c>MobLevel</c> floors its own
+    /// arithmetic because that value is derived, and there is nobody to tell; this one was typed,
+    /// and silently correcting it would hide the mistake behind a plausible mob.
+    /// </remarks>
+    public static bool TryParse(string? level, out int? pinned)
+    {
+        pinned = null;
+
+        if (level == Zone)
+        {
+            return true;
+        }
+
+        if (!int.TryParse(level, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) ||
+            parsed < 1)
+        {
+            return false;
+        }
+
+        pinned = parsed;
+        return true;
+    }
+}
 
 /// <summary>
 /// How a spawner answers "do these mobs wander": defer to the template, or override it.

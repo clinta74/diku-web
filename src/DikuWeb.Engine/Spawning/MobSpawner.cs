@@ -25,7 +25,8 @@ public sealed class MobSpawner
         global::DikuWeb.Domain.Worlds.World worldEntity,
         RoomKey roomKey,
         bool wanders = false,
-        Guid? spawnerId = null)
+        Guid? spawnerId = null,
+        int? fightsAtLevel = null)
     {
         ArgumentNullException.ThrowIfNull(template);
         ArgumentNullException.ThrowIfNull(zone);
@@ -37,8 +38,16 @@ public sealed class MobSpawner
 
         // How hard this placement is, in one object: the factor on health, the factor on damage,
         // and the level those add up to. Everything combat-shaped below goes through it, so a mob
-        // scaled by a zone and one scaled by a spawner's own level travel the same arithmetic.
-        var scaling = MobScaling.FromZone(template.Level, worldMults, zoneMults, zone.MinLevel);
+        // scaled by a zone and one pinned by its spawner travel the same arithmetic.
+        //
+        // A pin *replaces* the zone's combat dials rather than composing with them (§4.7). The
+        // whole reason a spawner states an outcome - "fights at 27" - is that 27 is then what
+        // happens; multiplying the zone on top would make it 54 in a doubled zone and the number
+        // the builder typed would be a lie. Xp and Gold below are untouched by this: they are not
+        // level statements, and a zone that is hard but stingy is a deliberate shape (§4.4).
+        var scaling = fightsAtLevel is { } pinned
+            ? MobScaling.FromTarget(template.Level, pinned)
+            : MobScaling.FromZone(template.Level, worldMults, zoneMults, zone.MinLevel);
 
         // Health has its own key because Vitals is a column, not part of the stat bag. The default
         // of 40 is for a template that declares no health at all.
@@ -85,6 +94,11 @@ public sealed class MobSpawner
                 ["ItemValue"] = zoneMults.ItemValue,
                 ["ItemPower"] = zoneMults.ItemPower,
                 ["SpawnDensity"] = zoneMults.SpawnDensity,
+
+                // What was actually applied, when it was not the dials above. Without it the
+                // snapshot that exists to answer "why does this kobold have 137 hp?" reports the
+                // zone's numbers for a mob the zone did not scale.
+                ["FightsAt"] = fightsAtLevel ?? 0,
             },
             ResolvedXp = resolvedXp,
             ResolvedGold = resolvedGold,

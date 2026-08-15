@@ -56,6 +56,9 @@ export function SpawnerDialog({
   const [targetCount, setTargetCount] = useState(1)
   const [respawnSeconds, setRespawnSeconds] = useState(60)
   const [wander, setWander] = useState<WanderMode>('template')
+  // 'zone' or a pinned level. Held as the wire's own word so there is no third representation to
+  // keep in step (PLAN.md §4.7).
+  const [level, setLevel] = useState('zone')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -67,6 +70,7 @@ export function SpawnerDialog({
     setTargetCount(editing?.targetCount ?? 1)
     setRespawnSeconds(editing?.respawnSeconds ?? 60)
     setWander(editing?.wander ?? 'template')
+    setLevel(editing?.level ?? 'zone')
     setError(null)
     setBusy(false)
   }, [open, editing, roomKey])
@@ -105,6 +109,9 @@ export function SpawnerDialog({
           targetCount,
           respawnSeconds,
           wander,
+          // An item has no level, and the server refuses a pin on one. Cleared here rather than
+          // relying on the refusal, so flipping the kind cannot strand a value nobody can see.
+          level: kind === 'Mob' ? level : 'zone',
         })
       } else {
         await builderApi.createSpawner({
@@ -115,6 +122,7 @@ export function SpawnerDialog({
           targetCount,
           respawnSeconds,
           wander,
+          level: kind === 'Mob' ? level : 'zone',
         })
       }
       onSaved()
@@ -151,6 +159,8 @@ export function SpawnerDialog({
             // The template lists do not overlap, so a key from the other kind would dangle.
             setKind(v as Kind)
             setTemplateKey('')
+            // See the submit path: an item cannot carry a pinned level.
+            if (v === 'Item') setLevel('zone')
           }}
         >
           <option value="Mob">Mobs</option>
@@ -207,6 +217,42 @@ export function SpawnerDialog({
             <option value="never">Never — stays where it is put</option>
             <option value="always">Always — wanders between rooms</option>
           </Select>
+        </Field>
+      )}
+
+      {kind === 'Mob' && (
+        <Field
+          label="Difficulty"
+          hint={
+            level === 'zone'
+              ? "The zone's multipliers decide, which is right when this template is a baseline being scaled into the zone."
+              : 'This placement fights at the level below, whatever the zone is set to. Use it to mix templates already written for this zone with lower-level ones.'
+          }
+        >
+          <Select
+            value={level === 'zone' ? 'zone' : 'fixed'}
+            onChange={(v) =>
+              // Seed the pin from what the zone currently produces, so switching to "fixed" starts
+              // from the number the builder is already looking at rather than from 1.
+              setLevel(v === 'zone' ? 'zone' : String(editing?.fightsAtLevel || 1))
+            }
+          >
+            <option value="zone">Let the zone scale it</option>
+            <option value="fixed">Fights at a fixed level</option>
+          </Select>
+        </Field>
+      )}
+
+      {kind === 'Mob' && level !== 'zone' && (
+        <Field
+          label="Fights at level"
+          hint="Health and damage are scaled to match. Experience is not — set that on the template or the zone's xp dial."
+        >
+          <NumberInput
+            min={1}
+            value={Number(level) || 1}
+            onChange={(v) => setLevel(String(Math.max(1, v)))}
+          />
         </Field>
       )}
     </Modal>

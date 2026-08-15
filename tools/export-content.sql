@@ -4,7 +4,9 @@
 -- a hand-written copy of the schema, and nothing compiles or tests this file. When
 -- `spawners.sentinel` was renamed to `wanders`, this script went on emitting `sentinel` and would
 -- have produced an export that failed to load, and an existing backup that no longer applied. The
--- fault surfaced only because somebody went looking. **Rename a column in one of the nine tables
+-- fault surfaced only because somebody went looking, and it has now happened twice: `quests`
+-- omitted `auto_start` from the day that column was added, so every SQL restore quietly reset every
+-- quest's auto-start to the column default. **Add or rename a column in one of the nine tables
 -- below and you must edit this file in the same commit.** The JSON path (§6.1) has tests behind it
 -- and should be preferred for anything that can use it; this one is guarded by nothing but reading.
 --
@@ -151,14 +153,14 @@ select '-- spawners';
 -- Keyed by id rather than by content, so re-applying an export does not double a population.
 select format(
     'INSERT INTO spawners (id, zone_key, template_key, template_kind, room_keys, target_count, '
-    || 'respawn_seconds, wanders) '
-    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L) ON CONFLICT (id) DO UPDATE SET '
+    || 'respawn_seconds, wanders, fights_at_level) '
+    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L, %L) ON CONFLICT (id) DO UPDATE SET '
     || 'zone_key = EXCLUDED.zone_key, template_key = EXCLUDED.template_key, '
     || 'template_kind = EXCLUDED.template_kind, room_keys = EXCLUDED.room_keys, '
     || 'target_count = EXCLUDED.target_count, respawn_seconds = EXCLUDED.respawn_seconds, '
-    || 'wanders = EXCLUDED.wanders;',
+    || 'wanders = EXCLUDED.wanders, fights_at_level = EXCLUDED.fights_at_level;',
     id, zone_key, template_key, template_kind, room_keys, target_count,
-    respawn_seconds, wanders)
+    respawn_seconds, wanders, fights_at_level)
 from spawners order by zone_key, template_key;
 
 select '';
@@ -166,8 +168,9 @@ select '-- quests';
 select format(
     'INSERT INTO quests (key, zone_key, name, summary, description, giver_mob_key, turnin_mob_key, '
     || 'required_item_key, required_count, reward_xp, reward_gold, reward_item_key, '
-    || 'reward_item_count, prerequisite_quest_keys, is_repeatable, dialogue, sort_order) '
-    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L) '
+    || 'reward_item_count, prerequisite_quest_keys, is_repeatable, auto_start, dialogue, '
+    || 'sort_order) '
+    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L) '
     || 'ON CONFLICT (key) DO UPDATE SET '
     || 'zone_key = EXCLUDED.zone_key, name = EXCLUDED.name, summary = EXCLUDED.summary, '
     || 'description = EXCLUDED.description, giver_mob_key = EXCLUDED.giver_mob_key, '
@@ -176,11 +179,11 @@ select format(
     || 'reward_gold = EXCLUDED.reward_gold, reward_item_key = EXCLUDED.reward_item_key, '
     || 'reward_item_count = EXCLUDED.reward_item_count, '
     || 'prerequisite_quest_keys = EXCLUDED.prerequisite_quest_keys, '
-    || 'is_repeatable = EXCLUDED.is_repeatable, dialogue = EXCLUDED.dialogue, '
-    || 'sort_order = EXCLUDED.sort_order;',
+    || 'is_repeatable = EXCLUDED.is_repeatable, auto_start = EXCLUDED.auto_start, '
+    || 'dialogue = EXCLUDED.dialogue, sort_order = EXCLUDED.sort_order;',
     key, zone_key, name, summary, description, giver_mob_key, turnin_mob_key,
     required_item_key, required_count, reward_xp, reward_gold, reward_item_key,
-    reward_item_count, prerequisite_quest_keys, is_repeatable, dialogue, sort_order)
+    reward_item_count, prerequisite_quest_keys, is_repeatable, auto_start, dialogue, sort_order)
 from quests order by key;
 
 select '';
