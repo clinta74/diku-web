@@ -442,9 +442,46 @@ public class DamageCalculatorTests
         // level / 2, plus the baseline that stands for competence rather than level. Without it
         // the level term cancels against the defence and no mob can reach a geared character.
         Assert.Equal(10, stats.AttackRating);
-        Assert.Equal(3, stats.BaseDamage);    // level / 3
-        Assert.Equal(1, stats.MinDamage);
-        Assert.Equal(4, stats.MaxDamage);
+
+        // Every face of the die scales, and the flat adder is gone: all the level scaling is in
+        // one place, so an authored `damage` means what it says.
+        Assert.Equal(0, stats.BaseDamage);
+        Assert.Equal(5, stats.MinDamage);     // 1 + level/2
+        Assert.Equal(17, stats.MaxDamage);    // 4 + 3*level/2
+    }
+
+    [Fact]
+    public void Mob_damage_dice_keep_their_spread_as_they_scale()
+    {
+        // The failure the flat adder produced was not only that it fell behind. A level 50 mob
+        // dealt 17-20 - an eight percent spread, so no exchange was luckier than any other and
+        // the dice had quietly stopped being rolled. The ratio has to survive the scaling.
+        foreach (var level in new[] { 1, 10, 25, 50 })
+        {
+            var stats = DamageCalculator.StatsFrom(NewMob(level, stats: new() { { "health", 40 } }));
+            var spread = (double)stats.MaxDamage / stats.MinDamage;
+
+            Assert.True(spread >= 2.5, $"level {level} deals {stats.MinDamage}-{stats.MaxDamage}, spread {spread:F1}");
+        }
+    }
+
+    [Fact]
+    public void Mob_damage_grows_faster_than_the_health_it_is_thrown_at()
+    {
+        // Player health grows by 5 a level. Damage that grew by a third of a level meant fights
+        // got steadily *longer* as the game went on - about thirty landed blows to kill a player
+        // at level 1 and fifty-three at level 50, before mitigation, which then widened it.
+        var low = DamageCalculator.StatsFrom(NewMob(level: 5, stats: new() { { "health", 40 } }));
+        var high = DamageCalculator.StatsFrom(NewMob(level: 45, stats: new() { { "health", 40 } }));
+
+        var lowAverage = (low.MinDamage + low.MaxDamage) / 2.0;
+        var highAverage = (high.MinDamage + high.MaxDamage) / 2.0;
+
+        // Health over the same span goes from 88 to 290, a little over three times. Damage has to
+        // clearly outpace that, because mitigation rises with the tiers on top of it.
+        Assert.True(
+            highAverage / lowAverage >= 6,
+            $"level 5 averages {lowAverage}, level 45 averages {highAverage}");
     }
 
     [Fact]
@@ -471,7 +508,10 @@ public class DamageCalculatorTests
         Assert.Equal(4, stats.MinDamage);
         Assert.Equal(7, stats.MaxDamage);
         Assert.Equal(10, stats.AttackRating);
-        Assert.Equal(3, stats.BaseDamage);
+
+        // No hidden adder on top of authored dice. A template that says 4-7 deals 4-7, and its
+        // level scaling comes from the zone dials (§4.4) like everything else about it.
+        Assert.Equal(0, stats.BaseDamage);
     }
 
     [Fact]
@@ -507,8 +547,8 @@ public class DamageCalculatorTests
 
         var stats = DamageCalculator.StatsFrom(mob);
 
-        Assert.Equal(3, stats.MinDamage);   // 1 x 3
-        Assert.Equal(12, stats.MaxDamage);  // 4 x 3
+        Assert.Equal(3, stats.MinDamage);   // (1 + 0) x 3
+        Assert.Equal(15, stats.MaxDamage);  // (4 + 1) x 3
     }
 
     [Fact]

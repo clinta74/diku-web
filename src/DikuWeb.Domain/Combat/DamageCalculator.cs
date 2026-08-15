@@ -185,12 +185,22 @@ public static class DamageCalculator
             ? rating
             : (level / 2) + MobAttackBaseline;
 
-        var baseDamage = StatReader.TryReadInt(stats, "baseDamage", out var flat)
-            ? flat
-            : level / 3;
+        // Zero, not level/3. All of the level scaling lives in the dice below, so there is one
+        // place to read it and an authored `damage` means exactly what it says rather than
+        // silently acquiring an adder that grows.
+        StatReader.TryReadInt(stats, "baseDamage", out var baseDamage);
 
-        var minDamage = 1;
-        var maxDamage = 4;
+        // The dice grow with level; they used to be a fixed 1-4 with a level/3 adder beside them.
+        // Two things were wrong with that. A level 50 mob dealt 17-20, which is an eight percent
+        // spread - very nearly a fixed number, so no swing in the whole exchange was luckier than
+        // any other. And the total fell steadily behind: fights got *longer* as the game went on,
+        // from about thirty landed blows to kill a player at level 1 to fifty-three at level 50,
+        // because player health and mitigation both outgrew it.
+        //
+        // Scaling every face keeps it a d4 in shape - the spread stays roughly three or four to
+        // one at every level - while the average tracks what a character of that level can absorb.
+        var minDamage = 1 + (level / 2);
+        var maxDamage = 4 + (3 * level / 2);
 
         if (StatReader.TryReadRange(stats, "damage", out var rangeMin, out var rangeMax))
         {

@@ -78,10 +78,14 @@ Add anything noticed while playing here. Cleared as items are done.
   - `MobAttackBaseline` is **6** — the constant standing for a mob's competence, since its `level/2`
     now cancels against the defence. It is the single dial that makes every fight in the game
     bloodier or gentler, and it was picked from a spreadsheet rather than from play.
-  - **Mob damage against player health has never been checked and is probably too low.** A silent
-    template falls back to `1d4 + level/3` — about 18 at level 50, against a Warden's 315. That is a
-    *content* number (the chassis will declare real dice), but it means nothing about time-to-kill
-    can be concluded from the armour numbers until the chassis exists.
+  - **Mob damage scaling: fixed.** It was `1d4 + level/3`, which fell behind badly enough that
+    fights got *longer* with level — about 30 landed blows to kill a player at level 1 and 53 at
+    level 50 — and whose spread collapsed to 17–20 at level 50, so the dice had stopped mattering.
+    A silent mob now rolls `(1 + level/2)` to `(4 + 3·level/2)`, which holds the ratio near 14–25
+    blows across the whole range and keeps a d4's spread. The flat `level/3` adder is gone; all the
+    scaling is in the dice, and an authored `damage` no longer picks up a hidden bonus.
+    Still unmeasured: this targets ~20 landed blows to kill a tier-geared character, which was
+    chosen, not observed.
   - The twelve `Guard(...)` values were converted from flat amounts to percentage points by holding
     their relative order, not by measurement.
 

@@ -615,6 +615,7 @@ hit    if natural d20 >= needed
 crit   if natural 20                                  → damage dice rolled twice, modifier once
 
 damage     = weaponDice + MightMod (+ ability riders)
+             a silent mob's dice are (1 + level/2) to (4 + 3·level/2)
 mitigation = min(0.75, armor / (armor + 100))         armor = Σ item armor
 final      = max(1, damage × (1 − mitigation))
 ```
@@ -662,6 +663,21 @@ curve's returns diminish — backwards, given whose abilities these mostly are.
 
 `Trinket` counts as an armour slot. It was absent from the sweep and is not one of the two hands a
 damage multiplier is read from, so the eighth slot equipped and did nothing whatsoever.
+
+**A silent mob's dice scale, rather than a fixed 1–4 with a `level/3` adder beside them.** The old
+shape failed twice over. Its spread collapsed — a level 50 mob dealt 17–20, an eight percent band,
+so no exchange in the late game was luckier than any other and the dice had quietly stopped being
+rolled. And its total fell behind: player health grows by 5 a level and mitigation rises with the
+tiers, so fights got *longer* as the game went on, from roughly thirty landed blows to kill a player
+at level 1 to fifty-three at level 50. Scaling every face keeps it a d4 in shape — the spread stays
+around three to one at every level — while the average tracks what a character of that level can
+absorb. `NdN` dice would give a tighter bell, but the roll is a single uniform draw, so `(level)d4`
+authored as a range would be `level` to `4·level`: both about two and a half times too large and far
+*swingier* than the tight distribution real dice of that name produce.
+
+The flat fallback is now **zero** rather than `level/3`, so all the level scaling is in one place and
+an authored `damage` means what it says — its scaling comes from the zone dials (§4.4) like
+everything else about a mob.
 
 **Whether a fight is allowed at all is decided before this math runs**, by room flags (§4.10):
 `peaceful` forbids combat entirely, and player-versus-player requires the `pvp` flag (§4.11).
