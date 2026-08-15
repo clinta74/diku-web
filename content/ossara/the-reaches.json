@@ -302,7 +302,12 @@
       "baseXp": 180,
       "baseGold": 27,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "ossara-keepsake",
+          "chance": 0.55
+        }
+      ],
       "attacks": [
         {
           "Verb": "strike",
@@ -338,7 +343,12 @@
       "baseXp": 320,
       "baseGold": 60,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "ossara-gate-shard",
+          "chance": 1.0
+        }
+      ],
       "attacks": [
         {
           "Verb": "strike",
@@ -1473,6 +1483,23 @@
       ],
       "targetCount": 1,
       "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "60c81c1c-dce4-593c-8224-17650187f731",
+      "zoneKey": "ossara.the-rimwalk",
+      "templateKey": "ossara-fallen-marker",
+      "templateKind": "Item",
+      "roomKeys": [
+        "ossara.the-rimwalk.the-marker-line",
+        "ossara.the-rimwalk.the-lost-way",
+        "ossara.the-rimwalk.the-cairn-field",
+        "ossara.the-rimwalk.the-watch-stone",
+        "ossara.the-rimwalk.the-thinning"
+      ],
+      "targetCount": 5,
+      "respawnSeconds": 240,
       "wanders": false,
       "fightsAtLevel": null
     }

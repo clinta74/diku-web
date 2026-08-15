@@ -299,7 +299,12 @@
       "baseXp": 160,
       "baseGold": 24,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "unlit-carried-thing",
+          "chance": 0.55
+        }
+      ],
       "attacks": [
         {
           "Verb": "take hold",
@@ -335,7 +340,12 @@
       "baseXp": 180,
       "baseGold": 27,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "unlit-carried-thing",
+          "chance": 0.35
+        }
+      ],
       "attacks": [
         {
           "Verb": "strike",
@@ -371,7 +381,12 @@
       "baseXp": 680,
       "baseGold": 0,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "unlit-answer",
+          "chance": 1.0
+        }
+      ],
       "attacks": [
         {
           "Verb": "strike",
@@ -931,6 +946,22 @@
       ],
       "targetCount": 1,
       "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "79bd3f78-47d7-5f26-a7af-3bea85e5207d",
+      "zoneKey": "the-unlit.the-crossing",
+      "templateKey": "unlit-worn-marker",
+      "templateKind": "Item",
+      "roomKeys": [
+        "the-unlit.the-crossing.the-turning-point",
+        "the-unlit.the-crossing.the-second-marker",
+        "the-unlit.the-crossing.the-quiet-mile",
+        "the-unlit.the-crossing.the-first-stretch"
+      ],
+      "targetCount": 4,
+      "respawnSeconds": 300,
       "wanders": false,
       "fightsAtLevel": null
     }

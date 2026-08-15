@@ -479,7 +479,12 @@
       "baseXp": 180,
       "baseGold": 27,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "grask-crew-tag",
+          "chance": 0.5
+        }
+      ],
       "attacks": [
         {
           "Verb": "strike",
@@ -515,7 +520,12 @@
       "baseXp": 380,
       "baseGold": 140,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "grask-first-mark",
+          "chance": 1.0
+        }
+      ],
       "attacks": [
         {
           "Verb": "strike",
@@ -2143,6 +2153,22 @@
       ],
       "targetCount": 1,
       "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "1852a3f7-62d1-57fe-937e-289870c65662",
+      "zoneKey": "grask.the-owing",
+      "templateKey": "grask-ledger-leaf",
+      "templateKind": "Item",
+      "roomKeys": [
+        "grask.the-owing.the-ledger-room",
+        "grask.the-owing.the-quiet-drift",
+        "grask.the-owing.the-abandoned-face",
+        "grask.the-owing.the-tool-drop"
+      ],
+      "targetCount": 4,
+      "respawnSeconds": 240,
       "wanders": false,
       "fightsAtLevel": null
     }

@@ -424,7 +424,12 @@
       "baseXp": 180,
       "baseGold": 27,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "nemhal-vigil-token",
+          "chance": 0.35
+        }
+      ],
       "attacks": []
     },
     {
@@ -479,7 +484,16 @@
       "baseXp": 200,
       "baseGold": 30,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "nemhal-vigil-token",
+          "chance": 0.5
+        },
+        {
+          "itemTemplateKey": "nemhal-office-page",
+          "chance": 0.3
+        }
+      ],
       "attacks": [
         {
           "Verb": "strike",
@@ -515,7 +529,12 @@
       "baseXp": 520,
       "baseGold": 180,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "nemhal-god-shroud",
+          "chance": 1.0
+        }
+      ],
       "attacks": [
         {
           "Verb": "strike",
@@ -2034,6 +2053,21 @@
       ],
       "targetCount": 1,
       "respawnSeconds": 900,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "57368007-3c11-578c-9bd0-9df6d919e914",
+      "zoneKey": "nemhal.keshvaun",
+      "templateKey": "nemhal-office-page",
+      "templateKind": "Item",
+      "roomKeys": [
+        "nemhal.keshvaun.the-cloister-walk",
+        "nemhal.keshvaun.the-chapter-house",
+        "nemhal.keshvaun.the-record-room"
+      ],
+      "targetCount": 3,
+      "respawnSeconds": 300,
       "wanders": false,
       "fightsAtLevel": null
     }

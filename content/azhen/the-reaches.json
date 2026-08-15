@@ -355,7 +355,12 @@
       "baseXp": 160,
       "baseGold": 24,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "azhen-drive-cog",
+          "chance": 0.35
+        }
+      ],
       "attacks": []
     },
     {
@@ -390,7 +395,12 @@
       "baseXp": 160,
       "baseGold": 24,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "azhen-drive-cog",
+          "chance": 0.4
+        }
+      ],
       "attacks": []
     },
     {
@@ -446,7 +456,12 @@
       "baseXp": 180,
       "baseGold": 27,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "azhen-drive-cog",
+          "chance": 0.5
+        }
+      ],
       "attacks": [
         {
           "Verb": "clamp",
@@ -482,7 +497,12 @@
       "baseXp": 200,
       "baseGold": 30,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "azhen-silent-plate",
+          "chance": 0.45
+        }
+      ],
       "attacks": [
         {
           "Verb": "strike",
@@ -518,7 +538,12 @@
       "baseXp": 440,
       "baseGold": 90,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "azhen-lens-blank",
+          "chance": 1.0
+        }
+      ],
       "attacks": [
         {
           "Verb": "strike",
@@ -1985,6 +2010,20 @@
       ],
       "targetCount": 1,
       "respawnSeconds": 900,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "fabb5d2c-2d5d-5d96-991e-3754404d7fbe",
+      "zoneKey": "azhen.thessivar",
+      "templateKey": "azhen-silent-plate",
+      "templateKind": "Item",
+      "roomKeys": [
+        "azhen.thessivar.the-plate-store",
+        "azhen.thessivar.the-registry"
+      ],
+      "targetCount": 2,
+      "respawnSeconds": 300,
       "wanders": false,
       "fightsAtLevel": null
     }
