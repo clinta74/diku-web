@@ -1,7 +1,7 @@
 # The Reaches
 
-The world this game is set in, complete enough that authoring it is transcription rather than
-invention. Design only — nothing here is built yet.
+The world this game is set in. **Authored as of 2026-08-15** — the files are in `content/`, and
+where they and this document diverged, the files won (§10.4).
 
 `PLAN.md` says what the engine does and why. This says what goes in it. Where the two touch, this
 document cites the code rather than restating it, because the arithmetic below is only correct for
@@ -595,6 +595,11 @@ Three properties of that path worth knowing before authoring against it:
   ([WorldImporter.cs](../src/DikuWeb.Server/Building/WorldImporter.cs)), so removing something from
   a bundle does not remove it from the world. Deletions are explicit API calls.
 
+**The world is authored.** As of 2026-08-15 all eighteen zones exist in `content/`: 224 rooms,
+67 mob templates, 70 items, 90 spawners, and fifteen quests across five acts. What this document
+specifies and what the files contain agree, and where they diverged the files won — the divergences
+are recorded in §10.4.
+
 **No ASCII room grids in this pass.** `Room.Grid` is optional and a room without one renders as a
 plain rectangle, so art is an upgrade rather than a tax. Painting the hub and set-piece rooms is a
 later pass through the builder's `GridPainter`.
@@ -632,6 +637,26 @@ engine behaviour without spawning test mobs into a zone players will see.
 [GameLoop.cs:489](../src/DikuWeb.Engine/GameLoop.cs#L489) greets every player on every login with a
 hardcoded `"Welcome to Aldenmoor"`, whichever world they are standing in. Tracked in
 `PlayTestingNotes.md`, to be done when the Gatetown rooms exist to point at.
+
+### 10.4 Where authoring overruled the design
+
+Three things changed on contact with the arithmetic, and the tables above have been left as they
+were so the difference is visible rather than tidied away.
+
+- **Deep realms re-skin the top of the chassis table, not all of it.** §7.1 reads as though every
+  realm re-skins all ten rows. It cannot: with `S` near 3, a level 2 chassis lands well under the
+  zone floor and is lifted to exactly `minLevel`, so every mob in the zone fights at the same
+  number and the band has no shape. Azhen, Nemhal and the Unlit use chassis 7–10; Grask uses 5–10;
+  only Ossara uses the whole table. §4.2's worked rows already said this and the roster section did
+  not.
+- **`the-unlit.the-crossing` is flat at 46.** Chassis 7, 8 and 9 all floor to it at `S` 4.70, and
+  only a level 10 would clear it. It is in band, it is a ten-room transitional zone, and a Reach
+  where everything has been in the binding equally long reads better uniform than graded — but it
+  is flat by arithmetic rather than by choice, and worth knowing before anyone tunes it.
+- **Act V is written.** §8.5 deliberately under-specified it. It is authored now, and it holds to
+  what that section asked for: nothing in the last zone is a boss fight against the Unlit, the
+  final beat is an answer rather than a kill, and the one thing standing between the player and
+  the niche is the oldest person who ever walked in on purpose.
 
 ### 10.3 What this design asks of the engine, and what it leaves alone
 

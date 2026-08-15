@@ -1,0 +1,1573 @@
+{
+  "formatVersion": 7,
+  "exportedAt": "2026-08-15T00:00:00+00:00",
+  "scope": {
+    "kind": "world",
+    "key": "ossara"
+  },
+  "worlds": [
+    {
+      "key": "ossara",
+      "name": "Ossara",
+      "description": "The green Reach, and the one everybody starts in. Ilvaro's country: worked land, short roads, and a gate in the middle of town that has not opened in living memory.",
+      "sortOrder": 1,
+      "flags": {},
+      "multipliers": {
+        "strength": 1.0,
+        "health": 1.0,
+        "damage": 1.0,
+        "xp": 1.0,
+        "gold": 1.0,
+        "itemValue": 1.0,
+        "itemPower": 1.0,
+        "spawnDensity": 1.0
+      }
+    }
+  ],
+  "zones": [
+    {
+      "key": "ossara.the-terraces",
+      "worldKey": "ossara",
+      "name": "The Terraces",
+      "description": "Farm shelves stepping down the hill south of Gatetown. Where everyone learns which end of a billhook is which.",
+      "minLevel": 1,
+      "maxLevel": 4,
+      "flags": {},
+      "multipliers": {
+        "strength": 1.0,
+        "health": 1.0,
+        "damage": 1.0,
+        "xp": 1.0,
+        "gold": 1.0,
+        "itemValue": 1.0,
+        "itemPower": 1.0,
+        "spawnDensity": 1.1
+      }
+    },
+    {
+      "key": "ossara.brackenfell",
+      "worldKey": "ossara",
+      "name": "Brackenfell",
+      "description": "Scrub woodland and old quarry between the farms and the rim. Firewood, charcoal, and a toll nobody agreed to.",
+      "minLevel": 4,
+      "maxLevel": 10,
+      "flags": {},
+      "multipliers": {
+        "strength": 1.0,
+        "health": 1.0,
+        "damage": 1.0,
+        "xp": 1.0,
+        "gold": 1.0,
+        "itemValue": 1.0,
+        "itemPower": 1.0,
+        "spawnDensity": 1.2
+      }
+    },
+    {
+      "key": "ossara.the-rimwalk",
+      "worldKey": "ossara",
+      "name": "The Rimwalk",
+      "description": "Where the land stops. Sulveth's ground, and the road out of Ossara.",
+      "minLevel": 8,
+      "maxLevel": 12,
+      "flags": {},
+      "multipliers": {
+        "strength": 1.2,
+        "health": 1.0,
+        "damage": 1.0,
+        "xp": 1.2,
+        "gold": 0.8,
+        "itemValue": 1.0,
+        "itemPower": 1.0,
+        "spawnDensity": 1.0
+      }
+    }
+  ],
+  "itemTemplates": [
+    {
+      "key": "ossara-fallen-marker",
+      "name": "a fallen road marker",
+      "description": "A shaped stone the length of a forearm, cut with the old road mark. It has been face down in the gorse long enough for moss to take one side.",
+      "icon": "|",
+      "slot": null,
+      "weight": 6000,
+      "baseValue": 0,
+      "baseStats": {},
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": true
+    },
+    {
+      "key": "ossara-keepsake",
+      "name": "somebody's keepsake",
+      "description": "A wedding ring, a whittled bird, a key to a door that is no longer anywhere. Every one of them used to belong to somebody, and says so.",
+      "icon": "*",
+      "slot": null,
+      "weight": 30,
+      "baseValue": 0,
+      "baseStats": {},
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": true
+    },
+    {
+      "key": "ossara-gate-shard",
+      "name": "a shard of gate-stone",
+      "description": "Dark stone, cool in a way the afternoon cannot fix. The broken face is not rough. It is as smooth as the outside, which means it was never one piece.",
+      "icon": "^",
+      "slot": null,
+      "weight": 400,
+      "baseValue": 0,
+      "baseStats": {},
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": true
+    }
+  ],
+  "mobTemplates": [
+    {
+      "key": "ossara-barn-rat",
+      "name": "a barn rat",
+      "description": "Fat on spilled grain and entirely uninterested in you until you are between it and the sack.",
+      "icon": "r",
+      "level": 1,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 12,
+        "damage": "1-3"
+      },
+      "baseXp": 20,
+      "baseGold": 3,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "ossara-terrace-crow",
+      "name": "a terrace crow",
+      "description": "One of the flock that works the terraces. It has learned that people carry food and that people are slow.",
+      "icon": "c",
+      "level": 2,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 18,
+        "damage": "2-4"
+      },
+      "baseXp": 40,
+      "baseGold": 6,
+      "behavior": {
+        "wanders": true
+      },
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "ossara-scrub-dog",
+      "name": "a scrub dog",
+      "description": "Nobody owns it and it does not hunt alone. There are always others in the gorse.",
+      "icon": "d",
+      "level": 3,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 22,
+        "damage": "2-5"
+      },
+      "baseXp": 60,
+      "baseGold": 9,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "ossara-hedge-thief",
+      "name": "a hedge thief",
+      "description": "Working the field edges for anything unattended. Comes off the wall swinging a billhook and is genuinely surprised when that does not settle it.",
+      "icon": "h",
+      "level": 4,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 34,
+        "damage": "3-6"
+      },
+      "baseXp": 80,
+      "baseGold": 12,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "ossara-road-cutpurse",
+      "name": "a road cutpurse",
+      "description": "Light, fast, and out of Gatetown a week ahead of a question they did not want to answer.",
+      "icon": "p",
+      "level": 5,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 40,
+        "damage": "3-7",
+        "defense": 1
+      },
+      "baseXp": 100,
+      "baseGold": 15,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "ossara-bracken-boar",
+      "name": "a bracken boar",
+      "description": "Waist high at the shoulder and built entirely for going forward. It commits early and it takes a long moment to turn.",
+      "icon": "B",
+      "level": 6,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 72,
+        "damage": "5-10",
+        "armor": 6
+      },
+      "baseXp": 120,
+      "baseGold": 18,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "ossara-hill-toller",
+      "name": "a hill toller",
+      "description": "One of the crew charging a toll on a road nobody gave them. Well equipped, badly led, and very committed to the fiction.",
+      "icon": "t",
+      "level": 7,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 58,
+        "damage": "5-9",
+        "armor": 4,
+        "defense": 1
+      },
+      "baseXp": 140,
+      "baseGold": 21,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "ossara-gorse-lurcher",
+      "name": "a gorse lurcher",
+      "description": "Long, low and the colour of dead bracken. It does not chase. It waits where the path narrows and it gets a grip on you.",
+      "icon": "L",
+      "level": 8,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 84,
+        "damage": "6-11",
+        "armor": 8,
+        "defense": 2
+      },
+      "baseXp": 160,
+      "baseGold": 24,
+      "behavior": {},
+      "loot": [],
+      "attacks": [
+        {
+          "Verb": "bite",
+          "DelayPulses": 8,
+          "EffectKey": null,
+          "EffectParams": null,
+          "DamageMultiplier": null
+        },
+        {
+          "Verb": "drag down",
+          "DelayPulses": 32,
+          "EffectKey": "control.root",
+          "EffectParams": {
+            "durationPulses": "16"
+          },
+          "DamageMultiplier": null
+        }
+      ]
+    },
+    {
+      "key": "ossara-left-behind",
+      "name": "one of the left behind",
+      "description": "It is a person shape and it is carrying something, and it will not put the thing down. Sulveth keeps what is lost. She does not always keep it still.",
+      "icon": "W",
+      "level": 9,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 96,
+        "damage": "7-12",
+        "armor": 10,
+        "defense": 2
+      },
+      "baseXp": 180,
+      "baseGold": 27,
+      "behavior": {},
+      "loot": [],
+      "attacks": [
+        {
+          "Verb": "strike",
+          "DelayPulses": 8,
+          "EffectKey": null,
+          "EffectParams": null,
+          "DamageMultiplier": null
+        },
+        {
+          "Verb": "hold",
+          "DelayPulses": 40,
+          "EffectKey": "control.stun",
+          "EffectParams": {
+            "durationPulses": "8"
+          },
+          "DamageMultiplier": null
+        }
+      ]
+    },
+    {
+      "key": "ossara-the-unclaimed",
+      "name": "the Unclaimed",
+      "description": "Taller than the others and put together out of more than one person's belongings. It has been at the rim longer than the marker stones have.",
+      "icon": "U",
+      "level": 10,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 150,
+        "damage": "8-14",
+        "armor": 14,
+        "defense": 3
+      },
+      "baseXp": 320,
+      "baseGold": 60,
+      "behavior": {},
+      "loot": [],
+      "attacks": [
+        {
+          "Verb": "strike",
+          "DelayPulses": 8,
+          "EffectKey": null,
+          "EffectParams": null,
+          "DamageMultiplier": null
+        },
+        {
+          "Verb": "crush",
+          "DelayPulses": 20,
+          "EffectKey": null,
+          "EffectParams": null,
+          "DamageMultiplier": 1.8
+        },
+        {
+          "Verb": "hold",
+          "DelayPulses": 48,
+          "EffectKey": "control.stun",
+          "EffectParams": {
+            "durationPulses": "8"
+          },
+          "DamageMultiplier": null
+        }
+      ]
+    },
+    {
+      "key": "ossara-terrace-warden",
+      "name": "Sesk, who walks the terraces",
+      "description": "She checks the dry-stone walls one shelf at a time, all year, and can tell you which season each repair is from.",
+      "icon": "@",
+      "level": 4,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 110
+      },
+      "baseXp": 0,
+      "baseGold": 0,
+      "behavior": {
+        "type": "npc",
+        "wanders": false,
+        "emotes": [
+          {
+            "text": "sets a fallen stone back into a wall without breaking stride",
+            "minSeconds": 90,
+            "maxSeconds": 240
+          },
+          {
+            "text": "says, 'Wall holds the soil. Soil holds the wall. Do not let either start.'",
+            "minSeconds": 240,
+            "maxSeconds": 480
+          }
+        ]
+      },
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "ossara-rim-keeper",
+      "name": "Keeper Vess of Sulveth's stone",
+      "description": "She keeps the blank stone at the rim, and has done for thirty years. She is not gloomy about it and has no patience for anyone who is.",
+      "icon": "@",
+      "level": 6,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 140
+      },
+      "baseXp": 0,
+      "baseGold": 0,
+      "behavior": {
+        "type": "npc",
+        "wanders": false,
+        "emotes": [
+          {
+            "text": "sets a found thing on the stone and writes nothing beside it",
+            "minSeconds": 120,
+            "maxSeconds": 300
+          },
+          {
+            "text": "says, 'Sulveth keeps what is lost. She does not give it back. Those are two facts, not one.'",
+            "minSeconds": 300,
+            "maxSeconds": 600
+          }
+        ]
+      },
+      "loot": [],
+      "attacks": []
+    }
+  ],
+  "abilities": [],
+  "rooms": [
+    {
+      "key": "ossara.the-terraces.the-high-shelf",
+      "zoneKey": "ossara.the-terraces",
+      "title": "The High Shelf",
+      "description": "The first of the terraces, and the widest. Dry-stone walls hold the soil in long green steps down the slope, each one a little narrower than the last.\n\nA hoe leans against the wall where somebody left it, and the row beside it is half done.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.the-terraces.the-drying-frames"
+        },
+        {
+          "direction": "north",
+          "to": "ossara.gatetown.terrace-gate"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-terraces.the-water-race"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.the-terraces.the-cellar-mouth"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-terraces.the-drying-frames",
+      "zoneKey": "ossara.the-terraces",
+      "title": "The Drying Frames",
+      "description": "Racks of split hazel, chest high, hung with beans and onion tops in the sun. The frames are re-tied every spring and none of the knots match.\n\nSomething has been at the low end of the third rack. There are droppings, and a hole in the wall behind it that was not put there by a mason.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "ossara.the-terraces.the-high-shelf"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-terraces.the-water-race",
+      "zoneKey": "ossara.the-terraces",
+      "title": "The Water Race",
+      "description": "A stone channel a hand deep runs along the shelf, carrying water from the river out to the far end and letting it fall shelf to shelf through cut notches.\n\nThe notches have wooden gates in them. Which gates are open is somebody's whole job, and arguing about it is most of the village's entertainment.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.the-terraces.the-high-shelf"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-terraces.the-lower-rows"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-terraces.the-cellar-mouth",
+      "zoneKey": "ossara.the-terraces",
+      "title": "The Cellar Mouth",
+      "description": "A door set flat into the hillside with two stone steps down to it, propped open with a rock because the hinge has gone. Cold air comes out of it even at noon.\n\nRoot vegetables go in here in autumn and come out all winter. Something else has been going in and out year round.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 1,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "down",
+          "to": "ossara.the-terraces.the-root-cellar"
+        },
+        {
+          "direction": "east",
+          "to": "ossara.the-terraces.the-high-shelf"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-terraces.the-root-cellar",
+      "zoneKey": "ossara.the-terraces",
+      "title": "The Root Cellar",
+      "description": "Earth walls, timber props, and sacking laid over the floor. Turnips and beet in slatted bins along one side, most of a barrel of apples along the other.\n\nEvery sack at the far end has been opened from underneath.",
+      "flags": {
+        "indoors": true,
+        "dark": true
+      },
+      "grid": [],
+      "legend": {},
+      "editorX": 0,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "up",
+          "to": "ossara.the-terraces.the-cellar-mouth"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-terraces.the-lower-rows",
+      "zoneKey": "ossara.the-terraces",
+      "title": "The Lower Rows",
+      "description": "Beans on strings, three shelves of them, running the whole width of the terrace. The strings are tied to hazel poles and the poles lean where the ground has crept.\n\nIt is the best cover on the whole hillside and everything on the hillside knows it.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.the-terraces.the-goat-fold"
+        },
+        {
+          "direction": "north",
+          "to": "ossara.the-terraces.the-water-race"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-terraces.the-orchard-shelf"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-terraces.the-goat-fold",
+      "zoneKey": "ossara.the-terraces",
+      "title": "The Goat Fold",
+      "description": "A pen of hurdles against the retaining wall, holding nine goats who have all worked out that hurdles can be leaned on. The tenth is somewhere else.\n\nA boy is supposed to be here. His stick is here.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "ossara.the-terraces.the-lower-rows"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-terraces.the-orchard-shelf",
+      "zoneKey": "ossara.the-terraces",
+      "title": "The Orchard Shelf",
+      "description": "Twenty apple trees on the widest of the lower terraces, pruned hard and standing in grass that is kept short by the goats when the goats are meant to be here.\n\nWindfalls lie under every tree. The crows have had the best of them and are not sorry.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.the-terraces.the-lower-rows"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-terraces.the-terrace-foot"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.the-terraces.the-beehives"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-terraces.the-beehives",
+      "zoneKey": "ossara.the-terraces",
+      "title": "The Beehives",
+      "description": "Six straw skeps on a stone bench, facing the morning sun, each with its own slate roof weighted down by a rock.\n\nSomebody has told the bees something recently. The rag tied to the third skep is the village's way of doing it, and it is fresh.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 1,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.the-terraces.the-orchard-shelf"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-terraces.the-terrace-foot",
+      "zoneKey": "ossara.the-terraces",
+      "title": "The Terrace Foot",
+      "description": "The bottom of the worked land. The last wall is twice the height of the others and the ground past it is scrub going to gorse.\n\nA stile crosses the wall here, worn hollow in the middle by two generations of people going out to Brackenfell for wood and coming back with less than they hoped.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 4,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.the-terraces.the-orchard-shelf"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.brackenfell.the-stile-path"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-stile-path",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Stile Path",
+      "description": "A trodden line through waist-high bracken, wide enough for one and used by two. The terraces are a green staircase behind you and the scrub closes over the path ahead.\n\nSomebody has cut a blaze into the third birch along. There is another further on, and then they stop.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.brackenfell.the-gorse-run"
+        },
+        {
+          "direction": "north",
+          "to": "ossara.the-terraces.the-terrace-foot"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.brackenfell.the-birch-stand"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-birch-stand",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Birch Stand",
+      "description": "Thin birches close together, all of them leaning the same way, with light coming down through them in bars. The ground is clean underneath and quiet to walk on.\n\nThis is where Gatetown gets its firewood, and the stumps are cut low and level by people who intend to come back.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.brackenfell.the-stile-path"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.brackenfell.the-charcoal-burn"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.brackenfell.the-wet-hollow"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-gorse-run",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Gorse Run",
+      "description": "Gorse over head height on both sides and a path through it barely a shoulder wide. The spines catch at everything and the flowers smell absurdly of coconut.\n\nThere are runs pushed through the base of it at knee height, going somewhere else.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 4,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "south",
+          "to": "ossara.brackenfell.the-thorn-hollow"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.brackenfell.the-stile-path"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-thorn-hollow",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Thorn Hollow",
+      "description": "A dip where the gorse gives out and blackthorn takes over, so dense at the edges that the middle is bare ground.\n\nBones in the middle, small ones, picked clean and dragged into no particular arrangement.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 4,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.brackenfell.the-gorse-run"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.brackenfell.the-old-quarry"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-wet-hollow",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Wet Hollow",
+      "description": "A boggy dip full of sedge and standing water that never quite drains, crossed by three planks laid end to end on stones.\n\nThe middle plank moves when you step on it. Everyone knows. Nobody has fixed it.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.brackenfell.the-birch-stand"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.brackenfell.the-alder-carr"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-alder-carr",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Alder Carr",
+      "description": "Alder growing straight out of the water on stilts of root, close enough together that you pick your way rather than walk.\n\nWhatever lives in here has learned that people are loud and slow and only come through in daylight.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.brackenfell.the-charcoal-burn"
+        },
+        {
+          "direction": "north",
+          "to": "ossara.brackenfell.the-wet-hollow"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-charcoal-burn",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Charcoal Burn",
+      "description": "A flat circle of bare scorched earth twenty feet across, with a shallow pit at the middle and a ring of turf sods stacked to one side.\n\nThe burn is cold. The sods have been stacked ready for a month and nobody has come back to set it.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.brackenfell.the-old-quarry"
+        },
+        {
+          "direction": "north",
+          "to": "ossara.brackenfell.the-birch-stand"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.brackenfell.the-cutting-bank"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.brackenfell.the-alder-carr"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-old-quarry",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Old Quarry",
+      "description": "A bite taken out of the hillside, three storeys of pale rock face with a floor of chips and puddles. Every wall in Gatetown came out of here.\n\nThe tool marks stop halfway up one face, mid-course, as though the day ended and did not start again.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 4,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.brackenfell.the-thorn-hollow"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.brackenfell.the-quarry-shelf"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.brackenfell.the-charcoal-burn"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-quarry-shelf",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Quarry Shelf",
+      "description": "A ledge halfway up the quarry face, reached by a ramp of spoil, wide enough for a cart and once used by several.\n\nSomebody is camping up here. The fire is banked, not out, and there is more gear than one person needs.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 4,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.brackenfell.the-old-quarry"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.brackenfell.the-toll-post"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.brackenfell.the-cutting-bank"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-cutting-bank",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Cutting Bank",
+      "description": "The old road runs through a cutting here, banks of red earth and root above head height on both sides, and it is exactly as good an ambush as it looks.\n\nThe road surface is still sound. Whoever laid it was better at this than anyone living.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.brackenfell.the-quarry-shelf"
+        },
+        {
+          "direction": "north",
+          "to": "ossara.brackenfell.the-charcoal-burn"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.brackenfell.the-boar-wallow"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-toll-post",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Toll Post",
+      "description": "A pole across the road on two forked stakes, with a plank nailed to it reading TOLL in paint that has run. Nobody has any authority to put it there.\n\nThe crew who did are camped where they can see both ways along the cutting, which is the one part of this they have thought through.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 4,
+      "editorY": 4,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.brackenfell.the-quarry-shelf"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.brackenfell.the-boar-wallow"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-boar-wallow",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Boar Wallow",
+      "description": "A churned patch of black mud twenty feet across, ringed with rubbed-smooth trees and smelling like the underside of a wet dog.\n\nThe tracks going in are deep and splayed. Nothing small made these.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 4,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.brackenfell.the-toll-post"
+        },
+        {
+          "direction": "north",
+          "to": "ossara.brackenfell.the-cutting-bank"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.brackenfell.the-long-bracken"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-long-bracken",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Long Bracken",
+      "description": "Bracken taller than a person for as far as you can see, with the path a green tunnel through it and the sky a strip overhead.\n\nYou cannot see anything off the path. Anything off the path can hear exactly where you are.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 5,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.brackenfell.the-boar-wallow"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.brackenfell.the-far-blaze"
+        }
+      ]
+    },
+    {
+      "key": "ossara.brackenfell.the-far-blaze",
+      "zoneKey": "ossara.brackenfell",
+      "title": "The Far Blaze",
+      "description": "The last of the cut blazes, on a birch that has grown around it until the mark is a knuckle of scar tissue.\n\nPast here the bracken thins, the soil goes to grit, and the ground begins its long tilt towards the rim.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 6,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.brackenfell.the-long-bracken"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-rimwalk.the-thinning"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-rimwalk.the-thinning",
+      "zoneKey": "ossara.the-rimwalk",
+      "title": "The Thinning",
+      "description": "The bracken gives up in stages. First the tall stuff, then the low, then a scatter of gorse in grit, and then grass so short it looks grazed by something nobody has seen.\n\nThe ground tilts. Not steeply. Just enough that walking is easier than stopping.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.the-rimwalk.the-picnic-stones"
+        },
+        {
+          "direction": "north",
+          "to": "ossara.brackenfell.the-far-blaze"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-rimwalk.the-marker-line"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-rimwalk.the-picnic-stones",
+      "zoneKey": "ossara.the-rimwalk",
+      "title": "The Picnic Stones",
+      "description": "Three flat slabs dragged into a rough triangle, generations ago, by people who wanted somewhere to sit and look at the edge.\n\nThe stones are scratched all over with names and dates. The most recent is from this spring. So is the ring of ash beside it.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 4,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "south",
+          "to": "ossara.the-rimwalk.the-watch-stone"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.the-rimwalk.the-thinning"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-rimwalk.the-watch-stone",
+      "zoneKey": "ossara.the-rimwalk",
+      "title": "The Watch Stone",
+      "description": "A single upright of the pale local rock, twice the height of a person, standing where the ground begins to fall away in earnest. It is not one of the markers - it is older and it is not cut with anything.\n\nSomeone has kept the turf clear around its base. Recently, and with a blade.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 4,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.the-rimwalk.the-picnic-stones"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-rimwalk.the-cairn-field"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.the-rimwalk.the-marker-line"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-rimwalk.the-marker-line",
+      "zoneKey": "ossara.the-rimwalk",
+      "title": "The Marker Line",
+      "description": "Shaped stones set into the turf every thirty paces, running out towards the edge, each cut with a mark that is not any letter Gatetown uses.\n\nHalf of them are down. The ones still standing lean the same way, which is not the way the wind comes from.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.the-rimwalk.the-watch-stone"
+        },
+        {
+          "direction": "north",
+          "to": "ossara.the-rimwalk.the-thinning"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-rimwalk.the-keepers-stone"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.the-rimwalk.the-gorse-tongue"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-rimwalk.the-gorse-tongue",
+      "zoneKey": "ossara.the-rimwalk",
+      "title": "The Gorse Tongue",
+      "description": "A last spit of gorse running out along a spur of higher ground, thinning as it goes until the bushes are separate and stunted.\n\nThe path narrows to a single line between two of them. It is the only way along the spur and everything using this ground knows it.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.the-rimwalk.the-marker-line"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-rimwalk.the-spur-end"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-rimwalk.the-spur-end",
+      "zoneKey": "ossara.the-rimwalk",
+      "title": "The Spur End",
+      "description": "The spur runs out. Grit, then turf, then nothing - the ground ends in a clean line with roots and soil showing in cross-section.\n\nPeople have thrown things off here for a long time to watch what happens. Nothing happens. They do not fall and they do not stay.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.the-rimwalk.the-keepers-stone"
+        },
+        {
+          "direction": "north",
+          "to": "ossara.the-rimwalk.the-gorse-tongue"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-rimwalk.the-keepers-stone",
+      "zoneKey": "ossara.the-rimwalk",
+      "title": "The Keeper's Stone",
+      "description": "A waist-high block of pale rock with a flat top, standing alone where the marker line bends. Nothing is written on it and nothing ever has been.\n\nThings are laid on it. A shoe, a comb, a bundle of letters gone to pulp. Nobody takes them, and nobody puts them anywhere else either.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.the-rimwalk.the-cairn-field"
+        },
+        {
+          "direction": "north",
+          "to": "ossara.the-rimwalk.the-marker-line"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-rimwalk.the-lost-way"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.the-rimwalk.the-spur-end"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-rimwalk.the-cairn-field",
+      "zoneKey": "ossara.the-rimwalk",
+      "title": "The Cairn Field",
+      "description": "Forty or fifty stone piles, none of them tall, spread across a shallow bowl of ground. Some are neat. Most have come apart.\n\nThey are not graves. Every one of them has a hollow in the top where something was meant to be set, and every hollow is empty.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 4,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.the-rimwalk.the-watch-stone"
+        },
+        {
+          "direction": "west",
+          "to": "ossara.the-rimwalk.the-keepers-stone"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-rimwalk.the-lost-way",
+      "zoneKey": "ossara.the-rimwalk",
+      "title": "The Lost Way",
+      "description": "The old road again, or what it becomes out here: two ruts in the turf running dead straight at the edge, with the marker stones keeping pace on either side.\n\nIt does not curve away. Whoever built it was going somewhere that used to be there.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.the-rimwalk.the-keepers-stone"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-rimwalk.the-forgetting-ground"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-rimwalk.the-forgetting-ground",
+      "zoneKey": "ossara.the-rimwalk",
+      "title": "The Forgetting Ground",
+      "description": "The turf here is wrong in a way that takes a moment. It is uncropped, unwalked, and the marker stones stop twenty paces short of it on both sides.\n\nThings stand about in it. They were people, and they are carrying what they were carrying, and they have not put any of it down.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 4,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.the-rimwalk.the-lost-way"
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-rimwalk.the-rim-gate"
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-rimwalk.the-rim-gate",
+      "zoneKey": "ossara.the-rimwalk",
+      "title": "The Rim Gate",
+      "description": "A ring of dark stone, twin to the dead one in Gatetown's yard, standing at the very edge with nothing behind it.\n\nThis one works. It has always worked. This season it does not, and the difference is not visible: it stands exactly as it stood, and what was through it is not.\n\nWhatever should be on the other side is not there. Not dark, not distance - the same nothing as everywhere else past the edge, arriving where a place used to.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 5,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "ossara.the-rimwalk.the-last-marker"
+        },
+        {
+          "direction": "north",
+          "to": "ossara.the-rimwalk.the-forgetting-ground"
+        },
+        {
+          "direction": "south",
+          "to": "grask.the-landing.the-gate-quay",
+          "requiredFlagKey": "attuned.grask",
+          "requiredItemKey": null,
+          "refusalMessage": "The ring is cold and the air inside it does not move. Something here has not been told your name."
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-rimwalk.the-last-marker",
+      "zoneKey": "ossara.the-rimwalk",
+      "title": "The Last Marker",
+      "description": "The final stone of the line, out past the gate, standing at an angle on ground that gives underfoot in a way ground should not.\n\nIt is the only marker still carrying what it was meant to carry: a shard of the same dark stone the gates are cut from, socketed into its head, and warm.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 4,
+      "editorY": 5,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "ossara.the-rimwalk.the-rim-gate"
+        }
+      ]
+    }
+  ],
+  "spawners": [
+    {
+      "id": "7437d3b0-bf0a-53e9-a416-4ef910001afa",
+      "zoneKey": "ossara.the-terraces",
+      "templateKey": "ossara-barn-rat",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.the-terraces.the-root-cellar",
+        "ossara.the-terraces.the-cellar-mouth"
+      ],
+      "targetCount": 4,
+      "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "cbd31afe-bea8-5c49-b31f-bbda93359f64",
+      "zoneKey": "ossara.the-terraces",
+      "templateKey": "ossara-terrace-crow",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.the-terraces.the-orchard-shelf",
+        "ossara.the-terraces.the-drying-frames",
+        "ossara.the-terraces.the-lower-rows"
+      ],
+      "targetCount": 4,
+      "respawnSeconds": 70,
+      "wanders": true,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "3f4b4114-b63f-5acf-80c5-4a2d7f3cc91f",
+      "zoneKey": "ossara.the-terraces",
+      "templateKey": "ossara-scrub-dog",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.the-terraces.the-terrace-foot",
+        "ossara.the-terraces.the-goat-fold"
+      ],
+      "targetCount": 3,
+      "respawnSeconds": 90,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "25b6f0a4-8e3f-5107-ba3d-92f3d979bd04",
+      "zoneKey": "ossara.the-terraces",
+      "templateKey": "ossara-hedge-thief",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.the-terraces.the-lower-rows",
+        "ossara.the-terraces.the-beehives"
+      ],
+      "targetCount": 2,
+      "respawnSeconds": 120,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "f0c7b5ae-5757-57d9-90fb-ecc8d1c38a9b",
+      "zoneKey": "ossara.the-terraces",
+      "templateKey": "ossara-terrace-warden",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.the-terraces.the-water-race"
+      ],
+      "targetCount": 1,
+      "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "1e4808ef-1e25-5db7-8669-8d8151f2ce16",
+      "zoneKey": "ossara.brackenfell",
+      "templateKey": "ossara-hedge-thief",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.brackenfell.the-stile-path",
+        "ossara.brackenfell.the-birch-stand"
+      ],
+      "targetCount": 3,
+      "respawnSeconds": 80,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "de5a9872-5eb6-5617-b7cd-181e6cbff875",
+      "zoneKey": "ossara.brackenfell",
+      "templateKey": "ossara-scrub-dog",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.brackenfell.the-gorse-run",
+        "ossara.brackenfell.the-thorn-hollow"
+      ],
+      "targetCount": 4,
+      "respawnSeconds": 70,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "7d1ab979-33e0-581a-b0f6-b70bcb56c644",
+      "zoneKey": "ossara.brackenfell",
+      "templateKey": "ossara-road-cutpurse",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.brackenfell.the-cutting-bank",
+        "ossara.brackenfell.the-charcoal-burn"
+      ],
+      "targetCount": 3,
+      "respawnSeconds": 90,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "487d0aa5-0191-512e-a6fd-40ef11bf6fc6",
+      "zoneKey": "ossara.brackenfell",
+      "templateKey": "ossara-bracken-boar",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.brackenfell.the-boar-wallow",
+        "ossara.brackenfell.the-wet-hollow",
+        "ossara.brackenfell.the-alder-carr"
+      ],
+      "targetCount": 3,
+      "respawnSeconds": 120,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "a865f5cb-b95e-56f0-abd1-923a01afdc68",
+      "zoneKey": "ossara.brackenfell",
+      "templateKey": "ossara-hill-toller",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.brackenfell.the-toll-post",
+        "ossara.brackenfell.the-quarry-shelf",
+        "ossara.brackenfell.the-old-quarry"
+      ],
+      "targetCount": 5,
+      "respawnSeconds": 100,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "2d955708-6cfa-53fd-b775-e0c5e80d115f",
+      "zoneKey": "ossara.brackenfell",
+      "templateKey": "ossara-gorse-lurcher",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.brackenfell.the-long-bracken",
+        "ossara.brackenfell.the-far-blaze"
+      ],
+      "targetCount": 2,
+      "respawnSeconds": 150,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "2c379755-54d8-53db-923d-3fdf86180c78",
+      "zoneKey": "ossara.the-rimwalk",
+      "templateKey": "ossara-gorse-lurcher",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.the-rimwalk.the-gorse-tongue",
+        "ossara.the-rimwalk.the-thinning"
+      ],
+      "targetCount": 3,
+      "respawnSeconds": 100,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "2439a298-00ac-568e-a6d0-0a72f9c70692",
+      "zoneKey": "ossara.the-rimwalk",
+      "templateKey": "ossara-hill-toller",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.the-rimwalk.the-picnic-stones",
+        "ossara.the-rimwalk.the-watch-stone"
+      ],
+      "targetCount": 3,
+      "respawnSeconds": 110,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "9a290678-8dd9-52e9-b28c-8229d3a049ee",
+      "zoneKey": "ossara.the-rimwalk",
+      "templateKey": "ossara-left-behind",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.the-rimwalk.the-forgetting-ground",
+        "ossara.the-rimwalk.the-cairn-field",
+        "ossara.the-rimwalk.the-lost-way",
+        "ossara.the-rimwalk.the-spur-end"
+      ],
+      "targetCount": 6,
+      "respawnSeconds": 120,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "1aaa51f0-9f38-55c0-be47-4338a04ad908",
+      "zoneKey": "ossara.the-rimwalk",
+      "templateKey": "ossara-the-unclaimed",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.the-rimwalk.the-last-marker"
+      ],
+      "targetCount": 1,
+      "respawnSeconds": 900,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "254c5d3b-cf57-5716-86af-ae48e0f1e167",
+      "zoneKey": "ossara.the-rimwalk",
+      "templateKey": "ossara-rim-keeper",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.the-rimwalk.the-keepers-stone"
+      ],
+      "targetCount": 1,
+      "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
+    }
+  ],
+  "quests": [
+    {
+      "key": "a1-1-the-road-out",
+      "zoneKey": "ossara.the-rimwalk",
+      "name": "The Road Out",
+      "summary": "Recover four fallen road markers from the Rimwalk.",
+      "description": "Deacon Pell has worked out that the gate stopped when the marker line came down, which is either the whole answer or a coincidence. He would like the stones back up either way.",
+      "giverMobKey": "ossara-ilvaro-deacon",
+      "turninMobKey": "ossara-ilvaro-deacon",
+      "requiredItemKey": "ossara-fallen-marker",
+      "requiredCount": 4,
+      "rewardXp": 900,
+      "rewardGold": 60,
+      "rewardItemKey": null,
+      "rewardItemCount": 0,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Pell has a map with more crossings-out than lines. 'The stones came down and the gate stopped. In that order. I am not saying it is the reason. I am saying nobody has checked.'",
+        "progress": "'Four. Any four. They all weigh the same amount of nothing to Ilvaro and rather a lot to you, I imagine.'",
+        "complete": "He turns one over twice. 'Right. So they are cut on both faces. Nobody mentioned that. Take a rest, and then would you mind terribly—'",
+        "already": "'Still up there, are they? They are not getting lighter.'"
+      },
+      "sortOrder": 1
+    },
+    {
+      "key": "a1-2-what-sulveth-keeps",
+      "zoneKey": "ossara.the-rimwalk",
+      "name": "What Sulveth Keeps",
+      "summary": "Collect six keepsakes from the left behind.",
+      "description": "The things standing about on the forgetting ground are carrying what they were carrying. Pell wants them back. He has not thought past that.",
+      "giverMobKey": "ossara-ilvaro-deacon",
+      "turninMobKey": "ossara-rim-keeper",
+      "requiredItemKey": "ossara-keepsake",
+      "requiredCount": 6,
+      "rewardXp": 1400,
+      "rewardGold": 90,
+      "rewardItemKey": null,
+      "rewardItemCount": 0,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a1-1-the-road-out"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "'They are holding things,' Pell says, and stops, and starts again. 'Somebody is missing those things. That is all I am confident about.'",
+        "progress": "'Six should do. Take them to the Keeper, not to me. She will know what they are. I will only guess and be wrong in front of you.'",
+        "complete": "Vess lays them out on the blank stone without hurrying. 'These went first,' she says. 'The stones went second. The gate went third. He has the order backwards and the right idea.'",
+        "already": "'Six. And do not sort them. I will sort them.'"
+      },
+      "sortOrder": 2
+    },
+    {
+      "key": "a1-3-a-gate-does-not-break",
+      "zoneKey": "ossara.the-rimwalk",
+      "name": "A Gate Does Not Break",
+      "summary": "Take the shard from the Unclaimed to Keeper Vess.",
+      "description": "The last marker still carries its shard, and the Unclaimed is standing over it. Vess wants the stone, and she has decided you have earned the sentence that comes with it.",
+      "giverMobKey": "ossara-rim-keeper",
+      "turninMobKey": "ossara-rim-keeper",
+      "requiredItemKey": "ossara-gate-shard",
+      "requiredCount": 1,
+      "rewardXp": 2600,
+      "rewardGold": 150,
+      "rewardItemKey": null,
+      "rewardItemCount": 0,
+      "rewardFlagKey": "attuned.grask",
+      "prerequisiteQuestKeys": [
+        "a1-2-what-sulveth-keeps"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vess does not look up. 'Last stone still has its piece. The big one is standing on it. I am seventy and I am not going to be the one to ask it to move.'",
+        "progress": "'One shard. Out past the ring, where the ground gives. Mind your footing and mind the thing that is already there.'",
+        "complete": "She turns the shard so the smooth broken face catches the light. 'A gate does not break,' she says. 'It forgets. Somebody stopped saying the name of the other side and it stopped being able to find it.' She presses the shard into your hand. 'It knows you now. Go and see what is left of Grask, and mind what looks back.'",
+        "already": "'Still standing there, is it. Yes. It does that.'"
+      },
+      "sortOrder": 3
+    }
+  ],
+  "configurations": [
+    {
+      "key": "the-reaches",
+      "name": "The Reaches",
+      "description": "The Reaches as designed in docs/WORLD.md. New characters begin in Gatetown, at the gate that has not opened in living memory.",
+      "startingRoomKey": "ossara.gatetown.the-gate-yard",
+      "welcomeMessage": "The Reaches hold, {name}. Welcome back."
+    }
+  ]
+}

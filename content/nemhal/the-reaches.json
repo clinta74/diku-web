@@ -1,0 +1,2126 @@
+{
+  "formatVersion": 7,
+  "exportedAt": "2026-08-15T00:00:00+00:00",
+  "scope": {
+    "kind": "world",
+    "key": "nemhal"
+  },
+  "worlds": [
+    {
+      "key": "nemhal",
+      "name": "Nemhal",
+      "description": "The failing Reach. Its edges are gone and going, and the reason is lying in Keshvaun where anyone can walk up to it.",
+      "sortOrder": 4,
+      "flags": {},
+      "multipliers": {
+        "strength": 4.1,
+        "health": 1.0,
+        "damage": 1.0,
+        "xp": 4.1,
+        "gold": 2.5,
+        "itemValue": 0.8,
+        "itemPower": 1.1,
+        "spawnDensity": 1.0
+      }
+    }
+  ],
+  "zones": [
+    {
+      "key": "nemhal.the-hold",
+      "worldKey": "nemhal",
+      "name": "The Hold",
+      "description": "Eleven people and a wall, holding a line against an edge that is not attacking.",
+      "minLevel": 34,
+      "maxLevel": 36,
+      "flags": {
+        "peaceful": true,
+        "respawn": true
+      },
+      "multipliers": {
+        "strength": 1.0,
+        "health": 1.0,
+        "damage": 1.0,
+        "xp": 1.0,
+        "gold": 1.0,
+        "itemValue": 1.0,
+        "itemPower": 1.0,
+        "spawnDensity": 1.0
+      }
+    },
+    {
+      "key": "nemhal.vurrach",
+      "worldKey": "nemhal",
+      "name": "Vurrach",
+      "description": "The near country, still maintained, by habit, by people nobody has relieved.",
+      "minLevel": 34,
+      "maxLevel": 41,
+      "flags": {},
+      "multipliers": {
+        "strength": 1.0,
+        "health": 1.0,
+        "damage": 1.0,
+        "xp": 1.0,
+        "gold": 1.0,
+        "itemValue": 1.0,
+        "itemPower": 1.0,
+        "spawnDensity": 1.0
+      }
+    },
+    {
+      "key": "nemhal.olmenneth",
+      "worldKey": "nemhal",
+      "name": "Olmenneth",
+      "description": "The processional road and the houses along it, all of them still keeping the office.",
+      "minLevel": 38,
+      "maxLevel": 45,
+      "flags": {},
+      "multipliers": {
+        "strength": 1.1,
+        "health": 1.0,
+        "damage": 1.0,
+        "xp": 1.0,
+        "gold": 1.0,
+        "itemValue": 1.0,
+        "itemPower": 1.0,
+        "spawnDensity": 1.2
+      }
+    },
+    {
+      "key": "nemhal.keshvaun",
+      "worldKey": "nemhal",
+      "name": "Keshvaun",
+      "description": "Where Nemhalla is lying. The only place in the Reaches a god can be walked up to.",
+      "minLevel": 42,
+      "maxLevel": 46,
+      "flags": {
+        "dark": true
+      },
+      "multipliers": {
+        "strength": 1.12,
+        "health": 1.0,
+        "damage": 1.0,
+        "xp": 1.1,
+        "gold": 1.0,
+        "itemValue": 1.0,
+        "itemPower": 1.0,
+        "spawnDensity": 1.0
+      }
+    }
+  ],
+  "itemTemplates": [
+    {
+      "key": "nemhal-vigil-helm",
+      "name": "a vigil helm",
+      "description": "Kept oiled by somebody, on a rack, in a Reach where nobody is coming to inspect it.",
+      "icon": "^",
+      "slot": "Head",
+      "weight": 1600,
+      "baseValue": 380,
+      "baseStats": {
+        "armor": 19
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false
+    },
+    {
+      "key": "nemhal-relic-harness",
+      "name": "a relic harness",
+      "description": "Plate over quilt, with a reliquary let into the breast that is empty and has been polished anyway.",
+      "icon": "[",
+      "slot": "Chest",
+      "weight": 9000,
+      "baseValue": 900,
+      "baseStats": {
+        "armor": 41
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false
+    },
+    {
+      "key": "nemhal-bearers-gauntlets",
+      "name": "a pair of bearer's gauntlets",
+      "description": "Made for carrying something heavy a long way without setting it down.",
+      "icon": "[",
+      "slot": "Hands",
+      "weight": 900,
+      "baseValue": 280,
+      "baseStats": {
+        "armor": 13
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false
+    },
+    {
+      "key": "nemhal-kneeling-greaves",
+      "name": "a pair of kneeling greaves",
+      "description": "Padded at the knee, worn through at the knee, repaired at the knee.",
+      "icon": "[",
+      "slot": "Legs",
+      "weight": 4200,
+      "baseValue": 560,
+      "baseStats": {
+        "armor": 25
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false
+    },
+    {
+      "key": "nemhal-processional-boots",
+      "name": "a pair of processional boots",
+      "description": "Soled for stone and for walking slowly in step with other people.",
+      "icon": "[",
+      "slot": "Feet",
+      "weight": 2600,
+      "baseValue": 400,
+      "baseStats": {
+        "armor": 14
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false
+    },
+    {
+      "key": "nemhal-bier-shield",
+      "name": "a bier shield",
+      "description": "One of the panels from a carrying frame, with handles added later and badly.",
+      "icon": ")",
+      "slot": "OffHand",
+      "weight": 4400,
+      "baseValue": 640,
+      "baseStats": {
+        "armor": 27,
+        "defense": 4
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false
+    },
+    {
+      "key": "nemhal-unlit-lamp",
+      "name": "an unlit lamp",
+      "description": "A hanging lamp of the kind carried in the vigil, never lit, kept filled.",
+      "icon": "*",
+      "slot": "Trinket",
+      "weight": 300,
+      "baseValue": 340,
+      "baseStats": {
+        "armor": 11
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false
+    },
+    {
+      "key": "nemhal-vigil-spear",
+      "name": "a vigil spear",
+      "description": "Carried at the shoulder for two hundred years and never once levelled.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 3600,
+      "baseValue": 720,
+      "baseStats": {
+        "damageMultiplier": 4.8,
+        "bonus": 4
+      },
+      "attackDelayPulses": 8,
+      "attackVerb": "pierce",
+      "isQuestItem": false
+    },
+    {
+      "key": "nemhal-keening-blade",
+      "name": "a keening blade",
+      "description": "It sounds when it moves. The cult say that is grief. The smith who made it knew exactly which groove does it.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2400,
+      "baseValue": 820,
+      "baseStats": {
+        "damageMultiplier": 4.4,
+        "bonus": 5
+      },
+      "attackDelayPulses": 6,
+      "attackVerb": "slash",
+      "isQuestItem": false
+    },
+    {
+      "key": "nemhal-standing-maul",
+      "name": "a standing maul",
+      "description": "Head the size of a loaf, haft the length of a person. Built to stop something rather than to kill it.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 6000,
+      "baseValue": 660,
+      "baseStats": {
+        "damageMultiplier": 5.4
+      },
+      "attackDelayPulses": 10,
+      "attackVerb": "crush",
+      "isQuestItem": false
+    },
+    {
+      "key": "nemhal-vigil-token",
+      "name": "a vigil token",
+      "description": "Carved bone on a cord, issued to everyone who stands a watch. The cult has issued them continuously for two hundred years.",
+      "icon": "*",
+      "slot": null,
+      "weight": 40,
+      "baseValue": 0,
+      "baseStats": {},
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": true
+    },
+    {
+      "key": "nemhal-office-page",
+      "name": "a page of the office",
+      "description": "One leaf of the daily office, worn soft. The prayers are all for a recovery.",
+      "icon": "?",
+      "slot": null,
+      "weight": 60,
+      "baseValue": 0,
+      "baseStats": {},
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": true
+    },
+    {
+      "key": "nemhal-god-shroud",
+      "name": "a corner of the shroud",
+      "description": "Linen, clean, changed weekly for two hundred years by people who have not been told.",
+      "icon": "?",
+      "slot": null,
+      "weight": 1200,
+      "baseValue": 0,
+      "baseStats": {},
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": true
+    }
+  ],
+  "mobTemplates": [
+    {
+      "key": "nemhal-crypt-mite",
+      "name": "a crypt mite",
+      "description": "Small, pale, and living off the wax.",
+      "icon": "r",
+      "level": 7,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 62,
+        "damage": "5-9"
+      },
+      "baseXp": 140,
+      "baseGold": 21,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "nemhal-vigil-moth",
+      "name": "a vigil moth",
+      "description": "Enormous and drawn to the lamps that are never lit.",
+      "icon": "c",
+      "level": 7,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 62,
+        "damage": "5-9"
+      },
+      "baseXp": 140,
+      "baseGold": 21,
+      "behavior": {
+        "wanders": true
+      },
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "nemhal-hollow-hound",
+      "name": "a hollow hound",
+      "description": "It was somebody's and it still runs the route it was walked on.",
+      "icon": "d",
+      "level": 8,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 90,
+        "damage": "6-11"
+      },
+      "baseXp": 160,
+      "baseGold": 24,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "nemhal-lay-brother",
+      "name": "a lay brother",
+      "description": "Still sweeping, still fetching, still on the rota. It objects to interruption.",
+      "icon": "h",
+      "level": 8,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 90,
+        "damage": "6-11"
+      },
+      "baseXp": 160,
+      "baseGold": 24,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "nemhal-bell-ringer",
+      "name": "a bell-ringer",
+      "description": "Fast on the rope and faster off it. The bell is still rung on the hour.",
+      "icon": "p",
+      "level": 8,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 88,
+        "damage": "6-11",
+        "defense": 2
+      },
+      "baseXp": 160,
+      "baseGold": 24,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "nemhal-bier-bearer",
+      "name": "a bier bearer",
+      "description": "Enormous, patient, and carrying one end of nothing at shoulder height.",
+      "icon": "B",
+      "level": 9,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 108,
+        "damage": "7-12",
+        "armor": 13
+      },
+      "baseXp": 180,
+      "baseGold": 27,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "nemhal-vigil-keeper",
+      "name": "a vigil keeper",
+      "description": "Armoured, posted, and standing a watch that ended before Grask was opened.",
+      "icon": "t",
+      "level": 9,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 104,
+        "damage": "7-12",
+        "armor": 11,
+        "defense": 2
+      },
+      "baseXp": 180,
+      "baseGold": 27,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "nemhal-shroud-binder",
+      "name": "a shroud binder",
+      "description": "Its whole work is wrapping, and it does not distinguish between the dead and the standing.",
+      "icon": "L",
+      "level": 9,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 112,
+        "damage": "7-12",
+        "armor": 16,
+        "defense": 3
+      },
+      "baseXp": 180,
+      "baseGold": 27,
+      "behavior": {},
+      "loot": [],
+      "attacks": [
+        {
+          "Verb": "wind",
+          "DelayPulses": 8,
+          "EffectKey": null,
+          "EffectParams": null,
+          "DamageMultiplier": null
+        },
+        {
+          "Verb": "bind fast",
+          "DelayPulses": 32,
+          "EffectKey": "control.root",
+          "EffectParams": {
+            "durationPulses": "28"
+          },
+          "DamageMultiplier": null
+        }
+      ]
+    },
+    {
+      "key": "nemhal-the-untold",
+      "name": "one of the untold",
+      "description": "A priest of Nemhalla in full vestment, keeping the office. Nobody has told them and there is nobody left who could.",
+      "icon": "W",
+      "level": 10,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 160,
+        "damage": "8-14",
+        "armor": 19,
+        "defense": 3
+      },
+      "baseXp": 200,
+      "baseGold": 30,
+      "behavior": {},
+      "loot": [],
+      "attacks": [
+        {
+          "Verb": "strike",
+          "DelayPulses": 8,
+          "EffectKey": null,
+          "EffectParams": null,
+          "DamageMultiplier": null
+        },
+        {
+          "Verb": "still",
+          "DelayPulses": 40,
+          "EffectKey": "control.stun",
+          "EffectParams": {
+            "durationPulses": "8"
+          },
+          "DamageMultiplier": null
+        }
+      ]
+    },
+    {
+      "key": "nemhal-the-first-mourner",
+      "name": "the First Mourner",
+      "description": "The one who was there. She has kept the vigil from the first hour and she will not be relieved.",
+      "icon": "U",
+      "level": 10,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 210,
+        "damage": "8-14",
+        "armor": 26,
+        "defense": 5
+      },
+      "baseXp": 520,
+      "baseGold": 180,
+      "behavior": {},
+      "loot": [],
+      "attacks": [
+        {
+          "Verb": "strike",
+          "DelayPulses": 8,
+          "EffectKey": null,
+          "EffectParams": null,
+          "DamageMultiplier": null
+        },
+        {
+          "Verb": "lament",
+          "DelayPulses": 20,
+          "EffectKey": null,
+          "EffectParams": null,
+          "DamageMultiplier": 2.1
+        },
+        {
+          "Verb": "still",
+          "DelayPulses": 48,
+          "EffectKey": "control.stun",
+          "EffectParams": {
+            "durationPulses": "8"
+          },
+          "DamageMultiplier": null
+        }
+      ]
+    },
+    {
+      "key": "nemhal-quartermaster",
+      "name": "Quartermaster Dell",
+      "description": "She rations rather than trades, and prices things by how badly the next person will need them rather than by what they cost.",
+      "icon": "@",
+      "level": 18,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 420
+      },
+      "baseXp": 0,
+      "baseGold": 2600,
+      "behavior": {
+        "type": "npc",
+        "wanders": false,
+        "emotes": [
+          {
+            "text": "says, 'Take what you need. Write what you took. Somebody will want to know.'",
+            "minSeconds": 240,
+            "maxSeconds": 480
+          },
+          {
+            "text": "counts a shelf, and counts the same shelf again",
+            "minSeconds": 120,
+            "maxSeconds": 300
+          }
+        ],
+        "shopkeeper": true,
+        "sells": [
+          "nemhal-vigil-helm",
+          "nemhal-relic-harness",
+          "nemhal-bearers-gauntlets",
+          "nemhal-kneeling-greaves",
+          "nemhal-processional-boots",
+          "nemhal-bier-shield",
+          "nemhal-unlit-lamp",
+          "nemhal-vigil-spear",
+          "nemhal-keening-blade",
+          "nemhal-standing-maul",
+          "torch",
+          "rope",
+          "bandage-roll",
+          "bread",
+          "waterskin"
+        ],
+        "markup": 0.2
+      },
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "nemhal-hold-captain",
+      "name": "Captain Orrun of the Hold",
+      "description": "He commands eleven people and a wall, against an edge that is not attacking and is still winning.",
+      "icon": "@",
+      "level": 20,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 460
+      },
+      "baseXp": 0,
+      "baseGold": 0,
+      "behavior": {
+        "type": "npc",
+        "wanders": false,
+        "emotes": [
+          {
+            "text": "walks to the parapet, looks west, and comes back",
+            "minSeconds": 120,
+            "maxSeconds": 300
+          },
+          {
+            "text": "says, 'We have moved the wall twice. We will move it again.'",
+            "minSeconds": 300,
+            "maxSeconds": 600
+          }
+        ]
+      },
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "nemhal-heretic",
+      "name": "Sister Aveth, who was expelled",
+      "description": "She said out loud that Nemhalla was dead, was put out of the cult for it, and has stayed within sight of them ever since.",
+      "icon": "@",
+      "level": 22,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 480
+      },
+      "baseXp": 0,
+      "baseGold": 0,
+      "behavior": {
+        "type": "npc",
+        "wanders": false,
+        "emotes": [
+          {
+            "text": "watches the procession go past and does not join it",
+            "minSeconds": 120,
+            "maxSeconds": 300
+          },
+          {
+            "text": "says, 'They are not lying to you. Nobody has ever told them.'",
+            "minSeconds": 300,
+            "maxSeconds": 600
+          }
+        ]
+      },
+      "loot": [],
+      "attacks": []
+    }
+  ],
+  "abilities": [],
+  "rooms": [
+    {
+      "key": "nemhal.the-hold.the-gate-yard",
+      "zoneKey": "nemhal.the-hold",
+      "title": "The Hold Gate",
+      "description": "The ring stands inside the wall, in a yard swept twice a day by people who have decided that keeping it swept is the same as holding on.\n\nYrriska's shrine is a niche in the wall with a lamp in it, and the lamp is lit.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "azhen.thessivar.the-silent-room"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.the-hold.the-muster-yard"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.the-hold.the-muster-yard",
+      "zoneKey": "nemhal.the-hold",
+      "title": "The Muster Yard",
+      "description": "A square of hard ground where the Hold's eleven form up every morning, which takes under a minute and is done anyway.\n\nThe yard was cut for two hundred.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.the-hold.the-west-parapet"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.the-hold.the-gate-yard"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.the-hold.the-stores"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.the-hold.the-west-parapet",
+      "zoneKey": "nemhal.the-hold",
+      "title": "The West Parapet",
+      "description": "A walkway on the wall, facing west, with a rail and three sentry posts. Two of the posts are boarded up.\n\nThe wall was built to face an enemy. It faces the edge instead, which does not care.\n\nThere is nothing to see. The rim of Nemhal is where the land has already gone, and what is past it is not distance - it is the absence of the question.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.the-hold.the-muster-yard"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.the-hold.the-stores",
+      "zoneKey": "nemhal.the-hold",
+      "title": "The Stores",
+      "description": "A vaulted room half full, with Dell's ledger on a lectern by the door and everything on the shelves counted against it.\n\nRationing, not trading. Dell will say so before you ask.",
+      "flags": {
+        "indoors": true
+      },
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.the-hold.the-muster-yard"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.the-hold.the-long-room"
+        },
+        {
+          "direction": "west",
+          "to": "nemhal.the-hold.the-infirmary"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.the-hold.the-infirmary",
+      "zoneKey": "nemhal.the-hold",
+      "title": "The Infirmary",
+      "description": "Eight beds, two occupied, and a shelf of Nemhal's own remedies that are better than anything in Grask and running out.\n\nNobody is making more.",
+      "flags": {
+        "indoors": true
+      },
+      "grid": [],
+      "legend": {},
+      "editorX": 1,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.the-hold.the-stores"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.the-hold.the-long-room",
+      "zoneKey": "nemhal.the-hold",
+      "title": "The Long Room",
+      "description": "The Hold's common room: one table the length of the wall, a fire, and eleven places laid whether or not eleven people come.\n\nAveth sits at the far end and is not asked to leave.",
+      "flags": {
+        "indoors": true
+      },
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.the-hold.the-chapel-corner"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.the-hold.the-stores"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.the-hold.the-sally-port"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.the-hold.the-chapel-corner",
+      "zoneKey": "nemhal.the-hold",
+      "title": "The Chapel Corner",
+      "description": "A corner of the long room with a rail across it, a lamp, and no image of anybody. The Hold does not keep Nemhalla's office and does not say why.\n\nSomebody has put fresh water in the bowl regardless.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.the-hold.the-long-room"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.the-hold.the-sally-port",
+      "zoneKey": "nemhal.the-hold",
+      "title": "The Sally Port",
+      "description": "A low arch through the wall with two doors and a drop-bar between them, opening on the road east into Vurrach.\n\nThe bar is lifted. Nobody has dropped it in living memory and nobody has removed it either.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 4,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.the-hold.the-long-room"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.vurrach.the-hold-road"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-hold-road",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Hold Road",
+      "description": "A made road running east out of the Hold, kept clear, with the verges cut back to a spear's length on both sides.\n\nSomebody cuts them. It is not the Hold.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.vurrach.the-milestone"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.the-hold.the-sally-port"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.vurrach.the-first-farm"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-milestone",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Milestone",
+      "description": "A stone at the roadside giving the distance to Keshvaun in a measure nobody uses now.\n\nIt has been re-cut. The figure is smaller than it was and the old figure is still faintly there.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.vurrach.the-hold-road"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-first-farm",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The First Farm",
+      "description": "A steading with the yard swept, the byre mucked out, and the door standing open. Every tool is on its hook.\n\nThere are no animals and there is no straw and the byre has been mucked out this morning.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.vurrach.the-hold-road"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.vurrach.the-orchard-rows"
+        },
+        {
+          "direction": "west",
+          "to": "nemhal.vurrach.the-well-house"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-well-house",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Well House",
+      "description": "A roofed well with a bucket on a chain and the chain oiled.\n\nThe water is good. Somebody draws it.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 1,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.vurrach.the-first-farm"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-orchard-rows",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Orchard Rows",
+      "description": "Pruned trees in lines, pruned this winter, bearing nothing at all and pruned anyway.\n\nThe cuts are clean and the angle is right. Whoever does this was taught properly.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.vurrach.the-drying-shed"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.vurrach.the-first-farm"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.vurrach.the-village-green"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-drying-shed",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Drying Shed",
+      "description": "Racks and racks of them, all empty, all dusted, in a shed with the door wedged open for the airflow.\n\nThe wedge is a folded page of the office.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.vurrach.the-orchard-rows"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-village-green",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Village Green",
+      "description": "A green with a cross at the middle and houses on three sides, every window shuttered and every shutter hung straight.\n\nThe grass is cut. There is nothing to cut it with in any of the houses.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.vurrach.the-orchard-rows"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.vurrach.the-bell-tower"
+        },
+        {
+          "direction": "west",
+          "to": "nemhal.vurrach.the-cooper-shop"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-cooper-shop",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Cooper Shop",
+      "description": "Staves in bundles, hoops on pegs, and a half-made barrel on the block with the last stave shaped and not fitted.\n\nThe glue pot is warm.",
+      "flags": {
+        "indoors": true
+      },
+      "grid": [],
+      "legend": {},
+      "editorX": 1,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.vurrach.the-village-green"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-bell-tower",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Bell Tower",
+      "description": "A square tower with an open bell stage, and a bell that has been rung on the hour every hour for two hundred years.\n\nIt is rung on the hour. You can wait and see.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 4,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.vurrach.the-ringing-chamber"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.vurrach.the-village-green"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.vurrach.the-lower-road"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-ringing-chamber",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Ringing Chamber",
+      "description": "One rope, one stool, and a chalked rota on the wall going back further than the chalk should survive.\n\nEvery name has been crossed through and rewritten in the same hand.",
+      "flags": {
+        "indoors": true
+      },
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 4,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.vurrach.the-bell-tower"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-lower-road",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Lower Road",
+      "description": "The road drops into a cutting here, and the cutting has been kept clear of the slips that come down after rain.\n\nThere is a slip half cleared. The barrows are standing in it.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 5,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.vurrach.the-bell-tower"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.vurrach.the-broken-span"
+        },
+        {
+          "direction": "west",
+          "to": "nemhal.vurrach.the-verge-camp"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-verge-camp",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Verge Camp",
+      "description": "A shelter of hurdles where the road crew sleeps, with eight beds made up and a pot hung over a fire that is banked, not out.\n\nThe crew is on shift. The crew has been on shift for two hundred years.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 1,
+      "editorY": 5,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.vurrach.the-lower-road"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-broken-span",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Broken Span",
+      "description": "A bridge over a dry gorge with the middle third missing, and a temporary crossing of lashed poles that has been temporary since before the Hold had a captain.\n\nThe lashings are new. They are always new.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 6,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.vurrach.the-gorge-floor"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.vurrach.the-lower-road"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.vurrach.the-far-verge"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-gorge-floor",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Gorge Floor",
+      "description": "Down among the fallen masonry, where the middle of the bridge came to rest, dressed stone in a heap and every block numbered.\n\nSomebody numbered them for rebuilding. Nobody has come.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 6,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.vurrach.the-broken-span"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.vurrach.the-far-verge",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Far Verge",
+      "description": "Where Vurrach's kept country gives out and the processional road begins: the verges stop being cut, and the road surface changes to worn slabs.\n\nEverything from here is older and better made and less looked after.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 7,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.vurrach.the-broken-span"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.olmenneth.the-processional-head"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-processional-head",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Head of the Procession",
+      "description": "A road forty feet wide in dressed slabs, running dead straight east, walled with standing stones at intervals.\n\nIt was built for a great many people walking slowly. It is still used that way.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.olmenneth.the-stone-line"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.vurrach.the-far-verge"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.olmenneth.the-first-station"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-stone-line",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Stone Line",
+      "description": "The standing stones close to, each carved with a figure carrying something, each figure faced the same way along the road.\n\nThe thing being carried is not shown on any of them.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.olmenneth.the-processional-head"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-first-station",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The First Station",
+      "description": "A roofed halt at the roadside with benches, a water trough, and a lamp bracket. The lamp is in the bracket and it is not lit.\n\nThe oil is fresh.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.olmenneth.the-processional-head"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.olmenneth.the-hostel"
+        },
+        {
+          "direction": "west",
+          "to": "nemhal.olmenneth.the-mason-yard"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-mason-yard",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Mason Yard",
+      "description": "Blocks squared and stacked, chisels laid out, and a half-cut figure on the bench with its arms roughed and its burden not begun.\n\nThe mason has been at this stage for a long time.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 1,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.olmenneth.the-first-station"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-hostel",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Hostel",
+      "description": "A long dormitory for pilgrims, forty beds, all made, all turned down.\n\nThe linen is clean and it is changed. You could stay here.",
+      "flags": {
+        "indoors": true
+      },
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.olmenneth.the-refectory"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.olmenneth.the-first-station"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.olmenneth.the-lamp-house"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-refectory",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Refectory",
+      "description": "Trestles and benches for a hundred, laid for a hundred, with bread on the boards that is not stale.\n\nThere is nobody to eat it and it is baked daily.",
+      "flags": {
+        "indoors": true
+      },
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.olmenneth.the-hostel"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-lamp-house",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Lamp House",
+      "description": "Racks of hanging lamps, hundreds, every one filled and trimmed and unlit. The rule of the vigil is that they are lit when she wakes.\n\nThey have been ready for two hundred years.",
+      "flags": {
+        "indoors": true
+      },
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.olmenneth.the-hostel"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.olmenneth.the-second-station"
+        },
+        {
+          "direction": "west",
+          "to": "nemhal.olmenneth.the-oil-press"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-oil-press",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Oil Press",
+      "description": "A press, a vat, and the smell of clean oil. It runs. There is no crop in Nemhal and it runs.\n\nNobody has asked where the oil comes from because everybody has decided not to.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 1,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.olmenneth.the-lamp-house"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-second-station",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Second Station",
+      "description": "The second halt, and the point where the procession is supposed to go silent. There is a line cut across the road.\n\nEverything that walks this road stops talking here, and everything on this road walks it.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 4,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.olmenneth.the-keening-court"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.olmenneth.the-lamp-house"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.olmenneth.the-narrow-way"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-keening-court",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Keening Court",
+      "description": "A sunken court off the road where the mourning is done, walled to hold the sound in, with tiers of benches on all four sides.\n\nIt is not empty and it is not quiet.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 4,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.olmenneth.the-second-station"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-narrow-way",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Narrow Way",
+      "description": "The road halves in width, walled on both sides above head height, and runs on straight.\n\nThe walls carry hands. Thousands of them, pressed in wet plaster, all at the height of a person walking.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 5,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.olmenneth.the-second-station"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.olmenneth.the-last-station"
+        },
+        {
+          "direction": "west",
+          "to": "nemhal.olmenneth.the-plaster-store"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-plaster-store",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Plaster Store",
+      "description": "Lime, sand, water, and a board with a fresh patch drying on it.\n\nThe patch has a hand in it. It is this morning's.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 1,
+      "editorY": 5,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.olmenneth.the-narrow-way"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-last-station",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Last Station",
+      "description": "The final halt before Keshvaun, where the bearers change and the procession re-forms.\n\nThe frames are here on their trestles. There is one at each corner, and the middle of the frame is empty.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 6,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.olmenneth.the-bearers-rest"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.olmenneth.the-narrow-way"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.olmenneth.the-shroud-house"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-bearers-rest",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Bearers' Rest",
+      "description": "A bench, a water butt, and a rail to lean a shoulder-frame against while the crew changes over.\n\nThe rail is worn in eight places.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 6,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.olmenneth.the-last-station"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.olmenneth.the-shroud-house",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Shroud House",
+      "description": "Where the linen is washed, dried and folded, in quantity, every week, by people working in silence at long tables.\n\nThe linen coming in is clean. They wash it anyway.",
+      "flags": {
+        "indoors": true
+      },
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 7,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.olmenneth.the-last-station"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.keshvaun.the-outer-court"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-outer-court",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Outer Court",
+      "description": "A court open to a sky that is the wrong colour, ringed with cloister on three sides and standing on the fourth side at the edge of everything.\n\nThe cloister is swept. The fourth side has no rail and needs none: nobody here goes near it.\n\nThere is nothing to see. The rim of Nemhal is where the land has already gone, and what is past it is not distance - it is the absence of the question.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.keshvaun.the-vestry"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.olmenneth.the-shroud-house"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.keshvaun.the-cloister-walk"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-vestry",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Vestry",
+      "description": "Vestments on hangers, in order of office, brushed. The senior sets are at the far end and have not been taken down in two hundred years.\n\nThey are brushed too.",
+      "flags": {
+        "indoors": true
+      },
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 0,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.keshvaun.the-outer-court"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-cloister-walk",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Cloister Walk",
+      "description": "A covered walk round three sides, with the office read aloud somewhere along it at every hour of the day and night.\n\nYou can hear it. You cannot find who is reading it.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.keshvaun.the-outer-court"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.keshvaun.the-chapter-house"
+        },
+        {
+          "direction": "west",
+          "to": "nemhal.keshvaun.the-lamp-court"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-lamp-court",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Lamp Court",
+      "description": "A court of unlit lamps on posts, a hundred of them in a grid, each filled.\n\nWhen she wakes they are lit. That is the whole rule and it has never been amended.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 1,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.keshvaun.the-cloister-walk"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-chapter-house",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Chapter House",
+      "description": "A round room with seats for forty and a lectern at the middle, where the cult meets to decide what it will do.\n\nIt meets weekly. It has decided the same thing every week for two hundred years.",
+      "flags": {
+        "indoors": true
+      },
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.keshvaun.the-record-room"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.keshvaun.the-cloister-walk"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.keshvaun.the-descent"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-record-room",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Record Room",
+      "description": "Shelves of minutes. Every meeting, every week, in order, all of them recording that the vigil continues and the office is kept.\n\nThe first volume is different. Somebody has taken it out and put it back many times.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.keshvaun.the-chapter-house"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-descent",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Descent",
+      "description": "A stair going down under the chapter house, broad, shallow, and worn into hollows by two hundred years of people going down carefully.\n\nThe hollows are in the middle of each step. Nobody has ever hurried on this stair.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.keshvaun.the-chapter-house"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.keshvaun.the-antechamber"
+        },
+        {
+          "direction": "west",
+          "to": "nemhal.keshvaun.the-washing-room"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-washing-room",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Washing Room",
+      "description": "Basins, cloths and clean water, where the hands are washed on the way down and again on the way up.\n\nThe water is warm.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 1,
+      "editorY": 3,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.keshvaun.the-descent"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-antechamber",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Antechamber",
+      "description": "A low room outside the last door where the bearers wait and the shroud is folded. The door is not locked and has no lock.\n\nIt is simply that nobody goes through it without being on the rota.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 4,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.keshvaun.the-folding-table"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.keshvaun.the-descent"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.keshvaun.the-lying-place"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-folding-table",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Folding Table",
+      "description": "One long table, one stack of folded linen, one stack waiting.\n\nCorners are cut off the old shroud as it is replaced, and kept, and there is a box of them going back to the first week.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 4,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.keshvaun.the-antechamber"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-lying-place",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Lying Place",
+      "description": "A chamber cut out of the same dark stone the gates are made from, all six faces, with no seam. It is the largest single piece of gate-stone anyone has found.\n\nShe is lying at the middle of it, under clean linen, and she is exactly the size of a person.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 5,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.keshvaun.the-unwritten-page"
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.keshvaun.the-antechamber"
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.keshvaun.the-standing-place"
+        },
+        {
+          "direction": "west",
+          "to": "nemhal.keshvaun.the-first-vigil"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-standing-place",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Standing Place",
+      "description": "Past the bier, where the chamber narrows to a slot, and the slot ends at a face of gate-stone that is not a wall - it is a surface, and it is the outside.\n\nShe is not lying in a tomb. She is lying in the gap she is filling, and the shape of her is the shape of the hole.\n\nThere is nothing to see here because she is in the way. That is the whole of it. She stood in the way, once, on purpose, and it cost her everything, and it worked, and Nemhal has been failing at exactly the rate she has.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 2,
+      "editorY": 6,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.keshvaun.the-lying-place"
+        },
+        {
+          "direction": "south",
+          "to": "the-unlit.the-crossing.the-arrival",
+          "requiredFlagKey": "attuned.the-unlit",
+          "requiredItemKey": null,
+          "refusalMessage": "There is a way past her. It is not closed and it is not locked. You are simply not somebody it has been told about, and it will not step aside for a stranger."
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-first-vigil",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The First Vigil",
+      "description": "A niche beside the lying place with one stool in it, worn to the shape of one person, and a rail worn where one pair of hands has held it.\n\nShe has not been relieved. She has never asked to be.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 1,
+      "editorY": 5,
+      "exits": [
+        {
+          "direction": "east",
+          "to": "nemhal.keshvaun.the-lying-place"
+        }
+      ]
+    },
+    {
+      "key": "nemhal.keshvaun.the-unwritten-page",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Unwritten Page",
+      "description": "A desk in the wall of the lying place with the vigil book open on it, and the day's entry begun and not finished.\n\nIt has been begun and not finished every day for two hundred years, in the same hand, and it is always the same three words.",
+      "flags": {},
+      "grid": [],
+      "legend": {},
+      "editorX": 3,
+      "editorY": 5,
+      "exits": [
+        {
+          "direction": "west",
+          "to": "nemhal.keshvaun.the-lying-place"
+        }
+      ]
+    }
+  ],
+  "spawners": [
+    {
+      "id": "fe2feba6-2bdc-5279-84f1-52d74fac5524",
+      "zoneKey": "nemhal.the-hold",
+      "templateKey": "nemhal-quartermaster",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.the-hold.the-stores"
+      ],
+      "targetCount": 1,
+      "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "3b73e926-27dc-511b-8323-eb2167a44560",
+      "zoneKey": "nemhal.the-hold",
+      "templateKey": "nemhal-hold-captain",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.the-hold.the-muster-yard"
+      ],
+      "targetCount": 1,
+      "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "03833463-2f65-5df9-9bd6-eb049e6c8840",
+      "zoneKey": "nemhal.the-hold",
+      "templateKey": "nemhal-heretic",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.the-hold.the-long-room"
+      ],
+      "targetCount": 1,
+      "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "0958ca7c-c14b-5686-84f6-247767efc8ec",
+      "zoneKey": "nemhal.vurrach",
+      "templateKey": "nemhal-lay-brother",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.vurrach.the-first-farm",
+        "nemhal.vurrach.the-cooper-shop",
+        "nemhal.vurrach.the-drying-shed"
+      ],
+      "targetCount": 5,
+      "respawnSeconds": 80,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "25e4c9de-448d-5551-9916-d222ab1dbcb4",
+      "zoneKey": "nemhal.vurrach",
+      "templateKey": "nemhal-hollow-hound",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.vurrach.the-hold-road",
+        "nemhal.vurrach.the-orchard-rows"
+      ],
+      "targetCount": 5,
+      "respawnSeconds": 70,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "5a414d4c-d490-5011-992d-18c456fc7f94",
+      "zoneKey": "nemhal.vurrach",
+      "templateKey": "nemhal-bell-ringer",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.vurrach.the-ringing-chamber",
+        "nemhal.vurrach.the-bell-tower"
+      ],
+      "targetCount": 3,
+      "respawnSeconds": 90,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "724ccf43-7ffc-5339-8b9c-97c389a976d4",
+      "zoneKey": "nemhal.vurrach",
+      "templateKey": "nemhal-bier-bearer",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.vurrach.the-gorge-floor",
+        "nemhal.vurrach.the-broken-span"
+      ],
+      "targetCount": 4,
+      "respawnSeconds": 110,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "574fe857-7b95-5377-955b-a785c7186657",
+      "zoneKey": "nemhal.vurrach",
+      "templateKey": "nemhal-vigil-keeper",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.vurrach.the-village-green",
+        "nemhal.vurrach.the-lower-road",
+        "nemhal.vurrach.the-verge-camp",
+        "nemhal.vurrach.the-far-verge"
+      ],
+      "targetCount": 6,
+      "respawnSeconds": 100,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "f70aa59c-89c3-5d56-89b6-c7d8c3ac00ba",
+      "zoneKey": "nemhal.vurrach",
+      "templateKey": "nemhal-vigil-moth",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.vurrach.the-well-house",
+        "nemhal.vurrach.the-milestone"
+      ],
+      "targetCount": 3,
+      "respawnSeconds": 70,
+      "wanders": true,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "76bd784f-e0e0-592a-ad12-a8c293ab81b1",
+      "zoneKey": "nemhal.olmenneth",
+      "templateKey": "nemhal-vigil-keeper",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.olmenneth.the-processional-head",
+        "nemhal.olmenneth.the-first-station",
+        "nemhal.olmenneth.the-second-station"
+      ],
+      "targetCount": 5,
+      "respawnSeconds": 100,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "7dad0640-589f-5c46-b860-8eb2696a7211",
+      "zoneKey": "nemhal.olmenneth",
+      "templateKey": "nemhal-bier-bearer",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.olmenneth.the-last-station",
+        "nemhal.olmenneth.the-bearers-rest",
+        "nemhal.olmenneth.the-stone-line"
+      ],
+      "targetCount": 5,
+      "respawnSeconds": 110,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "d3039f6f-7874-5626-9c71-9157b095f7dd",
+      "zoneKey": "nemhal.olmenneth",
+      "templateKey": "nemhal-shroud-binder",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.olmenneth.the-shroud-house",
+        "nemhal.olmenneth.the-narrow-way",
+        "nemhal.olmenneth.the-plaster-store"
+      ],
+      "targetCount": 5,
+      "respawnSeconds": 120,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "dd9c3808-7c8f-5d5e-815f-db96ec399fa1",
+      "zoneKey": "nemhal.olmenneth",
+      "templateKey": "nemhal-the-untold",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.olmenneth.the-keening-court",
+        "nemhal.olmenneth.the-lamp-house",
+        "nemhal.olmenneth.the-refectory",
+        "nemhal.olmenneth.the-hostel"
+      ],
+      "targetCount": 7,
+      "respawnSeconds": 110,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "4d5b9880-bd92-50b7-b57b-f5591974b037",
+      "zoneKey": "nemhal.olmenneth",
+      "templateKey": "nemhal-lay-brother",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.olmenneth.the-mason-yard",
+        "nemhal.olmenneth.the-oil-press"
+      ],
+      "targetCount": 4,
+      "respawnSeconds": 90,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "717e8cd1-572e-5139-9f17-32ff40e4c3aa",
+      "zoneKey": "nemhal.keshvaun",
+      "templateKey": "nemhal-shroud-binder",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.keshvaun.the-folding-table",
+        "nemhal.keshvaun.the-antechamber",
+        "nemhal.keshvaun.the-washing-room"
+      ],
+      "targetCount": 5,
+      "respawnSeconds": 110,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "1ad964e4-6698-5386-998b-8061946a19b4",
+      "zoneKey": "nemhal.keshvaun",
+      "templateKey": "nemhal-vigil-keeper",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.keshvaun.the-outer-court",
+        "nemhal.keshvaun.the-cloister-walk"
+      ],
+      "targetCount": 4,
+      "respawnSeconds": 100,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "ef8be87a-1bb1-5e7a-8e3e-4b2e0e65b7b5",
+      "zoneKey": "nemhal.keshvaun",
+      "templateKey": "nemhal-the-untold",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.keshvaun.the-chapter-house",
+        "nemhal.keshvaun.the-record-room",
+        "nemhal.keshvaun.the-vestry",
+        "nemhal.keshvaun.the-lamp-court",
+        "nemhal.keshvaun.the-descent",
+        "nemhal.keshvaun.the-unwritten-page"
+      ],
+      "targetCount": 9,
+      "respawnSeconds": 110,
+      "wanders": false,
+      "fightsAtLevel": null
+    },
+    {
+      "id": "0777b790-eddb-54af-a8fb-9a7654dffc0b",
+      "zoneKey": "nemhal.keshvaun",
+      "templateKey": "nemhal-the-first-mourner",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.keshvaun.the-first-vigil"
+      ],
+      "targetCount": 1,
+      "respawnSeconds": 900,
+      "wanders": false,
+      "fightsAtLevel": null
+    }
+  ],
+  "quests": [
+    {
+      "key": "a4-1-the-rota",
+      "zoneKey": "nemhal.olmenneth",
+      "name": "The Rota",
+      "summary": "Collect ten vigil tokens from the untold.",
+      "description": "Aveth wants to know how many are still on the rota. The only way to count them is to take the tokens off them, and she is direct about what that involves.",
+      "giverMobKey": "nemhal-heretic",
+      "turninMobKey": "nemhal-heretic",
+      "requiredItemKey": "nemhal-vigil-token",
+      "requiredCount": 10,
+      "rewardXp": 68000,
+      "rewardGold": 1400,
+      "rewardItemKey": null,
+      "rewardItemCount": 0,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Aveth does not soften it. 'Every one of them is on a rota, and every one of them has a token. I want ten. You will have to take them, and they will not understand why, because nobody has told them anything.'",
+        "progress": "'Ten tokens. Carved bone. They wear them under everything, which tells you what they think of them.'",
+        "complete": "She lays them in a line and counts under her breath. 'Two hundred years of issue and the numbers are still climbing,' she says. 'They are not leftovers. They are being replaced.'",
+        "already": "'Ten. And do not apologise to them. It does not reach.'"
+      },
+      "sortOrder": 1
+    },
+    {
+      "key": "a4-2-the-office",
+      "zoneKey": "nemhal.keshvaun",
+      "name": "The Office",
+      "summary": "Bring Aveth six pages of the daily office.",
+      "description": "The office has been read aloud in Keshvaun every hour for two hundred years, and every prayer in it is for a recovery. Aveth wants the words in front of her.",
+      "giverMobKey": "nemhal-heretic",
+      "turninMobKey": "nemhal-heretic",
+      "requiredItemKey": "nemhal-office-page",
+      "requiredCount": 6,
+      "rewardXp": 88000,
+      "rewardGold": 1800,
+      "rewardItemKey": null,
+      "rewardItemCount": 0,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a4-1-the-rota"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "'They read it on the hour,' Aveth says. 'I have heard it through a wall for nine years and I have never once seen the text. Bring me pages.'",
+        "progress": "'Six. From the cloister if you can - the chapter house copies are corrected and I want the ones they actually read.'",
+        "complete": "She reads all six without stopping. 'Every prayer is for a recovery,' she says at last. 'Not for the dead. For the sick. They are not mourning her.' She folds them very carefully. 'They are nursing her.'",
+        "already": "'Six pages. Any six. They are all the same and I want to be sure of that.'"
+      },
+      "sortOrder": 2
+    },
+    {
+      "key": "a4-3-she-stood-in-the-way",
+      "zoneKey": "nemhal.keshvaun",
+      "name": "She Stood In The Way",
+      "summary": "Take a corner of the shroud from the First Mourner.",
+      "description": "The lying place is down a stair everybody walks slowly. Aveth has never been past the antechamber. She wants a corner of the linen, and she wants somebody to look.",
+      "giverMobKey": "nemhal-heretic",
+      "turninMobKey": "nemhal-heretic",
+      "requiredItemKey": "nemhal-god-shroud",
+      "requiredCount": 1,
+      "rewardXp": 140000,
+      "rewardGold": 2600,
+      "rewardItemKey": null,
+      "rewardItemCount": 0,
+      "rewardFlagKey": "attuned.the-unlit",
+      "prerequisiteQuestKeys": [
+        "a4-2-the-office"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "'I have been within forty feet of her for nine years,' Aveth says. 'I have never gone down. Not out of respect. I did not want to be right.' She looks at you steadily. 'Bring me a corner of the shroud. And look past her while you are down there. Properly.'",
+        "progress": "'Past the bier the chamber narrows. Go to the end of it. The First Mourner is in the niche and she will not let you take anything, so do not plan on asking.'",
+        "complete": "Aveth holds the linen and does not look at it. 'You saw it, then,' she says. 'She is not lying in a tomb. She is lying in the gap. She stood in the way and it cost her all of it and it worked - and Nemhal has been coming apart at exactly the rate she has, because she is what is left holding it.' She hands the corner back. 'Take it with you. And listen: past the next gate, recall does not work. Not weakened. Does not work. You walk in and you walk out, or you die and pay for it. Say it back to me before you go.'",
+        "already": "'She is still there. She has been still there for two hundred years and she has never once been relieved.'"
+      },
+      "sortOrder": 3
+    }
+  ],
+  "configurations": []
+}

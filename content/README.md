@@ -1,12 +1,30 @@
 # Authored content
 
-`WorldBundle` JSON for the Reaches, one file per zone, laid out `content/<world>/<zone>.json`.
-The design these transcribe is [docs/WORLD.md](../docs/WORLD.md).
+`WorldBundle` JSON for the Reaches. The design these transcribe is
+[docs/WORLD.md](../docs/WORLD.md).
 
-One file per zone rather than one per world, because that is the granularity the export endpoint
-already offers (`GET /api/builder/export?zone=ossara.gatetown`) and the granularity a review can
-actually be read at. A zone-scoped bundle carries the world row above it, so any one file is enough
-to stand its zone up in an empty database.
+**The whole world is here**: five realms, eighteen zones, 224 rooms, 67 mob templates, 70 items,
+90 spawners and all five acts. Import them in realm order — `ossara`, `grask`, `azhen`, `nemhal`,
+`the-unlit` — because a realm's gate names a room in the next one, and a dangling exit is a warning
+you would rather not have to read past.
+
+| File | Zones |
+|---|---|
+| `ossara/gatetown.json` | Gatetown, hand-authored first and kept separate |
+| `ossara/the-reaches.json` | the Terraces, Brackenfell, the Rimwalk |
+| `grask/the-reaches.json` | the Landing, the Cutting, Stiltmarsh, the Owing |
+| `azhen/the-reaches.json` | the Camp, Ummath, Serrivet, Thessivar |
+| `nemhal/the-reaches.json` | the Hold, Vurrach, Olmenneth, Keshvaun |
+| `the-unlit/the-reaches.json` | the Crossing, the Regard |
+
+A bundle carries the world row above its zones, so any one file is enough to stand its realm up in
+an empty database.
+
+**Progression is four conditional exits and nothing else.** Each realm's story chain ends in a
+quest whose reward is a character flag, and the gate onward requires it (`PLAN.md` §4.15):
+`attuned.grask`, `attuned.azhen`, `attuned.nemhal`, `attuned.the-unlit`. The gates are one-way
+gated — you can always walk back the way you came, including out of the Unlit, where `recall` does
+not work and walking is the only way home.
 
 ## Applying one
 
@@ -41,11 +59,14 @@ own docstring for why each is worth a separate pass.
 
 ## These files are an artifact, not the source of truth
 
-Postgres is. The intended loop is to author geography in-game with `dig` — which makes the exit
-graph correct by construction, and mints spawner ids for you — do prose and tuning in the builder
-panel where `/validate` and `/preview` run, then **export over the file and commit that**. What is
-here now was hand-authored because the world had to start somewhere; treat a hand edit to these
-files as the exception, and re-export after any session in the builder.
+Postgres is. From here the loop is to edit in the builder — where `/validate`, `/preview` and the
+storyline graph actually run — and then **export over the file and commit that**. Re-export after
+any session in the builder rather than hand-editing the JSON back into agreement.
+
+Spawner ids in these files are `uuid5` over `zone|kind|template|rooms` rather than random, so the
+generator that produced them is reproducible and a re-import cannot double a zone's population. An
+export will replace them with whatever the database holds, which is fine — what matters is that
+they are stable, not what they are.
 
 The reason is on record: the `warden.last-stand` retune lived only in the database for a day while
 `AbilityCatalogue` stayed stale, and the planned `DROP DATABASE` would have silently reverted it.

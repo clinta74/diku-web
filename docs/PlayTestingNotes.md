@@ -97,6 +97,21 @@ Add anything noticed while playing here. Cleared as items are done.
   authored at final numbers instead. Implement it or delete it; carrying a dial that reads as
   configured and does nothing is the failure mode `Engine__StartingRoom` already demonstrated.
 
+- **The Reaches are authored and have never been played.** 224 rooms, 18 zones, 67 mobs, 15 quests
+  in `content/`. Every zone's effective levels were checked against its band and every level 1–50
+  has a full-value target, but that is arithmetic, not play. Specific things to watch on the first
+  run through:
+  - **The four gates are the only progression lock.** `attuned.grask`, `attuned.azhen`,
+    `attuned.nemhal`, `attuned.the-unlit`, each granted by the last quest of an act. If a chain is
+    unfinishable the realm behind it is unreachable, so walk each act end to end before anything
+    else.
+  - **Mob health and damage were set from the chassis shapes, not from fights.** The armour and
+    to-hit rework landed the same day; nothing in `content/` has been fought with the new curve.
+  - **`the-unlit.the-crossing` is flat at effective 46** (`WORLD.md` §10.4) — in band, but every
+    mob in the zone fights at the same number.
+  - **Quest XP was scaled off `XpProgression`, not measured.** Act V pays 420,000 for one turn-in;
+    that is a guess about what the last two levels should cost.
+
 - **Review solo and group balance for all four Paths, band by band.** Thirty-two abilities were
   added at levels 24–50 (`ABILITIES.md`) against no play data at all: every number in them is a
   first guess, and four Paths times eight new abilities is a lot of first guesses interacting.
