@@ -53,6 +53,14 @@ public static class CombatCommands
         var actor = ctx.Actor;
         var character = actor.Character;
 
+        // Before the target is even resolved: what you can see from a bedroll is not the question,
+        // and "you don't see 'rat' here" would be the wrong answer to "you are asleep".
+        if (RestGate.Refuse(character) is { } resting)
+        {
+            ctx.Reply(resting, "bad");
+            return;
+        }
+
         // Find target in room
         var targetActor = ctx.World.OthersIn(character.RoomKey, actor)
             .FirstOrDefault(p => string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase));

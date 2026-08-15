@@ -33,6 +33,14 @@ public sealed class WorldState(IRandomSource random)
     private readonly Dictionary<RoomKey, Combat> _combatsByRoom = [];
     private readonly CastQueueService _castQueue = new();
     private readonly Dictionary<(Guid CharacterId, string AbilityKey), long> _abilityCooldowns = [];
+
+    /// <summary>When each sleeping character is next due a dream (<see cref="Systems.DreamSystem"/>).</summary>
+    /// <remarks>
+    /// Transient like the cooldowns above and for the same reason: it is a timer, not a fact about
+    /// the character. Somebody who logs out asleep and back in has not been dreaming in the
+    /// meantime, and a persisted due-time would fire the instant they returned.
+    /// </remarks>
+    private readonly Dictionary<Guid, long> _nextDreamPulse = [];
     private readonly Dictionary<Guid, List<ActiveEffect>> _activeEffects = [];
     private readonly Dictionary<Guid, Dictionary<string, CharacterQuest>> _questsByCharacter = [];
     private readonly PartyRegistry _parties = new();
@@ -69,6 +77,16 @@ public sealed class WorldState(IRandomSource random)
         var key = (characterId, abilityKey);
         _abilityCooldowns[key] = pulse;
     }
+
+    /// <summary>When this character is next due a dream, or null if they are not asleep.</summary>
+    public long? NextDreamPulse(Guid characterId) =>
+        _nextDreamPulse.TryGetValue(characterId, out var pulse) ? pulse : null;
+
+    public void SetNextDreamPulse(Guid characterId, long pulse) =>
+        _nextDreamPulse[characterId] = pulse;
+
+    /// <summary>Forgets a character's dream timer, on waking or on leaving the world.</summary>
+    public void ClearDreams(Guid characterId) => _nextDreamPulse.Remove(characterId);
 
     public int RoomCount => _rooms.Count;
 

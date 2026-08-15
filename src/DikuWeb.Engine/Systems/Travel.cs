@@ -40,9 +40,9 @@ public static class Travel
             return "You cannot slip away mid-fight. Try 'flee' first.";
         }
 
-        if (character.RestState != CharacterRestState.Stand)
+        if (RestGate.Refuse(character) is { } resting)
         {
-            return "You must stand up first.";
+            return resting;
         }
 
         if (world.IsRooted(character.Id, currentPulse))

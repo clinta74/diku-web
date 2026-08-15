@@ -237,9 +237,9 @@ public sealed class CommandRegistry
         }
 
         // Can't move while resting or sleeping
-        if (character.RestState != CharacterRestState.Stand)
+        if (RestGate.Refuse(character) is { } resting)
         {
-            ctx.Reply("You must stand up first.", "bad");
+            ctx.Reply(resting, "bad");
             return;
         }
 
@@ -1144,7 +1144,18 @@ public sealed class CommandRegistry
         var line = $"{ctx.Actor.Name} {ctx.Argument}";
 
         ctx.Reply(line, "emote");
-        ctx.Broadcast(line, "emote");
+
+        // Broadcast by hand rather than through ctx.Broadcast, to skip the sleepers. An emote is
+        // something you do where people can see it, and a sleeping player is not somebody who can.
+        // Speech is deliberately not filtered the same way - `say` is addressed at the room and
+        // being woken by it is the point of shouting at somebody.
+        foreach (var other in ctx.World.OthersIn(ctx.Actor.RoomKey, ctx.Actor))
+        {
+            if (other.Character.RestState != CharacterRestState.Sleep)
+            {
+                other.SendText(line, "emote");
+            }
+        }
     }
 
     private static void Stats(CommandContext ctx)

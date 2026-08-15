@@ -195,6 +195,11 @@ public sealed class GameLoop(
         {
             RegenSystem.Tick(world);
             EffectExpirySystem.Tick(world, pulse);
+
+            // On the regen tick rather than every pulse: a dream is due once every five minutes,
+            // so checking sixty times as often would be sixty times the work to find the same
+            // answer. Regen already runs on the minute and already walks every player.
+            DreamSystem.Tick(world, pulse);
         }
 
         // One comparison per player per pulse, and a frame only when something actually moved.

@@ -57,6 +57,16 @@ public static class AbilityCommands
             return;
         }
 
+        // Posture, on the same footing as the stun above and for the same reason: an ability is an
+        // action, and rest is the state of not taking any. Refused before the ability is even
+        // resolved, so a sleeping character is told they are asleep rather than told they do not
+        // know a spell they know perfectly well.
+        if (RestGate.Refuse(character) is { } resting)
+        {
+            ctx.Reply(resting, "bad");
+            return;
+        }
+
         // Determine which abilities the character knows (at their level). Read from the loaded
         // table, so a retune or a newly authored ability takes effect without a restart.
         var knownAbilityKeys = AbilityProgression.GetKnownAbilitiesForLevel(

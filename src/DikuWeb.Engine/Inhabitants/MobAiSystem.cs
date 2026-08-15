@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Entities;
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Randomness;
@@ -147,6 +148,16 @@ public sealed class MobAiSystem(
         {
             foreach (var player in world.OccupantsOf(roomKey))
             {
+                // A sleeping player gets none of this. Idle flavour is the bulk of what arrives in
+                // a quiet room, and arriving while asleep it is just noise on a screen nobody is
+                // reading - DreamSystem sends something every five minutes instead. The line is
+                // still *scheduled* below whether or not anyone was awake for it, because the
+                // room's clock is not the sleeper's business.
+                if (player.Character.RestState == CharacterRestState.Sleep)
+                {
+                    continue;
+                }
+
                 player.SendText(
                     NarrationHelper.BuildSentence(template.Name, due.Text), "mob-action");
             }
