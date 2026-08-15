@@ -124,17 +124,23 @@ public static class AbilityCatalogue
         };
 
     /// <summary>
-    /// Harder to hit, and blows that land cost less. Negative values open a target up instead.
+    /// Harder to hit, and blows that land cost less. Used by <c>debuff.expose</c> to take both away.
     /// </summary>
+    /// <param name="mitigation">
+    /// Whole percentage points of each landed blow, added to what the bearer's armour already
+    /// absorbs and clamped with it at <see cref="Combat.ArmorCurve.Cap"/>. Percentage points rather
+    /// than the flat amount this used to carry, so a guard is worth the same in Ossara as in the
+    /// Unlit instead of being decisive at level 5 and unnoticeable at level 50.
+    /// </param>
     private static Dictionary<string, string> Guard(
         string defenseRating,
-        string armorFlat,
+        string mitigation,
         string duration,
         string name) =>
         new(StringComparer.Ordinal)
         {
             ["defenseRating"] = defenseRating,
-            ["armorFlat"] = armorFlat,
+            ["mitigation"] = mitigation,
             ["durationPulses"] = duration,
             ["name"] = name,
         };
@@ -349,7 +355,7 @@ public static class AbilityCatalogue
             CostType.Stamina, 30, 2400, null, TargetingType.Self,
             Together(
                 Part("buff.max-health", MaxHealth("1000", "480", "standing ground")),
-                Part("buff.defense", Guard("6", "5", "480", "standing ground")))),
+                Part("buff.defense", Guard("6", "6", "480", "standing ground")))),
 
         // -------------------------------------------------------------------
         // Warden, past 20 - holding a room rather than a target.
@@ -367,14 +373,14 @@ public static class AbilityCatalogue
         new(CharacterPath.Warden, 28, "warden.bulwark", "Bulwark",
             "Everything behind you is behind you.",
             CostType.Stamina, 32, 320, null, TargetingType.Self,
-            Effect("buff.defense", Guard("8", "6", "240", "bulwark"))),
+            Effect("buff.defense", Guard("8", "8", "240", "bulwark"))),
 
         new(CharacterPath.Warden, 32, "warden.ground-and-centre", "Ground and Centre",
             "More of you to get through, and less give in any of it.",
             CostType.Stamina, 36, 400, null, TargetingType.Self,
             Together(
                 Part("buff.max-health", MaxHealth("120", "320", "grounded")),
-                Part("buff.defense", Guard("6", "5", "320", "grounded")))),
+                Part("buff.defense", Guard("6", "6", "320", "grounded")))),
 
         new(CharacterPath.Warden, 36, "warden.reprisal", "Reprisal",
             "Answer it, and make sure it noticed who did.",
@@ -388,14 +394,14 @@ public static class AbilityCatalogue
             CostType.Stamina, 45, 1200, null, TargetingType.Self,
             Together(
                 Part("buff.max-health", MaxHealth("200", "480", "unbreakable")),
-                Part("buff.defense", Guard("12", "9", "480", "unbreakable")))),
+                Part("buff.defense", Guard("12", "12", "480", "unbreakable")))),
 
         new(CharacterPath.Warden, 43, "warden.sundering-blow", "Sundering Blow",
             "Take the guard apart so that everyone else's work lands on what is left.",
             CostType.Stamina, 34, 120, null, TargetingType.SingleTarget,
             Together(
                 Part("damage.physical", Damage("1.9", "12")),
-                Part("debuff.expose", Guard("6", "4", "96", "sundered open")))),
+                Part("debuff.expose", Guard("6", "5", "96", "sundered open")))),
 
         new(CharacterPath.Warden, 46, "warden.mass-provocation", "Mass Provocation",
             "Say the unforgivable thing to the whole room, and mean every word of it.",
@@ -409,7 +415,7 @@ public static class AbilityCatalogue
             CostType.Stamina, 50, 2400, null, TargetingType.Self,
             Together(
                 Part("buff.max-health", MaxHealth("400", "600", "the last wall")),
-                Part("buff.defense", Guard("18", "14", "600", "the last wall")))),
+                Part("buff.defense", Guard("18", "18", "600", "the last wall")))),
 
         // -------------------------------------------------------------------
         // Adept - focus caster. Expensive, slow, and hits hardest at range.
@@ -483,7 +489,7 @@ public static class AbilityCatalogue
             CostType.Focus, 34, 120, null, TargetingType.SingleTarget,
             Together(
                 Part("damage.physical", Damage("2.1", "14")),
-                Part("debuff.expose", Guard("5", "4", "96", "shattered")))),
+                Part("debuff.expose", Guard("5", "5", "96", "shattered")))),
 
         new(CharacterPath.Adept, 32, "adept.chain-lightning", "Chain Lightning",
             "It picks its own way across the room and is not slow about it.",
@@ -521,7 +527,7 @@ public static class AbilityCatalogue
             CostType.Focus, 70, 600, 16, TargetingType.Aoe,
             Together(
                 Part("damage.physical", Damage("3.0", "20")),
-                Part("debuff.expose", Guard("8", "6", "96", "unwritten")))),
+                Part("debuff.expose", Guard("8", "8", "96", "unwritten")))),
 
         // -------------------------------------------------------------------
         // Shade - stealth and burst. Cheap, fast, and fragile.
@@ -600,7 +606,7 @@ public static class AbilityCatalogue
             CostType.Stamina, 22, 72, null, TargetingType.SingleTarget,
             Together(
                 Part("damage.physical", Damage("1.4", "8")),
-                Part("debuff.expose", Guard("4", "3", "64", "exploited")))),
+                Part("debuff.expose", Guard("4", "4", "64", "exploited")))),
 
         new(CharacterPath.Shade, 32, "shade.flurry", "Flurry",
             "More than it can count, in less time than it has.",
@@ -727,7 +733,7 @@ public static class AbilityCatalogue
         new(CharacterPath.Hallow, 32, "hallow.aegis", "Aegis",
             "Something between the group and the weather.",
             CostType.Focus, 55, 96, 8, TargetingType.Aoe,
-            Effect("buff.defense", Guard("7", "5", "1200", "warded")),
+            Effect("buff.defense", Guard("7", "6", "1200", "warded")),
             Maintainable: true),
 
         new(CharacterPath.Hallow, 36, "hallow.mending-tide", "Mending Tide",
@@ -740,7 +746,7 @@ public static class AbilityCatalogue
             CostType.Focus, 70, 240, 12, TargetingType.Aoe,
             Together(
                 Part("buff.max-health", MaxHealth("220", "1200", "sanctified")),
-                Part("buff.defense", Guard("10", "7", "1200", "sanctified"))),
+                Part("buff.defense", Guard("10", "9", "1200", "sanctified"))),
             Maintainable: true),
 
         new(CharacterPath.Hallow, 43, "hallow.absolution", "Absolution",
@@ -760,7 +766,7 @@ public static class AbilityCatalogue
             Together(
                 Part("heal.restore", Heal("200")),
                 Part("buff.max-health", MaxHealth("300", "1200", "the long vigil")),
-                Part("buff.defense", Guard("12", "9", "1200", "the long vigil"))),
+                Part("buff.defense", Guard("12", "12", "1200", "the long vigil"))),
             Maintainable: true),
     ];
 

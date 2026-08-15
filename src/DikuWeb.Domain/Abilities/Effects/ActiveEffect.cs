@@ -34,9 +34,21 @@ public sealed class ActiveEffect
     public int DefenseRatingDelta { get; init; }
 
     /// <summary>
-    /// Added to the flat damage the bearer's armour subtracts from every blow that lands.
+    /// Added to the fraction of each landed blow the bearer's armour absorbs, as a decimal where
+    /// <c>0.10</c> is ten percentage points.
     /// </summary>
-    public int ArmorFlatDelta { get; init; }
+    /// <remarks>
+    /// <b>Percentage points rather than armour rating, so a shout is worth the same at every
+    /// tier.</b> This was a flat amount subtracted from each blow, which made a guard worth roughly
+    /// a whole hit at level 5 and a rounding error at level 50. Adding to the bearer's armour rating
+    /// instead would have been no better: the curve's returns diminish, so the same grant would be
+    /// worth twenty points to an unarmoured Adept and two to a geared Warden — backwards, since the
+    /// Warden is the one whose abilities these are.
+    ///
+    /// Summed across effects and clamped once, by <see cref="Combat.ArmorCurve.Mitigation(int, decimal)"/>,
+    /// so a stack of guards still cannot exceed the cap gear alone respects.
+    /// </remarks>
+    public decimal MitigationDelta { get; init; }
 
     /// <summary>
     /// Raises the bearer's maximum health while this is active, and lowers it again when it goes.

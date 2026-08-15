@@ -14,9 +14,9 @@ public sealed class CombatSystemTests
             MinDamage: 4,
             MaxDamage: 8);
         var defender = new DefenderStats(
+            Level: 0,
             DefenseRating: 2,
-            ArmorFlat: 0,
-            ArmorPercent: 0);
+            Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
         var random = new SeededRandomSource(1234);
@@ -49,9 +49,9 @@ public sealed class CombatSystemTests
             MinDamage: 1,
             MaxDamage: 4);
         var defender = new DefenderStats(
+            Level: 0,
             DefenseRating: 10,
-            ArmorFlat: 0,
-            ArmorPercent: 0);
+            Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
         var random = new SeededRandomSource(9999);
@@ -83,9 +83,9 @@ public sealed class CombatSystemTests
             MinDamage: 8,
             MaxDamage: 12);
         var defender = new DefenderStats(
+            Level: 0,
             DefenseRating: -5,
-            ArmorFlat: 0,
-            ArmorPercent: 0);
+            Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
         var random = new SeededRandomSource(42);
@@ -119,9 +119,9 @@ public sealed class CombatSystemTests
             MinDamage: 10,
             MaxDamage: 20);
         var defender = new DefenderStats(
+            Level: 0,
             DefenseRating: -10,
-            ArmorFlat: 0,
-            ArmorPercent: 0);
+            Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
         var random = new SeededRandomSource(100);
@@ -152,9 +152,9 @@ public sealed class CombatSystemTests
             MinDamage: 1,
             MaxDamage: 2);
         var defender = new DefenderStats(
+            Level: 0,
             DefenseRating: 0,
-            ArmorFlat: 0,
-            ArmorPercent: 0.5m);
+            Armor: 100);
 
         var validation = new TargetValidationResult(true, null);
         var random = new SeededRandomSource(1000);
@@ -184,9 +184,9 @@ public sealed class CombatSystemTests
             MinDamage: 6,
             MaxDamage: 8);
         var defender = new DefenderStats(
+            Level: 0,
             DefenseRating: 2,
-            ArmorFlat: 0,
-            ArmorPercent: 0);
+            Armor: 0);
 
         var validation = new TargetValidationResult(false, "You cannot attack Kael here.");
         var random = new SeededRandomSource(5000);
@@ -218,9 +218,9 @@ public sealed class CombatSystemTests
             MinDamage: 4,
             MaxDamage: 6);
         var defender = new DefenderStats(
+            Level: 0,
             DefenseRating: 0,
-            ArmorFlat: 0,
-            ArmorPercent: 0);
+            Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
         var random = new SeededRandomSource(2000);
@@ -253,9 +253,9 @@ public sealed class CombatSystemTests
             MinDamage: 5,
             MaxDamage: 7);
         var defender = new DefenderStats(
+            Level: 0,
             DefenseRating: 1,
-            ArmorFlat: 0,
-            ArmorPercent: 0);
+            Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
         var random = new SeededRandomSource(3000);
@@ -295,9 +295,9 @@ public sealed class CombatSystemTests
             MinDamage: 3,
             MaxDamage: 5);
         var defender = new DefenderStats(
+            Level: 0,
             DefenseRating: 1,
-            ArmorFlat: 0,
-            ArmorPercent: 0);
+            Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
         var random = new SeededRandomSource(4000);
@@ -328,9 +328,9 @@ public sealed class CombatSystemTests
             MinDamage: 5,
             MaxDamage: 8);
         var defender = new DefenderStats(
+            Level: 0,
             DefenseRating: 2,
-            ArmorFlat: 0,
-            ArmorPercent: 0);
+            Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
         var random = new SeededRandomSource(5000);
@@ -360,9 +360,9 @@ public sealed class CombatSystemTests
             MinDamage: 5,
             MaxDamage: 8);
         var defender = new DefenderStats(
+            Level: 0,
             DefenseRating: 2,
-            ArmorFlat: 0,
-            ArmorPercent: 0);
+            Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
         var random = new SeededRandomSource(5000);
@@ -392,9 +392,9 @@ public sealed class CombatSystemTests
             MinDamage: 4,
             MaxDamage: 6);
         var defender = new DefenderStats(
+            Level: 0,
             DefenseRating: 0,
-            ArmorFlat: 0,
-            ArmorPercent: 0);
+            Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
         var random = new SeededRandomSource(6000);

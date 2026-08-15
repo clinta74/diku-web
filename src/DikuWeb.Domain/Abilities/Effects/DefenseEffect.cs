@@ -7,9 +7,15 @@ namespace DikuWeb.Domain.Abilities.Effects;
 /// </summary>
 /// <remarks>
 /// <b>Two dials, because they are two different things.</b> <c>defenseRating</c> is added to the
-/// number an attack roll has to beat, so it changes how *often* a blow lands; <c>armorFlat</c> is
-/// subtracted from each blow that does land, so it changes what one *costs*. A braced stance wants
-/// the first, plate wants the second, and an ability can reasonably want either without the other.
+/// number an attack roll has to beat, so it changes how *often* a blow lands; <c>mitigation</c> is
+/// the extra share of each blow that does land which the bearer shrugs off, so it changes what one
+/// *costs*. A braced stance wants the first, plate wants the second, and an ability can reasonably
+/// want either without the other.
+///
+/// <c>mitigation</c> is authored in whole percentage points — <c>"8"</c> is eight points — because
+/// a builder typing <c>0.08</c> into a box that also takes <c>defenseRating</c> would be one
+/// mistyped decimal away from a permanent 8x. It replaces <c>armorFlat</c>, which was subtracted
+/// per blow and so meant something different at every level.
 ///
 /// Distinct from <c>debuff.weaken</c>, which moves damage multipliers: weakening a target reduces
 /// what it *deals*, and this changes what it *takes*.
@@ -48,7 +54,7 @@ public abstract class GuardEffect : IBuffEffect
         // the sign comes from which effect this is. Letting a builder type a negative into a
         // hardening effect is how you get a shield that makes you easier to hit.
         var defenseRating = Sign * Math.Abs(Read(parameters, "defenseRating"));
-        var armorFlat = Sign * Math.Abs(Read(parameters, "armorFlat"));
+        var mitigation = Sign * Math.Abs(Read(parameters, "mitigation")) / 100m;
 
         var duration = parameters.TryGetValue("durationPulses", out var raw)
             && long.TryParse(raw, out var value)
@@ -65,7 +71,7 @@ public abstract class GuardEffect : IBuffEffect
             Name = name,
             SourceEntityId = EffectSource.Of(caster),
             DefenseRatingDelta = defenseRating,
-            ArmorFlatDelta = armorFlat,
+            MitigationDelta = mitigation,
             ExpiresAtPulse = currentPulse + duration,
 
             // Never stacks. Two castings of a guard would pile into an unhittable target, which is

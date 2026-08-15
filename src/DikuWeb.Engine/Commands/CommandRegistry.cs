@@ -1163,6 +1163,7 @@ public sealed class CommandRegistry
             ItemSlot.MainHand);
 
         var defense = EquipmentResolver.ResolveDefenderStats(
+            character.Level,
             character.Attributes.AgilityModifier,
             equipped);
 
@@ -1183,8 +1184,11 @@ public sealed class CommandRegistry
             new($"\n  Dice: {attack.MinDamage}-{attack.MaxDamage}, Might bonus: {attack.BaseDamage:+#;-#;+0}"),
             new($"\n  Speed: one swing every {mainDelay * 0.25:0.##}s"),
             new($"\nAttack Rating: {attack.AttackRating}", "good"),
-            new($"\nDefense: {10 + defense.DefenseRating}", "good"),
-            new($"\n  Armour: {defense.ArmorFlat} flat, {defense.ArmorPercent:P0} reduction"),
+            // The number an attacker has to reach, shown whole rather than as its parts - it is
+            // what the player is actually being measured against, and the level term inside it is
+            // not something they can act on.
+            new($"\nDefense: {10 + (character.Level / 2) + defense.DefenseRating}", "good"),
+            new($"\n  Armour: {defense.Armor} rating, {ArmorCurve.Mitigation(defense.Armor):P0} of each hit absorbed"),
         };
 
         AppendOffHand(ctx, spans, character, equipped);

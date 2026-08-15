@@ -16,10 +16,20 @@ public sealed record AttackerStats(
 /// <summary>
 /// Input to damage calculation: the defender's resolved combat stats.
 /// </summary>
+/// <param name="Level">
+/// The level the defender fights at. Present because the number an attacker must beat scales with
+/// it at the same rate <see cref="AttackerStats.AttackRating"/> does, which is what keeps the die
+/// deciding the outcome — see <see cref="DamageCalculator"/>.
+/// </param>
+/// <param name="DefenseRating">How much harder than baseline this defender is to hit.</param>
+/// <param name="Armor">
+/// Summed armor rating, converted to a fraction by <see cref="ArmorCurve"/>. Replaced the old
+/// <c>ArmorFlat</c>/<c>ArmorPercent</c> pair: one number the author sets, one curve that reads it.
+/// </param>
 public sealed record DefenderStats(
+    int Level,
     int DefenseRating,
-    int ArmorFlat,
-    decimal ArmorPercent);
+    int Armor);
 
 /// <summary>
 /// Outcome of a single attack: hit/miss/crit, and if hit, damage dealt.
@@ -38,20 +48,55 @@ public sealed record DamageResult(
 /// Pure damage calculation per PLAN.md §4.6.
 ///
 /// Combat formula:
-///   attackRoll  = d20 + attackRating
-///   defenseVal  = 10 + defenseRating
-///   miss   if attackRoll &lt; defenseVal
-///   hit    if attackRoll ≥ defenseVal
-///   crit   if natural 20, or beats defenseVal by 10+
+///   defenseVal  = 10 + level/2 + defenseRating
+///   needed      = clamp(defenseVal − attackRating, 2, 20)
+///   miss   if natural d20 &lt; needed
+///   hit    if natural d20 ≥ needed
+///   crit   if natural 20
 ///
 ///   damage = roll weapon dice + MightMod (passed as baseDamage)
-///   final  = max(1, (damage − armorFlat) × (1 − armorPercent))
+///   final  = max(1, damage × (1 − ArmorCurve.Mitigation(armor)))
 ///
 /// No world state, no side effects. Given the same inputs and random seed,
 /// always returns the same result.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>Both sides carry level/2, and that is the whole repair.</b> Attack rating grew at
+/// <c>level/2</c> while the number to beat grew at <c>level/4</c>, so the gap between them widened
+/// past the die's entire range: by level 15 a player hit every swing, by level 30 so did every mob,
+/// and the d20 had stopped being consulted. Putting the same <c>level/2</c> on the defence side
+/// cancels it exactly at equal levels, leaving gear, attributes and the level *difference* to
+/// decide — all of which are small enough for twenty faces to express.
+/// </para>
+/// <para>
+/// <b>The clamp is the guarantee, not the tuning.</b> Clamping the needed roll to 2–20 means a
+/// natural 1 always misses and a natural 20 always hits, whatever anyone authors. Nothing can be
+/// equipped or buffed into being unhittable, and nothing can be stripped into being auto-hit, so
+/// those two properties stop depending on anybody's numbers being sensible.
+/// </para>
+/// <para>
+/// <b>A critical is a natural 20 and nothing else.</b> It used to also trigger on beating the
+/// defence by ten or more, which was fine while overshoot stayed small and became absurd once it
+/// did not: at level 50 a mob's every landed blow overshot by ten, so every hit was a critical and
+/// the dice were rolled twice, permanently. Overshoot is a symptom of the scaling above, so a rule
+/// that reads it was measuring the bug.
+/// </para>
+/// </remarks>
 public static class DamageCalculator
 {
+    /// <summary>The number an unlevelled, undefended target is hit on. The d20 baseline.</summary>
+    private const int BaseDefense = 10;
+
+    /// <summary>
+    /// The d20 faces that always miss and always hit. Keeping both ends open is what makes
+    /// "never certain either way" a property of the system rather than of its content.
+    /// </summary>
+    private const int MinNeeded = 2;
+
+    /// <inheritdoc cref="MinNeeded"/>
+    private const int MaxNeeded = 20;
+
     /// <summary>
     /// Calculate damage for one attack.
     /// </summary>
@@ -60,19 +105,19 @@ public static class DamageCalculator
         DefenderStats defender,
         IRandomSource random)
     {
-        var naturalRoll = random.Next(1, 21); // d20: 1-20
-        var attackRoll = naturalRoll + attacker.AttackRating;
-        var defenseVal = 10 + defender.DefenseRating;
+        ArgumentNullException.ThrowIfNull(attacker);
+        ArgumentNullException.ThrowIfNull(defender);
 
-        // Check for hit/miss
-        var isHit = attackRoll >= defenseVal;
-        if (!isHit)
+        var naturalRoll = random.Next(1, 21); // d20: 1-20
+        var defenseVal = BaseDefense + (defender.Level / 2) + defender.DefenseRating;
+        var needed = Math.Clamp(defenseVal - attacker.AttackRating, MinNeeded, MaxNeeded);
+
+        if (naturalRoll < needed)
         {
             return new DamageResult(naturalRoll, false, false, 0);
         }
 
-        // Check for crit: natural 20 or beats defense by 10+
-        var isCrit = naturalRoll == 20 || (attackRoll - defenseVal) >= 10;
+        var isCrit = naturalRoll == 20;
 
         // Calculate base damage
         var damageRolled = random.Next(attacker.MinDamage, attacker.MaxDamage + 1);
@@ -88,10 +133,9 @@ public static class DamageCalculator
 
         var totalDamage = damageRolled + attacker.BaseDamage;
 
-        // Apply armor reduction: (damage - flatReduction) * (1 - percentReduction)
-        var afterFlat = totalDamage - defender.ArmorFlat;
-        var afterPercent = (decimal)afterFlat * (1m - defender.ArmorPercent);
-        var final = (int)afterPercent;
+        // Armor absorbs a fraction, never a fixed amount. See ArmorCurve for why.
+        var absorbed = ArmorCurve.Mitigation(defender.Armor);
+        var final = (int)((decimal)totalDamage * (1m - absorbed));
 
         // Never drop below 1 damage on a hit
         final = Math.Max(1, final);
@@ -139,7 +183,7 @@ public static class DamageCalculator
         // Level-derived defaults, used wherever the template is silent.
         var attackRating = StatReader.TryReadInt(stats, "attackRating", out var rating)
             ? rating
-            : level / 2;
+            : (level / 2) + MobAttackBaseline;
 
         var baseDamage = StatReader.TryReadInt(stats, "baseDamage", out var flat)
             ? flat
@@ -199,15 +243,32 @@ public static class DamageCalculator
         mob.EffectiveLevel > 0 ? mob.EffectiveLevel : mob.Level;
 
     /// <summary>
-    /// Build defender stats from a player character.
-    /// No armor yet; defense is agility modifier + base 10.
+    /// How hard a mob swings before its template says otherwise.
     /// </summary>
+    /// <remarks>
+    /// A mob's rating is <c>level/2</c>, and the defence it faces now carries <c>level/2</c> too, so
+    /// without this the two cancel and every mob in the game is left beating <c>10 + agility +
+    /// gear</c> on a bare die — which a geared character wins outright. This is the mob's share of
+    /// the baseline: it stands for competence rather than level, which is why it is a constant and
+    /// not a rate. Raising it makes every fight in the game bloodier; that is what it is for.
+    /// </remarks>
+    private const int MobAttackBaseline = 6;
+
+    /// <summary>
+    /// Build defender stats from a player character, ignoring equipment.
+    /// </summary>
+    /// <remarks>
+    /// Equipment is <see cref="EquipmentResolver.ResolveDefenderStats"/>'s job — this is the
+    /// unarmoured baseline used where there is no inventory to hand, chiefly tests and previews.
+    /// </remarks>
     public static DefenderStats DefenderStatsFrom(Character character)
     {
+        ArgumentNullException.ThrowIfNull(character);
+
         return new DefenderStats(
+            Level: character.Level,
             DefenseRating: character.Attributes.AgilityModifier,
-            ArmorFlat: 0,
-            ArmorPercent: 0m);
+            Armor: 0);
     }
 
     /// <summary>
@@ -220,23 +281,15 @@ public static class DamageCalculator
 
         var stats = mob.ResolvedStats;
 
-        var defense = StatReader.TryReadInt(stats, "defense", out var declared)
-            ? declared
-            : FightingLevel(mob) / 4;
-
-        StatReader.TryReadInt(stats, "armorFlat", out var armorFlat);
-        StatReader.TryReadDecimal(stats, "armorPercent", out var armorPercent);
-
-        if (StatReader.TryReadDecimal(stats, "armorMultiplier", out var multiplier) && multiplier > 0m)
-        {
-            armorFlat = (int)Math.Ceiling(armorFlat * multiplier);
-        }
+        // Zero by default, not level/4. The level term now lives in the formula itself, so a
+        // template that says nothing means "no harder to hit than its level already makes it"
+        // rather than quietly acquiring a defence its author never wrote.
+        StatReader.TryReadInt(stats, "defense", out var defense);
+        StatReader.TryReadInt(stats, "armor", out var armor);
 
         return new DefenderStats(
+            Level: FightingLevel(mob),
             DefenseRating: defense,
-            ArmorFlat: armorFlat,
-
-            // Same 0-95% clamp equipment uses, so a mob cannot be authored immune.
-            ArmorPercent: Math.Clamp(armorPercent, 0m, 0.95m));
+            Armor: armor);
     }
 }

@@ -92,9 +92,9 @@ public sealed class ScaledMobSpawnTests
     public void A_template_that_declares_no_combat_stats_still_scales()
     {
         // The common case, and the one that made EffectiveLevel a promise the fight did not keep.
-        // DamageCalculator falls back to level/2, level/3 and level/4 for a silent template, and
-        // those read Mob.Level - so a rat in a x4 zone had four times the health and swung like
-        // the level 8 it was authored as.
+        // DamageCalculator falls back to level-derived values for a silent template, and those read
+        // Mob.Level - so a rat in a x4 zone had four times the health and swung like the level 8 it
+        // was authored as.
         var scaled = Spawn(Scaled(strength: 4m), new Dictionary<string, object> { ["health"] = 40 });
         var plain = Spawn(Scaled(), new Dictionary<string, object> { ["health"] = 40 });
 
@@ -102,9 +102,12 @@ public sealed class ScaledMobSpawnTests
         Assert.True(
             DamageCalculator.StatsFrom(scaled).AttackRating > DamageCalculator.StatsFrom(plain).AttackRating,
             "A mob the zone lifted to level 32 should be harder to evade than the level 8 it was authored as.");
-        Assert.True(
-            DamageCalculator.DefenderStatsFrom(scaled).DefenseRating
-                > DamageCalculator.DefenderStatsFrom(plain).DefenseRating);
+
+        // Defence carries the lifted level rather than a rating derived from it: the number to beat
+        // is 10 + level/2 + rating (§4.6), so the level is what makes the lifted mob harder to hit.
+        // A silent template's rating is zero on both, and asserting on that compared nothing.
+        Assert.Equal(32, DamageCalculator.DefenderStatsFrom(scaled).Level);
+        Assert.Equal(8, DamageCalculator.DefenderStatsFrom(plain).Level);
     }
 
     [Fact]

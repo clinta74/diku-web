@@ -98,14 +98,14 @@ public sealed class MobScalingTests
         {
             ["health"] = 40,
             ["defense"] = 6,
-            ["armorFlat"] = 2,
+            ["armor"] = 2,
             ["damageMin"] = 5,
             ["attackRating"] = 8,
         });
 
         Assert.Equal(120, Read(resolved, "health"));
         Assert.Equal(18, Read(resolved, "defense"));
-        Assert.Equal(6, Read(resolved, "armorFlat"));
+        Assert.Equal(6, Read(resolved, "armor"));
 
         Assert.Equal(5, Read(resolved, "damageMin"));
         Assert.Equal(8, Read(resolved, "attackRating"));

@@ -18,13 +18,13 @@ public sealed class GuardAndMaxHealthTests
 {
     private static readonly RoomKey West = RoomKey.Parse("test.zone.west");
 
-    private static ActiveEffect Guard(int defense, int armor, long expires) => new()
+    private static ActiveEffect Guard(int defense, decimal mitigation, long expires) => new()
     {
         EffectKey = "buff.defense",
         Name = "guarded",
         SourceEntityId = "unknown",
         DefenseRatingDelta = defense,
-        ArmorFlatDelta = armor,
+        MitigationDelta = mitigation,
         ExpiresAtPulse = expires,
     };
 
@@ -189,7 +189,7 @@ public sealed class GuardAndMaxHealthTests
         {
             harness.World.ApplyEffect(
                 player.Character.Id,
-                Guard(defense: guard, armor: 0, expires: 100_000));
+                Guard(defense: guard, mitigation: 0m, expires: 100_000));
         }
 
         Engine.Systems.CombatEngagement.Engage(harness.World, player.Character, rat);

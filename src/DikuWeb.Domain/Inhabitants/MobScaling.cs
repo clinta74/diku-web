@@ -109,8 +109,11 @@ public sealed record MobScaling(decimal Health, decimal Damage, int Level)
         return resolved;
     }
 
-    /// <summary>How tough it is. <c>armorPercent</c> is deliberately absent — it is a ratio.</summary>
-    private static readonly string[] HealthScaled = ["health", "defense", "armorFlat"];
+    /// <summary>
+    /// How tough it is. <c>armor</c> is a rating rather than a ratio, so it scales; the fraction it
+    /// becomes is <see cref="Combat.ArmorCurve"/>'s business and is never stored.
+    /// </summary>
+    private static readonly string[] HealthScaled = ["health", "defense", "armor"];
 
     /// <summary>How hard it hits. <c>damageMultiplier</c> is deliberately absent — it is a ratio.</summary>
     private static readonly string[] DamageScaled = ["attackRating", "baseDamage", "damageMin", "damageMax"];

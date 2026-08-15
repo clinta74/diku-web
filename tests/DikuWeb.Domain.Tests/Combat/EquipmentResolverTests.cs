@@ -90,97 +90,56 @@ public sealed class EquipmentResolverTests
     public void ResolveDefenderStats_unarmored_uses_agility_only()
     {
         var stats = EquipmentResolver.ResolveDefenderStats(
+            level: 6,
             agilityModifier: 2,
             equippedArmor: []);
 
-        // Defense rating: 10 + Agility 2 = 12 (but 10 is baked in the formula, we just add modifier)
+        // The base 10 and the level term are baked into the formula; this adds the rest.
+        Assert.Equal(6, stats.Level);
         Assert.Equal(2, stats.DefenseRating);
-        Assert.Equal(0, stats.ArmorFlat);
-        Assert.Equal(0m, stats.ArmorPercent);
+        Assert.Equal(0, stats.Armor);
     }
 
     [Fact]
-    public void ResolveDefenderStats_armor_stacks_flat()
+    public void ResolveDefenderStats_armor_ratings_sum()
     {
-        var chest = new ItemInstance
-        {
-            TemplateKey = "iron-chest",
-            EquippedSlot = ItemSlot.Chest,
-            ResolvedStats = new Dictionary<string, object> { { "armorFlat", 3 } }
-        };
-
-        var legs = new ItemInstance
-        {
-            TemplateKey = "iron-legs",
-            EquippedSlot = ItemSlot.Legs,
-            ResolvedStats = new Dictionary<string, object> { { "armorFlat", 2 } }
-        };
+        var chest = Piece("iron-chest", ItemSlot.Chest, ("armor", 30));
+        var legs = Piece("iron-legs", ItemSlot.Legs, ("armor", 20));
 
         var stats = EquipmentResolver.ResolveDefenderStats(
+            level: 1,
             agilityModifier: 1,
             equippedArmor: new[] { chest, legs });
 
         Assert.Equal(1, stats.DefenseRating);
-        Assert.Equal(5, stats.ArmorFlat);
-        Assert.Equal(0m, stats.ArmorPercent);
+        Assert.Equal(50, stats.Armor);
     }
 
     [Fact]
-    public void ResolveDefenderStats_armor_stacks_percent()
+    public void ResolveDefenderStats_armor_and_defense_are_independent()
     {
-        var chest = new ItemInstance
-        {
-            TemplateKey = "leather-chest",
-            EquippedSlot = ItemSlot.Chest,
-            ResolvedStats = new Dictionary<string, object> { { "armorPercent", 0.1m } }
-        };
-
-        var legs = new ItemInstance
-        {
-            TemplateKey = "leather-legs",
-            EquippedSlot = ItemSlot.Legs,
-            ResolvedStats = new Dictionary<string, object> { { "armorPercent", 0.05m } }
-        };
+        // The reason there are two authored numbers: a shield can be evasive without being
+        // absorbent, and plate the other way round. One number could only have made every piece
+        // both, in a fixed ratio nobody chose.
+        var shield = Piece("plank-shield", ItemSlot.OffHand, ("armor", 10), ("defense", 3));
+        var breastplate = Piece("iron-chest", ItemSlot.Chest, ("armor", 60));
 
         var stats = EquipmentResolver.ResolveDefenderStats(
-            agilityModifier: 0,
-            equippedArmor: new[] { chest, legs });
+            level: 1,
+            agilityModifier: 2,
+            equippedArmor: new[] { shield, breastplate });
 
-        Assert.Equal(0, stats.DefenseRating);
-        Assert.Equal(0, stats.ArmorFlat);
-        Assert.Equal(0.15m, stats.ArmorPercent);
-    }
-
-    [Fact]
-    public void ResolveDefenderStats_armor_percent_clamped_to_95percent()
-    {
-        var gear = Enumerable.Range(0, 20)
-            .Select(i => new ItemInstance
-            {
-                TemplateKey = $"gear-{i}",
-                EquippedSlot = ItemSlot.Head,
-                ResolvedStats = new Dictionary<string, object> { { "armorPercent", 0.1m } }
-            })
-            .ToList();
-
-        var stats = EquipmentResolver.ResolveDefenderStats(
-            agilityModifier: 0,
-            equippedArmor: gear);
-
-        Assert.Equal(0.95m, stats.ArmorPercent);
+        Assert.Equal(5, stats.DefenseRating); // 2 agility + 3 from the shield
+        Assert.Equal(70, stats.Armor);
     }
 
     [Fact]
     public void ResolveDefenderStats_armor_defense_bonus()
     {
-        var armor = new ItemInstance
-        {
-            TemplateKey = "blessed-mail",
-            EquippedSlot = ItemSlot.Chest,
-            ResolvedStats = new Dictionary<string, object> { { "defense", 2 } }
-        };
+        var armor = Piece("blessed-mail", ItemSlot.Chest, ("defense", 2));
 
         var stats = EquipmentResolver.ResolveDefenderStats(
+            level: 1,
             agilityModifier: 1,
             equippedArmor: new[] { armor });
 
@@ -188,28 +147,33 @@ public sealed class EquipmentResolverTests
     }
 
     [Fact]
-    public void ResolveDefenderStats_ignores_non_armor_slots()
+    public void ResolveDefenderStats_ignores_the_main_hand()
     {
-        var weapon = new ItemInstance
-        {
-            TemplateKey = "sword",
-            EquippedSlot = ItemSlot.MainHand,
-            ResolvedStats = new Dictionary<string, object> { { "armorFlat", 10 } }
-        };
-
-        var trinket = new ItemInstance
-        {
-            TemplateKey = "ring",
-            EquippedSlot = ItemSlot.Trinket,
-            ResolvedStats = new Dictionary<string, object> { { "armorFlat", 10 } }
-        };
+        // A weapon's numbers belong to the attacker and are resolved per hand.
+        var weapon = Piece("sword", ItemSlot.MainHand, ("armor", 100));
 
         var stats = EquipmentResolver.ResolveDefenderStats(
+            level: 1,
             agilityModifier: 0,
-            equippedArmor: new[] { weapon, trinket });
+            equippedArmor: new[] { weapon });
 
-        // Neither main-hand nor trinket should contribute armor
-        Assert.Equal(0, stats.ArmorFlat);
+        Assert.Equal(0, stats.Armor);
+    }
+
+    [Fact]
+    public void ResolveDefenderStats_counts_a_trinket()
+    {
+        // It used not to, and was not a hand either, so the eighth slot equipped and did nothing
+        // whatsoever - an item could be authored, sold, and worn with no stat on it ever read.
+        var trinket = Piece("ring", ItemSlot.Trinket, ("armor", 12), ("defense", 1));
+
+        var stats = EquipmentResolver.ResolveDefenderStats(
+            level: 1,
+            agilityModifier: 0,
+            equippedArmor: new[] { trinket });
+
+        Assert.Equal(12, stats.Armor);
+        Assert.Equal(1, stats.DefenseRating);
     }
 
     [Fact]
@@ -223,46 +187,22 @@ public sealed class EquipmentResolverTests
         };
 
         var stats = EquipmentResolver.ResolveDefenderStats(
+            level: 1,
             agilityModifier: 1,
             equippedArmor: new[] { armor });
 
         Assert.Equal(1, stats.DefenseRating);
-        Assert.Equal(0, stats.ArmorFlat);
+        Assert.Equal(0, stats.Armor);
     }
 
-    [Fact]
-    public void ResolveDefenderStats_mixed_armor_and_defense()
-    {
-        var chest = new ItemInstance
+    private static ItemInstance Piece(
+        string key, ItemSlot slot, params (string Key, object Value)[] stats) =>
+        new()
         {
-            TemplateKey = "iron-chest",
-            EquippedSlot = ItemSlot.Chest,
-            ResolvedStats = new Dictionary<string, object>
-            {
-                { "armorFlat", 5 },
-                { "defense", 1 }
-            }
+            TemplateKey = key,
+            EquippedSlot = slot,
+            ResolvedStats = stats.ToDictionary(s => s.Key, s => s.Value),
         };
-
-        var legs = new ItemInstance
-        {
-            TemplateKey = "leather-legs",
-            EquippedSlot = ItemSlot.Legs,
-            ResolvedStats = new Dictionary<string, object>
-            {
-                { "armorPercent", 0.1m },
-                { "defense", 1 }
-            }
-        };
-
-        var stats = EquipmentResolver.ResolveDefenderStats(
-            agilityModifier: 2,
-            equippedArmor: new[] { chest, legs });
-
-        Assert.Equal(4, stats.DefenseRating); // 2 agility + 1 + 1 defense
-        Assert.Equal(5, stats.ArmorFlat);
-        Assert.Equal(0.1m, stats.ArmorPercent);
-    }
 
     [Fact]
     public void ResolveAttackerStats_negative_modifiers()
@@ -282,28 +222,11 @@ public sealed class EquipmentResolverTests
     public void ResolveDefenderStats_negative_agility()
     {
         var stats = EquipmentResolver.ResolveDefenderStats(
+            level: 1,
             agilityModifier: -3,
             equippedArmor: []);
 
         Assert.Equal(-3, stats.DefenseRating);
-    }
-
-    [Fact]
-    public void ResolveDefenderStats_armor_percent_negative_clamped_to_zero()
-    {
-        var armor = new ItemInstance
-        {
-            TemplateKey = "cursed-mail",
-            EquippedSlot = ItemSlot.Chest,
-            ResolvedStats = new Dictionary<string, object> { { "armorPercent", -0.5m } }
-        };
-
-        var stats = EquipmentResolver.ResolveDefenderStats(
-            agilityModifier: 0,
-            equippedArmor: new[] { armor });
-
-        // Clamp to 0-95% range
-        Assert.Equal(0m, stats.ArmorPercent);
     }
 
     // =========================================================================
@@ -460,8 +383,11 @@ public sealed class EquipmentResolverTests
     }
 
     [Fact]
-    public void ResolveDefenderStats_armor_multiplier_scales_declared_flat_armour()
+    public void The_retired_armour_vocabulary_is_ignored_rather_than_half_read()
     {
+        // armorFlat, armorPercent and armorMultiplier are gone (see ArmorCurve). A piece still
+        // carrying them in an old database contributes nothing rather than something arbitrary -
+        // which is the honest reading, since none of the three converts to a rating.
         var mail = new ItemInstance
         {
             TemplateKey = "chain-mail",
@@ -469,14 +395,16 @@ public sealed class EquipmentResolverTests
             ResolvedStats = new Dictionary<string, object>
             {
                 { "armorFlat", 4 },
+                { "armorPercent", 0.5m },
                 { "armorMultiplier", 2 },
             },
         };
 
         var stats = EquipmentResolver.ResolveDefenderStats(
+            level: 1,
             agilityModifier: 0,
             equippedArmor: new[] { mail });
 
-        Assert.Equal(8, stats.ArmorFlat);
+        Assert.Equal(0, stats.Armor);
     }
 }

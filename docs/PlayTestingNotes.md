@@ -65,25 +65,33 @@ Add anything noticed while playing here. Cleared as items are done.
      content sets the `respawn` flag; `ossara.gatetown` sets it at the zone level, so this is the
      first import that makes the verb do anything. Worth actually typing it.
 
-- **Two item dials are recorded and never read.** Both found while authoring the Ossaran set, both
-  affect what content can assume, neither blocks anything:
-  - **`itemPower` does not scale item stats.**
-    [ItemSpawner.cs:51](../src/DikuWeb.Engine/Spawning/ItemSpawner.cs#L51) copies `BaseStats`
-    verbatim; only `ItemValue` is resolved, into the price. The dial is snapshotted into
-    `SpawnMultipliers` and then nothing reads it. `WORLD.md` §7.3 assumed the mob trick transferred —
-    author one baseline set, let the realm dial place it — and it does not, so every realm's set is
-    authored at final numbers instead. Implement it or delete it; carrying a dial that reads as
-    configured and does nothing is the failure mode `Engine__StartingRoom` already demonstrated.
-  - **`Trinket` equips and does nothing.** It is not in `IsArmorSlot`
-    ([EquipmentResolver.cs:243](../src/DikuWeb.Domain/Combat/EquipmentResolver.cs#L243)) and not one
-    of the two hands `damageMultiplier` is read from, so no stat on it is read by anything. The
-    eighth slot is currently cosmetic.
-  - Related and worth knowing before authoring more gear: **`armorMultiplier` is set-wide and
-    multiplicative.** Every equipped piece's multiplier accumulates into one factor applied to the
-    whole set's total `armorFlat`, so six pieces at 1.2 give 2.99. It is a lever for a single
-    deliberate item, never for a tier — and a piece carrying *only* a multiplier grants nothing,
-    since there is no flat value to scale. `simple-helmet` in the dev database is exactly that:
-    `armorMultiplier: 2`, no `armorFlat`, zero armour.
+- **Armour and to-hit: done**, and it was worse than the armour question that started it. `armorFlat`
+  was all-or-nothing at every level, but the d20 had *already* stopped working on its own: attack
+  rating grew at `level/2` against a defence growing at `level/4`, so a player hit on every swing
+  from level 15, mobs did from level 30, and by level 50 every landed mob blow was a critical
+  because the crit rule read overshoot. `PLAN.md` §4.6 has the new arithmetic. In short: both sides
+  carry `level/2` so the die decides again, the needed roll is clamped to 2–20 so neither certainty
+  is reachable, a crit is a natural 20, and armour absorbs `armor / (armor + 100)` capped at 75%.
+  Items author `armor` and `defense`; the retired keys are gone.
+
+  **What still wants checking with a controller in hand**, none of it blocking:
+  - `MobAttackBaseline` is **6** — the constant standing for a mob's competence, since its `level/2`
+    now cancels against the defence. It is the single dial that makes every fight in the game
+    bloodier or gentler, and it was picked from a spreadsheet rather than from play.
+  - **Mob damage against player health has never been checked and is probably too low.** A silent
+    template falls back to `1d4 + level/3` — about 18 at level 50, against a Warden's 315. That is a
+    *content* number (the chassis will declare real dice), but it means nothing about time-to-kill
+    can be concluded from the armour numbers until the chassis exists.
+  - The twelve `Guard(...)` values were converted from flat amounts to percentage points by holding
+    their relative order, not by measurement.
+
+- **`itemPower` is recorded and never read.**
+  [ItemSpawner.cs:51](../src/DikuWeb.Engine/Spawning/ItemSpawner.cs#L51) copies `BaseStats`
+  verbatim; only `ItemValue` is resolved, into the price. The dial is snapshotted into
+  `SpawnMultipliers` and then nothing reads it. `WORLD.md` §7.3 assumed the mob trick transferred —
+  author one baseline set, let the realm dial place it — and it does not, so every realm's set is
+  authored at final numbers instead. Implement it or delete it; carrying a dial that reads as
+  configured and does nothing is the failure mode `Engine__StartingRoom` already demonstrated.
 
 - **Review solo and group balance for all four Paths, band by band.** Thirty-two abilities were
   added at levels 24–50 (`ABILITIES.md`) against no play data at all: every number in them is a

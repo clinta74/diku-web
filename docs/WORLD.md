@@ -434,15 +434,31 @@ then never read. So the mob trick does not transfer: **each realm's set is autho
 numbers**, and the `itemPower` column in §3 is currently decoration. Azhen's 1.3 and the Unlit's 1.4
 record where the good equipment is meant to be; today they do not put it there (§10.3).
 
-Author flat values, not multipliers. Armour carries `armorFlat` (and `defense` for the to-hit dial);
-`armorMultiplier` is set-wide and multiplicative — every equipped piece's multiplier accumulates into
-one factor applied to the whole set's total flat reduction — so six pieces at 1.2 give 2.99, not 1.2.
-It is a lever for one deliberate item, never for a tier. Weapons are the exception and carry
-`damageMultiplier`, because that one scales the unarmed dice and so works on its own.
+**Armour is two authored numbers and one decision per realm.** A piece carries `armor`, which decides
+what a landed blow costs, and optionally `defense`, which decides how often one lands (`PLAN.md`
+§4.6). The realm decision is the *set total*, because mitigation is `A / (A + 100)` capped at 75%:
 
-**A `Trinket` is decorative today.** `IsArmorSlot` covers Head, Chest, Hands, Legs, Feet, and OffHand
-only, and the damage multiplier is read from the two hands, so nothing on a trinket is read by
-anything. Author them for flavour and value, and do not put the spine's numbers there.
+| Realm | Set total `armor` | Mitigation | Set total `defense` |
+|---|---|---|---|
+| `ossara` | 25 | 20% | 1 |
+| `grask` | 55 | 35% | 2 |
+| `azhen` | 95 | 49% | 3 |
+| `nemhal` | 150 | 60% | 4 |
+| `the-unlit` | 210 | 68% | 5 |
+
+Split the total across the eight slots by bulk — chest heaviest, gloves and boots lightest, the
+shield carrying most of the `defense`. The exact split is taste; the total is the balance decision,
+and `ArmorCurveTests` pins these five rows so the spine and this table cannot drift apart.
+
+Keep `defense` small and mostly on shields. It is added to a d20 target, so five points is a quarter
+of the whole die — the curve bounds `armor` for you, and nothing bounds `defense` but restraint.
+
+Weapons carry `damageMultiplier` and optionally `bonus`. That multiplier scales the unarmed dice, so
+unlike the retired armour multipliers it works on its own.
+
+**A `Trinket` counts as armour now.** It was absent from `IsArmorSlot` and is not one of the two
+hands a damage multiplier is read from, so the eighth slot equipped and did nothing at all. It is
+part of the set total above.
 
 Quest items set `isQuestItem: true`, which means only *cannot be sold or destroyed* (`PLAN.md`
 §4.9). They still drop from ordinary spawners and loot tables; there is no separate pipeline.

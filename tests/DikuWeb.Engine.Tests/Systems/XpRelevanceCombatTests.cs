@@ -32,6 +32,12 @@ public sealed class XpRelevanceCombatTests
         var mob = harness.AddMob("rat", West, health: 1, level: mobLevel);
         mob.ResolvedXp = xp;
 
+        // Hittable on anything but a natural 1. These tests measure what a kill is *worth*, and a
+        // mob far above the killer's level is now genuinely hard to land a blow on (§4.6) - without
+        // this the boss case simply never died inside the pump window and read as "no XP", which is
+        // the answer this helper exists to distinguish from.
+        mob.ResolvedStats["defense"] = -100;
+
         var before = killer.Character.Xp;
         harness.Execute(killer, "kill rat");
         harness.Pump(20);

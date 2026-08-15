@@ -913,6 +913,7 @@ public sealed class CombatSystem(
             stats = character is null
                 ? null
                 : EquipmentResolver.ResolveDefenderStats(
+                    character.Level,
                     character.Attributes.AgilityModifier,
                     [.. world.InventoryOf(character.Id).Where(i => i.EquippedSlot is not null)]);
         }
@@ -929,28 +930,49 @@ public sealed class CombatSystem(
 
         var effects = world.GetActiveEffects(EntityId.ToGuid(targetId));
         var defense = 0;
-        var armor = 0;
+        var mitigation = 0m;
 
         foreach (var effect in effects)
         {
             defense += effect.DefenseRatingDelta;
-            armor += effect.ArmorFlatDelta;
+            mitigation += effect.MitigationDelta;
         }
 
-        if (defense == 0 && armor == 0)
+        if (defense == 0 && mitigation == 0m)
         {
             return stats;
         }
 
-        // Floored at zero rather than allowed negative. A stripped guard should make somebody
-        // easy to hit, not easier than a defenceless one - and a negative armour value would turn
-        // the subtraction in the damage formula into a bonus.
+        // Defence is floored at zero rather than allowed negative: a stripped guard should make
+        // somebody easy to hit, not easier than a defenceless one.
+        //
+        // Mitigation is folded back into an armour rating rather than carried alongside one,
+        // because DefenderStats holds a rating and ArmorCurve owns the conversion — inverting the
+        // curve here keeps that ownership intact and keeps the cap applied exactly once, at the
+        // point of use. An expose that drives the total below zero lands on zero armour, which is
+        // the worst any defender can be, not a bonus to the attacker.
+        var absorbed = ArmorCurve.Mitigation(stats.Armor, mitigation);
+
         return stats with
         {
             DefenseRating = Math.Max(0, stats.DefenseRating + defense),
-            ArmorFlat = Math.Max(0, stats.ArmorFlat + armor),
+            Armor = RatingFor(absorbed),
         };
     }
+
+    /// <summary>
+    /// The armour rating that absorbs this fraction — <see cref="ArmorCurve"/> run backwards.
+    /// </summary>
+    /// <remarks>
+    /// At the cap the curve is flat and has no single inverse, so anything at or above it maps to a
+    /// rating comfortably past the cap's own threshold; the forward call clamps it straight back.
+    /// </remarks>
+    private static int RatingFor(decimal absorbed) =>
+        absorbed <= 0m
+            ? 0
+            : absorbed >= ArmorCurve.Cap
+                ? ArmorCurve.Midpoint * 100
+                : (int)Math.Round(ArmorCurve.Midpoint * absorbed / (1m - absorbed));
 
     private static decimal CalculateMultiplier(
         IReadOnlyList<DikuWeb.Domain.Abilities.Effects.ActiveEffect> effects,

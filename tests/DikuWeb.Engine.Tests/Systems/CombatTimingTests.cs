@@ -26,9 +26,13 @@ public sealed class CombatTimingTests
 
     /// <summary>
     /// Attack ratings are set high enough that every blow lands, so a missing swing means the
-    /// clock did not fire rather than the dice went the other way. A side effect is that every
-    /// blow is also a critical, which doubles the dice - the damage assertions account for it.
+    /// clock did not fire rather than the dice went the other way.
     /// </summary>
+    /// <remarks>
+    /// Overshooting the defence used to also make every one of those blows a critical, and the
+    /// damage assertions here had to double themselves to account for it. A critical is a natural
+    /// 20 now (§4.6), so a guaranteed hit is an ordinary hit and the numbers below are the dice.
+    /// </remarks>
     private const int MobHealthThatOutlastsTheTest = 100_000;
 
     [Fact]
@@ -231,10 +235,9 @@ public sealed class CombatTimingTests
 
         fight.Pump(through: 9);
 
-        // 2 damage a swing, tripled to 6 for the bite, and doubled again because every blow
-        // here is a critical (see MobHealthThatOutlastsTheTest). The claw keeps the mob's own.
-        Assert.Contains("bites you for 12 damage", fight.Log, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("claws you for 4 damage", fight.Log, StringComparison.OrdinalIgnoreCase);
+        // 2 damage a swing, tripled to 6 for the bite. The claw keeps the mob's own.
+        Assert.Contains("bites you for 6 damage", fight.Log, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("claws you for 2 damage", fight.Log, StringComparison.OrdinalIgnoreCase);
     }
 
     // --- Re-engaging and swapping ----------------------------------------

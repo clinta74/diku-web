@@ -75,7 +75,7 @@ public sealed class AttackVerbTests
             new AttackerStats(AttackRating: attackRating, BaseDamage: 2, MinDamage: 4, MaxDamage: 8),
             CombatantType.Mob,
             "goblin",
-            new DefenderStats(DefenseRating: 2, ArmorFlat: 0, ArmorPercent: 0),
+            new DefenderStats(Level: 0, DefenseRating: 2, Armor: 0),
             targetCurrentHealth: 50,
             new TargetValidationResult(true, null),
             verb,

@@ -535,9 +535,10 @@ so "why does this kobold have 137 hp?" is answerable from the row.
 damage, and the level those add up to. The invariant it holds is that **a mob at effective level N
 has the stats of a mob authored at level N** — without it, a template that declares its own combat
 stats scales while one that stays silent falls back to level-derived defaults, and two mobs in one
-zone disagree about what the zone did to them purely by which fields their author filled in. Ratios
-(`damageMultiplier`, `armorMultiplier`, `armorPercent`) are never scaled; multiplying a factor by a
-factor applies the zone twice.
+zone disagree about what the zone did to them purely by which fields their author filled in. Ratios such as
+`damageMultiplier` are never scaled; multiplying a factor by a factor applies the zone twice. `armor`
+*is* scaled, on the health dial, because it is a rating rather than a ratio — the fraction it becomes
+belongs to `ArmorCurve` (§4.6) and is never stored.
 
 *The table above was aspirational until 2026-08-14.* `Mob.ResolvedStats` was a verbatim copy of the
 template, so `damage`, `health`, `itemPower` and `spawnDensity` reached nothing at all and
@@ -605,19 +606,62 @@ building to save a player from a decision made on the character-creation screen.
 Explicitly not THAC0. Each round, per attack:
 
 ```
-attackRoll  = d20 + attackRating           attackRating  = level/2 + MightMod + weaponBonus
-defenseVal  = 10 + defenseRating           defenseRating = AgilityMod + armorDefense + shield
+attackRating = level/2 + MightMod + weaponBonus       (a mob: level/2 + 6)
+defenseVal   = 10 + level/2 + defenseRating           defenseRating = AgilityMod + Σ item defense
+needed       = clamp(defenseVal − attackRating, 2, 20)
 
-miss   if attackRoll <  defenseVal
-hit    if attackRoll >= defenseVal
-crit   if natural 20, or beats defenseVal by 10+   → damage dice rolled twice
+miss   if natural d20 <  needed
+hit    if natural d20 >= needed
+crit   if natural 20                                  → damage dice rolled twice, modifier once
 
-damage = weaponDice + MightMod (+ ability riders)
-final  = max(1, (damage − armorFlat) × (1 − armorPercent))
+damage     = weaponDice + MightMod (+ ability riders)
+mitigation = min(0.75, armor / (armor + 100))         armor = Σ item armor
+final      = max(1, damage × (1 − mitigation))
 ```
 
 No positional terms and no zone terms anywhere in the formula — the whole thing is a pure
 function of the two combatants, which is exactly what makes it unit-testable in isolation.
+
+**Both sides carry `level/2`, and that is not decoration.** Attack rating grew at `level/2` while
+the number to beat grew at `level/4`, so the gap between them widened past the die's entire range:
+by level 15 a player hit on every swing, by level 30 so did every mob, and a d20 had stopped being
+consulted anywhere in the game. Matching the rate cancels it at parity, leaving gear, attributes and
+the *level difference* to decide — all small enough for twenty faces to express. A higher-level
+defender is still harder to hit; an equally-matched one is a coin the die can actually flip.
+
+**The clamp is the guarantee, and the guarantee is the point.** Clamping `needed` to 2–20 means a
+natural 1 always misses and a natural 20 always hits, whatever anyone authors or buffs. Nothing can
+be equipped into being unhittable and nothing can be stripped into being auto-hit, so neither
+property depends on somebody's numbers being sensible. The two ends stay open by construction.
+
+**A critical is a natural 20 and nothing else.** It also used to trigger on beating the defence by
+ten or more, which was reasonable while overshoot stayed small and became absurd once it did not:
+at level 50 every landed mob blow overshot by ten, so *every* hit was a critical and the dice were
+rolled twice permanently. Overshoot is a symptom of the scaling above, so a rule that read it was
+measuring the bug.
+
+**Armor absorbs a fraction, never a fixed amount** (`ArmorCurve`). Subtraction has no usable value
+at any level: a rating of 10 reduced a level 25 mob's blow to the 1-damage floor and a level 50
+mob's by less than half, and there is no number that behaves reasonably across even one band,
+because the thing it is subtracted from grows and it does not. `armor / (armor + 100)` is scale-free,
+cannot reach 1, and is capped at 0.75 well below that — so a fully equipped character still takes a
+quarter of every blow that lands, and a mistyped extra zero changes nothing.
+
+**Two authored numbers, doing two jobs.** `armor` decides what a landed blow costs; `defense`
+decides how often one lands. Keeping them apart is what lets a shield be evasive and a breastplate
+absorbent — one number could only have made every piece both, in a fixed ratio nobody chose. The
+retired vocabulary (`armorFlat`, `armorPercent`, `armorMultiplier`) is gone rather than deprecated;
+`armorMultiplier` in particular was accumulated across *every* equipped piece and applied to the
+set's total, so six pieces at 1.2 multiplied to 2.99 and a piece carrying only a multiplier granted
+nothing at all.
+
+**Guard effects carry percentage points, not ratings.** `buff.defense` and `debuff.expose` author
+`mitigation` in whole points, summed into the gear's fraction and clamped once with it. A rating
+would have been worth twenty points to an unarmoured Adept and two to a geared Warden, since the
+curve's returns diminish — backwards, given whose abilities these mostly are.
+
+`Trinket` counts as an armour slot. It was absent from the sweep and is not one of the two hands a
+damage multiplier is read from, so the eighth slot equipped and did nothing whatsoever.
 
 **Whether a fight is allowed at all is decided before this math runs**, by room flags (§4.10):
 `peaceful` forbids combat entirely, and player-versus-player requires the `pvp` flag (§4.11).

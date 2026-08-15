@@ -177,72 +177,70 @@ public static class EquipmentResolver
     /// <param name="agilityModifier">Agility attribute modifier (d20 formula: (value-10)/2 rounded down).</param>
     /// <param name="equippedArmor">List of equipped items; only armor slots are used.</param>
     /// <returns>DefenderStats with all armor bonuses applied.</returns>
+    /// <remarks>
+    /// <b>Two authored numbers, and they do different jobs.</b> <c>armor</c> is summed and handed to
+    /// <see cref="ArmorCurve"/>, deciding what a landed blow costs; <c>defense</c> is summed
+    /// straight into the rating, deciding how often one lands. Keeping them apart is what lets a
+    /// shield be evasive and a breastplate be absorbent — one number could only have made every
+    /// piece both, in fixed proportion.
+    ///
+    /// The old vocabulary is gone rather than deprecated. <c>armorFlat</c> was subtracted from each
+    /// blow, which is unusable at scale (see <see cref="ArmorCurve"/>); <c>armorPercent</c> was a
+    /// second, redundant way to say what the curve now says; and <c>armorMultiplier</c> scaled the
+    /// whole set's total from any one piece, so six pieces at 1.2 multiplied to 2.99 and a piece
+    /// carrying only a multiplier silently granted nothing at all.
+    /// </remarks>
     public static DefenderStats ResolveDefenderStats(
+        int level,
         int agilityModifier,
         IEnumerable<ItemInstance> equippedArmor)
     {
-        // Base defense: 10 + Agility modifier (PLAN.md §4.6)
-        // Note: base of 10 is baked into the formula; we only add modifier and armor
+        // Base defense: 10 + level/2 + Agility modifier (PLAN.md §4.6)
+        // Note: the base and the level term are baked into the formula; we only add the rest
         var armorDefense = agilityModifier;
-        var armorFlat = 0;
-        var armorPercent = 0m;
+        var armor = 0;
 
         // Accumulate armor from armor-slot items only
         var armorItems = equippedArmor
             .Where(i => i.EquippedSlot.HasValue && IsArmorSlot(i.EquippedSlot.Value))
             .ToList();
 
-        var armorMultiplier = 1m;
-
-        foreach (var armor in armorItems)
+        foreach (var piece in armorItems)
         {
-            if (armor?.ResolvedStats is null)
+            if (piece?.ResolvedStats is null)
             {
                 continue;
             }
 
-            if (TryReadInt(armor, "armorFlat", out var flat))
+            if (TryReadInt(piece, "armor", out var rating))
             {
-                armorFlat += flat;
+                armor += rating;
             }
 
-            if (TryReadDecimal(armor, "armorPercent", out var percent))
-            {
-                armorPercent += percent;
-            }
-
-            if (TryReadInt(armor, "defense", out var def))
+            if (TryReadInt(piece, "defense", out var def))
             {
                 armorDefense += def;
             }
-
-            if (TryReadDecimal(armor, "armorMultiplier", out var multiplier) && multiplier > 0m)
-            {
-                armorMultiplier *= multiplier;
-            }
         }
-
-        // Scales the flat reduction the pieces actually declare. Deliberately not applied to a
-        // baseline the way damage scales the unarmed dice: an unarmoured character has no flat
-        // reduction to scale, and inventing one here would subtract from every incoming hit in
-        // the game.
-        if (armorMultiplier != 1m)
-        {
-            armorFlat = (int)Math.Ceiling(armorFlat * armorMultiplier);
-        }
-
-        // Clamp percent armor to reasonable bounds (0-95%)
-        armorPercent = Math.Clamp(armorPercent, 0m, 0.95m);
 
         return new DefenderStats(
+            Level: level,
             DefenseRating: armorDefense,
-            ArmorFlat: armorFlat,
-            ArmorPercent: armorPercent);
+            Armor: armor);
     }
 
+    /// <remarks>
+    /// <b>Trinket counts, and used not to.</b> It was absent here and is not one of the two hands a
+    /// damage multiplier is read from, so the eighth slot equipped and did nothing whatsoever — an
+    /// item could be authored, bought, and worn without any stat on it ever being read. A trinket is
+    /// not armour in the fiction, but it is worn and it is protective, and the alternative was
+    /// giving one slot a vocabulary of its own.
+    ///
+    /// The main hand stays out: a weapon's numbers are the attacker's, resolved per hand.
+    /// </remarks>
     private static bool IsArmorSlot(ItemSlot slot) =>
         slot is ItemSlot.Head or ItemSlot.Chest or ItemSlot.Hands or
-                ItemSlot.Legs or ItemSlot.Feet or ItemSlot.OffHand;
+                ItemSlot.Legs or ItemSlot.Feet or ItemSlot.OffHand or ItemSlot.Trinket;
 
     private static bool TryReadInt(ItemInstance item, string key, out int value) =>
         StatReader.TryReadInt(item.ResolvedStats, key, out value);

@@ -160,7 +160,7 @@
       "slot": "Head",
       "weight": 400,
       "baseValue": 18,
-      "baseStats": { "armorFlat": 1 },
+      "baseStats": { "armor": 3 },
       "attackDelayPulses": null,
       "attackVerb": null,
       "isQuestItem": false
@@ -173,7 +173,7 @@
       "slot": "Chest",
       "weight": 3500,
       "baseValue": 55,
-      "baseStats": { "armorFlat": 3 },
+      "baseStats": { "armor": 7 },
       "attackDelayPulses": null,
       "attackVerb": null,
       "isQuestItem": false
@@ -186,7 +186,7 @@
       "slot": "Hands",
       "weight": 300,
       "baseValue": 14,
-      "baseStats": { "armorFlat": 1 },
+      "baseStats": { "armor": 2 },
       "attackDelayPulses": null,
       "attackVerb": null,
       "isQuestItem": false
@@ -199,7 +199,7 @@
       "slot": "Legs",
       "weight": 2200,
       "baseValue": 38,
-      "baseStats": { "armorFlat": 2 },
+      "baseStats": { "armor": 4 },
       "attackDelayPulses": null,
       "attackVerb": null,
       "isQuestItem": false
@@ -212,7 +212,7 @@
       "slot": "Feet",
       "weight": 1600,
       "baseValue": 26,
-      "baseStats": { "armorFlat": 1 },
+      "baseStats": { "armor": 2 },
       "attackDelayPulses": null,
       "attackVerb": null,
       "isQuestItem": false
@@ -225,7 +225,7 @@
       "slot": "OffHand",
       "weight": 3000,
       "baseValue": 42,
-      "baseStats": { "armorFlat": 2, "defense": 1 },
+      "baseStats": { "armor": 5, "defense": 1 },
       "attackDelayPulses": null,
       "attackVerb": null,
       "isQuestItem": false
@@ -238,7 +238,7 @@
       "slot": "Trinket",
       "weight": 20,
       "baseValue": 11,
-      "baseStats": {},
+      "baseStats": { "armor": 2 },
       "attackDelayPulses": null,
       "attackVerb": null,
       "isQuestItem": false
