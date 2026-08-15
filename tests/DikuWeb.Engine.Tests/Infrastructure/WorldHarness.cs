@@ -142,7 +142,10 @@ internal sealed class WorldHarness
             MobTemplates,
             itemSpawner: null,
             logger: null,
-            effects: new Domain.Abilities.Effects.EffectRegistry());
+            effects: new Domain.Abilities.Effects.EffectRegistry(),
+            // The same cache `cast` resolves against, so a kill that levels somebody announces
+            // what they learned rather than levelling them in silence.
+            abilities: AbilityCache);
 
         // With a cache and the real effect registry, so a cast resolves into an actual effect
         // rather than falling out of Tick with nothing to apply. The mob templates are what tell

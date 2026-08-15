@@ -5,7 +5,16 @@ Add anything noticed while playing here. Cleared as items are done.
 - Should track changes in a changelog or use the github release functionality?
 
 - ability cooldowns: **done**. Retuned to the 2s combat beat (§4.5), and the pending-cooldown
-  display is built — an ability bar above the input, greyed with a countdown while cooling.
+  display is built. Reworked since: the bar shows **only what is cooling**, as a name and a fill
+  that drains, and the row is absent entirely when nothing is. Listing every ability the character
+  had did not fit on screen past the mid-twenties, so the one thing worth seeing at a glance was
+  behind a scrollbar. The chips no longer fill the input — nothing is clickable while an ability is
+  ready, because a ready ability is not drawn at all.
+
+- **discoverability, done with the above.** A level-up now names what it granted, one line per
+  ability and per passive, and every intermediate level of a multi-level jump. Without it a new
+  ability arrived as a row appearing in a panel that no longer exists, and a player had no way to
+  learn the verb short of typing `abilities` on speculation.
 
 - the UX evaluation is written up in [UX.md](UX.md) — eight findings, one of them a live defect
   (four Remove buttons that ask for a CSS class nobody wrote). The Follow my character checkbox is

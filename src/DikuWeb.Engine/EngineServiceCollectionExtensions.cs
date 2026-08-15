@@ -98,7 +98,10 @@ public static class EngineServiceCollectionExtensions
                 sp.GetService<ILogger<CombatSystem>>(),
                 // Without this a mob attack carrying an effect swings for its damage and applies
                 // nothing - the silent half-feature this codebase keeps having to relearn.
-                sp.GetService<EffectRegistry>()));
+                sp.GetService<EffectRegistry>(),
+                // Read only to name what a level-up just granted. Absent, a player levels in
+                // silence and finds their new ability by guessing.
+                sp.GetService<AbilityCache>()));
 
         // Phase 5 systems (abilities, quests). Explicit for the same reason as CombatSystem: the
         // mob templates are what tell an area effect which mobs are non-combatants, and a

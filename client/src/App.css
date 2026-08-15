@@ -1560,17 +1560,17 @@ code.dim {
 
 /* --- Ability bar ---------------------------------------------------- */
 
-/* Sits above the input, scrolls sideways rather than wrapping into a wall: a Path has ten
-   abilities at level 20, and a second row would push the transcript up every time one unlocked. */
+/* Only what is cooling appears here, so the row is short by construction and wrapping is the right
+   answer rather than a sideways scroll - four cooling abilities is a busy rotation, and nothing
+   the player has to drag a scrollbar to see. The whole row is absent when nothing is cooling. */
 .ability-bar {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
   list-style: none;
   margin: 0;
   padding: var(--space-2) var(--space-3);
   border-top: 1px solid var(--border);
-  overflow-x: auto;
-  scrollbar-width: thin;
 }
 
 .ability-chip {
@@ -1579,40 +1579,19 @@ code.dim {
   gap: var(--space-2);
   flex: none;
   padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule, var(--border));
   border-radius: 999px;
   background: var(--panel);
-  color: var(--text);
+  color: var(--dim);
   font: inherit;
   font-size: 0.8rem;
-  cursor: pointer;
   white-space: nowrap;
 }
 
-.ability-chip:hover {
-  border-color: var(--accent);
-}
-
-.ability-chip:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-/* Dimmed rather than disabled: the chip still fills the input, because typing the verb early and
-   pressing enter as it comes up is how a rotation is actually played. */
-.ability-chip.cooling {
-  color: var(--dim);
-  border-color: var(--rule, var(--border));
-}
-
-.ability-chip-cost {
-  color: var(--dim);
-  font-size: 0.75em;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Tabular, so a countdown does not jitter the chip's width as it passes 10. */
-.ability-chip-timer {
+/* The same block fill the vitals meters use, so a draining cooldown reads as the one bar shape the
+   screen already has. Accented, because it is the half that is still counting - the trailing
+   shaded cells carry `.dim` from the markup and recede on their own. */
+.ability-chip-bar {
   color: var(--accent);
-  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
 }

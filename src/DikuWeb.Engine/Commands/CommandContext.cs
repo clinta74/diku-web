@@ -68,6 +68,13 @@ public sealed class CommandContext
     /// <summary>Quest definitions the command layer reads. Null if quests are unavailable.</summary>
     public QuestCache? Quests { get; init; }
 
+    /// <summary>
+    /// The ability table, for the handler that has to name what a level-up granted. Null in a
+    /// host that never loaded abilities, which is why the announcement degrades to passives
+    /// rather than refusing.
+    /// </summary>
+    public Abilities.AbilityCache? Abilities { get; init; }
+
     /// <summary>Where quest progress is handed off to be persisted.</summary>
     public ICharacterQuestSaveQueue? QuestSaveQueue { get; init; }
 

@@ -122,9 +122,7 @@ public sealed class PlayerView(RoomLayoutService layout)
                 // What a player actually types. `cast` refuses a skill (§4.7), so telling the
                 // client which word to use is the difference between a panel that teaches the
                 // vocabulary and one that lists keys.
-                AbilityKinds.Of(a) == AbilityKind.Spell
-                    ? $"cast {a.Name.ToLowerInvariant()}"
-                    : a.Name.ToLowerInvariant(),
+                AbilityKinds.VerbFor(a),
                 a.CostType.ToString(),
                 a.CostValue,
                 a.CooldownPulses,
@@ -180,6 +178,42 @@ public sealed class PlayerView(RoomLayoutService layout)
 
         var remaining = (startedAt + ability.CooldownPulses) - currentPulse;
         return remaining > 0 ? remaining : 0;
+    }
+
+    /// <summary>
+    /// Names whatever the levels just crossed granted, one line each.
+    /// </summary>
+    /// <remarks>
+    /// <b>Nothing else tells the player.</b> The roster is a panel, and the panel now shows only
+    /// what is cooling - so an ability that arrives without a line here arrives without anything a
+    /// player would notice. Sent to the transcript rather than pushed at the panel because that is
+    /// where the game speaks.
+    ///
+    /// Takes the level the character started at rather than the number of levels gained: a single
+    /// award can carry someone across several at once, and everything unlocked on the way is still
+    /// theirs to be told about.
+    ///
+    /// A null actor is a character nobody is playing, and a null cache is a host that never loaded
+    /// abilities - both send nothing rather than throwing, which is the same trade
+    /// <see cref="SendAbilities"/> makes.
+    /// </remarks>
+    public static void SendUnlocks(PlayerActor? actor, AbilityCache? cache, int fromLevel)
+    {
+        if (actor is null || actor.Character.Level <= fromLevel)
+        {
+            return;
+        }
+
+        var lines = LevelUpUnlocks.Announce(
+            cache?.All.Values ?? [],
+            actor.Character.Path,
+            fromLevel,
+            actor.Character.Level);
+
+        foreach (var line in lines)
+        {
+            actor.SendText(line, "levelup");
+        }
     }
 
     /// <summary>Tells one player that an ability of theirs has started cooling down.</summary>

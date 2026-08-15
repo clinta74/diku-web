@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import { AbilityBar } from './AbilityBar'
 import { gameReducer, initialGameState } from '../state/gameReducer'
 import { PULSE_MS, type AbilityEntry } from '../net/protocol'
@@ -11,7 +11,7 @@ const kick: AbilityEntry = {
   verb: 'kick',
   costType: 'Stamina',
   costValue: 10,
-  cooldownPulses: 24,
+  cooldownPulses: 24, // 6s
   remainingPulses: 0,
   isSpell: false,
 }
@@ -27,6 +27,16 @@ const bolt: AbilityEntry = {
   isSpell: true,
 }
 
+/** The fill as drawn, both halves of it: ten cells, some solid and the rest shaded. */
+function bar(container: HTMLElement) {
+  return container.querySelector('.ability-chip-bar')?.textContent ?? ''
+}
+
+/** How much of the fill is still solid. */
+function filled(container: HTMLElement) {
+  return [...bar(container)].filter((cell) => cell === '█').length
+}
+
 afterEach(cleanup)
 
 beforeEach(() => {
@@ -37,61 +47,94 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-it('shows nothing at all when the character has no abilities', () => {
-  // A level-1 character of a Path with nothing yet, and every screen before the roster arrives.
-  // An empty bar would be a strip of border with no content.
+it('shows nothing at all when nothing is cooling', () => {
+  // The common case, and the reason the bar was rewritten: a level-45 character has a dozen
+  // abilities and is not usually waiting on any of them. A row of ready chips is a row of things
+  // the player already knows, taking space from the transcript.
   const { container } = render(
-    <AbilityBar abilities={[]} cooldownUntil={{}} onPick={() => {}} />,
+    <AbilityBar abilities={[kick, bolt]} cooldownUntil={{}} />,
   )
 
   expect(container.querySelector('.ability-bar')).toBeNull()
 })
 
-it('counts a cooldown down in seconds', () => {
+it('shows only the ability that is cooling', () => {
+  const { container } = render(
+    <AbilityBar
+      abilities={[kick, bolt]}
+      cooldownUntil={{ 'adept.bolt': Date.now() + 24 * PULSE_MS }}
+    />,
+  )
+
+  expect(container.querySelectorAll('.ability-chip')).toHaveLength(1)
+  expect(screen.getByText('Bolt')).toBeTruthy()
+  expect(screen.queryByText('Kick')).toBeNull()
+})
+
+it('empties the fill as the cooldown runs', () => {
   const until = Date.now() + 24 * PULSE_MS // 6s
 
-  const { rerender } = render(
-    <AbilityBar abilities={[kick]} cooldownUntil={{ 'warden.kick': until }} onPick={() => {}} />,
+  const { container, rerender } = render(
+    <AbilityBar abilities={[kick]} cooldownUntil={{ 'warden.kick': until }} />,
   )
 
-  expect(screen.getByText('6')).toBeTruthy()
+  expect(filled(container)).toBe(10)
+  expect(bar(container)).toHaveLength(10)
 
-  act(() => void vi.advanceTimersByTime(2000))
-  rerender(
-    <AbilityBar abilities={[kick]} cooldownUntil={{ 'warden.kick': until }} onPick={() => {}} />,
-  )
+  act(() => void vi.advanceTimersByTime(3000))
+  rerender(<AbilityBar abilities={[kick]} cooldownUntil={{ 'warden.kick': until }} />)
 
-  expect(screen.getByText('4')).toBeTruthy()
+  expect(filled(container)).toBe(5)
+  expect(bar(container)).toHaveLength(10)
 })
 
-it('rounds the countdown up, so nothing reads ready while it is still refused', () => {
-  // At 200ms left, "0" would be a lie the server would then contradict with a refusal.
-  const until = Date.now() + 200
+it('keeps a cell while the ability is still refused', () => {
+  // At 200ms of a 6s cooldown the honest fraction is 3% of a cell. An empty bar there reads as
+  // ready on something the server would still refuse, which is the same lie the old "0" told.
+  const { container } = render(
+    <AbilityBar abilities={[kick]} cooldownUntil={{ 'warden.kick': Date.now() + 200 }} />,
+  )
 
+  expect(filled(container)).toBe(1)
+})
+
+it('disappears the moment the cooldown reaches zero', () => {
+  const until = Date.now() + 24 * PULSE_MS
+
+  const { container, rerender } = render(
+    <AbilityBar abilities={[kick]} cooldownUntil={{ 'warden.kick': until }} />,
+  )
+
+  expect(container.querySelector('.ability-chip')).toBeTruthy()
+
+  act(() => void vi.advanceTimersByTime(6000))
+  rerender(<AbilityBar abilities={[kick]} cooldownUntil={{ 'warden.kick': until }} />)
+
+  expect(container.querySelector('.ability-bar')).toBeNull()
+})
+
+it('draws no more than a full bar when the roster disagrees with the cooldown', () => {
+  // A builder shortening a cooldown while one is running leaves the client holding an instant
+  // further out than the new duration allows. Clamped rather than trusted: the fraction would
+  // otherwise exceed 1 and repeat() would draw a bar wider than the chip.
+  const shortened = { ...kick, cooldownPulses: 4 } // 1s, against 6s still in flight
+  const { container } = render(
+    <AbilityBar
+      abilities={[shortened]}
+      cooldownUntil={{ 'warden.kick': Date.now() + 6000 }}
+    />,
+  )
+
+  expect(bar(container)).toHaveLength(10)
+  expect(filled(container)).toBe(10)
+})
+
+it('announces the remaining seconds, since the fill is unreadable aloud', () => {
   render(
-    <AbilityBar abilities={[kick]} cooldownUntil={{ 'warden.kick': until }} onPick={() => {}} />,
+    <AbilityBar abilities={[kick]} cooldownUntil={{ 'warden.kick': Date.now() + 4000 }} />,
   )
 
-  expect(screen.getByText('1')).toBeTruthy()
-})
-
-it('shows the cost once an ability is ready', () => {
-  render(<AbilityBar abilities={[kick]} cooldownUntil={{}} onPick={() => {}} />)
-
-  expect(screen.getByText('10')).toBeTruthy()
-})
-
-it('fills the input rather than casting', () => {
-  // A click that fired the ability would be a way to spend a resource by brushing a trackpad. The
-  // game is typed; the bar teaches the verb.
-  const picked: string[] = []
-  render(<AbilityBar abilities={[bolt]} cooldownUntil={{}} onPick={(v) => picked.push(v)} />)
-
-  fireEvent.click(screen.getByRole('button', { name: /Bolt/ }))
-
-  // "cast bolt", not "bolt": `cast` refuses a skill and the verb form always works, so the server
-  // decides which word this is and the client repeats it.
-  expect(picked).toEqual(['cast bolt'])
+  expect(screen.getByLabelText('Kick, 4 seconds')).toBeTruthy()
 })
 
 it('resyncs from the roster, because a reconnect missed every cooldown event', () => {

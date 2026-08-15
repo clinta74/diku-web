@@ -39,7 +39,8 @@ public sealed class CombatSystem(
     MobTemplateCache? mobTemplates = null,
     ItemSpawner? itemSpawner = null,
     ILogger<CombatSystem>? logger = null,
-    EffectRegistry? effects = null)
+    EffectRegistry? effects = null,
+    AbilityCache? abilities = null)
 {
     /// <summary>Combat is evaluated every pulse; per-attack delays do the pacing.</summary>
     public const int TickIntervalPulses = 1;
@@ -1257,7 +1258,7 @@ public sealed class CombatSystem(
     /// level scaled by its zone (<see cref="MobLevel"/>) is the measure of what was actually
     /// survived, and it applies to each person the same way whether they came alone or not.
     /// </remarks>
-    private static void AwardKill(WorldState world, Character killer, Mob mob, RoomKey roomKey)
+    private void AwardKill(WorldState world, Character killer, Mob mob, RoomKey roomKey)
     {
         var sharers = new List<Character> { killer };
 
@@ -1297,7 +1298,9 @@ public sealed class CombatSystem(
         }
     }
 
-    private static void Award(
+    // Instance rather than static, so the level-up announcement can reach the ability cache. That
+    // is the only reason: nothing else here reads state off the system.
+    private void Award(
         WorldState world,
         Character character,
         long xp,
@@ -1325,6 +1328,8 @@ public sealed class CombatSystem(
             actor?.SendText(note, "xp");
         }
 
+        var startingLevel = character.Level;
+
         while (CharacterProgression.TryLevelUp(
             character.Level,
             character.Xp,
@@ -1337,6 +1342,8 @@ public sealed class CombatSystem(
             character.Vitals = result.NewVitals;
             actor?.SendText($"You advance to level {result.NewLevel}!", "levelup");
         }
+
+        PlayerView.SendUnlocks(actor, abilities, startingLevel);
     }
 
     /// <summary>

@@ -342,7 +342,7 @@ Required server behavior:
 | `inventory`, `equipment` | item lists | Sent on change, not polled |
 | `combat` | attacker, target, verb, damage band | Lets the UI flash; prose still arrives via `text` |
 | `abilities` | the character's whole ability list, each with cost, the verb to type, and what is left of its cooldown | Sent on entry and on level-up. Carrying the remainder is what resynchronises a reconnect, which has missed every `cooldown` event it was away for |
-| `cooldown` | one ability's key and its cooldown in pulses | Sent once when a cast lands, not per pulse. The client counts down from it — a frame per pulse per cooling ability is four a second per player, which is the traffic §11 is careful about |
+| `cooldown` | one ability's key and its cooldown in pulses | Sent once when a cast lands, not per pulse. The client counts down from it — a frame per pulse per cooling ability is four a second per player, which is the traffic §11 is careful about. The client draws only what is cooling, using the roster's `cooldownPulses` as the denominator for the fill |
 | `sys` | connection notices, link-dead warnings, forced logout | |
 
 A builder edit to an occupied room pushes fresh `room` / `map` events to everyone standing in

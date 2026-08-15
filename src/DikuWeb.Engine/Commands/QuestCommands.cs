@@ -675,6 +675,8 @@ public static class QuestCommands
         AwardRewards(ctx, matchingQuest, character);
 
         // Handle level up
+        var startingLevel = character.Level;
+
         while (DikuWeb.Domain.Characters.CharacterProgression.TryLevelUp(
             character.Level, character.Xp, character.Attributes, character.Path, character.Vitals) is var result && result != null)
         {
@@ -683,6 +685,10 @@ public static class QuestCommands
             character.Vitals = result.NewVitals;
             ctx.Reply($"You advance to level {result.NewLevel}!", "levelup");
         }
+
+        // The same announcement combat makes, for the same reason: a quest that pays a whole band
+        // of levels at once grants abilities the player is never otherwise told about.
+        Presentation.PlayerView.SendUnlocks(ctx.Actor, ctx.Abilities, startingLevel);
 
         // Last, so the next step's offer reads as the consequence of the turn-in rather than
         // arriving in the middle of its rewards. By this point the quest is Completed, which is

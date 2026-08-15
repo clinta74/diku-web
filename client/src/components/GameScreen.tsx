@@ -304,14 +304,11 @@ export function GameScreen({
       )}
 
       {/*
-        Above the input, because it is a thing you read and then type - putting it under the input
-        would mean looking past what you are writing to see what you can write.
+        Above the input, because it is a thing you read while deciding what to type next - putting
+        it under the input would mean looking past what you are writing to see what is not ready.
+        Absent entirely when nothing is cooling, so an idle screen has no row here at all.
       */}
-      <AbilityBar
-        abilities={state.abilities}
-        cooldownUntil={state.cooldownUntil}
-        onPick={(verb) => insertKeyword.current?.(verb)}
-      />
+      <AbilityBar abilities={state.abilities} cooldownUntil={state.cooldownUntil} />
 
       <InputBar
         onSend={send}

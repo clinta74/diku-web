@@ -45,4 +45,18 @@ public static class AbilityKinds
     /// <summary>The word for it, for prose that has to name the category.</summary>
     public static string NameOf(AbilityKind kind) =>
         kind == AbilityKind.Spell ? "spell" : "skill";
+
+    /// <summary>What a player actually types to use this — <c>cast ember</c>, or <c>kick</c>.</summary>
+    /// <remarks>
+    /// Here rather than at each place that needs it, because two of them now exist: the ability
+    /// roster the client draws, and the level-up message that names a new ability as it is earned.
+    /// Those two disagreeing would teach a verb that <c>cast</c> then refuses.
+    /// </remarks>
+    public static string VerbFor(Ability ability)
+    {
+        ArgumentNullException.ThrowIfNull(ability);
+
+        var name = ability.Name.ToLowerInvariant();
+        return Of(ability) == AbilityKind.Spell ? $"cast {name}" : name;
+    }
 }

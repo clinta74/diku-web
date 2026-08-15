@@ -119,6 +119,14 @@ a level 13 one costs is a level 13 ability with a bigger number on it. The rule 
 roughly `unlockLevel × 1.5` in its resource, and cooldown long enough that the ability is a decision
 rather than a rotation slot — 240 pulses (60s) for a Signature, 600+ (150s) for a Capstone.
 
+**An unlock is announced, in the transcript, with the words to type.** `LevelUpUnlocks` names
+everything a level-up granted — abilities from this table and passives from `AbilityProgression`
+alike, since a player has no reason to care which of the two a thing came from — and it takes the
+whole range of levels crossed rather than the one landed on, because a single XP award can carry a
+character across several at once. This is the *only* thing that tells them: the client's ability bar
+draws what is cooling and nothing else, so an ability that arrives without a line here arrives
+without anything a player would notice.
+
 ---
 
 ## 5. Warden — holding a room, not a target

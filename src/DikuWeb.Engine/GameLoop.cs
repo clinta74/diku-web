@@ -553,6 +553,7 @@ public sealed class GameLoop(
             Clock = clock,
             Quests = questCache,
             QuestSaveQueue = questSaveQueue,
+            Abilities = abilityCache,
             Verb = verb,
             Argument = argument,
         };
