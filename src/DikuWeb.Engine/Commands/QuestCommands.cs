@@ -539,7 +539,7 @@ public static class QuestCommands
         {
             var inventory = ctx.World.InventoryOf(character.Id);
             var count = inventory.Count(i => i.TemplateKey.Equals(questDef.RequiredItemKey, StringComparison.OrdinalIgnoreCase));
-            ctx.Reply($"Progress: {count}/{questDef.RequiredCount} {questDef.RequiredItemKey}");
+            ctx.Reply($"Progress: {count}/{questDef.RequiredCount} — {ItemName(ctx, questDef.RequiredItemKey)}");
         }
         else if (questState.Status == QuestStatus.Completed)
         {
@@ -560,9 +560,44 @@ public static class QuestCommands
 
         if (!string.IsNullOrEmpty(questDef.RewardItemKey))
         {
-            ctx.Reply($"  {questDef.RewardItemCount} x {questDef.RewardItemKey}");
+            ctx.Reply($"  {Quantity(ctx, questDef.RewardItemKey, questDef.RewardItemCount)}");
         }
     }
+
+    /// <summary>
+    /// What to call a quest's item on screen, from the template rather than from an instance.
+    /// </summary>
+    /// <remarks>
+    /// <b>A quest names its item by key, and there is no instance here to ask.</b> That is why the
+    /// three lines below leaked <c>ossara-fallen-marker</c> at players while every mob and item
+    /// instance in the game had already been fixed: <see cref="Domain.Items.ItemInstance.DisplayName"/>
+    /// answers for a thing that exists, and a quest requirement is a thing that might not — a
+    /// player who holds none of them still has to be told what to go and find.
+    ///
+    /// Falls back to the key for the same reason everything else does: a missing template is a
+    /// content bug, and the key is the only string left that tells the player anything at all.
+    /// </remarks>
+    private static string ItemName(CommandContext ctx, string? key)
+    {
+        if (string.IsNullOrEmpty(key))
+        {
+            return "something";
+        }
+
+        var name = ctx.ItemTemplates?.Get(key)?.Name;
+        return string.IsNullOrEmpty(name) ? key : name;
+    }
+
+    /// <summary>
+    /// A quantity of one item, in the <c>(xN)</c> shape the pack listing already uses (§4.14).
+    /// </summary>
+    /// <remarks>
+    /// No pluralisation. Item names carry their own article — "a fallen road marker" — so "3 a
+    /// fallen road markers" is what naive pluralising produces, and the codebase already settled
+    /// this question once for the inventory.
+    /// </remarks>
+    private static string Quantity(CommandContext ctx, string? key, int count) =>
+        count > 1 ? $"{ItemName(ctx, key)} (x{count})" : ItemName(ctx, key);
 
     private static bool CheckPrerequisites(WorldState world, Guid characterId, Quest quest)
     {
@@ -639,7 +674,12 @@ public static class QuestCommands
 
         if (matchingItems.Count < matchingQuest.RequiredCount)
         {
-            ctx.Reply($"You don't have enough {matchingQuest.RequiredItemKey}.");
+            // The count, not just "not enough": without it the player has to go and tally their
+            // own pack to find out how far off they are, which is the one thing this line exists
+            // to save them.
+            ctx.Reply(
+                $"You need {Quantity(ctx, matchingQuest.RequiredItemKey, matchingQuest.RequiredCount)}. "
+                + $"You have {matchingItems.Count}.");
             return true;
         }
 

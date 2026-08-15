@@ -16,9 +16,9 @@ Add anything noticed while playing here. Cleared as items are done.
   ability arrived as a row appearing in a panel that no longer exists, and a player had no way to
   learn the verb short of typing `abilities` on speculation.
 
-- the UX evaluation is written up in [UX.md](UX.md) — eight findings, one of them a live defect
-  (four Remove buttons that ask for a CSS class nobody wrote). The Follow my character checkbox is
-  gone. The rest is a fix list at the end of that document, not yet done.
+- **the UX evaluation is done.** All eight findings in [UX.md](UX.md) are marked FIXED there,
+  including the live defect (four Remove buttons asking for a CSS class nobody wrote) and the
+  Follow my character checkbox.
 
 - **done**: all three. An ability carries a list of effects now (§4.5), and two new executors —
   `buff.defense` / `debuff.expose` for the to-hit and mitigation dials, and `buff.max-health`,
@@ -47,32 +47,21 @@ Add anything noticed while playing here. Cleared as items are done.
   button sent `attack <target>` to a server that had no such verb, so it has been broken since it
   was written.
 
-- **The world has nothing left to fight at level 6.** Not a bug in the above, its consequence: the
-  only mobs authored are levels 1 and 2, both zones leave every multiplier at 1.0, and both declare
-  `min_level` 1 — so nothing gets lifted and from level 6 the floor is 3. Needs content, or bands
-  and dials that say what the zones are for. `aldenmoor.sunken-crypt` is currently 1–50.
+- ~~**The world has nothing left to fight at level 6.**~~ Superseded: that was the two-zone
+  Aldenmoor. The Reaches cover 1–50 and every level has a full-value target on paper — see the
+  "authored and never played" entry below, which is now the live version of this concern.
 
 - **Power levelling is now possible again**, and worth a decision rather than a discovery. With the
   party floor gone, a level 9 in a level 50 zone earns a full share of a level 50 mob. That is the
   same rule that makes the level 19 case right, so it cannot be fixed by putting the floor back —
   the honest lever is capping how far *above* your level a mob can pay.
 
-- **When Gatetown is imported, do these three in one pass.** All of them are waiting on the rooms
-  existing to point at, and none of them is worth doing before that:
-
-  1. **The login greeting is hardcoded to the retired world.**
-     [GameLoop.cs:489](../src/DikuWeb.Engine/GameLoop.cs#L489) sends
-     `"Welcome to Aldenmoor, {name}."` to every player on every login, whichever world they are
-     actually standing in. Deriving it from the starting room's world is *not* the fix — "Welcome
-     to Ossara" is also wrong, because the setting is the Reaches and the realm you begin in is
-     incidental. It wants to be a configured greeting.
-  2. **Point `Engine__StartingRoom` at `ossara.gatetown.the-gate-yard`.** Configuration, not code
-     ([Program.cs:65](../src/DikuWeb.Server/Program.cs#L65)) — the `EngineContracts.cs` default
-     stays on Millbrook and stays correct for development and tests. Aldenmoor is **not** deleted;
-     see `WORLD.md` §10.2 for why leaving it costs nothing and buys a builder sandbox.
-  3. **Bind works again the moment this lands.** `bind` has been refusing everywhere because no
-     content sets the `respawn` flag; `ossara.gatetown` sets it at the zone level, so this is the
-     first import that makes the verb do anything. Worth actually typing it.
+- **Gatetown: done, all three.** The greeting and the starting room are both `GameConfiguration`
+  now — data, not code — and the `the-reaches` configuration is imported and **activated**. Neither
+  `GameLoop` nor `Program.cs` names a world any more, and `EngineContracts.cs` keeps its Millbrook
+  default for development and tests. Aldenmoor is **not** deleted; `WORLD.md` §10.2 has why leaving
+  it costs nothing and buys a builder sandbox. `bind` should work in Gatetown now that the zone's
+  `respawn` flag is live — still worth typing once to confirm.
 
 - **Armour and to-hit: done**, and it was worse than the armour question that started it. `armorFlat`
   was all-or-nothing at every level, but the d20 had *already* stopped working on its own: attack
@@ -193,12 +182,32 @@ Add anything noticed while playing here. Cleared as items are done.
     `occupants.FirstOrDefault()`, so who gets attacked is decided by room-list order rather than by
     anything about the party. Found while investigating the above; not fixed.
 
-  - incorrect messageing when not giving enough items.
-  Deacon Pell of Ilvaro's house is here.
-> give marker
-Give what to whom?
-> give marker pell
-You don't have enough ossara-fallen-marker.
+  - **quest items were named by key: done, and there were three of them.** Reported as
+    `You don't have enough ossara-fallen-marker.`; the other two were the **progress** line
+    (`Progress: 1/4 ossara-fallen-marker`, read every time anyone checks a quest) and the reward
+    listing. The earlier `DisplayName` sweep could not have caught these — it fixed every site with
+    an *instance* to ask, and a quest names its item by key precisely because the player may be
+    holding none of them and still has to be told what to find. Now `Progress: 1/4 — a fallen road
+    marker`, and the short turn-in says the numbers: `You need a fallen road marker (x4). You have
+    1.` The `(xN)` shape is the pack listing's (§4.14); no pluralisation, because item names carry
+    their own article and "3 a fallen road markers" is what naive pluralising produces.
 
+    Two other key-printing sites are deliberately left: `AbilityCommands:358` and
+    `ShopCommands:104` both fire when the template is *missing*, so the key is the only thing there
+    is to say.
 
-- when in a group we may want an autofollow <character> command. this command toggles on and off. when target charactor moves the auto following character should attempt to follow. if auto fallow fails in a move then it should go to its off state and have to be called again to start up.
+- **autofollow `<character>`** — a toggle. When the target moves, the follower attempts to follow;
+  a failed follow drops it back to off and it has to be called again. Decided, not yet built:
+
+  - **Directional moves only.** A recall, a portal, a `goto`, or a death respawn is not a move that
+    can be followed — and rather than being ignored, it **turns off every autofollow pointed at that
+    character**. A follower left standing while the leader teleports across the world is the failure
+    this rule exists to make loud.
+  - Still open: whether A-follows-B-follows-A needs a cycle check when the toggle is set or a
+    re-entrancy guard when it fires (chains like C→A→B are wanted and the same guard covers both),
+    and whether the toggle should require being grouped or just being in the room.
+  - The hook is `CommandRegistry.Move`, which is the only place a player walks under their own
+    power — `Travel.cs:91` and the respawn path bypass it, which is exactly the split the rule above
+    wants.
+  - It composes with `assist`: follow the tank, assist the tank, and that is the whole of playing
+    support without typing during a fight.
