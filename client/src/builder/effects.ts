@@ -7,14 +7,22 @@
  * effect that runs with defaults and reports nothing — which is why these are fields rather than
  * a free-text bag.
  *
+ * `ABILITY_EFFECTS` offers **every** effect, because an ability points either way by design and the
+ * executor's own `IsHarmful` is what decides which targets it gathers. The server agrees: it
+ * validates that an ability's effect key is *registered*, and draws no ability/attack line at all.
+ *
  * `ATTACK_EFFECTS` offers only the harmful ones. A rider applies to whoever the attack *hit*, so a
  * helpful one would mean a mob buffing or mending the player it just struck. That is almost never
  * intended, and offering it is how it happens by accident. The server validates that the key is
  * *known* rather than that it is harmful, which leaves the deliberate oddity possible without
  * making it easy — an authoring guardrail, not a rule of the world.
  *
- * `ABILITY_EFFECTS` offers all eight, because an ability points either way by design and the
- * executor's own `IsHarmful` is what decides which targets it gathers.
+ * <b>The two are one list with a flag, not two lists.</b> They were two, and five effects — root,
+ * stun, wound-over-time, expose, weaken — ended up in the rider list only. So the ability editor
+ * offered six options while shipped abilities used eleven, and `<select value="control.root">`
+ * matching no `<option>` made the browser paint the first one: Hamstring, a root, read as "Damage".
+ * The fields below it were right the whole time, because they come from a lookup across both lists,
+ * which is what made it look like a subtype nobody could reach rather than a missing option.
  *
  * One file rather than two because the parameter names are the same contract either way, and a
  * second transcription of the executors is a second thing to forget when one changes.
@@ -40,6 +48,12 @@ export interface EffectOption {
   label: string
   summary: string
   params: EffectParamField[]
+  /**
+   * Whether a mob attack may carry this as a rider — the harmful ones only, per the header.
+   * Absent means abilities-only, which is the safe default: an effect added without thinking about
+   * riders stays out of the attack list rather than being offered to land on whoever was hit.
+   */
+  rider?: boolean
 }
 
 const duration = (fallback: string, ceiling?: string): EffectParamField => ({
@@ -58,8 +72,14 @@ const label = (fallback: string): EffectParamField => ({
   fallback,
 })
 
-/** Every effect an ability may use. Ordered as the catalogue reads: damage, heal, then riders. */
-export const ABILITY_EFFECTS: EffectOption[] = [
+/**
+ * Every effect, in the order the dropdowns read.
+ *
+ * The two damage effects sit together deliberately: they are separate executors rather than one
+ * with a subtype, and a builder who wants "damage" has to choose between a hit and a bleed. Putting
+ * them apart is what made a wound-over-time ability look like a plain one.
+ */
+const EFFECTS: EffectOption[] = [
   {
     key: 'damage.physical',
     label: 'Damage',
@@ -78,6 +98,38 @@ export const ABILITY_EFFECTS: EffectOption[] = [
         fallback: '1',
         integer: true,
       },
+    ],
+  },
+  {
+    key: 'damage.overtime',
+    label: 'Wound over time',
+    summary: 'Damage on an interval until it runs out. Only ticks during a fight.',
+    rider: true,
+    params: [
+      {
+        key: 'tickDamage',
+        label: 'Damage per tick',
+        hint: 'Flat, and not scaled by the zone multipliers the way the swing is.',
+        fallback: '4',
+        integer: true,
+      },
+      {
+        key: 'tickIntervalPulses',
+        label: 'Ticks every (seconds)',
+        hint: 'Total damage is roughly damage × (duration ÷ interval).',
+        fallback: '8',
+        integer: true,
+        pulses: true,
+      },
+      duration('48'),
+      {
+        key: 'maxStacks',
+        label: 'Max stacks',
+        hint: 'Above 1, repeated hits pile up rather than refreshing.',
+        fallback: '1',
+        integer: true,
+      },
+      label('bleeding'),
     ],
   },
   {
@@ -157,72 +209,10 @@ export const ABILITY_EFFECTS: EffectOption[] = [
     ],
   },
   {
-    key: 'control.taunt',
-    label: 'Taunt',
-    summary: 'Puts the caster at the top of the target\'s hate list — a lead, not a lock.',
-    params: [
-      {
-        key: 'leadFraction',
-        label: 'Lead',
-        hint: "A fraction of the target's max health, so it means the same on a rat and a dragon.",
-        fallback: '0.30',
-      },
-    ],
-  },
-]
-
-/**
- * The harmful subset, for mob attack riders. Built from the list above rather than written out,
- * so an effect cannot exist for abilities and quietly go missing here.
- */
-export const ATTACK_EFFECTS: EffectOption[] = [
-  {
-    key: 'control.stun',
-    label: 'Stun',
-    summary: 'The target does not act: no swings, no casts, and anything mid-cast breaks.',
-    params: [duration('8', '24 (6s)'), label('stunned')],
-  },
-  {
-    key: 'control.root',
-    label: 'Root',
-    summary: 'The target can still fight but cannot flee or walk away.',
-    params: [duration('16', '40 (10s)'), label('rooted')],
-  },
-  {
-    key: 'damage.overtime',
-    label: 'Wound over time',
-    summary: 'Damage on an interval until it runs out. Only ticks during a fight.',
-    params: [
-      {
-        key: 'tickDamage',
-        label: 'Damage per tick',
-        hint: 'Flat, and not scaled by the zone multipliers the way the swing is.',
-        fallback: '4',
-        integer: true,
-      },
-      {
-        key: 'tickIntervalPulses',
-        label: 'Ticks every (seconds)',
-        hint: 'Total damage is roughly damage × (duration ÷ interval).',
-        fallback: '8',
-        integer: true,
-        pulses: true,
-      },
-      duration('48'),
-      {
-        key: 'maxStacks',
-        label: 'Max stacks',
-        hint: 'Above 1, repeated hits pile up rather than refreshing.',
-        fallback: '1',
-        integer: true,
-      },
-      label('bleeding'),
-    ],
-  },
-  {
     key: 'debuff.expose',
     label: 'Expose',
     summary: "Strips a target's guard: easier to hit, and blows land harder.",
+    rider: true,
     params: [
       {
         key: 'defenseRating',
@@ -246,6 +236,7 @@ export const ATTACK_EFFECTS: EffectOption[] = [
     key: 'debuff.weaken',
     label: 'Weaken',
     summary: 'The target deals less damage, or takes more of it.',
+    rider: true,
     params: [
       {
         key: 'outgoingMultiplier',
@@ -263,10 +254,50 @@ export const ATTACK_EFFECTS: EffectOption[] = [
       label('weakened'),
     ],
   },
+  {
+    key: 'control.taunt',
+    label: 'Taunt',
+    summary: 'Puts the caster at the top of the target\'s hate list — a lead, not a lock.',
+    params: [
+      {
+        key: 'leadFraction',
+        label: 'Lead',
+        hint: "A fraction of the target's max health, so it means the same on a rat and a dragon.",
+        fallback: '0.30',
+      },
+    ],
+  },
+  {
+    key: 'control.stun',
+    label: 'Stun',
+    summary: 'The target does not act: no swings, no casts, and anything mid-cast breaks.',
+    rider: true,
+    params: [duration('8', '24 (6s)'), label('stunned')],
+  },
+  {
+    key: 'control.root',
+    label: 'Root',
+    summary: 'The target can still fight but cannot flee or walk away.',
+    rider: true,
+    params: [duration('16', '40 (10s)'), label('rooted')],
+  },
 ]
 
+/**
+ * Every effect an ability may use — all of them, because the server draws no ability/attack line.
+ * <c>ABILITY_EFFECTS[0]</c> is the default a freshly added effect takes, so Damage stays first.
+ */
+export const ABILITY_EFFECTS: EffectOption[] = EFFECTS
+
+/**
+ * The harmful subset, for mob attack riders. **Filtered from the list above rather than written
+ * out**, which is what the old comment claimed and the old code did not do — and an effect existing
+ * for one surface and quietly missing from the other is exactly what that cost.
+ */
+export const ATTACK_EFFECTS: EffectOption[] = EFFECTS.filter((e) => e.rider)
+
 /** Every effect either surface can offer, keyed for lookup. */
-export const ALL_EFFECTS: EffectOption[] = [...ABILITY_EFFECTS, ...ATTACK_EFFECTS]
+export const ALL_EFFECTS: EffectOption[] = EFFECTS
 
 /** One pulse in seconds (PLAN.md §2.3). */
 const PULSE_SECONDS = 0.25

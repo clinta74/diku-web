@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ABILITY_EFFECTS,
   ALL_EFFECTS,
   ATTACK_EFFECTS,
   effectOption,
@@ -42,6 +43,54 @@ describe('the offered effects', () => {
     for (const effect of ALL_EFFECTS) {
       expect(known).toContain(effect.key)
     }
+  })
+
+  it('offers every registered effect to an ability, not a subset', () => {
+    // The direction that was missing, and the whole of the bug. Five effects lived only in the
+    // rider list, so the ability dropdown had six options while shipped abilities used eleven -
+    // and a <select> whose value matches no <option> paints the first one. Hamstring, a root, read
+    // as "Damage" with a root's fields underneath it.
+    //
+    // Asserted against the registry rather than against ALL_EFFECTS, which would be tautological
+    // now that both are the same array.
+    const known = [
+      'damage.physical',
+      'heal.restore',
+      'buff.damage-up',
+      'debuff.weaken',
+      'damage.overtime',
+      'control.stun',
+      'control.root',
+      'control.taunt',
+      'buff.defense',
+      'debuff.expose',
+      'buff.max-health',
+    ]
+
+    expect(ABILITY_EFFECTS.map((e) => e.key).sort()).toEqual([...known].sort())
+  })
+
+  it('keeps every rider in the ability list too', () => {
+    // The subset relation, in the direction that broke. A rider is an effect; an effect a mob may
+    // carry must also be one an ability may.
+    const offered = new Set(ABILITY_EFFECTS.map((e) => e.key))
+    for (const effect of ATTACK_EFFECTS) {
+      expect(offered).toContain(effect.key)
+    }
+  })
+
+  it('leads with Damage, which is what a new effect defaults to', () => {
+    // AbilityEditor reads ABILITY_EFFECTS[0] for a freshly added effect. Reordering the list is a
+    // silent change to what "Add effect" produces.
+    expect(ABILITY_EFFECTS[0].key).toBe('damage.physical')
+  })
+
+  it('puts the two damage effects together', () => {
+    // They are separate executors, not one with a subtype - which is exactly what a builder
+    // reported believing when a wound-over-time ability showed "Damage". Adjacency is what makes
+    // the choice between a hit and a bleed visible at the moment it is made.
+    const keys = ABILITY_EFFECTS.map((e) => e.key)
+    expect(keys.indexOf('damage.overtime')).toBe(keys.indexOf('damage.physical') + 1)
   })
 
   it('states what each parameter does when left blank', () => {
