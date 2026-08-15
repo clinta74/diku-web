@@ -305,6 +305,13 @@ ServerLog.DatabaseConfigured(logger, csb.Host ?? "(unset)", csb.Database ?? "(un
         {
             ServerLog.SeedSkipped(logger);
         }
+
+        // Outside the branch above, because that one skips a database that already has a world -
+        // and every development database made before §4.16 has exactly that shape.
+        if (await StarterWorldSeeder.ReconcileStarterConfigurationAsync(db))
+        {
+            ServerLog.SeededStarterConfiguration(logger, StarterWorldSeeder.ConfigurationKey);
+        }
     }
 
     // Last, and after any seeding, so a first boot can point at a room that now exists. The

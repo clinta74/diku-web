@@ -5,6 +5,7 @@ using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine;
 using DikuWeb.Persistence;
+using DikuWeb.Persistence.Seeding;
 using DikuWeb.Server.Tests.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -289,6 +290,45 @@ public sealed class GameConfigurationTests(PostgresFixture postgres) : IAsyncLif
 
         // The definition travels; the choice does not.
         Assert.False(carried.TryGetProperty("isActive", out _));
+    }
+
+    [Fact]
+    public async Task The_starter_configuration_matches_the_engine_fallback()
+    {
+        // The point of seeding it at all. EngineOptions carries a compiled default so a database
+        // with nothing in it still has somewhere to put people; the row makes that value visible
+        // in the Setup tab and editable, instead of a number only the source knows. If the two
+        // ever disagree, the panel is lying about where new characters start.
+        using var scope = postgres.App.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DikuWebDbContext>();
+
+        var seeded = await db.GameConfigurations.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Key == StarterWorldSeeder.ConfigurationKey);
+
+        Assert.NotNull(seeded);
+        Assert.Equal(StarterWorldSeeder.StartingRoom.ToString(), seeded.StartingRoomKey);
+
+        // And it carries the greeting GameLoop used to hold as a literal, so the old world still
+        // says the old thing - now from a row somebody can edit.
+        Assert.Contains(GameConfiguration.NameToken, seeded.WelcomeMessage, StringComparison.Ordinal);
+        Assert.Contains("Aldenmoor", seeded.WelcomeMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Reconciling_the_starter_configuration_twice_plants_it_once()
+    {
+        // It runs on every development boot. A second run must not duplicate the row, and - more
+        // importantly - must not reclaim the active flag from whatever the operator has chosen
+        // since, or every restart would silently undo their choice of world.
+        using var scope = postgres.App.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DikuWebDbContext>();
+
+        Assert.False(await StarterWorldSeeder.ReconcileStarterConfigurationAsync(db));
+
+        var count = await db.GameConfigurations.AsNoTracking()
+            .CountAsync(c => c.Key == StarterWorldSeeder.ConfigurationKey);
+
+        Assert.Equal(1, count);
     }
 
     [Fact]

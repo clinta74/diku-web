@@ -71,6 +71,12 @@ internal static partial class ServerLog
     public static partial void StreamClosed(ILogger logger, string character);
 
     [LoggerMessage(
+        EventId = 1029,
+        Level = LogLevel.Information,
+        Message = "Planted the starter game configuration '{Key}'")]
+    public static partial void SeededStarterConfiguration(ILogger logger, string key);
+
+    [LoggerMessage(
         EventId = 1027,
         Level = LogLevel.Information,
         Message = "Active game configuration is '{Key}'; players begin at {StartingRoom}")]

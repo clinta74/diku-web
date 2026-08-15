@@ -317,6 +317,66 @@ public static class StarterWorldSeeder
         }
 
         // Abilities are reconciled separately, on every startup - see ReconcileAbilitiesAsync.
+        // So is the starter configuration - see ReconcileStarterConfigurationAsync.
+        await db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    /// <summary>The starter configuration's key (PLAN.md §4.16).</summary>
+    public const string ConfigurationKey = "aldenmoor-starter";
+
+    /// <summary>
+    /// Plants a <see cref="GameConfiguration"/> matching the engine's compiled fallback, so the
+    /// value the server is obeying is visible and editable rather than implicit.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Separate from <see cref="SeedAsync"/>, because that one skips a database that already has
+    /// a world.</b> Every development database created before configurations existed has a world
+    /// and no configuration, and would never have got one - the Setup tab would show an empty list
+    /// beside a server quietly starting people in Millbrook, which is precisely the implicit state
+    /// §4.16 exists to end.
+    /// </para>
+    /// <para>
+    /// <b>It activates only when nothing else is.</b> Creating the row is safe to repeat; stealing
+    /// the active flag would not be, because a restart must never undo an operator's choice of
+    /// which world their server opens in. Zero-active is reachable only on a fresh database - the
+    /// API refuses to delete the live one - so this claims the slot exactly once.
+    /// </para>
+    /// <para>
+    /// Development-only, like the world it describes. A production server has no Aldenmoor, so a
+    /// configuration pointing into it would be a row naming a room that does not exist.
+    /// </para>
+    /// </remarks>
+    /// <returns>True when a configuration was planted.</returns>
+    public static async Task<bool> ReconcileStarterConfigurationAsync(
+        DikuWebDbContext db,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+
+        if (await db.GameConfigurations.AnyAsync(c => c.Key == ConfigurationKey, cancellationToken))
+        {
+            return false;
+        }
+
+        var anyActive = await db.GameConfigurations.AnyAsync(c => c.IsActive, cancellationToken);
+
+        db.GameConfigurations.Add(new GameConfiguration
+        {
+            Key = ConfigurationKey,
+            Name = "Aldenmoor",
+            Description =
+                "The original starter world, kept as a sandbox and as the fixture the playtest "
+                + "plans run against. Matches the engine's built-in fallback.",
+            StartingRoomKey = StartingRoom.ToString(),
+
+            // The line GameLoop used to hold as a literal, now where it can be changed.
+            WelcomeMessage = "Welcome to Aldenmoor, {name}.",
+            IsActive = !anyActive,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        });
+
         await db.SaveChangesAsync(cancellationToken);
         return true;
     }

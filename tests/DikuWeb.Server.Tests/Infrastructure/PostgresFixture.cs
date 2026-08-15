@@ -75,6 +75,10 @@ public sealed class PostgresFixture : IAsyncLifetime
         // would land in a room that does not exist.
         await StarterWorldSeeder.SeedAsync(db);
 
+        // And the starter configuration (§4.16), for the same reason: a development database has
+        // one, so a test database without one is a different shape from the thing under test.
+        await StarterWorldSeeder.ReconcileStarterConfigurationAsync(db);
+
         // Built after seeding: the host loads the world into memory at startup, so a host
         // created before the starter world exists would come up with zero rooms.
         _app = new DikuWebAppFactory(ConnectionString);
