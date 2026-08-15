@@ -6,6 +6,7 @@ stays in the root because it is the first thing a stranger reads.
 | | |
 |---|---|
 | [PLAN.md](PLAN.md) | **The one to read.** Architecture, game design, the data model, the builder, the phase plan — and, more usefully, *why* each decision went the way it did. Where the reasoning behind anything in this repository lives. |
+| [WORLD.md](WORLD.md) | **The world itself.** The Reaches, the Unlit, the pantheon, and every realm and zone with its level band and multiplier dials — design only, none of it built yet. Where `PLAN.md` says what the engine does, this says what goes in it. |
 | [HISTORY.md](HISTORY.md) | What is finished. The phase checklists through 5, the notes from each build, and the postmortems — moved out of `PLAN.md` §8 so that document carries the design and the open work rather than an account of both. |
 | [BUGS.md](BUGS.md) | The queue. A bug leaves this file when it has a fix **and** a test that would have caught it; the story of why it happened moves into `HISTORY.md`. |
 | [PlayTestingNotes.md](PlayTestingNotes.md) | The inbox. Anything noticed while playing goes here, and is cleared as it is dealt with. |
