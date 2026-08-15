@@ -36,7 +36,7 @@ public static class HostileActionGate
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(mob);
 
-        var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+        var displayName = mob.DisplayName;
 
         // Checked before the room rules, because an NPC is unattackable everywhere rather than
         // merely in peaceful rooms. Quest givers, turn-ins, and shopkeepers are all NPCs, and

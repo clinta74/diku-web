@@ -22,6 +22,23 @@ public sealed class Mob
     /// <summary>Display name from template at spawn time (cached for consistency).</summary>
     public string TemplateName { get; init; } = string.Empty;
 
+    /// <summary>
+    /// What to call this mob on screen: its name, falling back to its key when the instance
+    /// carries none.
+    /// </summary>
+    /// <remarks>
+    /// <b>Here rather than at each call site, because the call sites got it wrong.</b> This
+    /// fallback was written out by hand in a dozen places and missed in two of them, so
+    /// <c>talk</c> answered "ossara-innkeeper has nothing to say about quests" about a character
+    /// the room had just introduced as Corun, who keeps the fire. A key is an authoring
+    /// identifier; it should never reach a player except as the last resort this property makes it.
+    ///
+    /// The fallback still matters: a nameless line is unmatchable by every verb that takes a mob,
+    /// so showing the key at least tells the player what to type.
+    /// </remarks>
+    public string DisplayName =>
+        string.IsNullOrEmpty(TemplateName) ? TemplateKey : TemplateName;
+
     /// <summary>Level, unchanged from template (not stat-adjusted).</summary>
     public int Level { get; set; }
 

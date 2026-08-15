@@ -298,14 +298,14 @@ public sealed class PlayerView(RoomLayoutService layout)
 
         foreach (var mob in mobs.OrderBy(m => m.TemplateKey))
         {
-            var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+            var displayName = mob.DisplayName;
             var prose = NarrationHelper.BuildSentence(displayName, "is here.");
             spans.Add(new TextSpan($"\n{prose}", "mob"));
         }
 
         foreach (var item in items.OrderBy(i => i.TemplateKey))
         {
-            var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
+            var displayName = item.DisplayName;
             spans.Add(new TextSpan($"\nYou see {NarrationHelper.WithArticle(displayName)}.", "item"));
         }
 
@@ -352,7 +352,7 @@ public sealed class PlayerView(RoomLayoutService layout)
         occupantEntries.AddRange(mobs
             .OrderBy(m => m.TemplateKey)
             .Select(m => {
-                var displayName = string.IsNullOrEmpty(m.TemplateName) ? m.TemplateKey : m.TemplateName;
+                var displayName = m.DisplayName;
                 var icon = displayName[0].ToString();
                 return new ContentEntry(icon, displayName, m.TemplateKey.ToLowerInvariant());
             }));
@@ -361,7 +361,7 @@ public sealed class PlayerView(RoomLayoutService layout)
         itemEntries.AddRange(items
             .OrderBy(i => i.TemplateKey)
             .Select(i => {
-                var displayName = string.IsNullOrEmpty(i.TemplateName) ? i.TemplateKey : i.TemplateName;
+                var displayName = i.DisplayName;
                 return new ContentEntry(i.Icon, displayName, i.TemplateKey.ToLowerInvariant());
             }));
 

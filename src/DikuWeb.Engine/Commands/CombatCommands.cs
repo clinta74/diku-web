@@ -113,7 +113,7 @@ public static class CombatCommands
         }
         else if (targetMob != null)
         {
-            var displayName = string.IsNullOrEmpty(targetMob.TemplateName) ? targetMob.TemplateKey : targetMob.TemplateName;
+            var displayName = targetMob.DisplayName;
 
             // The six steps of starting a fight live in one place, because three things now do it
             // - this verb, a taunt, and a damaging ability landing on something not yet engaged.
@@ -171,9 +171,7 @@ public static class CombatCommands
             // be the game warning you about a different mob from the one it is about to reward you
             // for. `examine` is the builder's view and still shows what was authored.
             var level = ctx.World.EffectiveLevelOf(targetMob);
-            var name = string.IsNullOrEmpty(targetMob.TemplateName)
-                ? targetMob.TemplateKey
-                : targetMob.TemplateName;
+            var name = targetMob.DisplayName;
 
             ctx.Reply(
                 $"{NarrationHelper.WithArticle(name, capitalize: true)} — Level {level}. " +

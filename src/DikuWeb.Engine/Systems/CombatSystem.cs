@@ -746,9 +746,7 @@ public sealed class CombatSystem(
         var isCharacter = EntityId.IsCharacter(combatantId);
         var name = isCharacter
             ? world.GetCharacter(EntityId.ToGuid(combatantId))?.Name
-            : world.GetMob(EntityId.ToGuid(combatantId)) is { } mob
-                ? (string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName)
-                : null;
+            : world.GetMob(EntityId.ToGuid(combatantId))?.DisplayName;
 
         if (name is null)
         {
@@ -893,8 +891,7 @@ public sealed class CombatSystem(
         return (null, "", null);
     }
 
-    private static string DisplayNameOf(Mob mob) =>
-        string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+    private static string DisplayNameOf(Mob mob) => mob.DisplayName;
 
     /// <summary>
     /// The defender's stats as equipment resolves them, with any active defence effects folded in.

@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Characters;
@@ -478,7 +478,7 @@ public sealed class CommandRegistry
     /// the template, because two things a player cannot tell apart should not read as two lines.
     /// </remarks>
     private static string DisplayNameOf(ItemInstance item) =>
-        string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
+        item.DisplayName;
 
     private static void Examine(CommandContext ctx)
     {
@@ -552,7 +552,7 @@ public sealed class CommandRegistry
     private static void ExamineMob(CommandContext ctx, Mob mob)
     {
         var template = ctx.MobTemplates?.Get(mob.TemplateKey);
-        var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+        var displayName = mob.DisplayName;
         var article = NarrationHelper.WithDefiniteArticle(displayName);
 
         var spans = new List<TextSpan>
@@ -955,7 +955,7 @@ public sealed class CommandRegistry
             return;
         }
 
-        var displayName = string.IsNullOrEmpty(offHand.TemplateName) ? offHand.TemplateKey : offHand.TemplateName;
+        var displayName = offHand.DisplayName;
         var template = ctx.ItemTemplates?.Get(offHand.TemplateKey);
 
         spans.Add(new TextSpan($"\n\nOff Hand: {displayName}", "heading"));

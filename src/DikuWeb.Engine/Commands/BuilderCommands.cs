@@ -1,4 +1,4 @@
-﻿using DikuWeb.Domain.Accounts;
+using DikuWeb.Domain.Accounts;
 using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
@@ -520,7 +520,7 @@ internal static class BuilderCommands
         }
 
         var target = onTheFloor[0];
-        var displayName = string.IsNullOrEmpty(target.TemplateName) ? target.TemplateKey : target.TemplateName;
+        var displayName = target.DisplayName;
 
         ctx.World.RemoveItem(target);
 
@@ -562,7 +562,7 @@ internal static class BuilderCommands
         }
 
         var target = here[0];
-        var displayName = string.IsNullOrEmpty(target.TemplateName) ? target.TemplateKey : target.TemplateName;
+        var displayName = target.DisplayName;
 
         // Take it out of any fight first. A combatant that vanishes from the world but not from
         // the combat leaves the fight two-sided forever, so whoever was swinging at it would

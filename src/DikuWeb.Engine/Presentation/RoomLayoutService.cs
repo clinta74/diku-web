@@ -111,8 +111,8 @@ public sealed class RoomLayoutService
             }
 
             var (x, y) = placeable[index];
-            var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
-            var icon = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey[0].ToString() : displayName[0].ToString();
+            var displayName = mob.DisplayName;
+            var icon = displayName[0].ToString();
             entities.Add(new MapEntity(entityId, icon, x, y, displayName, "mob"));
         }
 

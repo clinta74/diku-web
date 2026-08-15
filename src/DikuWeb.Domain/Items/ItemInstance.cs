@@ -18,6 +18,23 @@ public sealed class ItemInstance
     /// <summary>Display name from template at spawn time (cached for consistency).</summary>
     public string TemplateName { get; init; } = string.Empty;
 
+    /// <summary>
+    /// What to call this item on screen: its name, falling back to its key when the instance
+    /// carries none.
+    /// </summary>
+    /// <remarks>
+    /// The mob half of this fallback was written out by hand in a dozen places and missed in two,
+    /// which is how a player got told "ossara-innkeeper has nothing to say about quests"; this is
+    /// the same rule in the same shape so the item half cannot go the same way.
+    ///
+    /// The fallback still matters: a nameless line is unmatchable by every verb that takes an item,
+    /// so showing the key at least tells the player what to type. It is also the grouping key the
+    /// pack listing collapses on (§4.14) — by what is displayed rather than by the template,
+    /// because two things a player cannot tell apart should not read as two lines.
+    /// </remarks>
+    public string DisplayName =>
+        string.IsNullOrEmpty(TemplateName) ? TemplateKey : TemplateName;
+
     /// <summary>Icon from template at spawn time (cached for map display).</summary>
     public string Icon { get; init; } = "$";
 

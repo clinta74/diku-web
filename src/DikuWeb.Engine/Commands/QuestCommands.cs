@@ -72,7 +72,7 @@ public static class QuestCommands
 
         if (offeredQuests.Count == 0)
         {
-            ctx.Reply($"{targetMob.TemplateKey} has nothing to say about quests.");
+            ctx.Reply($"{targetMob.DisplayName} has nothing to say about quests.");
             return;
         }
 
@@ -151,7 +151,7 @@ public static class QuestCommands
 
         if (narrations.Count == 0)
         {
-            ctx.Reply($"{targetMob.TemplateKey} has nothing to say to you about quests.");
+            ctx.Reply($"{targetMob.DisplayName} has nothing to say to you about quests.");
             return;
         }
 

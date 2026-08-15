@@ -257,7 +257,7 @@ public sealed class AbilitySystem(
 
         mob.CurrentTarget = casterId;
 
-        var displayName = string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName;
+        var displayName = mob.DisplayName;
         actor.SendText(
             $"{NarrationHelper.WithDefiniteArticle(displayName, capitalize: true)} turns on you!",
             "combat");
@@ -379,7 +379,7 @@ public sealed class AbilitySystem(
     {
         Character character => character.Name,
         Mob mob => NarrationHelper.WithArticle(
-            string.IsNullOrEmpty(mob.TemplateName) ? mob.TemplateKey : mob.TemplateName),
+            mob.DisplayName),
         _ => "something",
     };
 
