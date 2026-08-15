@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Worlds;
@@ -744,7 +745,92 @@ public sealed class BuilderQueries(DikuWebDbContext db)
                 "orphan-room", room.Key.ToString(), "Nothing links to this room."));
         }
 
+        warnings.AddRange(await LevelWarningsAsync(zoneKey, cancellationToken));
+
         return new ZoneValidation(zoneKey, warnings);
+    }
+
+    /// <summary>
+    /// What the levels in this zone look like from outside (PLAN.md §4.7).
+    /// </summary>
+    /// <remarks>
+    /// <b>All advisory, per §7.4.</b> None of these is wrong — a deliberately trivial critter in a
+    /// hard zone, a boss above the band, and a mob that pays little for a hard fight are all
+    /// legitimate authoring. They are here because each is also what an accident looks like, and
+    /// the difference is only visible to whoever wrote it.
+    ///
+    /// The last one is the honest cost of the pin saying nothing about experience: lifting a rat to
+    /// 27 leaves it paying a rat's reward. That is a deliberate trade (§4.7), and a trade nobody is
+    /// told about is just a trap.
+    /// </remarks>
+    private async Task<List<ValidationWarning>> LevelWarningsAsync(
+        string zoneKey,
+        CancellationToken cancellationToken)
+    {
+        var warnings = new List<ValidationWarning>();
+
+        var zone = await db.Zones.AsNoTracking()
+            .FirstOrDefaultAsync(z => z.Key == zoneKey, cancellationToken);
+
+        if (zone is null)
+        {
+            return warnings;
+        }
+
+        var spawners = await db.Spawners.AsNoTracking()
+            .Where(s => s.ZoneKey == zoneKey && s.TemplateKind == DikuWeb.Domain.Spawning.TemplateKind.Mob)
+            .OrderBy(s => s.Id)
+            .ToListAsync(cancellationToken);
+
+        if (spawners.Count == 0)
+        {
+            return warnings;
+        }
+
+        var levels = await FightingLevelsAsync(spawners, cancellationToken);
+        var keys = spawners.Select(s => s.TemplateKey).Distinct().ToList();
+        var templates = await db.MobTemplates.AsNoTracking()
+            .Where(t => keys.Contains(t.Key))
+            .ToDictionaryAsync(t => t.Key, cancellationToken);
+
+        foreach (var spawner in spawners)
+        {
+            if (!levels.TryGetValue(spawner.Id, out var level) ||
+                !templates.TryGetValue(spawner.TemplateKey, out var template))
+            {
+                continue;
+            }
+
+            if (level < zone.MinLevel || level > zone.MaxLevel)
+            {
+                warnings.Add(new ValidationWarning(
+                    "level-outside-band",
+                    spawner.TemplateKey,
+                    $"Fights at level {level}, outside this zone's {zone.MinLevel}–{zone.MaxLevel} band."));
+            }
+
+            if (level > XpProgression.MaxLevel)
+            {
+                warnings.Add(new ValidationWarning(
+                    "level-above-cap",
+                    spawner.TemplateKey,
+                    $"Fights at level {level}, above the level {XpProgression.MaxLevel} a character can reach."));
+            }
+
+            // A mob two tiers above the experience it pays. The threshold is deliberately loose:
+            // this is meant to catch a template lifted a long way and never re-costed, not to
+            // second-guess tuning.
+            if (spawner.FightsAtLevel is not null && template.Level > 0 && level >= template.Level * 2)
+            {
+                warnings.Add(new ValidationWarning(
+                    "reward-lags-level",
+                    spawner.TemplateKey,
+                    $"Pinned to level {level} from a level {template.Level} template, but still pays "
+                    + $"{template.BaseXp} experience. A pin scales health and damage, never the reward."));
+            }
+        }
+
+        return warnings;
     }
 
     // -----------------------------------------------------------------------

@@ -171,6 +171,48 @@ public sealed class SpawnerLevelApiTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task A_pin_far_above_the_template_warns_that_the_reward_did_not_follow()
+    {
+        // The honest cost of the pin saying nothing about experience (§4.7). Lifting a level 10 rat
+        // to 27 leaves it paying a level 10 rat's reward, which is a deliberate trade - and a trade
+        // nobody is told about is a trap. Advisory per §7.4: it never blocks the save.
+        var (client, id) = await SpawnerAsync(level: "27", templateLevel: 10);
+        using var _ = client;
+
+        var spawner = await ReadAsync(client, id);
+        var zoneKey = spawner.GetProperty("zoneKey").GetString();
+
+        var validation = await BuilderClient.JsonAsync(await client.GetAsync(
+            new Uri($"/api/builder/zones/{zoneKey}/validate", UriKind.Relative)));
+
+        var kinds = validation.GetProperty("warnings").EnumerateArray()
+            .Select(w => w.GetProperty("kind").GetString())
+            .ToList();
+
+        Assert.Contains("reward-lags-level", kinds);
+    }
+
+    [Fact]
+    public async Task A_level_inside_the_band_with_a_matching_reward_warns_about_neither()
+    {
+        var (client, id) = await SpawnerAsync(level: null, templateLevel: 3);
+        using var _ = client;
+
+        var spawner = await ReadAsync(client, id);
+        var zoneKey = spawner.GetProperty("zoneKey").GetString();
+
+        var validation = await BuilderClient.JsonAsync(await client.GetAsync(
+            new Uri($"/api/builder/zones/{zoneKey}/validate", UriKind.Relative)));
+
+        var kinds = validation.GetProperty("warnings").EnumerateArray()
+            .Select(w => w.GetProperty("kind").GetString())
+            .ToList();
+
+        Assert.DoesNotContain("reward-lags-level", kinds);
+        Assert.DoesNotContain("level-above-cap", kinds);
+    }
+
+    [Fact]
     public async Task Turning_a_pinned_mob_spawner_into_an_item_one_is_refused()
     {
         // Checked against the *resulting* kind rather than the stored one. Otherwise the pin
