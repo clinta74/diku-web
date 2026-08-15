@@ -732,6 +732,16 @@ public sealed class CommandRegistry
             return;
         }
 
+        if (ItemRules.IsLore(ctx.ItemTemplates, targetItem.TemplateKey) &&
+            ItemRules.AlreadyHolds(ctx.World, ctx.Actor.CharacterId, targetItem.TemplateKey))
+        {
+            ctx.Reply(
+                $"You already carry {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}, "
+                + "and one is all anyone gets.",
+                "bad");
+            return;
+        }
+
         ctx.World.PickUpItem(targetItem, ctx.Actor.CharacterId);
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
@@ -754,6 +764,17 @@ public sealed class CommandRegistry
         if (targetItem is null)
         {
             ctx.Reply($"You don't have {ctx.Argument}.", "bad");
+            return;
+        }
+
+        if (ItemRules.IsNoDrop(ctx.ItemTemplates, targetItem.TemplateKey))
+        {
+            // The way out is 'destroy', and saying so is the whole point - a bound item with no
+            // stated way to be rid of it is a slot in the pack the player cannot reason about.
+            ctx.Reply(
+                $"{NarrationHelper.WithDefiniteArticle(targetItem.TemplateName, capitalize: true)} "
+                + "will not leave your hand. You could destroy it, if you truly meant to.",
+                "bad");
             return;
         }
 
@@ -988,6 +1009,19 @@ public sealed class CommandRegistry
         string selfVerb,
         string othersVerb)
     {
+        // Here rather than in Wear and Wield separately: they are two verbs onto one action, and
+        // a restriction enforced in one of them is a restriction you get around by typing the
+        // other word.
+        if (ItemRules.RefusePath(
+                ctx.ItemTemplates,
+                item.TemplateKey,
+                ctx.Actor.Character.Path,
+                NarrationHelper.WithDefiniteArticle(item.TemplateName, capitalize: true)) is { } wrongPath)
+        {
+            ctx.Reply(wrongPath, "bad");
+            return false;
+        }
+
         var occupant = ctx.World.InventoryOf(ctx.Actor.CharacterId)
             .FirstOrDefault(i => i.EquippedSlot == slot);
 
@@ -1101,6 +1135,27 @@ public sealed class CommandRegistry
         if (targetPlayer.CharacterId == ctx.Actor.CharacterId)
         {
             ctx.Reply("You can't give items to yourself.", "bad");
+            return;
+        }
+
+        // Checked after the quest turn-in above, not before: handing a bound item to the person
+        // the chain wants it handed to is the one transfer that must always work.
+        if (ItemRules.IsNoDrop(ctx.ItemTemplates, targetItem.TemplateKey))
+        {
+            ctx.Reply(
+                $"{NarrationHelper.WithDefiniteArticle(targetItem.TemplateName, capitalize: true)} "
+                + "is yours and will not go to anyone else.",
+                "bad");
+            return;
+        }
+
+        // The recipient's rule, not the giver's. Lore is about who ends up holding it, so it has
+        // to be asked on the receiving side - otherwise two players hand one back and forth and
+        // each ends the exchange holding a second copy they could not have picked up.
+        if (ItemRules.IsLore(ctx.ItemTemplates, targetItem.TemplateKey) &&
+            ItemRules.AlreadyHolds(ctx.World, targetPlayer.CharacterId, targetItem.TemplateKey))
+        {
+            ctx.Reply($"{targetPlayer.Name} already has one, and one is all anyone gets.", "bad");
             return;
         }
 

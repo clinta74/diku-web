@@ -322,7 +322,10 @@ public sealed record UpsertItemTemplate(
     Dictionary<string, object> BaseStats,
     int? AttackDelayPulses,
     string? AttackVerb,
-    bool IsQuestItem) : WorldChange
+    bool IsQuestItem,
+    bool IsLore,
+    bool IsNoDrop,
+    List<CharacterPath> Paths) : WorldChange
 {
     public override string EntityKind => "item-template";
 

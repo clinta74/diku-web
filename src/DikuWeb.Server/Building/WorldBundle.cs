@@ -58,6 +58,13 @@ public sealed record WorldBundle(
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
     ///
+    /// <b>8 because an item can refuse you.</b> A v7 bundle has no <c>isLore</c>, <c>isNoDrop</c>
+    /// or <c>paths</c>, so read as v8 every item arrives unrestricted — which is the weak direction
+    /// for two of the three and the wrong one for all of them: an epic reward that is neither lore
+    /// nor bound is an epic reward one player farms and hands to five friends. The same shape as 6:
+    /// the missing fields all deserialise to "no restriction", silently, and a bundle cannot say
+    /// what it was not written to say.
+    ///
     /// <b>7 because a bundle carries its own starter configurations.</b> A v6 bundle has no
     /// <c>configurations</c>, so read as v7 it would arrive with none — which is survivable, unlike
     /// the bumps below it, since a missing configuration is visible the moment somebody opens the
@@ -98,7 +105,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 7;
+    public const int CurrentFormatVersion = 8;
 }
 
 /// <summary>
@@ -182,7 +189,10 @@ public sealed record BundleItemTemplate(
     Dictionary<string, object> BaseStats,
     int? AttackDelayPulses,
     string? AttackVerb,
-    bool IsQuestItem);
+    bool IsQuestItem,
+    bool IsLore,
+    bool IsNoDrop,
+    List<CharacterPath>? Paths);
 
 /// <summary>
 /// One ability, whole. Unlike a zone-scoped entity there is nothing to scope an ability *to* -

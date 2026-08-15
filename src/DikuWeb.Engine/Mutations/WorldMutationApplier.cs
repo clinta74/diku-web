@@ -1199,6 +1199,9 @@ public sealed class WorldMutationApplier(
             AttackDelayPulses = change.AttackDelayPulses,
             AttackVerb = change.AttackVerb,
             IsQuestItem = change.IsQuestItem,
+            IsLore = change.IsLore,
+            IsNoDrop = change.IsNoDrop,
+            Paths = [.. change.Paths],
         });
 
         return MutationResult.Ok([change]);

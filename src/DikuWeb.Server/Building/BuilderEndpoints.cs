@@ -1041,7 +1041,10 @@ public static class BuilderEndpoints
             request.BaseStats ?? new Dictionary<string, object>(),
             request.AttackDelayPulses,
             Trim(request.AttackVerb),
-            request.IsQuestItem ?? false);
+            request.IsQuestItem ?? false,
+            request.IsLore ?? false,
+            request.IsNoDrop ?? false,
+            request.Paths ?? []);
 
         return await SaveAsync(editor, change, http, ct, () => queries.ItemTemplateAsync(key, ct));
     }
@@ -1075,7 +1078,10 @@ public static class BuilderEndpoints
             request.BaseStats ?? existing.BaseStats,
             request.AttackDelayPulses ?? existing.AttackDelayPulses,
             Trim(request.AttackVerb) ?? existing.AttackVerb,
-            request.IsQuestItem ?? existing.IsQuestItem);
+            request.IsQuestItem ?? existing.IsQuestItem,
+            request.IsLore ?? existing.IsLore,
+            request.IsNoDrop ?? existing.IsNoDrop,
+            request.Paths ?? [.. existing.Paths]);
 
         return await SaveAsync(editor, change, http, ct, () => queries.ItemTemplateAsync(key, ct));
     }

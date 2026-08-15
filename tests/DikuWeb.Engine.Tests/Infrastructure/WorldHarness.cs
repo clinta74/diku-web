@@ -548,6 +548,37 @@ internal sealed class WorldHarness
         return template;
     }
 
+    /// <summary>
+    /// Registers a template the caller built itself, for the fields the convenience helpers above
+    /// do not take - the three restrictions among them.
+    /// </summary>
+    public ItemTemplate AddItemTemplate(ItemTemplate template)
+    {
+        _itemTemplateRepo.Add(template);
+        ItemTemplates.LoadAsync(_itemTemplateRepo, CancellationToken.None).GetAwaiter().GetResult();
+        return template;
+    }
+
+    /// <summary>Puts a loose instance of a template on the floor of a room, ready to be taken.</summary>
+    public ItemInstance DropItemInRoom(ItemTemplate template, RoomKey at)
+    {
+        // RoomKey before AddItem, and AddItem alone. WorldState.AddItem ignores an instance whose
+        // RoomKey is still null, so registering first and dropping afterwards puts the item in the
+        // room's list and never in the world's index - which reads as a room you can see an item in
+        // and cannot pick it up from.
+        var item = new ItemInstance
+        {
+            TemplateKey = template.Key,
+            TemplateName = template.Name,
+            ResolvedStats = new Dictionary<string, object>(template.BaseStats),
+            Value = template.BaseValue,
+            RoomKey = at.ToString(),
+        };
+
+        World.AddItem(item);
+        return item;
+    }
+
     /// <summary>Puts an instance of a template into a character's inventory and returns it.</summary>
     public ItemInstance GiveItem(
         PlayerActor actor,

@@ -261,7 +261,10 @@ public sealed record ItemTemplateResponse(
     Dictionary<string, object> BaseStats,
     int? AttackDelayPulses,
     string? AttackVerb,
-    bool IsQuestItem);
+    bool IsQuestItem,
+    bool IsLore,
+    bool IsNoDrop,
+    IReadOnlyList<CharacterPath> Paths);
 
 public sealed record SaveItemTemplateRequest(
     string? Name,
@@ -274,7 +277,10 @@ public sealed record SaveItemTemplateRequest(
     Dictionary<string, object>? BaseStats,
     int? AttackDelayPulses,
     string? AttackVerb,
-    bool? IsQuestItem);
+    bool? IsQuestItem,
+    bool? IsLore,
+    bool? IsNoDrop,
+    List<CharacterPath>? Paths);
 
 /// <param name="Wander">One of <see cref="WanderMode"/>. Never null on the way out.</param>
 public sealed record SpawnerResponse(

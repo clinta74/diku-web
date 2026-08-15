@@ -221,7 +221,8 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
 
     private static WorldChange ItemChangeFor(BundleItemTemplate i) =>
         new UpsertItemTemplate(i.Key, i.Name, i.Description, i.Icon, i.Slot, i.Weight, i.BaseValue,
-            i.BaseStats ?? [], i.AttackDelayPulses, i.AttackVerb, i.IsQuestItem);
+            i.BaseStats ?? [], i.AttackDelayPulses, i.AttackVerb, i.IsQuestItem,
+            i.IsLore, i.IsNoDrop, i.Paths ?? []);
 
     private static WorldChange MobChangeFor(BundleMobTemplate m) =>
         new UpsertMobTemplate(m.Key, m.Name, m.Description, m.Icon, m.Level, m.WanderIntervalPulses,

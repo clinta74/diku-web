@@ -180,6 +180,16 @@ public static class ShopCommands
             return;
         }
 
+        // Refused before the gold is taken. A shop is the one place an item can be acquired
+        // repeatedly and on demand, so leaving lore out here would make it the loophole rather
+        // than an oversight.
+        if (itemTemplate.IsLore &&
+            ItemRules.AlreadyHolds(ctx.World, character.Id, itemTemplate.Key))
+        {
+            ctx.Reply($"You already have {NarrationHelper.WithArticle(itemTemplate.Name)}.", "bad");
+            return;
+        }
+
         // Spawn the item. The lookup wants the qualified "world.zone" key - RoomKey.Zone is the
         // bare segment, so this always missed and every purchase died on the guard below
         // reporting the shop temporarily unavailable.

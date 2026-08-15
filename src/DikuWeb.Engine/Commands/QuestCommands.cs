@@ -797,6 +797,18 @@ public static class QuestCommands
             return;
         }
 
+        // A lore reward is not handed over twice. This is the path an epic chain arrives by, so
+        // leaving it out would mean the one flag written for epics was enforced everywhere except
+        // where epics come from - and a repeatable chain would mint a second copy on every run.
+        if (itemTemplate.IsLore &&
+            ItemRules.AlreadyHolds(ctx.World, character.Id, quest.RewardItemKey!))
+        {
+            ctx.Reply(
+                $"(You already carry {itemTemplate.Name}. One is all anyone gets.)",
+                "bad");
+            return;
+        }
+
         var spawner = new DikuWeb.Engine.Spawning.ItemSpawner();
 
         // Spawned per copy, not once and cloned: each instance needs its own id, and the spawner

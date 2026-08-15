@@ -1,3 +1,5 @@
+using DikuWeb.Domain.Characters;
+
 namespace DikuWeb.Domain.Items;
 
 /// <summary>
@@ -62,6 +64,41 @@ public sealed class ItemTemplate
     /// created under even if a builder later unsets it.
     /// </remarks>
     public bool IsQuestItem { get; set; }
+
+    /// <summary>
+    /// One only. A character may not hold a second copy in inventory or equipment.
+    /// </summary>
+    /// <remarks>
+    /// The rule an epic reward needs: without it one player farms an act boss and equips five
+    /// friends. Checked wherever an item enters a pack — picking it up, buying it, being given it,
+    /// and being handed it as a quest reward — because a lore item that only the loot path refuses
+    /// is a lore item you buy two of.
+    /// </remarks>
+    public bool IsLore { get; set; }
+
+    /// <summary>
+    /// Cannot be dropped or given away. It <em>can</em> be destroyed.
+    /// </summary>
+    /// <remarks>
+    /// Distinct from <see cref="IsQuestItem"/>, which is the opposite pair: a quest item cannot be
+    /// sold or destroyed but can be put down. This one is about who ends up holding it rather than
+    /// about it surviving, so the way out is deliberate destruction — leaving no way at all to be
+    /// rid of a bound item is how a pack fills up with things a character will never use again.
+    /// </remarks>
+    public bool IsNoDrop { get; set; }
+
+    /// <summary>
+    /// The Paths that may wear or wield this. Empty means anyone.
+    /// </summary>
+    /// <remarks>
+    /// Empty rather than null-or-all, so the default state of an authored item is "no restriction"
+    /// and a builder has to opt in. A list rather than a single Path because the useful case is
+    /// "the two martial Paths" as often as it is one.
+    ///
+    /// This restricts <em>equipping</em> only. Carrying, selling and handing over are deliberately
+    /// left alone: a Shade should be able to pick up a Warden's shield and take it to the Warden.
+    /// </remarks>
+    public List<CharacterPath> Paths { get; set; } = [];
 }
 
 /// <summary>Equippable item slots.</summary>
