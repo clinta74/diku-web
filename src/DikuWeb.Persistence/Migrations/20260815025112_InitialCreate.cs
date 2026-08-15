@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Inhabitants;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -21,6 +22,8 @@ namespace DikuWeb.Persistence.Migrations
                 columns: table => new
                 {
                     key = table.Column<string>(type: "text", nullable: false),
+                    path = table.Column<int>(type: "integer", nullable: false),
+                    unlock_level = table.Column<int>(type: "integer", nullable: false),
                     name = table.Column<string>(type: "text", nullable: false),
                     description = table.Column<string>(type: "text", nullable: false),
                     cost_type = table.Column<int>(type: "integer", nullable: false),
@@ -28,8 +31,7 @@ namespace DikuWeb.Persistence.Migrations
                     cooldown_pulses = table.Column<long>(type: "bigint", nullable: false),
                     cast_time_pulses = table.Column<long>(type: "bigint", nullable: true),
                     targeting_type = table.Column<int>(type: "integer", nullable: false),
-                    effect_key = table.Column<string>(type: "text", nullable: false),
-                    effect_params = table.Column<Dictionary<string, string>>(type: "jsonb", nullable: false)
+                    effects = table.Column<List<AbilityEffectSpec>>(type: "jsonb", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -44,6 +46,7 @@ namespace DikuWeb.Persistence.Migrations
                     email = table.Column<string>(type: "citext", maxLength: 320, nullable: false),
                     username = table.Column<string>(type: "citext", maxLength: 32, nullable: false),
                     password_hash = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    password_changed_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     role = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     last_login_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
@@ -192,8 +195,10 @@ namespace DikuWeb.Persistence.Migrations
                     reward_gold = table.Column<int>(type: "integer", nullable: false),
                     reward_item_key = table.Column<string>(type: "text", nullable: true),
                     reward_item_count = table.Column<int>(type: "integer", nullable: false),
+                    reward_flag_key = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     prerequisite_quest_keys = table.Column<List<string>>(type: "text[]", nullable: false),
                     is_repeatable = table.Column<bool>(type: "boolean", nullable: false),
+                    auto_start = table.Column<bool>(type: "boolean", nullable: false),
                     dialogue = table.Column<Dictionary<string, string>>(type: "jsonb", nullable: false),
                     sort_order = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -213,7 +218,8 @@ namespace DikuWeb.Persistence.Migrations
                     room_keys = table.Column<List<string>>(type: "text[]", nullable: false),
                     target_count = table.Column<int>(type: "integer", nullable: false),
                     respawn_seconds = table.Column<int>(type: "integer", nullable: false),
-                    sentinel = table.Column<bool>(type: "boolean", nullable: false)
+                    wanders = table.Column<bool>(type: "boolean", nullable: true),
+                    fights_at_level = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -252,6 +258,7 @@ namespace DikuWeb.Persistence.Migrations
                     current_target = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     respawn_room_key = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
                     gold = table.Column<long>(type: "bigint", nullable: false),
+                    flags = table.Column<List<string>>(type: "text[]", nullable: false),
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     last_played_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     playtime_seconds = table.Column<long>(type: "bigint", nullable: false),
@@ -325,7 +332,10 @@ namespace DikuWeb.Persistence.Migrations
                 {
                     from_room_key = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     direction = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
-                    to_room_key = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false)
+                    to_room_key = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    required_flag_key = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    required_item_key = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    refusal_message = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -337,6 +347,11 @@ namespace DikuWeb.Persistence.Migrations
                         principalColumn: "key",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_abilities_path_unlock_level",
+                table: "abilities",
+                columns: new[] { "path", "unlock_level" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_abilities_targeting_type",

@@ -100,6 +100,31 @@ claims; `Game loop starting with N rooms` is the second one.
 
 ### 3b. A dump older than a migration squash — **verified hazard**
 
+**Squashed again on 2026-08-15.** The nine migrations that ran from `20260810145400_InitialCreate`
+through `20260815022137_ConditionalExits` are now one baseline, **`20260815025112_InitialCreate`**.
+Everything below about the 2026-08-10 squash still describes the shape of the problem; the ID to
+repair *to* is the new one.
+
+**Read this before reaching for the repair.** The recipe only works when the restored schema already
+equals the new baseline — that is, when the dump was taken from a database that had applied
+**every** migration through `ConditionalExits`. A dump from any earlier point restores a schema
+missing columns the baseline creates (`room_exits.required_flag_key`, `quests.reward_flag_key`,
+`characters.flags`, `spawners.fights_at_level`), and telling EF the baseline is already applied
+leaves those columns permanently absent. The server starts and then fails on the first query that
+names one.
+
+Since almost no dump in `backups/` predates 2026-08-15, **the honest default for a database with no
+characters worth keeping is to drop and recreate it** rather than repair the history:
+
+```sql
+DROP DATABASE dikuweb; CREATE DATABASE dikuweb;
+```
+
+Start `web`; the baseline builds the schema and the seeder plants abilities. Content comes back from
+a `WorldBundle` import (§10.1 of `WORLD.md`), which is what that format is for.
+
+---
+
 `backups/dikuweb-full-2026-08-10.dump` restores with no errors and the server **will not start
 against it**:
 
@@ -117,18 +142,21 @@ The rows are all fine. The history is what is wrong, so that is what to repair �
 then **before starting `web`**:
 
 ```sql
--- ProductVersion must match the other rows in a current database (10.0.10 as of 2026-08-14).
+-- ProductVersion must match the other rows in a current database (10.0.10 as of 2026-08-15).
+-- The ID is the CURRENT baseline, which changes with every squash.
 DELETE FROM "__EFMigrationsHistory";
-INSERT INTO "__EFMigrationsHistory" VALUES ('20260810145400_InitialCreate', '10.0.10');
+INSERT INTO "__EFMigrationsHistory" VALUES ('20260815025112_InitialCreate', '10.0.10');
 ```
 
-Start `web`. The migrations after the baseline apply in order and the loop comes up.
+Start `web`. Anything after the baseline applies in order and the loop comes up.
 
-Only valid when the pre-squash schema equals the squashed baseline — true for this squash, and
-**tested**: the six later migrations applied cleanly and the loop started with 15 rooms.
+**Only valid when the restored schema equals the baseline**, per the warning above — which for the
+2026-08-15 baseline means a dump taken at or after `ConditionalExits`. It was true for the
+2026-08-10 squash and **tested** there: the six later migrations applied cleanly and the loop
+started with 15 rooms.
 
 **If you squash again, every existing backup inherits this problem.** Note the new baseline ID here
-in the same commit.
+in the same commit — as this section has now had to do twice.
 
 ---
 
