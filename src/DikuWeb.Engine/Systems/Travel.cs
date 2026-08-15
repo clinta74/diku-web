@@ -88,7 +88,12 @@ public static class Travel
             other.SendText(departure, "movement");
         }
 
-        world.Move(actor, destination.Key);
+        // Not walked, so this ends every follow pointed at them (§4.17) — a recall crosses the
+        // world and nobody walks behind that. Telling them is the whole reason the list comes back.
+        foreach (var dropped in world.Move(actor, destination.Key))
+        {
+            dropped.SendText($"{actor.Name} vanishes, and you stop following.", "bad");
+        }
 
         foreach (var other in world.OthersIn(destination.Key, actor))
         {

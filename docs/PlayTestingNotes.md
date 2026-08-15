@@ -196,18 +196,21 @@ Add anything noticed while playing here. Cleared as items are done.
     `ShopCommands:104` both fire when the template is *missing*, so the key is the only thing there
     is to say.
 
-- **autofollow `<character>`** — a toggle. When the target moves, the follower attempts to follow;
-  a failed follow drops it back to off and it has to be called again. Decided, not yet built:
+- **autofollow: done** (`PLAN.md` §4.17). `autofollow <player>`, four characters to `auto`, group
+  only. Naming the same person again turns it off; bare `autofollow` also turns it off.
 
-  - **Directional moves only.** A recall, a portal, a `goto`, or a death respawn is not a move that
-    can be followed — and rather than being ignored, it **turns off every autofollow pointed at that
-    character**. A follower left standing while the leader teleports across the world is the failure
-    this rule exists to make loud.
-  - Still open: whether A-follows-B-follows-A needs a cycle check when the toggle is set or a
-    re-entrancy guard when it fires (chains like C→A→B are wanted and the same guard covers both),
-    and whether the toggle should require being grouped or just being in the room.
-  - The hook is `CommandRegistry.Move`, which is the only place a player walks under their own
-    power — `Travel.cs:91` and the respawn path bypass it, which is exactly the split the rule above
-    wants.
-  - It composes with `assist`: follow the tank, assist the tank, and that is the whole of playing
-    support without typing during a fight.
+  - **Directional moves only**, and a non-directional one — recall, portal, `goto`, death respawn —
+    **ends** every follow pointed at that character rather than being ignored. The break lives in
+    `WorldState.Move` with breaking as the *default*, so a relocation added later gets it without
+    knowing the feature exists; `walked: true` is passed by exactly one caller.
+  - **Circles resolved both ways.** Following somebody who follows you says so; a longer ring
+    (A→B→C→A) is walked and refused too. Propagation still carries a visited set, because the chain
+    can be re-pointed between steps.
+  - **A refused step ends the follow and says why.** The follower is asked the same questions the
+    mover was — including the exit gate, deliberately, since skipping it would walk anybody past any
+    lock.
+  - Chains work: C follows B follows A moves all three.
+
+  **Untested in play**, and the two things to watch: whether the per-follower room refreshes are
+  noticeable when a party of five moves, and whether "a step it cannot take ends it" is too strict
+  in practice — a party crossing a zone with one gated door loses everyone behind it at once.

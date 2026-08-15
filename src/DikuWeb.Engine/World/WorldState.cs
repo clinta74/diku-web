@@ -288,13 +288,83 @@ public sealed class WorldState(IRandomSource random)
         _bySession[newSessionId] = actor;
     }
 
-    public void Move(PlayerActor actor, RoomKey destination)
+    /// <summary>
+    /// Puts a character in another room, and returns anyone whose autofollow this broke.
+    /// </summary>
+    /// <param name="walked">
+    /// True only when this is the character stepping through an exit under their own power. False
+    /// — the default — means a relocation nobody could have walked behind: a recall, a portal, a
+    /// <c>goto</c>, a respawn, a room deleted underneath them. Those break every autofollow pointed
+    /// at this character.
+    /// </param>
+    /// <remarks>
+    /// <b>The default is the breaking one, deliberately.</b> A relocation site added later gets the
+    /// safe behaviour without knowing this feature exists — the same argument an absent room flag
+    /// resolving to the confining value already makes. Getting it wrong the other way leaves a
+    /// follower standing three realms from the person they are following, still following them.
+    ///
+    /// Returns the dropped followers rather than telling them, because <see cref="WorldState"/> is
+    /// state and does not narrate. A caller that ignores the list still gets the link broken, which
+    /// is the half that must not be forgettable; saying so is the half that can be.
+    /// </remarks>
+    public IReadOnlyList<PlayerActor> Move(PlayerActor actor, RoomKey destination, bool walked = false)
     {
         ArgumentNullException.ThrowIfNull(actor);
+
+        var dropped = walked ? [] : BreakFollowersOf(actor.CharacterId);
 
         OccupantList(actor.RoomKey).Remove(actor);
         actor.Character.RoomKey = destination;
         OccupantList(destination).Add(actor);
+
+        return dropped;
+    }
+
+    // -----------------------------------------------------------------------
+    // Autofollow (PLAN.md §4.17)
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Follower character id -> the leader they are following. Runtime only: an intent formed for
+    /// one trip across a zone has no business surviving a relog.
+    /// </summary>
+    private readonly Dictionary<Guid, Guid> _following = [];
+
+    /// <summary>Who this character is following, or null.</summary>
+    public Guid? LeaderOf(Guid followerId) =>
+        _following.TryGetValue(followerId, out var leader) ? leader : null;
+
+    public void SetFollowing(Guid followerId, Guid leaderId) => _following[followerId] = leaderId;
+
+    public bool StopFollowing(Guid followerId) => _following.Remove(followerId);
+
+    /// <summary>Everyone currently following this character.</summary>
+    public IReadOnlyList<PlayerActor> FollowersOf(Guid leaderId)
+    {
+        List<PlayerActor>? followers = null;
+
+        foreach (var (followerId, id) in _following)
+        {
+            if (id == leaderId && FindByCharacter(followerId) is { } actor)
+            {
+                (followers ??= []).Add(actor);
+            }
+        }
+
+        return followers ?? (IReadOnlyList<PlayerActor>)[];
+    }
+
+    /// <summary>Drops every autofollow pointed at this character, and returns who was dropped.</summary>
+    public IReadOnlyList<PlayerActor> BreakFollowersOf(Guid leaderId)
+    {
+        var dropped = FollowersOf(leaderId);
+
+        foreach (var follower in dropped)
+        {
+            _following.Remove(follower.CharacterId);
+        }
+
+        return dropped;
     }
 
     private List<PlayerActor> OccupantList(RoomKey key)

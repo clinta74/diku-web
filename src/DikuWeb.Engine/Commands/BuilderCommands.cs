@@ -298,7 +298,14 @@ internal static class BuilderCommands
         }
 
         ctx.Broadcast($"{ctx.Actor.Name} steps out of the world.", "movement");
-        ctx.World.Move(ctx.Actor, destination.Key);
+
+        // `goto` is not a step anyone walks behind, so it ends every follow (§4.17). A builder
+        // hopping across realms must not drag a party through with them.
+        foreach (var dropped in ctx.World.Move(ctx.Actor, destination.Key))
+        {
+            dropped.SendText($"{ctx.Actor.Name} steps out of the world, and you stop following.", "bad");
+        }
+
         ctx.Broadcast($"{ctx.Actor.Name} steps into the world.", "movement");
 
         ctx.Reply($"You step through to {target}.", "heading");

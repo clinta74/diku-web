@@ -26,6 +26,113 @@ public static class PartyCommands
 
         commands.Add(new CommandDefinition(
             "gtell", 2, "gtell <message> (gt) - speak to your group, wherever they are", GroupTell));
+
+        // Full word. "a", "ab" and "as" are already spoken for by abilities and assist, and there
+        // is nothing to be gained from a short form for a verb typed once a trip.
+        commands.Add(new CommandDefinition(
+            "autofollow",
+            4,
+            "autofollow <player> (auto) - walk behind someone in your group",
+            AutoFollow));
+    }
+
+    /// <summary>
+    /// Turns following somebody in your group on, or off again (PLAN.md §4.17).
+    /// </summary>
+    /// <remarks>
+    /// A toggle on the <em>target</em>: naming the person you are already following stops it, and
+    /// naming somebody else moves the follow rather than stacking a second one, because following
+    /// two people at once has no meaning the moment they part.
+    /// </remarks>
+    private static void AutoFollow(CommandContext ctx)
+    {
+        var actor = ctx.Actor;
+        var world = ctx.World;
+
+        // Bare `autofollow` stops, which is what a player reaches for when they want out and are
+        // not sure they remember whose name they typed.
+        if (!ctx.HasArgument)
+        {
+            ctx.Reply(
+                world.StopFollowing(actor.CharacterId)
+                    ? "You stop following."
+                    : "You are not following anyone.");
+            return;
+        }
+
+        var target = world.OthersIn(actor.RoomKey, actor)
+            .FirstOrDefault(p => string.Equals(p.Name, ctx.Argument, StringComparison.OrdinalIgnoreCase))
+            ?? world.AllPlayers.FirstOrDefault(
+                p => string.Equals(p.Name, ctx.Argument, StringComparison.OrdinalIgnoreCase));
+
+        if (target is null || target.CharacterId == actor.CharacterId)
+        {
+            ctx.Reply($"You don't see '{ctx.Argument}' here.");
+            return;
+        }
+
+        if (world.LeaderOf(actor.CharacterId) == target.CharacterId)
+        {
+            world.StopFollowing(actor.CharacterId);
+            ctx.Reply($"You stop following {target.Name}.");
+            return;
+        }
+
+        // The group is where the consent to be dragged around the world already lives. A bare name
+        // in a room does not establish it, and following is a standing licence rather than a step.
+        if (!world.Parties.SameParty(actor.CharacterId, target.CharacterId))
+        {
+            ctx.Reply($"{target.Name} is not in your group.", "bad");
+            return;
+        }
+
+        if (Circles(world, actor.CharacterId, target.CharacterId) is { } circle)
+        {
+            ctx.Reply(circle, "bad");
+            return;
+        }
+
+        world.SetFollowing(actor.CharacterId, target.CharacterId);
+        ctx.Reply($"You begin following {target.Name}.");
+        target.SendText($"{actor.Name} begins following you.", "party");
+    }
+
+    /// <summary>
+    /// Why following <paramref name="leaderId"/> would go round in a circle, or null.
+    /// </summary>
+    /// <remarks>
+    /// Refused when the verb is typed rather than only guarded at propagation, because a player who
+    /// is told <em>now</em> can fix it now — and the two of them standing still while each waits for
+    /// the other to move first is not a state anything on screen would explain.
+    /// </remarks>
+    private static string? Circles(WorldState world, Guid followerId, Guid leaderId)
+    {
+        if (world.LeaderOf(leaderId) == followerId)
+        {
+            return $"{world.FindByCharacter(leaderId)?.Name ?? "They"} is already following you.";
+        }
+
+        // Longer rings: A follows B follows C follows A. Walked rather than assumed away, because
+        // a three-person party is enough to build one and nothing else would catch it.
+        var seen = new HashSet<Guid> { followerId };
+        var walk = world.LeaderOf(leaderId);
+
+        while (walk is { } next)
+        {
+            if (next == followerId)
+            {
+                return "That would leave your group going round in a circle.";
+            }
+
+            if (!seen.Add(next))
+            {
+                break;
+            }
+
+            walk = world.LeaderOf(next);
+        }
+
+        return null;
     }
 
     private static void Group(CommandContext ctx)

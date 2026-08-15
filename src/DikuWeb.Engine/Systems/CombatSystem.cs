@@ -1168,8 +1168,14 @@ public sealed class CombatSystem(
             respawnRoom = options.StartingRoom;
         }
 
-        // Move and reset vitals
-        world.Move(actor, respawnRoom);
+        // Move and reset vitals. Dying is not a step anyone walks behind, so it ends every follow
+        // pointed at the corpse (§4.17) - and the follower is standing in the room the fight was
+        // in, which is where they would rather be told about it.
+        foreach (var dropped in world.Move(actor, respawnRoom))
+        {
+            dropped.SendText($"{actor.Name} falls, and you stop following.", "bad");
+        }
+
         character.Vitals.Health = Math.Max(1, (int)(character.Vitals.HealthMax * options.RespawnHealthPercent));
         character.Vitals.Focus = 0;
         character.Vitals.Stamina = 0;

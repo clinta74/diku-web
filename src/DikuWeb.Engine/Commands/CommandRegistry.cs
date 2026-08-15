@@ -298,7 +298,9 @@ public sealed class CommandRegistry
         var origin = ctx.Actor.RoomKey;
 
         ctx.Broadcast($"{ctx.Actor.Name} leaves {direction.ToLowerName()}.", "movement");
-        ctx.World.Move(ctx.Actor, destination.Key);
+        // The one relocation in the game that does not break following, because it is the only one
+        // anybody could have walked behind (§4.17).
+        ctx.World.Move(ctx.Actor, destination.Key, walked: true);
         ctx.Broadcast($"{ctx.Actor.Name} arrives from the {direction.Opposite().ToLowerName()}.", "movement");
 
         ctx.Reply($"You walk {direction.ToLowerName()}.", "movement");
@@ -307,6 +309,11 @@ public sealed class CommandRegistry
         // Both rooms changed occupancy, so both maps need redrawing for everyone in them.
         ctx.View.RefreshRoom(ctx.World, origin);
         ctx.View.RefreshRoom(ctx.World, destination.Key);
+
+        // Last, so the leader's own arrival is on screen before anyone else's. Each follower
+        // refreshes the two rooms again, which is the price of them being ordinary movers.
+        FollowSystem.Step(
+            ctx.World, ctx.View, ctx.Actor, origin, direction, ctx.Clock?.CurrentPulse ?? 0L);
     }
 
     private static void Look(CommandContext ctx) =>

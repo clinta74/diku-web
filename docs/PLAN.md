@@ -1355,6 +1355,42 @@ Three parts, and each is load-bearing:
 - **It refuses mid-fight exactly as `attack` does.** Switching targets is a separate decision from
   choosing one; if that rule is ever relaxed it should be relaxed for both verbs together.
 
+### 4.17 `autofollow` — walking behind somebody
+
+`autofollow <player>` toggles. When they walk, you walk.
+
+- **Group only.** Following is a standing licence to be dragged around the world, and the group is
+  where that consent already lives: `group invite` / `group accept` is two people agreeing to
+  travel together. A bare name in a room establishes nothing.
+- **It follows walking, and nothing else.** A recall, a portal, a `goto`, a respawn — anything that
+  is not a step through an exit — **ends** every follow pointed at that character rather than being
+  silently skipped. A link that survived a teleport would mean the leader's next ordinary step
+  relocates somebody across the world.
+- **The break lives in `WorldState.Move`, and breaking is the default.** `walked: true` is passed by
+  exactly one caller, the movement handler. Every other relocation gets the safe behaviour without
+  knowing this feature exists, which is the same argument an absent room flag resolving to the
+  confining value already makes. `Move` returns the dropped followers so the caller can say so; a
+  caller that ignores the list still gets the link broken, because that is the half that must not be
+  forgettable.
+- **A step that cannot be taken ends the follow, and says why.** The follower is asked the same
+  questions the mover was, in the same order — combat, rest, root, the exit gate, a live
+  destination. **Deliberately re-asked rather than inherited**: the gate that let a Warden with the
+  key through is exactly the gate that must stop the Shade without it (§4.15), and a follow that
+  skipped it would walk anybody past any lock. Retrying silently is how somebody ends up three
+  rooms behind and unaware, which is the state the verb exists to prevent.
+- **Only followers standing in the room the leader left.** Following is an intent, not a leash;
+  being elsewhere is not a failure and does not end it.
+- **Circles are refused when the verb is typed.** Following somebody who follows you answers *"X is
+  already following you."*; a longer ring — A→B→C→A, which three people can build — is walked and
+  refused too. Propagation still carries a visited set, because the chain can be re-pointed between
+  one step and the next and a termination guarantee that depends on a command handler having been
+  careful is not one.
+- **Chains work and are wanted.** C follows B follows A: all three move, because all three were in
+  the room the step started from.
+
+Composes with `assist` (§4.16): follow the tank, assist the tank, and that is the whole of playing
+support without typing during a fight.
+
 ---
 
 ## 5. Game client layout
