@@ -1,5 +1,5 @@
 {
-  "formatVersion": 7,
+  "formatVersion": 8,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -121,7 +121,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "nemhal-relic-harness",
@@ -136,7 +139,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "nemhal-bearers-gauntlets",
@@ -151,7 +157,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "nemhal-kneeling-greaves",
@@ -166,7 +175,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "nemhal-processional-boots",
@@ -181,7 +193,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "nemhal-bier-shield",
@@ -197,7 +212,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "nemhal-unlit-lamp",
@@ -212,7 +230,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "nemhal-vigil-spear",
@@ -228,7 +249,10 @@
       },
       "attackDelayPulses": 8,
       "attackVerb": "pierce",
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "nemhal-keening-blade",
@@ -244,7 +268,10 @@
       },
       "attackDelayPulses": 6,
       "attackVerb": "slash",
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "nemhal-standing-maul",
@@ -259,7 +286,10 @@
       },
       "attackDelayPulses": 10,
       "attackVerb": "crush",
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "nemhal-vigil-token",
@@ -272,7 +302,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": true
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "nemhal-office-page",
@@ -285,7 +318,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": true
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "nemhal-god-shroud",
@@ -298,7 +334,94 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": true
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
+    },
+    {
+      "key": "epic-warden-4",
+      "name": "a kept oathmaul",
+      "description": "Head like a milestone, haft the length of a person. It was made to stop something. Carried through Nemhal and kept, which is the only word the cult there would use.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 6.6,
+        "bonus": 5
+      },
+      "attackDelayPulses": 10,
+      "attackVerb": "crush",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Warden"
+      ]
+    },
+    {
+      "key": "epic-hallow-4",
+      "name": "a kept hearthcenser",
+      "description": "A censer on a chain, weighted for swinging and never once used for incense. Carried through Nemhal and kept, which is the only word the cult there would use.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 6.6,
+        "bonus": 5
+      },
+      "attackDelayPulses": 8,
+      "attackVerb": "crush",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Hallow"
+      ]
+    },
+    {
+      "key": "epic-adept-4",
+      "name": "a kept stormrod",
+      "description": "Bronze wound with wire that stands the hair up on your arm when the weather turns. Carried through Nemhal and kept, which is the only word the cult there would use.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 5.6,
+        "bonus": 4
+      },
+      "attackDelayPulses": 8,
+      "attackVerb": "strike",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Adept"
+      ]
+    },
+    {
+      "key": "epic-shade-4",
+      "name": "a kept quiet knife",
+      "description": "It does not catch the light. Somebody took a great deal of trouble over that. Carried through Nemhal and kept, which is the only word the cult there would use.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 5.6,
+        "bonus": 4
+      },
+      "attackDelayPulses": 6,
+      "attackVerb": "pierce",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Shade"
+      ]
     }
   ],
   "mobTemplates": [
@@ -560,6 +683,42 @@
           "DamageMultiplier": null
         }
       ]
+    },
+    {
+      "key": "epic-smith-vesh",
+      "name": "Vesh, who follows the gates",
+      "description": "A smith with a travelling anvil and no forge, who has been at every crossing anyone can remember and looks no older in any of the stories. She works for materials and will not take coin.",
+      "icon": "@",
+      "level": 20,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 500
+      },
+      "baseXp": 0,
+      "baseGold": 0,
+      "behavior": {
+        "type": "npc",
+        "wanders": false,
+        "emotes": [
+          {
+            "text": "turns a piece over and puts it back in the bag unfinished",
+            "minSeconds": 150,
+            "maxSeconds": 320
+          },
+          {
+            "text": "says, 'I do not sell. Bring me something and I will make it better.'",
+            "minSeconds": 300,
+            "maxSeconds": 600
+          },
+          {
+            "text": "sets an anvil down that nobody saw her carrying",
+            "minSeconds": 240,
+            "maxSeconds": 500
+          }
+        ]
+      },
+      "loot": [],
+      "attacks": []
     },
     {
       "key": "nemhal-quartermaster",
@@ -2070,6 +2229,19 @@
       "respawnSeconds": 300,
       "wanders": false,
       "fightsAtLevel": null
+    },
+    {
+      "id": "c5bdfded-379f-5d71-b29c-a9274c000143",
+      "zoneKey": "nemhal.keshvaun",
+      "templateKey": "epic-smith-vesh",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "nemhal.keshvaun.the-outer-court"
+      ],
+      "targetCount": 1,
+      "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
     }
   ],
   "quests": [
@@ -2154,6 +2326,122 @@
         "already": "'She is still there. She has been still there for two hundred years and she has never once been relieved.'"
       },
       "sortOrder": 3
+    },
+    {
+      "key": "e4-warden",
+      "zoneKey": "nemhal.keshvaun",
+      "name": "The Oathmaul, kept",
+      "summary": "Have Vesh reforge your oathmaul.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-warden-3",
+      "requiredCount": 1,
+      "rewardXp": 96000,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-warden-4",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a4-3-she-stood-in-the-way",
+        "e3-warden"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 14
+    },
+    {
+      "key": "e4-hallow",
+      "zoneKey": "nemhal.keshvaun",
+      "name": "The Hearthcenser, kept",
+      "summary": "Have Vesh reforge your hearthcenser.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-hallow-3",
+      "requiredCount": 1,
+      "rewardXp": 96000,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-hallow-4",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a4-3-she-stood-in-the-way",
+        "e3-hallow"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 14
+    },
+    {
+      "key": "e4-adept",
+      "zoneKey": "nemhal.keshvaun",
+      "name": "The Stormrod, kept",
+      "summary": "Have Vesh reforge your stormrod.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-adept-3",
+      "requiredCount": 1,
+      "rewardXp": 96000,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-adept-4",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a4-3-she-stood-in-the-way",
+        "e3-adept"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 14
+    },
+    {
+      "key": "e4-shade",
+      "zoneKey": "nemhal.keshvaun",
+      "name": "The Quiet Knife, kept",
+      "summary": "Have Vesh reforge your quiet knife.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-shade-3",
+      "requiredCount": 1,
+      "rewardXp": 96000,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-shade-4",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a4-3-she-stood-in-the-way",
+        "e3-shade"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 14
     }
   ],
   "configurations": []

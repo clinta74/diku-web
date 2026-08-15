@@ -1,5 +1,5 @@
 {
-  "formatVersion": 7,
+  "formatVersion": 8,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -95,7 +95,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": true
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "ossara-keepsake",
@@ -108,7 +111,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": true
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "ossara-gate-shard",
@@ -121,7 +127,110 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": true
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
+    },
+    {
+      "key": "epic-warden-1",
+      "name": "an unproven oathmaul",
+      "description": "Head like a milestone, haft the length of a person. It was made to stop something. Newly made and honest about it. Vesh will not pretend this is finished.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 2.4,
+        "bonus": 2
+      },
+      "attackDelayPulses": 10,
+      "attackVerb": "crush",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Warden"
+      ]
+    },
+    {
+      "key": "epic-hallow-1",
+      "name": "an unproven hearthcenser",
+      "description": "A censer on a chain, weighted for swinging and never once used for incense. Newly made and honest about it. Vesh will not pretend this is finished.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 2.4,
+        "bonus": 2
+      },
+      "attackDelayPulses": 8,
+      "attackVerb": "crush",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Hallow"
+      ]
+    },
+    {
+      "key": "epic-adept-1",
+      "name": "an unproven stormrod",
+      "description": "Bronze wound with wire that stands the hair up on your arm when the weather turns. Newly made and honest about it. Vesh will not pretend this is finished.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 2.0,
+        "bonus": 1
+      },
+      "attackDelayPulses": 8,
+      "attackVerb": "strike",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Adept"
+      ]
+    },
+    {
+      "key": "epic-shade-1",
+      "name": "an unproven quiet knife",
+      "description": "It does not catch the light. Somebody took a great deal of trouble over that. Newly made and honest about it. Vesh will not pretend this is finished.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 2.0,
+        "bonus": 1
+      },
+      "attackDelayPulses": 6,
+      "attackVerb": "pierce",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Shade"
+      ]
+    },
+    {
+      "key": "epic-ember",
+      "name": "a banked ember",
+      "description": "It is not warm and it has not gone out. Vesh keeps a jar of them and will not say where the first one came from.",
+      "icon": "*",
+      "slot": null,
+      "weight": 10,
+      "baseValue": 0,
+      "baseStats": {},
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     }
   ],
   "mobTemplates": [
@@ -347,6 +456,18 @@
         {
           "itemTemplateKey": "ossara-gate-shard",
           "chance": 1.0
+        },
+        {
+          "itemTemplateKey": "epic-ember",
+          "chance": 1.0
+        },
+        {
+          "itemTemplateKey": "epic-ember",
+          "chance": 0.9
+        },
+        {
+          "itemTemplateKey": "epic-ember",
+          "chance": 0.8
         }
       ],
       "attacks": [
@@ -374,6 +495,42 @@
           "DamageMultiplier": null
         }
       ]
+    },
+    {
+      "key": "epic-smith-vesh",
+      "name": "Vesh, who follows the gates",
+      "description": "A smith with a travelling anvil and no forge, who has been at every crossing anyone can remember and looks no older in any of the stories. She works for materials and will not take coin.",
+      "icon": "@",
+      "level": 20,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 500
+      },
+      "baseXp": 0,
+      "baseGold": 0,
+      "behavior": {
+        "type": "npc",
+        "wanders": false,
+        "emotes": [
+          {
+            "text": "turns a piece over and puts it back in the bag unfinished",
+            "minSeconds": 150,
+            "maxSeconds": 320
+          },
+          {
+            "text": "says, 'I do not sell. Bring me something and I will make it better.'",
+            "minSeconds": 300,
+            "maxSeconds": 600
+          },
+          {
+            "text": "sets an anvil down that nobody saw her carrying",
+            "minSeconds": 240,
+            "maxSeconds": 500
+          }
+        ]
+      },
+      "loot": [],
+      "attacks": []
     },
     {
       "key": "ossara-terrace-warden",
@@ -1502,6 +1659,19 @@
       "respawnSeconds": 240,
       "wanders": false,
       "fightsAtLevel": null
+    },
+    {
+      "id": "df6c7fd4-e5c4-594b-958d-ed9f48e90e95",
+      "zoneKey": "ossara.the-rimwalk",
+      "templateKey": "epic-smith-vesh",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "ossara.the-rimwalk.the-picnic-stones"
+      ],
+      "targetCount": 1,
+      "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
     }
   ],
   "quests": [
@@ -1586,6 +1756,118 @@
         "already": "'Still standing there, is it. Yes. It does that.'"
       },
       "sortOrder": 3
+    },
+    {
+      "key": "e1-warden",
+      "zoneKey": "ossara.the-rimwalk",
+      "name": "The Oathmaul, unproven",
+      "summary": "Have Vesh reforge your oathmaul.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-ember",
+      "requiredCount": 3,
+      "rewardXp": 1800,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-warden-1",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a1-3-a-gate-does-not-break"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh looks at you rather than at your hands. 'You are a Warden. I know what a Warden needs and I have known for a long time.' She sets down a bag. 'Three embers. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
+        "progress": "'Three. They do not go out and they do not warm anything. Bring them.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 11
+    },
+    {
+      "key": "e1-hallow",
+      "zoneKey": "ossara.the-rimwalk",
+      "name": "The Hearthcenser, unproven",
+      "summary": "Have Vesh reforge your hearthcenser.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-ember",
+      "requiredCount": 3,
+      "rewardXp": 1800,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-hallow-1",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a1-3-a-gate-does-not-break"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh looks at you rather than at your hands. 'You are a Hallow. I know what a Hallow needs and I have known for a long time.' She sets down a bag. 'Three embers. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
+        "progress": "'Three. They do not go out and they do not warm anything. Bring them.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 11
+    },
+    {
+      "key": "e1-adept",
+      "zoneKey": "ossara.the-rimwalk",
+      "name": "The Stormrod, unproven",
+      "summary": "Have Vesh reforge your stormrod.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-ember",
+      "requiredCount": 3,
+      "rewardXp": 1800,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-adept-1",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a1-3-a-gate-does-not-break"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh looks at you rather than at your hands. 'You are a Adept. I know what a Adept needs and I have known for a long time.' She sets down a bag. 'Three embers. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
+        "progress": "'Three. They do not go out and they do not warm anything. Bring them.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 11
+    },
+    {
+      "key": "e1-shade",
+      "zoneKey": "ossara.the-rimwalk",
+      "name": "The Quiet Knife, unproven",
+      "summary": "Have Vesh reforge your quiet knife.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-ember",
+      "requiredCount": 3,
+      "rewardXp": 1800,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-shade-1",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a1-3-a-gate-does-not-break"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh looks at you rather than at your hands. 'You are a Shade. I know what a Shade needs and I have known for a long time.' She sets down a bag. 'Three embers. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
+        "progress": "'Three. They do not go out and they do not warm anything. Bring them.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 11
     }
   ],
   "configurations": [

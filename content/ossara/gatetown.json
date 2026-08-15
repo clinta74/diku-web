@@ -1,5 +1,5 @@
 {
-  "formatVersion": 7,
+  "formatVersion": 8,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "zone",
@@ -60,7 +60,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "waterskin",
@@ -73,7 +76,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "torch",
@@ -86,7 +92,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "rope",
@@ -99,7 +108,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "bandage-roll",
@@ -112,7 +124,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "ossara-short-blade",
@@ -128,7 +143,10 @@
       },
       "attackDelayPulses": 6,
       "attackVerb": "slash",
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "ossara-hand-axe",
@@ -143,7 +161,10 @@
       },
       "attackDelayPulses": 8,
       "attackVerb": "chop",
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "ossara-walking-staff",
@@ -158,7 +179,10 @@
       },
       "attackDelayPulses": 8,
       "attackVerb": "crush",
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "ossara-leather-cap",
@@ -173,7 +197,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "ossara-leather-jerkin",
@@ -188,7 +215,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "ossara-leather-gloves",
@@ -203,7 +233,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "ossara-leather-leggings",
@@ -218,7 +251,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "ossara-walking-boots",
@@ -233,7 +269,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "ossara-plank-shield",
@@ -249,7 +288,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "ossara-luck-token",
@@ -264,7 +306,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     }
   ],
   "mobTemplates": [

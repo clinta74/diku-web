@@ -1,5 +1,5 @@
 {
-  "formatVersion": 7,
+  "formatVersion": 8,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -124,7 +124,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "azhen-scaled-mantle",
@@ -139,7 +142,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "azhen-calipers-gloves",
@@ -154,7 +160,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "azhen-plated-skirt",
@@ -169,7 +178,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "azhen-soled-sandals",
@@ -184,7 +196,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "azhen-orrery-guard",
@@ -200,7 +215,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "azhen-reading-stone",
@@ -215,7 +233,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "azhen-measuring-rod",
@@ -231,7 +252,10 @@
       },
       "attackDelayPulses": 8,
       "attackVerb": "strike",
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "azhen-gate-stylus",
@@ -247,7 +271,10 @@
       },
       "attackDelayPulses": 6,
       "attackVerb": "pierce",
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "azhen-counterweight-maul",
@@ -262,7 +289,10 @@
       },
       "attackDelayPulses": 10,
       "attackVerb": "crush",
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "azhen-lens-blank",
@@ -275,7 +305,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": true
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "azhen-drive-cog",
@@ -288,7 +321,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": true
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "azhen-silent-plate",
@@ -301,7 +337,94 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": true
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
+    },
+    {
+      "key": "epic-warden-3",
+      "name": "a measured oathmaul",
+      "description": "Head like a milestone, haft the length of a person. It was made to stop something. Trued against an Azhen rule. Every measurement on it is a measurement of something else.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 5.0,
+        "bonus": 4
+      },
+      "attackDelayPulses": 10,
+      "attackVerb": "crush",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Warden"
+      ]
+    },
+    {
+      "key": "epic-hallow-3",
+      "name": "a measured hearthcenser",
+      "description": "A censer on a chain, weighted for swinging and never once used for incense. Trued against an Azhen rule. Every measurement on it is a measurement of something else.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 5.0,
+        "bonus": 4
+      },
+      "attackDelayPulses": 8,
+      "attackVerb": "crush",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Hallow"
+      ]
+    },
+    {
+      "key": "epic-adept-3",
+      "name": "a measured stormrod",
+      "description": "Bronze wound with wire that stands the hair up on your arm when the weather turns. Trued against an Azhen rule. Every measurement on it is a measurement of something else.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 4.2,
+        "bonus": 3
+      },
+      "attackDelayPulses": 8,
+      "attackVerb": "strike",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Adept"
+      ]
+    },
+    {
+      "key": "epic-shade-3",
+      "name": "a measured quiet knife",
+      "description": "It does not catch the light. Somebody took a great deal of trouble over that. Trued against an Azhen rule. Every measurement on it is a measurement of something else.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 4.2,
+        "bonus": 3
+      },
+      "attackDelayPulses": 6,
+      "attackVerb": "pierce",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Shade"
+      ]
     }
   ],
   "mobTemplates": [
@@ -569,6 +692,42 @@
           "DamageMultiplier": null
         }
       ]
+    },
+    {
+      "key": "epic-smith-vesh",
+      "name": "Vesh, who follows the gates",
+      "description": "A smith with a travelling anvil and no forge, who has been at every crossing anyone can remember and looks no older in any of the stories. She works for materials and will not take coin.",
+      "icon": "@",
+      "level": 20,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 500
+      },
+      "baseXp": 0,
+      "baseGold": 0,
+      "behavior": {
+        "type": "npc",
+        "wanders": false,
+        "emotes": [
+          {
+            "text": "turns a piece over and puts it back in the bag unfinished",
+            "minSeconds": 150,
+            "maxSeconds": 320
+          },
+          {
+            "text": "says, 'I do not sell. Bring me something and I will make it better.'",
+            "minSeconds": 300,
+            "maxSeconds": 600
+          },
+          {
+            "text": "sets an anvil down that nobody saw her carrying",
+            "minSeconds": 240,
+            "maxSeconds": 500
+          }
+        ]
+      },
+      "loot": [],
+      "attacks": []
     },
     {
       "key": "azhen-camp-trader",
@@ -2026,6 +2185,19 @@
       "respawnSeconds": 300,
       "wanders": false,
       "fightsAtLevel": null
+    },
+    {
+      "id": "47b8425b-b9b3-582d-8a95-5c2ebfbeb853",
+      "zoneKey": "azhen.thessivar",
+      "templateKey": "epic-smith-vesh",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "azhen.thessivar.the-entry-court"
+      ],
+      "targetCount": 1,
+      "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
     }
   ],
   "quests": [
@@ -2110,6 +2282,122 @@
         "already": "'They are still sitting there. They will be sitting there tomorrow.'"
       },
       "sortOrder": 3
+    },
+    {
+      "key": "e3-warden",
+      "zoneKey": "azhen.thessivar",
+      "name": "The Oathmaul, measured",
+      "summary": "Have Vesh reforge your oathmaul.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-warden-2",
+      "requiredCount": 1,
+      "rewardXp": 34000,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-warden-3",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a3-3-what-it-is-watching-for",
+        "e2-warden"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 13
+    },
+    {
+      "key": "e3-hallow",
+      "zoneKey": "azhen.thessivar",
+      "name": "The Hearthcenser, measured",
+      "summary": "Have Vesh reforge your hearthcenser.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-hallow-2",
+      "requiredCount": 1,
+      "rewardXp": 34000,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-hallow-3",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a3-3-what-it-is-watching-for",
+        "e2-hallow"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 13
+    },
+    {
+      "key": "e3-adept",
+      "zoneKey": "azhen.thessivar",
+      "name": "The Stormrod, measured",
+      "summary": "Have Vesh reforge your stormrod.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-adept-2",
+      "requiredCount": 1,
+      "rewardXp": 34000,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-adept-3",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a3-3-what-it-is-watching-for",
+        "e2-adept"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 13
+    },
+    {
+      "key": "e3-shade",
+      "zoneKey": "azhen.thessivar",
+      "name": "The Quiet Knife, measured",
+      "summary": "Have Vesh reforge your quiet knife.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-shade-2",
+      "requiredCount": 1,
+      "rewardXp": 34000,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-shade-3",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a3-3-what-it-is-watching-for",
+        "e2-shade"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 13
     }
   ],
   "configurations": []

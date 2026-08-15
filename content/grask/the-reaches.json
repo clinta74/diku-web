@@ -1,5 +1,5 @@
 {
-  "formatVersion": 7,
+  "formatVersion": 8,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -121,7 +121,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "grask-plated-coat",
@@ -136,7 +139,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "grask-riggers-gloves",
@@ -151,7 +157,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "grask-studded-breeches",
@@ -166,7 +175,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "grask-marsh-boots",
@@ -181,7 +193,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "grask-claim-shield",
@@ -197,7 +212,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "grask-owing-token",
@@ -212,7 +230,10 @@
       },
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "grask-dredge-hook",
@@ -228,7 +249,10 @@
       },
       "attackDelayPulses": 8,
       "attackVerb": "hook",
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "grask-claim-cleaver",
@@ -244,7 +268,10 @@
       },
       "attackDelayPulses": 6,
       "attackVerb": "cleave",
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "grask-long-pick",
@@ -259,7 +286,10 @@
       },
       "attackDelayPulses": 10,
       "attackVerb": "pierce",
-      "isQuestItem": false
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "grask-crew-tag",
@@ -272,7 +302,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": true
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "grask-ledger-leaf",
@@ -285,7 +318,10 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": true
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
     },
     {
       "key": "grask-first-mark",
@@ -298,7 +334,94 @@
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
-      "isQuestItem": true
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "paths": []
+    },
+    {
+      "key": "epic-warden-2",
+      "name": "a tempered oathmaul",
+      "description": "Head like a milestone, haft the length of a person. It was made to stop something. Folded again with something out of Grask in it, and heavier for the knowing.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 3.6,
+        "bonus": 3
+      },
+      "attackDelayPulses": 10,
+      "attackVerb": "crush",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Warden"
+      ]
+    },
+    {
+      "key": "epic-hallow-2",
+      "name": "a tempered hearthcenser",
+      "description": "A censer on a chain, weighted for swinging and never once used for incense. Folded again with something out of Grask in it, and heavier for the knowing.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 3.6,
+        "bonus": 3
+      },
+      "attackDelayPulses": 8,
+      "attackVerb": "crush",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Hallow"
+      ]
+    },
+    {
+      "key": "epic-adept-2",
+      "name": "a tempered stormrod",
+      "description": "Bronze wound with wire that stands the hair up on your arm when the weather turns. Folded again with something out of Grask in it, and heavier for the knowing.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 3.0,
+        "bonus": 2
+      },
+      "attackDelayPulses": 8,
+      "attackVerb": "strike",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Adept"
+      ]
+    },
+    {
+      "key": "epic-shade-2",
+      "name": "a tempered quiet knife",
+      "description": "It does not catch the light. Somebody took a great deal of trouble over that. Folded again with something out of Grask in it, and heavier for the knowing.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 3.0,
+        "bonus": 2
+      },
+      "attackDelayPulses": 6,
+      "attackVerb": "pierce",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "paths": [
+        "Shade"
+      ]
     }
   ],
   "mobTemplates": [
@@ -551,6 +674,42 @@
           "DamageMultiplier": null
         }
       ]
+    },
+    {
+      "key": "epic-smith-vesh",
+      "name": "Vesh, who follows the gates",
+      "description": "A smith with a travelling anvil and no forge, who has been at every crossing anyone can remember and looks no older in any of the stories. She works for materials and will not take coin.",
+      "icon": "@",
+      "level": 20,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "health": 500
+      },
+      "baseXp": 0,
+      "baseGold": 0,
+      "behavior": {
+        "type": "npc",
+        "wanders": false,
+        "emotes": [
+          {
+            "text": "turns a piece over and puts it back in the bag unfinished",
+            "minSeconds": 150,
+            "maxSeconds": 320
+          },
+          {
+            "text": "says, 'I do not sell. Bring me something and I will make it better.'",
+            "minSeconds": 300,
+            "maxSeconds": 600
+          },
+          {
+            "text": "sets an anvil down that nobody saw her carrying",
+            "minSeconds": 240,
+            "maxSeconds": 500
+          }
+        ]
+      },
+      "loot": [],
+      "attacks": []
     },
     {
       "key": "grask-quaymaster",
@@ -2171,6 +2330,19 @@
       "respawnSeconds": 240,
       "wanders": false,
       "fightsAtLevel": null
+    },
+    {
+      "id": "b50402a8-f134-5cf9-8e08-63b2ed23b704",
+      "zoneKey": "grask.the-owing",
+      "templateKey": "epic-smith-vesh",
+      "templateKind": "Mob",
+      "roomKeys": [
+        "grask.the-owing.the-first-turn"
+      ],
+      "targetCount": 1,
+      "respawnSeconds": 60,
+      "wanders": false,
+      "fightsAtLevel": null
     }
   ],
   "quests": [
@@ -2255,6 +2427,122 @@
         "already": "'He is still down there. He is not going anywhere. That is rather the point of him.'"
       },
       "sortOrder": 3
+    },
+    {
+      "key": "e2-warden",
+      "zoneKey": "grask.the-owing",
+      "name": "The Oathmaul, tempered",
+      "summary": "Have Vesh reforge your oathmaul.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-warden-1",
+      "requiredCount": 1,
+      "rewardXp": 9000,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-warden-2",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a2-3-what-was-paid",
+        "e1-warden"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 12
+    },
+    {
+      "key": "e2-hallow",
+      "zoneKey": "grask.the-owing",
+      "name": "The Hearthcenser, tempered",
+      "summary": "Have Vesh reforge your hearthcenser.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-hallow-1",
+      "requiredCount": 1,
+      "rewardXp": 9000,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-hallow-2",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a2-3-what-was-paid",
+        "e1-hallow"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 12
+    },
+    {
+      "key": "e2-adept",
+      "zoneKey": "grask.the-owing",
+      "name": "The Stormrod, tempered",
+      "summary": "Have Vesh reforge your stormrod.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-adept-1",
+      "requiredCount": 1,
+      "rewardXp": 9000,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-adept-2",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a2-3-what-was-paid",
+        "e1-adept"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 12
+    },
+    {
+      "key": "e2-shade",
+      "zoneKey": "grask.the-owing",
+      "name": "The Quiet Knife, tempered",
+      "summary": "Have Vesh reforge your quiet knife.",
+      "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
+      "giverMobKey": "epic-smith-vesh",
+      "turninMobKey": "epic-smith-vesh",
+      "requiredItemKey": "epic-shade-1",
+      "requiredCount": 1,
+      "rewardXp": 9000,
+      "rewardGold": 0,
+      "rewardItemKey": "epic-shade-2",
+      "rewardItemCount": 1,
+      "rewardFlagKey": null,
+      "prerequisiteQuestKeys": [
+        "a2-3-what-was-paid",
+        "e1-shade"
+      ],
+      "isRepeatable": false,
+      "autoStart": false,
+      "dialogue": {
+        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "already": "'When it has been through something. Not before.'"
+      },
+      "sortOrder": 12
     }
   ],
   "configurations": []
