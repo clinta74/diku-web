@@ -47,6 +47,7 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
   const [rewardGold, setRewardGold] = useState(0)
   const [rewardItemKey, setRewardItemKey] = useState('')
   const [rewardItemCount, setRewardItemCount] = useState(1)
+  const [rewardFlagKey, setRewardFlagKey] = useState('')
   const [prerequisites, setPrerequisites] = useState('')
   const [isRepeatable, setIsRepeatable] = useState(false)
   const [autoStart, setAutoStart] = useState(false)
@@ -81,6 +82,7 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
         setRewardGold(loaded.rewardGold)
         setRewardItemKey(loaded.rewardItemKey ?? '')
         setRewardItemCount(loaded.rewardItemCount)
+        setRewardFlagKey(loaded.rewardFlagKey ?? '')
         setPrerequisites(formatKeyList(loaded.prerequisiteQuestKeys))
         setIsRepeatable(loaded.isRepeatable)
         setAutoStart(loaded.autoStart)
@@ -139,6 +141,7 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
         rewardGold,
         rewardItemKey: rewardItemKey.trim() === '' ? null : rewardItemKey.trim(),
         rewardItemCount,
+        rewardFlagKey: rewardFlagKey.trim() === '' ? null : rewardFlagKey.trim(),
         prerequisiteQuestKeys: parseKeyList(prerequisites),
         isRepeatable,
         autoStart,
@@ -364,6 +367,21 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
             />
           </Field>
         </div>
+
+        <Field
+          label="Reward flag"
+          hint="A capability the character keeps for good — what a gated exit asks for (PLAN.md §4.15). Free text: there is no list of flags, because which ones are real is up to the world you author."
+        >
+          <input
+            value={rewardFlagKey}
+            placeholder="attuned.grask"
+            spellCheck={false}
+            onChange={(e) => {
+              setRewardFlagKey(e.target.value)
+              touch()
+            }}
+          />
+        </Field>
       </fieldset>
 
       <fieldset className="behavior-editor">

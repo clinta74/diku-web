@@ -100,6 +100,24 @@ export interface RoomExit {
   to: string
   /** False for a dangling link - allowed, and worth drawing differently (PLAN.md §7.4). */
   targetExists: boolean
+  /** A character flag needed to pass, or null for a way anyone may take (PLAN.md §4.15). */
+  requiredFlagKey: string | null
+  /** An item template key the character must be carrying. Never consumed. */
+  requiredItemKey: string | null
+  /** What someone turned away is told. Null falls back to a generic line. */
+  refusalMessage: string | null
+}
+
+/** What gates an exit. Every field null is an exit anyone may use (PLAN.md §4.15). */
+export interface ExitConditions {
+  requiredFlagKey: string | null
+  requiredItemKey: string | null
+  refusalMessage: string | null
+  /**
+   * Whether the conditions also apply to the reciprocal edge. Defaults false where `reciprocal`
+   * defaults true, because you can always leave a vault.
+   */
+  reciprocalConditions?: boolean
 }
 
 /** Where a flag's effective value came from, so inherited values can be shown as inherited. */
@@ -300,6 +318,11 @@ export interface Quest {
   rewardGold: number
   rewardItemKey: string | null
   rewardItemCount: number
+  /**
+   * A character flag granted on completion, or null (PLAN.md §4.15). How attunement is earned,
+   * and the only thing that opens a gate requiring that flag.
+   */
+  rewardFlagKey: string | null
   prerequisiteQuestKeys: string[]
   isRepeatable: boolean
   autoStart: boolean
@@ -456,10 +479,27 @@ export const builderApi = {
       body: JSON.stringify({ direction, reciprocal: options?.reciprocal ?? true, zoneKey: options?.zoneKey ?? null }),
     }),
 
-  setExit: (key: string, direction: string, to: string, reciprocal = true) =>
+  /**
+   * A PUT states the whole exit, so conditions left out are conditions it does not have - which
+   * is what lets a lock be taken off again (PLAN.md §4.15).
+   */
+  setExit: (
+    key: string,
+    direction: string,
+    to: string,
+    reciprocal = true,
+    conditions?: ExitConditions,
+  ) =>
     request<RoomDetail>(`${base}/rooms/${key}/exits/${direction}`, {
       method: 'PUT',
-      body: JSON.stringify({ to, reciprocal }),
+      body: JSON.stringify({
+        to,
+        reciprocal,
+        requiredFlagKey: conditions?.requiredFlagKey ?? null,
+        requiredItemKey: conditions?.requiredItemKey ?? null,
+        refusalMessage: conditions?.refusalMessage ?? null,
+        reciprocalConditions: conditions?.reciprocalConditions ?? false,
+      }),
     }),
 
   removeExit: (key: string, direction: string) =>
