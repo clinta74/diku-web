@@ -47,3 +47,25 @@ Add anything noticed while playing here. Cleared as items are done.
   party floor gone, a level 9 in a level 50 zone earns a full share of a level 50 mob. That is the
   same rule that makes the level 19 case right, so it cannot be fixed by putting the floor back —
   the honest lever is capping how far *above* your level a mob can pay.
+
+- **Review solo and group balance for all four Paths, band by band.** Thirty-two abilities were
+  added at levels 24–50 (`ABILITIES.md`) against no play data at all: every number in them is a
+  first guess, and four Paths times eight new abilities is a lot of first guesses interacting.
+
+  The target the tuning is *for*, so it is not rediscovered per Path:
+
+  - **Ordinary grinding must be soloable, on every Path.** A player should be able to reach the
+    next band by fighting the zones their level points at, alone, without a Path being the reason
+    it does not work. Hallow and Warden are the two to watch — they are the ones whose new
+    abilities buy survival rather than damage, so they clear more slowly and can end up gated on
+    finding company rather than on levelling.
+  - **The storyline should want a small group, wherever it asks for kills.** Not a raid and not a
+    hard gate: the set-piece fights in each act's zone should be the ones you bring two or three
+    people to, and the ones that feel *better* with a Hallow buffing beforehand and a Warden
+    holding. That is the point at which the group abilities added here should stop being optional.
+
+  Both halves are content dials rather than ability dials — a zone's `strength` and its spawner
+  counts decide whether a fight is a solo fight — so this wants doing **after** the Reaches are
+  authored and can actually be played, not before. Check it per Path per band, and check the
+  Hallow buff window specifically: the maintainable protections are meant to be set before a fight
+  and still standing at the end of one, so if a band's fights outlast them the design has drifted.

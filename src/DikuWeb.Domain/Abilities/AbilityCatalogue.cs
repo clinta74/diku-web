@@ -35,15 +35,45 @@ namespace DikuWeb.Domain.Abilities;
 ///
 /// Identity comes from cost, cadence, and scaling rather than from a private list of effects: a
 /// Warden hits reliably and endures, a Shade pays little and strikes fast, an Adept pays a lot for
-/// a big slow hit, a Hallow mends more than it harms. Only the Adept and the Hallow reach a
-/// whole room, one in each direction — an area ability is the strongest thing the executors can
-/// express, and spreading it across all four Paths would cost every one of them its shape.
+/// a big slow hit, a Hallow mends more than it harms.
+///
+/// <b>Three of the four reach a whole room, and the Shade is the one that does not.</b> That used
+/// to be two — an area ability is the strongest thing the executors can express, and spreading it
+/// everywhere would cost every Path its shape. What changed is that the Warden's job past level 20
+/// is holding a room rather than a target, and an area *taunt* is not an area *attack*: it buys no
+/// damage and no survival, only the attention of everything present, which is the one thing that
+/// Path exists to take. The Shade keeps none, because killing one thing properly is its shape.
 /// </remarks>
 public static class AbilityCatalogue
 {
     /// <summary>One ability, and what it takes to learn it.</summary>
     /// <param name="Path">The Path that learns it.</param>
     /// <param name="UnlockLevel">The level at which it is granted.</param>
+    /// <param name="Maintainable">
+    /// Whether this ability is <em>meant</em> to be held up permanently — its duration may exceed
+    /// its cooldown.
+    /// </param>
+    /// <remarks>
+    /// <b>The general rule is that nothing outlasts its own cooldown</b>, because buffs refresh
+    /// rather than stack, so a longer duration makes the cooldown do nothing. Ten of the eleven
+    /// timed effects were in that state once and the retune that fixed it is why the rule exists.
+    ///
+    /// <b>Hallow's group buffs are the deliberate exception, and it is what makes the Path a
+    /// buffer without making buffing its combat rotation.</b> The point of a long duration and a
+    /// short cooldown together is that the group is set up <em>before</em> the fight and the buffs
+    /// are still standing at the end of it — so the Hallow spends the fight healing, which is the
+    /// other half of the job, instead of re-casting protection it already gave.
+    ///
+    /// That sets the duration floor: a maintainable buff must comfortably outlast a whole fight,
+    /// or it becomes exactly the in-combat chore it exists to avoid. The short cooldown is so that
+    /// setting up a group is not itself a chore.
+    ///
+    /// A self-buff held up forever is still free power, so this is granted to group protection and
+    /// withheld from anything that raises damage or personal survival. It is catalogue metadata
+    /// rather than a column: the <c>abilities</c> table has no such field and the engine has no
+    /// opinion — it exists so the design rule can be tested against the shipped set, exactly as
+    /// the combat-beat rule on cooldowns is.
+    /// </remarks>
     public sealed record Entry(
         CharacterPath Path,
         int UnlockLevel,
@@ -55,7 +85,8 @@ public static class AbilityCatalogue
         long CooldownPulses,
         long? CastTimePulses,
         TargetingType TargetingType,
-        List<AbilityEffectSpec> Effects);
+        List<AbilityEffectSpec> Effects,
+        bool Maintainable = false);
 
     /// <summary>One effect, which is what all thirty-seven starter abilities have.</summary>
     /// <summary>One effect, which is what most starter abilities have.</summary>
@@ -315,10 +346,70 @@ public static class AbilityCatalogue
         // maximum comes back down when it ends, taking anything above the new ceiling with it.
         new(CharacterPath.Warden, 20, "warden.last-stand", "Last Stand",
             "Refuse to fall. The refusal is most of it.",
-            CostType.Stamina, 15, 200, null, TargetingType.Self,
+            CostType.Stamina, 30, 2400, null, TargetingType.Self,
             Together(
-                Part("buff.max-health", MaxHealth("80", "96", "unbroken")),
-                Part("buff.defense", Guard("4", "3", "96", "unbroken")))),
+                Part("buff.max-health", MaxHealth("1000", "480", "standing ground")),
+                Part("buff.defense", Guard("6", "5", "480", "standing ground")))),
+
+        // -------------------------------------------------------------------
+        // Warden, past 20 - holding a room rather than a target.
+        //
+        // Everything here is about taking hits *for other people*, which is a different job from
+        // surviving them, and the one the list stopped short of: `taunt` is single-target and
+        // arrives at level 8, and nothing after it helped hold more than one thing.
+        // -------------------------------------------------------------------
+
+        new(CharacterPath.Warden, 24, "warden.thunderclap", "Thunderclap",
+            "Shield into the ground, once. Everything in the room decides you are the problem.",
+            CostType.Stamina, 28, 96, null, TargetingType.Aoe,
+            Effect("control.taunt", TauntLead("0.35"))),
+
+        new(CharacterPath.Warden, 28, "warden.bulwark", "Bulwark",
+            "Everything behind you is behind you.",
+            CostType.Stamina, 32, 320, null, TargetingType.Self,
+            Effect("buff.defense", Guard("8", "6", "240", "bulwark"))),
+
+        new(CharacterPath.Warden, 32, "warden.ground-and-centre", "Ground and Centre",
+            "More of you to get through, and less give in any of it.",
+            CostType.Stamina, 36, 400, null, TargetingType.Self,
+            Together(
+                Part("buff.max-health", MaxHealth("120", "320", "grounded")),
+                Part("buff.defense", Guard("6", "5", "320", "grounded")))),
+
+        new(CharacterPath.Warden, 36, "warden.reprisal", "Reprisal",
+            "Answer it, and make sure it noticed who did.",
+            CostType.Stamina, 30, 64, null, TargetingType.SingleTarget,
+            Together(
+                Part("damage.physical", Damage("1.6", "10")),
+                Part("control.taunt", TauntLead("0.25")))),
+
+        new(CharacterPath.Warden, 40, "warden.unbreakable", "Unbreakable",
+            "Decide not to. The fight can disagree for a while.",
+            CostType.Stamina, 45, 1200, null, TargetingType.Self,
+            Together(
+                Part("buff.max-health", MaxHealth("200", "480", "unbreakable")),
+                Part("buff.defense", Guard("12", "9", "480", "unbreakable")))),
+
+        new(CharacterPath.Warden, 43, "warden.sundering-blow", "Sundering Blow",
+            "Take the guard apart so that everyone else's work lands on what is left.",
+            CostType.Stamina, 34, 120, null, TargetingType.SingleTarget,
+            Together(
+                Part("damage.physical", Damage("1.9", "12")),
+                Part("debuff.expose", Guard("6", "4", "96", "sundered open")))),
+
+        new(CharacterPath.Warden, 46, "warden.mass-provocation", "Mass Provocation",
+            "Say the unforgivable thing to the whole room, and mean every word of it.",
+            CostType.Stamina, 40, 320, null, TargetingType.Aoe,
+            Together(
+                Part("control.taunt", TauntLead("0.5")),
+                Part("debuff.weaken", Weaken("0.8", "240", "cowed")))),
+
+        new(CharacterPath.Warden, 50, "warden.the-last-wall", "The Last Wall",
+            "There is a place past which things do not go. You are standing on it.",
+            CostType.Stamina, 50, 2400, null, TargetingType.Self,
+            Together(
+                Part("buff.max-health", MaxHealth("400", "600", "the last wall")),
+                Part("buff.defense", Guard("18", "14", "600", "the last wall")))),
 
         // -------------------------------------------------------------------
         // Adept - focus caster. Expensive, slow, and hits hardest at range.
@@ -376,6 +467,63 @@ public static class AbilityCatalogue
             (Effect("damage.physical", Damage("3.0", "25")))),
 
         // -------------------------------------------------------------------
+        // Adept, past 20 - from one target to the room.
+        //
+        // Firestorm and Cataclysm already established the direction at 18 and 20; what was missing
+        // was everything after them. Nothing here is subtle: the Path pays a lot and hits hard.
+        // -------------------------------------------------------------------
+
+        new(CharacterPath.Adept, 24, "adept.conflagration", "Conflagration",
+            "Set the air going and let it keep going.",
+            CostType.Focus, 50, 200, 8, TargetingType.Aoe,
+            Effect("damage.overtime", OverTime("14", "12", "96", "conflagration"))),
+
+        new(CharacterPath.Adept, 28, "adept.shatter", "Shatter",
+            "Find the fault, and put everything into it.",
+            CostType.Focus, 34, 120, null, TargetingType.SingleTarget,
+            Together(
+                Part("damage.physical", Damage("2.1", "14")),
+                Part("debuff.expose", Guard("5", "4", "96", "shattered")))),
+
+        new(CharacterPath.Adept, 32, "adept.chain-lightning", "Chain Lightning",
+            "It picks its own way across the room and is not slow about it.",
+            CostType.Focus, 48, 160, 8, TargetingType.Aoe,
+            Effect("damage.physical", Damage("1.8", "12"))),
+
+        new(CharacterPath.Adept, 36, "adept.unmaking", "Unmaking",
+            "Take away some of what it is, and it hits like something less.",
+            CostType.Focus, 40, 160, null, TargetingType.SingleTarget,
+            Together(
+                Part("damage.physical", Damage("2.2", "15")),
+                Part("debuff.weaken", Weaken("0.7", "120", "unmade")))),
+
+        new(CharacterPath.Adept, 40, "adept.pyre", "Pyre",
+            "Everything in the room, twice - once now and once for a while afterwards.",
+            CostType.Focus, 60, 240, 12, TargetingType.Aoe,
+            Together(
+                Part("damage.physical", Damage("2.0", "14")),
+                Part("damage.overtime", OverTime("18", "12", "120", "pyre")))),
+
+        new(CharacterPath.Adept, 43, "adept.arcane-surge", "Arcane Surge",
+            "The window you fire the long words through.",
+            CostType.Focus, 38, 240, null, TargetingType.Self,
+            Effect("buff.damage-up", Buff("1.6", "160", "surging"))),
+
+        new(CharacterPath.Adept, 46, "adept.gravity-well", "Gravity Well",
+            "Nothing in the room is going anywhere, and standing there is costing it.",
+            CostType.Focus, 55, 320, 12, TargetingType.Aoe,
+            Together(
+                Part("control.root", Root("32", "held under")),
+                Part("damage.overtime", OverTime("20", "16", "64", "crushed")))),
+
+        new(CharacterPath.Adept, 50, "adept.the-unwriting", "The Unwriting",
+            "Say what a thing is not, at sufficient volume.",
+            CostType.Focus, 70, 600, 16, TargetingType.Aoe,
+            Together(
+                Part("damage.physical", Damage("3.0", "20")),
+                Part("debuff.expose", Guard("8", "6", "96", "unwritten")))),
+
+        // -------------------------------------------------------------------
         // Shade - stealth and burst. Cheap, fast, and fragile.
         // -------------------------------------------------------------------
         new(CharacterPath.Shade, 1, "shade.strike", "Quick Strike",
@@ -431,6 +579,66 @@ public static class AbilityCatalogue
             "Decide how this ends, then make it true.",
             CostType.Stamina, 35, 192, null, TargetingType.SingleTarget,
             (Effect("damage.physical", Damage("2.8", "22")))),
+
+        // -------------------------------------------------------------------
+        // Shade, past 20 - burst now, bleeding after.
+        //
+        // The two halves are the whole design: put the wound on, then spend the burst while it
+        // works. Deliberately no area ability - a Shade kills one thing properly, and spreading
+        // the room-wide effects across every Path would cost each of them its shape.
+        // -------------------------------------------------------------------
+
+        new(CharacterPath.Shade, 24, "shade.rupture", "Rupture",
+            "Something inside it is now outside the arrangement.",
+            CostType.Stamina, 26, 64, null, TargetingType.SingleTarget,
+            Together(
+                Part("damage.physical", Damage("1.5", "8")),
+                Part("damage.overtime", OverTime("10", "8", "64", "ruptured")))),
+
+        new(CharacterPath.Shade, 28, "shade.exploit", "Exploit",
+            "Cheap, fast, and it makes the next one worse for them.",
+            CostType.Stamina, 22, 72, null, TargetingType.SingleTarget,
+            Together(
+                Part("damage.physical", Damage("1.4", "8")),
+                Part("debuff.expose", Guard("4", "3", "64", "exploited")))),
+
+        new(CharacterPath.Shade, 32, "shade.flurry", "Flurry",
+            "More than it can count, in less time than it has.",
+            CostType.Stamina, 24, 48, null, TargetingType.SingleTarget,
+            Effect("damage.physical", Damage("1.7", "10"))),
+
+        new(CharacterPath.Shade, 36, "shade.hemorrhage", "Hemorrhage",
+            "Cheap to start and expensive to be on the wrong end of.",
+            CostType.Stamina, 28, 96, null, TargetingType.SingleTarget,
+            Effect("damage.overtime", OverTime("16", "8", "96", "hemorrhaging"))),
+
+        new(CharacterPath.Shade, 40, "shade.execution", "Execution",
+            "The whole fight, arriving at once and slightly early.",
+            CostType.Stamina, 45, 240, null, TargetingType.SingleTarget,
+            Effect("damage.physical", Damage("3.2", "20"))),
+
+        new(CharacterPath.Shade, 43, "shade.shadowstep", "Shadowstep",
+            "Be somewhere else, then be behind it.",
+            CostType.Stamina, 32, 160, null, TargetingType.SingleTarget,
+            Together(
+                Part("damage.physical", Damage("1.8", "10")),
+                Part("control.stun", Stun("16", "reeling")))),
+
+        // Stacks to five, which is what makes it a rotation rather than a refresh: the cooldown is
+        // deliberately shorter than the duration so the cuts pile up on something that lives long
+        // enough to regret it. The permanence rule skips multi-stack effects for exactly this.
+        new(CharacterPath.Shade, 46, "shade.thousand-cuts", "A Thousand Cuts",
+            "None of them would have done it. All of them will.",
+            CostType.Stamina, 20, 32, null, TargetingType.SingleTarget,
+            Effect("damage.overtime", OverTime("12", "8", "72", "cut to pieces", maxStacks: "5"))),
+
+        new(CharacterPath.Shade, 50, "shade.severance", "Severance",
+            "Take the fight out of it and the rest follows on its own.",
+            CostType.Stamina, 55, 480, null, TargetingType.SingleTarget,
+            Together(
+                Part("damage.physical", Damage("3.5", "22")),
+                Part("damage.overtime", OverTime("22", "8", "120", "severed")),
+                Part("debuff.weaken", Weaken("0.75", "120", "severed")))),
 
         // -------------------------------------------------------------------
         // Hallow - support and control. Mends more than it harms.
@@ -491,6 +699,69 @@ public static class AbilityCatalogue
             "Stand between someone and what was coming for them.",
             CostType.Focus, 50, 176, 12, TargetingType.SingleTarget,
             (Effect("heal.restore", Heal("120")))),
+
+        // -------------------------------------------------------------------
+        // Hallow, past 20 - keeping people alive, and keeping them standing.
+        //
+        // Healing undoes damage; health and protection change how much damage there is to undo.
+        // The back half is built so the Path does both, and so the *buffing* happens before the
+        // fight rather than during it: the protections are marked Maintainable and last long
+        // enough to still be standing at the end, which is what leaves the Hallow free to spend
+        // the fight healing.
+        //
+        // Deliberately no new damage. Wither and Sap already make the Path playable alone, and
+        // adding more would make it a worse Adept in the one place it should be irreplaceable.
+        // -------------------------------------------------------------------
+
+        new(CharacterPath.Hallow, 24, "hallow.communion", "Communion",
+            "Say it once, for everyone standing with you.",
+            CostType.Focus, 55, 64, 8, TargetingType.Aoe,
+            Effect("heal.restore", Heal("70"))),
+
+        new(CharacterPath.Hallow, 28, "hallow.fortitude", "Fortitude",
+            "More of everyone to get through. Set it before you go in.",
+            CostType.Focus, 55, 96, 8, TargetingType.Aoe,
+            Effect("buff.max-health", MaxHealth("150", "1200", "fortified")),
+            Maintainable: true),
+
+        new(CharacterPath.Hallow, 32, "hallow.aegis", "Aegis",
+            "Something between the group and the weather.",
+            CostType.Focus, 55, 96, 8, TargetingType.Aoe,
+            Effect("buff.defense", Guard("7", "5", "1200", "warded")),
+            Maintainable: true),
+
+        new(CharacterPath.Hallow, 36, "hallow.mending-tide", "Mending Tide",
+            "The one that comes in over everyone at once, when Communion was not enough.",
+            CostType.Focus, 60, 160, 12, TargetingType.Aoe,
+            Effect("heal.restore", Heal("140"))),
+
+        new(CharacterPath.Hallow, 40, "hallow.sanctuary", "Sanctuary",
+            "Draw the line around all of them at once, and make it hold.",
+            CostType.Focus, 70, 240, 12, TargetingType.Aoe,
+            Together(
+                Part("buff.max-health", MaxHealth("220", "1200", "sanctified")),
+                Part("buff.defense", Guard("10", "7", "1200", "sanctified"))),
+            Maintainable: true),
+
+        new(CharacterPath.Hallow, 43, "hallow.absolution", "Absolution",
+            "Everything, off one person, now.",
+            CostType.Focus, 55, 96, null, TargetingType.SingleTarget,
+            Effect("heal.restore", Heal("260"))),
+
+        new(CharacterPath.Hallow, 46, "hallow.consecration", "Consecration",
+            "Support that is not mending: the whole group hits like it means it.",
+            CostType.Focus, 60, 160, 8, TargetingType.Aoe,
+            Effect("buff.damage-up", Buff("1.35", "960", "consecrated")),
+            Maintainable: true),
+
+        new(CharacterPath.Hallow, 50, "hallow.the-long-vigil", "The Long Vigil",
+            "Close what is open, raise what is left, and stand over all of it.",
+            CostType.Focus, 80, 600, 16, TargetingType.Aoe,
+            Together(
+                Part("heal.restore", Heal("200")),
+                Part("buff.max-health", MaxHealth("300", "1200", "the long vigil")),
+                Part("buff.defense", Guard("12", "9", "1200", "the long vigil"))),
+            Maintainable: true),
     ];
 
     /// <summary>Every ability this Path learns, in unlock order.</summary>

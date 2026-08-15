@@ -48,7 +48,16 @@ public static class AbilityValidator
     public const int MaxLevel = 50;
 
     /// <summary>The level by which every Path should have finished unlocking (PLAN.md §4.5).</summary>
-    public const int ProgressionCompleteLevel = 20;
+    /// <remarks>
+    /// <b>Was 20, which is where every Path used to stop.</b> The spacing check below runs only up
+    /// to this level, so leaving it at 20 while filling 21–50 would have meant the entire back half
+    /// of progression was the one stretch nothing checked — and the check it would have been
+    /// missing is the one that catches the failure that filling it exists to fix.
+    ///
+    /// At 50 it is the level cap, which is the honest answer: a Path is finished unlocking when
+    /// there are no more levels to unlock at.
+    /// </remarks>
+    public const int ProgressionCompleteLevel = MaxLevel;
 
     /// <summary>The largest gap between unlocks before levelling starts to feel empty.</summary>
     public const int MaxLevelGap = 4;

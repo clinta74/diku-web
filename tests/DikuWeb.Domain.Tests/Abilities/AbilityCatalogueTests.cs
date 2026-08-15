@@ -434,6 +434,16 @@ public sealed class AbilityCatalogueTests
                 continue;
             }
 
+            // Marked as meant to be held up (Entry.Maintainable), which is how Hallow is a buffing
+            // Path without buffing being its combat rotation: the group is set up before the fight
+            // and the protection is still standing at the end of it, so the Hallow spends the
+            // fight healing. Granted to group protection only - a self-buff kept up forever is the
+            // free power this rule exists to stop.
+            if (entry.Maintainable)
+            {
+                continue;
+            }
+
             // A wound is allowed to be re-applied exactly as it expires; a buff or debuff at that
             // point has a cooldown that does nothing.
             var overlaps = effect.Key == "damage.overtime"

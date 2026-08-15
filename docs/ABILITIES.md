@@ -1,7 +1,9 @@
 # Abilities past level 20
 
-The four Paths finish unlocking at level 20 and then give nothing for the next thirty levels. This
-is the plan for filling them. Design only — nothing here is built.
+The four Paths used to finish unlocking at level 20 and then give nothing for the next thirty
+levels. **This is built** — thirty-two abilities at levels 24–50, and `ProgressionCompleteLevel`
+raised so the validator checks the whole range. Kept as the reasoning behind the numbers rather
+than as a proposal.
 
 Called *abilities* rather than *skills* throughout, because that is what the table, the entity, the
 cache, the validator, the command, and every existing key are called. One word for one thing.
@@ -69,17 +71,23 @@ The eleven effect keys available:
 
 ## 3. One engine change, and it is a constant
 
-`AbilityValidator.ProgressionCompleteLevel` is **20**, and the gap check runs
+`AbilityValidator.ProgressionCompleteLevel` **was 20**, and the gap check runs
 `Where(a => a.UnlockLevel <= ProgressionCompleteLevel)`. So today the validator stops caring about
 spacing at exactly the point this plan starts filling.
 
-Left alone, thirty levels of new content would be the only part of the progression nothing checks —
-and the check it would be missing is the one that catches the failure this plan exists to fix. It
-should move to **50**, which turns `MaxLevelGap` into a real constraint across the whole range and
-makes "Warden goes from level 32 to 40 with nothing new" a warning a builder sees.
+Left alone, thirty levels of new content would have been the only part of the progression nothing
+checks — and the check it would have been missing is the one that catches the failure the fill
+exists to fix. It is now `MaxLevel`, which turns `MaxLevelGap` into a real constraint across the
+whole range and makes "Warden goes from level 32 to 40 with nothing new" a warning a builder sees.
+Nothing else in the engine moved.
 
-That is a one-line change plus whatever it then reports about the existing rows. Nothing else in the
-engine moves.
+**One catalogue addition came out of authoring rather than planning: `Entry.Maintainable`.** The
+shipped set is tested against a rule that nothing outlasts its own cooldown — buffs refresh rather
+than stack, so a longer duration makes the cooldown do nothing, and ten of eleven timed effects were
+once in exactly that state. Hallow's group protections are the deliberate exception (§8). It is
+catalogue metadata rather than a column: the `abilities` table has no such field and the engine has
+no opinion, so it exists only to hold the design rule against the shipped set — as the combat-beat
+rule on cooldowns already does.
 
 ## 4. The shape of the back half
 
@@ -128,12 +136,19 @@ single-target and arrives at level 8, and nothing after it helps hold more than 
 | 40 | `warden.unbreakable` | Unbreakable | `buff.defense`, `buff.max-health` (Self) | **Signature.** The long-cooldown survival button a tank plans a fight around |
 | 43 | `warden.sundering-blow` | Sundering Blow | `damage.physical`, `debuff.expose` | Refines Sunder: the target takes more from everyone, which is a tank contributing damage without dealing it |
 | 46 | `warden.mass-provocation` | Mass Provocation | `control.taunt` (Aoe), `debuff.weaken` | The second AoE hold, and it softens what it grabs |
-| 50 | `warden.last-wall` | The Last Wall | `buff.defense`, `buff.max-health`, `control.taunt` (Aoe) | **Capstone.** Take the room, and become very hard to remove from it |
+| 50 | `warden.the-last-wall` | The Last Wall | `buff.defense`, `buff.max-health` (Self) | **Capstone.** The draft also gave it an AoE taunt; the validator refuses an ability mixing harmful and helpful effects, so the room-taking lives at 46 and this is pure immovability |
 
 **Why two AoE taunts.** Thunderclap at 24 is the workhorse; Mass Provocation at 46 is the one that
 also weakens, for the fights where holding four things means surviving four things. A single
 scaling taunt would have been simpler, but the engine has no notion of an ability that improves
 with level — a row is a row (§4.5) — so a stronger version is a second row.
+
+**Warden reaching a room is a change to a stated principle**, and `AbilityCatalogue`'s own header
+now records it: only Adept and Hallow used to, on the argument that an area ability is the
+strongest thing the executors express and spreading it everywhere costs each Path its shape. The
+distinction that lets Warden in is that an area *taunt* is not an area *attack* — it buys no damage
+and no survival, only the attention of everything present, which is the one thing the Path exists
+to take. Shade still gets none.
 
 ## 6. Adept — from one target to the room
 
@@ -149,7 +164,7 @@ is missing is everything after them.
 | 40 | `adept.pyre` | Pyre | `damage.physical`, `damage.overtime` (Aoe) | **Signature.** Everything in the room, twice — once now and once over the next several seconds |
 | 43 | `adept.arcane-surge` | Arcane Surge | `buff.damage-up` (Self) | Refines Amplify. The window you fire a Capstone through |
 | 46 | `adept.gravity-well` | Gravity Well | `control.root` (Aoe), `damage.overtime` (Aoe) | Holds the room still and burns it. The Path's only real crowd control |
-| 50 | `adept.unwriting` | The Unwriting | `damage.physical` (Aoe), `debuff.expose` | **Capstone.** The largest single number in the game, and it leaves what survives easier to finish |
+| 50 | `adept.the-unwriting` | The Unwriting | `damage.physical` (Aoe), `debuff.expose` | **Capstone.** The largest single number in the game, and it leaves what survives easier to finish |
 
 ## 7. Shade — burst now, bleeding after
 
@@ -164,11 +179,17 @@ is about the interplay between them: land the sustained damage, then spend the b
 | 36 | `shade.hemorrhage` | Hemorrhage | `damage.overtime` | Refinement: the long bleed, cheap, meant to be kept running |
 | 40 | `shade.execution` | Execution | `damage.physical` | **Signature.** The biggest single-target instant in the game, on a cooldown that makes it a moment |
 | 43 | `shade.shadowstep` | Shadowstep | `damage.physical`, `control.stun` | Refines Ambush — opens or interrupts, and hurts either way |
-| 46 | `shade.thousand-cuts` | A Thousand Cuts | `damage.overtime` (Aoe) | The Path's one area tool, and it is bleeds rather than a nuke, which is the right shape for it |
+| 46 | `shade.thousand-cuts` | A Thousand Cuts | `damage.overtime` (stacks to 5) | Cheap and fast, on a cooldown shorter than its own duration so the cuts pile up. **Single-target** — see below |
 | 50 | `shade.severance` | Severance | `damage.physical`, `damage.overtime`, `debuff.weaken` | **Capstone.** Burst, bleed, and the target hits back softer while it dies |
 
 **Death Mark at 20 stays the setup and is not replaced.** The back half is built to be spent through
 it rather than around it.
+
+**Shade is the one Path with no area ability, and that is deliberate.** The draft gave A Thousand
+Cuts an `Aoe` bleed; it was authored single-target instead, because killing one thing properly is
+the Path's shape and an area tool on every Path costs each of them their identity. What it got
+instead is the only multi-stack effect in the game outside Ambush: a 32-pulse cooldown under a
+72-pulse duration, so it is meant to be re-applied on top of itself.
 
 ## 8. Hallow — keeping people alive, and keeping them standing
 
@@ -191,6 +212,19 @@ than a slower Adept.
 **Hallow gets no new damage past 20**, deliberately. Wither and Sap already exist and the Path is
 playable solo through them; adding damage to the back half would make Hallow a worse Adept in the
 place it should be an irreplaceable Hallow.
+
+**The protections are `Maintainable`, and that is what makes Hallow a buffing Path without making
+buffing its combat rotation.** Fortitude, Aegis, Sanctuary, Consecration and The Long Vigil run
+1200 pulses (five minutes) on cooldowns between 96 and 600, so their durations exceed their
+cooldowns — normally forbidden, because a buff that outlasts its cooldown makes the cooldown do
+nothing. The exception is granted here because the intent is that **the group is set up before the
+fight and the buffs are still standing at the end of it**, leaving the Hallow free to spend the
+fight healing rather than re-casting protection it already gave.
+
+That sets a floor the tuning has to respect: a maintainable buff must comfortably outlast a whole
+fight, or it becomes precisely the in-combat chore it exists to avoid. It is withheld from anything
+that raises damage or personal survival — a self-buff held up forever is the free power the rule is
+there to stop.
 
 ---
 
