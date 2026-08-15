@@ -1,0 +1,278 @@
+import { useRef, useState } from 'react'
+import { builderApi, type ImportReport } from '../../net/builderApi'
+import { Button } from '../../ui/Button'
+import { ConfirmDialog } from '../../ui/ConfirmDialog'
+import { Field } from '../../ui/Field'
+import { useToast } from '../../ui/Toast'
+
+interface Loaded {
+  filename: string
+  bundle: unknown
+  formatVersion: number
+  /** A one-line count per kind, so a file can be recognised before it is applied. */
+  summary: string
+}
+
+/** What a bundle claims to hold, without trusting it to be well-formed. */
+function describe(bundle: unknown): string {
+  if (typeof bundle !== 'object' || bundle === null) return 'not a bundle'
+
+  const record = bundle as Record<string, unknown>
+  const parts: string[] = []
+
+  for (const key of [
+    'worlds',
+    'zones',
+    'rooms',
+    'itemTemplates',
+    'mobTemplates',
+    'abilities',
+    'spawners',
+    'quests',
+    'configurations',
+  ]) {
+    const value = record[key]
+    if (Array.isArray(value) && value.length > 0) {
+      parts.push(`${value.length} ${key}`)
+    }
+  }
+
+  return parts.length > 0 ? parts.join(', ') : 'empty'
+}
+
+interface Props {
+  onImported: () => void
+}
+
+/**
+ * Moving authored content between servers (PLAN.md §6).
+ *
+ * <b>A dry run is not optional here, it is the only way in.</b> An import is not atomic — one
+ * entity is one loop round trip and one transaction — so a bundle that fails part way through
+ * leaves everything before it applied. The rehearsal answers the same question from the same code
+ * and touches nothing, so the panel makes it the first step rather than a checkbox somebody
+ * remembers.
+ *
+ * Export is a plain link. The response carries a Content-Disposition attachment with a dated
+ * filename, and fetching it into a blob would throw that away for an untitled download.
+ */
+export function TransferPanel({ onImported }: Props) {
+  const toast = useToast()
+  const fileInput = useRef<HTMLInputElement>(null)
+
+  const [scope, setScope] = useState({ world: '', zone: '' })
+  const [loaded, setLoaded] = useState<Loaded | null>(null)
+  const [report, setReport] = useState<ImportReport | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+
+  function reset() {
+    setLoaded(null)
+    setReport(null)
+    if (fileInput.current) fileInput.current.value = ''
+  }
+
+  async function onFile(file: File) {
+    setReport(null)
+
+    try {
+      const text = await file.text()
+      const bundle: unknown = JSON.parse(text)
+      const version = (bundle as { formatVersion?: unknown }).formatVersion
+
+      setLoaded({
+        filename: file.name,
+        bundle,
+        formatVersion: typeof version === 'number' ? version : 0,
+        summary: describe(bundle),
+      })
+    } catch (e: unknown) {
+      // Parsed here rather than posted blindly, so a malformed file reports the position it went
+      // wrong at instead of arriving as a server 400 that says only "unreadable body".
+      setLoaded(null)
+      toast.notify(e instanceof Error ? `That file is not JSON: ${e.message}` : 'Unreadable file.', 'bad')
+    }
+  }
+
+  async function run(dryRun: boolean) {
+    if (!loaded) return
+
+    setBusy(true)
+    try {
+      const result = await builderApi.importBundle(loaded.bundle, dryRun)
+      setReport(result)
+
+      if (!dryRun) {
+        setConfirming(false)
+        toast.notify(result.ok ? 'Import applied.' : 'Import applied in part — see the failures.', result.ok ? 'good' : 'bad')
+        onImported()
+      }
+    } catch (e: unknown) {
+      toast.notify(e instanceof Error ? e.message : 'The import was refused.', 'bad')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="template-editor">
+      <div className="setup-head">
+        <h3>Export</h3>
+      </div>
+
+      <p className="dim">
+        The authored world as one JSON document. Leave both boxes empty for everything; a zone
+        bundle carries the world and zone above it, plus every template its content needs.
+      </p>
+
+      <Field label="World" hint="Optional. One world and all its zones.">
+        <input
+          value={scope.world}
+          spellCheck={false}
+          placeholder="ossara"
+          onChange={(e) => setScope({ world: e.target.value, zone: '' })}
+        />
+      </Field>
+
+      <Field label="Zone" hint="Optional, and wins over World when both are given.">
+        <input
+          value={scope.zone}
+          spellCheck={false}
+          placeholder="ossara.gatetown"
+          onChange={(e) => setScope({ ...scope, zone: e.target.value })}
+        />
+      </Field>
+
+      <div className="spawner-actions">
+        {/* A real link, so the browser honours the attachment filename the server sends. */}
+        <a
+          className="setup-download"
+          href={builderApi.exportUrl({
+            world: scope.world.trim() || undefined,
+            zone: scope.zone.trim() || undefined,
+          })}
+        >
+          Download bundle
+        </a>
+      </div>
+
+      <div className="setup-head">
+        <h3>Import</h3>
+      </div>
+
+      <p className="dim">
+        An import is a <strong>merge</strong>: keys in the file are written, and anything this
+        server has that the file does not is left alone. Removing something from a file does not
+        remove it from the world.
+      </p>
+
+      <Field label="Bundle file">
+        <input
+          ref={fileInput}
+          type="file"
+          accept="application/json,.json"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) void onFile(file)
+          }}
+        />
+      </Field>
+
+      {loaded && (
+        <div className="section-body">
+          <p>
+            <strong>{loaded.filename}</strong>
+            <span className="dim"> · format {loaded.formatVersion} · {loaded.summary}</span>
+          </p>
+
+          <div className="spawner-actions">
+            <Button variant="primary" disabled={busy} onClick={() => void run(true)}>
+              {busy ? 'Checking…' : 'Dry run'}
+            </Button>
+
+            {/* Only after a rehearsal, and only if it came back clean enough to read. Applying
+                first and reading the report afterwards is the order that leaves a half-applied
+                world behind. */}
+            <Button disabled={busy || report === null} onClick={() => setConfirming(true)}>
+              Apply
+            </Button>
+
+            <Button onClick={reset}>Clear</Button>
+          </div>
+
+          {report === null && (
+            <p className="dim">Dry run first — it reports what would happen and changes nothing.</p>
+          )}
+        </div>
+      )}
+
+      {report && (
+        <div className="section-body">
+          <h4>{report.dryRun ? 'Dry run' : 'Applied'}</h4>
+
+          <ul className="setup-list">
+            {report.counts
+              .filter((c) => c.created > 0 || c.updated > 0)
+              .map((c) => (
+                <li key={c.kind}>
+                  <code>{c.kind}</code>
+                  <span className="dim">
+                    {' '}
+                    · {c.created} new, {c.updated} updated
+                  </span>
+                </li>
+              ))}
+          </ul>
+
+          {report.counts.every((c) => c.created === 0 && c.updated === 0) && (
+            <p className="dim">Nothing to write — this server already matches the file.</p>
+          )}
+
+          {report.warnings.length > 0 && (
+            <>
+              <h4>Warnings</h4>
+              {/* Advisory by design (§7.4): a zone imported ahead of the zone it links to is a
+                  state the world tolerates, so these never block. */}
+              <ul className="setup-list">
+                {report.warnings.map((w, i) => (
+                  <li key={`${w.kind}-${w.entityKey}-${i}`} className="dim">
+                    <code>{w.entityKey}</code> — {w.message}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {report.failures.length > 0 && (
+            <>
+              <h4 className="bad">Failures</h4>
+              <ul className="setup-list">
+                {report.failures.map((f, i) => (
+                  <li key={`${f.kind}-${f.key}-${i}`} className="bad">
+                    <code>{f.key}</code> — {f.message}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title="Apply this bundle?"
+        description={
+          <>
+            This writes to the live world and players standing in these rooms will see the change.
+            An import is <strong>not atomic</strong> — if it fails part way through, everything
+            before that point stays applied.
+          </>
+        }
+        confirmLabel="Apply"
+        busy={busy}
+        onConfirm={() => void run(false)}
+      />
+    </section>
+  )
+}

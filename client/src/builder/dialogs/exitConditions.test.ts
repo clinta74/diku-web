@@ -20,19 +20,33 @@ interface CapturedBody {
 }
 
 function captureFetch() {
-  const fetchMock = vi.fn(async () =>
-    new Response(JSON.stringify({ key: 'w.z.r', exits: [] }), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    }),
+  // Declared with fetch's own parameters, not as a nullary function. Without them vi.fn types the
+  // recorded calls as an empty tuple, so reading the request init back out of them does not
+  // compile - which is what this whole helper exists to do.
+  const fetchMock = vi.fn(
+    async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      new Response(JSON.stringify({ key: 'w.z.r', exits: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
   )
 
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
 }
 
-const bodyOf = (fetchMock: ReturnType<typeof captureFetch>): CapturedBody =>
-  JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body))
+const bodyOf = (fetchMock: ReturnType<typeof captureFetch>): CapturedBody => {
+  // Asserted rather than indexed blind: the mock's call tuple is typed as possibly empty, and
+  // reading [0][1] from it does not compile. A failure here should also say "nothing was sent"
+  // rather than throw on undefined three lines later.
+  const [call] = fetchMock.mock.calls
+  if (!call) throw new Error('setExit sent no request.')
+
+  const init = call[1]
+  if (!init?.body) throw new Error('setExit sent a request with no body.')
+
+  return JSON.parse(String(init.body)) as CapturedBody
+}
 
 afterEach(() => vi.unstubAllGlobals())
 

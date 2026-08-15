@@ -386,6 +386,54 @@ export const DIALOGUE_KEYS = [
 
 const base = '/api/builder'
 
+/**
+ * A named starter configuration (PLAN.md §4.16): where a new character wakes up and what the game
+ * says to them. A server holds several and exactly one is live.
+ */
+export interface GameConfiguration {
+  key: string
+  name: string
+  description: string
+  startingRoomKey: string
+  welcomeMessage: string
+  isActive: boolean
+  /**
+   * False when the starting room names a room this server does not have. Advisory: writing a
+   * configuration before importing the world it points into is the normal order of operations.
+   */
+  startingRoomExists: boolean
+  updatedAt: string
+}
+
+export interface GameConfigurationList {
+  configurations: GameConfiguration[]
+  /** What the running loop is obeying, which is not always what a row says. */
+  activeStartingRoomKey: string
+  activeWelcomeMessage: string
+}
+
+export interface ImportCount {
+  kind: string
+  created: number
+  updated: number
+}
+
+export interface ImportFailure {
+  kind: string
+  key: string
+  message: string
+}
+
+/** What an import did, or - under dryRun - what it would have done. */
+export interface ImportReport {
+  formatVersion: number
+  dryRun: boolean
+  counts: ImportCount[]
+  warnings: ValidationWarning[]
+  failures: ImportFailure[]
+  ok: boolean
+}
+
 export const builderApi = {
   roomFlags: () => request<RoomFlagDefinition[]>(`${base}/room-flags`),
 
@@ -622,6 +670,52 @@ export const builderApi = {
 
   questReachability: (key: string) =>
     request<QuestReachability>(`${base}/quests/${key}/reachability`),
+
+  configurations: () => request<GameConfigurationList>(`${base}/configurations`),
+
+  saveConfiguration: (
+    key: string,
+    body: Pick<GameConfiguration, 'name' | 'description' | 'startingRoomKey' | 'welcomeMessage'>,
+  ) =>
+    request<GameConfiguration>(`${base}/configurations/${key}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  deleteConfiguration: (key: string) =>
+    request<void>(`${base}/configurations/${key}`, { method: 'DELETE' }),
+
+  /** Makes one live. Takes effect for the next character to enter the game, with no restart. */
+  activateConfiguration: (key: string) =>
+    request<GameConfiguration>(`${base}/configurations/${key}/activate`, { method: 'POST' }),
+
+  /**
+   * The whole authored world as one JSON document, or one world, or one zone.
+   *
+   * A plain URL rather than a fetch: the response carries a Content-Disposition attachment with a
+   * dated filename, so letting the browser follow it saves a file somebody keeps. Reading it into
+   * a blob here would throw that name away and hand back an untitled download.
+   */
+  exportUrl: (scope?: { world?: string; zone?: string }) => {
+    const query = new URLSearchParams()
+    if (scope?.zone) query.set('zone', scope.zone)
+    else if (scope?.world) query.set('world', scope.world)
+    const suffix = query.toString()
+    return suffix ? `${base}/export?${suffix}` : `${base}/export`
+  },
+
+  /**
+   * Applies a bundle. `dryRun` reports what would happen and changes nothing.
+   *
+   * The bundle is sent as already-parsed JSON rather than as text, so a malformed file fails in
+   * the browser with a parse error naming the position instead of arriving at the server as a
+   * 400 that says only that the body was unreadable.
+   */
+  importBundle: (bundle: unknown, dryRun: boolean) =>
+    request<ImportReport>(`${base}/import${dryRun ? '?dryRun=true' : ''}`, {
+      method: 'POST',
+      body: JSON.stringify(bundle),
+    }),
 
   storyline: (zoneKey: string) => request<Storyline>(`${base}/zones/${zoneKey}/storyline`),
 }

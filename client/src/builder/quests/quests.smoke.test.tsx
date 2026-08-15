@@ -19,6 +19,8 @@ const quest = vi.hoisted(
     rewardGold: 10,
     rewardItemKey: null,
     rewardItemCount: 1,
+    // Attunement: a quest may grant a character flag that opens a gated exit (PLAN.md §4.15).
+    rewardFlagKey: null,
     prerequisiteQuestKeys: [],
     isRepeatable: false,
     autoStart: false,

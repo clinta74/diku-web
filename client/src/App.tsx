@@ -9,6 +9,7 @@ import { MobsTab } from './builder/mobs/MobsTab'
 import { ItemsTab } from './builder/items/ItemsTab'
 import { QuestsTab } from './builder/quests/QuestsTab'
 import { AccountsTab } from './builder/accounts/AccountsTab'
+import { SetupTab } from './builder/setup/SetupTab'
 import { api, type Account, type Character } from './net/api'
 import './App.css'
 
@@ -153,6 +154,7 @@ export default function App() {
               <Route path="abilities/:abilityKey?" element={<AbilitiesTab />} />
               <Route path="items/:templateKey?" element={<ItemsTab />} />
               <Route path="quests/:questKey?" element={<QuestsTab />} />
+              <Route path="setup/:section?" element={<SetupTab />} />
 
               {/* Admin-only, and refused here as well as in the tab bar - hiding a tab is not
                   access control, and this route is reachable by typing it. The API refuses a

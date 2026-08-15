@@ -22,6 +22,11 @@ function room(
       direction: e.direction,
       to: e.to,
       targetExists: e.targetExists ?? true,
+      // Layout is geography and does not care who may pass, but an exit carries its conditions
+      // (PLAN.md §4.15) and the fixture has to be a whole one.
+      requiredFlagKey: null,
+      requiredItemKey: null,
+      refusalMessage: null,
     })),
   }
 }

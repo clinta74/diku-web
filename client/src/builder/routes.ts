@@ -18,7 +18,21 @@ export const DEFAULT_SECTION: Section = 'details'
  * this one administers people and is Admin-only. It lives here rather than in a separate app
  * because it is the same audience, the same chrome, and one more screen to build otherwise.
  */
-export type BuilderTab = 'world' | 'mobs' | 'items' | 'abilities' | 'quests' | 'accounts'
+export type BuilderTab =
+  | 'world'
+  | 'mobs'
+  | 'items'
+  | 'abilities'
+  | 'quests'
+  | 'setup'
+  | 'accounts'
+
+/**
+ * The two halves of server-wide setup (PLAN.md §4.16, §6). Neither belongs to a world, which is
+ * why they are their own tab rather than a corner of the World one.
+ */
+export const SETUP_SECTIONS = ['configurations', 'transfer'] as const
+export type SetupSection = (typeof SETUP_SECTIONS)[number]
 
 /** The route params react-router extracts from the `world` branch, each a single slug. */
 export interface WorldRouteParams {
@@ -110,4 +124,8 @@ export function toQuestsPath(questKey?: string | null): string {
 
 export function toAccountsPath(username?: string | null): string {
   return username ? `/builder/accounts/${encodeURIComponent(username)}` : '/builder/accounts'
+}
+
+export function toSetupPath(section?: SetupSection | null): string {
+  return section ? `/builder/setup/${section}` : '/builder/setup'
 }
