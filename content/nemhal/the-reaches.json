@@ -448,7 +448,7 @@
       "description": "Enormous and drawn to the lamps that are never lit.",
       "icon": "c",
       "level": 7,
-      "wanderIntervalPulses": 24,
+      "wanderIntervalPulses": 72,
       "baseStats": {
         "health": 62,
         "damage": "5-9"

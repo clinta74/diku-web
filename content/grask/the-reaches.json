@@ -448,7 +448,7 @@
       "description": "It has worked out which crates hold food and which hands hold food, and it prefers the hands.",
       "icon": "c",
       "level": 5,
-      "wanderIntervalPulses": 24,
+      "wanderIntervalPulses": 180,
       "baseStats": {
         "health": 40,
         "damage": "3-7"

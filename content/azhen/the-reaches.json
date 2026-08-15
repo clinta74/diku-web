@@ -451,7 +451,7 @@
       "description": "A hand-sized maintenance thing on four wings, still doing its round of a room nobody is in.",
       "icon": "c",
       "level": 7,
-      "wanderIntervalPulses": 24,
+      "wanderIntervalPulses": 360,
       "baseStats": {
         "health": 58,
         "damage": "5-9"

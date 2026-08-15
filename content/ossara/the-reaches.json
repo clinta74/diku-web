@@ -257,7 +257,7 @@
       "description": "One of the flock that works the terraces. It has learned that people carry food and that people are slow.",
       "icon": "c",
       "level": 2,
-      "wanderIntervalPulses": 24,
+      "wanderIntervalPulses": 240,
       "baseStats": {
         "health": 18,
         "damage": "2-4"

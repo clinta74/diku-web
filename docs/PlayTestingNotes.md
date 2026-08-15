@@ -142,3 +142,29 @@ Add anything noticed while playing here. Cleared as items are done.
   authored and can actually be played, not before. Check it per Path per band, and check the
   Hallow buff window specifically: the maintainable protections are meant to be set before a fight
   and still standing at the end of one, so if a band's fights outlast them the design has drifted.
+
+
+  
+  - **wander cadence: done, and it was content rather than code.** The stagger already existed —
+    `MobAiSystem.ScheduleWander` draws each mob's next move from ±50% of its authored interval, per
+    mob, precisely so two spawned into one room stop moving in lockstep. What made it read as spam
+    was the number: **all 72 authored intervals were 24 pulses — six seconds**, one value
+    copy-pasted across all five realm generators, and only four templates actually wander. Four
+    terrace crows in a three-room pocket at six seconds each, with two lines per move (leaves /
+    arrives), is a line every second or two.
+
+    | Template | Was | Now |
+    |---|---|---|
+    | a terrace crow | 6s | **60s** (240 pulses) |
+    | a brass flitter | 6s | **90s** (360 pulses) |
+    | a pier gull | 6s | **45s** (180 pulses) |
+    | a vigil moth | 6s | **18s** (72 pulses) |
+
+    The spread still applies on top, so a crow moves every 30–90s and the moth every 9–27s. Re-import
+    to pick it up; mobs already standing do **not** need respawning, because `ScheduleWander` reads
+    the interval off the live template cache on every draw.
+
+  - **`mob(...)` in the generators now takes `wander=`**, defaulting to 24 and inert unless the
+    behaviour says wanders. The default is what produced this bug, so a wandering mob is expected to
+    override it — worth a glance whenever a new one is authored.
+  - chacters should be able to help others in combat. right now if 2 mobs of the same name are in a room and 1 character attacks 1 mob and a second character jumps the second one may attack the first. we may want an assist <character> command so they can concentrate on one mob. if you don't assist then picking a mob that is not in combat first would be the right choice.
