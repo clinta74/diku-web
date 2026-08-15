@@ -47,6 +47,17 @@ public sealed class Quest
     /// <summary>Number of reward items to spawn. Default 1.</summary>
     public int RewardItemCount { get; set; } = 1;
 
+    /// <summary>
+    /// A character flag granted on completion, or null (PLAN.md §4.15) — how attunement to a realm
+    /// is earned, and the only thing in the game that writes <see cref="Characters.Character.Flags"/>.
+    /// </summary>
+    /// <remarks>
+    /// Granted rather than toggled: a capability is never taken back by finishing a quest again, so
+    /// a repeatable quest re-granting what the character already holds is a no-op rather than a
+    /// second copy.
+    /// </remarks>
+    public string? RewardFlagKey { get; set; }
+
     /// <summary>Quest keys that must be completed before this one can be started. Empty = no prerequisites.</summary>
     public List<string> PrerequisiteQuestKeys { get; set; } = [];
 

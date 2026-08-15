@@ -10,6 +10,7 @@ using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Protocol;
+using DikuWeb.Engine.Systems;
 using DikuWeb.Engine.Quests;
 using DikuWeb.Engine.Spawning;
 using DikuWeb.Engine.Time;
@@ -258,6 +259,16 @@ public sealed class CommandRegistry
         if (exit is null)
         {
             ctx.Reply($"You cannot go {direction.ToLowerName()} from here.", "bad");
+            return;
+        }
+
+        // Asked before the destination is resolved, so a locked door reads as locked whether or
+        // not there is anything behind it yet (§4.15). Builders are not exempt: `goto` already
+        // takes them anywhere, so nothing is lost by letting them meet their own gates the way a
+        // player will - which is the only way an author finds out the flag key has a typo in it.
+        if (ExitGate.Refuse(ctx.World, character, exit) is { } barred)
+        {
+            ctx.Reply(barred, "bad");
             return;
         }
 

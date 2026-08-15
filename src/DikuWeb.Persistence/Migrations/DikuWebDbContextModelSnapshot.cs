@@ -290,6 +290,11 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
+                    b.PrimitiveCollection<List<string>>("Flags")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("flags");
+
                     b.Property<long>("Gold")
                         .HasColumnType("bigint")
                         .HasColumnName("gold");
@@ -632,6 +637,11 @@ namespace DikuWeb.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("required_item_key");
 
+                    b.Property<string>("RewardFlagKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("reward_flag_key");
+
                     b.Property<int>("RewardGold")
                         .HasColumnType("integer")
                         .HasColumnName("reward_gold");
@@ -797,6 +807,21 @@ namespace DikuWeb.Persistence.Migrations
                         .HasMaxLength(8)
                         .HasColumnType("character varying(8)")
                         .HasColumnName("direction");
+
+                    b.Property<string>("RefusalMessage")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("refusal_message");
+
+                    b.Property<string>("RequiredFlagKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("required_flag_key");
+
+                    b.Property<string>("RequiredItemKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("required_item_key");
 
                     b.Property<string>("ToRoomKey")
                         .IsRequired()

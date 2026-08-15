@@ -237,6 +237,53 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task A_gated_exit_survives_a_round_trip()
+    {
+        // The same six-places argument as the pinned level above, and with a worse failure: a
+        // bundle that dropped the conditions would land a world whose gates are all open, and
+        // nothing about the imported zone would look wrong until a level 4 walked into the last
+        // realm (PLAN.md §4.15).
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var content = await AuthorZoneAsync(client);
+
+        (await client.PutAsJsonAsync(
+            $"/api/builder/rooms/{content.RoomKey}/exits/north",
+            new
+            {
+                to = content.NorthRoomKey,
+                requiredFlagKey = "attuned.grask",
+                requiredItemKey = "brass-key",
+                refusalMessage = "The gate does not know you.",
+            }))
+            .EnsureSuccessStatusCode();
+
+        var json = await ExportZoneJsonAsync(client, content.ZoneKey);
+        Assert.Contains("\"requiredFlagKey\":\"attuned.grask\"", json, StringComparison.Ordinal);
+
+        // Take the lock off, then let the import put it back - which is what proves the import
+        // writes the fields rather than merely leaving them where they were.
+        (await client.PutAsJsonAsync(
+            $"/api/builder/rooms/{content.RoomKey}/exits/north",
+            new { to = content.NorthRoomKey }))
+            .EnsureSuccessStatusCode();
+
+        await ImportAsync(client, json);
+
+        var room = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/rooms/{content.RoomKey}", UriKind.Relative)));
+
+        var north = room.GetProperty("exits").EnumerateArray()
+            .Single(e => e.GetProperty("direction").GetString() == "north");
+
+        Assert.Equal("attuned.grask", north.GetProperty("requiredFlagKey").GetString());
+        Assert.Equal("brass-key", north.GetProperty("requiredItemKey").GetString());
+        Assert.Equal("The gate does not know you.", north.GetProperty("refusalMessage").GetString());
+    }
+
+    [Fact]
     public async Task A_second_import_of_an_unchanged_bundle_updates_and_creates_nothing()
     {
         var factory = postgres.App;
@@ -543,6 +590,7 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
         string WorldKey,
         string ZoneKey,
         string RoomKey,
+        string NorthRoomKey,
         string RoomTitle,
         string MobKey,
         string QuestItemKey,
@@ -617,7 +665,8 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
         })).EnsureSuccessStatusCode();
 
         return new AuthoredZone(
-            worldKey, zoneKey, roomKey, "The start room", mobKey, questItemKey, lootKey, questKey);
+            worldKey, zoneKey, roomKey, northKey, "The start room", mobKey, questItemKey, lootKey,
+            questKey);
     }
 
     // -----------------------------------------------------------------------

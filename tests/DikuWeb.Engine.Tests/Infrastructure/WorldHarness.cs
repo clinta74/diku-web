@@ -454,7 +454,8 @@ internal sealed class WorldHarness
         int rewardItemCount = 1,
         bool repeatable = false,
         string zoneKey = "test.zone",
-        Dictionary<string, string>? dialogue = null)
+        Dictionary<string, string>? dialogue = null,
+        string? rewardFlagKey = null)
     {
         var quest = new Quest
         {
@@ -469,6 +470,7 @@ internal sealed class WorldHarness
             RewardGold = rewardGold,
             RewardItemKey = rewardItemKey,
             RewardItemCount = rewardItemCount,
+            RewardFlagKey = rewardFlagKey,
             IsRepeatable = repeatable,
             Dialogue = dialogue ?? [],
         };

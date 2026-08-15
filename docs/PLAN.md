@@ -1184,10 +1184,23 @@ not a key, it is a flag with a picture on it.
 - **Flags live on the Character, never the Account.** An account-level flag would let a fresh alt
   inherit attunement to the last realm at level 1, which is the entire gate defeated by the
   character-select screen. Per-character is the only scope that means anything here.
-- **`CharacterFlags` is an open registry**, exactly as `RoomFlags` is (§4.10): one `Register` call,
-  no migration, and **absence must be the safe value** — which for a gate means *closed*.
-  `Character.Flags` is a jsonb `FlagSet`, so an unrecognised flag round-trips rather than being
-  dropped, the same as everywhere else.
+- **Character flags are content, so there is no registry** — and this is where they part company
+  with `RoomFlags` (§4.10). That registry is closed because every flag in it has engine behaviour
+  attached: `pvp` reaches combat, `dark` reaches the description, so registering a flag and writing
+  its reader are one act. A character flag has *no* engine behaviour at all. Its only meaning is
+  that some exit asks for it, which makes the real set a property of the authored world rather than
+  of the binary — and a `Register` call per realm would mean shipping a build to open a new Reach.
+  Keys are validated for shape only (`CharacterFlags.IsValidKey`).
+- **Reachability replaces the registry.** `/validate` reports an exit asking for a flag that no
+  quest grants, which is the same check and the same class of bug as a quest item nothing drops
+  (§7.4). A typo is caught by nothing being able to grant it. **Absence is still the safe value:**
+  a character who does not hold the flag does not pass.
+- **`Character.Flags` is a `text[]` of held keys, not a `FlagSet`**, and that is not an
+  inconsistency. A room flag needs three states because *absent* must fall through to the zone
+  while an explicit *false* must override it. Nothing inherits from a character, so a flag is held
+  or it is not, and a map of key to `true` would be a second way of writing one fact — the shape
+  that let `sentinel` and `wanders` disagree (§4.8). It follows the `text[]` mapping already used
+  for prerequisite quest keys and spawner room keys.
 - **A quest grants a flag as a reward** — `Quest.RewardFlagKey`, beside XP, gold, and item. This is
   what makes the capability earnable through content rather than hardcoded, and it is why the exit
   names a *flag* rather than a quest key: re-author the chain, split it, add a second route, and
@@ -1236,9 +1249,10 @@ guaranteed way out of one, paid for in experience.
 not in the registry refuses. The asymmetry justifies itself: a wall players cannot pass is reported
 within the hour, and a silently-open gate to the endgame is reported never.
 
-**This takes `WorldBundle.FormatVersion` to 5.** A v4 bundle read as v5 would deserialise every
+**This takes `WorldBundle.FormatVersion` to 6.** A v5 bundle read as v6 would deserialise every
 missing requirement to null and quietly open every gate in it — the silent partial apply the version
-number exists to refuse. Both fields land in one bump rather than two.
+number exists to refuse. Both fields land in one bump rather than two. (5 was already spent on the
+spawner level pin, which landed first.)
 
 ---
 

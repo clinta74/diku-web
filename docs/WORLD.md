@@ -555,9 +555,10 @@ spawners, and quests — everything this document specifies and nothing player-o
 
 Three properties of that path worth knowing before authoring against it:
 
-- **`FormatVersion` must be exactly 4** — today. A version mismatch is the one hard refusal in the
-  whole import path, deliberately. Conditional exits (§10.3) take it to 5 when they land, and every
-  bundle authored before then needs bumping at that point.
+- **`FormatVersion` must be exactly 6.** A version mismatch is the one hard refusal in the whole
+  import path, deliberately, and it moves whenever the shape does — 5 was the spawner level pin, 6
+  is conditional exits. Author against whatever `WorldBundle.CurrentFormatVersion` says rather than
+  against this sentence.
 - **A spawner carries its own `Id`.** That is what makes re-importing idempotent — a bundle that
   minted fresh ids would double every zone's population on the second run. Author the GUIDs once and
   keep them.
@@ -586,12 +587,10 @@ parse regardless of whether the world exists and do not need touching.
 
 ### 10.3 What this design asks of the engine, and what it leaves alone
 
-**One engine dependency, and it is specified rather than assumed.** Conditional exits — `PLAN.md`
-§4.15 — are what turn attunement from a story beat into a gate. Ossara does not need them; they
-become load-bearing the moment a second realm exists, so they are a Grask-time dependency rather
-than a day-one one and can be built after the low-band content has proven the authoring pipeline.
-Note that they take `WorldBundle.FormatVersion` to **5**, so any bundle authored before that lands
-needs the version bumped when it does.
+**One engine dependency, and it is built.** Conditional exits — `PLAN.md` §4.15 — are what turn
+attunement from a story beat into a gate: an exit may require a character flag, an inventory item,
+or both, and a quest grants the flag. Attunement chains therefore need no further engine work.
+They took `WorldBundle.FormatVersion` to **6**.
 
 Two things beyond that are deliberately left as *later* rather than assumed:
 

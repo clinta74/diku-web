@@ -58,6 +58,14 @@ internal sealed class CharacterConfiguration : IEntityTypeConfiguration<Characte
             .HasMaxLength(RoomKey.MaxLength);
 
         builder.Property(c => c.Gold).HasColumnName("gold").IsRequired();
+
+        // Capabilities earned, usually from a quest (PLAN.md §4.15). text[] rather than jsonb
+        // because a character flag is held or it is not - there is no inheritance chain here to
+        // need an absent-versus-false distinction, so the set is the whole truth.
+        builder.Property(c => c.Flags)
+            .HasColumnName("flags")
+            .HasColumnType("text[]")
+            .IsRequired();
         builder.Property(c => c.RestState).HasColumnName("rest_state").HasConversion<int>().IsRequired();
         builder.Property(c => c.CombatState).HasColumnName("combat_state").HasConversion<int>().IsRequired();
         builder.Property(c => c.CurrentTarget).HasColumnName("current_target").HasMaxLength(64);

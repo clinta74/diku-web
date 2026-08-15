@@ -729,6 +729,7 @@ public static class QuestCommands
             ctx.Reply($"You gain {gold} gold.", "reward");
         }
 
+        AwardRewardFlag(ctx, quest, character);
         AwardRewardItems(ctx, quest, character, zone, world);
         return;
 
@@ -736,6 +737,31 @@ public static class QuestCommands
             worldMultipliers is null || zoneMultipliers is null
                 ? amount
                 : Multipliers.Resolve(amount, worldMultipliers, zoneMultipliers, type);
+    }
+
+    /// <summary>
+    /// Grants the capability this quest opens, if it opens one (PLAN.md §4.15) — the only thing in
+    /// the game that writes <see cref="Character.Flags"/>.
+    /// </summary>
+    /// <remarks>
+    /// <b>Granted, never toggled, and idempotent.</b> A repeatable quest completed twice must not
+    /// hold the flag twice, and finishing a quest again can never take a capability away — a
+    /// player who re-ran the chain that attuned them to a Reach and came out unable to go there
+    /// would have no way to understand what had happened.
+    ///
+    /// Unlike the reward item, a flag has nothing that can be missing: it is a string, not a
+    /// lookup, so there is no content-bug case to narrate. Whether anything grants a flag an exit
+    /// asks for is a builder-side question, answered by <c>/validate</c> rather than here.
+    /// </remarks>
+    private static void AwardRewardFlag(CommandContext ctx, Quest quest, Character character)
+    {
+        if (string.IsNullOrEmpty(quest.RewardFlagKey) || character.HasFlag(quest.RewardFlagKey))
+        {
+            return;
+        }
+
+        character.Flags.Add(quest.RewardFlagKey);
+        ctx.Reply("Something that was closed to you is not any more.", "reward");
     }
 
     /// <summary>Hands over the quest's reward item, if it has one.</summary>

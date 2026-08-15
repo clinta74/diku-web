@@ -427,11 +427,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             .OrderBy(q => q.SortOrder).ThenBy(q => q.Key)
             .ToListAsync(cancellationToken);
 
-        return [.. quests.Select(q => new QuestResponse(
-            q.Key, q.ZoneKey, q.Name, q.Summary, q.Description,
-            q.GiverMobKey, q.TurninMobKey, q.RequiredItemKey, q.RequiredCount,
-            q.RewardXp, q.RewardGold, q.RewardItemKey, q.RewardItemCount,
-            q.PrerequisiteQuestKeys, q.IsRepeatable, q.AutoStart, q.Dialogue, q.SortOrder))];
+        return [.. quests.Select(QuestResponse.From)];
     }
 
     public async Task<IReadOnlyList<QuestResponse>> QuestsByZoneAsync(
@@ -443,11 +439,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             .OrderBy(q => q.SortOrder).ThenBy(q => q.Key)
             .ToListAsync(cancellationToken);
 
-        return [.. quests.Select(q => new QuestResponse(
-            q.Key, q.ZoneKey, q.Name, q.Summary, q.Description,
-            q.GiverMobKey, q.TurninMobKey, q.RequiredItemKey, q.RequiredCount,
-            q.RewardXp, q.RewardGold, q.RewardItemKey, q.RewardItemCount,
-            q.PrerequisiteQuestKeys, q.IsRepeatable, q.AutoStart, q.Dialogue, q.SortOrder))];
+        return [.. quests.Select(QuestResponse.From)];
     }
 
     public async Task<QuestResponse?> QuestAsync(string key, CancellationToken cancellationToken)
@@ -460,11 +452,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             return null;
         }
 
-        return new QuestResponse(
-            quest.Key, quest.ZoneKey, quest.Name, quest.Summary, quest.Description,
-            quest.GiverMobKey, quest.TurninMobKey, quest.RequiredItemKey, quest.RequiredCount,
-            quest.RewardXp, quest.RewardGold, quest.RewardItemKey, quest.RewardItemCount,
-            quest.PrerequisiteQuestKeys, quest.IsRepeatable, quest.AutoStart, quest.Dialogue, quest.SortOrder);
+        return QuestResponse.From(quest);
     }
 
     /// <summary>
@@ -746,8 +734,93 @@ public sealed class BuilderQueries(DikuWebDbContext db)
         }
 
         warnings.AddRange(await LevelWarningsAsync(zoneKey, cancellationToken));
+        warnings.AddRange(await GateWarningsAsync(rooms, zoneFlags, worldFlags, cancellationToken));
 
         return new ZoneValidation(zoneKey, warnings);
+    }
+
+    /// <summary>
+    /// What is wrong with the conditional exits in this zone (PLAN.md §4.15).
+    /// </summary>
+    /// <remarks>
+    /// <b>This is what stands in for a registry of character flags.</b> There is deliberately no
+    /// closed list of them — which flags are real is a property of the authored world, not of the
+    /// binary — so a mistyped flag key cannot be caught by a lookup. It is caught here instead, by
+    /// nothing being able to grant it: the same check, and the same class of bug, as a quest item
+    /// that nothing drops.
+    /// </remarks>
+    private async Task<IReadOnlyList<ValidationWarning>> GateWarningsAsync(
+        IReadOnlyList<Room> rooms,
+        FlagSet? zoneFlags,
+        FlagSet? worldFlags,
+        CancellationToken cancellationToken)
+    {
+        var conditional = rooms
+            .SelectMany(r => r.Exits.Where(e => e.IsConditional).Select(e => (Room: r, Exit: e)))
+            .ToList();
+
+        if (conditional.Count == 0)
+        {
+            return [];
+        }
+
+        var warnings = new List<ValidationWarning>();
+
+        var granted = await db.Quests.AsNoTracking()
+            .Where(q => q.RewardFlagKey != null)
+            .Select(q => q.RewardFlagKey!)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var grantable = granted.ToHashSet(StringComparer.Ordinal);
+
+        var neededItems = conditional
+            .Select(c => c.Exit.RequiredItemKey)
+            .Where(k => k is not null)
+            .Select(k => k!)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        var realItems = (await db.ItemTemplates.AsNoTracking()
+                .Where(i => neededItems.Contains(i.Key))
+                .Select(i => i.Key)
+                .ToListAsync(cancellationToken))
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var (room, exit) in conditional.OrderBy(c => c.Room.Key.ToString(), StringComparer.Ordinal))
+        {
+            var where = room.Key.ToString();
+            var which = exit.Direction.ToLowerName();
+
+            if (exit.RequiredFlagKey is { } flag && !grantable.Contains(flag))
+            {
+                warnings.Add(new ValidationWarning(
+                    "ungrantable-gate",
+                    where,
+                    $"{which} needs the flag '{flag}', which no quest grants. Nobody can pass."));
+            }
+
+            if (exit.RequiredItemKey is { } item && !realItems.Contains(item))
+            {
+                warnings.Add(new ValidationWarning(
+                    "missing-gate-item",
+                    where,
+                    $"{which} needs the item '{item}', which does not exist. Nobody can pass."));
+            }
+
+            // A bind point behind a lock lets a character recall past it forever after, because
+            // recall teleports rather than walks (§4.12, §4.15). Hub zones are the intended home
+            // for `respawn` and are never gated, so this fires on a mistake rather than a design.
+            if (RoomFlags.Resolve(RoomFlags.Respawn, room.Flags, zoneFlags, worldFlags).Value)
+            {
+                warnings.Add(new ValidationWarning(
+                    "bind-behind-gate",
+                    where,
+                    $"Bindable, and {which} is gated. A character can bind here and recall back in without passing it."));
+            }
+        }
+
+        return warnings;
     }
 
     /// <summary>
@@ -904,6 +977,9 @@ public sealed class BuilderQueries(DikuWebDbContext db)
                     .Select(e => new ExitResponse(
                         e.Direction.ToLowerName(),
                         e.ToRoomKey.ToString(),
-                        existingTargets.Contains(e.ToRoomKey))),
+                        existingTargets.Contains(e.ToRoomKey),
+                        e.RequiredFlagKey,
+                        e.RequiredItemKey,
+                        e.RefusalMessage)),
             ]);
 }

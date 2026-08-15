@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
@@ -84,5 +85,20 @@ internal sealed class RoomExitConfiguration : IEntityTypeConfiguration<RoomExit>
             .IsRequired();
 
         builder.HasIndex(e => e.ToRoomKey).HasDatabaseName("ix_room_exits_to_room_key");
+
+        // What gates this way, if anything (PLAN.md §4.15). All nullable and all plain strings,
+        // never foreign keys: a builder authors the gate before the quest that opens it exists,
+        // exactly as they link an exit before digging its destination.
+        builder.Property(e => e.RequiredFlagKey)
+            .HasColumnName("required_flag_key")
+            .HasMaxLength(CharacterFlags.MaxLength);
+
+        builder.Property(e => e.RequiredItemKey)
+            .HasColumnName("required_item_key")
+            .HasMaxLength(64);
+
+        builder.Property(e => e.RefusalMessage)
+            .HasColumnName("refusal_message")
+            .HasMaxLength(256);
     }
 }

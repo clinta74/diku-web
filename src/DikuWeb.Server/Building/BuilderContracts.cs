@@ -4,6 +4,7 @@ using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
+using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Server.Infrastructure;
@@ -49,7 +50,13 @@ public sealed record ZoneResponse(
             WorldResponse.Flat(zone.Flags), zone.Multipliers.Clone(), roomCount);
 }
 
-public sealed record ExitResponse(string Direction, string To, bool TargetExists);
+public sealed record ExitResponse(
+    string Direction,
+    string To,
+    bool TargetExists,
+    string? RequiredFlagKey = null,
+    string? RequiredItemKey = null,
+    string? RefusalMessage = null);
 
 /// <summary>
 /// A room as the builder sees it. Carries <em>resolved</em> flags alongside the room's own, so
@@ -128,7 +135,23 @@ public sealed record SaveRoomRequest(
     int? EditorX,
     int? EditorY);
 
-public sealed record SaveExitRequest(string? To, bool Reciprocal = true);
+/// <summary>
+/// One exit, whole (PLAN.md §4.15). The three conditions are absolute rather than patch-style:
+/// sending null clears them, which is what makes the editor able to remove a lock.
+/// </summary>
+/// <remarks>
+/// <b><see cref="ReciprocalConditions"/> defaults to false while <see cref="Reciprocal"/> defaults
+/// to true</b>, and the asymmetry is the point. Digging and linking are two-way by default because
+/// a corridor you cannot walk back down is almost never what was meant; a lock is one-way by
+/// default because you can always leave a vault. A builder who wants both sides gated says so.
+/// </remarks>
+public sealed record SaveExitRequest(
+    string? To,
+    bool Reciprocal = true,
+    string? RequiredFlagKey = null,
+    string? RequiredItemKey = null,
+    string? RefusalMessage = null,
+    bool ReciprocalConditions = false);
 
 /// <summary>
 /// One flag, three states, at whichever of the three scopes the route names. <c>true</c> and
@@ -427,11 +450,29 @@ public sealed record QuestResponse(
     int RewardGold,
     string? RewardItemKey,
     int RewardItemCount,
+    string? RewardFlagKey,
     List<string> PrerequisiteQuestKeys,
     bool IsRepeatable,
     bool AutoStart,
     Dictionary<string, string> Dialogue,
-    int SortOrder);
+    int SortOrder)
+{
+    /// <summary>
+    /// One mapping, three callers. Written out at each of them until adding a field broke all
+    /// three at once, which is the argument.
+    /// </summary>
+    public static QuestResponse From(Quest quest)
+    {
+        ArgumentNullException.ThrowIfNull(quest);
+
+        return new QuestResponse(
+            quest.Key, quest.ZoneKey, quest.Name, quest.Summary, quest.Description,
+            quest.GiverMobKey, quest.TurninMobKey, quest.RequiredItemKey, quest.RequiredCount,
+            quest.RewardXp, quest.RewardGold, quest.RewardItemKey, quest.RewardItemCount,
+            quest.RewardFlagKey, quest.PrerequisiteQuestKeys, quest.IsRepeatable, quest.AutoStart,
+            quest.Dialogue, quest.SortOrder);
+    }
+}
 
 /// <summary>
 /// One thing that would stop a quest being finishable. Advisory only, like every other builder
@@ -462,6 +503,7 @@ public sealed record SaveQuestRequest(
     int? RewardGold,
     string? RewardItemKey,
     int? RewardItemCount,
+    string? RewardFlagKey,
     List<string>? PrerequisiteQuestKeys,
     bool? IsRepeatable,
     bool? AutoStart,

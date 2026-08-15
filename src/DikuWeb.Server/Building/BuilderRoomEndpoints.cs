@@ -262,9 +262,22 @@ public static class BuilderRoomEndpoints
             return BuilderEndpoints.Invalid("The destination must be 'world.zone.room'.");
         }
 
+        // ApplyConditions: true - a PUT states the whole exit, so a condition left out of the body
+        // is a condition the exit does not have. That is what lets the editor take a lock off
+        // (PLAN.md §4.15); the in-game `link` verb sends the same change with it false, and so
+        // repoints without touching who may pass.
         return await BuilderEndpoints.SaveAsync(
             editor,
-            new LinkExit(from, parsedDirection, to, request.Reciprocal),
+            new LinkExit(
+                from,
+                parsedDirection,
+                to,
+                request.Reciprocal,
+                ApplyConditions: true,
+                request.RequiredFlagKey,
+                request.RequiredItemKey,
+                request.RefusalMessage,
+                request.ReciprocalConditions),
             http,
             ct,
             () => queries.RoomAsync(from, ct));

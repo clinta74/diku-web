@@ -197,6 +197,12 @@ public sealed record CharacterSnapshot(
     Vitals Vitals,
     RoomKey? RespawnRoomKey,
     long Gold,
+    /// <summary>
+    /// Capabilities earned (PLAN.md §4.15). Copied rather than shared: the list on the character
+    /// is mutated in place when a quest grants a flag, and a snapshot that aliased it would not be
+    /// a snapshot.
+    /// </summary>
+    IReadOnlyList<string> Flags,
     DateTimeOffset LastPlayedAt,
     long PlaytimeSeconds)
 {
@@ -223,6 +229,7 @@ public sealed record CharacterSnapshot(
             },
             character.RespawnRoomKey,
             character.Gold,
+            [.. character.Flags],
             now,
             character.PlaytimeSeconds);
     }

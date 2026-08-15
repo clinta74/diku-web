@@ -108,7 +108,22 @@ public sealed record DeleteRoom(RoomKey Key) : WorldChange
 }
 
 /// <summary>Creates or repoints a single exit. One edge, one direction.</summary>
-public sealed record SetExit(RoomKey From, Direction Direction, RoomKey To) : WorldChange
+/// <param name="RequiredFlagKey">A character flag needed to pass, or null (PLAN.md §4.15).</param>
+/// <param name="RequiredItemKey">An item the character must carry, or null.</param>
+/// <param name="RefusalMessage">What someone turned away is told, or null for the generic line.</param>
+/// <remarks>
+/// The three conditions ride on <c>SetExit</c> rather than on a separate <c>SetExitCondition</c>
+/// change, because an exit and its conditions are one row and one audit entry. Two primitives
+/// would mean a gate could be half-saved — an exit that exists with the requirement still to
+/// land — which is the only window in which it is open to everyone.
+/// </remarks>
+public sealed record SetExit(
+    RoomKey From,
+    Direction Direction,
+    RoomKey To,
+    string? RequiredFlagKey = null,
+    string? RequiredItemKey = null,
+    string? RefusalMessage = null) : WorldChange
 {
     public override string EntityKind => "exit";
 
@@ -149,11 +164,28 @@ public sealed record DigRoom(
 }
 
 /// <summary>Links an exit, optionally with its reciprocal - the default (PLAN.md §7.6).</summary>
+/// <param name="ApplyConditions">
+/// Whether the three condition fields mean anything (PLAN.md §4.15). <b>False is "leave whatever is
+/// there"</b>, which is what the in-game <c>link</c> verb and walk-and-build want: those say where a
+/// door goes and nothing about who may use it, so repointing a locked exit must not unlock it.
+/// True is "these are the conditions now", including null meaning none - what a builder's PUT of a
+/// whole exit means, and the only way a lock can ever be removed.
+/// </param>
+/// <param name="ReciprocalConditions">
+/// Whether <paramref name="ApplyConditions"/> also applies to the reciprocal edge. Defaults false
+/// even though <paramref name="Reciprocal"/> defaults true: a corridor you cannot walk back down is
+/// almost never meant, but you can always leave a vault.
+/// </param>
 public sealed record LinkExit(
     RoomKey From,
     Direction Direction,
     RoomKey To,
-    bool Reciprocal = true) : WorldChange
+    bool Reciprocal = true,
+    bool ApplyConditions = false,
+    string? RequiredFlagKey = null,
+    string? RequiredItemKey = null,
+    string? RefusalMessage = null,
+    bool ReciprocalConditions = false) : WorldChange
 {
     public override string EntityKind => "exit";
 
@@ -341,6 +373,7 @@ public sealed record UpsertQuest(
     int RewardGold,
     string? RewardItemKey,
     int RewardItemCount,
+    string? RewardFlagKey,
     List<string> PrerequisiteQuestKeys,
     bool IsRepeatable,
     bool AutoStart,

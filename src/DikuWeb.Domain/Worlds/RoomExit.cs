@@ -18,5 +18,39 @@ public sealed class RoomExit
     /// </summary>
     public required RoomKey ToRoomKey { get; set; }
 
+    /// <summary>
+    /// A character flag required to pass this way, or null when anyone may (PLAN.md §4.15).
+    /// </summary>
+    /// <remarks>
+    /// Names the <em>capability</em> rather than the quest that grants it, which is what lets a
+    /// chain be re-authored, split, or given a second route without touching a single exit. Held as
+    /// a plain string for the same reason <see cref="ToRoomKey"/> is: content may reference what
+    /// does not exist yet, and a builder must be able to author the gate before the quest.
+    /// </remarks>
+    public string? RequiredFlagKey { get; set; }
+
+    /// <summary>
+    /// An item template key the character must be carrying, or null (PLAN.md §4.15). Checked
+    /// against direct inventory and equipment; never consumed.
+    /// </summary>
+    /// <remarks>
+    /// The losable half of the pair. A flag survives being robbed and this does not, which is
+    /// exactly why attunement to a realm is a flag and a vault key is an item.
+    /// </remarks>
+    public string? RequiredItemKey { get; set; }
+
+    /// <summary>
+    /// What a character who cannot pass is told, or null for the generic refusal.
+    /// </summary>
+    /// <remarks>
+    /// Authored rather than derived, because <em>"The gate does not know you."</em> and <em>"It is
+    /// locked."</em> are different sentences and choosing between them from whichever requirement
+    /// failed gets worse the moment an exit has both. The author knows what the door is.
+    /// </remarks>
+    public string? RefusalMessage { get; set; }
+
+    /// <summary>True when anything at all gates this exit.</summary>
+    public bool IsConditional => RequiredFlagKey is not null || RequiredItemKey is not null;
+
     public Room? FromRoom { get; init; }
 }

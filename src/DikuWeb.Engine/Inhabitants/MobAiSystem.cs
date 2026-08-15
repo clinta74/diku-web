@@ -291,6 +291,16 @@ public sealed class MobAiSystem(
                 continue;
             }
 
+            // A conditional exit is a door, and nothing that wanders opens one (§4.15). Mobs hold
+            // neither flags nor inventory, so there is no question to ask them — and the
+            // alternative is flagging noMob on every room behind every lock and remembering to do
+            // it again each time a builder digs one, which is the failure mode the home-zone rule
+            // above exists to avoid.
+            if (exit.IsConditional)
+            {
+                continue;
+            }
+
             // Valid destination found: move the mob
             var leaveProse = NarrationHelper.BuildSentence(template.Name, $"leaves {exit.Direction.ToLowerName()}");
             var arriveProse = NarrationHelper.BuildSentence(template.Name, $"arrives from the {exit.Direction.Opposite().ToLowerName()}");

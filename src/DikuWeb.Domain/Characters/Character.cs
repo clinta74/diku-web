@@ -53,6 +53,31 @@ public sealed class Character
     /// <summary>Gold wallet from mob kills (PLAN.md §4.8).</summary>
     public long Gold { get; set; }
 
+    /// <summary>
+    /// Capabilities this character has earned, usually as a quest reward — attunement to a realm,
+    /// a rank, a pardon (PLAN.md §4.15). A conditional exit names one of these to decide whether
+    /// this character may pass.
+    /// </summary>
+    /// <remarks>
+    /// <b>On the character, never the account.</b> An account-level flag would hand a fresh alt
+    /// attunement to the last realm at level 1, which is the whole gate defeated by the
+    /// character-select screen.
+    ///
+    /// <b>A set of keys rather than a <see cref="Worlds.FlagSet"/>, and that is not an
+    /// inconsistency.</b> A room flag needs three states, because absent must fall through to the
+    /// zone while an explicit false must override it. Nothing inherits from a character, so a flag
+    /// is held or it is not, and a map of key to <c>true</c> would be a second way of writing the
+    /// same fact — the shape that let <c>sentinel</c> and <c>wanders</c> disagree (§4.8).
+    ///
+    /// A concrete List because Npgsql maps <c>List&lt;string&gt;</c> onto <c>text[]</c> directly,
+    /// as it already does for prerequisite quest keys and spawner room keys.
+    /// </remarks>
+    public List<string> Flags { get; set; } = [];
+
+    /// <summary>Whether this character holds a capability. Absent is always the closed answer.</summary>
+    public bool HasFlag(string? key) =>
+        key is not null && Flags.Contains(key, StringComparer.Ordinal);
+
     public required DateTimeOffset CreatedAt { get; init; }
 
     public DateTimeOffset? LastPlayedAt { get; set; }

@@ -215,12 +215,21 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         FromRoomKey = c.From,
                         Direction = c.Direction,
                         ToRoomKey = c.To,
+                        RequiredFlagKey = c.RequiredFlagKey,
+                        RequiredItemKey = c.RequiredItemKey,
+                        RefusalMessage = c.RefusalMessage,
                     });
 
                     return ContentAction.Create;
                 }
 
+                // Assigned rather than coalesced. The applier builds this primitive from the exit
+                // as it now stands (§4.15), so a null here is a condition that is genuinely gone -
+                // coalescing would make a lock impossible to remove.
                 entity.ToRoomKey = c.To;
+                entity.RequiredFlagKey = c.RequiredFlagKey;
+                entity.RequiredItemKey = c.RequiredItemKey;
+                entity.RefusalMessage = c.RefusalMessage;
                 return ContentAction.Update;
             }
 
@@ -496,6 +505,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         RewardGold = c.RewardGold,
                         RewardItemKey = c.RewardItemKey,
                         RewardItemCount = c.RewardItemCount,
+                        RewardFlagKey = c.RewardFlagKey,
                         PrerequisiteQuestKeys = new List<string>(c.PrerequisiteQuestKeys),
                         IsRepeatable = c.IsRepeatable,
                         AutoStart = c.AutoStart,
@@ -517,6 +527,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 entity.RewardGold = c.RewardGold;
                 entity.RewardItemKey = c.RewardItemKey;
                 entity.RewardItemCount = c.RewardItemCount;
+                entity.RewardFlagKey = c.RewardFlagKey;
                 entity.PrerequisiteQuestKeys = new List<string>(c.PrerequisiteQuestKeys);
                 entity.IsRepeatable = c.IsRepeatable;
                 entity.AutoStart = c.AutoStart;
@@ -659,6 +670,13 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                     ["from"] = entity.FromRoomKey.ToString(),
                     ["direction"] = entity.Direction.ToLowerName(),
                     ["to"] = entity.ToRoomKey.ToString(),
+
+                    // Who may pass is as much a content decision as where the door goes, and an
+                    // audit that recorded only the destination would leave "when did this gate
+                    // stop being locked?" unanswerable (§4.15).
+                    ["requiredFlagKey"] = entity.RequiredFlagKey,
+                    ["requiredItemKey"] = entity.RequiredItemKey,
+                    ["refusalMessage"] = entity.RefusalMessage,
                 }.ToJsonString();
             }
 
@@ -704,6 +722,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                     ["rewardGold"] = entity.RewardGold,
                     ["rewardItemKey"] = entity.RewardItemKey,
                     ["rewardItemCount"] = entity.RewardItemCount,
+                    ["rewardFlagKey"] = entity.RewardFlagKey,
                     ["prerequisiteQuestKeys"] =
                         new JsonArray([.. entity.PrerequisiteQuestKeys.Select(k => (JsonNode?)k)]),
                     ["isRepeatable"] = entity.IsRepeatable,

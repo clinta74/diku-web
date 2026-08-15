@@ -59,7 +59,7 @@ public sealed class WorldMutationApplier(
             DeleteZone change => ApplyDeleteZone(change),
             UpsertRoom change => ApplyUpsertRoom(change),
             DeleteRoom change => ApplyDeleteRoom(change),
-            SetExit change => ApplyLink(new LinkExit(change.From, change.Direction, change.To, Reciprocal: false)),
+            SetExit change => ApplySetExit(change),
             RemoveExit change => ApplyUnlink(new UnlinkExit(change.From, change.Direction, Reciprocal: false)),
             LinkExit change => ApplyLink(change),
             UnlinkExit change => ApplyUnlink(change),
@@ -413,10 +413,17 @@ public sealed class WorldMutationApplier(
                 room.EditorY),
         };
 
-        // Carry the room's own exits across to the new key.
+        // Carry the room's own exits across to the new key - conditions included, or renaming a
+        // room would quietly unlock every door leading out of it (§4.15).
         foreach (var exit in room.Exits)
         {
-            applied.Add(new SetExit(change.To, exit.Direction, exit.ToRoomKey));
+            applied.Add(new SetExit(
+                change.To,
+                exit.Direction,
+                exit.ToRoomKey,
+                exit.RequiredFlagKey,
+                exit.RequiredItemKey,
+                exit.RefusalMessage));
         }
 
         // And repoint everything that pointed at the old key, in the same mutation - otherwise
@@ -424,7 +431,13 @@ public sealed class WorldMutationApplier(
         var inbound = world.ExitsPointingAt(change.From).ToList();
         foreach (var exit in inbound)
         {
-            applied.Add(new SetExit(exit.FromRoomKey, exit.Direction, change.To));
+            applied.Add(new SetExit(
+                exit.FromRoomKey,
+                exit.Direction,
+                change.To,
+                exit.RequiredFlagKey,
+                exit.RequiredItemKey,
+                exit.RefusalMessage));
         }
 
         // An exit is not the only thing that names a room. A spawner names the rooms it fills, so
@@ -437,7 +450,7 @@ public sealed class WorldMutationApplier(
 
         var occupants = world.OccupantsOf(change.From).ToList();
 
-        world.PutRoom(ToRoom((UpsertRoom)applied[0], room.Exits.Select(e => (e.Direction, e.ToRoomKey))));
+        world.PutRoom(ToRoom((UpsertRoom)applied[0], room.Exits));
         foreach (var exit in inbound)
         {
             exit.ToRoomKey = change.To;
@@ -634,6 +647,44 @@ public sealed class WorldMutationApplier(
     // Exits
     // -----------------------------------------------------------------------
 
+    /// <summary>
+    /// A full upsert of one exit row, conditions included (PLAN.md §4.15).
+    /// </summary>
+    /// <remarks>
+    /// Distinct from <see cref="ApplyLink"/>, which it used to be expressed as. <c>link</c>
+    /// repoints and preserves; this states what the exit <em>is</em>, so a null condition here
+    /// means *clear it* rather than *leave it*. That difference is why the builder's exit editor
+    /// and the importer both send this one, and why <c>link</c> cannot be made to carry conditions
+    /// instead — a verb that can only add a lock and never remove one is a verb with no undo.
+    /// </remarks>
+    private MutationResult ApplySetExit(SetExit change)
+    {
+        var from = world.FindRoom(change.From);
+        if (from is null)
+        {
+            return MutationResult.Fail(MutationError.NotFound, $"No room '{change.From}'.");
+        }
+
+        // Refused rather than stored, for the reason an unknown room flag is (§4.10): there is no
+        // point letting a builder type a key into existence that nothing can ever grant. Unlike a
+        // room flag the shape is all that can be checked here, because which flags are real is a
+        // property of the authored world - /validate answers the rest.
+        if (change.RequiredFlagKey is { } flag && !CharacterFlags.IsValidKey(flag))
+        {
+            return MutationResult.Fail(
+                MutationError.Invalid,
+                $"'{flag}' is not a valid character flag key.");
+        }
+
+        var exit = PutExit(from, change.Direction, change.To);
+        exit.RequiredFlagKey = change.RequiredFlagKey;
+        exit.RequiredItemKey = change.RequiredItemKey;
+        exit.RefusalMessage = change.RefusalMessage;
+
+        RefreshOccupants(change.From);
+        return MutationResult.Ok([Describe(exit)], change.From);
+    }
+
     private MutationResult ApplyLink(LinkExit change)
     {
         var from = world.FindRoom(change.From);
@@ -642,16 +693,36 @@ public sealed class WorldMutationApplier(
             return MutationResult.Fail(MutationError.NotFound, $"No room '{change.From}'.");
         }
 
+        if (change.ApplyConditions
+            && change.RequiredFlagKey is { } requested
+            && !CharacterFlags.IsValidKey(requested))
+        {
+            return MutationResult.Fail(
+                MutationError.Invalid,
+                $"'{requested}' is not a valid character flag key.");
+        }
+
         // The destination is deliberately not required to exist. Live editing has no publish
         // gate to defer the link to, so an exit may be authored before its target (§7.4).
-        var applied = new List<WorldChange> { new SetExit(change.From, change.Direction, change.To) };
-        PutExit(from, change.Direction, change.To);
+        var forward = PutExit(from, change.Direction, change.To);
+        if (change.ApplyConditions)
+        {
+            State(forward, change);
+        }
+
+        var applied = new List<WorldChange> { Describe(forward) };
 
         if (change.Reciprocal && world.FindRoom(change.To) is { } to)
         {
             var back = change.Direction.Opposite();
-            applied.Add(new SetExit(change.To, back, change.From));
-            PutExit(to, back, change.From);
+            var backward = PutExit(to, back, change.From);
+
+            if (change.ApplyConditions && change.ReciprocalConditions)
+            {
+                State(backward, change);
+            }
+
+            applied.Add(Describe(backward));
             RefreshOccupants(change.To);
         }
 
@@ -832,25 +903,63 @@ public sealed class WorldMutationApplier(
     // Helpers
     // -----------------------------------------------------------------------
 
-    private static void PutExit(Room room, Direction direction, RoomKey to)
+    /// <summary>
+    /// Creates or repoints an exit, leaving any conditions on it alone, and hands it back so the
+    /// caller can decide what to do with them (PLAN.md §4.15).
+    /// </summary>
+    /// <remarks>
+    /// Repointing preserves rather than clears, because <c>link</c> is about where a door goes and
+    /// says nothing about who may use it. A builder fixing the far end of a locked exit must not
+    /// discover they have unlocked it.
+    /// </remarks>
+    private static RoomExit PutExit(Room room, Direction direction, RoomKey to)
     {
         var existing = room.ExitTo(direction);
 
         if (existing is not null)
         {
             existing.ToRoomKey = to;
-            return;
+            return existing;
         }
 
-        room.Exits.Add(new RoomExit
+        var created = new RoomExit
         {
             FromRoomKey = room.Key,
             Direction = direction,
             ToRoomKey = to,
-        });
+        };
+
+        room.Exits.Add(created);
+        return created;
     }
 
-    private static Room ToRoom(UpsertRoom change, IEnumerable<(Direction Direction, RoomKey To)> exits)
+    /// <summary>Writes a link request's conditions onto an exit, nulls included.</summary>
+    private static void State(RoomExit exit, LinkExit change)
+    {
+        exit.RequiredFlagKey = change.RequiredFlagKey;
+        exit.RequiredItemKey = change.RequiredItemKey;
+        exit.RefusalMessage = change.RefusalMessage;
+    }
+
+    /// <summary>
+    /// The <c>SetExit</c> that describes an exit exactly as it now stands — what the writer replays
+    /// into Postgres. Built from the entity rather than from the request, so a change that only
+    /// meant to repoint does not persist as one that also cleared the conditions.
+    /// </summary>
+    private static SetExit Describe(RoomExit exit) => new(
+        exit.FromRoomKey,
+        exit.Direction,
+        exit.ToRoomKey,
+        exit.RequiredFlagKey,
+        exit.RequiredItemKey,
+        exit.RefusalMessage);
+
+    /// <summary>
+    /// Builds the in-memory room, carrying whole exits rather than direction-and-destination
+    /// pairs — otherwise a rename rebuilds its exits stripped of their conditions (§4.15) and the
+    /// live world disagrees with what was just written to Postgres until the next restart.
+    /// </summary>
+    private static Room ToRoom(UpsertRoom change, IEnumerable<RoomExit> exits)
     {
         var room = new Room
         {
@@ -865,13 +974,16 @@ public sealed class WorldMutationApplier(
             EditorY = change.EditorY,
         };
 
-        foreach (var (direction, to) in exits)
+        foreach (var exit in exits)
         {
             room.Exits.Add(new RoomExit
             {
                 FromRoomKey = change.Key,
-                Direction = direction,
-                ToRoomKey = to,
+                Direction = exit.Direction,
+                ToRoomKey = exit.ToRoomKey,
+                RequiredFlagKey = exit.RequiredFlagKey,
+                RequiredItemKey = exit.RequiredItemKey,
+                RefusalMessage = exit.RefusalMessage,
             });
         }
 

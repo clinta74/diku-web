@@ -169,7 +169,15 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
                     // link as separate edges, so asking for the reciprocal would invent an exit
                     // the source environment does not have.
                     var outcome = await editor.ApplyAsync(
-                        new SetExit(from, direction, to), accountId, cancellationToken);
+                        new SetExit(
+                            from,
+                            direction,
+                            to,
+                            exit.RequiredFlagKey,
+                            exit.RequiredItemKey,
+                            exit.RefusalMessage),
+                        accountId,
+                        cancellationToken);
 
                     if (!outcome.Ok)
                     {
@@ -242,7 +250,7 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
     private static WorldChange QuestChangeFor(BundleQuest q) =>
         new UpsertQuest(q.Key, q.ZoneKey, q.Name, q.Summary, q.Description,
             q.GiverMobKey, q.TurninMobKey, q.RequiredItemKey, q.RequiredCount,
-            q.RewardXp, q.RewardGold, q.RewardItemKey, q.RewardItemCount,
+            q.RewardXp, q.RewardGold, q.RewardItemKey, q.RewardItemCount, q.RewardFlagKey,
             q.PrerequisiteQuestKeys ?? [], q.IsRepeatable, q.AutoStart,
             q.Dialogue ?? new Dictionary<string, string>(StringComparer.Ordinal), q.SortOrder);
 

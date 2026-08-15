@@ -152,6 +152,25 @@ public sealed class MobWanderZoneTests
     }
 
     [Fact]
+    public async Task Nothing_that_wanders_opens_a_locked_door()
+    {
+        // `roams` is set, so the zone border is deliberately not what stops it here - the gate is
+        // (PLAN.md §4.15). A mob holds neither flags nor inventory, so there is no question worth
+        // asking it, and the alternative is flagging noMob on every room behind every lock and
+        // remembering to do it again each time a builder digs one: the same argument that put the
+        // zone fence on the mob rather than on the geography.
+        var harness = TwoZones();
+        var template = Rat(roams: true);
+        var mob = SpawnAtHome(harness, template);
+
+        harness.World.FindRoom(Home)!.ExitTo(Direction.East)!.RequiredFlagKey = "attuned.grask";
+
+        await WanderAsync(harness, template);
+
+        Assert.Equal(Home.ToString(), mob.RoomKey);
+    }
+
+    [Fact]
     public async Task It_still_wanders_freely_inside_its_own_zone()
     {
         // Confinement must not read as "does not wander". The test world's three rooms are all

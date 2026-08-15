@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Quests;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -58,6 +59,12 @@ public sealed class QuestConfiguration : IEntityTypeConfiguration<Quest>
 
         builder.Property(q => q.RewardItemCount)
             .HasColumnName("reward_item_count");
+
+        // The character flag this quest grants on completion (PLAN.md §4.15). Nullable, and a
+        // plain string for the same reason the mob and item keys are.
+        builder.Property(q => q.RewardFlagKey)
+            .HasColumnName("reward_flag_key")
+            .HasMaxLength(CharacterFlags.MaxLength);
 
         builder.Property(q => q.PrerequisiteQuestKeys)
             .HasColumnName("prerequisite_quest_keys")

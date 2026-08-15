@@ -57,12 +57,20 @@ public sealed record WorldBundle(
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
     ///
+    /// <b>6 because an exit can refuse you and a quest can grant a capability.</b> A version 5
+    /// bundle has no <c>requiredFlagKey</c>, <c>requiredItemKey</c> or <c>rewardFlagKey</c>, so
+    /// read as v6 every one of them would deserialise to null - which is a gate that opens for
+    /// anybody, and a chain that never attunes anyone to anything (§4.15). Both halves fail
+    /// silently and in the dangerous direction, which is precisely what this number is here to
+    /// refuse. The strong kind of bump, unlike the one below it.
+    ///
     /// <b>5 because a spawner can pin the level its mobs fight at.</b> This is the weaker kind of
     /// bump, and worth saying so: a v4 bundle carries no pin, which reads correctly as "the zone
     /// decides" - exactly what a v4 spawner meant. It is here because the exporter now *writes* a
     /// key a v4 reader would drop, and a file labelled 4 that carries a v5 field is a lie about its
     /// own shape. Omitting the key when null was the alternative; it buys nothing and costs a
     /// serialisation special case.
+    ///
     ///
     /// <b>4 because an ability carries a list of effects rather than one.</b> A version 3 bundle
     /// has <c>effectKey</c> and <c>effectParams</c> where this one has <c>effects</c>, so read as
@@ -81,7 +89,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 5;
+    public const int CurrentFormatVersion = 6;
 }
 
 /// <summary>
@@ -125,7 +133,12 @@ public sealed record BundleRoom(
     int? EditorY,
     IReadOnlyList<BundleExit> Exits);
 
-public sealed record BundleExit(string Direction, string To);
+public sealed record BundleExit(
+    string Direction,
+    string To,
+    string? RequiredFlagKey = null,
+    string? RequiredItemKey = null,
+    string? RefusalMessage = null);
 
 public sealed record BundleItemTemplate(
     string Key,
@@ -219,6 +232,7 @@ public sealed record BundleQuest(
     int RewardGold,
     string? RewardItemKey,
     int RewardItemCount,
+    string? RewardFlagKey,
     List<string> PrerequisiteQuestKeys,
     bool IsRepeatable,
     bool AutoStart,

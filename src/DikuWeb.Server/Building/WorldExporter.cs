@@ -228,7 +228,12 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
                     // unchanged zone are byte-identical and a diff shows only real edits.
                     .. r.Exits
                         .OrderBy(e => DirectionExtensions.All.ToList().IndexOf(e.Direction))
-                        .Select(e => new BundleExit(e.Direction.ToLowerName(), e.ToRoomKey.ToString())),
+                        .Select(e => new BundleExit(
+                            e.Direction.ToLowerName(),
+                            e.ToRoomKey.ToString(),
+                            e.RequiredFlagKey,
+                            e.RequiredItemKey,
+                            e.RefusalMessage)),
                 ])),
         ];
     }
@@ -270,7 +275,7 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
         return [.. quests.Select(q => new BundleQuest(
             q.Key, q.ZoneKey, q.Name, q.Summary, q.Description,
             q.GiverMobKey, q.TurninMobKey, q.RequiredItemKey, q.RequiredCount,
-            q.RewardXp, q.RewardGold, q.RewardItemKey, q.RewardItemCount,
+            q.RewardXp, q.RewardGold, q.RewardItemKey, q.RewardItemCount, q.RewardFlagKey,
             [.. q.PrerequisiteQuestKeys], q.IsRepeatable, q.AutoStart,
             new Dictionary<string, string>(q.Dialogue, StringComparer.Ordinal), q.SortOrder))];
     }

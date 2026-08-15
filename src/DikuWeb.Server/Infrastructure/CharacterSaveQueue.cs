@@ -171,6 +171,11 @@ public sealed class CharacterSaveWorker(
             tracked.Gold = snapshot.Gold;
             tracked.RespawnRoomKey = snapshot.RespawnRoomKey;
 
+            // And this is the third field that would have been dropped here. A capability that
+            // does not survive a restart is worse than one that was never granted: the quest is
+            // Completed, so the chain cannot be re-run to earn it again (PLAN.md §4.15).
+            tracked.Flags = [.. snapshot.Flags];
+
             tracked.LastPlayedAt = snapshot.LastPlayedAt;
             tracked.PlaytimeSeconds = snapshot.PlaytimeSeconds;
             saved++;
