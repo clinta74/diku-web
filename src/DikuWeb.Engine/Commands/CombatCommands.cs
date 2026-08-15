@@ -278,6 +278,15 @@ public static class CombatCommands
     {
         var character = ctx.Actor.Character;
 
+        // Refused mid-fight for the reason travel is (Travel.Refuse): where you wake up is not a
+        // decision to be taking while being hit. Only that one clause carries over, though —
+        // binding is not travel, so a `noRecall` room and a seated character are both fine here.
+        if (character.CombatState == CombatState.Fighting)
+        {
+            ctx.Reply("Not while you are fighting. Try 'flee' first.", "bad");
+            return;
+        }
+
         // Check if room allows binding
         if (!ctx.World.IsFlagSet(character.RoomKey, RoomFlags.Respawn))
         {
@@ -285,8 +294,23 @@ public static class CombatCommands
             return;
         }
 
+        var previous = character.RespawnRoomKey;
+
+        if (previous is { } already && already == character.RoomKey)
+        {
+            ctx.Reply("Your soul is already bound here.");
+            return;
+        }
+
         character.RespawnRoomKey = character.RoomKey;
-        ctx.Reply($"You bind your soul to this place: {character.RoomKey}");
+
+        // Says what it replaced. The verb is one keystroke and overwrites without asking, and
+        // `quit` demands all four characters precisely because a stray keypress should not cost
+        // you something you only discover the next time you die.
+        ctx.Reply(previous is { } old
+            ? $"You bind your soul to this place: {character.RoomKey} (unbound from {old})."
+            : $"You bind your soul to this place: {character.RoomKey}");
+
         ctx.Broadcast($"{ctx.Actor.Name} binds their soul here.");
     }
 }

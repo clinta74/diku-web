@@ -1070,13 +1070,28 @@ means a bind point can be deleted out from under a player (§7.4):
 
 ```
 1. characters.respawn_room_key    -- set by `bind` in a room that resolves `respawn` true
-2. the entrance room of the character's home zone
-3. EngineOptions.StartingRoom     -- the world's origin, guaranteed to exist
+2. EngineOptions.StartingRoom     -- the world's origin, guaranteed to exist
 ```
 
 A character who has never used `bind` therefore respawns where they first entered the world, which
 is the simple behaviour; `bind` and the `respawn` flag exist so builders can place waypoints as the
 world grows outward, without that being a second system.
+
+**Two steps, not three.** An earlier version of this list had *the entrance room of the character's
+home zone* in the middle, which was never built — there is no entrance field on a zone to build it
+from. It stays out deliberately rather than as an omission: a long run back is an acceptable price
+for never having bound, and it is the price that makes `bind` worth typing. Placing `respawn` well
+is the lever here, and it is an authoring decision rather than an engine one.
+
+**Where `bind` may be used is entirely the `respawn` flag**, and because flags resolve room → zone →
+world (§4.10), setting it once on a zone makes every room in it bindable. That is the intended
+granularity: bind points are a handful of deliberate places, not a property of individual rooms.
+**No second flag.** *"You may bind here"* and *"you may respawn here"* are one fact, and a pair of
+flags meaning one thing is the bug this codebase has already shipped once (§4.8, `sentinel`).
+
+`bind` is free, uncapped, and instant — it is a waypoint, not a resource. Two guards, both small:
+it is refused mid-fight, for the reason travel is, and it **names the point it replaced**, because
+the verb is one keystroke and the cost of a stray press is otherwise invisible until you next die.
 
 **On respawn** the character is at 25% Health, 0 Focus, 0 Stamina, and out of combat. The real
 cost of dying is the walk back and the rest afterwards; reviving at full vitals would make death
