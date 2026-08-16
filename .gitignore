@@ -41,3 +41,5 @@ coverage/
 TestResults/
 *.coverage
 *.trx
+
+__pycache__/
