@@ -342,6 +342,7 @@ input:focus {
   letter-spacing: 0;
   color: var(--dim);
   white-space: pre;
+  font-family: inherit;
 }
 
 .legend li,
