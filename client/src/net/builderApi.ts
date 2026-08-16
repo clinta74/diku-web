@@ -218,6 +218,19 @@ export interface ItemTemplate {
   attackVerb: string | null
   /** Bound to a quest: cannot be sold or destroyed, but can still be dropped (PLAN.md §4.9). */
   isQuestItem: boolean
+  /** One only, counting what is worn. Checked on pick-up, purchase, gift, and quest reward. */
+  isLore: boolean
+  /** Cannot be dropped or given away. Destroying it is still allowed, deliberately. */
+  isNoDrop: boolean
+  /**
+   * The Paths that may wear or wield this. **Empty means anyone**, which is why it is a list of
+   * what is allowed rather than of what is forbidden — an item is unrestricted until a builder
+   * opts in.
+   *
+   * Strings rather than numbers: the server registers a `JsonStringEnumConverter` globally, so
+   * `CharacterPath` crosses the wire as "Warden" rather than 0.
+   */
+  paths: CharacterPath[]
 }
 
 /**
@@ -230,7 +243,16 @@ export interface ItemTemplate {
  */
 export type WanderMode = 'template' | 'always' | 'never'
 
-export type CharacterPath = 'Warden' | 'Adept' | 'Shade' | 'Hallow'
+/**
+ * The four Paths, in the server enum's own order.
+ *
+ * A value rather than only a type, because a form that offers all four has to iterate them — and
+ * a hand-written list beside the union is the pair that drifts. `CharacterPath` is derived from
+ * this so the two cannot disagree.
+ */
+export const CHARACTER_PATHS = ['Warden', 'Adept', 'Shade', 'Hallow'] as const
+
+export type CharacterPath = (typeof CHARACTER_PATHS)[number]
 export type CostType = 'Focus' | 'Stamina' | 'Health'
 export type TargetingType = 'SingleTarget' | 'Self' | 'Aoe'
 

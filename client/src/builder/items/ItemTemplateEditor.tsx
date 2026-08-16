@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
-import { builderApi, type ItemTemplate } from '../../net/builderApi'
+import {
+  builderApi,
+  CHARACTER_PATHS,
+  type CharacterPath,
+  type ItemTemplate,
+} from '../../net/builderApi'
 import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
@@ -39,6 +44,9 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
   const [attackDelayPulses, setAttackDelayPulses] = useState<number | null>(null)
   const [attackVerb, setAttackVerb] = useState('')
   const [isQuestItem, setIsQuestItem] = useState(false)
+  const [isLore, setIsLore] = useState(false)
+  const [isNoDrop, setIsNoDrop] = useState(false)
+  const [paths, setPaths] = useState<CharacterPath[]>([])
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -66,6 +74,11 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         setAttackDelayPulses(loaded.attackDelayPulses ?? null)
         setAttackVerb(loaded.attackVerb ?? '')
         setIsQuestItem(loaded.isQuestItem)
+        setIsLore(loaded.isLore)
+        setIsNoDrop(loaded.isNoDrop)
+        // Ordered to CHARACTER_PATHS rather than to whatever came back, so the checkboxes and the
+        // saved list agree and a save with nothing changed is not a change.
+        setPaths(CHARACTER_PATHS.filter((p) => (loaded.paths ?? []).includes(p)))
         setDirty(false)
       })
       .catch((e) => {
@@ -91,6 +104,9 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         attackDelayPulses,
         attackVerb: attackVerb.trim() === '' ? null : attackVerb.trim(),
         isQuestItem,
+        isLore,
+        isNoDrop,
+        paths,
       })
       setTemplate(updated)
       setSlot(updated.slot)
@@ -257,23 +273,97 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         </div>
       </fieldset>
 
-      <label className="field-check">
-        <input
-          type="checkbox"
-          checked={isQuestItem}
-          onChange={(e) => {
-            setIsQuestItem(e.target.checked)
-            touch()
-          }}
-        />
-        Quest item — cannot be sold or destroyed, but can still be dropped
-      </label>
-      {isQuestItem && (
+      <fieldset className="multiplier-set">
+        <legend>Restrictions</legend>
         <p className="dim detail">
-          Stamped onto each copy when it spawns, so items already in a pack keep the rule they
-          were created under. Turning this off will not free copies that already exist.
+          Every one of these is off by default, and an item stays unrestricted until you say
+          otherwise.
         </p>
-      )}
+
+        <label className="field-check">
+          <input
+            type="checkbox"
+            checked={isQuestItem}
+            onChange={(e) => {
+              setIsQuestItem(e.target.checked)
+              touch()
+            }}
+          />
+          Quest item — cannot be sold or destroyed, but can still be dropped
+        </label>
+        {isQuestItem && (
+          <p className="dim detail">
+            {/* The one of the four that behaves differently, and the difference is worth stating
+                where a builder is deciding: quest-ness is a protection stamped onto the copy, so
+                it must survive this box being unticked. The three below are restrictions read
+                live from the template, so widening them frees copies already in packs. */}
+            Stamped onto each copy when it spawns, so items already in a pack keep the rule they
+            were created under. Turning this off will not free copies that already exist.
+          </p>
+        )}
+
+        <label className="field-check">
+          <input
+            type="checkbox"
+            checked={isLore}
+            onChange={(e) => {
+              setIsLore(e.target.checked)
+              touch()
+            }}
+          />
+          Lore — one only, counting what is worn
+        </label>
+
+        <label className="field-check">
+          <input
+            type="checkbox"
+            checked={isNoDrop}
+            onChange={(e) => {
+              setIsNoDrop(e.target.checked)
+              touch()
+            }}
+          />
+          No drop — cannot be dropped or given away, but can still be destroyed
+        </label>
+
+        <Field
+          label="Paths"
+          hint="None ticked means anyone may use it. Ticking any restricts it to those."
+        >
+          <div className="check-row">
+            {CHARACTER_PATHS.map((path) => (
+              <label className="field-check" key={path}>
+                <input
+                  type="checkbox"
+                  checked={paths.includes(path)}
+                  onChange={(e) => {
+                    // Rebuilt from CHARACTER_PATHS rather than pushed onto, so the saved order is
+                    // the enum's however they were ticked - two items restricted to the same two
+                    // Paths should not differ by the order somebody clicked.
+                    setPaths(
+                      CHARACTER_PATHS.filter((p) =>
+                        p === path ? e.target.checked : paths.includes(p),
+                      ),
+                    )
+                    touch()
+                  }}
+                />
+                {path}
+              </label>
+            ))}
+          </div>
+        </Field>
+
+        {paths.length > 0 && slot === null && (
+          /* A Path list on something with no slot restricts nothing: the check runs when an item
+             is worn or wielded, and this one never is. Said rather than refused, because an
+             authored slot may be on its way. */
+          <p className="dim detail">
+            This item has no slot, so it is never worn or wielded and the Path list will never be
+            consulted.
+          </p>
+        )}
+      </fieldset>
 
       {STAT_GROUPS.map((group) => (
         <fieldset className="multiplier-set" key={group.label}>
