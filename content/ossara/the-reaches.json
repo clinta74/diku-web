@@ -603,8 +603,22 @@
       "title": "The High Shelf",
       "description": "The first of the terraces, and the widest. Dry-stone walls hold the soil in long green steps down the slope, each one a little narrower than the last.\n\nA hoe leans against the wall where somebody left it, and the row beside it is half done.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"····\"\"\"\"\"",
+        "\"\"··\"\"\"······\"\"······",
+        "········\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣"
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 2,
       "editorY": 0,
       "exits": [
@@ -632,8 +646,22 @@
       "title": "The Drying Frames",
       "description": "Racks of split hazel, chest high, hung with beans and onion tops in the sun. The frames are re-tied every spring and none of the knots match.\n\nSomething has been at the low end of the third rack. There are droppings, and a hole in the wall behind it that was not put there by a mason.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"♣·············",
+        "\"\"\"\"\"\"\"··\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"····\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "·····\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 3,
       "editorY": 0,
       "exits": [
@@ -649,8 +677,21 @@
       "title": "The Water Race",
       "description": "A stone channel a hand deep runs along the shelf, carrying water from the river out to the far end and letting it fall shelf to shelf through cut notches.\n\nThe notches have wooden gates in them. Which gates are open is somebody's whole job, and arguing about it is most of the village's entertainment.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "♣": "tree"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -670,8 +711,21 @@
       "title": "The Cellar Mouth",
       "description": "A door set flat into the hillside with two stone steps down to it, propped open with a rock because the hinge has gone. Cold air comes out of it even at noon.\n\nRoot vegetables go in here in autumn and come out all winter. Something else has been going in and out year round.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"",
+        "♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "♣": "tree"
+      },
       "editorX": 1,
       "editorY": 0,
       "exits": [
@@ -694,8 +748,21 @@
         "indoors": true,
         "dark": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "♣": "tree"
+      },
       "editorX": 0,
       "editorY": 0,
       "exits": [
@@ -711,8 +778,22 @@
       "title": "The Lower Rows",
       "description": "Beans on strings, three shelves of them, running the whole width of the terrace. The strings are tied to hazel poles and the poles lean where the ground has crept.\n\nIt is the best cover on the whole hillside and everything on the hillside knows it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"♣\"\"\"\"·······\"\"",
+        "\"\"\"\"\"\"\"\"·····\"\"\"·····",
+        "·········\"\"\"\"\"\"\"\"\"♣\"\"",
+        "·\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -736,8 +817,22 @@
       "title": "The Goat Fold",
       "description": "A pen of hurdles against the retaining wall, holding nine goats who have all worked out that hurdles can be leaned on. The tenth is somewhere else.\n\nA boy is supposed to be here. His stick is here.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"··\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "·········\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"··\"\"\"\"♣\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"····\"\"\"♣\"\"\"·",
+        "\"\"\"\"\"\"\"\"\"\"\"\"·········",
+        "\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 3,
       "editorY": 2,
       "exits": [
@@ -753,8 +848,22 @@
       "title": "The Orchard Shelf",
       "description": "Twenty apple trees on the widest of the lower terraces, pruned hard and standing in grass that is kept short by the goats when the goats are meant to be here.\n\nWindfalls lie under every tree. The crows have had the best of them and are not sorry.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"····",
+        "\"\"\"\"\"\"\"···········\"··",
+        "·\"······\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "···\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"♣\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 2,
       "editorY": 3,
       "exits": [
@@ -778,8 +887,21 @@
       "title": "The Beehives",
       "description": "Six straw skeps on a stone bench, facing the morning sun, each with its own slate roof weighted down by a rock.\n\nSomebody has told the bees something recently. The rag tied to the third skep is the village's way of doing it, and it is fresh.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "♣": "tree"
+      },
       "editorX": 1,
       "editorY": 3,
       "exits": [
@@ -795,8 +917,21 @@
       "title": "The Terrace Foot",
       "description": "The bottom of the worked land. The last wall is twice the height of the others and the ground past it is scrub going to gorse.\n\nA stile crosses the wall here, worn hollow in the middle by two generations of people going out to Brackenfell for wood and coming back with less than they hoped.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"",
+        "\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "♣": "tree"
+      },
       "editorX": 2,
       "editorY": 4,
       "exits": [
@@ -816,8 +951,21 @@
       "title": "The Stile Path",
       "description": "A trodden line through waist-high bracken, wide enough for one and used by two. The terraces are a green staircase behind you and the scrub closes over the path ahead.\n\nSomebody has cut a blaze into the third birch along. There is another further on, and then they stop.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "▓.▓▓▓▓▓..▓..▓.▓.▓▓▓..",
+        ".....▓▓.......▓...▓..",
+        ".......▓.............",
+        ".....................",
+        "...............▓.....",
+        ".....................",
+        "......▓▓.............",
+        "...▓..▓▓..▓.▓▓...▓.▓.",
+        "▓..▓▓.▓▓▓.▓.▓▓▓.▓▓.▓."
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 3,
       "editorY": 0,
       "exits": [
@@ -841,8 +989,21 @@
       "title": "The Birch Stand",
       "description": "Thin birches close together, all of them leaning the same way, with light coming down through them in bars. The ground is clean underneath and quiet to walk on.\n\nThis is where Gatetown gets its firewood, and the stumps are cut low and level by people who intend to come back.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"♣\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"♣\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"♣\"\"\"♣\"♣\"\"\"\"♣\"\"\"\"♣\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "♣": "tree"
+      },
       "editorX": 3,
       "editorY": 1,
       "exits": [
@@ -866,8 +1027,22 @@
       "title": "The Gorse Run",
       "description": "Gorse over head height on both sides and a path through it barely a shoulder wide. The spines catch at everything and the flowers smell absurdly of coconut.\n\nThere are runs pushed through the base of it at knee height, going somewhere else.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"··♣",
+        "\"···\"\"\"\"\"\"\"\"♣\"\"\"·····",
+        "··\"··\"\"\"\"\"\"······\"\"\"\"",
+        "\"\"\"\"········\"\"\"\"\"♣\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 4,
       "editorY": 0,
       "exits": [
@@ -887,8 +1062,22 @@
       "title": "The Thorn Hollow",
       "description": "A dip where the gorse gives out and blackthorn takes over, so dense at the edges that the middle is bare ground.\n\nBones in the middle, small ones, picked clean and dragged into no particular arrangement.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"······\"\"\"\"",
+        "\"\"\"\"\"·······\"\"\"\"··\"\"\"",
+        "······\"\"\"\"\"\"\"\"\"\"\"····",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"·",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 4,
       "editorY": 1,
       "exits": [
@@ -908,8 +1097,21 @@
       "title": "The Wet Hollow",
       "description": "A boggy dip full of sedge and standing water that never quite drains, crossed by three planks laid end to end on stones.\n\nThe middle plank moves when you step on it. Everyone knows. Nobody has fixed it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "▓....▓..▓.▓▓.▓▓▓▓.▓▓.",
+        ".....▓.......▓▓.▓....",
+        ".................▓▓..",
+        ".....................",
+        "............▓........",
+        ".....................",
+        ".....................",
+        "▓...........▓..▓▓.▓▓.",
+        "▓▓▓....▓▓▓▓.▓.▓▓▓▓▓▓▓"
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -929,8 +1131,22 @@
       "title": "The Alder Carr",
       "description": "Alder growing straight out of the water on stilts of root, close enough together that you pick your way rather than walk.\n\nWhatever lives in here has learned that people are loud and slow and only come through in daylight.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"░\"\"\"\"\"\"\"",
+        "\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "♣\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "♣\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"♣\"\"\"\"\"░\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"░\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "♣": "tree",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -950,8 +1166,22 @@
       "title": "The Charcoal Burn",
       "description": "A flat circle of bare scorched earth twenty feet across, with a shallow pit at the middle and a ring of turf sods stacked to one side.\n\nThe burn is cold. The sods have been stacked ready for a month and nobody has come back to set it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"·········♣\"\"",
+        "\"\"\"\"\"·····\"\"\"\"\"······",
+        "\"\"\"\"··\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "·····\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"♣",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 3,
       "editorY": 2,
       "exits": [
@@ -979,8 +1209,22 @@
       "title": "The Old Quarry",
       "description": "A bite taken out of the hillside, three storeys of pale rock face with a floor of chips and puddles. Every wall in Gatetown came out of here.\n\nThe tool marks stop halfway up one face, mid-course, as though the day ended and did not start again.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "····\"\"♣\"\"\"\"\"\"\"\"····\"\"",
+        "\"\"\"····\"\"·······\"\"···",
+        "\"\"\"\"\"\"····\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 4,
       "editorY": 2,
       "exits": [
@@ -1004,8 +1248,22 @@
       "title": "The Quarry Shelf",
       "description": "A ledge halfway up the quarry face, reached by a ramp of spoil, wide enough for a cart and once used by several.\n\nSomebody is camping up here. The fire is banked, not out, and there is more gear than one person needs.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣",
+        "\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"♣♣\"░\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "♣": "tree",
+        "░": "rubble"
+      },
       "editorX": 4,
       "editorY": 3,
       "exits": [
@@ -1029,8 +1287,22 @@
       "title": "The Cutting Bank",
       "description": "The old road runs through a cutting here, banks of red earth and root above head height on both sides, and it is exactly as good an ambush as it looks.\n\nThe road surface is still sound. Whoever laid it was better at this than anyone living.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣",
+        "\"\"············\"\"\"\"\"\"\"",
+        "···\"\"\"\"\"\"\"··\"···\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"····\"\"",
+        "\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"···",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 3,
       "editorY": 3,
       "exits": [
@@ -1054,8 +1326,22 @@
       "title": "The Toll Post",
       "description": "A pole across the road on two forked stakes, with a plank nailed to it reading TOLL in paint that has run. Nobody has any authority to put it there.\n\nThe crew who did are camped where they can see both ways along the cutting, which is the one part of this they have thought through.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"░\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"░\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣",
+        "\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "♣": "tree",
+        "░": "rubble"
+      },
       "editorX": 4,
       "editorY": 4,
       "exits": [
@@ -1075,8 +1361,21 @@
       "title": "The Boar Wallow",
       "description": "A churned patch of black mud twenty feet across, ringed with rubbed-smooth trees and smelling like the underside of a wet dog.\n\nThe tracks going in are deep and splayed. Nothing small made these.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "▓.▓▓.▓▓▓..▓▓▓▓.▓▓▓▓.▓",
+        "▓.▓▓..▓▓.....▓..▓▓▓..",
+        ".....................",
+        "............▓.....▓..",
+        "..................▓..",
+        ".....................",
+        ".....................",
+        "▓..▓...▓.▓.▓.▓▓..▓▓▓.",
+        "▓.▓▓.▓▓▓.▓▓▓.▓▓▓.▓▓▓."
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 3,
       "editorY": 4,
       "exits": [
@@ -1100,8 +1399,22 @@
       "title": "The Long Bracken",
       "description": "Bracken taller than a person for as far as you can see, with the path a green tunnel through it and the sky a strip overhead.\n\nYou cannot see anything off the path. Anything off the path can hear exactly where you are.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "░\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"░\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"",
+        "\"\"\"\"\"\"♣\"\"\"░\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "♣": "tree",
+        "░": "rubble"
+      },
       "editorX": 3,
       "editorY": 5,
       "exits": [
@@ -1121,8 +1434,22 @@
       "title": "The Far Blaze",
       "description": "The last of the cut blazes, on a birch that has grown around it until the mark is a knuckle of scar tissue.\n\nPast here the bracken thins, the soil goes to grit, and the ground begins its long tilt towards the rim.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"············",
+        "\"\"\"\"\"·····\"\"\"\"\"♣\"\"\"\"\"",
+        "······\"··\"\"\"\"\"\"\"\"\"\"\"\"",
+        "·\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 3,
       "editorY": 6,
       "exits": [
@@ -1142,8 +1469,21 @@
       "title": "The Thinning",
       "description": "The bracken gives up in stages. First the tall stuff, then the low, then a scatter of gorse in grit, and then grass so short it looks grazed by something nobody has seen.\n\nThe ground tilts. Not steeply. Just enough that walking is easier than stopping.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"▓\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"▓\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"▓\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "▓": "rock"
+      },
       "editorX": 3,
       "editorY": 0,
       "exits": [
@@ -1167,8 +1507,21 @@
       "title": "The Picnic Stones",
       "description": "Three flat slabs dragged into a rough triangle, generations ago, by people who wanted somewhere to sit and look at the edge.\n\nThe stones are scratched all over with names and dates. The most recent is from this spring. So is the ring of ash beside it.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"    \"\"\"\"\"\"\"\"",
+        "  \"\" \"        \"\"\"\"\"\"\"",
+        "               \"\"\"\"\"\"",
+        "                \"  \" "
+      ],
+      "legend": {
+        "\"": "grass",
+        " ": "void"
+      },
       "editorX": 4,
       "editorY": 0,
       "exits": [
@@ -1188,8 +1541,21 @@
       "title": "The Watch Stone",
       "description": "A single upright of the pale local rock, twice the height of a person, standing where the ground begins to fall away in earnest. It is not one of the markers - it is older and it is not cut with anything.\n\nSomeone has kept the turf clear around its base. Recently, and with a blade.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"▓\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"▓\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "▓": "rock"
+      },
       "editorX": 4,
       "editorY": 1,
       "exits": [
@@ -1213,8 +1579,22 @@
       "title": "The Marker Line",
       "description": "Shaped stones set into the turf every thirty paces, running out towards the edge, each cut with a mark that is not any letter Gatetown uses.\n\nHalf of them are down. The ones still standing lean the same way, which is not the way the wind comes from.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"",
+        "··\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"····\"\"\"\"\"\"\"\"\"♣\"♣\"\"\"·",
+        "\"\"\"\"······\"\"\"\"\"\"\"\"\"··",
+        "\"\"\"\"\"\"\"\"\"···········\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 3,
       "editorY": 1,
       "exits": [
@@ -1242,8 +1622,22 @@
       "title": "The Gorse Tongue",
       "description": "A last spit of gorse running out along a spur of higher ground, thinning as it goes until the bushes are separate and stunted.\n\nThe path narrows to a single line between two of them. It is the only way along the spur and everything using this ground knows it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "···\"······\"♣\"···\"\"\"\"\"",
+        "\"\"···\"\"\"\"·····\"·····\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"··",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -1263,8 +1657,21 @@
       "title": "The Spur End",
       "description": "The spur runs out. Grit, then turf, then nothing - the ground ends in a clean line with roots and soil showing in cross-section.\n\nPeople have thrown things off here for a long time to watch what happens. Nothing happens. They do not fall and they do not stay.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        " \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"  ",
+        "  \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"   ",
+        "   \"\"\"   \"     \"     "
+      ],
+      "legend": {
+        "\"": "grass",
+        " ": "void"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -1284,8 +1691,22 @@
       "title": "The Keeper's Stone",
       "description": "A waist-high block of pale rock with a flat top, standing alone where the marker line bends. Nothing is written on it and nothing ever has been.\n\nThings are laid on it. A shoe, a comb, a bundle of letters gone to pulp. Nobody takes them, and nobody puts them anywhere else either.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "··\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"···\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"·········\"♣·····\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"····\"\"\"···",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 3,
       "editorY": 2,
       "exits": [
@@ -1313,8 +1734,21 @@
       "title": "The Cairn Field",
       "description": "Forty or fifty stone piles, none of them tall, spread across a shallow bowl of ground. Some are neat. Most have come apart.\n\nThey are not graves. Every one of them has a hollow in the top where something was meant to be set, and every hollow is empty.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"▓\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"▓\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"▓\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "▓\"\"\"\"\"\"\"\"▓\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "▓": "rock"
+      },
       "editorX": 4,
       "editorY": 2,
       "exits": [
@@ -1334,8 +1768,21 @@
       "title": "The Lost Way",
       "description": "The old road again, or what it becomes out here: two ruts in the turf running dead straight at the edge, with the marker stones keeping pace on either side.\n\nIt does not curve away. Whoever built it was going somewhere that used to be there.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "    \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "      \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "         \"\"\"\"\"\"\"  \"\"\"",
+        "                     "
+      ],
+      "legend": {
+        "\"": "grass",
+        " ": "void"
+      },
       "editorX": 3,
       "editorY": 3,
       "exits": [
@@ -1355,8 +1802,21 @@
       "title": "The Forgetting Ground",
       "description": "The turf here is wrong in a way that takes a moment. It is uncropped, unwalked, and the marker stones stop twenty paces short of it on both sides.\n\nThings stand about in it. They were people, and they are carrying what they were carrying, and they have not put any of it down.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"    \"  \"\"\"\"\"\"\"  ",
+        "             \"\"\"     ",
+        "                     ",
+        "                     "
+      ],
+      "legend": {
+        "\"": "grass",
+        " ": "void"
+      },
       "editorX": 3,
       "editorY": 4,
       "exits": [
@@ -1376,8 +1836,21 @@
       "title": "The Rim Gate",
       "description": "A ring of dark stone, twin to the dead one in Gatetown's yard, standing at the very edge with nothing behind it.\n\nThis one works. It has always worked. This season it does not, and the difference is not visible: it stands exactly as it stood, and what was through it is not.\n\nWhatever should be on the other side is not there. Not dark, not distance - the same nothing as everywhere else past the edge, arriving where a place used to.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\" \"\"\"\"\"\"",
+        " \"\"\"  \"\"\"  \"\"   \"\"\"\"\"",
+        "                 \"\"  ",
+        "                     "
+      ],
+      "legend": {
+        "\"": "grass",
+        " ": "void"
+      },
       "editorX": 3,
       "editorY": 5,
       "exits": [
@@ -1404,8 +1877,21 @@
       "title": "The Last Marker",
       "description": "The final stone of the line, out past the gate, standing at an angle on ground that gives underfoot in a way ground should not.\n\nIt is the only marker still carrying what it was meant to carry: a shard of the same dark stone the gates are cut from, socketed into its head, and warm.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        " \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "  \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "   \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"   ",
+        "    \"\"\"\"\"\"\"\"\"\"\"      "
+      ],
+      "legend": {
+        "\"": "grass",
+        " ": "void"
+      },
       "editorX": 4,
       "editorY": 5,
       "exits": [

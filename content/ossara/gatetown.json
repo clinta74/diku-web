@@ -614,8 +614,27 @@
       "title": "The Gate Yard",
       "description": "The gate stands where it has always stood: a ring of dark stone twice the height of a man, set into the cobbles with no foundation and no seam. Nothing moves in it. Nobody living has seen anything move in it.\n\nGatetown grew up around it anyway and treats it the way a town treats a large rock. Crates lean against the near side, children are told not to climb it, and the stone is worn shiny at shoulder height by three generations of people touching it on their way past.\n\nYrriska's shrine sits at its foot — a bowl of coins, a knot of ribbon, and somebody's dice. It is the only untidy thing in the yard, and the sweepers go around it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        ".": "floor",
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
+      },
       "editorX": 2,
       "editorY": 3,
       "exits": [
@@ -643,8 +662,21 @@
       "title": "The Common",
       "description": "Grass, mostly, kept short by geese that belong to four separate households and recognise none of them. A well stands at the middle under a slate cap.\n\nIlvaro's house is west, low and whitewashed. Khaldra's Hearth is east and you can find it by the smell of bread at any hour, including the ones when nobody should be baking.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "♣": "tree"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -674,8 +706,27 @@
       "flags": {
         "indoors": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│..♦................│",
+        "│...................│",
+        "│...................│",
+        "│.........♦.........│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        ".": "floor",
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "♦": "brazier"
+      },
       "editorX": 1,
       "editorY": 2,
       "exits": [
@@ -693,8 +744,27 @@
       "flags": {
         "indoors": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│..............▬..▬.│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        ".": "floor",
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▬": "table"
+      },
       "editorX": 3,
       "editorY": 2,
       "exits": [
@@ -710,8 +780,22 @@
       "title": "North Lane",
       "description": "A packed-dirt lane running north out of the common, wide enough for one cart and used by two. Houses on both sides, each with a strip of garden and an opinion about the strip next door.\n\nThe ground rises towards the north end, where the town stops at a wall about waist high.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "─────────────────────",
+        "·····················",
+        "············▣········",
+        "·················▣···",
+        "·····················",
+        "·····················",
+        "─────────────────────",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▣": "crate"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -739,8 +823,21 @@
       "title": "The Low Wall",
       "description": "The wall is waist high, dry-laid, and has never stopped anything. It is where the town ends because somebody once decided the town should end somewhere, and the ground past it slopes down through gorse for about two hundred feet.\n\nThen it stops. Not a cliff — a cliff has a bottom. The turf ends in a clean line, roots and soil and all, and there is nothing under it.\n\nPeople picnic here. There are cut marks on the wall's flat stones from generations of people sitting and swinging their heels against it.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "  ░░░░░░░░░░░   ░░  ░",
+        "   ░░░░░░░           ",
+        "       ░             "
+      ],
+      "legend": {
+        " ": "void",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 0,
       "exits": [
@@ -756,8 +853,22 @@
       "title": "The Mustering Yard",
       "description": "A square of beaten earth behind the lane, fenced on three sides, with a rack of practice staves and a straw man on a post who has been repaired so often he is now entirely repairs.\n\nThe town has no soldiers. It has about forty people who can hold a line for as long as it takes everyone else to get behind the wall, and this is where they find that out.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "·····················",
+        "········▣············",
+        "···········▣·········",
+        "··········▣··········",
+        "···············▣·····",
+        "·····················",
+        "·····················",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▣": "crate"
+      },
       "editorX": 3,
       "editorY": 1,
       "exits": [
@@ -773,8 +884,21 @@
       "title": "The Water Steps",
       "description": "Eleven stone steps down to a cut in the bank where the river runs slow and brown. Two women are beating laundry against the flat rock and have not looked up.\n\nBuckets go up these steps all day. The steps are worn into shallow bowls and somebody has scratched a tally into the wall that stopped counting at four hundred.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈\"≈≈≈≈\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈≈≈≈≈≈≈≈≈\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈≈≈≈≈≈≈≈≈≈≈≈\"\"\"\"\"\"\"≈\"",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈"
+      ],
+      "legend": {
+        "\"": "grass",
+        "≈": "water"
+      },
       "editorX": 1,
       "editorY": 1,
       "exits": [
@@ -794,8 +918,21 @@
       "title": "The Rope Ferry",
       "description": "A flat raft on a hemp line strung bank to bank, with a stool on it that is nailed down. The far bank is close enough to shout across and everybody does.\n\nThe rope is spliced in eleven places and each splice is dated in tar. The most recent is from this spring.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░≈░≈≈≈≈≈",
+        "≈≈░░░░░░░░░░≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈░░░≈≈≈≈≈≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈"
+      ],
+      "legend": {
+        "≈": "water",
+        "░": "rubble"
+      },
       "editorX": 0,
       "editorY": 1,
       "exits": [
@@ -811,8 +948,22 @@
       "title": "Market Row",
       "description": "Six stalls under a shared awning that leaks in one particular place everyone has learned to stand clear of. Wick's yard is at the west end and the weaponwright's shed is behind, down the short lane south.\n\nPrices are chalked on a board and revised about as often as the weather changes, which here is twice a day.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "·····················",
+        "·········▬······▬····",
+        "··········▬··········",
+        "·····················",
+        "·····················",
+        "······▬········▬··▬··",
+        "·····················",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▬": "table"
+      },
       "editorX": 1,
       "editorY": 3,
       "exits": [
@@ -836,8 +987,27 @@
       "title": "Wick's Yard",
       "description": "Less a shop than a roofed yard with a counter across the front of it, stacked to head height with crates, coils, sacks, and at least one thing that is definitely a boat.\n\nThere is no order to any of it that a customer can see. There is an order to it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│....▣......▣.......│",
+        "│.......▣...▣.......│",
+        "│.....▣......▣......│",
+        "│....▣.....▣........│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        ".": "floor",
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▣": "crate"
+      },
       "editorX": 0,
       "editorY": 3,
       "exits": [
@@ -859,8 +1029,27 @@
       "flags": {
         "indoors": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│..▣.▣..............│",
+        "│..▣............▣...│",
+        "│.▣▣........▣.▣.....│",
+        "│.................▣.│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        ".": "floor",
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▣": "crate"
+      },
       "editorX": 0,
       "editorY": 4,
       "exits": [
@@ -878,8 +1067,27 @@
       "flags": {
         "indoors": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...........▬.......│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│..........▬........│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        ".": "floor",
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▬": "table"
+      },
       "editorX": 1,
       "editorY": 4,
       "exits": [
@@ -895,8 +1103,22 @@
       "title": "The Provisioner's Stall",
       "description": "The last stall before the road out, which is not an accident. Sacks of meal, strings of onions, hard cheese under a cloth, and bandage rolled by the dozen.\n\nA slate by the scale reads: TWO DAYS OUT — THREE DAYS FOOD. It has been rewritten so many times the slate is going soft.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "─────────────────────",
+        "··▬··················",
+        "·····················",
+        "······▬··············",
+        "······▬··············",
+        "···········▬·········",
+        "─────────────────────",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▬": "table"
+      },
       "editorX": 3,
       "editorY": 3,
       "exits": [
@@ -912,8 +1134,22 @@
       "title": "The Gate Road",
       "description": "The road south out of the yard, wide enough for two carts and rutted like it has carried them. Drainage ditches on both sides, dug straight, cleared every spring.\n\nThe last houses give out here and the terraces start showing green over the rise ahead.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"····\"\"\"\"\"\"",
+        "············\"\"····♣\"\"",
+        "\"\"\"\"··\"\"\"\"\"\"\"\"\"\"\"····",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
+      },
       "editorX": 2,
       "editorY": 4,
       "exits": [
@@ -933,8 +1169,22 @@
       "title": "The Terrace Gate",
       "description": "Not a gate in any defensive sense — two posts, a lintel, and a bell on a bracket that is rung when somebody comes back hurt. It marks where the town's responsibility stops and the farms' begins.\n\nBeyond it the land steps down in long green shelves, each one walled in dry stone, all the way to the haze.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "·····················",
+        "··▣············▣·····",
+        "···········▣·········",
+        "···▣·················",
+        "·····················",
+        "·····················",
+        "·····················",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▣": "crate"
+      },
       "editorX": 2,
       "editorY": 5,
       "exits": [

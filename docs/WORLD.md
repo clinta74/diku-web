@@ -600,9 +600,32 @@ Three properties of that path worth knowing before authoring against it:
 specifies and what the files contain agree, and where they diverged the files won — the divergences
 are recorded in §10.4.
 
-**No ASCII room grids in this pass.** `Room.Grid` is optional and a room without one renders as a
-plain rectangle, so art is an upgrade rather than a tax. Painting the hub and set-piece rooms is a
-later pass through the builder's `GridPainter`.
+**Room terrain: done, and generated rather than drawn.** All 224 rooms carry a 21×9 grid — the
+layout service's own default size, so a room with terrain and one without sit the same size beside
+each other. Each **zone declares a terrain kind** (or several, picked per room key) and the art is
+drawn from a RNG seeded with the room key, which is what makes regeneration byte-identical: a random
+seed would rewrite every room on every run and no diff could be read.
+
+Twenty-one kinds cover the Reaches — `field`, `scrub`, `marsh`, `pier`, `hall`, `ruin`, `cave`,
+`street`, `rim`, `standing` and the rest. Two of them are load-bearing rather than decorative:
+
+- **`rim` is chosen by the prose, not declared.** A room carrying Rim View text (§5) already says
+  the land stops there, so that is the signal — the convention reaches the map without anything new
+  being written per room.
+- **`standing` is the Unlit.** A floor with void all round it and nothing underneath, which is the
+  one piece of terrain here making a point instead of decorating one.
+
+**Solid tiles are named from the engine's list.** `RoomLayoutService.NonPlaceableTiles` decides what
+a mob may be drawn standing on and matches on the *legend name*, so calling a pillar "column" would
+silently put a rat inside it. The Reaches added five names to that set — `void`, `pillar`, `rock`,
+`crate`, `brazier` — and `tools/check-bundle.py` reads the set out of the engine source rather than
+transcribing it, then refuses any room whose grid is ragged, whose legend misses a character it
+draws, or which leaves under 40 cells to stand on. That last one matters: entities are placed only
+on open ground and are simply *not drawn* when there is none, so an all-water room is a room whose
+occupants vanish.
+
+Hand-painting individual set-piece rooms through the builder's `GridPainter` is still worth doing
+and is now an edit rather than a blank page.
 
 ### 10.2 Retiring Aldenmoor — decided: leave it where it is
 

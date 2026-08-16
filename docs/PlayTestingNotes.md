@@ -95,6 +95,15 @@ Add anything noticed while playing here. Cleared as items are done.
   authored at final numbers instead. Implement it or delete it; carrying a dial that reads as
   configured and does nothing is the failure mode `Engine__StartingRoom` already demonstrated.
 
+- **Room terrain: done.** All 224 rooms carry a 21×9 grid (`WORLD.md` §10.1). Generated per zone
+  kind and seeded from the room key, so regeneration is byte-identical and a re-import is safe to
+  repeat. `check-bundle.py` now refuses ragged grids, characters missing from a legend, and rooms
+  with under 40 cells to stand on — the last is the silent one, since occupants are simply not
+  drawn when a room has nowhere open.
+
+  **Re-import all six bundles to see it.** Import upserts rooms, so existing rooms pick the terrain
+  up; nothing needs deleting first.
+
 - **The Reaches are authored and have never been played.** 224 rooms, 18 zones, 67 mobs, 15 quests
   in `content/`. Every zone's effective levels were checked against its band and every level 1–50
   has a full-value target, but that is arithmetic, not play. Specific things to watch on the first

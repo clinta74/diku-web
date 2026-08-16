@@ -848,8 +848,27 @@
       "title": "The Gate Hall",
       "description": "The ring stands at one end of a hall eighty feet high, cut square, with the walls dressed so flat they take a shine. It is not a room built around a gate. It is a room the gate was fitted into.\n\nYrriska's shrine is a scratch on the floor and a handful of coins. Nobody has had the nerve to build anything bigger in here.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│....░..............│",
+        "│.....░........░....│",
+        "│.....░.............│",
+        "│..........░........│",
+        "│........░..........│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 0,
       "exits": [
@@ -869,8 +888,27 @@
       "title": "The Tent Line",
       "description": "Nine years of survey camp pitched down the middle of the hall: canvas, cots, a stove with a flue going up into a space that swallows the smoke entirely.\n\nThe tents are laid out on the floor's own grid. Everyone did it without discussing it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│......░.░░.........│",
+        "│...............░...│",
+        "│...................│",
+        "│...................│",
+        "│.........░.......░.│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -896,8 +934,27 @@
       "flags": {
         "indoors": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│.....░.......░...░.│",
+        "│...................│",
+        "│........░..........│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 3,
       "editorY": 1,
       "exits": [
@@ -913,8 +970,27 @@
       "title": "The Catalogue Tent",
       "description": "Trestle tables under canvas, covered in cogs, plates, glass and bone, each with a paper tag. Nine years of finds, catalogued and understood at about one item in forty.\n\nThe unread pile is the big one and it is at the back where visitors do not see it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -940,8 +1016,27 @@
       "flags": {
         "indoors": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 1,
       "editorY": 2,
       "exits": [
@@ -957,8 +1052,27 @@
       "title": "The Measured Stair",
       "description": "A stair of forty steps, every step identical to within nothing anyone can measure, going down into the near halls.\n\nThe survey has counted the steps eleven times. It has got forty every time and somebody still checks.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│.....░...........░.│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│.....░...░.........│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 3,
       "exits": [
@@ -982,8 +1096,27 @@
       "title": "The Spoil Heap",
       "description": "Where nine years of unwanted finds have been tipped: broken glass, bent bronze, and stone chipped off things to see what was underneath.\n\nSomebody has started sorting it. Somebody stopped.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│.....░.............│",
+        "│...................│",
+        "│...........░.......│",
+        "│............░.░░.░.│",
+        "│...........░.......│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 3,
       "editorY": 3,
       "exits": [
@@ -999,8 +1132,27 @@
       "title": "The Threshold",
       "description": "The camp's boundary, marked with a line of lamps and a painted stripe. Past it the survey works in pairs and signs out.\n\nThe rule is written on a board and it is not a suggestion.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...░.....░.........│",
+        "│................░..│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 4,
       "exits": [
@@ -1020,8 +1172,27 @@
       "title": "The First Hall",
       "description": "A hall the size of a village, floored in a grid of squares each exactly a pace across. The ceiling is out of the lamplight.\n\nThings move at the edges, at a walking pace, on routes.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 2,
       "editorY": 0,
       "exits": [
@@ -1045,8 +1216,27 @@
       "title": "The Sweeper Run",
       "description": "A side gallery with a shallow channel cut down the middle of the floor, worn a finger deep by things going up and down it.\n\nThey are still going up and down it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 3,
       "editorY": 0,
       "exits": [
@@ -1062,8 +1252,27 @@
       "title": "The Cog Gallery",
       "description": "Racks from floor to ceiling, every rack holding cogs by size, every size labelled. Half the racks are empty and the labels are still there.\n\nSomebody took the small ones first, which is what a thief does and not what a mover does.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│............░.░....│",
+        "│..........░........│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -1087,8 +1296,27 @@
       "title": "The Glass Store",
       "description": "Crates of lens blanks in straw, stacked six high, most of them never opened. The straw is intact. The straw is a hundred years old and it is intact.\n\nOne crate has been opened recently and carefully.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 1,
       "editorY": 1,
       "exits": [
@@ -1104,8 +1332,27 @@
       "title": "The Water Stair",
       "description": "A stair with a channel running down beside it carrying clear water, fast and quiet, from somewhere above to somewhere below.\n\nIt has not silted. Something is keeping it clear.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -1129,8 +1376,27 @@
       "title": "The Pump Room",
       "description": "A room of bronze cylinders and rocking beams, working, in oil, with no attendant and no obvious source of power.\n\nThe oil is clean.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│............░......│",
+        "│...................│",
+        "│.............░.....│",
+        "│.....░.............│",
+        "│..░..............░.│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 3,
       "editorY": 2,
       "exits": [
@@ -1146,8 +1412,27 @@
       "title": "The Long Gallery",
       "description": "Four hundred feet of gallery with alcoves down both sides, each alcove holding a mounting, each mounting empty.\n\nThe mountings are all aimed the same way, and it is not at anything in this room.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│.░..............░..│",
+        "│...................│",
+        "│.....░..........░░.│",
+        "│................░..│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 3,
       "exits": [
@@ -1171,8 +1456,27 @@
       "title": "The Grinding Room",
       "description": "Six grinding frames, all running, all working glass that is no longer there. The arms go round and the wheels turn and the tolerance is still being held.\n\nIt is the loudest room in Ummath and there is nothing in it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 1,
       "editorY": 3,
       "exits": [
@@ -1188,8 +1492,27 @@
       "title": "The Cross Hall",
       "description": "Where four halls meet under a dome, with a disc of polished floor at the centre marked with a figure nobody has matched to anything.\n\nEvery route in Ummath passes through here. Everything that walks a route arrives here eventually.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 2,
       "editorY": 4,
       "exits": [
@@ -1213,8 +1536,27 @@
       "title": "The Warden Post",
       "description": "An alcove with a bronze figure in it, human-shaped, holding a door that is not there any more.\n\nIt has been holding the doorway for longer than the door lasted.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 3,
       "editorY": 4,
       "exits": [
@@ -1230,8 +1572,27 @@
       "title": "The Standing Rail",
       "description": "A rail of bronze runs down the middle of the hall at waist height, polished bright on the top surface for its whole length.\n\nThings have been sliding along it. Recently. All of them going the same way.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│..░...░............│",
+        "│...................│",
+        "│...................│",
+        "│.░.................│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 5,
       "exits": [
@@ -1255,8 +1616,27 @@
       "title": "The Empty Library",
       "description": "Shelves cut into the rock, forty feet of them, and not one book, scroll or plate. The shelves are dusted.\n\nNothing has been burned. Nothing has been dropped. It was emptied.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 1,
       "editorY": 5,
       "exits": [
@@ -1272,8 +1652,27 @@
       "title": "The Counterweight Shaft",
       "description": "A shaft going up out of sight with a bronze block the size of a cart hanging in it, creeping downward at a speed you can just about believe you are imagining.\n\nIt has a long way to go. It has had a long way to go for a long time.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│.......░.......░...│",
+        "│......░............│",
+        "│...................│",
+        "│.............░..░..│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 6,
       "exits": [
@@ -1293,8 +1692,27 @@
       "title": "The Outer Door",
       "description": "A doorway forty feet high standing open on daylight and dust. The instrument yards are past it and the noise of them is already here.\n\nThe door itself lies flat on the floor inside, where it was taken down and laid out neatly.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 2,
       "editorY": 7,
       "exits": [
@@ -1314,8 +1732,21 @@
       "title": "The Yard Gate",
       "description": "Out of Ummath and into open air, on a paved yard so large the far side is a suggestion. Instruments stand on it in rows.\n\nAll of them are turning. Slowly, and together.\n\nThe instruments here were built to look, and they still are. What they show is not what the eye shows, and the discrepancy is somewhere in the difference between the two.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "    ░░░░░░░░░░░░░░░░░",
+        "     ░░░ ░░░░░     ░░",
+        "          ░░        ░",
+        "                     "
+      ],
+      "legend": {
+        "░": "rubble",
+        " ": "void"
+      },
       "editorX": 2,
       "editorY": 0,
       "exits": [
@@ -1339,8 +1770,22 @@
       "title": "The Alignment Marks",
       "description": "A grid of bronze studs set into the paving, thousands of them, each stamped with a figure. The survey has copied out four hundred and made no progress.\n\nThe figures increase towards the edge of the Reach.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░▓░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "··░░░░░░░░░░░░▓░░░░░░",
+        "░·········░▓░░░░░░░░░",
+        "░░░░░░░▓░·····░░····░",
+        "░░░░░░░░░░░░░····░░··",
+        "▓░░░░░░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 3,
       "editorY": 0,
       "exits": [
@@ -1356,8 +1801,28 @@
       "title": "The First Ring",
       "description": "An instrument like a well-head twenty feet across, a bronze ring in a stone collar, rotating at about a degree an hour.\n\nSomething inside the collar is taking a reading and there is nowhere for it to write it down.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌░─░────░───────░───┐",
+        "░.........░░........│",
+        "│░............░.....│",
+        "░...................│",
+        "│....░............░░│",
+        "│......░............░",
+        "░..░...........░..▓.│",
+        "│...................│",
+        "└──░──────░────░─░░─┘"
+      ],
+      "legend": {
+        ".": "floor",
+        "░": "rubble",
+        "▓": "rock",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -1381,8 +1846,28 @@
       "title": "The Broken Mount",
       "description": "The one instrument in Serrivet that has failed: collapsed on its mounting, glass out, arms in the dust.\n\nEverything else in the yard has adjusted to point past it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌────░─────░────────┐",
+        "│........░..........│",
+        "░...........░.......│",
+        "│...................│",
+        "│░..................│",
+        "│░░░..░.......░.....│",
+        "│..▓.........▓......│",
+        "░...░.░.............│",
+        "└░───░─────░─────░─░┘"
+      ],
+      "legend": {
+        ".": "floor",
+        "░": "rubble",
+        "▓": "rock",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall"
+      },
       "editorX": 1,
       "editorY": 1,
       "exits": [
@@ -1398,8 +1883,28 @@
       "title": "The Mirror Walk",
       "description": "A colonnade of polished bronze plates on posts, each angled to throw light down the line to the next.\n\nThe light coming along the line is not the colour of the light falling on the yard.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───░░───░░░─░──────┐",
+        "│..░........░.......│",
+        "│................░..│",
+        "│..░..........░░....│",
+        "░........░..........│",
+        "│.░......░..........│",
+        "░..........░....▓░..│",
+        "│..........░........│",
+        "└─░──────░───────░░─┘"
+      ],
+      "legend": {
+        ".": "floor",
+        "░": "rubble",
+        "▓": "rock",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -1423,8 +1928,22 @@
       "title": "The Shadow Court",
       "description": "A sunken square where the paving is marked with radiating lines and a gnomon stands at the middle.\n\nThe shadow is on a line. It is not the line the sun would put it on.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░▓░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "···░░░░░░···░····░░░░",
+        "░░··░░····░···░░···░░",
+        "░░░····░░░░░░░░░░░···",
+        "░░░░░░░░░░░░░░░░░░░░·",
+        "░░░░░░░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 3,
       "editorY": 2,
       "exits": [
@@ -1440,8 +1959,28 @@
       "title": "The Quadrant",
       "description": "A quarter-circle of bronze forty feet tall, graduated the whole way, with a sighting arm halfway up and a ladder to it.\n\nThe arm is at the top of its range and has been for a very long time.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌──────────────░────┐",
+        "│............░....░.░",
+        "│..░.....░..........│",
+        "│............░...░..│",
+        "░.........░.......▓.│",
+        "│....░..............│",
+        "░....░.........░....│",
+        "│░....░......░.░....│",
+        "└░─░─░───░──░░──────┘"
+      ],
+      "legend": {
+        ".": "floor",
+        "░": "rubble",
+        "▓": "rock",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall"
+      },
       "editorX": 2,
       "editorY": 3,
       "exits": [
@@ -1467,8 +2006,22 @@
       "flags": {
         "indoors": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░····░░░·",
+        "░░░░··········░░·····",
+        "·····░░░░··░▓░░░░░░░░",
+        "░░░░░░░░░░░░░░▓░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░▓░░░░░░░",
+        "░░░░░░░▓░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 1,
       "editorY": 3,
       "exits": [
@@ -1484,8 +2037,28 @@
       "title": "The Cable Run",
       "description": "Bronze cable in stone channels crosses the yard here in bundles, going from the instruments towards the far end, all of it taut and faintly humming.\n\nWhatever is at the far end is still being told.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───░───────────────┐",
+        "│..............░░...░",
+        "│...................░",
+        "│....░............▓.│",
+        "│....░....░...░.░...░",
+        "│...........░.......│",
+        "│.........▓..░......│",
+        "│...................│",
+        "└────░────────░──░─░┘"
+      ],
+      "legend": {
+        ".": "floor",
+        "░": "rubble",
+        "▓": "rock",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall"
+      },
       "editorX": 2,
       "editorY": 4,
       "exits": [
@@ -1509,8 +2082,22 @@
       "title": "The Tension House",
       "description": "A shed of screws and springs where the cable tension is kept, with a dial for every line and every dial in its band.\n\nSomebody adjusted these. There is no wear on the handles.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░▓░▓░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░··············",
+        "····░░··░░░░▓░░░░░░░·",
+        "░░░····░░░░░░░░░░░▓░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░▓░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 3,
       "editorY": 4,
       "exits": [
@@ -1526,8 +2113,22 @@
       "title": "The Second Yard",
       "description": "A second paved expanse, emptier, with the mountings stripped and carried off. Only the bolt patterns remain.\n\nWhatever stood here was taken to Thessivar. The drag marks say so.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░▓░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "···░░░░░░░░░░░░░░····",
+        "░░················░░░",
+        "░░░░░░░░░░▓░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░▓░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 5,
       "exits": [
@@ -1551,8 +2152,22 @@
       "title": "The Drag Line",
       "description": "Two grooves worn into the paving, a cart-width apart, running dead straight towards the far end of the yard.\n\nThey are inches deep. This was not done once.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░▓░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░▓░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "··░░░░░░░░░░░░░░░░░░░",
+        "░···░·····░░░░░░░····",
+        "░░░···░░░··░░░░░··░░░",
+        "░░░░░░░░░░·······░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 1,
       "editorY": 5,
       "exits": [
@@ -1568,8 +2183,22 @@
       "title": "The Approach",
       "description": "A processional way a hundred feet wide, walled on both sides, running towards a building that gets no closer for an uncomfortably long time.\n\nThe walls carry the same figure over and over, at head height, all the way along.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░▓░░",
+        "░░░·······░░░░░░░░···",
+        "░░··░░░░░··········░░",
+        "░··░░░░░░░░░░░░░░░░░░",
+        "··░░░░░░░░░░░░░░░░░░░",
+        "░░▓░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░▓░▓░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 6,
       "exits": [
@@ -1593,8 +2222,21 @@
       "title": "The Rim Platform",
       "description": "A viewing platform out to the side of the approach, railed in bronze, with a mounted glass on a swivel aimed out past the edge of the Reach.\n\nThe survey does not use it. Vane used it once.\n\nThe instruments here were built to look, and they still are. What they show is not what the eye shows, and the discrepancy is somewhere in the difference between the two.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░         ",
+        "  ░ ░░░ ░░           ",
+        "                     ",
+        "                     "
+      ],
+      "legend": {
+        "░": "rubble",
+        " ": "void"
+      },
       "editorX": 3,
       "editorY": 6,
       "exits": [
@@ -1610,8 +2252,28 @@
       "title": "The Instrument Door",
       "description": "The door of Thessivar: two bronze leaves, sixty feet high, standing a foot apart with cold air coming out between them.\n\nThey were not left open. They were stopped while closing.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───░──░─────░─░────┐",
+        "│........░.░........░",
+        "│.........░.........░",
+        "░........░..........│",
+        "│......░░.....░.....│",
+        "░..▓................│",
+        "│........░.......▓..│",
+        "░....░.............░│",
+        "└─────░────░─░───░░░┘"
+      ],
+      "legend": {
+        ".": "floor",
+        "░": "rubble",
+        "▓": "rock",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall"
+      },
       "editorX": 2,
       "editorY": 7,
       "exits": [
@@ -1631,8 +2293,27 @@
       "title": "The Entry Court",
       "description": "Inside the doors, a court with a floor of black glass and a ceiling lost above the lamplight. Your footsteps come back a long time later.\n\nThe lamps are Azhen's own and they are lit.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│..♦................│",
+        "│.....♦.............│",
+        "│...........♦.......│",
+        "│...♦...............│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "♦": "brazier"
+      },
       "editorX": 2,
       "editorY": 0,
       "exits": [
@@ -1656,8 +2337,27 @@
       "title": "The Robing Room",
       "description": "Pegs, benches, and forty bronze mantles hung up in size order. Every peg is full.\n\nNobody left this building.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 3,
       "editorY": 0,
       "exits": [
@@ -1673,8 +2373,27 @@
       "title": "The Drum Floor",
       "description": "A circular floor two hundred feet across under a dome, with the whole floor turning at a rate you feel through your boots rather than see.\n\nThe walls are stationary. Walking a straight line takes attention.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│.........░..░░.....│",
+        "│..░............░...│",
+        "│.......░░..........│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -1698,8 +2417,27 @@
       "title": "The Plate Store",
       "description": "Racks of reading plates, filed by date, running back further than Grask has existed.\n\nThe last hundred have all been scraped. The scrapings are in a bowl on the bench.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 1,
       "editorY": 1,
       "exits": [
@@ -1715,8 +2453,27 @@
       "title": "The Lower Gearing",
       "description": "Under the drum floor, in among the gearing: bronze wheels the height of a house meshing slowly and exactly, in oil, in the dark.\n\nThere is a walkway. It was built for people who worked down here while it ran.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│.................░.│",
+        "│.................░.│",
+        "│...░...........░...│",
+        "│..........░........│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -1740,8 +2497,27 @@
       "title": "The Oil Gallery",
       "description": "A gallery of reservoirs and drip-feeds keeping the gearing wet, every level in its band, every band marked.\n\nSomebody tops these up.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 3,
       "editorY": 2,
       "exits": [
@@ -1757,8 +2533,27 @@
       "title": "The Cable Heads",
       "description": "Where every cable from Serrivet arrives, forty of them, each terminating in a bronze head that twitches.\n\nThey are not delivering power. They are delivering readings, and something is receiving them.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...░..░........░...│",
+        "│..░..░.....░.....░.│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 3,
       "exits": [
@@ -1782,8 +2577,27 @@
       "title": "The Silent Room",
       "description": "A chamber off the cable heads, cut square, lined with gate-stone on all six faces. It takes sound and does not give it back.\n\nSpeaking in here is like speaking into a coat. It is also the only room in Azhen with no instrument in it, which for these people is a statement.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│..░...........░.░..│",
+        "│....░..............│",
+        "│........░..........│",
+        "│.░.................│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 1,
       "editorY": 3,
       "exits": [
@@ -1806,8 +2620,27 @@
       "title": "The Ascent",
       "description": "A spiral stair inside the instrument's column, wide enough for two, with a bronze rail worn to a shine on the inside edge.\n\nIt is worn on the way up and the way down equally.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│.......♦...........│",
+        "│.............♦.....│",
+        "│....♦..............│",
+        "│................♦..│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "♦": "brazier"
+      },
       "editorX": 2,
       "editorY": 4,
       "exits": [
@@ -1831,8 +2664,27 @@
       "title": "The Counterweight Well",
       "description": "A shaft beside the stair with the instrument's counterweight in it, a bronze cylinder the size of a cottage, hanging on cable as thick as a leg.\n\nIt is at the bottom of its travel. Something has been winding it back up.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 3,
       "editorY": 4,
       "exits": [
@@ -1848,8 +2700,27 @@
       "title": "The Observation Floor",
       "description": "The floor the whole building exists to hold up: a ring of eyepieces around a central housing, each with a seat, each seat placed for a person.\n\nAll but one of the seats is empty.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 2,
       "editorY": 5,
       "exits": [
@@ -1873,8 +2744,27 @@
       "title": "The Registry",
       "description": "A desk, a lamp, and the day-book of the observation floor, open, with a pen laid across the page.\n\nEntries every day for four hundred years and then one line that is not a reading.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar"
+      },
       "editorX": 1,
       "editorY": 5,
       "exits": [
@@ -1890,8 +2780,21 @@
       "title": "The Housing",
       "description": "The instrument itself: a bronze housing thirty feet across at the top of the column, with the great lens in it, and the lens is aimed out past the edge of the Reach.\n\nIt is tracking. It has been tracking one thing for four hundred years and it has never once had to search for it again.\n\nThrough the eyepiece the outside is not distance and not dark. It is a surface, and it is much closer than the eye insists, and the reason the instrument has never lost its subject is that its subject has never moved.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        " ░░░░░░░░░░░░░░░░░░ ░",
+        "  ░░░░░░ ░░░░ ░      ",
+        "   ░░░░              ",
+        "     ░               "
+      ],
+      "legend": {
+        "░": "rubble",
+        " ": "void"
+      },
       "editorX": 2,
       "editorY": 6,
       "exits": [

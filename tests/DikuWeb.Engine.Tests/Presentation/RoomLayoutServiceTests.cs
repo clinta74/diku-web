@@ -142,6 +142,37 @@ public sealed class RoomLayoutServiceTests
         }
     }
 
+    [Theory]
+    [InlineData("void")]
+    [InlineData("pillar")]
+    [InlineData("rock")]
+    [InlineData("crate")]
+    [InlineData("brazier")]
+    public void Nothing_stands_on_the_tiles_the_Reaches_added(string tile)
+    {
+        // The five names the Reaches terrain draws with. The set matches on the legend *name*, so
+        // a room calling a pillar "column" would put a rat inside it and nothing would complain -
+        // the mob is simply drawn somewhere a player can see it should not be.
+        //
+        // "void" is the one that reads oddly and the reason the engine's set is not called
+        // "solid": a rim room draws the edge where the shard stops, and the question being asked
+        // is "may something be drawn here", not "is it made of stone".
+        var room = WorldHarness.NewRoom(
+            "edge",
+            grid: ["XXXXX", "X...X", "XXXXX"],
+            legend: new Dictionary<string, string> { ["X"] = tile, ["."] = "floor" });
+
+        var harness = new WorldHarness();
+        harness.World.Load([], [], [room]);
+        var viewer = harness.AddPlayer("Viewer", room.Key);
+        harness.AddPlayer("Other", room.Key);
+
+        var map = _layout.BuildMap(room, harness.World.OccupantsOf(room.Key), [], [], viewer);
+
+        Assert.NotEmpty(map.Entities);
+        Assert.All(map.Entities, e => Assert.Equal('.', map.Terrain[e.Y][e.X]));
+    }
+
     [Fact]
     public void Occupants_beyond_the_cell_count_stack_rather_than_vanish()
     {

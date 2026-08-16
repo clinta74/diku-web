@@ -55,6 +55,28 @@ def registered_flags():
     return set(re.findall(r'^\s*"([a-zA-Z][a-zA-Z0-9]*)",\s*"', text, re.MULTILINE)) or None
 
 
+def non_placeable_tiles():
+    """The tile names nothing is drawn on, read out of RoomLayoutService rather than copied.
+
+    Read from source for the same reason the flags are: a second transcription is a second thing
+    to forget. A legend calling a pillar "column" puts a rat inside it, and nothing at runtime
+    complains - the mob is simply placed somewhere a player can see it should not be.
+    """
+    source = REPO / 'src' / 'DikuWeb.Engine' / 'Presentation' / 'RoomLayoutService.cs'
+    try:
+        text = source.read_text(encoding='utf-8')
+    except OSError:
+        return None
+
+    block = re.search(r'NonPlaceableTiles\s*=\s*new\([^)]*\)\s*\{(.*?)\};', text, re.S)
+    return set(re.findall(r'"([a-z]+)"', block.group(1))) if block else None
+
+
+# The fewest open cells a room may leave. Entities are placed only on open ground and are simply
+# not drawn when there is none, so a room that is all water is a room whose occupants vanish.
+MIN_OPEN_CELLS = 40
+
+
 def check(path):
     errors, warnings = [], []
 
@@ -198,6 +220,41 @@ def check(path):
             if value and value not in known:
                 warn('quest %s names %s %s, which this bundle does not carry'
                      % (quest['key'], label, value))
+
+    # Room terrain. All four of these are silent at runtime: an unlisted character draws a tile the
+    # map legend cannot explain, a ragged grid renders as a ragged room, and a room with nowhere to
+    # stand renders with its occupants missing entirely.
+    solid = non_placeable_tiles()
+    for room in bundle.get('rooms') or []:
+        grid = room.get('grid') or []
+        legend = room.get('legend') or {}
+
+        if not grid:
+            if legend:
+                warn('room %s has a legend and no grid' % room['key'])
+            continue
+
+        width = len(grid[0])
+        if any(len(row) != width for row in grid):
+            error('room %s has rows of differing length' % room['key'])
+            continue
+
+        used = {ch for row in grid for ch in row}
+
+        for ch in sorted(used - set(legend)):
+            error('room %s draws %r with nothing in its legend' % (room['key'], ch))
+
+        for ch in sorted(set(legend) - used):
+            warn('room %s legends %r and never draws it' % (room['key'], ch))
+
+        if solid:
+            open_cells = sum(
+                1 for row in grid for ch in row
+                if legend.get(ch) and legend[ch] not in solid)
+
+            if open_cells < MIN_OPEN_CELLS:
+                error('room %s leaves %d cells to stand on, under the %d minimum'
+                      % (room['key'], open_cells, MIN_OPEN_CELLS))
 
     known_flags = registered_flags()
     if known_flags:

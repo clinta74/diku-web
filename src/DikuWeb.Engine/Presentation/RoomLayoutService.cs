@@ -35,6 +35,11 @@ public sealed class RoomLayoutService
     /// Cosmetic, but it is what stops a rat being drawn standing on the altar or inside the
     /// forge. Anything solid enough that a builder drew it as an object belongs here; open
     /// ground - floor, grass, path, rubble, stairs - does not.
+    ///
+    /// <b>"void" is the odd one, and it is the reason this list is not called "solid".</b> The
+    /// Reaches are shards with nothing between them, so a rim room draws the edge where the land
+    /// stops. Void is the opposite of solid and just as un-standable, and the question this set
+    /// answers is "may something be drawn here", not "is it made of stone".
     /// </remarks>
     private static readonly HashSet<string> NonPlaceableTiles =
         new(StringComparer.OrdinalIgnoreCase)
@@ -51,6 +56,13 @@ public sealed class RoomLayoutService
             "anvil",
             "well",
             "millstone",
+
+            // The Reaches vocabulary.
+            "void",
+            "pillar",
+            "rock",
+            "crate",
+            "brazier",
         };
 
     private static readonly IReadOnlyDictionary<string, string> DefaultLegend =

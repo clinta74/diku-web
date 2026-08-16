@@ -617,8 +617,21 @@
       "title": "The Arrival",
       "description": "You come out of the ring onto a surface. Not ground - it does not end and it does not begin, and it takes a footprint and keeps it.\n\nThe ring behind you is a ring. From this side it is not set into anything.\n\nYou are the view now. Whatever a person on an Ossaran rim is squinting at, on a clear afternoon, leaning on a low wall with their heels knocking against it, is you.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        " ░░░░░░░░░░░░░░░░░░░░",
+        "  ░░░░░░░░░░░░░░░░░░░",
+        "   ░░░░   ░░░░  ░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        " ": "void"
+      },
       "editorX": 2,
       "editorY": 0,
       "exits": [
@@ -642,8 +655,21 @@
       "title": "The Turning Point",
       "description": "A marker stone, one of Ossara's, standing upright a hundred paces from the gate with nothing holding it up.\n\nSomebody carried it in and set it here so that whoever came next would have something to turn back at.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "          .          ",
+        "         ....        ",
+        "      ........       ",
+        "     ...........     ",
+        " ..................  ",
+        "    ............     ",
+        "       .......       ",
+        "        .... .       ",
+        "          ..         "
+      ],
+      "legend": {
+        " ": "void",
+        ".": "floor"
+      },
       "editorX": 3,
       "editorY": 0,
       "exits": [
@@ -659,8 +685,21 @@
       "title": "The First Stretch",
       "description": "Walking. The surface gives very slightly and comes back. There is light and no source for it and no direction to it.\n\nRecall does not answer here. You knew that. It is different knowing it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "         . .         ",
+        "       ......        ",
+        "     ...........     ",
+        "   ............. .   ",
+        " .................   ",
+        "   ...............   ",
+        "     . ........      ",
+        "       .....         ",
+        "          ..         "
+      ],
+      "legend": {
+        " ": "void",
+        ".": "floor"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -684,8 +723,21 @@
       "title": "The Scatter",
       "description": "Things lying about over a wide area: a boot, a lamp, a coil of rope, a child's cup. None of them are damaged and none of them are together.\n\nThis is where people put things down.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "          .          ",
+        "         .....       ",
+        "     .........       ",
+        "    ............     ",
+        " ..................  ",
+        "   ...............   ",
+        "     .........       ",
+        "       . ...         ",
+        "         .           "
+      ],
+      "legend": {
+        " ": "void",
+        ".": "floor"
+      },
       "editorX": 1,
       "editorY": 1,
       "exits": [
@@ -701,8 +753,21 @@
       "title": "The Quiet Mile",
       "description": "The longest stretch, and the one people talk about afterwards. Nothing happens in it at all.\n\nSound does not carry and does not echo. Your own footfalls arrive normally, which is somehow worse.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        " ░░░░░░░░░░░░░░░░░░░░",
+        "   ░░░░░░░░░░░░░░░░░░",
+        "    ░   ░░░░  ░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        " ": "void"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -726,8 +791,21 @@
       "title": "The Second Marker",
       "description": "Another of Ossara's stones, worn almost smooth, standing at the same interval as the first.\n\nWhoever is doing this is ahead of you and has been for a very long time.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "    ░    ░░░░░░░░░░░░",
+        "          ░░░░░░░░░░ ",
+        "            ░░       ",
+        "                     "
+      ],
+      "legend": {
+        "░": "rubble",
+        " ": "void"
+      },
       "editorX": 3,
       "editorY": 2,
       "exits": [
@@ -743,8 +821,21 @@
       "title": "The Standing Crowd",
       "description": "Forty or fifty of them, spread out, all facing the same way and all still going, at a walking pace, without arriving.\n\nThey do not turn to look at you. They have not stopped in a long time.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        " ░░░░░░░░░░░░░░░░░░  ",
+        "   ░     ░░░░░░░     ",
+        "            ░        "
+      ],
+      "legend": {
+        "░": "rubble",
+        " ": "void"
+      },
       "editorX": 2,
       "editorY": 3,
       "exits": [
@@ -768,8 +859,21 @@
       "title": "The Held Things",
       "description": "A place where the long held have gathered without meaning to, each of them holding what they came in with, none of them within reach of another.\n\nSulveth keeps what is lost. This is where it is kept.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "          .          ",
+        "        .....        ",
+        "       ....... .     ",
+        "     ...........     ",
+        "   ................  ",
+        "   ..............    ",
+        "     ..........      ",
+        "        ......       ",
+        "          ..         "
+      ],
+      "legend": {
+        " ": "void",
+        ".": "floor"
+      },
       "editorX": 1,
       "editorY": 3,
       "exits": [
@@ -785,8 +889,21 @@
       "title": "The Thinning Out",
       "description": "Fewer of them here, and further apart, and the light has begun to have a direction after all.\n\nIt is coming from ahead.\n\nYou are the view now. Whatever a person on an Ossaran rim is squinting at, on a clear afternoon, leaning on a low wall with their heels knocking against it, is you.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "   ░░░░░░░░░░░░░░░░░░",
+        "    ░░░░░░░░░░░░░░░░░",
+        "        ░░░░░░░░░░░░░",
+        "              ░░░ ░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        " ": "void"
+      },
       "editorX": 2,
       "editorY": 4,
       "exits": [
@@ -806,8 +923,21 @@
       "title": "The Near Approach",
       "description": "Close enough now that the surface has a grain to it, running the way you are walking, like the grain in cut stone.\n\nEverything in the binding is aligned on what is ahead. Everything. Including, now that you look down, your own footprints.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "          .          ",
+        "        .... .       ",
+        "     ..........      ",
+        "   . ............    ",
+        "  .................  ",
+        "   . ........... .   ",
+        "     ...........     ",
+        "        ....         ",
+        "          ..         "
+      ],
+      "legend": {
+        " ": "void",
+        ".": "floor"
+      },
       "editorX": 2,
       "editorY": 5,
       "exits": [
@@ -827,8 +957,21 @@
       "title": "The Threshold",
       "description": "The grain runs out and the surface becomes a face - flat, dark, and enormous, going up out of sight and down out of sight.\n\nIt is not a wall. There is nothing behind it. It is the outside of everything, seen from the inside.\n\nYou are the view now. Whatever a person on an Ossaran rim is squinting at, on a clear afternoon, leaning on a low wall with their heels knocking against it, is you.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░ ░░   ░░   ",
+        "   ░░ ░░░            ",
+        "       ░             ",
+        "                     "
+      ],
+      "legend": {
+        "░": "rubble",
+        " ": "void"
+      },
       "editorX": 2,
       "editorY": 0,
       "exits": [
@@ -852,8 +995,21 @@
       "title": "What Was Carried In",
       "description": "A drift of belongings against the face, deep, and sorted - by kind, by size, by something. Not by anybody.\n\nEvery Reach is represented. So are two that are not.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "         . .         ",
+        "       . ....        ",
+        "      .........      ",
+        "   ..............    ",
+        "  .................. ",
+        "    ............     ",
+        "       ....... .     ",
+        "        .....        ",
+        "         ...         "
+      ],
+      "legend": {
+        " ": "void",
+        ".": "floor"
+      },
       "editorX": 3,
       "editorY": 0,
       "exits": [
@@ -869,8 +1025,21 @@
       "title": "The Standing Ground",
       "description": "A stretch of clear surface below the face where nothing is lying and nothing is walking, kept clear by use.\n\nPeople have stood here. Many, over a long time, and in the same place.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "          .          ",
+        "       . ....        ",
+        "       .......       ",
+        "    .............    ",
+        "  .................  ",
+        "    ............     ",
+        "       ........      ",
+        "        .....        ",
+        "          .          "
+      ],
+      "legend": {
+        " ": "void",
+        ".": "floor"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -894,8 +1063,21 @@
       "title": "The First Way In",
       "description": "A ring, half the size of the gates and much rougher, lying flat and half sunk into the surface.\n\nIt is older than Azhen's work by a long way. Somebody made a door into the binding before anybody made a door between Reaches.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "                     ",
+        "       ......        ",
+        "     ..........      ",
+        "     ............    ",
+        "  .................  ",
+        "    ............     ",
+        "      ..........     ",
+        "        ......       ",
+        "          .          "
+      ],
+      "legend": {
+        " ": "void",
+        ".": "floor"
+      },
       "editorX": 1,
       "editorY": 1,
       "exits": [
@@ -911,8 +1093,21 @@
       "title": "The Long Watch",
       "description": "Where the ones who came in on purpose stopped. Their gear is here, laid out, in order, the way people lay out gear they expect to pick up again.\n\nThere are forty sets. There is one person.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "         ..          ",
+        "       .......       ",
+        "      .........      ",
+        "    .............    ",
+        "  .................  ",
+        "   . .............   ",
+        "      ........       ",
+        "         ....        ",
+        "          ..         "
+      ],
+      "legend": {
+        " ": "void",
+        ".": "floor"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -936,8 +1131,21 @@
       "title": "The Worn Place",
       "description": "A patch of the face rubbed to a shine at the height of a hand, over an area about the width of a person's reach.\n\nSomebody has been touching the same spot for longer than the Reaches have had names.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "          .          ",
+        "        .....        ",
+        "      ..........     ",
+        "     ............    ",
+        "  .................  ",
+        "     ............    ",
+        "       .......       ",
+        "        ......       ",
+        "          .          "
+      ],
+      "legend": {
+        " ": "void",
+        ".": "floor"
+      },
       "editorX": 3,
       "editorY": 2,
       "exits": [
@@ -953,8 +1161,21 @@
       "title": "The Facing Place",
       "description": "Directly under the face, close enough to put a palm on it. It is neither warm nor cold. It is exactly the temperature of whatever touches it.\n\nFrom here you can tell that it is not flat. It is very slightly curved, and the curve is towards you, and it is the size of everything.\n\nIt is recognition, not attention. It has never had to search. Whatever it has been watching for since before Azhen took the first reading, it can see from here, and so can you, and it is behind you.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        " ░                 ░░",
+        "                     ",
+        "                     ",
+        "                     "
+      ],
+      "legend": {
+        "░": "rubble",
+        " ": "void"
+      },
       "editorX": 2,
       "editorY": 3,
       "exits": [
@@ -974,8 +1195,21 @@
       "title": "The Answer",
       "description": "The last of it. The face, the standing ground, and one place to stand where somebody has stood before.\n\nThere is nothing here to fight. There has never been anything here to fight. There is a question, and it has been waiting a very long time for somebody to be in a position to answer it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "          ..         ",
+        "         ....        ",
+        "      .........      ",
+        "   .............     ",
+        "  .................  ",
+        "    .............    ",
+        "     ..........      ",
+        "       .....         ",
+        "          ..         "
+      ],
+      "legend": {
+        " ": "void",
+        ".": "floor"
+      },
       "editorX": 2,
       "editorY": 4,
       "exits": [
@@ -995,8 +1229,21 @@
       "title": "What Is Owed",
       "description": "A niche in the face, worn rather than cut, with a stone seat in it and a view of nothing whatsoever.\n\nKheddran binds people by their word. The Unlit binds the Reaches by being there. The question is whether the second is owed anything by the things it holds, and it is not rhetorical, and you are the one being asked.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "         ..          ",
+        "         ...         ",
+        "     .........       ",
+        "     ............    ",
+        " ..................  ",
+        "     ............    ",
+        "     ...........     ",
+        "        .....        ",
+        "          .          "
+      ],
+      "legend": {
+        " ": "void",
+        ".": "floor"
+      },
       "editorX": 3,
       "editorY": 4,
       "exits": [

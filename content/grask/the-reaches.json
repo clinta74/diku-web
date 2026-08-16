@@ -918,8 +918,22 @@
       "title": "The Gate Quay",
       "description": "The ring stands at the head of a stone quay, and unlike Ossara's it is busy: a crew of four works the crossing all day, waving loads through in both directions.\n\nYrriska's shrine here is enormous and disgraceful, three feet deep in coins and dice and written oaths, and the crew touch it every single time.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "─────────────────────",
+        "···▣·················",
+        "·····················",
+        "·········▣·······▣···",
+        "················▣····",
+        "·····················",
+        "·····················",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▣": "crate"
+      },
       "editorX": 2,
       "editorY": 0,
       "exits": [
@@ -939,8 +953,21 @@
       "title": "The Tally House",
       "description": "A long shed open on the quay side, with three clerks at three desks and a queue that never gets shorter. Everything crossing the gate is weighed, named and written down.\n\nThe ledgers go back to the opening. The early volumes are on a shelf nobody dusts.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "≈░≈≈░░░░░≈░≈░≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈"
+      ],
+      "legend": {
+        "░": "rubble",
+        "≈": "water"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -966,8 +993,22 @@
       "flags": {
         "indoors": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "─────────────────────",
+        "··▬··················",
+        "·············▬·······",
+        "·········▬··▬········",
+        "·····················",
+        "·····················",
+        "─────────────────────",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▬": "table"
+      },
       "editorX": 3,
       "editorY": 1,
       "exits": [
@@ -983,8 +1024,22 @@
       "title": "The Market Run",
       "description": "A street of stalls that has grown until it is three streets, and the middle one has no name because it was not there last year.\n\nNothing sold here was made here. Everything sold here has been sold at least once already.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "·····················",
+        "·····················",
+        "·····················",
+        "·····················",
+        "·······▣···▣·········",
+        "·····················",
+        "─────────────────────",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▣": "crate"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -1014,8 +1069,22 @@
       "flags": {
         "indoors": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "·····················",
+        "·····················",
+        "················▣····",
+        "·····················",
+        "·····················",
+        "··▣··················",
+        "·····················",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▣": "crate"
+      },
       "editorX": 1,
       "editorY": 2,
       "exits": [
@@ -1031,8 +1100,22 @@
       "title": "The Provision Stall",
       "description": "Sacks, barrels and a slate listing what a three-day crew needs, in a hand that has corrected the water figure upwards twice.\n\nEverything here is priced for people who will pay it because they have to.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "─────────────────────",
+        "·····▬·▬·····▬·······",
+        "·················▬···",
+        "·····················",
+        "·····················",
+        "·····················",
+        "─────────────────────",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▬": "table"
+      },
       "editorX": 3,
       "editorY": 2,
       "exits": [
@@ -1048,8 +1131,22 @@
       "title": "The Hiring Step",
       "description": "A flight of six broad steps outside the company office, where crews are taken on. Men and women sit on them all morning waiting to be pointed at.\n\nThe board lists three cuts by name and a fourth by depth only.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "─────────────────────",
+        "·····················",
+        "·····················",
+        "·······▬·····▬·······",
+        "··▬··················",
+        "·········▬·▬·········",
+        "·····················",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▬": "table"
+      },
       "editorX": 2,
       "editorY": 3,
       "exits": [
@@ -1073,8 +1170,22 @@
       "title": "The Company Yard",
       "description": "Stacked timber, coiled rope, and a locked shed with a man sitting on it. The company owns everything in Grask that is not nailed down and quite a lot that is.\n\nA tally of crews is chalked on the shed door. The last line has been rubbed out and not rewritten.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "─────────────────────",
+        "················▬·▬··",
+        "·····················",
+        "·····················",
+        "·············▬·▬·····",
+        "·····················",
+        "·····················",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▬": "table"
+      },
       "editorX": 3,
       "editorY": 3,
       "exits": [
@@ -1090,8 +1201,21 @@
       "title": "The Boom Road",
       "description": "The road out to the workings, wide, rutted, and carrying carts in both directions all day. It was laid in a hurry and has been repaired in a bigger hurry ever since.\n\nHalf the buildings along it are unfinished and occupied.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "≈≈≈≈░░░░░░░░░░░░░░░░░",
+        "≈≈≈≈≈░░░░░░░░░░░░░░░░",
+        "≈≈≈≈≈≈░░≈≈≈░░░░≈≈≈░░░",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈"
+      ],
+      "legend": {
+        "░": "rubble",
+        "≈": "water"
+      },
       "editorX": 2,
       "editorY": 4,
       "exits": [
@@ -1121,8 +1245,22 @@
       "flags": {
         "indoors": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "─────────────────────",
+        "····▬·······▬···▬····",
+        "·····················",
+        "·····················",
+        "·····················",
+        "···········▬·········",
+        "─────────────────────",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▬": "table"
+      },
       "editorX": 1,
       "editorY": 4,
       "exits": [
@@ -1138,8 +1276,21 @@
       "title": "The Staging",
       "description": "A platform of scaffold and plank thrown out over the edge, loaded with crates waiting for the next crossing. It sways, and everyone has agreed not to discuss it.\n\nFrom out here you can see past the Landing entirely.\n\nOut past the staging the shapes are nearer than an Ossaran would say they should be, and one of them has something on it that is not land. Nobody in the Landing looks for long, and everybody has a view about it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "  \" \"\"   \"\"\"\"\"\"\"\"\"\"\"\"",
+        "          \"\"\"\"\"\"\"\"\"\"\"",
+        "           \"\"\"\"\"\"\"\"\"\"",
+        "             \"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        " ": "void"
+      },
       "editorX": 3,
       "editorY": 4,
       "exits": [
@@ -1155,8 +1306,22 @@
       "title": "The Cut Head",
       "description": "Where the road stops being a road and becomes the top of the first claim: a raw slot in the ground with a switchback ramp going down into it.\n\nThe noise comes up out of it all day and most of the night.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "─────────────────────",
+        "·····················",
+        "············▣········",
+        "·····················",
+        "·····················",
+        "··········▣··········",
+        "·············▣·······",
+        "─────────────────────",
+        "─────────────────────"
+      ],
+      "legend": {
+        "·": "path",
+        "─": "wall",
+        "▣": "crate"
+      },
       "editorX": 2,
       "editorY": 5,
       "exits": [
@@ -1176,8 +1341,21 @@
       "title": "The First Ramp",
       "description": "A switchback of packed spoil going down into the cut, wide enough for a cart if the cart is careful and nobody is coming up.\n\nThe walls on either side are stepped where the claim was worked out in courses.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "▓▓▓▓..▓.▓.▓▓▓▓▓▓▓.▓▓▓",
+        "▓▓..........▓.▓▓▓.▓▓.",
+        ".....▓.▓.............",
+        ".....................",
+        "..........▓..........",
+        ".....................",
+        "...........▓.........",
+        "..........▓..▓.......",
+        "▓.▓.▓▓▓▓▓.▓▓▓▓.▓.▓▓.."
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 0,
       "exits": [
@@ -1203,8 +1381,27 @@
       "flags": {
         "indoors": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│.░..........░......│",
+        "│...........░.......│",
+        "│.....░.░.....░.....│",
+        "│......░..........░.│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 3,
       "editorY": 0,
       "exits": [
@@ -1220,8 +1417,21 @@
       "title": "The Second Bench",
       "description": "A worked-out level, flat and littered, with the rock face rising on one side and a drop fenced with rope on the other.\n\nNobody works this bench any more. Plenty of people are on it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "...▓▓▓▓..▓▓▓▓▓▓▓▓▓▓▓▓",
+        "...▓.▓....▓▓▓.▓..▓▓.▓",
+        "................▓▓...",
+        ".....................",
+        "...............▓.....",
+        ".....................",
+        "......▓.......▓......",
+        ".▓.▓..▓.▓......▓.▓▓..",
+        "▓▓▓▓▓.▓.▓..▓▓.▓▓.▓▓▓▓"
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -1248,8 +1458,22 @@
         "indoors": true,
         "dark": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "···░░░░░░░░░░░░░░░░░░",
+        "░░·······░▓░░░░░░░░░░",
+        "░░░░░░░░···▓░░░░░░░··",
+        "░░░▓░░░░░░···········",
+        "░░░░░░░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 1,
       "editorY": 1,
       "exits": [
@@ -1269,8 +1493,27 @@
       "title": "The Drowned Bench",
       "description": "A level the adit does not quite drain, standing in a foot of still brown water with the tops of abandoned gear showing above it.\n\nSomething is using it. The water is disturbed in a line, and the line moves.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...░......░........│",
+        "│...................│",
+        "│...................│",
+        "│.....░.........░...│",
+        "│.......░.....░░....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 1,
       "editorY": 2,
       "exits": [
@@ -1290,8 +1533,21 @@
       "title": "The Spoil Run",
       "description": "The tip: everything the cut did not want, in a slope of grey rubble a hundred feet long, still steaming faintly where it was turned this morning.\n\nPeople work it who are not supposed to.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        ".▓..▓.▓▓.▓▓..▓.▓.▓.▓▓",
+        ".............▓.▓.▓.▓▓",
+        "...............▓.....",
+        ".....................",
+        "......▓▓.............",
+        "..▓............▓.....",
+        "..................▓..",
+        ".▓.▓......▓▓▓▓..▓▓.▓▓",
+        ".▓▓▓..▓▓▓▓▓▓▓▓.▓▓▓.▓▓"
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -1315,8 +1571,22 @@
       "title": "The Third Bench",
       "description": "Live workings. Picks going, a windlass turning, and four crews who all believe the other three are on their ground.\n\nThe boundary pegs have been moved. All of them, by everybody.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░▓▓░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "···░░░░░░░░░░░░░░░░░░",
+        "░░··░░░░░···░░░░░░░░░",
+        "░░░····░··░···░░░░░░░",
+        "░░░░░░···░░░░········",
+        "░░░░░░░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 3,
       "exits": [
@@ -1340,8 +1610,22 @@
       "title": "The Claim Line",
       "description": "A line of whitewashed stakes running up the cut wall, marking where one company's ground stops. Six of the stakes are new and are not in line with the others.\n\nThis is where the arguments happen and it is obvious why.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░▓░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░▓░░░░░░░░░",
+        "░░░░░░░░░▓░░░░░░░····",
+        "·░·····░░░········░░░",
+        "···░░░·····░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░▓░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░▓░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 3,
       "editorY": 3,
       "exits": [
@@ -1357,8 +1641,22 @@
       "title": "The Crossing Plank",
       "description": "Two planks and a handrail over the sump at the bottom of the cut, sagging in the middle, replaced often enough that nobody trusts it and everybody uses it.\n\nThe sump below has no bottom anyone has found with a rope.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░▓░░░░░",
+        "·····░░░░░░░░░░░░░░░░",
+        "·░░▓······░░░░░····░·",
+        "░░░░░░··░·······░░···",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░▓░",
+        "░░░░░░░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 4,
       "exits": [
@@ -1382,8 +1680,22 @@
       "title": "The Sump Shelf",
       "description": "A ledge above the sump where the pumps are, three of them, two working. The noise here makes conversation a matter of pointing.\n\nWhoever built the mountings knew what they were doing and did not work for the company.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░▓░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░·······░░░░░░░░░░░░░",
+        "··░░░░░········░░░░░░",
+        "░░░░░░░░░░░░░░·······",
+        "░░░░░░░░░░░░░░░░░░░░▓",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 3,
       "editorY": 4,
       "exits": [
@@ -1399,8 +1711,27 @@
       "title": "The Far Face",
       "description": "The working face at the far end, where the cut is still being pushed forward a foot a week into rock that has stopped being generous.\n\nThe ore ran out here two years ago. They are still cutting.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│...........░.......│",
+        "│...................│",
+        "│...░...............│",
+        "│.................░.│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "─": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble"
+      },
       "editorX": 2,
       "editorY": 5,
       "exits": [
@@ -1424,8 +1755,21 @@
       "title": "The Underhang",
       "description": "Where the face has been undercut and left, a lip of rock overhanging thirty feet of nothing much, propped with timbers that are doing visible work.\n\nBeyond and below, a second slot goes down further than this one. Nobody calls it the second cut.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        ".▓▓▓▓.▓..▓▓.▓..▓▓▓▓▓.",
+        "..▓▓▓.....▓....▓▓▓▓▓.",
+        ".....................",
+        "..▓..................",
+        ".....................",
+        ".....................",
+        "..........▓..........",
+        "..▓▓.......▓..▓.....▓",
+        "▓.▓▓▓▓...▓▓▓▓▓▓.▓..▓▓"
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 6,
       "exits": [
@@ -1445,8 +1789,21 @@
       "title": "The Boardwalk Head",
       "description": "The cut wall ends and the ground gives out into standing water and sedge. A boardwalk on driven piles goes out into it, three planks wide, with no rail.\n\nThe piles are new. The ones beside them, at the same spacing, are not.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈≈≈\"\"\"\"≈≈≈≈≈≈≈≈≈≈\"\"\"\"",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈\"",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈"
+      ],
+      "legend": {
+        "\"": "grass",
+        "≈": "water"
+      },
       "editorX": 0,
       "editorY": 0,
       "exits": [
@@ -1470,8 +1827,21 @@
       "title": "The Long Walk",
       "description": "Four hundred feet of boardwalk with black water on both sides and nowhere to step off. The planks move under you in sequence as you go.\n\nThings come up alongside and keep pace and go back down.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"≈\"\"≈≈\"\"≈\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"≈≈≈\"\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"≈≈≈≈≈\"\"≈\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"≈≈≈≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"≈≈≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"≈≈\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "reed",
+        "≈": "water"
+      },
       "editorX": 0,
       "editorY": 1,
       "exits": [
@@ -1495,8 +1865,21 @@
       "title": "The First Platform",
       "description": "A square of decking on piles, wide enough for a hut and a stack of crates, with the hut leaning and the crates newer than it.\n\nSomebody lives here. Somebody has lived here a long time.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"≈≈≈\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"≈≈\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"≈≈≈\"\"\"\"\"\"\"\"\"\"≈≈≈≈\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"≈\"≈≈≈\"≈\"",
+        "\"\"\"\"\"≈≈≈≈≈\"\"\"\"\"≈≈≈≈\"\"",
+        "\"\"\"\"\"≈≈\"\"≈\"\"≈≈\"≈\"\"\"\"\"",
+        "\"\"\"\"\"\"≈≈≈≈≈≈\"≈\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"≈\"\"≈\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"≈≈\"≈≈\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "reed",
+        "≈": "water"
+      },
       "editorX": 0,
       "editorY": 2,
       "exits": [
@@ -1520,8 +1903,21 @@
       "title": "The Eel Traps",
       "description": "A line of wicker traps on a rope, hauled and reset twice a day. The eels here are enormous and everyone in Grask eats them without comment.\n\nThe last three traps on the line have not been reset in a while.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"≈\"≈≈≈\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"≈≈\"\"\"\"\"\"",
+        "\"\"\"≈≈≈≈≈≈≈≈\"\"\"\"≈\"≈\"\"\"",
+        "\"\"\"≈≈≈≈≈≈≈≈\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"≈≈≈≈≈≈\"≈\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"≈\"≈≈\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"≈\"≈≈\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"≈≈≈≈\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "reed",
+        "≈": "water"
+      },
       "editorX": 1,
       "editorY": 2,
       "exits": [
@@ -1537,8 +1933,21 @@
       "title": "The Reed Cut",
       "description": "A channel hacked through reeds twice head height, wide enough for one punt, with the reeds closing over the top.\n\nYou can hear everything and see nothing at all.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"≈≈\"≈\"\"\"\"\"\"\"\"",
+        "\"\"\"\"≈\"\"\"\"≈\"\"≈≈\"\"\"\"\"\"\"",
+        "\"\"\"≈≈≈≈\"\"≈\"\"≈≈≈\"≈\"\"\"\"",
+        "\"\"\"\"≈\"≈≈\"\"\"\"≈≈≈≈\"\"\"\"\"",
+        "\"\"\"\"\"\"\"≈\"\"\"\"≈\"\"≈\"\"\"\"\"",
+        "\"\"\"≈≈≈≈\"≈≈≈≈\"\"\"\"\"\"\"\"\"",
+        "\"\"\"≈≈≈≈≈\"≈\"≈\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"≈≈≈≈\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "reed",
+        "≈": "water"
+      },
       "editorX": 0,
       "editorY": 3,
       "exits": [
@@ -1562,8 +1971,21 @@
       "title": "The Drowned Stand",
       "description": "Alders standing dead in three feet of water, bark gone, every trunk pale and smooth. Something has scored all of them at the same height.\n\nThe height is above yours.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"≈≈\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈≈≈≈≈≈≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈\"≈≈\"\"\"\"\"\"\"\"≈\"\"≈\"≈\"\"\"",
+        "≈≈\"≈≈\"\"\"≈\"≈≈≈\"\"≈≈\"≈\"\"",
+        "\"\"\"\"\"\"\"\"\"≈≈≈≈\"≈\"≈≈≈\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"≈\"≈\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "reed",
+        "≈": "water"
+      },
       "editorX": 1,
       "editorY": 3,
       "exits": [
@@ -1579,8 +2001,21 @@
       "title": "The Sunk Claim",
       "description": "A claim that flooded and was abandoned, with the winding gear still standing out of the water at an angle and a boardwalk running to it out of habit.\n\nThe company still owns this. The company owns a lot of water.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"≈≈\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"≈≈≈\"\"\"≈≈≈≈≈≈≈\"\"\"",
+        "\"≈≈≈≈≈≈≈≈\"\"≈≈≈≈≈\"\"\"\"\"",
+        "\"≈≈≈\"\"\"\"\"\"\"≈≈≈≈\"\"≈≈\"\"",
+        "≈\"≈≈≈\"\"\"\"\"\"≈≈≈≈\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"≈≈≈≈\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "reed",
+        "≈": "water"
+      },
       "editorX": 0,
       "editorY": 4,
       "exits": [
@@ -1604,8 +2039,21 @@
       "title": "The Hog Wallow",
       "description": "A shelf of firm mud among the reeds, churned to soup and stinking, where the marsh hogs come out of the water to lie in the sun.\n\nThey are the size of the punts and they are not afraid of them.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈\"\"≈≈≈\"\"≈≈≈≈≈≈≈\"\"\"\"\"\"",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈"
+      ],
+      "legend": {
+        "\"": "grass",
+        "≈": "water"
+      },
       "editorX": 1,
       "editorY": 4,
       "exits": [
@@ -1621,8 +2069,21 @@
       "title": "The Piling Yard",
       "description": "A working platform where the piles are cut and driven, with a ram frame standing over it and a crew of six who never stop.\n\nThe far end of the yard is stacked with piles pulled back out of the marsh. They are chewed.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"≈≈≈\"≈\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"≈≈≈≈≈\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"≈≈≈≈\"\"\"\"\"",
+        "≈\"≈≈≈\"\"\"\"\"\"\"\"\"\"\"≈≈\"\"\"",
+        "≈≈≈≈≈\"\"\"\"\"\"\"\"≈≈≈\"≈\"\"\"",
+        "≈≈≈≈≈\"\"\"\"\"\"\"\"≈≈\"≈≈\"\"\"",
+        "\"\"\"\"\"≈≈≈≈\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"≈\"≈\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"≈≈≈≈\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "reed",
+        "≈": "water"
+      },
       "editorX": 0,
       "editorY": 5,
       "exits": [
@@ -1648,8 +2109,21 @@
       "flags": {
         "dark": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"≈\"\"\"",
+        "≈≈≈\"\"\"\"\"\"\"\"\"\"\"\"\"≈≈≈\"\"",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈"
+      ],
+      "legend": {
+        "\"": "grass",
+        "≈": "water"
+      },
       "editorX": 1,
       "editorY": 5,
       "exits": [
@@ -1665,8 +2139,21 @@
       "title": "The Black Reach",
       "description": "Open water, still and lightless, with the boardwalk running out across it on piles that get further apart as they go.\n\nNothing grows here. The reeds stop at a line as clean as a wall.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"≈\"≈≈\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"≈≈≈≈≈≈\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"≈\"≈≈≈≈\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"≈≈≈\"≈\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"≈≈≈≈\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"≈≈≈≈≈\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "reed",
+        "≈": "water"
+      },
       "editorX": 0,
       "editorY": 6,
       "exits": [
@@ -1690,8 +2177,21 @@
       "title": "The Old Piles",
       "description": "Two hundred piles in rows, driven a lifetime ago, holding nothing up. The boardwalk they carried is not here and there is no record of it being taken away.\n\nThey are the first company's spacing.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"≈≈≈≈≈≈≈\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈≈≈≈≈≈≈≈≈≈\"\"\"\"\"\"\"\"\"\"\"",
+        "≈≈≈≈≈≈≈≈≈≈≈\"\"\"\"\"\"\"\"≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈\"\"\"\"\"≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈"
+      ],
+      "legend": {
+        "\"": "grass",
+        "≈": "water"
+      },
       "editorX": 1,
       "editorY": 6,
       "exits": [
@@ -1707,8 +2207,21 @@
       "title": "The Far Staging",
       "description": "The last platform, where the marsh stops mattering and the edge of Grask begins. Crates are stacked here for a crossing that has not run in some time.\n\nThe water simply stops, and the stopping has an edge to it.\n\nOut past the staging the shapes are nearer than an Ossaran would say they should be, and one of them has something on it that is not land. Nobody in the Landing looks for long, and everybody has a view about it.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        " \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "  \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "   \"\"\"\"\"\" \"\"\"\"\"\"\"\"\"  ",
+        "     \"       \"\"\"\"\"   "
+      ],
+      "legend": {
+        "\"": "grass",
+        " ": "void"
+      },
       "editorX": 0,
       "editorY": 7,
       "exits": [
@@ -1724,8 +2237,21 @@
       "title": "The Tallyman's Post",
       "description": "A hut on piles beside the long walk, where a company man counts everyone in and everyone out and does not ask about the difference.\n\nThe out column is shorter. It has been shorter for years.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"≈≈≈≈≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"≈≈≈≈≈≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"≈≈≈≈≈≈\"\"≈\"\"\"\"\"\"\"\"\"\"\"",
+        "\"≈\"≈≈≈≈≈≈≈\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"≈\"≈\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"≈\"\"≈\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"≈\"\"\"≈\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"≈≈\"≈≈\"\"\"\""
+      ],
+      "legend": {
+        "\"": "reed",
+        "≈": "water"
+      },
       "editorX": 1,
       "editorY": 1,
       "exits": [
@@ -1743,8 +2269,21 @@
       "flags": {
         "indoors": true
       },
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"≈\"≈≈≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"≈≈≈≈≈\"\"\"\"\"\"\"\"\"\"≈≈≈\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"≈≈≈≈≈≈≈\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"≈\"≈≈≈≈≈\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"≈≈≈≈≈\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"≈≈≈≈\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"≈≈≈≈\"\"\"\""
+      ],
+      "legend": {
+        "\"": "reed",
+        "≈": "water"
+      },
       "editorX": 1,
       "editorY": 0,
       "exits": [
@@ -1760,8 +2299,21 @@
       "title": "The Head of the Owing",
       "description": "A slot going down out of the underhang, narrower than the cut above and far deeper, with a stair of cut steps hugging one wall.\n\nThere is no windlass and no rope. Everything that comes out of here is carried.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "▓▓.▓▓.▓.▓▓▓▓....▓.▓..",
+        "▓..▓....▓▓▓.....▓.▓..",
+        ".....................",
+        ".......▓.............",
+        ".....................",
+        "......▓......▓.......",
+        "..........▓..........",
+        ".▓▓.▓.▓▓..........▓..",
+        ".▓▓▓▓.▓▓▓▓.▓...▓▓▓▓▓."
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 0,
       "exits": [
@@ -1781,8 +2333,22 @@
       "title": "The First Turn",
       "description": "The stair turns back on itself for the first time. From here the light from the top is a shape rather than a light.\n\nSomebody has cut a tally into the wall at the turn. It stops at forty-one.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░···",
+        "░░░▓░░░░░░░░░░░░░··░░",
+        "·····░░░░░░░░░░···░░░",
+        "░░░░············░░░░░",
+        "░░░░░░░▓░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 1,
       "exits": [
@@ -1806,8 +2372,21 @@
       "title": "The Cold Store",
       "description": "A chamber off the stair, cut square, holding nothing at all. The air in it is noticeably colder than the stair and does not move.\n\nIt was cut deliberately. It has never been used for anything.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        ".▓▓▓▓..▓▓▓..▓▓▓▓.▓..▓",
+        ".▓▓▓▓....▓...▓...▓..▓",
+        "..................▓..",
+        ".......▓.............",
+        "......▓..............",
+        ".....................",
+        ".....▓..▓...▓........",
+        "▓......▓.▓.▓.▓.▓▓▓▓▓.",
+        "▓▓.▓.▓.▓.▓.▓▓▓▓▓▓▓▓▓▓"
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 3,
       "editorY": 1,
       "exits": [
@@ -1823,8 +2402,21 @@
       "title": "The Lamp Line",
       "description": "Hooks driven into the wall every twenty feet, each with a lamp, each lamp lit. Somebody comes down here twice a day and fills all of them.\n\nThe line goes further down than the workings do.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        ".▓▓.▓.▓.▓.▓▓▓...▓▓.▓▓",
+        ".▓▓.....▓..▓▓...▓..▓▓",
+        ".....................",
+        "...........▓.........",
+        ".....................",
+        "..▓.............▓....",
+        "..▓..................",
+        ".▓.▓▓......▓.▓...▓.▓▓",
+        ".▓.▓▓▓.....▓.▓▓..▓▓▓▓"
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 2,
       "exits": [
@@ -1844,8 +2436,22 @@
       "title": "The Second Turn",
       "description": "The second switchback, and the last one with a handrail. Below this the steps are cut into the wall and nothing else.\n\nThe tally continues here in a different hand.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░▓░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░▓░░░░",
+        "░░░░░░░░░░░░░░···░░░░",
+        "░░░░░░░░░░░░░··░·····",
+        "··············░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 3,
       "exits": [
@@ -1869,8 +2475,22 @@
       "title": "The Tool Drop",
       "description": "A widening where a crew's gear is stacked against the wall: picks, wedges, three lamps, and a coat with the sleeves still turned out.\n\nAll of it is laid out for the start of a shift.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░······░░░▓░░░░░░",
+        "░░░░··░░░░···········",
+        "·····░░░░░░░░░··░░░░·",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░▓░░░░░",
+        "░░░░░▓░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 1,
       "editorY": 3,
       "exits": [
@@ -1886,8 +2506,21 @@
       "title": "The Abandoned Face",
       "description": "A working face, mid-cut, with the marks of the last blow still fresh on it and the spoil not carried away.\n\nIt is not old. Everything about it says the crew stepped away an hour ago.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "▓▓▓.▓.▓▓▓▓▓▓▓▓▓▓▓.▓▓▓",
+        ".▓▓...▓▓▓▓▓...▓...▓▓.",
+        ".....................",
+        ".....................",
+        "...........▓.........",
+        "..................▓..",
+        ".....................",
+        "▓▓...▓▓.....▓.▓.▓..▓▓",
+        "▓▓▓.▓▓▓..▓▓.▓.▓▓▓..▓▓"
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 4,
       "exits": [
@@ -1911,8 +2544,21 @@
       "title": "The Deep Sump",
       "description": "Water at the bottom of a shaft the stair passes, black and absolutely still, with a rope going into it that has been there long enough to have grown a skin.\n\nThe rope is taut.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "..▓.▓..▓▓.▓▓▓..▓▓▓.▓▓",
+        ".......▓.......▓▓..▓.",
+        "....▓.▓..............",
+        ".....................",
+        ".......▓.............",
+        "........▓.........▓..",
+        "........▓............",
+        "▓▓▓.▓..▓▓...▓...▓..▓▓",
+        "▓▓▓.▓▓.▓▓▓.▓▓...▓.▓▓▓"
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 3,
       "editorY": 4,
       "exits": [
@@ -1928,8 +2574,21 @@
       "title": "The Ledger Room",
       "description": "A chamber cut square and dry, with a shelf along one wall and books on the shelf. This far down, dry, with books, and no reason for any of it.\n\nThe entries are wages. They are still being made.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "..▓..▓▓▓.....▓▓.▓▓.▓.",
+        ".....▓▓......▓..▓..▓.",
+        ".....................",
+        ".....................",
+        ".....................",
+        "........▓.....▓......",
+        ".....................",
+        ".▓..▓..▓▓.....▓▓.▓.▓▓",
+        "▓▓▓▓▓..▓▓▓▓▓▓▓▓▓.▓.▓▓"
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 5,
       "exits": [
@@ -1953,8 +2612,22 @@
       "title": "The First Workings",
       "description": "The bottom of the Owing, and the oldest cut in Grask: the hole the first company drove two generations ago before there was a Landing to come back to.\n\nThe gate-stone is in the wall here, raw and unshaped, and the first mark is cut into it. Azhen cut every gate in the Reaches. This is the piece they cut them from.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░·",
+        "░░░░░░░░░░░░░░░░░░░··",
+        "░░░░░░░░░░░░░░░░░░··░",
+        "·······░▓░░░░░░░░··░░",
+        "░░░░░░············░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░▓░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 6,
       "exits": [
@@ -1981,8 +2654,21 @@
       "title": "The Standing Account",
       "description": "A chamber past the first workings that nobody cut. The walls are the same dark stone as a gate, all the way round, with no seam and no face.\n\nThe first crew is here. They are in their kit, and they are working, and they have been paid every week since.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "▓▓▓..▓▓▓▓▓▓▓.▓...▓..▓",
+        "......▓▓.▓▓▓.....▓..▓",
+        ".................▓...",
+        "....▓..▓▓............",
+        ".....................",
+        ".....................",
+        ".....................",
+        "..▓▓▓▓.....▓......▓▓▓",
+        "..▓▓▓▓▓.▓.▓▓.▓....▓▓▓"
+      ],
+      "legend": {
+        ".": "floor",
+        "▓": "rock"
+      },
       "editorX": 2,
       "editorY": 7,
       "exits": [
@@ -1998,8 +2684,22 @@
       "title": "The Quiet Drift",
       "description": "A drift running off the ledger room, level and dry, going nowhere in particular for about two hundred feet before it simply stops.\n\nThere is no face at the end. The rock is finished, like a wall.",
       "flags": {},
-      "grid": [],
-      "legend": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░▓░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░▓░░░░░░░░░░░",
+        "····░░░░░░░░░░░░░░░░░",
+        "░░░·····░░░░░░░░░░░░·",
+        "░░░░··░···░░···░·····",
+        "░░░░░░░░░····░···░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░"
+      ],
+      "legend": {
+        "░": "rubble",
+        "·": "path",
+        "▓": "rock"
+      },
       "editorX": 1,
       "editorY": 5,
       "exits": [
