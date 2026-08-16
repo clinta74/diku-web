@@ -294,15 +294,20 @@ input:focus {
   gap: 1px;
   background: var(--border);
   grid-template-columns: minmax(16rem, 22rem) 1fr;
-  grid-template-rows: minmax(11rem, auto) 1fr auto auto auto;
+  grid-template-rows: minmax(11rem, auto) 1fr auto auto auto auto;
 
-  /* `notice` carries the reconnect bar. The row is `auto`, so it is zero-height whenever nothing
-     is in it — which is almost always — and the layout does not have to change shape to make
-     room for a bar that only appears when the connection drops. */
+  /* `notice` carries the reconnect bar and `cooldowns` the ability bar. Both rows are `auto`, so
+     they are zero-height whenever nothing is in them — which is almost always — and the layout
+     does not have to change shape to make room for a bar that only appears sometimes.
+
+     Every child needs an area here. This grid has named areas and no `grid-auto-columns`, so an
+     item without one is auto-placed into column 1 and comes out 22rem wide with the grid's own
+     border colour beside it — which is exactly what the ability bar did until it was given a row. */
   grid-template-areas:
     "map room"
     "scroll scroll"
     "notice notice"
+    "cooldowns cooldowns"
     "input input"
     "vitals vitals";
 }
@@ -604,12 +609,13 @@ input:focus {
 @media (max-width: 900px) {
   .game {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr auto auto auto;
+    grid-template-rows: auto auto 1fr auto auto auto auto;
     grid-template-areas:
       "room"
       "map"
       "scroll"
       "notice"
+      "cooldowns"
       "input"
       "vitals";
   }
@@ -647,12 +653,13 @@ input:focus {
 
 .game[data-layout='phone'] {
   grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr auto auto auto auto;
+  grid-template-rows: auto 1fr auto auto auto auto auto;
   grid-template-areas:
     "header"
     "scroll"
     "notice"
     "pad"
+    "cooldowns"
     "input"
     "vitals";
 }
@@ -1562,8 +1569,12 @@ code.dim {
 
 /* Only what is cooling appears here, so the row is short by construction and wrapping is the right
    answer rather than a sideways scroll - four cooling abilities is a busy rotation, and nothing
-   the player has to drag a scrollbar to see. The whole row is absent when nothing is cooling. */
+   the player has to drag a scrollbar to see. The whole row is absent when nothing is cooling.
+
+   The grid area is not decoration: `.game` places by name, so without one this is auto-placed into
+   the first column and renders 22rem wide against the grid's border colour. */
 .ability-bar {
+  grid-area: cooldowns;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
