@@ -241,3 +241,10 @@ Add anything noticed while playing here. Cleared as items are done.
   **Untested in play**, and the two things to watch: whether the per-follower room refreshes are
   noticeable when a party of five moves, and whether "a step it cannot take ends it" is too strict
   in practice — a party crossing a zone with one gated door loses everyone behind it at once.
+
+
+  - there are dark rooms that you need a light for, but I don't see any light source items. for an item to be used as a light source it should be held of worn. a peice of armor could function as a light source.
+
+  - focus on casters (hallow and adept) should recover faster when standing, resting, and sleeping.
+
+  - when in a group you should be able to see the other group members hp, focus, and stamina. Add these under the characters version.

@@ -207,6 +207,7 @@ public sealed class GameLoop(
         foreach (var actor in world.AllPlayers)
         {
             PlayerView.SendVitalsIfChanged(actor);
+            PlayerView.SendPartyIfChanged(world, actor);
             PlayerView.SendAbilitiesIfLevelled(actor, world, abilityCache, pulse);
         }
 
@@ -445,6 +446,7 @@ public sealed class GameLoop(
             }
 
             PlayerView.SendVitals(existing);
+            PlayerView.SendParty(world, existing);
             // Resends the roster with live remaining cooldowns, which is what makes a reconnect
             // correct: the client counts down locally, so it has missed every cooldown event that
             // fired while it was away (PLAN.md §3.5).
@@ -493,6 +495,7 @@ public sealed class GameLoop(
 
         actor.SendSys(GameConfiguration.Greet(options.WelcomeMessage, actor.Name), SysKinds.Info);
         PlayerView.SendVitals(actor);
+        PlayerView.SendParty(world, actor);
         PlayerView.SendAbilities(actor, world, abilityCache, clock.CurrentPulse);
         view.SendRoom(world, actor, verbose: true);
 

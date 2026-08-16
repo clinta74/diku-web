@@ -11,7 +11,8 @@ public sealed class RegenCalculatorTests
         var (health, focus, stamina) = RegenCalculator.Calculate(
             CharacterRestState.Sleep,
             vitals,
-            vitalityModifier: 0);
+            vitalityModifier: 0,
+            CharacterPath.Warden);
 
         // 15% of max per vital
         Assert.Equal(9, health);   // floor(60 * 0.15)
@@ -26,7 +27,8 @@ public sealed class RegenCalculatorTests
         var (health, focus, stamina) = RegenCalculator.Calculate(
             CharacterRestState.Rest,
             vitals,
-            vitalityModifier: 0);
+            vitalityModifier: 0,
+            CharacterPath.Warden);
 
         // 8% of max per vital
         Assert.Equal(4, health);   // floor(60 * 0.08)
@@ -41,7 +43,8 @@ public sealed class RegenCalculatorTests
         var (health, focus, stamina) = RegenCalculator.Calculate(
             CharacterRestState.Stand,
             vitals,
-            vitalityModifier: 0);
+            vitalityModifier: 0,
+            CharacterPath.Warden);
 
         // 2% of max per vital, minimum 1
         Assert.Equal(1, health);   // floor(60 * 0.02) = 1
@@ -53,8 +56,9 @@ public sealed class RegenCalculatorTests
     public void Calculate_positive_vitality_modifier_increases_regen()
     {
         var vitals = Vitals.StartingFor(CharacterPath.Warden);
-        var baseRegen = RegenCalculator.Calculate(CharacterRestState.Rest, vitals, vitalityModifier: 0);
-        var boostedRegen = RegenCalculator.Calculate(CharacterRestState.Rest, vitals, vitalityModifier: 3);
+        var baseRegen = RegenCalculator.Calculate(CharacterRestState.Rest, vitals, vitalityModifier: 0,
+            CharacterPath.Warden);
+        var boostedRegen = RegenCalculator.Calculate(CharacterRestState.Rest, vitals, vitalityModifier: 3, CharacterPath.Warden);
 
         // +3 modifier adds 3% to base 8% = 11% total
         var expectedHealth = (int)Math.Floor(60 * 0.11);
@@ -66,8 +70,9 @@ public sealed class RegenCalculatorTests
     public void Calculate_negative_vitality_modifier_decreases_regen()
     {
         var vitals = Vitals.StartingFor(CharacterPath.Warden);
-        var baseRegen = RegenCalculator.Calculate(CharacterRestState.Rest, vitals, vitalityModifier: 0);
-        var penalizedRegen = RegenCalculator.Calculate(CharacterRestState.Rest, vitals, vitalityModifier: -2);
+        var baseRegen = RegenCalculator.Calculate(CharacterRestState.Rest, vitals, vitalityModifier: 0,
+            CharacterPath.Warden);
+        var penalizedRegen = RegenCalculator.Calculate(CharacterRestState.Rest, vitals, vitalityModifier: -2, CharacterPath.Warden);
 
         // -2 modifier reduces base 8% by 2% = 6% total
         var expectedHealth = (int)Math.Floor(60 * 0.06);
@@ -91,7 +96,8 @@ public sealed class RegenCalculatorTests
         var (health, focus, stamina) = RegenCalculator.Calculate(
             CharacterRestState.Stand,
             vitals,
-            vitalityModifier: 0);
+            vitalityModifier: 0,
+            CharacterPath.Warden);
 
         // Even with 1 HP, regen is at least 1
         Assert.Equal(1, health);
@@ -107,7 +113,8 @@ public sealed class RegenCalculatorTests
         var (health, focus, stamina) = RegenCalculator.Calculate(
             CharacterRestState.Stand,
             vitals,
-            vitalityModifier: 10);
+            vitalityModifier: 10,
+            CharacterPath.Warden);
 
         var expectedHealth = (int)Math.Floor(60 * 0.12);
         Assert.Equal(expectedHealth, health);
@@ -127,7 +134,8 @@ public sealed class RegenCalculatorTests
             StaminaMax = 100,
         };
 
-        var changed = RegenCalculator.ApplyRegen(CharacterRestState.Sleep, vitals, vitalityModifier: 0);
+        var changed = RegenCalculator.ApplyRegen(CharacterRestState.Sleep, vitals, vitalityModifier: 0,
+            CharacterPath.Warden);
 
         Assert.True(changed);
         Assert.Equal(39, vitals.Health);    // 30 + 9 (15% of 60)
@@ -148,7 +156,8 @@ public sealed class RegenCalculatorTests
             StaminaMax = 100,
         };
 
-        RegenCalculator.ApplyRegen(CharacterRestState.Sleep, vitals, vitalityModifier: 0);
+        RegenCalculator.ApplyRegen(CharacterRestState.Sleep, vitals, vitalityModifier: 0,
+            CharacterPath.Warden);
 
         Assert.Equal(60, vitals.Health);   // 55 + 9 = 64, capped to 60
         Assert.Equal(20, vitals.Focus);    // 18 + 3 = 21, capped to 20
@@ -160,7 +169,8 @@ public sealed class RegenCalculatorTests
     {
         var vitals = Vitals.StartingFor(CharacterPath.Warden);
         // Don't change anything; it's at max
-        var changed = RegenCalculator.ApplyRegen(CharacterRestState.Sleep, vitals, vitalityModifier: 0);
+        var changed = RegenCalculator.ApplyRegen(CharacterRestState.Sleep, vitals, vitalityModifier: 0,
+            CharacterPath.Warden);
 
         Assert.False(changed);
     }
@@ -178,7 +188,8 @@ public sealed class RegenCalculatorTests
             StaminaMax = 100,
         };
 
-        var changed = RegenCalculator.ApplyRegen(CharacterRestState.Sleep, vitals, vitalityModifier: 0);
+        var changed = RegenCalculator.ApplyRegen(CharacterRestState.Sleep, vitals, vitalityModifier: 0,
+            CharacterPath.Warden);
 
         Assert.True(changed);
         Assert.Equal(60, vitals.Health);
@@ -195,7 +206,8 @@ public sealed class RegenCalculatorTests
             var (health, focus, stamina) = RegenCalculator.Calculate(
                 CharacterRestState.Sleep,
                 vitals,
-                vitalityModifier: 0);
+                vitalityModifier: 0,
+                path);
 
             Assert.True(health > 0);
             Assert.True(focus > 0);
@@ -207,8 +219,10 @@ public sealed class RegenCalculatorTests
     public void Sleep_regens_more_than_rest()
     {
         var vitals = Vitals.StartingFor(CharacterPath.Warden);
-        var sleep = RegenCalculator.Calculate(CharacterRestState.Sleep, vitals, vitalityModifier: 0);
-        var rest = RegenCalculator.Calculate(CharacterRestState.Rest, vitals, vitalityModifier: 0);
+        var sleep = RegenCalculator.Calculate(CharacterRestState.Sleep, vitals, vitalityModifier: 0,
+            CharacterPath.Warden);
+        var rest = RegenCalculator.Calculate(CharacterRestState.Rest, vitals, vitalityModifier: 0,
+            CharacterPath.Warden);
 
         Assert.True(sleep.health > rest.health);
         Assert.True(sleep.focus > rest.focus);
@@ -220,11 +234,48 @@ public sealed class RegenCalculatorTests
     {
         // Use Adept which has higher Focus max (50 vs 20), ensuring Rest > Stand for all vitals
         var vitals = Vitals.StartingFor(CharacterPath.Adept);
-        var rest = RegenCalculator.Calculate(CharacterRestState.Rest, vitals, vitalityModifier: 0);
-        var stand = RegenCalculator.Calculate(CharacterRestState.Stand, vitals, vitalityModifier: 0);
+        var rest = RegenCalculator.Calculate(CharacterRestState.Rest, vitals, vitalityModifier: 0,
+            CharacterPath.Adept);
+        var stand = RegenCalculator.Calculate(CharacterRestState.Stand, vitals, vitalityModifier: 0,
+            CharacterPath.Adept);
 
         Assert.True(rest.health > stand.health);
         Assert.True(rest.focus > stand.focus);
         Assert.True(rest.stamina > stand.stamina);
+    }
+
+    /// <summary>
+    /// The two Paths that spend focus get it back twice as fast, in every state.
+    /// </summary>
+    /// <remarks>
+    /// Compared at the same vitals rather than at each Path's own starting ones, so this measures
+    /// the rate and not the fact that an Adept's focus pool is larger to begin with.
+    /// </remarks>
+    [Theory]
+    [InlineData(CharacterRestState.Sleep)]
+    [InlineData(CharacterRestState.Rest)]
+    [InlineData(CharacterRestState.Stand)]
+    public void Casters_recover_focus_twice_as_fast(CharacterRestState state)
+    {
+        Vitals Pool() => new()
+        {
+            Health = 0, HealthMax = 200,
+            Focus = 0, FocusMax = 200,
+            Stamina = 0, StaminaMax = 200,
+        };
+
+        var warden = RegenCalculator.Calculate(state, Pool(), vitalityModifier: 0, CharacterPath.Warden);
+        var shade = RegenCalculator.Calculate(state, Pool(), vitalityModifier: 0, CharacterPath.Shade);
+        var adept = RegenCalculator.Calculate(state, Pool(), vitalityModifier: 0, CharacterPath.Adept);
+        var hallow = RegenCalculator.Calculate(state, Pool(), vitalityModifier: 0, CharacterPath.Hallow);
+
+        Assert.Equal(warden.focus * 2, adept.focus);
+        Assert.Equal(warden.focus * 2, hallow.focus);
+        Assert.Equal(warden.focus, shade.focus);
+
+        // Only focus. Health and stamina are the same for everyone, which is what keeps this from
+        // being a blanket "casters recover faster" buff.
+        Assert.Equal(warden.health, adept.health);
+        Assert.Equal(warden.stamina, adept.stamina);
     }
 }

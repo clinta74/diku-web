@@ -557,14 +557,71 @@ input:focus {
 .vitals-bar {
   grid-area: vitals;
   display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
   padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
   padding-left: calc(1rem + env(safe-area-inset-left, 0px));
   padding-right: calc(1rem + env(safe-area-inset-right, 0px));
   font-size: 0.8rem;
+}
+
+/*
+ * Your own meters, the identity line and the buttons — everything the bar held before the group
+ * roster was added under it. The row's flex layout moved down here so the bar itself could become
+ * a column; the padding and the home-bar inset stay on the bar, which is still the one element
+ * that touches the bottom edge.
+ */
+.vitals-self {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+/*
+ * The rest of the group. Wraps rather than scrolls: five members at three bars each does not fit
+ * on a phone in one line, and a horizontal scroller at the bottom of the screen is a thing you
+ * discover by accident.
+ */
+.party-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-2);
+}
+
+.party-member {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+/* Someone in another room is still in the group and still worth watching, just not helping here. */
+.party-member[data-away] {
+  opacity: 0.6;
+}
+
+.party-name {
+  color: var(--fg);
+}
+
+.party-note {
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+
+.mini-meter.health {
+  color: var(--health);
+}
+.mini-meter.focus {
+  color: var(--focus);
+}
+.mini-meter.stamina {
+  color: var(--stamina);
 }
 
 .meter {

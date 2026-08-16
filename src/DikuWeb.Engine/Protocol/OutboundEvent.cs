@@ -20,6 +20,9 @@ public static class EventTypes
 
     /// <summary>One ability just went on cooldown.</summary>
     public const string Cooldown = "cooldown";
+
+    /// <summary>The group's roster and how everyone in it is holding up.</summary>
+    public const string Party = "party";
 }
 
 /// <param name="RemainingPulses">
@@ -127,6 +130,46 @@ public sealed record VitalsPayload(
     long Xp,
     string Path,
     long Gold);
+
+/// <summary>
+/// One member of the group, as the rest of the group sees them.
+/// </summary>
+/// <param name="Here">
+/// Whether they are standing in the same room as the viewer. A group is allowed to split up, and a
+/// bar that does not say so reads as "nobody is helping" rather than "they are two rooms away".
+/// </param>
+public sealed record PartyMemberEntry(
+    string Name,
+    int Level,
+    string Path,
+    int Health,
+    int HealthMax,
+    int Focus,
+    int FocusMax,
+    int Stamina,
+    int StaminaMax,
+    bool IsLeader,
+    bool Here,
+    bool LinkDead);
+
+/// <summary>
+/// The whole group, sent to each of its members (PLAN.md §5.3).
+/// </summary>
+/// <remarks>
+/// <b>An empty list means "not in a group"</b> rather than being a state the client has to
+/// distinguish from never having been told. Leaving a party is the case that matters: it has to
+/// clear the panel, and a payload that only ever described a party would leave the last roster on
+/// screen forever.
+///
+/// A single frame naming everyone rather than a per-member one, for the reason
+/// <see cref="AbilitiesPayload"/> gives: it is at most six entries, and a delta would require the
+/// client to already hold a correct roster. The viewer is included in it - they are in their own
+/// group, and dropping them would make the panel disagree with <c>group</c>.
+///
+/// The viewer's own copy of this is what makes it comparable per player: <c>Here</c> is answered
+/// from the viewer's room, so two members standing apart are correctly sent different frames.
+/// </remarks>
+public sealed record PartyPayload(IReadOnlyList<PartyMemberEntry> Members);
 
 /// <summary>Connection notices, link-dead warnings, forced logout.</summary>
 public sealed record SysPayload(string Message, string Kind);

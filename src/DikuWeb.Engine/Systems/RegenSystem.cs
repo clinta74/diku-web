@@ -36,7 +36,8 @@ public static class RegenSystem
             var regenApplied = RegenCalculator.ApplyRegen(
                 character.RestState,
                 character.Vitals,
-                vitalityModifier);
+                vitalityModifier,
+                character.Path);
 
             if (regenApplied)
             {

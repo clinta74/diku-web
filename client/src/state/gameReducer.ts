@@ -4,6 +4,7 @@ import type {
   ContentsPayload,
   GameEvent,
   MapPayload,
+  PartyMemberEntry,
   RoomPayload,
   TextSpan,
   VitalsPayload,
@@ -22,6 +23,11 @@ export interface GameState {
   map: MapPayload | null
   contents: ContentsPayload | null
   vitals: VitalsPayload | null
+  /**
+   * The group, viewer included. Empty when ungrouped — which is the same value the server sends on
+   * leaving a party, so there is no separate "clear it" action.
+   */
+  party: PartyMemberEntry[]
   abilities: AbilityEntry[]
   /**
    * When each cooling ability becomes usable again, as a wall-clock timestamp. Absent means ready.
@@ -42,6 +48,7 @@ export const initialGameState: GameState = {
   map: null,
   contents: null,
   vitals: null,
+  party: [],
   abilities: [],
   cooldownUntil: {},
   scrollback: [],
@@ -85,6 +92,9 @@ function applyEvent(state: GameState, event: GameEvent): GameState {
 
     case 'vitals':
       return { ...state, vitals: event.data }
+
+    case 'party':
+      return { ...state, party: event.data.members }
 
     case 'abilities': {
       // Replaces both the list and the cooldowns. The roster is the authoritative picture - it

@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { GameScreen } from './GameScreen'
-import type { ContentEntry, GameEvent } from '../net/protocol'
+import type { ContentEntry, GameEvent, PartyMemberEntry } from '../net/protocol'
 
 const sent: string[] = []
 
@@ -441,5 +441,72 @@ describe('holding on to the stream', () => {
     rerender(<GameScreen characterId="c2" characterName="Mira" onLeave={() => {}} />)
 
     expect(stream.opened).toBe(2)
+  })
+})
+
+describe('the group bar', () => {
+  function member(name: string, over: Partial<PartyMemberEntry> = {}): PartyMemberEntry {
+    return {
+      name,
+      level: 12,
+      path: 'Hallow',
+      health: 40,
+      healthMax: 80,
+      focus: 30,
+      focusMax: 60,
+      stamina: 90,
+      staminaMax: 100,
+      isLeader: false,
+      here: true,
+      linkDead: false,
+      ...over,
+    }
+  }
+
+  function group(...members: PartyMemberEntry[]) {
+    emit({ type: 'party', data: { members } })
+  }
+
+  it('is absent while ungrouped', () => {
+    play()
+    expect(screen.queryByRole('group', { name: 'Group' })).toBeNull()
+  })
+
+  /** The viewer's own numbers are the row above, in full. Repeating them costs a row. */
+  it('does not list the viewer', () => {
+    play()
+    group(member('Kael', { isLeader: true }), member('Mira'))
+
+    const bar = screen.getByRole('group', { name: 'Group' })
+    expect(bar.textContent).toContain('Mira')
+    expect(bar.textContent).not.toContain('Kael')
+  })
+
+  it('shows each of the three vitals with its numbers', () => {
+    play()
+    group(member('Kael'), member('Mira'))
+
+    expect(screen.getByLabelText('Mira HP 40 of 80')).toBeTruthy()
+    expect(screen.getByLabelText('Mira FO 30 of 60')).toBeTruthy()
+    expect(screen.getByLabelText('Mira ST 90 of 100')).toBeTruthy()
+  })
+
+  it('says why a member who is fine is not helping', () => {
+    play()
+    group(member('Kael'), member('Mira', { here: false }), member('Doryn', { linkDead: true }))
+
+    const bar = screen.getByRole('group', { name: 'Group' })
+    expect(bar.textContent).toContain('elsewhere')
+    expect(bar.textContent).toContain('link-dead')
+  })
+
+  /** An empty roster is how leaving a party arrives, so it has to clear the bar. */
+  it('disappears again when the group ends', () => {
+    play()
+    group(member('Kael'), member('Mira'))
+    expect(screen.getByRole('group', { name: 'Group' })).toBeTruthy()
+
+    group()
+    expect(screen.queryByRole('group', { name: 'Group' })).toBeNull()
   })
 })

@@ -76,6 +76,17 @@ public sealed class PlayerActor
     public int? LastSentAbilityLevel { get; set; }
 
     /// <summary>
+    /// The last group roster this player received, so an unchanged one is not resent.
+    /// </summary>
+    /// <remarks>
+    /// A list rather than the payload record, because a record's generated equality compares a
+    /// list by reference and would therefore report every frame as different - which is the whole
+    /// of what this exists to avoid. Compared element by element instead; the entries themselves
+    /// are records and do have value equality.
+    /// </remarks>
+    public IReadOnlyList<PartyMemberEntry>? LastSentParty { get; set; }
+
+    /// <summary>
     /// Who last sent this player a tell, so <c>reply</c> has something to answer (PLAN.md §5.3).
     /// Runtime only: a conversation does not outlive the session it happened in.
     /// </summary>

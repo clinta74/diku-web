@@ -100,6 +100,31 @@ export interface CooldownPayload {
   pulses: number
 }
 
+/** One member of the group, as the rest of the group sees them. */
+export interface PartyMemberEntry {
+  name: string
+  level: number
+  path: string
+  health: number
+  healthMax: number
+  focus: number
+  focusMax: number
+  stamina: number
+  staminaMax: number
+  isLeader: boolean
+  /** In the same room as the viewer. A split party is a normal state, not an error. */
+  here: boolean
+  linkDead: boolean
+}
+
+/**
+ * The whole group, sent to each of its members. An empty list means "not in a group" — which is
+ * what clears the panel when you leave one, rather than leaving the last roster on screen.
+ */
+export interface PartyPayload {
+  members: PartyMemberEntry[]
+}
+
 export interface SysPayload {
   message: string
   kind: 'info' | 'warning' | 'disconnect'
@@ -114,6 +139,7 @@ export type GameEvent =
   | { type: 'sys'; data: SysPayload }
   | { type: 'abilities'; data: AbilitiesPayload }
   | { type: 'cooldown'; data: CooldownPayload }
+  | { type: 'party'; data: PartyPayload }
 
 export const EVENT_TYPES = [
   'text',
@@ -124,4 +150,5 @@ export const EVENT_TYPES = [
   'sys',
   'abilities',
   'cooldown',
+  'party',
 ] as const

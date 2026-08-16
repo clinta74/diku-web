@@ -3,7 +3,13 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { api } from '../net/api'
 import { connectStream } from '../net/stream'
 import { gameReducer, initialGameState } from '../state/gameReducer'
-import type { ContentEntry, MapPayload, TextSpan, VitalsPayload } from '../net/protocol'
+import type {
+  ContentEntry,
+  MapPayload,
+  PartyMemberEntry,
+  TextSpan,
+  VitalsPayload,
+} from '../net/protocol'
 import { shouldRedirectToInput } from './typeAnywhere'
 import { useCoarsePointer, usePhoneLayout } from './pointer'
 import { exitPad, recentCommands, verbsFor } from './touchVerbs'
@@ -321,6 +327,7 @@ export function GameScreen({
       />
       <VitalsBar
         vitals={state.vitals}
+        party={state.party}
         characterName={characterName}
         connected={state.connected}
         onLeave={onLeave}
@@ -827,12 +834,14 @@ function InputBar({
 
 function VitalsBar({
   vitals,
+  party,
   characterName,
   connected,
   onLeave,
   onOpenBuilder,
 }: {
   vitals: VitalsPayload | null
+  party: PartyMemberEntry[]
   characterName: string
   connected: boolean
   onLeave: () => void
@@ -840,35 +849,84 @@ function VitalsBar({
 }) {
   return (
     <div className="vitals-bar">
-      {vitals ? (
-        <>
-          <Meter label="HP" value={vitals.health} max={vitals.healthMax} tone="health" />
-          <Meter label="FO" value={vitals.focus} max={vitals.focusMax} tone="focus" />
-          <Meter label="ST" value={vitals.stamina} max={vitals.staminaMax} tone="stamina" />
-          <span className="identity">
-            {characterName} · {vitals.path} · level {vitals.level} · {vitals.xp.toLocaleString()} xp
-            {' · '}
-            <span className="gold">{vitals.gold.toLocaleString()} gold</span>
-          </span>
-        </>
-      ) : (
-        <span className="dim">{characterName}</span>
-      )}
+      <div className="vitals-self">
+        {vitals ? (
+          <>
+            <Meter label="HP" value={vitals.health} max={vitals.healthMax} tone="health" />
+            <Meter label="FO" value={vitals.focus} max={vitals.focusMax} tone="focus" />
+            <Meter label="ST" value={vitals.stamina} max={vitals.staminaMax} tone="stamina" />
+            <span className="identity">
+              {characterName} · {vitals.path} · level {vitals.level} ·{' '}
+              {vitals.xp.toLocaleString()} xp
+              {' · '}
+              <span className="gold">{vitals.gold.toLocaleString()} gold</span>
+            </span>
+          </>
+        ) : (
+          <span className="dim">{characterName}</span>
+        )}
 
-      <span className={connected ? 'status good' : 'status bad'}>
-        {connected ? 'connected' : 'reconnecting…'}
-      </span>
-      {onOpenBuilder && (
-        // Called with no arguments on purpose. Passing the handler straight to onClick hands it
-        // React's MouseEvent as its first argument, which this signature now reads as a builder
-        // path — so the button navigated to an event object instead of /builder.
-        <button type="button" className="leave" onClick={() => onOpenBuilder()}>
-          builder
+        <span className={connected ? 'status good' : 'status bad'}>
+          {connected ? 'connected' : 'reconnecting…'}
+        </span>
+        {onOpenBuilder && (
+          // Called with no arguments on purpose. Passing the handler straight to onClick hands it
+          // React's MouseEvent as its first argument, which this signature now reads as a builder
+          // path — so the button navigated to an event object instead of /builder.
+          <button type="button" className="leave" onClick={() => onOpenBuilder()}>
+            builder
+          </button>
+        )}
+        <button type="button" className="leave" onClick={onLeave}>
+          leave
         </button>
-      )}
-      <button type="button" className="leave" onClick={onLeave}>
-        leave
-      </button>
+      </div>
+
+      <PartyBar party={party} characterName={characterName} />
+    </div>
+  )
+}
+
+/**
+ * The rest of the group, under your own meters.
+ *
+ * Only the others: your own numbers are the row above this one, in full, and repeating them here
+ * would cost a row of a bar that has to fit on a phone. Absent entirely when ungrouped, which is
+ * the same rule the ability bar follows — a row that is empty most of the time is a row the layout
+ * should not be reserving.
+ */
+function PartyBar({ party, characterName }: { party: PartyMemberEntry[]; characterName: string }) {
+  const others = party.filter((member) => member.name !== characterName)
+  if (others.length === 0) return null
+
+  return (
+    <div className="party-bar" role="group" aria-label="Group">
+      {others.map((member) => (
+        <span key={member.name} className="party-member" data-away={!member.here || undefined}>
+          <span className="party-name">
+            {member.name}
+            {member.isLeader && (
+              <span className="dim" title="Group leader">
+                {' ★'}
+              </span>
+            )}
+          </span>
+
+          <MiniMeter who={member.name} label="HP" value={member.health} max={member.healthMax} tone="health" />
+          <MiniMeter who={member.name} label="FO" value={member.focus} max={member.focusMax} tone="focus" />
+          <MiniMeter who={member.name} label="ST" value={member.stamina} max={member.staminaMax} tone="stamina" />
+
+          {/*
+            Why a healthy-looking bar is not being helped. Link-dead wins over "elsewhere" because
+            it is the one that explains someone standing right beside you doing nothing.
+          */}
+          {member.linkDead ? (
+            <span className="party-note">link-dead</span>
+          ) : (
+            !member.here && <span className="party-note">elsewhere</span>
+          )}
+        </span>
+      ))}
     </div>
   )
 }
@@ -896,6 +954,41 @@ function Meter({
       <span className="meter-value">
         {value}/{max}
       </span>
+    </span>
+  )
+}
+
+/**
+ * Somebody else's vital: six cells and no printed number.
+ *
+ * The numbers are in the tooltip and the accessible name rather than on screen, because what is
+ * read off another player's bar is *how bad is it* — and three of these times five members at the
+ * full width is a bar nothing else fits beside.
+ */
+function MiniMeter({
+  who,
+  label,
+  value,
+  max,
+  tone,
+}: {
+  who: string
+  label: string
+  value: number
+  max: number
+  tone: string
+}) {
+  const cells = 6
+  const filled = max > 0 ? Math.round((value / max) * cells) : 0
+
+  return (
+    <span
+      className={`mini-meter ${tone}`}
+      title={`${who} ${label} ${value}/${max}`}
+      aria-label={`${who} ${label} ${value} of ${max}`}
+    >
+      {'█'.repeat(filled)}
+      <span className="dim">{'░'.repeat(Math.max(0, cells - filled))}</span>
     </span>
   )
 }

@@ -255,6 +255,92 @@ public sealed class PlayerView(RoomLayoutService layout)
         actor.Send(new OutboundEvent(EventTypes.Vitals, payload));
     }
 
+    /// <summary>Sends the group roster whether or not it has changed.</summary>
+    public static void SendParty(WorldState world, PlayerActor actor)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(actor);
+
+        var members = PartyOf(world, actor);
+        actor.LastSentParty = members;
+        actor.Send(new OutboundEvent(EventTypes.Party, new PartyPayload(members)));
+    }
+
+    /// <summary>
+    /// Sends the group roster only when it differs from the last one this player received.
+    /// </summary>
+    /// <remarks>
+    /// The same trade <see cref="SendVitalsIfChanged"/> makes, and for a stronger reason: this
+    /// frame moves whenever any of six characters takes a hit, so the events that would have to
+    /// push it are every one that touches a vital, times everyone who can see it. Comparing here
+    /// means joining, leaving, being kicked, walking out of the room, going link-dead and simply
+    /// getting hurt are all covered without any of them knowing the panel exists.
+    ///
+    /// An ungrouped player compares an empty list against an empty list and sends nothing, which is
+    /// the common case and costs one allocation-free length check.
+    /// </remarks>
+    public static void SendPartyIfChanged(WorldState world, PlayerActor actor)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(actor);
+
+        var members = PartyOf(world, actor);
+
+        // Never having been sent one is the same picture as having been sent an empty one: there is
+        // no group either way, and nothing on screen to correct. Treating null as "unknown" instead
+        // would send every solo player a frame saying nothing, once, on their first pulse.
+        if ((actor.LastSentParty ?? []).SequenceEqual(members))
+        {
+            return;
+        }
+
+        actor.LastSentParty = members;
+        actor.Send(new OutboundEvent(EventTypes.Party, new PartyPayload(members)));
+    }
+
+    /// <summary>
+    /// This player's group as they see it, or an empty list when they are adventuring alone.
+    /// </summary>
+    /// <remarks>
+    /// A member with no actor - removed from the world between the roster being read and this
+    /// running - is skipped rather than shown as a blank row. <see cref="PartyRegistry.Forget"/>
+    /// takes them out on the way through the one door out of the world, so this is a window of one
+    /// pulse rather than a state that persists.
+    /// </remarks>
+    private static IReadOnlyList<PartyMemberEntry> PartyOf(WorldState world, PlayerActor actor)
+    {
+        if (world.Parties.Of(actor.CharacterId) is not { } party)
+        {
+            return [];
+        }
+
+        var entries = new List<PartyMemberEntry>(party.Count);
+
+        foreach (var memberId in party.Members)
+        {
+            if (world.FindByCharacter(memberId) is not { } member)
+            {
+                continue;
+            }
+
+            var c = member.Character;
+            var v = c.Vitals;
+
+            entries.Add(new PartyMemberEntry(
+                member.Name,
+                c.Level,
+                c.Path.ToString(),
+                v.Health, v.HealthMax,
+                v.Focus, v.FocusMax,
+                v.Stamina, v.StaminaMax,
+                party.IsLeader(memberId),
+                member.RoomKey == actor.RoomKey,
+                member.IsLinkDead));
+        }
+
+        return entries;
+    }
+
     private static VitalsPayload VitalsOf(PlayerActor actor)
     {
         var c = actor.Character;
