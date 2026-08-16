@@ -31,10 +31,21 @@ internal static class AdminWorldCommands
             "teleport", 4, "teleport <name> - pull a player to your room (admin)",
             Teleport, Requires: AccountRole.Admin));
 
-        // "stat": the player-facing `stats` screen demands five characters, so four is free.
+        // `inspect`, not `stat`. It was `stat`, held apart from the player-facing `stats` by
+        // demanding one character fewer — which is backwards: the admin verb owned the shorter
+        // prefix, so a player typing the obvious abbreviation of their own combat sheet reached
+        // this and was told the verb does not exist. `RequireAdmin` answers as though the verb
+        // were unknown on purpose, so nothing on screen could have explained it.
+        //
+        // The new name is also the better one. This inspects an entity — any character, mob or
+        // item — where `stats` reports one screen about yourself, and only the level and the gold
+        // were ever the same number.
+        //
+        // "ins" is safe: `inventory` is registered first and takes every prefix up to "inve", and
+        // "inventory".StartsWith("ins") is false.
         commands.Add(new CommandDefinition(
-            "stat", 4, "stat [name] - inspect a character, mob, or item (admin)",
-            Stat, Requires: AccountRole.Admin));
+            "inspect", 3, "inspect [name] - inspect a character, mob, or item (admin)",
+            Inspect, Requires: AccountRole.Admin));
 
         // `kickplayer`, not `kick`, because Kick is a Warden skill and the command table is
         // checked before a player's abilities are — an admin verb named `kick` would take the
@@ -336,7 +347,7 @@ internal static class AdminWorldCommands
     /// description does not say what its resolved damage is, which zone's multipliers produced it,
     /// or which spawner is responsible for it still being there. This does.
     /// </remarks>
-    private static void Stat(CommandContext ctx)
+    private static void Inspect(CommandContext ctx)
     {
         if (!RequireAdmin(ctx))
         {
@@ -355,7 +366,7 @@ internal static class AdminWorldCommands
         var room = ctx.Actor.RoomKey;
 
         // Room first, then the world. Standing in front of something is the usual reason to be
-        // asking about it, and a global name search would make "stat rat" ambiguous everywhere.
+        // asking about it, and a global name search would make "inspect rat" ambiguous everywhere.
         if (NameMatch.Best(ctx.World.OccupantsOf(room), name, p => p.Name, _ => null) is { } here)
         {
             StatCharacter(ctx, here);

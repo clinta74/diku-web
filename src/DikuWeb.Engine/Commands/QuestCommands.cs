@@ -28,8 +28,13 @@ public static class QuestCommands
         // no reachable input at all. It was dead from the day it was written.
         //
         // What keeps the other prefix pairs safe is that the longer verb demands more characters
-        // than the shorter one has: `whois` needs 5, so "who" can never reach it, and `stats`
-        // needs 5, so "stat" cannot. "quests" asking for only 3 is what broke the symmetry.
+        // than the shorter one has: `whois` needs 5, so "who" can never reach it. "quests" asking
+        // for only 3 is what broke the symmetry.
+        //
+        // `stats` was the other example here, held off "stat" by demanding five. That was the
+        // wrong fix and it has been undone: the four-character form belonged to the player's own
+        // screen, and reserving it for an admin verb only meant `stat` answered "not something you
+        // can do". Guard a pair by naming them apart, not by making the common one harder to type.
         commands.Add(new CommandDefinition(
             "quest", 3, "quest [name] - your journal, or one quest in detail", QuestDetail));
 

@@ -17,9 +17,16 @@ namespace DikuWeb.Engine.Tests.Commands;
 /// was the wrong output — the help text advertised a command that could not be run.
 ///
 /// The other prefix pairs survive by accident of their numbers rather than by design:
-/// <c>whois</c> demands five characters so "who" cannot reach it, and <c>stats</c> demands five so
-/// "stat" cannot. That is a property worth pinning rather than rediscovering, because the next
-/// verb somebody adds beside an existing one will land on the same rake.
+/// <c>whois</c> demands five characters so "who" cannot reach it. That is a property worth pinning
+/// rather than rediscovering, because the next verb somebody adds beside an existing one will land
+/// on the same rake.
+///
+/// <c>stats</c> was guarded the same way and it was the wrong guard. It demanded five characters so
+/// that "stat" would fall through to an admin verb of that name — which meant a player typing the
+/// obvious abbreviation of their own combat sheet was told the verb did not exist. Being reachable
+/// is not enough on its own: a prefix has to reach the command the person typing it meant, and
+/// there is no arrangement of lengths that makes a shared name do that. The admin verb is
+/// <c>inspect</c> now, which is also what it does.
 /// </remarks>
 public sealed class VerbReachabilityTests
 {
@@ -72,8 +79,10 @@ public sealed class VerbReachabilityTests
     [InlineData("que", "quest")]
     [InlineData("who", "who")]
     [InlineData("whois", "whois")]
-    [InlineData("stat", "stat")]
+    [InlineData("stat", "stats")]
     [InlineData("stats", "stats")]
+    [InlineData("ins", "inspect")]
+    [InlineData("inv", "inventory")]
     public void The_prefix_pairs_resolve_the_way_a_player_would_expect(string typed, string expected)
     {
         var resolved = new WorldHarness().Commands.Find(typed);

@@ -706,7 +706,7 @@ and has now been played long enough to want one more turn of the handle.
 Phase 6 is in progress; PLAN.md §8 keeps the open items. These are the ones that shipped, moved
 here for the same reason the phases above were.
 
-- [x] **Admin commands the loop can answer itself: `teleport`, `stat`, `kick`, `shutdown`.**
+- [x] **Admin commands the loop can answer itself: `teleport`, `inspect`, `kick`, `shutdown`.**
       In `AdminWorldCommands`, deliberately apart from `AdminCommands`: those touch the *account*
       store, which §2.1 forbids the loop, so each hands off to a queue and is answered later.
       These are about the world, which the loop owns outright. Mixing the two would make it
@@ -715,9 +715,12 @@ here for the same reason the phases above were.
         fetching is what you want when answering *"I am stuck"*. It ignores `noRecall`, roots, and
         combat on purpose: being held by content is the usual reason to need it, and a tool the
         content could veto is no use in the case it exists for.
-      - `stat` answers what the room description cannot — which spawner is responsible for a mob
-        still being here, which zone's multipliers produced its numbers, what is on its hate list.
-        Both of the questions the last round of playtesting raised.
+      - `inspect` answers what the room description cannot — which spawner is responsible for a
+        mob still being here, which zone's multipliers produced its numbers, what is on its hate
+        list. Both of the questions the last round of playtesting raised.
+        *Shipped as `stat`, renamed later:* four characters put it in front of the player-facing
+        `stats`, so `stat` reached an admin verb and a player asking for their own combat sheet
+        was told the verb does not exist. `inspect` is the better name for it anyway.
       - `kick` hands the removal back to the loop rather than doing it in the handler: leaving the
         world saves, closes the channel, and redraws the room, and the second copy of that list is
         the one that goes stale. Says something in the room, too — a character vanishing with no

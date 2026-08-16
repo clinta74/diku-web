@@ -98,8 +98,12 @@ public sealed class CommandRegistry
         _commands.Add(new CommandDefinition(
             "help", 1, "help - this list", Help));
 
+        // Four, not five. The fifth character was reserved for the admin `stat`, which is now
+        // `inspect` — so `stat` reached an invisible admin verb and a player asking for their own
+        // sheet by its obvious abbreviation was told the verb did not exist (RequireAdmin answers
+        // as though it were unknown, deliberately, so admin verbs cannot be found by fishing).
         _commands.Add(new CommandDefinition(
-            "stats", 5, "stats - show your damage, armor, and combat stats", Stats));
+            "stats", 4, "stats - show your damage, armor, and combat stats", Stats));
 
         // Full word required: quitting by fumbling a key would be a bad surprise.
         _commands.Add(new CommandDefinition(

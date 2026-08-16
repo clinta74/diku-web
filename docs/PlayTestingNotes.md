@@ -2,6 +2,27 @@
 
 Add anything noticed while playing here. Cleared as items are done.
 
+- **`stat` and `stats`: done, and they never overlapped — they collided.** `stats` is a player's
+  combat sheet about themselves, all of it derived through the same `EquipmentResolver` combat
+  uses: damage range split into dice and Might bonus, swing speed, attack rating, the number an
+  attacker has to beat, armour mitigation. `stat` was an **admin inspector** for any character, mob
+  or item, printing raw stored state. Only the level and the gold were ever the same number.
+
+  The problem was the names. `stat` demanded four characters and `stats` five, so **the admin verb
+  owned the shorter prefix** — and `RequireAdmin` answers as though the verb were unknown, on
+  purpose, so nobody can find admin verbs by fishing. A player typing the obvious abbreviation of
+  their own screen got *"'stat' is not something you can do. Try 'help'."*
+
+  Not merged: one verb would either change its output with your role, or accept a target for
+  everyone and refuse players — the first is invisible, the second is inexplicable. **The admin one
+  is `inspect` now** (three characters, `ins`), which is also what it does, and `stats` drops to
+  four so `stat` reaches the sheet a player meant. `ins` is safe — `inventory` is registered first
+  and holds every prefix up to `inve`.
+
+  `VerbReachabilityTests` used to *assert* the old arrangement as correct. Being reachable is not
+  enough on its own: a prefix has to reach the command the person typing it meant, and no
+  arrangement of lengths makes a shared name do that.
+
 - Should track changes in a changelog or use the github release functionality?
 
 - ability cooldowns: **done**. Retuned to the 2s combat beat (§4.5), and the pending-cooldown

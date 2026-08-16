@@ -2081,7 +2081,7 @@ history:
 
 Partly done ahead of schedule — the deployment pipeline landed alongside Phase 5.
 
-- [x] **Admin commands the loop can answer itself: `teleport`, `stat`, `kick`, `shutdown`.** In
+- [x] **Admin commands the loop can answer itself: `teleport`, `inspect`, `kick`, `shutdown`.** In
       `AdminWorldCommands`, deliberately apart from `AdminCommands` — those touch the account
       store, which §2.1 forbids the loop, so they hand off to a queue and are answered later.
       `shutdown <minutes|now|cancel>` warns at nine milestones; it came from playtesting, because

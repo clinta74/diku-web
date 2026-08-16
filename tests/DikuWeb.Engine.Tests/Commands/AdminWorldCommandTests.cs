@@ -34,7 +34,7 @@ public sealed class AdminWorldCommandTests
 
     [Theory]
     [InlineData("teleport Kael")]
-    [InlineData("stat Kael")]
+    [InlineData("inspect Kael")]
     [InlineData("kickplayer Kael")]
     [InlineData("shutdown 5")]
     [InlineData("set Kael gold 500")]
@@ -119,22 +119,22 @@ public sealed class AdminWorldCommandTests
     }
 
     // -----------------------------------------------------------------------
-    // stat
+    // inspect
     // -----------------------------------------------------------------------
 
     [Fact]
-    public void Stat_with_no_argument_reports_the_admin()
+    public void Inspect_with_no_argument_reports_the_admin()
     {
         var harness = Loaded();
         var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
 
-        harness.Execute(admin, "stat");
+        harness.Execute(admin, "inspect");
 
         Assert.Contains("Root", harness.DrainText(admin), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Stat_reports_what_the_room_description_cannot()
+    public void Inspect_reports_what_the_room_description_cannot()
     {
         // The point of the verb: which spawner is responsible for this mob still being here, and
         // which zone it belongs to. Both were questions playtesting raised and nothing answered.
@@ -142,7 +142,7 @@ public sealed class AdminWorldCommandTests
         var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
         harness.AddMob("rat", West, name: "a rat");
 
-        harness.Execute(admin, "stat rat");
+        harness.Execute(admin, "inspect rat");
 
         var text = harness.DrainText(admin);
 
@@ -152,7 +152,7 @@ public sealed class AdminWorldCommandTests
     }
 
     [Fact]
-    public void Stat_finds_a_player_standing_elsewhere()
+    public void Inspect_finds_a_player_standing_elsewhere()
     {
         // The room first, because standing in front of something is the usual reason to ask -
         // but a name nothing here answers to should still reach the person it names.
@@ -160,20 +160,94 @@ public sealed class AdminWorldCommandTests
         var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
         harness.AddPlayer("Kael", East);
 
-        harness.Execute(admin, "stat Kael");
+        harness.Execute(admin, "inspect Kael");
 
         Assert.Contains("Kael", harness.DrainText(admin), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Stat_says_so_when_nothing_answers()
+    public void Inspect_says_so_when_nothing_answers()
     {
         var harness = Loaded();
         var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
 
-        harness.Execute(admin, "stat basilisk");
+        harness.Execute(admin, "inspect basilisk");
 
         Assert.Contains("answers to", harness.DrainText(admin), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// `stat` reaches the player's own combat sheet, not an admin verb they cannot see.
+    /// </summary>
+    /// <remarks>
+    /// This is why the verb was renamed. `stat` used to match the admin inspector, which demanded
+    /// four characters where `stats` demanded five — so the admin verb owned the shorter prefix,
+    /// and a player typing the obvious abbreviation of their own screen was answered
+    /// <em>"'stat' is not something you can do"</em>. That wording is deliberate (admin verbs must
+    /// not be discoverable by fishing), which is exactly why nothing on screen could explain it.
+    /// </remarks>
+    [Theory]
+    [InlineData("stat")]
+    [InlineData("stats")]
+    public void A_player_asking_for_stats_gets_their_own_sheet(string verb)
+    {
+        var harness = Loaded();
+        var player = harness.AddPlayer("Bram", West);
+        harness.Drain(player);
+
+        harness.Execute(player, verb);
+
+        var text = harness.DrainText(player);
+        Assert.Contains("Combat Stats", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("not something you can do", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>An admin gets the same player sheet from `stat`. It is their sheet too.</summary>
+    [Fact]
+    public void An_admin_typing_stat_gets_the_player_sheet_not_the_inspector()
+    {
+        var harness = Loaded();
+        var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
+        harness.Drain(admin);
+
+        harness.Execute(admin, "stat");
+
+        Assert.Contains("Combat Stats", harness.DrainText(admin), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// `ins` reaches the inspector rather than the inventory, which is the one prefix that could
+    /// have gone either way.
+    /// </summary>
+    [Fact]
+    public void The_inspector_answers_to_its_shortest_form()
+    {
+        var harness = Loaded();
+        var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
+        harness.Drain(admin);
+
+        harness.Execute(admin, "ins");
+
+        Assert.Contains("Root", harness.DrainText(admin), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// And everything shorter still reaches the inventory, which was registered first and has
+    /// answered to a bare "i" since Phase 3.
+    /// </summary>
+    [Theory]
+    [InlineData("i")]
+    [InlineData("in")]
+    [InlineData("inv")]
+    public void Nothing_shorter_was_taken_from_the_inventory(string verb)
+    {
+        var harness = Loaded();
+        var admin = harness.AddPlayer("Root", West, role: AccountRole.Admin);
+        harness.Drain(admin);
+
+        harness.Execute(admin, verb);
+
+        Assert.Contains("carrying", harness.DrainText(admin), StringComparison.OrdinalIgnoreCase);
     }
 
     // -----------------------------------------------------------------------
