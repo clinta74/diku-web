@@ -1044,6 +1044,7 @@ public static class BuilderEndpoints
             request.IsQuestItem ?? false,
             request.IsLore ?? false,
             request.IsNoDrop ?? false,
+            request.IsLightSource ?? false,
             request.Paths ?? []);
 
         return await SaveAsync(editor, change, http, ct, () => queries.ItemTemplateAsync(key, ct));
@@ -1081,6 +1082,7 @@ public static class BuilderEndpoints
             request.IsQuestItem ?? existing.IsQuestItem,
             request.IsLore ?? existing.IsLore,
             request.IsNoDrop ?? existing.IsNoDrop,
+            request.IsLightSource ?? existing.IsLightSource,
             request.Paths ?? [.. existing.Paths]);
 
         return await SaveAsync(editor, change, http, ct, () => queries.ItemTemplateAsync(key, ct));

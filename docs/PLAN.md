@@ -560,6 +560,15 @@ Range 1–20, modifier = `(value − 10) / 2` rounded down.
 Three vitals: **Health** (damage pool, zero = death), **Focus** (powers abilities — the mana
 analogue), **Stamina** (movement and heavy attacks).
 
+**Recovery is a percentage of each vital's own maximum per minute** — 15% asleep, 8% resting, 2%
+standing, plus a point per Vitality modifier — **except that Adept and Hallow get focus back twice
+as fast**. All three vitals shared one rate at first, which meant the two Paths that spend focus to
+do anything at all got it back at the rate of the two that keep it as a small reserve behind a
+stamina bar: an Adept's empty focus took the better part of an hour on their feet. Only focus moves;
+health and stamina are the same number for everyone, so this is a caster's resource being a caster's
+resource rather than a blanket buff. `RegenCalculator` takes the Path rather than defaulting it,
+because getting it wrong is silent.
+
 Four Paths chosen at creation: **Warden** (armored frontline), **Adept** (focus-caster),
 **Shade** (stealth/burst), **Hallow** (support/control). A Path grants an ability list and
 shapes stat growth; it does not hard-gate equipment.
@@ -1045,7 +1054,7 @@ The starting registry:
 | `respawn` | false | death, `bind` | A valid bind point (§4.12) | Phase 4 |
 | `noMob` | false | mob AI | Wandering mobs will not path in | Phase 3 |
 | `noRecall` | false | `Travel.Refuse` | `recall` and any future teleport out are refused | Phase 5.3 |
-| `dark` | false | room rendering | Description withheld without a light source | Phase 5 |
+| `dark` | false | room rendering | Nothing is drawn without a light source (§4.18) | Phase 5 |
 | `indoors` | false | presentation | Shelters from weather when weather exists | later |
 | `unfinished` | false | builder | The build to-do list (§7.6) | Phase 2 |
 
@@ -1391,6 +1400,50 @@ Three parts, and each is load-bearing:
 Composes with `assist` (§4.16): follow the tank, assist the tank, and that is the whole of playing
 support without typing during a fight.
 
+### 4.18 Light — the `dark` flag, and what answers it
+
+`dark` (§4.10) was registered in Phase 5 and read by nothing until Phase 6. Four whole zones in
+`content/` were authored dark — the Owing, Thessivar, Keshvaun, and the Regard — and rendered
+exactly like anywhere else.
+
+**A light source is a column on the item template, not a slot and not a base stat.** `isLightSource`
+sits beside `isLore` and `isNoDrop` for the reason `attackDelayPulses` does: the builder coerces
+every base stat to a number, and this is a rule rather than a quantity. Any equipment slot counts,
+so a helm with a lamp on it and a pendant that glows both work and no hand has to be reserved for
+light — though the two lights `content/` actually stocks do cost something: the pitch torch takes
+the off hand, and the hooded pit lamp takes the trinket slot and costs eight times as much.
+
+Four rules, and the first is the one the rest follow from:
+
+- **Light belongs to the room, not to the viewer.** Anyone standing in a lit room can see, so one
+  lantern lights it for a party of six. That makes carrying one a thing a group organises rather
+  than a tax five people each pay, and it is why the check takes a room rather than a character.
+- **Worn or wielded only.** A lamp in the pack is a lamp you have not taken out. This is the whole
+  cost of the feature: a light occupies a slot that would otherwise carry armour.
+- **Mobs carry nothing.** A mob's inventory is loot, not equipment, so a room holding only mobs is
+  dark. A lit room whose light was standing in the corner waiting to be killed would be a light
+  source the player cannot take with them.
+- **Read from the template, live.** A builder who lights a lamp lights the copies already out in
+  the world, not only ones minted afterwards — the argument `ItemRules` makes for the three
+  restrictions. Failing open here means failing *dark*, which is the recoverable direction.
+
+What the dark withholds: the room's **title as well as its description** (the phone header draws
+from the title, so leaving it in would have the game announcing your location while telling you it
+is pitch black), every occupant, mob and item, and everything drawn on the map — which keeps its
+dimensions so the panel does not jump.
+
+**Exits survive, and that is the one deliberate concession.** Walking is the only way out of an
+unlit room, and on a phone the exit pad is drawn from that list and is the only movement control
+there is. A dark room you can leave only by having memorised the map is a trap rather than a reason
+to buy a torch.
+
+**Targeting is untouched.** `attack rat` still finds the rat, because the name search reads the
+world rather than the frame. Fighting blind is the classic behaviour and is left as it is; what
+changes is that you cannot tell what is in the room before you swing at it.
+
+**Fuel is not modelled.** A torch does not burn down. If it ever should, it is a charge on the
+instance and an expiry sweep, not a change to any of the above.
+
 ---
 
 ## 5. Game client layout
@@ -1434,7 +1487,17 @@ Five regions. The map is a monospace `<pre>` grid; everything else is ordinary D
 - **Scrollback** — the authoritative game text. Everything that happens appears here, even when
   it's also reflected on the map. A player who ignores the map misses nothing.
 - **Input** — command line with history (↑/↓), tab-completion of visible keywords, and aliases.
-- **Vitals** — bars for Health, Focus, Stamina plus Path, level, and XP.
+- **Vitals** — bars for Health, Focus, Stamina plus Path, level, and XP. **The group sits under
+  them**, one compact row per other member — three six-cell bars, who leads, and why somebody
+  healthy-looking is not helping (*elsewhere*, *link-dead*). Absent entirely when ungrouped.
+
+  Its `party` frame is **compared rather than pushed**, the trade `vitals` already makes and for a
+  stronger reason: what moves it is every event that touches any member's vitals, times everyone who
+  can see them. Comparing means joining, leaving, being kicked, walking out of the room, dropping
+  link and simply taking a hit are all covered without any of them knowing the panel exists. An
+  empty roster is how leaving a party arrives, so there is no separate "clear it". `Here` is
+  answered from the viewer's own room, which is why the frame is built per player rather than per
+  party — two members standing apart are correctly sent different pictures.
 
 Responsive: below ~900 px the map and room panels stack above the scrollback, and the map
 collapses to a toggle so the text still dominates on mobile.

@@ -5,6 +5,8 @@ using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Protocol;
+using DikuWeb.Engine.Spawning;
+using DikuWeb.Engine.Systems;
 using DikuWeb.Engine.World;
 
 namespace DikuWeb.Engine.Presentation;
@@ -13,8 +15,30 @@ namespace DikuWeb.Engine.Presentation;
 /// Turns world state into the events a client renders. Sits between the command handlers and
 /// <see cref="RoomLayoutService"/> so handlers never touch coordinates themselves.
 /// </summary>
-public sealed class PlayerView(RoomLayoutService layout)
+public sealed class PlayerView(RoomLayoutService layout, ItemTemplateCache? items = null)
 {
+    /// <summary>
+    /// What a room says instead of its name when nobody in it has a light.
+    /// </summary>
+    /// <remarks>
+    /// The title goes too, not only the description. Knowing you are in Khaldra's Hearth is knowing
+    /// where you are, and a player who cannot see the room cannot read the sign over the door —
+    /// the phone header draws from this same field, so leaving the real title in would have the
+    /// game announcing your location while telling you it is pitch black.
+    /// </remarks>
+    public const string DarkTitle = "Darkness";
+
+    /// <summary>
+    /// Said in place of a description, and it names the answer.
+    /// </summary>
+    /// <remarks>
+    /// "You cannot see a thing" alone reads as a broken room to somebody who has never met the
+    /// flag — four whole zones are dark, and the first of them is at level 20, by which point a
+    /// player has walked through two hundred rooms that all worked. Naming the light is the
+    /// difference between a puzzle and a bug report.
+    /// </remarks>
+    public const string DarkProse = "It is pitch black. You cannot see a thing without a light.";
+
     private readonly RoomLayoutService _layout =
         layout ?? throw new ArgumentNullException(nameof(layout));
 
@@ -35,9 +59,18 @@ public sealed class PlayerView(RoomLayoutService layout)
             return;
         }
 
-        var occupants = world.OccupantsOf(actor.RoomKey);
-        var mobs = world.MobsIn(actor.RoomKey);
-        var items = world.ItemsIn(actor.RoomKey);
+        // Asked once for the room rather than once per thing withheld, so the four frames below
+        // cannot disagree about whether the lamp is lit.
+        var dark = RoomLight.IsDark(world, items, actor.RoomKey);
+
+        IReadOnlyList<PlayerActor> occupants = dark ? [] : world.OccupantsOf(actor.RoomKey);
+        IReadOnlyList<Mob> mobs = dark ? [] : world.MobsIn(actor.RoomKey);
+        IReadOnlyList<ItemInstance> roomItems = dark ? [] : world.ItemsIn(actor.RoomKey);
+
+        // Exits survive the dark, and this is the one deliberate concession in it. Walking is the
+        // only way out of an unlit room, and on a phone the exit pad is drawn from this list and is
+        // the only movement control there is — a dark room you can leave only by having memorised
+        // the map is a trap rather than a reason to buy a lantern.
         var exits = room.Exits
             .OrderBy(e => DirectionExtensions.All.ToList().IndexOf(e.Direction))
             .Select(e => e.Direction.ToLowerName())
@@ -45,20 +78,42 @@ public sealed class PlayerView(RoomLayoutService layout)
 
         actor.Send(new OutboundEvent(
             EventTypes.Room,
-            new RoomPayload(room.Key.ToString(), room.Title, room.Description, exits)));
+            new RoomPayload(
+                room.Key.ToString(),
+                dark ? DarkTitle : room.Title,
+                dark ? string.Empty : room.Description,
+                exits)));
 
-        var legend = room.HasGrid ? room.Legend : new Dictionary<string, string>(StringComparer.Ordinal) { ["."] = "floor" };
+        var legend = LegendFor(room, dark);
+        var map = _layout.BuildMap(room, occupants, mobs, roomItems, actor);
 
-        actor.Send(new OutboundEvent(
-            EventTypes.Map,
-            _layout.BuildMap(room, occupants, mobs, items, actor)));
+        actor.Send(new OutboundEvent(EventTypes.Map, dark ? Unlit(map) : map));
 
         actor.Send(new OutboundEvent(
             EventTypes.Contents,
-            BuildContents(occupants, mobs, items, actor, legend)));
+            BuildContents(occupants, mobs, roomItems, actor, legend)));
 
-        SendProse(actor, room, occupants, mobs, items, exits, verbose);
+        SendProse(actor, room, occupants, mobs, roomItems, exits, verbose, dark);
     }
+
+    /// <summary>
+    /// The room's grid with nothing drawn on it.
+    /// </summary>
+    /// <remarks>
+    /// The same width and height rather than an empty payload, so the map panel keeps its shape and
+    /// the layout does not jump every time somebody walks into an unlit room. Built from the real
+    /// map so the dimensions are whatever the room's actually are.
+    /// </remarks>
+    private static MapPayload Unlit(MapPayload map) =>
+        new(map.W, map.H, [.. map.Terrain.Select(row => new string(' ', row.Length))], []);
+
+    /// <summary>What the blank map's characters mean. Nothing, in the dark.</summary>
+    private static IReadOnlyDictionary<string, string> LegendFor(Room room, bool dark) =>
+        dark
+            ? new Dictionary<string, string>(StringComparer.Ordinal)
+            : room.HasGrid
+                ? room.Legend
+                : new Dictionary<string, string>(StringComparer.Ordinal) { ["."] = "floor" };
 
     /// <summary>Refreshes the map and contents for everyone standing in a room.</summary>
     public void RefreshRoom(WorldState world, RoomKey roomKey)
@@ -71,16 +126,27 @@ public sealed class PlayerView(RoomLayoutService layout)
             return;
         }
 
-        var occupants = world.OccupantsOf(roomKey);
-        var mobs = world.MobsIn(roomKey);
-        var items = world.ItemsIn(roomKey);
-        var contents = BuildContentsFor(occupants, mobs, items);
-        var legend = room.HasGrid ? room.Legend : new Dictionary<string, string>(StringComparer.Ordinal) { ["."] = "floor" };
+        // The people in the room are still the ones to send to, whether or not any of them can see
+        // one another - so this is read before the dark empties the lists.
+        var viewers = world.OccupantsOf(roomKey);
 
-        foreach (var viewer in occupants)
+        var dark = RoomLight.IsDark(world, items, roomKey);
+
+        IReadOnlyList<PlayerActor> occupants = dark ? [] : viewers;
+        IReadOnlyList<Mob> mobs = dark ? [] : world.MobsIn(roomKey);
+        IReadOnlyList<ItemInstance> roomItems = dark ? [] : world.ItemsIn(roomKey);
+
+        var contents = BuildContentsFor(occupants, mobs, roomItems);
+        var legend = LegendFor(room, dark);
+
+        foreach (var viewer in viewers)
         {
-            viewer.Send(new OutboundEvent(EventTypes.Map, _layout.BuildMap(room, occupants, mobs, items, viewer)));
-            viewer.Send(new OutboundEvent(EventTypes.Contents, BuildContents(occupants, mobs, items, viewer, legend, contents)));
+            var map = _layout.BuildMap(room, occupants, mobs, roomItems, viewer);
+
+            viewer.Send(new OutboundEvent(EventTypes.Map, dark ? Unlit(map) : map));
+            viewer.Send(new OutboundEvent(
+                EventTypes.Contents,
+                BuildContents(occupants, mobs, roomItems, viewer, legend, contents)));
         }
     }
 
@@ -361,11 +427,18 @@ public sealed class PlayerView(RoomLayoutService layout)
         IReadOnlyList<Mob> mobs,
         IReadOnlyList<ItemInstance> items,
         IReadOnlyList<string> exits,
-        bool verbose)
+        bool verbose,
+        bool dark)
     {
-        var spans = new List<TextSpan> { new(room.Title, "room-title") };
+        var spans = new List<TextSpan> { new(dark ? DarkTitle : room.Title, "room-title") };
 
-        if (verbose && !string.IsNullOrWhiteSpace(room.Description))
+        // Said whether or not the look was verbose. Brief mode suppresses a description you have
+        // read before; this is not a description, it is the reason there isn't one.
+        if (dark)
+        {
+            spans.Add(new TextSpan("\n" + DarkProse, "dark"));
+        }
+        else if (verbose && !string.IsNullOrWhiteSpace(room.Description))
         {
             spans.Add(new TextSpan("\n" + room.Description));
         }

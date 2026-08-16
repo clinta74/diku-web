@@ -34,6 +34,19 @@ public static class ItemRules
         templateKey is not null && templates?.Get(templateKey)?.IsNoDrop == true;
 
     /// <summary>
+    /// Whether wearing or wielding this lights the room (<see cref="Systems.RoomLight"/>).
+    /// </summary>
+    /// <remarks>
+    /// Not a restriction, but read from the template for the same reason they are: a builder who
+    /// lights a lamp means the lamps already out in the world, not only ones minted afterwards.
+    /// Failing open here means failing <em>dark</em>, which is the safe direction — a room the
+    /// player cannot read is recoverable by walking out of it, and the alternative would be a cache
+    /// miss lighting a zone that is supposed to be unlit.
+    /// </remarks>
+    public static bool IsLightSource(ItemTemplateCache? templates, string? templateKey) =>
+        templateKey is not null && templates?.Get(templateKey)?.IsLightSource == true;
+
+    /// <summary>
     /// Why this Path may not equip this item, or null when they may.
     /// </summary>
     public static string? RefusePath(

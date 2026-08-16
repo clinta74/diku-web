@@ -1201,6 +1201,7 @@ public sealed class WorldMutationApplier(
             IsQuestItem = change.IsQuestItem,
             IsLore = change.IsLore,
             IsNoDrop = change.IsNoDrop,
+            IsLightSource = change.IsLightSource,
             Paths = [.. change.Paths],
         });
 

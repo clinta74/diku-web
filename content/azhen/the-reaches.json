@@ -1,5 +1,5 @@
 {
-  "formatVersion": 8,
+  "formatVersion": 9,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -127,6 +127,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -145,6 +146,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -163,6 +165,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -181,6 +184,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -199,6 +203,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -218,6 +223,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -236,6 +242,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -255,6 +262,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -274,6 +282,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -292,6 +301,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -308,6 +318,7 @@
       "isQuestItem": true,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -324,6 +335,7 @@
       "isQuestItem": true,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -340,6 +352,7 @@
       "isQuestItem": true,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -359,6 +372,7 @@
       "isQuestItem": true,
       "isLore": true,
       "isNoDrop": true,
+      "isLightSource": false,
       "paths": [
         "Warden"
       ]
@@ -380,6 +394,7 @@
       "isQuestItem": true,
       "isLore": true,
       "isNoDrop": true,
+      "isLightSource": false,
       "paths": [
         "Hallow"
       ]
@@ -401,6 +416,7 @@
       "isQuestItem": true,
       "isLore": true,
       "isNoDrop": true,
+      "isLightSource": false,
       "paths": [
         "Adept"
       ]
@@ -422,6 +438,7 @@
       "isQuestItem": true,
       "isLore": true,
       "isNoDrop": true,
+      "isLightSource": false,
       "paths": [
         "Shade"
       ]

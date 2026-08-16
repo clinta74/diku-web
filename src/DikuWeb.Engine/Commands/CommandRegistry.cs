@@ -934,7 +934,14 @@ public sealed class CommandRegistry
 
         // Striking with a second weapon is trained, not innate. Say so, or an untrained
         // character reads their off hand doing nothing as a bug.
-        if (slot.Value == ItemSlot.OffHand && !CanStrikeWithOffHand(ctx.Actor.Character))
+        //
+        // Only for something that could strike. A shield, a torch, anything whose template
+        // declares no attack delay never swings however trained you are (`AttackDelayPulses`), so
+        // blaming the training would name a fix that does not exist - which is what the `stats`
+        // screen has always said correctly one screen over.
+        if (slot.Value == ItemSlot.OffHand &&
+            ctx.ItemTemplates?.Get(targetItem.TemplateKey)?.AttackDelayPulses is not null &&
+            !CanStrikeWithOffHand(ctx.Actor.Character))
         {
             ctx.Reply(
                 $"You settle {article} into your off hand, though you've not the training to strike with it.",

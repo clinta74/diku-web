@@ -88,6 +88,22 @@ public sealed class ItemTemplate
     public bool IsNoDrop { get; set; }
 
     /// <summary>
+    /// Lights the room it is worn or wielded in.
+    /// </summary>
+    /// <remarks>
+    /// <b>Any slot, not a slot of its own.</b> A lantern in the off hand, a helm with a lamp on it,
+    /// a pendant that glows — the fiction is the item's, and reserving a hand for light would make
+    /// every dark room a choice between seeing and carrying a shield. Carrying one in the pack is
+    /// deliberately not enough: a light you have not taken out is a light that is not lit.
+    ///
+    /// A column rather than a <see cref="BaseStats"/> key, for the reason
+    /// <see cref="AttackDelayPulses"/> gives — the builder coerces every base stat to a number, and
+    /// this is a rule rather than a quantity. It is read from the template rather than stamped onto
+    /// the instance, so a builder who lights a lamp lights the ones already out in the world too.
+    /// </remarks>
+    public bool IsLightSource { get; set; }
+
+    /// <summary>
     /// The Paths that may wear or wield this. Empty means anyone.
     /// </summary>
     /// <remarks>

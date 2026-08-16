@@ -264,6 +264,7 @@ public sealed record ItemTemplateResponse(
     bool IsQuestItem,
     bool IsLore,
     bool IsNoDrop,
+    bool IsLightSource,
     IReadOnlyList<CharacterPath> Paths);
 
 public sealed record SaveItemTemplateRequest(
@@ -280,6 +281,7 @@ public sealed record SaveItemTemplateRequest(
     bool? IsQuestItem,
     bool? IsLore,
     bool? IsNoDrop,
+    bool? IsLightSource,
     List<CharacterPath>? Paths);
 
 /// <param name="Wander">One of <see cref="WanderMode"/>. Never null on the way out.</param>

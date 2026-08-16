@@ -296,7 +296,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             t.Key, t.Name, t.Description, t.Icon, t.Slot, t.Weight, t.BaseValue,
             new Dictionary<string, object>(t.BaseStats),
             t.AttackDelayPulses, t.AttackVerb, t.IsQuestItem,
-            t.IsLore, t.IsNoDrop, t.Paths))];
+            t.IsLore, t.IsNoDrop, t.IsLightSource, t.Paths))];
     }
 
     public async Task<ItemTemplateResponse?> ItemTemplateAsync(
@@ -314,7 +314,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             template.Weight, template.BaseValue,
             new Dictionary<string, object>(template.BaseStats),
             template.AttackDelayPulses, template.AttackVerb, template.IsQuestItem,
-            template.IsLore, template.IsNoDrop, template.Paths);
+            template.IsLore, template.IsNoDrop, template.IsLightSource, template.Paths);
     }
 
     public async Task<IReadOnlyList<SpawnerResponse>> SpawnersAsync(

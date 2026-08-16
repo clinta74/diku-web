@@ -26,6 +26,7 @@ const oathmaul = vi.hoisted(
     isQuestItem: true,
     isLore: true,
     isNoDrop: true,
+    isLightSource: false,
     paths: ['Warden'],
   }),
 )
@@ -86,6 +87,19 @@ it('sends all three on save', async () => {
     isNoDrop: true,
     paths: ['Warden', 'Hallow'],
   })
+})
+
+it('carries the light source, which is the same trap one field over', async () => {
+  // Not a restriction, but it reaches the editor through the same PATCH and would fail the same
+  // silent way: a lantern saved from this screen with the box ticked and the field omitted is a
+  // lantern that looks authored and lights nothing.
+  await open()
+
+  fireEvent.click(screen.getByLabelText(/^Light source/))
+  fireEvent.click(screen.getByText(/^Save$/))
+
+  await waitFor(() => expect(saved.body).not.toBeNull())
+  expect(saved.body).toMatchObject({ isLightSource: true })
 })
 
 it('keeps the Path list in the enum order however it was ticked', async () => {

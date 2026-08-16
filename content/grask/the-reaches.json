@@ -1,5 +1,5 @@
 {
-  "formatVersion": 8,
+  "formatVersion": 9,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -109,255 +109,25 @@
   ],
   "itemTemplates": [
     {
-      "key": "grask-tallow-cap",
-      "name": "a tallow-proofed cap",
-      "description": "Boiled felt soaked in tallow until it turns rain. It smells, and everyone here smells of it.",
-      "icon": "^",
-      "slot": "Head",
-      "weight": 500,
-      "baseValue": 60,
-      "baseStats": {
-        "armor": 7
-      },
-      "attackDelayPulses": null,
-      "attackVerb": null,
-      "isQuestItem": false,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "grask-plated-coat",
-      "name": "a plated dredger coat",
-      "description": "Canvas with iron plates riveted between the layers, cut long. Heavy out of the water and heavier in it.",
-      "icon": "[",
-      "slot": "Chest",
-      "weight": 6000,
-      "baseValue": 190,
-      "baseStats": {
-        "armor": 15
-      },
-      "attackDelayPulses": null,
-      "attackVerb": null,
-      "isQuestItem": false,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "grask-riggers-gloves",
-      "name": "a pair of rigger's gloves",
-      "description": "Palms doubled and doubled again, because rope on a wet claim takes fingers off people who economise.",
-      "icon": "[",
-      "slot": "Hands",
-      "weight": 400,
-      "baseValue": 48,
-      "baseStats": {
-        "armor": 5
-      },
-      "attackDelayPulses": null,
-      "attackVerb": null,
-      "isQuestItem": false,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "grask-studded-breeches",
-      "name": "a pair of studded breeches",
-      "description": "Hide with a stud pattern that was fashionable in the Landing for one season and is now just what everyone owns.",
-      "icon": "[",
-      "slot": "Legs",
-      "weight": 2800,
-      "baseValue": 120,
-      "baseStats": {
-        "armor": 9
-      },
-      "attackDelayPulses": null,
-      "attackVerb": null,
-      "isQuestItem": false,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "grask-marsh-boots",
-      "name": "a pair of marsh boots",
-      "description": "Thigh high, greased, and sold with the honest warning that they will fill and that you should still wear them.",
-      "icon": "[",
-      "slot": "Feet",
-      "weight": 2400,
-      "baseValue": 90,
-      "baseStats": {
-        "armor": 5
-      },
-      "attackDelayPulses": null,
-      "attackVerb": null,
-      "isQuestItem": false,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "grask-claim-shield",
-      "name": "a claim-marked shield",
-      "description": "Iron-rimmed, with a company mark burned into it and two other marks burned out underneath.",
-      "icon": ")",
-      "slot": "OffHand",
-      "weight": 3600,
-      "baseValue": 150,
-      "baseStats": {
-        "armor": 10,
-        "defense": 2
-      },
-      "attackDelayPulses": null,
-      "attackVerb": null,
-      "isQuestItem": false,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "grask-owing-token",
-      "name": "a debt token",
-      "description": "A brass disc stamped with a sum and a name. Nobody in Grask thinks it is odd to wear one.",
-      "icon": "*",
-      "slot": "Trinket",
-      "weight": 40,
-      "baseValue": 55,
-      "baseStats": {
-        "armor": 4
-      },
-      "attackDelayPulses": null,
-      "attackVerb": null,
-      "isQuestItem": false,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "grask-dredge-hook",
-      "name": "a dredging hook",
-      "description": "A boat hook shortened for close work, with the point re-drawn so many times the head is half its first size.",
+      "key": "epic-adept-2",
+      "name": "a tempered stormrod",
+      "description": "Bronze wound with wire that stands the hair up on your arm when the weather turns. Folded again with something out of Grask in it, and heavier for the knowing.",
       "icon": "/",
       "slot": "MainHand",
       "weight": 2600,
-      "baseValue": 130,
+      "baseValue": 0,
       "baseStats": {
-        "damageMultiplier": 2.4,
+        "damageMultiplier": 3.0,
         "bonus": 2
       },
       "attackDelayPulses": 8,
-      "attackVerb": "hook",
-      "isQuestItem": false,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "grask-claim-cleaver",
-      "name": "a claimjumper's cleaver",
-      "description": "Broad, short, and made for arguments about boundaries. Not one of them has a maker mark.",
-      "icon": "/",
-      "slot": "MainHand",
-      "weight": 2000,
-      "baseValue": 145,
-      "baseStats": {
-        "damageMultiplier": 2.2,
-        "bonus": 3
-      },
-      "attackDelayPulses": 6,
-      "attackVerb": "cleave",
-      "isQuestItem": false,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "grask-long-pick",
-      "name": "a long pick",
-      "description": "Reach and leverage, which is what you want against something that has committed to a charge.",
-      "icon": "/",
-      "slot": "MainHand",
-      "weight": 3400,
-      "baseValue": 120,
-      "baseStats": {
-        "damageMultiplier": 2.8
-      },
-      "attackDelayPulses": 10,
-      "attackVerb": "pierce",
-      "isQuestItem": false,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "grask-crew-tag",
-      "name": "a crew tag",
-      "description": "A stamped tin oval on a wire loop, worn under the shirt. The company issues one to everyone who goes down the cut.",
-      "icon": "*",
-      "slot": null,
-      "weight": 20,
-      "baseValue": 0,
-      "baseStats": {},
-      "attackDelayPulses": null,
-      "attackVerb": null,
-      "isQuestItem": true,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "grask-ledger-leaf",
-      "name": "a leaf from the deep ledger",
-      "description": "One page, water-stained, in a hand that runs out of patience halfway down and starts abbreviating.",
-      "icon": "?",
-      "slot": null,
-      "weight": 40,
-      "baseValue": 0,
-      "baseStats": {},
-      "attackDelayPulses": null,
-      "attackVerb": null,
-      "isQuestItem": true,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "grask-first-mark",
-      "name": "the first mark",
-      "description": "A palm-sized wedge of gate-stone with a company mark cut into it - the oldest mark in Grask, made by people who did not know what they were signing.",
-      "icon": "^",
-      "slot": null,
-      "weight": 500,
-      "baseValue": 0,
-      "baseStats": {},
-      "attackDelayPulses": null,
-      "attackVerb": null,
-      "isQuestItem": true,
-      "isLore": false,
-      "isNoDrop": false,
-      "paths": []
-    },
-    {
-      "key": "epic-warden-2",
-      "name": "a tempered oathmaul",
-      "description": "Head like a milestone, haft the length of a person. It was made to stop something. Folded again with something out of Grask in it, and heavier for the knowing.",
-      "icon": "/",
-      "slot": "MainHand",
-      "weight": 2600,
-      "baseValue": 0,
-      "baseStats": {
-        "damageMultiplier": 3.6,
-        "bonus": 3
-      },
-      "attackDelayPulses": 10,
-      "attackVerb": "crush",
+      "attackVerb": "strike",
       "isQuestItem": true,
       "isLore": true,
       "isNoDrop": true,
+      "isLightSource": false,
       "paths": [
-        "Warden"
+        "Adept"
       ]
     },
     {
@@ -377,29 +147,9 @@
       "isQuestItem": true,
       "isLore": true,
       "isNoDrop": true,
+      "isLightSource": false,
       "paths": [
         "Hallow"
-      ]
-    },
-    {
-      "key": "epic-adept-2",
-      "name": "a tempered stormrod",
-      "description": "Bronze wound with wire that stands the hair up on your arm when the weather turns. Folded again with something out of Grask in it, and heavier for the knowing.",
-      "icon": "/",
-      "slot": "MainHand",
-      "weight": 2600,
-      "baseValue": 0,
-      "baseStats": {
-        "damageMultiplier": 3.0,
-        "bonus": 2
-      },
-      "attackDelayPulses": 8,
-      "attackVerb": "strike",
-      "isQuestItem": true,
-      "isLore": true,
-      "isNoDrop": true,
-      "paths": [
-        "Adept"
       ]
     },
     {
@@ -419,9 +169,295 @@
       "isQuestItem": true,
       "isLore": true,
       "isNoDrop": true,
+      "isLightSource": false,
       "paths": [
         "Shade"
       ]
+    },
+    {
+      "key": "epic-warden-2",
+      "name": "a tempered oathmaul",
+      "description": "Head like a milestone, haft the length of a person. It was made to stop something. Folded again with something out of Grask in it, and heavier for the knowing.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 0,
+      "baseStats": {
+        "damageMultiplier": 3.6,
+        "bonus": 3
+      },
+      "attackDelayPulses": 10,
+      "attackVerb": "crush",
+      "isQuestItem": true,
+      "isLore": true,
+      "isNoDrop": true,
+      "isLightSource": false,
+      "paths": [
+        "Warden"
+      ]
+    },
+    {
+      "key": "grask-claim-cleaver",
+      "name": "a claimjumper's cleaver",
+      "description": "Broad, short, and made for arguments about boundaries. Not one of them has a maker mark.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2000,
+      "baseValue": 145,
+      "baseStats": {
+        "damageMultiplier": 2.2,
+        "bonus": 3
+      },
+      "attackDelayPulses": 6,
+      "attackVerb": "cleave",
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
+      "key": "grask-claim-shield",
+      "name": "a claim-marked shield",
+      "description": "Iron-rimmed, with a company mark burned into it and two other marks burned out underneath.",
+      "icon": ")",
+      "slot": "OffHand",
+      "weight": 3600,
+      "baseValue": 150,
+      "baseStats": {
+        "armor": 10,
+        "defense": 2
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
+      "key": "grask-crew-tag",
+      "name": "a crew tag",
+      "description": "A stamped tin oval on a wire loop, worn under the shirt. The company issues one to everyone who goes down the cut.",
+      "icon": "*",
+      "slot": null,
+      "weight": 20,
+      "baseValue": 0,
+      "baseStats": {},
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
+      "key": "grask-dredge-hook",
+      "name": "a dredging hook",
+      "description": "A boat hook shortened for close work, with the point re-drawn so many times the head is half its first size.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 2600,
+      "baseValue": 130,
+      "baseStats": {
+        "damageMultiplier": 2.4,
+        "bonus": 2
+      },
+      "attackDelayPulses": 8,
+      "attackVerb": "hook",
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
+      "key": "grask-first-mark",
+      "name": "the first mark",
+      "description": "A palm-sized wedge of gate-stone with a company mark cut into it - the oldest mark in Grask, made by people who did not know what they were signing.",
+      "icon": "^",
+      "slot": null,
+      "weight": 500,
+      "baseValue": 0,
+      "baseStats": {},
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
+      "key": "grask-ledger-leaf",
+      "name": "a leaf from the deep ledger",
+      "description": "One page, water-stained, in a hand that runs out of patience halfway down and starts abbreviating.",
+      "icon": "?",
+      "slot": null,
+      "weight": 40,
+      "baseValue": 0,
+      "baseStats": {},
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": true,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
+      "key": "grask-long-pick",
+      "name": "a long pick",
+      "description": "Reach and leverage, which is what you want against something that has committed to a charge.",
+      "icon": "/",
+      "slot": "MainHand",
+      "weight": 3400,
+      "baseValue": 120,
+      "baseStats": {
+        "damageMultiplier": 2.8
+      },
+      "attackDelayPulses": 10,
+      "attackVerb": "pierce",
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
+      "key": "grask-marsh-boots",
+      "name": "a pair of marsh boots",
+      "description": "Thigh high, greased, and sold with the honest warning that they will fill and that you should still wear them.",
+      "icon": "[",
+      "slot": "Feet",
+      "weight": 2400,
+      "baseValue": 90,
+      "baseStats": {
+        "armor": 5
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
+      "key": "grask-owing-token",
+      "name": "a debt token",
+      "description": "A brass disc stamped with a sum and a name. Nobody in Grask thinks it is odd to wear one.",
+      "icon": "*",
+      "slot": "Trinket",
+      "weight": 40,
+      "baseValue": 55,
+      "baseStats": {
+        "armor": 4
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
+      "key": "grask-pit-lamp",
+      "name": "a hooded pit lamp",
+      "description": "Tin, hooded on three sides so the flame does not blind the man behind you. The Owing runs on these and the Owing charges for them.",
+      "icon": "*",
+      "slot": "Trinket",
+      "weight": 400,
+      "baseValue": 48,
+      "baseStats": {
+        "armor": 2
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": true,
+      "paths": []
+    },
+    {
+      "key": "grask-plated-coat",
+      "name": "a plated dredger coat",
+      "description": "Canvas with iron plates riveted between the layers, cut long. Heavy out of the water and heavier in it.",
+      "icon": "[",
+      "slot": "Chest",
+      "weight": 6000,
+      "baseValue": 190,
+      "baseStats": {
+        "armor": 15
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
+      "key": "grask-riggers-gloves",
+      "name": "a pair of rigger's gloves",
+      "description": "Palms doubled and doubled again, because rope on a wet claim takes fingers off people who economise.",
+      "icon": "[",
+      "slot": "Hands",
+      "weight": 400,
+      "baseValue": 48,
+      "baseStats": {
+        "armor": 5
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
+      "key": "grask-studded-breeches",
+      "name": "a pair of studded breeches",
+      "description": "Hide with a stud pattern that was fashionable in the Landing for one season and is now just what everyone owns.",
+      "icon": "[",
+      "slot": "Legs",
+      "weight": 2800,
+      "baseValue": 120,
+      "baseStats": {
+        "armor": 9
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
+      "key": "grask-tallow-cap",
+      "name": "a tallow-proofed cap",
+      "description": "Boiled felt soaked in tallow until it turns rain. It smells, and everyone here smells of it.",
+      "icon": "^",
+      "slot": "Head",
+      "weight": 500,
+      "baseValue": 60,
+      "baseStats": {
+        "armor": 7
+      },
+      "attackDelayPulses": null,
+      "attackVerb": null,
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
     }
   ],
   "mobTemplates": [
@@ -766,6 +802,7 @@
         ],
         "shopkeeper": true,
         "sells": [
+          "grask-pit-lamp",
           "grask-tallow-cap",
           "grask-plated-coat",
           "grask-riggers-gloves",

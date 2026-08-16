@@ -140,4 +140,44 @@ public sealed class EquipCommandTests
 
         Assert.Contains("wield", harness.DrainText(kael), StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// A torch, a shield, anything with no declared attack delay never swings — so wielding one
+    /// must not blame the training, which is a fix that does not exist for it.
+    /// </summary>
+    /// <remarks>
+    /// Found through the light sources (PLAN.md §4.18): the pitch torch takes the off hand, so
+    /// every player who buys one meets this line. The `stats` screen has always said the right
+    /// thing one screen over — <em>"Not a weapon — it never strikes."</em>
+    /// </remarks>
+    [Fact]
+    public void Wielding_something_that_is_not_a_weapon_says_nothing_about_training()
+    {
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        var torch = harness.DefineItem("pitch-torch", "a pitch torch", ItemSlot.OffHand);
+        var item = harness.GiveItem(kael, torch);
+        harness.Drain(kael);
+
+        harness.Execute(kael, "wield pitch-torch");
+
+        Assert.Equal(ItemSlot.OffHand, item.EquippedSlot);
+        Assert.DoesNotContain("training", harness.DrainText(kael), StringComparison.Ordinal);
+    }
+
+    /// <summary>A second weapon still warns, because there the training is the missing thing.</summary>
+    [Fact]
+    public void Wielding_a_second_weapon_untrained_still_says_so()
+    {
+        var harness = Loaded();
+        var kael = harness.AddPlayer("Kael", Room);
+        var dagger = harness.DefineItem("off-dagger", "a short dagger", ItemSlot.OffHand);
+        dagger.AttackDelayPulses = 6;
+        harness.GiveItem(kael, dagger);
+        harness.Drain(kael);
+
+        harness.Execute(kael, "wield off-dagger");
+
+        Assert.Contains("training", harness.DrainText(kael), StringComparison.Ordinal);
+    }
 }

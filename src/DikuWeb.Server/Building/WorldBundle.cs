@@ -58,6 +58,12 @@ public sealed record WorldBundle(
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
     ///
+    /// <b>9 because an item can be a lamp.</b> A v8 bundle has no <c>isLightSource</c>, so read
+    /// as v9 every item in it arrives unlit. That is the weak direction and it is the one that
+    /// matters: a dark room is unreadable without a light, so a bundle carrying the lantern that
+    /// answers one of its own dark rooms would import a lantern that does nothing, and the room
+    /// would look like a bug in the room rather than a field that was dropped.
+    ///
     /// <b>8 because an item can refuse you.</b> A v7 bundle has no <c>isLore</c>, <c>isNoDrop</c>
     /// or <c>paths</c>, so read as v8 every item arrives unrestricted — which is the weak direction
     /// for two of the three and the wrong one for all of them: an epic reward that is neither lore
@@ -105,7 +111,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 8;
+    public const int CurrentFormatVersion = 9;
 }
 
 /// <summary>
@@ -192,6 +198,7 @@ public sealed record BundleItemTemplate(
     bool IsQuestItem,
     bool IsLore,
     bool IsNoDrop,
+    bool IsLightSource,
     List<CharacterPath>? Paths);
 
 /// <summary>

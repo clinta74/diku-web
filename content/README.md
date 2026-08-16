@@ -3,8 +3,8 @@
 `WorldBundle` JSON for the Reaches. The design these transcribe is
 [docs/WORLD.md](../docs/WORLD.md).
 
-**The whole world is here**: five realms, eighteen zones, 224 rooms, 67 mob templates, 70 items,
-90 spawners and all five acts. Import them in realm order — `ossara`, `grask`, `azhen`, `nemhal`,
+**The whole world is here**: five realms, eighteen zones, 224 rooms, 68 mob templates, 92 items,
+100 spawners and all five acts. Import them in realm order — `ossara`, `grask`, `azhen`, `nemhal`,
 `the-unlit` — because a realm's gate names a room in the next one, and a dangling exit is a warning
 you would rather not have to read past.
 
@@ -49,8 +49,9 @@ own docstring for why each is worth a separate pass.
 
 ## Three properties of the import path that shape how these are written
 
-- **`formatVersion` must be exactly 6.** It is the one hard refusal in the whole path. Author against
-  `WorldBundle.CurrentFormatVersion`, not against this sentence.
+- **`formatVersion` must match the server exactly.** It is the one hard refusal in the whole path.
+  Author against `WorldBundle.CurrentFormatVersion` — these files are at **9** — not against this
+  sentence, which has been wrong before.
 - **Import is a merge, not a mirror.** Deleting an entity from a file does not delete it from the
   world, and renaming a room key produces *both* rooms on the next import. Removals are explicit
   `DELETE` calls.

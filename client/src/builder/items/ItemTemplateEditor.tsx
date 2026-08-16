@@ -46,6 +46,7 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
   const [isQuestItem, setIsQuestItem] = useState(false)
   const [isLore, setIsLore] = useState(false)
   const [isNoDrop, setIsNoDrop] = useState(false)
+  const [isLightSource, setIsLightSource] = useState(false)
   const [paths, setPaths] = useState<CharacterPath[]>([])
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -76,6 +77,7 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         setIsQuestItem(loaded.isQuestItem)
         setIsLore(loaded.isLore)
         setIsNoDrop(loaded.isNoDrop)
+        setIsLightSource(loaded.isLightSource)
         // Ordered to CHARACTER_PATHS rather than to whatever came back, so the checkboxes and the
         // saved list agree and a save with nothing changed is not a change.
         setPaths(CHARACTER_PATHS.filter((p) => (loaded.paths ?? []).includes(p)))
@@ -106,6 +108,7 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         isQuestItem,
         isLore,
         isNoDrop,
+        isLightSource,
         paths,
       })
       setTemplate(updated)
@@ -325,6 +328,25 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
           />
           No drop — cannot be dropped or given away, but can still be destroyed
         </label>
+
+        <label className="field-check">
+          <input
+            type="checkbox"
+            checked={isLightSource}
+            onChange={(e) => {
+              setIsLightSource(e.target.checked)
+              touch()
+            }}
+          />
+          Light source — lights a dark room while worn or wielded
+        </label>
+        {isLightSource && (
+          <p className="dim detail">
+            Any slot counts, so a helm or a pendant works as well as a lantern in a hand. Carrying
+            it in the pack does not: a light you have not taken out is not lit. One lit item lights
+            the room for everyone standing in it.
+          </p>
+        )}
 
         <Field
           label="Paths"

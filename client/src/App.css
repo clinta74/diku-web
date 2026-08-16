@@ -474,6 +474,11 @@ input:focus {
 .line .occupant {
   color: var(--text);
 }
+/* An unlit room. Dimmed rather than coloured — it is the absence of a description, not an event. */
+.line .dark {
+  color: var(--dim);
+  font-style: italic;
+}
 .line .heading {
   color: var(--accent);
 }

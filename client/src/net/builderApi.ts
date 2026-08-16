@@ -222,6 +222,8 @@ export interface ItemTemplate {
   isLore: boolean
   /** Cannot be dropped or given away. Destroying it is still allowed, deliberately. */
   isNoDrop: boolean
+  /** Lights the room while worn or wielded. Any slot; carrying it in the pack is not enough. */
+  isLightSource: boolean
   /**
    * The Paths that may wear or wield this. **Empty means anyone**, which is why it is a list of
    * what is allowed rather than of what is forbidden — an item is unrestricted until a builder

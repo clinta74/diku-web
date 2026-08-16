@@ -122,7 +122,9 @@ internal sealed class WorldHarness
         // whole command path went untested - the buff tests reach past it and apply effects to
         // the world directly. Populated from the catalogue by DefineAbility.
         Commands = new CommandRegistry(abilityCache: AbilityCache, clock: Clock);
-        View = new PlayerView(new RoomLayoutService());
+        // With the item cache, because the view reads it to decide whether a dark room can be
+        // seen. Built without it, every dark room stays dark whatever anybody is carrying.
+        View = new PlayerView(new RoomLayoutService(), ItemTemplates);
         Options = new EngineOptions { StartingRoom = RoomKey.Parse("test.zone.west") };
         // With the caches and the item queue the host wires up, because an edit that has to reach
         // them is one this harness must be able to see. Built bare, it applied a rename that

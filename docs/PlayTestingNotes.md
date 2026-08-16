@@ -243,8 +243,83 @@ Add anything noticed while playing here. Cleared as items are done.
   in practice — a party crossing a zone with one gated door loses everyone behind it at once.
 
 
-  - there are dark rooms that you need a light for, but I don't see any light source items. for an item to be used as a light source it should be held of worn. a peice of armor could function as a light source.
+  - **light: done, and the flag had never been read at all.** `dark` was registered in Phase 5 with
+    the summary *"description withheld without a light source"* and nothing anywhere consulted it —
+    so the four zones authored dark (**the Owing, Thessivar, Keshvaun, the Regard**, an act each in
+    Grask, Azhen, Nemhal and the Unlit) rendered exactly like every other room. The missing items
+    were the visible half of a feature that did not exist.
 
-  - focus on casters (hallow and adept) should recover faster when standing, resting, and sleeping.
+    `PLAN.md` §4.18 has the rules. In short: `isLightSource` is a column on the item template beside
+    `isLore` and `isNoDrop`; **any equipment slot counts**, so a helm or a pendant works; **worn or
+    wielded only**, because a lamp in the pack is a lamp you have not taken out; and **light belongs
+    to the room**, so one lantern lights it for a party of six rather than five people each buying
+    one. Mobs carry none — a lit room whose light is standing in the corner waiting to be killed is
+    a light you cannot take with you.
 
-  - when in a group you should be able to see the other group members hp, focus, and stamina. Add these under the characters version.
+    The dark takes the room's **title as well as its description** (the phone header draws from the
+    title), every occupant, mob and item, and everything on the map — which keeps its dimensions so
+    the panel does not jump. **Exits survive**, deliberately: walking is the only way out, and on a
+    phone the exit pad is that list.
+
+    | Item | Sold by | Slot | Cost |
+    |---|---|---|---|
+    | a pitch torch | Gatetown trader and provisioner, Grask provisioner | off hand | 6 |
+    | a hooded pit lamp | Grask outfitter | trinket | 48 |
+
+    **The torch already existed** — `slot: null`, so unequippable, so useless. It now takes the off
+    hand, which is the whole cost of light; the pit lamp is what you buy to get that hand back.
+    Its description promised *"burns about an hour"* and nothing models fuel, so that line is gone
+    rather than left as a claim a player can catch the game out on.
+
+    **Re-import all six bundles**: `formatVersion` is now **9**, and a v8 bundle carrying a lantern
+    would import a lantern that does nothing.
+
+    **Not done, deliberately:** targeting is untouched — `attack rat` still finds the rat, because
+    the name search reads the world rather than the frame. Fighting blind is the classic behaviour.
+    Fuel is not modelled either; a torch does not burn down.
+
+  - **Found on the way, and worse than the thing that found it: `WorldWriter` never persisted any
+    of an item's flags.** The round-trip test written for the light source failed, and the cause was
+    that neither the create nor the update branch of `UpsertItemTemplate` set `isLore`, `isNoDrop`
+    or `paths` — since the `ItemRestrictions` migration added them. The API accepted them, the
+    applier put them in the running cache, `/validate` was happy, the exporter wrote them and the
+    importer read them. Nothing ever wrote a row.
+
+    So **every restriction authored in the builder or landed by an import survived exactly as long
+    as the process did**, and reverted silently on the next restart when the cache reloaded from a
+    database that had never been told. Twenty items in `content/` carry one. The same defect class
+    as the stale editor keys: a field that reads as configured everywhere a builder can see, and is
+    connected to nothing at the far end.
+
+    All four are written now, and `An_item_templates_flags_survive_a_round_trip` pins them together
+    — they failed as a group and they are fixed as a group. A sweep of every other `Upsert*` case
+    against its change record found no second instance; `UpsertGameConfiguration.Live` is untouched
+    on purpose and says so.
+
+    **Re-import to repair**: the rows in a running database are still wrong, because nothing has
+    written them yet.
+
+  - **Wielding a shield or a torch no longer blames your training.** `wield` said *"you've not the
+    training to strike with it"* for anything in the off hand, but an item with no declared attack
+    delay never swings however trained you are — so the message named a fix that does not exist.
+    The `stats` screen has always said the right thing one screen over. Found because the torch is
+    an off-hand item and every player who buys one now meets it.
+
+  - **caster focus: done.** Adept and Hallow recover focus at twice the rate, standing, resting and
+    sleeping alike. All three vitals shared one percentage, so the two Paths that spend focus to do
+    anything got it back at the rate of the two that keep it as a small reserve — an Adept's empty
+    bar was the better part of an hour on their feet. Only focus moves. `RegenCalculator` takes the
+    Path rather than defaulting it, because a caster handed the martial rate is silent.
+
+  - **group vitals: done.** A `party` frame carries every member's health, focus and stamina, their
+    level and Path, who leads, whether they are in your room, and whether they are link-dead; the
+    client draws it under your own meters, one compact row each, absent entirely when ungrouped.
+    `group` already printed health, but only when typed, and the number you need is the one you did
+    not ask for.
+
+    Compared rather than pushed, so joining, leaving, being kicked, walking off, dropping link and
+    simply taking a hit are all covered without any of them knowing the panel exists.
+
+    **Untested in play:** whether three six-cell bars per member is readable at a glance on a phone
+    with five in the group, and whether *elsewhere* is the right thing to say about somebody one
+    room away versus one realm away — it does not currently distinguish.

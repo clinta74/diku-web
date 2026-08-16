@@ -25,6 +25,7 @@ internal sealed class ItemTemplateConfiguration : IEntityTypeConfiguration<ItemT
         builder.Property(e => e.IsQuestItem).HasColumnName("is_quest_item");
         builder.Property(e => e.IsLore).HasColumnName("is_lore");
         builder.Property(e => e.IsNoDrop).HasColumnName("is_no_drop");
+        builder.Property(e => e.IsLightSource).HasColumnName("is_light_source");
 
         // The Paths that may equip it, as a jsonb array of names. A join table would be the
         // relational answer and is not worth it: this is a short, unordered, read-only list that

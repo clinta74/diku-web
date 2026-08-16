@@ -1,5 +1,5 @@
 {
-  "formatVersion": 8,
+  "formatVersion": 9,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "zone",
@@ -63,6 +63,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -79,22 +80,24 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
       "key": "torch",
       "name": "a pitch torch",
-      "description": "A hand's length of ash wrapped in pitch-soaked rag. Burns about an hour and smells like it the whole time.",
+      "description": "A hand's length of ash wrapped in pitch-soaked rag. Takes a hand to carry and smells like it the whole time.",
       "icon": "!",
-      "slot": null,
+      "slot": "OffHand",
       "weight": 500,
-      "baseValue": 3,
+      "baseValue": 6,
       "baseStats": {},
       "attackDelayPulses": null,
       "attackVerb": null,
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": true,
       "paths": []
     },
     {
@@ -111,6 +114,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -127,6 +131,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -146,6 +151,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -164,6 +170,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -182,6 +189,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -200,6 +208,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -218,6 +227,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -236,6 +246,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -254,6 +265,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -272,6 +284,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -291,6 +304,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     },
     {
@@ -309,6 +323,7 @@
       "isQuestItem": false,
       "isLore": false,
       "isNoDrop": false,
+      "isLightSource": false,
       "paths": []
     }
   ],

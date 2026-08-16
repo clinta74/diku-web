@@ -218,7 +218,12 @@ public sealed class ScopedFlagEditTests
 
         harness.Mutate(new SetZoneFlag("test.zone", RoomFlags.Dark.Key, true));
 
-        Assert.Contains("The west room", harness.DrainText(kael), StringComparison.Ordinal);
+        // Darkening the zone is the strongest form of this: the resent room does not merely arrive,
+        // it arrives changed. Kael is carrying no light, so the room he was reading a moment ago
+        // has stopped saying its own name.
+        var text = harness.DrainText(kael);
+        Assert.Contains("Darkness", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("The west room", text, StringComparison.Ordinal);
     }
 
     [Fact]

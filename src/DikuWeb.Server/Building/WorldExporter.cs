@@ -363,7 +363,7 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
                     i.Key, i.Name, i.Description, i.Icon, i.Slot, i.Weight, i.BaseValue,
                     new Dictionary<string, object>(i.BaseStats),
                     i.AttackDelayPulses, i.AttackVerb, i.IsQuestItem,
-                    i.IsLore, i.IsNoDrop, i.Paths)),
+                    i.IsLore, i.IsNoDrop, i.IsLightSource, i.Paths)),
             ],
             [
                 .. mobs.Select(m => new BundleMobTemplate(

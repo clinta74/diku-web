@@ -393,6 +393,10 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         AttackDelayPulses = c.AttackDelayPulses,
                         AttackVerb = c.AttackVerb,
                         IsQuestItem = c.IsQuestItem,
+                        IsLore = c.IsLore,
+                        IsNoDrop = c.IsNoDrop,
+                        IsLightSource = c.IsLightSource,
+                        Paths = [.. c.Paths],
                     });
 
                     return ContentAction.Create;
@@ -408,6 +412,18 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 entity.AttackDelayPulses = c.AttackDelayPulses;
                 entity.AttackVerb = c.AttackVerb;
                 entity.IsQuestItem = c.IsQuestItem;
+
+                // These four were missing until the light source was added, and had been since the
+                // `ItemRestrictions` migration: the API accepted them, the applier put them in the
+                // running cache, the exporter wrote them and the importer read them - and nothing
+                // ever wrote a row. So every lore, no-drop and Path restriction authored in the
+                // builder or landed by an import survived exactly until the next restart, when the
+                // cache was reloaded from a database that had never been told.
+                entity.IsLore = c.IsLore;
+                entity.IsNoDrop = c.IsNoDrop;
+                entity.IsLightSource = c.IsLightSource;
+                entity.Paths = [.. c.Paths];
+
                 return ContentAction.Update;
             }
 

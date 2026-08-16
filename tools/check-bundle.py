@@ -40,7 +40,7 @@ OPPOSITE = {
 # The one format version this repo's server reads. Kept in step with
 # WorldBundle.CurrentFormatVersion by hand, because a mismatch is the single hard refusal in the
 # import path and finding it here beats finding it in an HTTP 400. 8 added item restrictions.
-FORMAT_VERSION = 8
+FORMAT_VERSION = 9
 
 REPO = Path(__file__).resolve().parent.parent
 

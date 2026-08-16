@@ -53,7 +53,12 @@ public static class EngineServiceCollectionExtensions
                 sp.GetService<IGameClock>(),
                 sp.GetService<EffectRegistry>()));
         services.AddSingleton<RoomLayoutService>();
-        services.AddSingleton<PlayerView>();
+        // Explicit rather than by convention, for the reason the Phase 4 block below gives: the
+        // template cache is optional, and a container that quietly failed to supply it would leave
+        // every dark room dark whatever anybody was carrying.
+        services.AddSingleton<PlayerView>(sp => new PlayerView(
+            sp.GetRequiredService<RoomLayoutService>(),
+            sp.GetService<ItemTemplateCache>()));
         services.AddSingleton<WorldMutationApplier>();
         services.AddSingleton<LoopWorldEditor>();
         services.AddSingleton<GameGateway>();

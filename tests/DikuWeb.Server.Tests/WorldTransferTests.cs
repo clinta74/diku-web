@@ -236,6 +236,64 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
         Assert.Equal(27, after.GetProperty("fightsAtLevel").GetInt32());
     }
 
+    /// <summary>
+    /// Everything an item template carries besides its numbers: lore, no-drop, Path, and light.
+    /// </summary>
+    /// <remarks>
+    /// <b>Written for the light source and it caught the other three.</b> None of the four were
+    /// ever written to the database — the API accepted them, the applier put them in the running
+    /// cache, the exporter wrote them and the importer read them, and <c>WorldWriter</c> set
+    /// neither on create nor on update. So every restriction authored in the builder or landed by
+    /// an import survived exactly as long as the process did, and twenty items in <c>content/</c>
+    /// carry one.
+    ///
+    /// The four are asserted together deliberately: they fail as a group, they were fixed as a
+    /// group, and a test per field would be four database round trips to learn the same thing.
+    /// </remarks>
+    [Fact]
+    public async Task An_item_templates_flags_survive_a_round_trip()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var content = await AuthorZoneAsync(client);
+
+        (await client.PatchAsJsonAsync(
+            $"/api/builder/item-templates/{content.LootKey}",
+            new
+            {
+                isLightSource = true,
+                isLore = true,
+                isNoDrop = true,
+                paths = new[] { "Warden" },
+            })).EnsureSuccessStatusCode();
+
+        // Read back before exporting. The bug this covers put the flags in the cache and not the
+        // row, and the exporter reads the database — so a GET that agreed and an export that did
+        // not is precisely the shape being pinned.
+        var saved = await BuilderClient.JsonAsync(await client.GetAsync(
+            new Uri($"/api/builder/item-templates/{content.LootKey}", UriKind.Relative)));
+        Assert.True(saved.GetProperty("isLightSource").GetBoolean());
+
+        var json = await ExportZoneJsonAsync(client, content.ZoneKey);
+        Assert.Contains("\"isLightSource\":true", json, StringComparison.Ordinal);
+        Assert.Contains("\"isLore\":true", json, StringComparison.Ordinal);
+        Assert.Contains("\"isNoDrop\":true", json, StringComparison.Ordinal);
+
+        await ImportAsync(client, json);
+
+        var after = await BuilderClient.JsonAsync(await client.GetAsync(
+            new Uri($"/api/builder/item-templates/{content.LootKey}", UriKind.Relative)));
+
+        Assert.True(after.GetProperty("isLightSource").GetBoolean());
+        Assert.True(after.GetProperty("isLore").GetBoolean());
+        Assert.True(after.GetProperty("isNoDrop").GetBoolean());
+        Assert.Equal(
+            ["Warden"],
+            after.GetProperty("paths").EnumerateArray().Select(p => p.GetString()));
+    }
+
     [Fact]
     public async Task A_gated_exit_survives_a_round_trip()
     {

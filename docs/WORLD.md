@@ -463,6 +463,25 @@ part of the set total above.
 Quest items set `isQuestItem: true`, which means only *cannot be sold or destroyed* (`PLAN.md`
 §4.9). They still drop from ordinary spawners and loot tables; there is no separate pipeline.
 
+**Four zones are `dark`, and two items answer them.** The Owing, Thessivar, Keshvaun and the Regard
+withhold everything but their exits from anyone standing in them without a light (`PLAN.md` §4.18) —
+which is a whole act each in Grask, Azhen, Nemhal and the Unlit. Both answers are bought rather than
+found, on purpose: a light that drops is a light one player in five has.
+
+| Item | Where | Slot | Cost |
+|---|---|---|---|
+| a pitch torch | Gatetown's trader and provisioner, and Grask's provisioner | `OffHand` | 6 |
+| a hooded pit lamp | Grask's outfitter | `Trinket` | 48 |
+
+The torch is level-1 cheap and available three hundred rooms before it is needed, which is the
+point: nobody is gated on gold. What it costs is the off hand — no shield, no second weapon — and
+the pit lamp is what you buy to get that hand back, at eight times the price and in the realm whose
+own act is the first dark one. **One lit item lights the room for everyone in it**, so the honest
+group answer is one lamp between six.
+
+`nemhal-unlit-lamp` is deliberately not a light. It is a vigil lamp *"never lit, kept filled"*, and
+the joke only works if it stays dark.
+
 ### 7.4 Shops
 
 A shopkeeper is a mob template with `shopkeeper` in its `Behavior` bag and a `sells` list.

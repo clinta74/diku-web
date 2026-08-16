@@ -325,6 +325,7 @@ public sealed record UpsertItemTemplate(
     bool IsQuestItem,
     bool IsLore,
     bool IsNoDrop,
+    bool IsLightSource,
     List<CharacterPath> Paths) : WorldChange
 {
     public override string EntityKind => "item-template";
