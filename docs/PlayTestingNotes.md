@@ -87,6 +87,24 @@ Add anything noticed while playing here. Cleared as items are done.
   - The twelve `Guard(...)` values were converted from flat amounts to percentage points by holding
     their relative order, not by measurement.
 
+- **The builder was offering ten stat keys nothing reads.** Found from `ossara-leather-cap`: its
+  `armor = 3` showed under "carried through unchanged" while three inert boxes sat above it
+  labelled as armour. The armour rework retired `armorFlat`, `armorPercent` and `armorMultiplier`
+  for a single `armor` rating and neither the item nor the mob editor was updated; the three vital
+  multipliers (`healthMultiplier`, `focusMultiplier`, `staminaMultiplier`) have never been read by
+  anything, in any version; and the ability editor offered `armorFlat` for `buff.defense` and
+  `debuff.expose` where `DefenseEffect` reads `mitigation`, so the absorb half of every guard
+  authored in the browser was silently zero.
+
+  **The shipped content was never wrong** — `AbilityCatalogue` writes `mitigation`, and the imported
+  items carry `armor`. Only the editors were stale, and only values typed *in the browser* were
+  lost.
+
+  `tools/check-builder-keys.py` now reads both languages and fails on a key no engine source names.
+  Verified against the pre-fix tree: it reports all ten. It is deliberately one-directional — a key
+  the engine reads and no form offers is a missing feature, a key the form offers and nothing reads
+  is a lie, and only the second is silent.
+
 - **`itemPower` is recorded and never read.**
   [ItemSpawner.cs:51](../src/DikuWeb.Engine/Spawning/ItemSpawner.cs#L51) copies `BaseStats`
   verbatim; only `ItemValue` is resolved, into the price. The dial is snapshotted into

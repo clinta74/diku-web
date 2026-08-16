@@ -7,9 +7,15 @@ namespace DikuWeb.Domain.Combat;
 /// (PLAN.md §4.6). Pure function that combines base stats with equipment bonuses.
 ///
 /// Equipment provides:
-/// - Weapons: weaponBonus (to attackRating), weaponDice (min/max damage)
-/// - Armor: armorFlat, armorPercent (damage reduction)
+/// - Weapons: <c>bonus</c> (to attack rating), <c>damageMin</c>/<c>damageMax</c>,
+///   <c>baseDamage</c>, and <c>damageMultiplier</c>
+/// - Armour: <c>armor</c> (a rating, through <see cref="ArmorCurve"/>) and <c>defense</c>
 /// - Other: attribute bonuses (not implemented yet, Phase 5+)
+///
+/// <b>This list is the contract the builder transcribes</b>, and it named the retired
+/// <c>armorFlat</c>/<c>armorPercent</c> pair for long enough that both editors were still offering
+/// them. `tools/check-builder-keys.py` compares the two sides now, but a stale summary here is
+/// where that drift starts.
 /// </summary>
 public static class EquipmentResolver
 {

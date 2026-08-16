@@ -1,13 +1,20 @@
 /**
  * The `baseStats` keys the combat engine actually reads off an equipped item.
  *
- * Every key here is one `EquipmentResolver` looks for by name. The editor used to offer only the
- * five multipliers, which left the multipliers with nothing to multiply: an authored breastplate
- * had `armorMultiplier` and no `armorFlat`, so its protection resolved to `0 × 2 = 0`. Damage
- * escaped that only because unarmed combat has a 1-2 baseline for `damageMultiplier` to scale.
+ * Every key here is one `EquipmentResolver` looks for by name, and **nothing here is a key it does
+ * not read**. Both halves have been wrong. The editor first offered only the five multipliers,
+ * which left them with nothing to multiply; then the armour rework retired `armorFlat`,
+ * `armorPercent` and `armorMultiplier` in favour of a single `armor` rating through
+ * `ArmorCurve`, and this file was not updated — so the form offered three dead fields for armour
+ * and no way to set the live one. An imported cap with `armor: 3` showed its protection under
+ * "carried through unchanged" while three inert boxes sat above it labelled as armour.
+ *
+ * A dead field is worse than a missing one: it reads as a dial a builder has set, and the number
+ * they typed is stored, exported, and never consulted. `tools/check-builder-keys.py` now compares
+ * this list against the engine so the next retirement cannot go unnoticed.
  *
  * Labels are written out in words. The raw key is what goes in the bag, but a form that shows
- * "armorMultiplier" is asking a builder to read camelCase to find out what a field does.
+ * "damageMultiplier" is asking a builder to read camelCase to find out what a field does.
  */
 export type StatKind = 'int' | 'decimal'
 
@@ -61,15 +68,9 @@ export const STAT_GROUPS: StatGroup[] = [
     hint: 'Read from armour slots only — a weapon carrying these does nothing with them.',
     fields: [
       {
-        key: 'armorPercent',
-        label: 'Damage reduction',
-        hint: '0.1 takes a tenth off every hit. Capped at 0.95, and scales evenly at every level.',
-        kind: 'decimal',
-      },
-      {
-        key: 'armorFlat',
-        label: 'Flat reduction',
-        hint: 'Subtracted before the percentage. A hit never drops below 1, so large values trivialise weak enemies.',
+        key: 'armor',
+        label: 'Armour rating',
+        hint: 'Every piece adds up, and the total absorbs rating ÷ (rating + 100) of each hit — 100 is a quarter off, capped at 75%.',
         kind: 'int',
       },
       {
@@ -82,14 +83,8 @@ export const STAT_GROUPS: StatGroup[] = [
   },
   {
     label: 'Multipliers',
-    hint: '1.0 is no change. These scale the numbers above, so a multiplier on an item that declares none does nothing.',
-    fields: [
-      { key: 'damageMultiplier', label: 'Damage multiplier', kind: 'decimal' },
-      { key: 'armorMultiplier', label: 'Armour multiplier', kind: 'decimal' },
-      { key: 'healthMultiplier', label: 'Health multiplier', kind: 'decimal' },
-      { key: 'focusMultiplier', label: 'Focus multiplier', kind: 'decimal' },
-      { key: 'staminaMultiplier', label: 'Stamina multiplier', kind: 'decimal' },
-    ],
+    hint: 'One only, and it scales the damage above — a multiplier on an item that declares no damage does nothing.',
+    fields: [{ key: 'damageMultiplier', label: 'Damage multiplier', kind: 'decimal' }],
   },
 ]
 

@@ -9,7 +9,13 @@ import type { StatGroup } from '../items/stats'
  *
  * The keys differ from the item side in two places worth knowing: a mob's attack rating is
  * `attackRating` where an item's is `bonus`, and a mob may declare its damage as a range string
- * (`"4-7"`) in `damage` as well as through `damageMin`/`damageMax`.
+ * (`"4-7"`) in `damage` as well as through `damageMin`/`damageMax`. That range string is why the
+ * bag is read as `unknown` and written back in place — coercing it would turn `"4-7"` into 0.
+ *
+ * Carried the item side's armour bug too: `armorFlat`, `armorPercent` and `armorMultiplier` were
+ * all retired by the armour rework in favour of one `armor` rating, and both forms went on
+ * offering the dead three and none of the live one. `tools/check-builder-keys.py` compares this
+ * list against the engine now.
  */
 export const MOB_STAT_GROUPS: StatGroup[] = [
   {
@@ -28,16 +34,10 @@ export const MOB_STAT_GROUPS: StatGroup[] = [
         kind: 'int',
       },
       {
-        key: 'armorFlat',
-        label: 'Flat reduction',
-        hint: 'Subtracted from each hit. A hit never drops below 1.',
+        key: 'armor',
+        label: 'Armour rating',
+        hint: 'Absorbs rating ÷ (rating + 100) of each hit — 100 is a quarter off, capped at 75%.',
         kind: 'int',
-      },
-      {
-        key: 'armorPercent',
-        label: 'Damage reduction',
-        hint: '0.2 takes a fifth off every hit. Capped at 0.95.',
-        kind: 'decimal',
       },
     ],
   },
@@ -63,11 +63,8 @@ export const MOB_STAT_GROUPS: StatGroup[] = [
   },
   {
     label: 'Multipliers',
-    hint: '1.0 is no change. These scale the numbers above, so a multiplier alone does nothing.',
-    fields: [
-      { key: 'damageMultiplier', label: 'Damage multiplier', kind: 'decimal' },
-      { key: 'armorMultiplier', label: 'Armour multiplier', kind: 'decimal' },
-    ],
+    hint: '1.0 is no change. It scales the damage above, so a multiplier alone does nothing.',
+    fields: [{ key: 'damageMultiplier', label: 'Damage multiplier', kind: 'decimal' }],
   },
 ]
 

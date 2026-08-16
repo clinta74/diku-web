@@ -4,10 +4,13 @@ import { asMultiplier, OWNED_STAT_KEYS, STAT_GROUPS } from './stats'
 /**
  * The keys `EquipmentResolver` reads off an equipped item, transcribed from the resolver itself.
  *
- * The editor offering a subset of these is not a cosmetic gap: it is why an authored breastplate
- * did nothing. `armorMultiplier` was offered and `armorFlat` was not, so the multiplier scaled a
- * value no builder could set — `0 × 2 = 0`. Damage escaped it only because unarmed combat has a
- * 1-2 baseline to scale.
+ * This list has been wrong in both directions. It first offered a subset, which is why an authored
+ * breastplate did nothing. Then the armour rework replaced `armorFlat` and `armorPercent` with one
+ * `armor` rating through `ArmorCurve` and dropped `armorMultiplier`, and the transcription was not
+ * updated — so the form kept three inert armour fields and had no way to set the live one.
+ *
+ * A transcription checked by hand drifts. `tools/check-builder-keys.py` now reads both sides and
+ * fails on a key the engine does not name; this list is the readable half of the same rule.
  */
 const KEYS_THE_ENGINE_READS = [
   // Weapon, main hand only.
@@ -17,10 +20,8 @@ const KEYS_THE_ENGINE_READS = [
   'baseDamage',
   'damageMultiplier',
   // Armour slots only.
-  'armorFlat',
-  'armorPercent',
+  'armor',
   'defense',
-  'armorMultiplier',
 ]
 
 describe('item stat fields', () => {
@@ -53,11 +54,11 @@ describe('item stat fields', () => {
   })
 
   it('marks whole-number stats as integers', () => {
-    // Flat armour of 2.5 is not something the resolver can use - it reads these with an int
+    // An armour rating of 2.5 is not something the resolver can use - it reads these with an int
     // parser and would drop the value entirely.
     const kinds = new Map(STAT_GROUPS.flatMap((g) => g.fields).map((f) => [f.key, f.kind]))
 
-    expect(kinds.get('armorFlat')).toBe('int')
+    expect(kinds.get('armor')).toBe('int')
     expect(kinds.get('defense')).toBe('int')
     expect(kinds.get('damageMin')).toBe('int')
     expect(kinds.get('damageMax')).toBe('int')
@@ -68,9 +69,22 @@ describe('item stat fields', () => {
   it('marks proportional stats as decimals', () => {
     const kinds = new Map(STAT_GROUPS.flatMap((g) => g.fields).map((f) => [f.key, f.kind]))
 
-    expect(kinds.get('armorPercent')).toBe('decimal')
     expect(kinds.get('damageMultiplier')).toBe('decimal')
-    expect(kinds.get('armorMultiplier')).toBe('decimal')
+  })
+
+  it('offers no key the engine has retired', () => {
+    // The armour rework's casualties, named so the failure says what happened rather than just
+    // that a count changed. Stored, exported, and never read - the quietest failure here.
+    for (const dead of [
+      'armorFlat',
+      'armorPercent',
+      'armorMultiplier',
+      'healthMultiplier',
+      'focusMultiplier',
+      'staminaMultiplier',
+    ]) {
+      expect(OWNED_STAT_KEYS).not.toContain(dead)
+    }
   })
 })
 

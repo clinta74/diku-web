@@ -14,10 +14,8 @@ const KEYS_THE_ENGINE_READS = [
   'baseDamage',
   'attackRating',
   'defense',
-  'armorFlat',
-  'armorPercent',
+  'armor',
   'damageMultiplier',
-  'armorMultiplier',
 ]
 
 describe('mob stat fields', () => {
