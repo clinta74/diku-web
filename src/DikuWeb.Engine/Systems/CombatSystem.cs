@@ -1191,7 +1191,16 @@ public sealed class CombatSystem(
                 occupant.SendText($"{actor.Name} falls.", "death");
             }
         }
-        actor.SendText($"You died. Respawned at {respawnRoom}.", "death");
+
+        // The room's name, not its key. `ossara.gatetown.the-gate-yard` is an authoring identifier
+        // and the one description of that place a player has no use for.
+        var respawnTitle = world.FindRoom(respawnRoom)?.Title;
+        actor.SendText(
+            string.IsNullOrEmpty(respawnTitle)
+                ? "You died."
+                : $"You died. You wake in {respawnTitle}.",
+            "death");
+
         foreach (var occupant in world.OccupantsOf(respawnRoom))
         {
             if (occupant.CharacterId != character.Id)
@@ -1199,6 +1208,17 @@ public sealed class CombatSystem(
                 occupant.SendText($"{actor.Name} appears.", "arrival");
             }
         }
+
+        // <b>Death was the one relocation that never showed the player where they ended up.</b>
+        // Walking, recall, portal and goto all send the room and redraw both ends; this moved the
+        // character and said a key, so the description, the exits and the map all still belonged
+        // to the room they had just died in until they thought to type `look`.
+        //
+        // Verbose, like waking somewhere is: a player who has just lost the fight and some
+        // experience should not also have to ask where they are.
+        view?.SendRoom(world, actor, verbose: true);
+        view?.RefreshRoom(world, deathRoom);
+        view?.RefreshRoom(world, respawnRoom);
     }
 
     private void HandleMobDeath(WorldState world, Combat combat, Mob mob, string combatantId)
