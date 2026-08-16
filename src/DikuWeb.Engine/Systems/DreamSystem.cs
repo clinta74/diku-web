@@ -20,8 +20,15 @@ namespace DikuWeb.Engine.Systems;
 /// </para>
 /// <para>
 /// The line is chosen from the character's id and the count of dreams they have had, rather than at
-/// random: two players asleep in the same room get different dreams, one player gets a different
-/// dream each time, and neither needs a random source threaded into the loop to make it happen.
+/// random: one player gets a different dream each time, two players are keyed apart so a shared room
+/// does not read as a broadcast, and neither needs a random source threaded into the loop.
+/// </para>
+/// <para>
+/// <b>Two sleepers are not <em>guaranteed</em> to differ</b>, and the comment here used to say they
+/// were. Ten lines and two arbitrary ids collide about one time in ten, so a test asserting it
+/// failed roughly that often. Keying the line to the id is what stops the room reading as one
+/// announcement; making the collision impossible would need the sleepers to coordinate, which is a
+/// great deal of machinery for a line of flavour.
 /// </para>
 /// </remarks>
 public static class DreamSystem
@@ -78,11 +85,20 @@ public static class DreamSystem
                 continue;
             }
 
-            var index = (int)(((uint)character.Id.GetHashCode() + (ulong)(pulse / IntervalPulses))
-                % (ulong)Dreams.Length);
-
-            actor.SendText(Dreams[index], "emote");
+            actor.SendText(Dreams[LineFor(character.Id, pulse)], "emote");
             world.SetNextDreamPulse(character.Id, pulse + IntervalPulses);
         }
     }
+
+    /// <summary>
+    /// Which line this character dreams at this pulse.
+    /// </summary>
+    /// <remarks>
+    /// Exposed so the choice can be tested as the function it is. Asserting it by putting two
+    /// players in a room and comparing what they were sent is sampling a distribution, not checking
+    /// a rule — and with ten lines that sample is wrong one time in ten.
+    /// </remarks>
+    public static int LineFor(Guid characterId, long pulse) =>
+        (int)(((uint)characterId.GetHashCode() + (ulong)(pulse / IntervalPulses))
+            % (ulong)Dreams.Length);
 }

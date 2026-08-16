@@ -279,7 +279,10 @@ const EFFECTS: EffectOption[] = [
     label: 'Root',
     summary: 'The target can still fight but cannot flee or walk away.',
     rider: true,
-    params: [duration('16', '40 (10s)'), label('rooted')],
+    // "held fast", not "rooted": this is the placeholder, so it has to be the word the engine
+    // actually falls back to. RootEffect says "held fast" and it is the better sentence in
+    // "You are …!" — so the placeholder moved rather than the engine.
+    params: [duration('16', '40 (10s)'), label('held fast')],
   },
 ]
 

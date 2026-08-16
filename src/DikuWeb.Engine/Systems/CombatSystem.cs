@@ -479,14 +479,24 @@ public sealed class CombatSystem(
 
         effect.Apply(source, target, parameters, world.Random);
 
+        ActiveEffect? applied = null;
         if (effect is IBuffEffect ongoing)
         {
-            world.ApplyEffect(
-                EntityId.ToGuid(strike.TargetId),
-                ongoing.CreateActiveEffect(source, target, parameters, strike.Pulse));
+            applied = ongoing.CreateActiveEffect(source, target, parameters, strike.Pulse);
+            world.ApplyEffect(EntityId.ToGuid(strike.TargetId), applied);
         }
 
-        NarrateRider(world, strike, effect.EffectKey, parameters);
+        // Narrated from the effect that was actually applied rather than from the rider's raw
+        // parameters. Every effect already resolves its own fallback - "stunned", "held fast",
+        // "bleeding" - so asking the ActiveEffect makes the line and the status panel agree by
+        // construction instead of by two places happening to choose the same word.
+        //
+        // A rider with no ongoing state says nothing. There is no status to name, and the swing it
+        // rode in on has already been narrated.
+        if (applied is not null)
+        {
+            NarrateRider(world, strike, applied.Name);
+        }
     }
 
     /// <summary>
@@ -494,20 +504,17 @@ public sealed class CombatSystem(
     /// </summary>
     /// <remarks>
     /// Without this a stun is invisible: the player's next command is refused with "You cannot
-    /// gather yourself" and nothing ever explained why. The effect's own <c>name</c> parameter is
-    /// the wording, because that is what the status panel and the ability that applied it already
-    /// use - "reeling" reads the same wherever it came from.
+    /// gather yourself" and nothing ever explained why. The effect's resolved name is the wording,
+    /// because that is what the status panel and the ability that applied it already use -
+    /// "reeling" reads the same wherever it came from.
+    ///
+    /// <b><paramref name="label"/> is the applied effect's name, never its key.</b> This used to
+    /// fall back to the key when a rider authored no <c>name</c>, which produced <em>"You are
+    /// control.stun!"</em> — and the fallback was never needed, because every effect that carries a
+    /// status already resolves one of its own.
     /// </remarks>
-    private static void NarrateRider(
-        WorldState world,
-        StrikeContext strike,
-        string effectKey,
-        Dictionary<string, string> parameters)
+    private static void NarrateRider(WorldState world, StrikeContext strike, string label)
     {
-        var label = parameters.TryGetValue("name", out var name) && !string.IsNullOrWhiteSpace(name)
-            ? name
-            : effectKey;
-
         if (strike.TargetActor is PlayerActor targetPlayer)
         {
             targetPlayer.SendText($"You are {label}!", "bad");

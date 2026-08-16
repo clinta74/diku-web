@@ -273,8 +273,10 @@ public sealed class RestAndDreamTests
     [Fact]
     public void Two_sleepers_in_one_room_do_not_dream_the_same_thing()
     {
-        // Chosen from the character id rather than at random, so this is a property rather than a
-        // coincidence - and it is what stops a shared room reading like a broadcast.
+        // Both sleepers dream. Whether they dream the *same* thing is asserted below against the
+        // function itself: with ten lines and two arbitrary ids they collide about one time in
+        // ten, so comparing what two random characters were sent is sampling rather than testing.
+        // This test failed roughly that often until it stopped claiming otherwise.
         var harness = new WorldHarness();
         harness.LoadTestWorld();
 
@@ -289,12 +291,54 @@ public sealed class RestAndDreamTests
         DreamSystem.Tick(harness.World, 0);
         DreamSystem.Tick(harness.World, DreamSystem.IntervalPulses);
 
-        var first = harness.DrainText(one);
-        var second = harness.DrainText(two);
+        Assert.Contains("You dream", harness.DrainText(one), StringComparison.Ordinal);
+        Assert.Contains("You dream", harness.DrainText(two), StringComparison.Ordinal);
+    }
 
-        Assert.Contains("You dream", first, StringComparison.Ordinal);
-        Assert.Contains("You dream", second, StringComparison.Ordinal);
-        Assert.NotEqual(first, second);
+    [Fact]
+    public void The_dream_is_keyed_to_the_character_so_a_room_is_not_a_broadcast()
+    {
+        // Spread across the table, asserted over fixed ids rather than over two.
+        //
+        // Two is the wrong number for this. Ten lines means any *particular* pair collides one
+        // time in ten - which is what made the original test flaky, and what made my first
+        // attempt at replacing it fail outright when the two ids I picked happened to be a
+        // colliding pair. The claim worth making is that the id moves the line at all, and that
+        // is a claim about the set.
+        var lines = Enumerable
+            .Range(0, 32)
+            .Select(i => new Guid(i, 0, 0, [0, 0, 0, 0, 0, 0, 0, 0]))
+            .Select(id => DreamSystem.LineFor(id, DreamSystem.IntervalPulses))
+            .Distinct()
+            .Count();
+
+        // Deliberately weak: true for any sane hash, and false for the failure that matters -
+        // every sleeper in the world reading the same sentence.
+        Assert.True(lines > 1, $"32 characters produced {lines} distinct dreams");
+    }
+
+    [Fact]
+    public void One_sleeper_dreams_something_new_each_time()
+    {
+        // The property that does hold unconditionally: the line advances with the dream count, so
+        // an hour asleep is not the same sentence twelve times.
+        var kael = new Guid("11111111-1111-1111-1111-111111111111");
+
+        Assert.NotEqual(
+            DreamSystem.LineFor(kael, DreamSystem.IntervalPulses),
+            DreamSystem.LineFor(kael, DreamSystem.IntervalPulses * 2));
+    }
+
+    [Fact]
+    public void The_same_sleeper_at_the_same_moment_dreams_the_same_thing()
+    {
+        // Pure function of (id, pulse). Nothing is stored and no random source is threaded through
+        // the loop, which is the whole reason it is derived this way.
+        var kael = new Guid("11111111-1111-1111-1111-111111111111");
+
+        Assert.Equal(
+            DreamSystem.LineFor(kael, DreamSystem.IntervalPulses),
+            DreamSystem.LineFor(kael, DreamSystem.IntervalPulses));
     }
 
     [Fact]

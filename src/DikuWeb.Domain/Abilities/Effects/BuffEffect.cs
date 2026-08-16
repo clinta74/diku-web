@@ -33,7 +33,9 @@ public sealed class BuffEffect : IBuffEffect
         var durationPulses = 240L;
         var maxStacks = 1;
         var stackingRule = EffectStackingRule.Refresh;
-        var name = "damage boost";
+        // A participle, not a noun. This name is shown in the status panel *and* dropped into
+        // "You are …!", and "You are damage boost!" is what a noun produces there.
+        var name = "emboldened";
 
         // Parse parameters
         if (parameters.TryGetValue("outgoingMultiplier", out var outStr) &&

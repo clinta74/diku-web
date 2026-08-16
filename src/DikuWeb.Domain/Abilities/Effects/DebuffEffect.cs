@@ -41,7 +41,9 @@ public sealed class DebuffEffect : IBuffEffect
         var durationPulses = 240L;
         var maxStacks = 1;
         var stackingRule = EffectStackingRule.Refresh;
-        var name = "weakness";
+        // A participle, not a noun - see BuffEffect. This one is reachable in play: weaken is in
+        // the rider set, so an authored mob attack with no name said "You are weakness!".
+        var name = "weakened";
 
         // Parse parameters. Above 1.0 on incoming means the target takes more; below 1.0 on
         // outgoing means it deals less. Either alone is a debuff; both together is a strong one.
