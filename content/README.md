@@ -4,9 +4,12 @@
 [docs/WORLD.md](../docs/WORLD.md).
 
 **The whole world is here**: five realms, eighteen zones, 224 rooms, 68 mob templates, 92 items,
-100 spawners and all five acts. Import them in realm order — `ossara`, `grask`, `azhen`, `nemhal`,
-`the-unlit` — because a realm's gate names a room in the next one, and a dangling exit is a warning
-you would rather not have to read past.
+100 spawners and all five acts.
+
+**Merge them and import once** — see [Applying them](#applying-them). Importing the six files one at
+a time works, but it has to be done in realm order (`ossara`, `grask`, `azhen`, `nemhal`,
+`the-unlit`) and still produces dangling-exit warnings, because a realm's gate names a room in the
+next one and each file's exits are applied before the next file's rooms exist.
 
 | File | Zones |
 |---|---|
@@ -26,32 +29,42 @@ quest whose reward is a character flag, and the gate onward requires it (`PLAN.m
 gated — you can always walk back the way you came, including out of the Unlit, where `recall` does
 not work and walking is the only way home.
 
-## Applying one
+## Applying them
+
+Merge the six into one bundle, check it, then import it once:
 
 ```
+python tools/merge-bundles.py content -o build/the-reaches.json
+python tools/check-bundle.py build/the-reaches.json
 POST /api/builder/import?dryRun=true    # what would happen; changes nothing
 POST /api/builder/import                # do it
 ```
 
-Both require the Builder role and cookie authentication, so scripting it means logging in first.
-Always dry-run a zone-sized bundle: an import is **not atomic** — one entity is one loop round trip
-and one transaction, so a failure part way through leaves everything before it applied.
+The import endpoint requires the Builder role and cookie authentication, so scripting it means
+logging in first. **Always dry-run first**: an import is **not atomic** — one entity is one loop
+round trip and one transaction, so a failure part way through leaves everything before it applied.
+Merging does not change that; what it changes is that every intermediate state is *valid*, and that
+one dry run covers the whole world instead of six.
 
-Before either, and without needing a server:
+**`build/` is gitignored on purpose.** The merged file is derived, byte-for-byte reproducible from
+these six, and six times the same words — committing it would make it a second source of truth that
+drifts, invisibly, inside a diff nobody reads. Rebuild it when you import.
 
-```
-python tools/check-bundle.py content/ossara/gatetown.json
-```
+`check-bundle.py` catches the three mistakes the dry run does not treat as failures — a one-way exit,
+a room with no path to the rest of its zone, and a room declaring a zone it does not live in. It runs
+without a server, so it belongs in an editor loop.
 
-That catches the three mistakes the dry run does not treat as failures — a one-way exit, a room with
-no path to the rest of its zone, and a room declaring a zone it does not live in. See the script's
-own docstring for why each is worth a separate pass.
+**Run it on the merged file, not the parts.** It can only judge an exit whose target is in the same
+bundle, so per file the four cross-realm gates are the one part of the world it cannot check at all.
+Run against the merge, it found one on the first attempt: the Grask→Azhen gate leaves `west` and
+comes back `north`, where every other gate is a proper south/north pair.
 
 ## Three properties of the import path that shape how these are written
 
 - **`formatVersion` must match the server exactly.** It is the one hard refusal in the whole path.
-  Author against `WorldBundle.CurrentFormatVersion` — these files are at **9** — not against this
-  sentence, which has been wrong before.
+  Author against `WorldBundle.CurrentFormatVersion` — these files are at **11** — not against this
+  sentence, which has now been wrong twice. `check-bundle.py` reads the number out of the C# and is
+  the thing to trust; `merge-bundles.py` refuses a set of files that disagree with each other.
 - **Import is a merge, not a mirror.** Deleting an entity from a file does not delete it from the
   world, and renaming a room key produces *both* rooms on the next import. Removals are explicit
   `DELETE` calls.

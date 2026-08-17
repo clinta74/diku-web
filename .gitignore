@@ -33,6 +33,12 @@ appsettings.*.Local.json
 # in history should be committed by path, deliberately, after reading it.
 backups/
 
+# Where tools/merge-bundles.py writes. A merged bundle is derived from content/, byte-for-byte
+# reproducible from it, and 6x the same words — committing one would make it a second source of
+# truth that drifts from the files it was built from, and the drift would be invisible in a diff
+# that large. Rebuild it at import time instead.
+build/
+
 # ---- Tooling ----
 .idea/
 .DS_Store
