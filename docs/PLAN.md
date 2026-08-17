@@ -2321,31 +2321,26 @@ None of the four is something reading the code would have found. All four came f
 
 Then **Phase 7**, the mobile client, planned in full in [MOBILE.md](MOBILE.md).
 
-**Open, from playtesting** ([PlayTestingNotes.md](PlayTestingNotes.md) is the live inbox):
+**Open, from playtesting** ([PlayTestingNotes.md](PlayTestingNotes.md) is the live inbox, and
+[BUGS.md](BUGS.md) is the queue):
 
 - A changelog, or GitHub releases — nothing records what changed between two builds.
-- **Ability cooldowns are retuned; the pending-cooldown display is not built.** The numbers went
-  first because the note understated the problem: ten of the eleven timed effects had a duration
-  *longer than their own cooldown* and all of them refresh, so buffs and debuffs were permanently
-  maintainable and the cooldown was decorative — Weaken sat at 200% uptime. Every cooldown is now a
-  whole number of 2-second combat beats, since a swing is 8 pulses and anything else drifts against
-  the fight forever; 14 of 37 were fractional. Length follows impact, and for a timed effect that
-  means *duration ÷ target uptime*. Ambush moved *down*, because it is authored to stack three
-  times and at 28 pulses could never reach two.
-  What is left is the UI half, and it is the larger one: the client has never heard of abilities.
-  `EventTypes` is `text`/`room`/`map`/`contents`/`vitals`/`sys`, so a fire event would arrive at a
-  client with nothing to grey out. It needs an `abilities` roster event carrying remaining cooldown
-  per ability — which also resyncs a reconnect for free — and a `cooldown` event on cast, with the
-  client counting down locally rather than the server ticking one per pulse.
-- The **UX evaluation** is written — [UX.md](UX.md), eight findings. The *Follow my character*
-  checkbox is gone, which is the part the note asked for outright. What is left is the fix list at
-  the end of that document; the top three are minutes each and the largest, resizable builder
-  rails, wants the Pointer Events work Phase 7's M4a is already going to do.
+- **The milestone review** over command, room, item, mob and quest — `BUGS.md` #6–#25. Its Tier 1 is
+  closed and so are the three guards it argued for; what is left there is the design questions it
+  deliberately did not answer, chiefly the aggression target rule, mob regeneration and leashing,
+  and quest accept/decline.
+- **Balance is unmeasured.** `MobAttackBaseline`, quest XP scaling, and solo/group difficulty per
+  Path per band were all chosen rather than observed. This needs play, not review.
+- **The Reaches have still never been walked end to end.** Every act's chain is arithmetic that
+  checks out; none of it has been finished by a person.
 - `examine` and `stats` are builder-aware; `look`, `inventory`, and `consider` are not.
 - **Claude in the builder** (§13) — assistance with authored prose, starting with descriptions,
   built so that it proposes and never writes. Would be the first outbound HTTP call in `src/`.
 - **Authored lines that mean exactly what they say** (§13). Emotes are formatted as predicates,
   which is right for what they are today and wrong for anything else a builder might write.
+
+*Two entries that stood here are done: the ability cooldown display, which is built and reworked
+since, and the UX evaluation, whose eight findings are all marked FIXED in [UX.md](UX.md).*
 
 **Two lessons from the audits, worth carrying forward:**
 

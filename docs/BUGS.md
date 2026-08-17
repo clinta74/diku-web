@@ -38,26 +38,26 @@ class. Only going and looking is, which is what #22–#24 are meant to replace.
 
 | # | Finding | Severity | Verified | Status |
 |---|-----|----------|----------|--------|
-| 6 | Every quest's authored dialogue is unreachable — wrong key vocabulary | **Blocking** | Key histogram vs source | Open |
-| 7 | Quest reward flags never reach the running server | **Blocking** | By inspection | Open |
-| 8 | Equipment slots are never cleared on `drop`/`give`/`sell` — stackable | **Blocking** | By inspection | Open |
-| 9 | `sell` bypasses the guards `drop`, `give` and `destroy` enforce | Moderate | By inspection | Open |
-| 10 | Mob map icons are authored and read by nothing | Moderate | By inspection | Open |
-| 11 | `stats` "Equipped Bonuses" filters out two thirds of the data | Moderate | Content tally | Open |
-| 12 | Three help strings advertise abbreviations that go elsewhere | Moderate | By inspection | Open |
-| 13 | Mob AI narration bypasses `MobLabel` | Moderate | By inspection | Open |
-| 14 | Authoring keys still reaching players in four places | Moderate | By inspection | Open |
-| 15 | `set` reports the value it was given, not the one it wrote | Minor | By inspection | Open |
-| 16 | `quest <name>` shows `0/0` progress for a quest with no fetch step | Minor | By inspection | Open |
-| 17 | Three dials authored and wired to nothing | Latent | Call-site sweep | Open |
-| 18 | `noMob` skips flag inheritance | Latent | By inspection | Open |
-| 19 | `RoomFlag.Phase` is plumbed to the browser and rendered by nothing | Latent | By inspection | Open |
+| 6 | Every quest's authored dialogue is unreachable — wrong key vocabulary | **Blocking** | Key histogram vs source | **Fixed** |
+| 7 | Quest reward flags never reach the running server | **Blocking** | By inspection | **Fixed** |
+| 8 | Equipment slots are never cleared on `drop`/`give`/`sell` — stackable | **Blocking** | By inspection | **Fixed** |
+| 9 | `sell` bypasses the guards `drop`, `give` and `destroy` enforce | Moderate | By inspection | **Fixed** |
+| 10 | Mob map icons are authored and read by nothing | Moderate | By inspection | **Fixed** |
+| 11 | `stats` "Equipped Bonuses" filters out two thirds of the data | Moderate | Content tally | **Fixed** |
+| 12 | Three help strings advertise abbreviations that go elsewhere | Moderate | By inspection | **Fixed** |
+| 13 | Mob AI narration bypasses `MobLabel` | Moderate | By inspection | **Fixed** |
+| 14 | Authoring keys still reaching players in four places | Moderate | By inspection | **Fixed** |
+| 15 | `set` reports the value it was given, not the one it wrote | Minor | By inspection | **Fixed** |
+| 16 | `quest <name>` shows `0/0` progress for a quest with no fetch step | Minor | By inspection | **Fixed** |
+| 17 | Three dials authored and wired to nothing | Latent | Call-site sweep | **Fixed** |
+| 18 | `noMob` skips flag inheritance | Latent | By inspection | **Fixed** |
+| 19 | `RoomFlag.Phase` is plumbed to the browser and rendered by nothing | Latent | By inspection | **Fixed** |
 | 20 | `TryAggress` targets by arrival order; link-dead players soak aggro | Latent | By inspection | Open |
-| 21 | Player targeting is exact-match in combat, prefix elsewhere | Latent | By inspection | Open |
-| 22 | `VerbReachabilityTests` does not test what its comment says | Coverage gap | By inspection | Open |
-| 23 | No guard that a change record reaches the cache and the database | Coverage gap | Found 2 live bugs | Open |
-| 24 | No guard that a content key is one the engine reads | Coverage gap | Would have caught #6 | Open |
-| 25 | Assorted dead code, duplication and inconsistency | Minor | By inspection | Open |
+| 21 | Player targeting is exact-match in combat, prefix elsewhere | Latent | By inspection | **Fixed** |
+| 22 | `VerbReachabilityTests` does not test what its comment says | Coverage gap | By inspection | **Fixed** |
+| 23 | No guard that a change record reaches the cache and the database | Coverage gap | Found 2 live bugs | **Fixed** |
+| 24 | No guard that a content key is one the engine reads | Coverage gap | Would have caught #6 | **Fixed** |
+| 25 | Assorted dead code, duplication and inconsistency | Minor | By inspection | **Partly** |
 
 ---
 
@@ -361,6 +361,18 @@ rather than keeping a copy, so the technique is in the repo — it just has not 
   heal or reset. Buy price ignores the `itemValue` multiplier that sell price honours.
   `SpawnMultipliers` records zone-only while claiming world × zone, and nothing reads it for items.
   Three orphaned XML doc comments. A duplicated level-up loop.
+
+**Done in this pass:** the five zero-caller members, the three word-splitters, all 29 hand-written
+`DisplayName` sites, both misplaced doc comments, the two dead branches, `rflag`'s fallthrough, and
+the `BuilderCommands` statics.
+
+**Still open, and why.** `EquipmentResolver.ResolveAttackerStats`'s two overloads are called only by
+tests, so removing them means rewriting a test file that covers real arithmetic through a different
+door. `RoomFlagKind` is a field on the `RoomFlag` record, so removing it reshapes the record for no
+behaviour. The rest — refusal styling, `RequiredCount = 0`, `abandon`'s unranked match, mobs never
+healing, the buy/sell multiplier asymmetry, `SpawnMultipliers`, and the two builder verbs running
+off the loop thread — each change what something *does*, and this pass was behaviour-preserving by
+agreement.
 
 ---
 

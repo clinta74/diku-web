@@ -23,6 +23,38 @@ Add anything noticed while playing here. Cleared as items are done.
   enough on its own: a prefix has to reach the command the person typing it meant, and no
   arrangement of lengths makes a shared name do that.
 
+- **A milestone review of command, room, item, mob and quest is done**, and it is worth reading as
+  one thing rather than twenty. Everything it found shares a cause — *a field that reads as
+  configured everywhere a human can see it and is connected to nothing at the far end* — which had
+  already happened five times before it and was caught by a test exactly once. `BUGS.md` #6–#25.
+
+  The two that were live and blocking, both on the path just used to import the world:
+
+  - **Every quest's authored dialogue was unreachable.** The engine reads `giverOffer` /
+    `giverInProgress` / `giverComplete` / `turninReady`; all 35 quests authored `offer` /
+    `progress` / `complete` / `already`. Zero overlap, so ~137 lines of prose were replaced by four
+    generic templates and every giver in the game said "I have a job for you: {summary}".
+  - **Quest reward flags never reached the running server.** The applier copied 17 of the change's
+    18 fields and dropped `RewardFlagKey` — the four attunement gates, the only progression lock in
+    the game. The database was right and the cache was wrong, so a gate stayed shut until a restart.
+
+  Nine more player-visible defects went with them: the map drew a lowercase `a` for nearly every
+  mob because mob icons were read by nothing; a slot could be stacked without limit by dropping a
+  worn item and picking it back up; `sell` would buy the sword in your hand; `stats` promised
+  equipped bonuses and showed one stat key in four; three help strings advertised abbreviations that
+  went somewhere else.
+
+  **Three guards now exist, each demonstrated failing first** — a change record must reach both the
+  cache and the database, a content key must be one the engine reads, and an advertised abbreviation
+  must reach the verb advertising it.
+
+  **Re-import**: `formatVersion` is **10**, the dialogue keys moved, and `spawners.respawn_seconds`
+  is dropped by a migration.
+
+  **Left deliberately**, as design questions rather than bugs: the aggression target rule (a
+  link-dead player soaks every aggressive mob in the room), mob regeneration and leashing, quest
+  accept/decline, and containers.
+
 - Should track changes in a changelog or use the github release functionality?
 
 - ability cooldowns: **done**. Retuned to the 2s combat beat (§4.5), and the pending-cooldown
