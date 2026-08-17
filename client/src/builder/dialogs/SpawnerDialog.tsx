@@ -54,7 +54,6 @@ export function SpawnerDialog({
   const [templateKey, setTemplateKey] = useState('')
   const [roomKeys, setRoomKeys] = useState<string[]>([])
   const [targetCount, setTargetCount] = useState(1)
-  const [respawnSeconds, setRespawnSeconds] = useState(60)
   const [wander, setWander] = useState<WanderMode>('template')
   // 'zone' or a pinned level. Held as the wire's own word so there is no third representation to
   // keep in step (PLAN.md §4.7).
@@ -68,7 +67,6 @@ export function SpawnerDialog({
     setTemplateKey(editing?.templateKey ?? '')
     setRoomKeys(editing?.roomKeys ?? [roomKey])
     setTargetCount(editing?.targetCount ?? 1)
-    setRespawnSeconds(editing?.respawnSeconds ?? 60)
     setWander(editing?.wander ?? 'template')
     setLevel(editing?.level ?? 'zone')
     setError(null)
@@ -107,7 +105,6 @@ export function SpawnerDialog({
           templateKind: kind,
           roomKeys,
           targetCount,
-          respawnSeconds,
           wander,
           // An item has no level, and the server refuses a pin on one. Cleared here rather than
           // relying on the refusal, so flipping the kind cannot strand a value nobody can see.
@@ -120,7 +117,6 @@ export function SpawnerDialog({
           templateKind: kind,
           roomKeys,
           targetCount,
-          respawnSeconds,
           wander,
           level: kind === 'Mob' ? level : 'zone',
         })
@@ -197,10 +193,6 @@ export function SpawnerDialog({
 
       <Field label="Target count">
         <NumberInput min={1} value={targetCount} onChange={setTargetCount} />
-      </Field>
-
-      <Field label="Respawn (seconds)">
-        <NumberInput min={0} value={respawnSeconds} onChange={setRespawnSeconds} />
       </Field>
 
       {kind === 'Mob' && (

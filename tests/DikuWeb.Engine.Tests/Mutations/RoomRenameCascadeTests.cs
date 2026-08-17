@@ -39,7 +39,7 @@ public sealed class RoomRenameCascadeTests
         var id = Guid.CreateVersion7();
 
         harness.Mutate(new UpsertSpawner(
-            id, "test.zone", "rat", TemplateKind.Mob, [.. rooms], 2, 30, Wanders: null, fightsAtLevel));
+            id, "test.zone", "rat", TemplateKind.Mob, [.. rooms], 2, Wanders: null, fightsAtLevel));
 
         return id;
     }
@@ -200,7 +200,6 @@ public sealed class RoomRenameCascadeTests
 
         Assert.Equal(27, spawner.FightsAtLevel);
         Assert.Equal(2, spawner.TargetCount);
-        Assert.Equal(30, spawner.RespawnSeconds);
         Assert.Contains(Renamed.ToString(), spawner.RoomKeys);
     }
 }

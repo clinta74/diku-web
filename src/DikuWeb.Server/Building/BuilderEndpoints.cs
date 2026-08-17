@@ -1159,7 +1159,6 @@ public static class BuilderEndpoints
             kind,
             request.RoomKeys ?? new List<string>(),
             request.TargetCount ?? 1,
-            request.RespawnSeconds ?? 60,
             wanders,
             fightsAt);
 
@@ -1214,7 +1213,6 @@ public static class BuilderEndpoints
             kind,
             request.RoomKeys ?? existing.RoomKeys,
             request.TargetCount ?? existing.TargetCount,
-            request.RespawnSeconds ?? existing.RespawnSeconds,
             wanders,
             fightsAt);
 

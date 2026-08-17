@@ -263,7 +263,7 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
 
     private static WorldChange SpawnerChangeFor(BundleSpawner s) =>
         new UpsertSpawner(s.Id, s.ZoneKey, s.TemplateKey, s.TemplateKind,
-            s.RoomKeys ?? [], s.TargetCount, s.RespawnSeconds, s.Wanders, s.FightsAtLevel);
+            s.RoomKeys ?? [], s.TargetCount, s.Wanders, s.FightsAtLevel);
 
     private static WorldChange QuestChangeFor(BundleQuest q) =>
         new UpsertQuest(q.Key, q.ZoneKey, q.Name, q.Summary, q.Description,
@@ -305,8 +305,6 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
         m.Xp = Read("xp", m.Xp);
         m.Gold = Read("gold", m.Gold);
         m.ItemValue = Read("itemValue", m.ItemValue);
-        m.ItemPower = Read("itemPower", m.ItemPower);
-        m.SpawnDensity = Read("spawnDensity", m.SpawnDensity);
 
         return m;
 

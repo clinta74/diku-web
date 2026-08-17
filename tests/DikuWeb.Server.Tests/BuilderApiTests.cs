@@ -778,7 +778,6 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
             templateKind = "Mob",
             roomKeys = new[] { roomKey },
             targetCount = 1,
-            respawnSeconds = 60,
         })).EnsureSuccessStatusCode();
 
         var questKey = await NewQuestAsync(client, zoneKey, mob, item);

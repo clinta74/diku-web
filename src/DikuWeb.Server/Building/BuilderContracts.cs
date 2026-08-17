@@ -292,7 +292,6 @@ public sealed record SpawnerResponse(
     TemplateKind TemplateKind,
     List<string> RoomKeys,
     int TargetCount,
-    int RespawnSeconds,
     string Wander,
     /// <summary>
     /// The level mobs from this spawner will fight at (PLAN.md §4.7). Zero for an item spawner, or
@@ -322,7 +321,6 @@ public sealed record SaveSpawnerRequest(
     TemplateKind? TemplateKind,
     List<string>? RoomKeys,
     int? TargetCount,
-    int? RespawnSeconds,
     string? Wander,
     string? Level);
 

@@ -497,9 +497,14 @@ All multipliers are fractional, default `1.0`, and apply as `world × zone`:
 | `damage` | Monster damage | Fine-tune on top of `strength` |
 | `xp` | XP awarded on kill | Independent — a zone can be hard but stingy |
 | `gold` | Coin drops | |
-| `itemValue` | Vendor value of items | |
-| `itemPower` | Item stat bonuses (weapon damage, armor) | |
-| `spawnDensity` | Spawner target counts | Makes a zone crowded, not just tougher |
+| `itemValue` | Vendor value of items | Applied at spawn; the shop counter reads the instance |
+
+**There were seven.** `itemPower` (item stat bonuses) and `spawnDensity` (spawner target counts)
+were removed in the milestone review: both were authored across the Reaches, editable in the
+builder, previewed, exported, and **passed to `Resolve` by nothing** — the only caller was a unit
+test asserting the arithmetic of a function no production code invoked, which is exactly what made
+them look alive. Deleting rather than implementing them was deliberate: wiring them up changes the
+balance of content nobody has played, which is a decision that needs play behind it (BUGS.md #17).
 
 Resolution:
 
@@ -541,7 +546,7 @@ zone disagree about what the zone did to them purely by which fields their autho
 belongs to `ArmorCurve` (§4.6) and is never stored.
 
 *The table above was aspirational until 2026-08-14.* `Mob.ResolvedStats` was a verbatim copy of the
-template, so `damage`, `health`, `itemPower` and `spawnDensity` reached nothing at all and
+template, so `damage` and `health` reached nothing at all and
 `strength` scaled only the health pool — the master difficulty dial made mobs tankier and never
 deadlier, and the worked example's damage column was false in every row. Worse, `DamageCalculator`
 read `Mob.Level` for the stats a silent template leaves to its level, so the most common kind of mob
@@ -891,8 +896,12 @@ and a second field for it would be a second source of truth to disagree with.
 
 - **Template → Instance.** `MobTemplate`/`ItemTemplate` hold the baseline; `Mob`/`Item` are
   runtime instances with concrete, multiplier-resolved stats. Replaces Diku "resets".
-- **Spawner.** A declarative rule on a zone: *maintain N of template X across these rooms,
-  respawn D seconds after death.* A population target, not an imperative reset script.
+- **Spawner.** A declarative rule on a zone: *maintain N of template X across these rooms.* A
+  population target, not an imperative reset script. **There is no per-spawner respawn delay** —
+  the field existed, defaulted to 30, and was offered in the builder while `SpawnerSystem` refilled
+  to the target on its own 15-second sweep and never read it, so it has been removed rather than
+  left reading as tuned (BUGS.md #17). Staggering a respawn is a pacing decision that should start
+  from the design, not from a number somebody typed into a dead field.
   **A mob spawner counts what it made, wherever that has got to** — not what is standing in its
   rooms. Counting by room meant a mob that wandered one step out stopped counting and was
   replaced, and the replacement wandered off as well.
@@ -1861,7 +1870,7 @@ The reason the whole feature exists, so it deserves real UI. Editing a zone's mu
 a live table of what every template resolves to in that zone:
 
 ```
-Zone: sunken-crypt      strength 2.5    gold 3.0    xp 1.0    spawnDensity 1.5
+Zone: sunken-crypt      strength 2.5    gold 3.0    xp 1.0    itemValue 1.5
 
   kobold-sentry     40 hp  →  100 hp      4-7 dmg  →  10-18 dmg     25g → 75g
   cave-lurker       85 hp  →  213 hp     9-14 dmg  →  23-35 dmg     60g → 180g

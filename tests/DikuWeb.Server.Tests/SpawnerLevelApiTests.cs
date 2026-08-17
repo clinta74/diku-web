@@ -48,7 +48,6 @@ public sealed class SpawnerLevelApiTests(PostgresFixture postgres)
                 templateKind = "Mob",
                 roomKeys = new[] { roomKey },
                 targetCount = 1,
-                respawnSeconds = 60,
                 level,
             }));
 
@@ -163,7 +162,6 @@ public sealed class SpawnerLevelApiTests(PostgresFixture postgres)
             templateKind = "Item",
             roomKeys = new[] { roomKey },
             targetCount = 1,
-            respawnSeconds = 60,
             level = "12",
         });
 

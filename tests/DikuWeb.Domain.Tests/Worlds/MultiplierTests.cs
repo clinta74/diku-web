@@ -15,8 +15,6 @@ public sealed class MultiplierTests
         Assert.Equal(1.0m, mults.Xp);
         Assert.Equal(1.0m, mults.Gold);
         Assert.Equal(1.0m, mults.ItemValue);
-        Assert.Equal(1.0m, mults.ItemPower);
-        Assert.Equal(1.0m, mults.SpawnDensity);
     }
 
     [Theory]
@@ -149,12 +147,12 @@ public sealed class MultiplierTests
     [Fact]
     public void All_multiplier_types_resolve_independently()
     {
-        var world = new Multipliers { Strength = 2.0m, Xp = 0.5m, ItemPower = 1.5m };
-        var zone = new Multipliers { Strength = 1.5m, Xp = 2.0m, ItemPower = 1.0m };
+        var world = new Multipliers { Strength = 2.0m, Xp = 0.5m, ItemValue = 1.5m };
+        var zone = new Multipliers { Strength = 1.5m, Xp = 2.0m, ItemValue = 1.0m };
 
         var strength = Multipliers.Resolve(40, world, zone, MultiplierType.Strength);
         var xp = Multipliers.Resolve(100, world, zone, MultiplierType.Xp);
-        var itemPower = Multipliers.Resolve(5, world, zone, MultiplierType.ItemPower);
+        var itemValue = Multipliers.Resolve(5, world, zone, MultiplierType.ItemValue);
 
         // 40 × 2.0 × 1.5 = 120
         Assert.Equal(120, strength);
@@ -163,6 +161,6 @@ public sealed class MultiplierTests
         Assert.Equal(100, xp);
 
         // 5 × 1.5 × 1.0 = 7.5 → rounds to 8
-        Assert.Equal(8, itemPower);
+        Assert.Equal(8, itemValue);
     }
 }

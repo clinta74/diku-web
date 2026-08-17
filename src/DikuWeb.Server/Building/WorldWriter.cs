@@ -457,7 +457,6 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         TemplateKind = c.TemplateKind,
                         RoomKeys = new List<string>(c.RoomKeys),
                         TargetCount = c.TargetCount,
-                        RespawnSeconds = c.RespawnSeconds,
                         Wanders = c.Wanders,
                         FightsAtLevel = c.FightsAtLevel,
                     });
@@ -475,7 +474,6 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                     TemplateKind = c.TemplateKind,
                     RoomKeys = new List<string>(c.RoomKeys),
                     TargetCount = c.TargetCount,
-                    RespawnSeconds = c.RespawnSeconds,
                     Wanders = c.Wanders,
                     FightsAtLevel = c.FightsAtLevel,
                 });

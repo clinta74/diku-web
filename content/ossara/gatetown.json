@@ -1,5 +1,5 @@
 {
-  "formatVersion": 9,
+  "formatVersion": 10,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "zone",
@@ -18,9 +18,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     }
   ],
@@ -42,9 +40,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     }
   ],
@@ -1224,7 +1220,6 @@
         "ossara.gatetown.the-gate-yard"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1237,7 +1232,6 @@
         "ossara.gatetown.the-general-store"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1250,7 +1244,6 @@
         "ossara.gatetown.the-provisioner"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1263,7 +1256,6 @@
         "ossara.gatetown.the-weaponwrights"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1276,7 +1268,6 @@
         "ossara.gatetown.the-armoury"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1289,7 +1280,6 @@
         "ossara.gatetown.khaldras-hearth"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1302,7 +1292,6 @@
         "ossara.gatetown.ilvaros-house"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1315,7 +1304,6 @@
         "ossara.gatetown.the-rope-ferry"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     }

@@ -567,7 +567,6 @@ public sealed class WorldMutationApplier(
                 spawner.TemplateKind,
                 rooms,
                 spawner.TargetCount,
-                spawner.RespawnSeconds,
                 spawner.Wanders,
                 spawner.FightsAtLevel);
 
@@ -1224,7 +1223,6 @@ public sealed class WorldMutationApplier(
             TemplateKind = change.TemplateKind,
             RoomKeys = [.. change.RoomKeys],
             TargetCount = change.TargetCount,
-            RespawnSeconds = change.RespawnSeconds,
             Wanders = change.Wanders,
             FightsAtLevel = change.FightsAtLevel,
         });

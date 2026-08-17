@@ -347,7 +347,6 @@ public sealed record UpsertSpawner(
     TemplateKind TemplateKind,
     List<string> RoomKeys,
     int TargetCount,
-    int RespawnSeconds,
     bool? Wanders,
     int? FightsAtLevel) : WorldChange
 {

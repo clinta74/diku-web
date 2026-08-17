@@ -1,5 +1,5 @@
 {
-  "formatVersion": 9,
+  "formatVersion": 10,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -18,9 +18,7 @@
         "damage": 1.0,
         "xp": 1.9,
         "gold": 2.6,
-        "itemValue": 1.2,
-        "itemPower": 1.0,
-        "spawnDensity": 1.0
+        "itemValue": 1.2
       }
     }
   ],
@@ -42,9 +40,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     },
     {
@@ -61,9 +57,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.2
+        "itemValue": 1.0
       }
     },
     {
@@ -80,9 +74,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.4
+        "itemValue": 1.0
       }
     },
     {
@@ -101,9 +93,7 @@
         "damage": 1.0,
         "xp": 1.1,
         "gold": 0.4,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     }
   ],
@@ -2757,7 +2747,6 @@
         "grask.the-landing.the-tally-house"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2770,7 +2759,6 @@
         "grask.the-landing.the-outfitters"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2783,7 +2771,6 @@
         "grask.the-landing.the-ironmonger"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2796,7 +2783,6 @@
         "grask.the-landing.the-provision-stall"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2809,7 +2795,6 @@
         "grask.the-landing.the-hiring-step"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2823,7 +2808,6 @@
         "grask.the-cutting.the-second-bench"
       ],
       "targetCount": 4,
-      "respawnSeconds": 80,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2837,7 +2821,6 @@
         "grask.the-cutting.the-spoil-run"
       ],
       "targetCount": 4,
-      "respawnSeconds": 70,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2851,7 +2834,6 @@
         "grask.the-cutting.the-third-bench"
       ],
       "targetCount": 4,
-      "respawnSeconds": 90,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2866,7 +2848,6 @@
         "grask.the-cutting.the-far-face"
       ],
       "targetCount": 4,
-      "respawnSeconds": 100,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2879,7 +2860,6 @@
         "grask.the-cutting.the-drowned-bench"
       ],
       "targetCount": 2,
-      "respawnSeconds": 140,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2892,7 +2872,6 @@
         "grask.the-cutting.the-water-adit"
       ],
       "targetCount": 3,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2907,7 +2886,6 @@
         "grask.stiltmarsh.the-black-reach"
       ],
       "targetCount": 5,
-      "respawnSeconds": 100,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2921,7 +2899,6 @@
         "grask.stiltmarsh.the-reed-cut"
       ],
       "targetCount": 4,
-      "respawnSeconds": 110,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2935,7 +2912,6 @@
         "grask.stiltmarsh.the-piling-yard"
       ],
       "targetCount": 3,
-      "respawnSeconds": 90,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2949,7 +2925,6 @@
         "grask.stiltmarsh.the-piling-yard"
       ],
       "targetCount": 3,
-      "respawnSeconds": 100,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2963,7 +2938,6 @@
         "grask.stiltmarsh.the-far-staging"
       ],
       "targetCount": 3,
-      "respawnSeconds": 130,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2977,7 +2951,6 @@
         "grask.stiltmarsh.the-drowned-stand"
       ],
       "targetCount": 3,
-      "respawnSeconds": 70,
       "wanders": true,
       "fightsAtLevel": null
     },
@@ -2991,7 +2964,6 @@
         "grask.the-owing.the-lamp-line"
       ],
       "targetCount": 3,
-      "respawnSeconds": 100,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3005,7 +2977,6 @@
         "grask.the-owing.the-quiet-drift"
       ],
       "targetCount": 3,
-      "respawnSeconds": 120,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3022,7 +2993,6 @@
         "grask.the-owing.the-cold-store"
       ],
       "targetCount": 8,
-      "respawnSeconds": 110,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3035,7 +3005,6 @@
         "grask.the-owing.the-standing-account"
       ],
       "targetCount": 1,
-      "respawnSeconds": 900,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3048,7 +3017,6 @@
         "grask.the-owing.the-owing-head"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3064,7 +3032,6 @@
         "grask.the-owing.the-tool-drop"
       ],
       "targetCount": 4,
-      "respawnSeconds": 240,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3077,7 +3044,6 @@
         "grask.the-owing.the-first-turn"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     }

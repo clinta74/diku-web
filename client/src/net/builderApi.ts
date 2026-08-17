@@ -24,9 +24,7 @@ export interface Multipliers {
   xp: number
   gold: number
   itemValue: number
-  itemPower: number
   /** Spawner target counts — makes a zone crowded, not just tougher. */
-  spawnDensity: number
 }
 
 export const MULTIPLIER_KEYS: Array<keyof Multipliers> = [
@@ -36,8 +34,6 @@ export const MULTIPLIER_KEYS: Array<keyof Multipliers> = [
   'xp',
   'gold',
   'itemValue',
-  'itemPower',
-  'spawnDensity',
 ]
 
 export const NEUTRAL_MULTIPLIERS: Multipliers = {
@@ -47,8 +43,6 @@ export const NEUTRAL_MULTIPLIERS: Multipliers = {
   xp: 1,
   gold: 1,
   itemValue: 1,
-  itemPower: 1,
-  spawnDensity: 1,
 }
 
 export interface WorldSummary {
@@ -301,7 +295,6 @@ export interface Spawner {
   templateKind: 'Mob' | 'Item'
   roomKeys: string[]
   targetCount: number
-  respawnSeconds: number
   wander: WanderMode
   /**
    * What mobs from this spawner fight at (PLAN.md §4.7). Server-computed and read-only; zero for

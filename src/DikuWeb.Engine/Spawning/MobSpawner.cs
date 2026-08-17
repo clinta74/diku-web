@@ -93,8 +93,6 @@ public sealed class MobSpawner
                 ["Xp"] = zoneMults.Xp,
                 ["Gold"] = zoneMults.Gold,
                 ["ItemValue"] = zoneMults.ItemValue,
-                ["ItemPower"] = zoneMults.ItemPower,
-                ["SpawnDensity"] = zoneMults.SpawnDensity,
 
                 // What was actually applied, when it was not the dials above. Without it the
                 // snapshot that exists to answer "why does this kobold have 137 hp?" reports the

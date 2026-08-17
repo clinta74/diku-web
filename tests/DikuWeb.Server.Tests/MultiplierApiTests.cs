@@ -53,13 +53,13 @@ public sealed class MultiplierApiTests(PostgresFixture postgres)
 
         (await client.PatchAsJsonAsync($"/api/builder/worlds/{worldKey}", new
         {
-            multipliers = new { itemPower = 4.0 },
+            multipliers = new { itemValue = 4.0 },
         })).EnsureSuccessStatusCode();
 
         var world = await BuilderClient.JsonAsync(
             await client.GetAsync(new Uri($"/api/builder/worlds/{worldKey}", UriKind.Relative)));
 
-        Assert.Equal(4.0m, world.GetProperty("multipliers").GetProperty("itemPower").GetDecimal());
+        Assert.Equal(4.0m, world.GetProperty("multipliers").GetProperty("itemValue").GetDecimal());
     }
 
     [Fact]
@@ -75,7 +75,12 @@ public sealed class MultiplierApiTests(PostgresFixture postgres)
         var multipliers = zone.GetProperty("multipliers");
 
         Assert.Equal(1m, multipliers.GetProperty("xp").GetDecimal());
-        Assert.Equal(1m, multipliers.GetProperty("spawnDensity").GetDecimal());
+        Assert.Equal(1m, multipliers.GetProperty("itemValue").GetDecimal());
+
+        // The two dials that used to be asserted here, `itemPower` and `spawnDensity`, are gone —
+        // authored, editable, previewed, exported, and applied by nothing (BUGS.md #17).
+        Assert.False(multipliers.TryGetProperty("itemPower", out _));
+        Assert.False(multipliers.TryGetProperty("spawnDensity", out _));
     }
 
     /// <summary>
@@ -160,7 +165,6 @@ public sealed class MultiplierApiTests(PostgresFixture postgres)
             templateKind = "Mob",
             roomKeys = new[] { roomKey },
             targetCount = 1,
-            respawnSeconds = 60,
         })).EnsureSuccessStatusCode();
 
         (await client.PatchAsJsonAsync($"/api/builder/zones/{zoneKey}", new
@@ -210,7 +214,6 @@ public sealed class MultiplierApiTests(PostgresFixture postgres)
             templateKind = "Mob",
             roomKeys = new[] { roomKey },
             targetCount = 1,
-            respawnSeconds = 60,
         })).EnsureSuccessStatusCode();
 
         (await client.PatchAsJsonAsync($"/api/builder/zones/{zoneKey}", new
@@ -271,7 +274,6 @@ public sealed class MultiplierApiTests(PostgresFixture postgres)
                 templateKind = "Mob",
                 roomKeys = new[] { roomKey },
                 targetCount = 1,
-                respawnSeconds = 60,
             }));
 
         var id = created.GetProperty("id").GetString();
@@ -307,7 +309,6 @@ public sealed class MultiplierApiTests(PostgresFixture postgres)
                 templateKind = "Item",
                 roomKeys = new[] { roomKey },
                 targetCount = 1,
-                respawnSeconds = 60,
             }));
 
         Assert.Equal(0, created.GetProperty("fightsAtLevel").GetInt32());

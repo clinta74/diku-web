@@ -10,8 +10,6 @@ const HINTS: Record<keyof Multipliers, string> = {
   xp: 'XP awarded on kill. 0 makes a zone worth no experience.',
   gold: 'Coin dropped on loot.',
   itemValue: 'What items are worth to a vendor.',
-  itemPower: 'Weapon damage and armour on dropped items.',
-  spawnDensity: 'Spawner target counts — crowded, not just tougher.',
 }
 
 const LABELS: Record<keyof Multipliers, string> = {
@@ -21,8 +19,6 @@ const LABELS: Record<keyof Multipliers, string> = {
   xp: 'XP',
   gold: 'Gold',
   itemValue: 'Item value',
-  itemPower: 'Item power',
-  spawnDensity: 'Spawn density',
 }
 
 interface Props {

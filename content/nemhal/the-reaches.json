@@ -1,5 +1,5 @@
 {
-  "formatVersion": 9,
+  "formatVersion": 10,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -18,9 +18,7 @@
         "damage": 1.0,
         "xp": 4.1,
         "gold": 2.5,
-        "itemValue": 0.8,
-        "itemPower": 1.1,
-        "spawnDensity": 1.0
+        "itemValue": 0.8
       }
     }
   ],
@@ -42,9 +40,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     },
     {
@@ -61,9 +57,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     },
     {
@@ -80,9 +74,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.2
+        "itemValue": 1.0
       }
     },
     {
@@ -101,9 +93,7 @@
         "damage": 1.0,
         "xp": 1.1,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     }
   ],
@@ -2885,7 +2875,6 @@
         "nemhal.the-hold.the-stores"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2898,7 +2887,6 @@
         "nemhal.the-hold.the-muster-yard"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2911,7 +2899,6 @@
         "nemhal.the-hold.the-long-room"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2926,7 +2913,6 @@
         "nemhal.vurrach.the-drying-shed"
       ],
       "targetCount": 5,
-      "respawnSeconds": 80,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2940,7 +2926,6 @@
         "nemhal.vurrach.the-orchard-rows"
       ],
       "targetCount": 5,
-      "respawnSeconds": 70,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2954,7 +2939,6 @@
         "nemhal.vurrach.the-bell-tower"
       ],
       "targetCount": 3,
-      "respawnSeconds": 90,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2968,7 +2952,6 @@
         "nemhal.vurrach.the-broken-span"
       ],
       "targetCount": 4,
-      "respawnSeconds": 110,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2984,7 +2967,6 @@
         "nemhal.vurrach.the-far-verge"
       ],
       "targetCount": 6,
-      "respawnSeconds": 100,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2998,7 +2980,6 @@
         "nemhal.vurrach.the-milestone"
       ],
       "targetCount": 3,
-      "respawnSeconds": 70,
       "wanders": true,
       "fightsAtLevel": null
     },
@@ -3013,7 +2994,6 @@
         "nemhal.olmenneth.the-second-station"
       ],
       "targetCount": 5,
-      "respawnSeconds": 100,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3028,7 +3008,6 @@
         "nemhal.olmenneth.the-stone-line"
       ],
       "targetCount": 5,
-      "respawnSeconds": 110,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3043,7 +3022,6 @@
         "nemhal.olmenneth.the-plaster-store"
       ],
       "targetCount": 5,
-      "respawnSeconds": 120,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3059,7 +3037,6 @@
         "nemhal.olmenneth.the-hostel"
       ],
       "targetCount": 7,
-      "respawnSeconds": 110,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3073,7 +3050,6 @@
         "nemhal.olmenneth.the-oil-press"
       ],
       "targetCount": 4,
-      "respawnSeconds": 90,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3088,7 +3064,6 @@
         "nemhal.keshvaun.the-washing-room"
       ],
       "targetCount": 5,
-      "respawnSeconds": 110,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3102,7 +3077,6 @@
         "nemhal.keshvaun.the-cloister-walk"
       ],
       "targetCount": 4,
-      "respawnSeconds": 100,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3120,7 +3094,6 @@
         "nemhal.keshvaun.the-unwritten-page"
       ],
       "targetCount": 9,
-      "respawnSeconds": 110,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3133,7 +3106,6 @@
         "nemhal.keshvaun.the-first-vigil"
       ],
       "targetCount": 1,
-      "respawnSeconds": 900,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3148,7 +3120,6 @@
         "nemhal.keshvaun.the-record-room"
       ],
       "targetCount": 3,
-      "respawnSeconds": 300,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3161,7 +3132,6 @@
         "nemhal.keshvaun.the-outer-court"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     }

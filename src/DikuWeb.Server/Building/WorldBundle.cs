@@ -58,6 +58,14 @@ public sealed record WorldBundle(
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
     ///
+    /// <b>10 because three dials that never did anything are gone.</b> A v9 bundle carries
+    /// <c>itemPower</c> and <c>spawnDensity</c> on its multipliers and <c>respawnSeconds</c> on
+    /// every spawner. Read as v10 those keys are simply ignored, which is harmless — they were
+    /// ignored by the engine too — but the bump is not about the reading. It is about the
+    /// *writing*: an export at v10 no longer emits them, so a v9 file and a v10 file describe the
+    /// same world with different fields, and a version number is what stops somebody diffing the
+    /// two and concluding content was lost (BUGS.md #17).
+    ///
     /// <b>9 because an item can be a lamp.</b> A v8 bundle has no <c>isLightSource</c>, so read
     /// as v9 every item in it arrives unlit. That is the weak direction and it is the one that
     /// matters: a dark room is unreadable without a light, so a bundle carrying the lantern that
@@ -111,7 +119,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 9;
+    public const int CurrentFormatVersion = 10;
 }
 
 /// <summary>
@@ -253,7 +261,6 @@ public sealed record BundleSpawner(
     TemplateKind TemplateKind,
     List<string> RoomKeys,
     int TargetCount,
-    int RespawnSeconds,
     bool? Wanders,
     /// <summary>
     /// The level these mobs fight at, or null to let the zone decide (PLAN.md §4.7).

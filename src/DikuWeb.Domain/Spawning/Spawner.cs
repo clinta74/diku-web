@@ -21,11 +21,19 @@ public sealed class Spawner
     /// <summary>Rooms where this spawner places instances. Defaults to all rooms in zone if empty.</summary>
     public List<string> RoomKeys { get; set; } = new();
 
-    /// <summary>Target population (before spawn density multiplier).</summary>
+    /// <summary>Target population.</summary>
+    /// <remarks>
+    /// It used to say "before spawn density multiplier". There was no spawn density multiplier -
+    /// the dial existed and was applied by nothing, and has since been deleted (BUGS.md #17).
+    /// </remarks>
     public int TargetCount { get; set; } = 1;
 
-    /// <summary>Seconds to wait before respawning a dead mob or dropped item.</summary>
-    public int RespawnSeconds { get; set; } = 30;
+    // `RespawnSeconds` used to sit here, defaulting to 30 and offered as a number field in the
+    // builder. `SpawnerSystem` refills straight to TargetCount on its own 15-second sweep and
+    // never read it, so a builder who typed "respawn after 600 seconds" got 15. Deleted rather
+    // than implemented, for the reason the two multipliers were: staggered respawn is a design
+    // decision about pacing, and reintroducing it should start from that rather than from a
+    // number somebody typed into a field that did nothing (BUGS.md #17).
 
     /// <summary>
     /// Whether mobs from this spawner wander. <b>Null defers to the template</b>, which is the

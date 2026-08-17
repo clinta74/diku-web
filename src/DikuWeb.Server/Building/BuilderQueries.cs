@@ -333,7 +333,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
 
         return [.. spawners.Select(s => new SpawnerResponse(
             s.Id, s.ZoneKey, s.TemplateKey, s.TemplateKind,
-            new List<string>(s.RoomKeys), s.TargetCount, s.RespawnSeconds, WanderMode.From(s.Wanders),
+            new List<string>(s.RoomKeys), s.TargetCount, WanderMode.From(s.Wanders),
             levels.GetValueOrDefault(s.Id), SpawnLevel.From(s.FightsAtLevel)))];
     }
 
@@ -352,7 +352,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
 
         return new SpawnerResponse(
             spawner.Id, spawner.ZoneKey, spawner.TemplateKey, spawner.TemplateKind,
-            new List<string>(spawner.RoomKeys), spawner.TargetCount, spawner.RespawnSeconds,
+            new List<string>(spawner.RoomKeys), spawner.TargetCount,
             WanderMode.From(spawner.Wanders), levels.GetValueOrDefault(spawner.Id),
             SpawnLevel.From(spawner.FightsAtLevel));
     }
@@ -637,8 +637,6 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             ["xp"] = mults.Xp,
             ["gold"] = mults.Gold,
             ["itemValue"] = mults.ItemValue,
-            ["itemPower"] = mults.ItemPower,
-            ["spawnDensity"] = mults.SpawnDensity,
         };
     }
 

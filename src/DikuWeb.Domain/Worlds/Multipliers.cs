@@ -25,11 +25,15 @@ public sealed class Multipliers
     /// <summary>Vendor value of items.</summary>
     public decimal ItemValue { get; set; } = 1.0m;
 
-    /// <summary>Item stat bonuses (weapon damage, armor).</summary>
-    public decimal ItemPower { get; set; } = 1.0m;
-
-    /// <summary>Spawner target counts — makes a zone crowded, not just tougher.</summary>
-    public decimal SpawnDensity { get; set; } = 1.0m;
+    // `ItemPower` and `SpawnDensity` used to sit here. Both were authored - itemPower on four
+    // worlds and zones up to 1.4, spawnDensity on eight zones from 0.6 to 1.4 - editable in the
+    // builder, previewed, exported, and applied by nothing at all: neither was ever passed to
+    // Resolve from production code, and the only caller was a unit test asserting the arithmetic
+    // of a function nothing invoked, which is what made them look alive.
+    //
+    // Deleted rather than implemented (BUGS.md #17). Wiring them up would have changed the balance
+    // of content that has never been played, which is a tuning decision needing play behind it;
+    // leaving them would have kept two dials in the builder that read as tuned and did nothing.
 
     /// <summary>
     /// A detached copy, for the same reason <c>FlagSet.Clone</c> exists: a mutation primitive is
@@ -44,8 +48,6 @@ public sealed class Multipliers
         Xp = Xp,
         Gold = Gold,
         ItemValue = ItemValue,
-        ItemPower = ItemPower,
-        SpawnDensity = SpawnDensity,
     };
 
     /// <summary>
@@ -61,8 +63,6 @@ public sealed class Multipliers
             MultiplierType.Xp => Math.Max(0, Round(baseValue * world.Xp * zone.Xp)),
             MultiplierType.Gold => Math.Max(0, Round(baseValue * world.Gold * zone.Gold)),
             MultiplierType.ItemValue => Math.Max(0, Round(baseValue * world.ItemValue * zone.ItemValue)),
-            MultiplierType.ItemPower => Math.Max(1, Round(baseValue * world.ItemPower * zone.ItemPower)),
-            MultiplierType.SpawnDensity => Math.Max(1, Round(baseValue * world.SpawnDensity * zone.SpawnDensity)),
             _ => throw new ArgumentOutOfRangeException(nameof(type)),
         };
 
@@ -79,6 +79,4 @@ public enum MultiplierType
     Xp,
     Gold,
     ItemValue,
-    ItemPower,
-    SpawnDensity,
 }

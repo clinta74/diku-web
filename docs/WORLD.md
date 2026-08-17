@@ -146,13 +146,13 @@ with it ([MobLevel.cs](../src/DikuWeb.Domain/Inhabitants/MobLevel.cs)), so with 
 authored at levels 1–10 (§7.1) a realm's world-level `strength` is about **its band ceiling ÷ 10,
 less the ~10% the zone dials add back**.
 
-| Realm | Band | `strength` | `xp` | `gold` | `itemValue` | `itemPower` | Gods |
-|---|---|---|---|---|---|---|---|
-| `ossara` | 1–12 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | Ilvaro; Sulveth at the rim |
-| `grask` | 12–24 | 1.9 | 1.9 | 2.6 | 1.2 | 1.0 | Ravvan; Mhorrek below |
-| `azhen` | 24–34 | 3.0 | 3.0 | 2.1 | 1.0 | 1.3 | Azhimet |
-| `nemhal` | 34–46 | 4.1 | 4.1 | 2.5 | 0.8 | 1.1 | Nemhalla, dead |
-| `the-unlit` | 46–50 | 4.7 | 4.7 | **0.0** | 0.0 | 1.4 | none |
+| Realm | Band | `strength` | `xp` | `gold` | `itemValue` | Gods |
+|---|---|---|---|---|---|---|
+| `ossara` | 1–12 | 1.0 | 1.0 | 1.0 | 1.0 | Ilvaro; Sulveth at the rim |
+| `grask` | 12–24 | 1.9 | 1.9 | 2.6 | 1.2 | Ravvan; Mhorrek below |
+| `azhen` | 24–34 | 3.0 | 3.0 | 2.1 | 1.0 | Azhimet |
+| `nemhal` | 34–46 | 4.1 | 4.1 | 2.5 | 0.8 | Nemhalla, dead |
+| `the-unlit` | 46–50 | 4.7 | 4.7 | **0.0** | 0.0 | none |
 
 **`xp` tracks `strength`, and that is forced rather than chosen.** Required XP per level is
 `1000·L·(L−1)/2` ([XpProgression.cs](../src/DikuWeb.Domain/Characters/XpProgression.cs)), so the XP
@@ -167,8 +167,10 @@ something without writing a word of prose:
   a player who goes there early will feel it. That is the trap working as intended.
 - **Mhorrek takes it back** — `grask.the-owing` sets `gold` 0.4 against the realm's 2.6, so the
   deepest and hardest zone in Grask is the poorest. Nobody has to explain why.
-- **Azhen has no money and very good equipment** (`gold` 2.1, `itemPower` 1.3). Nobody has lived
-  there for generations. What is left is what was built, not what was earned.
+- **Azhen has no money and very good equipment** (`gold` 2.1). Nobody has lived there for
+  generations. What is left is what was built, not what was earned. *The second half of that is now
+  said by the item spine alone* — Azhen's set is simply authored better than its band demands —
+  since `itemPower`, which used to carry it, applied to nothing and has been deleted (§7.3).
 - **Nemhal's economy is dying** (`itemValue` 0.8). Its things are worth less than they were and
   everyone there knows it.
 - **The Unlit has no economy at all** (`gold` 0.0, `itemValue` 0.0). A zero multiplier legitimately
@@ -205,23 +207,23 @@ mob gets lifted into band instead of becoming worthless filler. This is the exac
 | Zone | Role | God | min–max | zone `str` | S | Other dials | Flags | Rooms |
 |---|---|---|---|---|---|---|---|---|
 | `ossara.gatetown` | **Start** | Ilvaro | 1–3 | 1.0 | 1.00 | — | `peaceful`, `respawn` | ~16 |
-| `ossara.the-terraces` | **Training** | Ilvaro | 1–4 | 1.0 | 1.00 | `spawnDensity` 1.1 | — | ~9 |
-| `ossara.brackenfell` | **Grinding** | Ilvaro | 4–10 | 1.0 | 1.00 | `spawnDensity` 1.2 | — | ~14 |
+| `ossara.the-terraces` | **Training** | Ilvaro | 1–4 | 1.0 | 1.00 | — | — | ~9 |
+| `ossara.brackenfell` | **Grinding** | Ilvaro | 4–10 | 1.0 | 1.00 | — | — | ~14 |
 | `ossara.the-rimwalk` | **Story** — Act I | Sulveth | 8–12 | 1.2 | 1.20 | `xp` 1.2, `gold` 0.8 | — | ~11 |
 | `grask.the-landing` | **Hub** | Ravvan | 12–14 | 1.0 | 1.90 | — | `peaceful`, `respawn` | ~12 |
-| `grask.the-cutting` | **Grinding** | Ravvan | 12–18 | 0.95 | 1.81 | `spawnDensity` 1.2 | — | ~14 |
-| `grask.stiltmarsh` | **Grinding** | Ravvan | 16–22 | 1.15 | 2.19 | `spawnDensity` 1.4 | — | ~15 |
+| `grask.the-cutting` | **Grinding** | Ravvan | 12–18 | 0.95 | 1.81 | — | — | ~14 |
+| `grask.stiltmarsh` | **Grinding** | Ravvan | 16–22 | 1.15 | 2.19 | — | — | ~15 |
 | `grask.the-owing` | **Story** — Act II | Mhorrek | 20–24 | 1.26 | 2.39 | `gold` 0.4, `xp` 1.1 | `dark` | ~12 |
 | `azhen.the-camp` | **Hub** | — | 24–26 | 1.0 | 3.00 | — | `peaceful`, `respawn` | ~8 |
 | `azhen.ummath` | **Grinding** | Azhimet | 24–30 | 1.0 | 3.00 | — | `indoors` | ~14 |
-| `azhen.serrivet` | **Grinding** | Azhimet | 28–34 | 1.13 | 3.39 | `spawnDensity` 1.2 | — | ~15 |
-| `azhen.thessivar` | **Story** — Act III | Azhimet | 30–34 | 1.15 | 3.45 | `itemPower` 1.2 | `indoors`, `dark` | ~13 |
+| `azhen.serrivet` | **Grinding** | Azhimet | 28–34 | 1.13 | 3.39 | — | — | ~15 |
+| `azhen.thessivar` | **Story** — Act III | Azhimet | 30–34 | 1.15 | 3.45 | — | `indoors`, `dark` | ~13 |
 | `nemhal.the-hold` | **Hub** | — | 34–36 | 1.0 | 4.10 | — | `peaceful`, `respawn` | ~8 |
 | `nemhal.vurrach` | **Grinding** | Nemhalla | 34–41 | 1.0 | 4.10 | — | — | ~15 |
-| `nemhal.olmenneth` | **Grinding** | Nemhalla | 38–45 | 1.1 | 4.51 | `spawnDensity` 1.2 | — | ~15 |
+| `nemhal.olmenneth` | **Grinding** | Nemhalla | 38–45 | 1.1 | 4.51 | — | — | ~15 |
 | `nemhal.keshvaun` | **Story** — Act IV | Nemhalla | 42–46 | 1.12 | 4.59 | `xp` 1.1 | `dark` | ~13 |
-| `the-unlit.the-crossing` | **Grinding** | none | 46–48 | 1.0 | 4.70 | `spawnDensity` 0.7 | `noRecall` | ~10 |
-| `the-unlit.the-regard` | **Story** — Act V | none | 48–50 | 1.06 | 4.98 | `spawnDensity` 0.6 | `noRecall`, `dark` | ~9 |
+| `the-unlit.the-crossing` | **Grinding** | none | 46–48 | 1.0 | 4.70 | — | `noRecall` | ~10 |
+| `the-unlit.the-regard` | **Story** — Act V | none | 48–50 | 1.06 | 4.98 | — | `noRecall`, `dark` | ~9 |
 
 Every flag named above is in the registry
 ([RoomFlags.cs](../src/DikuWeb.Domain/Worlds/RoomFlags.cs)). **No new flag is required by this
@@ -427,12 +429,16 @@ template — *"a quest giver that wanders off is a chain nobody can finish."*
 Eight slots exist (`ItemSlot`: Head, Chest, Hands, Legs, Feet, MainHand, OffHand, Trinket). The
 spine is **one full set per realm**, five sets, plus per-act quest rewards.
 
-**`itemPower` does not scale item stats, and this section used to claim it did.**
-[ItemSpawner.cs:51](../src/DikuWeb.Engine/Spawning/ItemSpawner.cs#L51) copies `BaseStats` verbatim —
-`ItemValue` is resolved into the price and `ItemPower` is snapshotted into `SpawnMultipliers` and
-then never read. So the mob trick does not transfer: **each realm's set is authored at its own final
-numbers**, and the `itemPower` column in §3 is currently decoration. Azhen's 1.3 and the Unlit's 1.4
-record where the good equipment is meant to be; today they do not put it there (§10.3).
+**There is no item-power dial, so the mob trick does not transfer.**
+[ItemSpawner.cs](../src/DikuWeb.Engine/Spawning/ItemSpawner.cs) copies `BaseStats` verbatim and
+resolves only `ItemValue`, into the price. **Each realm's set is authored at its own final
+numbers.**
+
+`itemPower` used to sit in the §3 table recording where the good equipment was meant to be — Azhen
+1.3, the Unlit 1.4 — while putting it nowhere. This document already called that *"a dial to either
+implement or delete, not a blocker"* and judged deleting it the smaller lie; the milestone review
+carried that out (BUGS.md #17). `spawnDensity` went with it for the same reason, which is why the
+zone table's dial column is emptier than it was.
 
 **Armour is two authored numbers and one decision per realm.** A piece carries `armor`, which decides
 what a landed blow costs, and optionally `defense`, which decides how often one lands (`PLAN.md`
@@ -715,10 +721,10 @@ Four things beyond that are deliberately left as *later* rather than assumed:
   `BuilderEndpoints`. Until it is, editing a zone's multipliers only affects future spawns and
   tuning a zone means restarting the server. This will be felt immediately when the tables in §3 and
   §4 meet reality.
-- **`itemPower` is snapshotted and never applied.** `ItemSpawner` resolves `ItemValue` into the
-  price and copies `BaseStats` verbatim, so the dial records an intention it does not carry out
-  (§7.3). The design does not depend on it — every realm's set is authored at final numbers — so
-  this is a dial to either implement or delete, not a blocker. Deleting it is the smaller lie.
+- ~~**`itemPower` is snapshotted and never applied.**~~ **Deleted**, along with `spawnDensity` and
+  the spawner's `respawnSeconds`, in the milestone review — all three were authored, editable and
+  applied by nothing (BUGS.md #17). The design never depended on any of them: every realm's set is
+  authored at final numbers, and that is now the only way it is said.
 - **`Trinket` is not wired to anything.** It is absent from `IsArmorSlot` and is not one of the two
   hands the damage multiplier is read from, so the eighth slot equips and does nothing. Worth one
   of: adding it to the armour sweep, giving it its own stat vocabulary, or dropping it from the

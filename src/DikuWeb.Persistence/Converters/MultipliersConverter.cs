@@ -25,8 +25,6 @@ internal sealed class MultipliersConverter : ValueConverter<Multipliers, string>
                 m.Xp,
                 m.Gold,
                 m.ItemValue,
-                m.ItemPower,
-                m.SpawnDensity,
             },
             JsonOptions);
 
@@ -55,8 +53,6 @@ internal sealed class MultipliersConverter : ValueConverter<Multipliers, string>
                 Xp = GetDecimal(root, "Xp", 1.0m),
                 Gold = GetDecimal(root, "Gold", 1.0m),
                 ItemValue = GetDecimal(root, "ItemValue", 1.0m),
-                ItemPower = GetDecimal(root, "ItemPower", 1.0m),
-                SpawnDensity = GetDecimal(root, "SpawnDensity", 1.0m),
             };
         }
         catch (JsonException)

@@ -1,5 +1,5 @@
 {
-  "formatVersion": 9,
+  "formatVersion": 10,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -18,9 +18,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     }
   ],
@@ -39,9 +37,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.1
+        "itemValue": 1.0
       }
     },
     {
@@ -58,9 +54,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.2
+        "itemValue": 1.0
       }
     },
     {
@@ -77,9 +71,7 @@
         "damage": 1.0,
         "xp": 1.2,
         "gold": 0.8,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     }
   ],
@@ -1921,7 +1913,6 @@
         "ossara.the-terraces.the-cellar-mouth"
       ],
       "targetCount": 4,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1936,7 +1927,6 @@
         "ossara.the-terraces.the-lower-rows"
       ],
       "targetCount": 4,
-      "respawnSeconds": 70,
       "wanders": true,
       "fightsAtLevel": null
     },
@@ -1950,7 +1940,6 @@
         "ossara.the-terraces.the-goat-fold"
       ],
       "targetCount": 3,
-      "respawnSeconds": 90,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1964,7 +1953,6 @@
         "ossara.the-terraces.the-beehives"
       ],
       "targetCount": 2,
-      "respawnSeconds": 120,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1977,7 +1965,6 @@
         "ossara.the-terraces.the-water-race"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1991,7 +1978,6 @@
         "ossara.brackenfell.the-birch-stand"
       ],
       "targetCount": 3,
-      "respawnSeconds": 80,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2005,7 +1991,6 @@
         "ossara.brackenfell.the-thorn-hollow"
       ],
       "targetCount": 4,
-      "respawnSeconds": 70,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2019,7 +2004,6 @@
         "ossara.brackenfell.the-charcoal-burn"
       ],
       "targetCount": 3,
-      "respawnSeconds": 90,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2034,7 +2018,6 @@
         "ossara.brackenfell.the-alder-carr"
       ],
       "targetCount": 3,
-      "respawnSeconds": 120,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2049,7 +2032,6 @@
         "ossara.brackenfell.the-old-quarry"
       ],
       "targetCount": 5,
-      "respawnSeconds": 100,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2063,7 +2045,6 @@
         "ossara.brackenfell.the-far-blaze"
       ],
       "targetCount": 2,
-      "respawnSeconds": 150,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2077,7 +2058,6 @@
         "ossara.the-rimwalk.the-thinning"
       ],
       "targetCount": 3,
-      "respawnSeconds": 100,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2091,7 +2071,6 @@
         "ossara.the-rimwalk.the-watch-stone"
       ],
       "targetCount": 3,
-      "respawnSeconds": 110,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2107,7 +2086,6 @@
         "ossara.the-rimwalk.the-spur-end"
       ],
       "targetCount": 6,
-      "respawnSeconds": 120,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2120,7 +2098,6 @@
         "ossara.the-rimwalk.the-last-marker"
       ],
       "targetCount": 1,
-      "respawnSeconds": 900,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2133,7 +2110,6 @@
         "ossara.the-rimwalk.the-keepers-stone"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2150,7 +2126,6 @@
         "ossara.the-rimwalk.the-thinning"
       ],
       "targetCount": 5,
-      "respawnSeconds": 240,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2163,7 +2138,6 @@
         "ossara.the-rimwalk.the-picnic-stones"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     }

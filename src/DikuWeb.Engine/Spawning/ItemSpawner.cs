@@ -57,8 +57,6 @@ public sealed class ItemSpawner
                 ["Xp"] = zoneMults.Xp,
                 ["Gold"] = zoneMults.Gold,
                 ["ItemValue"] = zoneMults.ItemValue,
-                ["ItemPower"] = zoneMults.ItemPower,
-                ["SpawnDensity"] = zoneMults.SpawnDensity,
             },
             Value = resolvedValue,
 

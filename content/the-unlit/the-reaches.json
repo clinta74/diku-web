@@ -1,5 +1,5 @@
 {
-  "formatVersion": 9,
+  "formatVersion": 10,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -18,9 +18,7 @@
         "damage": 1.0,
         "xp": 4.7,
         "gold": 0.0,
-        "itemValue": 0.0,
-        "itemPower": 1.4,
-        "spawnDensity": 1.0
+        "itemValue": 0.0
       }
     }
   ],
@@ -41,9 +39,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 0.7
+        "itemValue": 1.0
       }
     },
     {
@@ -63,9 +59,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 0.6
+        "itemValue": 1.0
       }
     }
   ],
@@ -1283,7 +1277,6 @@
         "the-unlit.the-crossing.the-scatter"
       ],
       "targetCount": 4,
-      "respawnSeconds": 140,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1297,7 +1290,6 @@
         "the-unlit.the-crossing.the-standing-crowd"
       ],
       "targetCount": 5,
-      "respawnSeconds": 150,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1312,7 +1304,6 @@
         "the-unlit.the-crossing.the-turning-point"
       ],
       "targetCount": 3,
-      "respawnSeconds": 170,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1326,7 +1317,6 @@
         "the-unlit.the-regard.the-worn-place"
       ],
       "targetCount": 3,
-      "respawnSeconds": 150,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1342,7 +1332,6 @@
         "the-unlit.the-regard.the-first-way-in"
       ],
       "targetCount": 5,
-      "respawnSeconds": 150,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1355,7 +1344,6 @@
         "the-unlit.the-regard.the-facing-place"
       ],
       "targetCount": 1,
-      "respawnSeconds": 900,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1368,7 +1356,6 @@
         "the-unlit.the-regard.the-owed-question"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1384,7 +1371,6 @@
         "the-unlit.the-crossing.the-first-stretch"
       ],
       "targetCount": 4,
-      "respawnSeconds": 300,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1397,7 +1383,6 @@
         "the-unlit.the-regard.the-standing-ground"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     }

@@ -1,5 +1,5 @@
 {
-  "formatVersion": 9,
+  "formatVersion": 10,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -18,9 +18,7 @@
         "damage": 1.0,
         "xp": 3.0,
         "gold": 2.1,
-        "itemValue": 1.0,
-        "itemPower": 1.3,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     }
   ],
@@ -42,9 +40,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     },
     {
@@ -63,9 +59,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     },
     {
@@ -82,9 +76,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.0,
-        "spawnDensity": 1.2
+        "itemValue": 1.0
       }
     },
     {
@@ -104,9 +96,7 @@
         "damage": 1.0,
         "xp": 1.0,
         "gold": 1.0,
-        "itemValue": 1.0,
-        "itemPower": 1.2,
-        "spawnDensity": 1.0
+        "itemValue": 1.0
       }
     }
   ],
@@ -2832,7 +2822,6 @@
         "azhen.the-camp.the-traders-tent"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2845,7 +2834,6 @@
         "azhen.the-camp.the-catalogue-tent"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2858,7 +2846,6 @@
         "azhen.the-camp.the-plate-bench"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2873,7 +2860,6 @@
         "azhen.ummath.the-cross-hall"
       ],
       "targetCount": 6,
-      "respawnSeconds": 70,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2887,7 +2873,6 @@
         "azhen.ummath.the-cog-gallery"
       ],
       "targetCount": 4,
-      "respawnSeconds": 70,
       "wanders": true,
       "fightsAtLevel": null
     },
@@ -2901,7 +2886,6 @@
         "azhen.ummath.the-glass-store"
       ],
       "targetCount": 4,
-      "respawnSeconds": 90,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2915,7 +2899,6 @@
         "azhen.ummath.the-cross-hall"
       ],
       "targetCount": 4,
-      "respawnSeconds": 90,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2929,7 +2912,6 @@
         "azhen.ummath.the-water-stair"
       ],
       "targetCount": 3,
-      "respawnSeconds": 120,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2944,7 +2926,6 @@
         "azhen.ummath.the-empty-library"
       ],
       "targetCount": 4,
-      "respawnSeconds": 110,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2958,7 +2939,6 @@
         "azhen.serrivet.the-tension-house"
       ],
       "targetCount": 4,
-      "respawnSeconds": 90,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2972,7 +2952,6 @@
         "azhen.serrivet.the-second-yard"
       ],
       "targetCount": 4,
-      "respawnSeconds": 110,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2987,7 +2966,6 @@
         "azhen.serrivet.the-quadrant"
       ],
       "targetCount": 5,
-      "respawnSeconds": 100,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3002,7 +2980,6 @@
         "azhen.serrivet.the-mirror-walk"
       ],
       "targetCount": 4,
-      "respawnSeconds": 120,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3016,7 +2993,6 @@
         "azhen.serrivet.the-shadow-court"
       ],
       "targetCount": 3,
-      "respawnSeconds": 140,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3029,7 +3005,6 @@
         "azhen.serrivet.the-alignment-marks"
       ],
       "targetCount": 3,
-      "respawnSeconds": 70,
       "wanders": true,
       "fightsAtLevel": null
     },
@@ -3044,7 +3019,6 @@
         "azhen.thessivar.the-counterweight-well"
       ],
       "targetCount": 5,
-      "respawnSeconds": 110,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3058,7 +3032,6 @@
         "azhen.thessivar.the-drum-floor"
       ],
       "targetCount": 4,
-      "respawnSeconds": 100,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3075,7 +3048,6 @@
         "azhen.thessivar.the-silent-room"
       ],
       "targetCount": 8,
-      "respawnSeconds": 110,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3088,7 +3060,6 @@
         "azhen.thessivar.the-housing"
       ],
       "targetCount": 1,
-      "respawnSeconds": 900,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3102,7 +3073,6 @@
         "azhen.thessivar.the-registry"
       ],
       "targetCount": 2,
-      "respawnSeconds": 300,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3115,7 +3085,6 @@
         "azhen.thessivar.the-entry-court"
       ],
       "targetCount": 1,
-      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     }

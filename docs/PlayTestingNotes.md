@@ -126,13 +126,14 @@ Add anything noticed while playing here. Cleared as items are done.
   the engine reads and no form offers is a missing feature, a key the form offers and nothing reads
   is a lie, and only the second is silent.
 
-- **`itemPower` is recorded and never read.**
-  [ItemSpawner.cs:51](../src/DikuWeb.Engine/Spawning/ItemSpawner.cs#L51) copies `BaseStats`
-  verbatim; only `ItemValue` is resolved, into the price. The dial is snapshotted into
-  `SpawnMultipliers` and then nothing reads it. `WORLD.md` §7.3 assumed the mob trick transferred —
-  author one baseline set, let the realm dial place it — and it does not, so every realm's set is
-  authored at final numbers instead. Implement it or delete it; carrying a dial that reads as
-  configured and does nothing is the failure mode `Engine__StartingRoom` already demonstrated.
+- **`itemPower`: done, and it took two others with it.** It was recorded into `SpawnMultipliers`
+  and read by nothing; the milestone review found `spawnDensity` (eight zones, 0.6–1.4) and a
+  spawner's `respawnSeconds` (all 100 of them) in the same state — authored, editable in the
+  builder, previewed, exported, and applied nowhere. All three are **deleted** rather than
+  implemented: wiring them up would change the balance of content nobody has played yet, which is a
+  decision that needs play behind it. `WORLD.md` had already judged deleting the smaller lie.
+
+  `formatVersion` is **10**, and `spawners.respawn_seconds` is dropped by a migration. Re-import.
 
 - **Room terrain: done.** All 224 rooms carry a 21×9 grid (`WORLD.md` §10.1). Generated per zone
   kind and seeded from the room key, so regeneration is byte-identical and a re-import is safe to

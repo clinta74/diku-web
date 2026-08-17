@@ -15,8 +15,6 @@ const neutral = vi.hoisted(() => ({
   xp: 1,
   gold: 1,
   itemValue: 1,
-  itemPower: 1,
-  spawnDensity: 1,
 }))
 
 const worlds = [
@@ -42,8 +40,6 @@ vi.mock('../net/builderApi', () => ({
     'xp',
     'gold',
     'itemValue',
-    'itemPower',
-    'spawnDensity',
   ],
   NEUTRAL_MULTIPLIERS: neutral,
   builderApi: {
