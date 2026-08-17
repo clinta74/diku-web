@@ -1,0 +1,1 @@
+Fixtures not built: No admin credential was supplied, so a plan's world: fixtures cannot be created. Pass --admin-user and --admin-password, or build the content by hand.

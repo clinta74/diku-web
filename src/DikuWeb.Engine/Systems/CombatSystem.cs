@@ -1517,12 +1517,9 @@ public sealed class CombatSystem(
         }
         else if (EntityId.IsMob(combatantId))
         {
-            var mob = world.GetMob(EntityId.ToGuid(combatantId));
-            if (mob != null)
-            {
-                mob.CombatState = CombatState.Idle;
-                mob.CurrentTarget = null;
-            }
+            // Idle, untargeted, and healed - see Mob.Disengage. This is the path a fight ending
+            // naturally, a player dying, and either party walking out all arrive by.
+            world.GetMob(EntityId.ToGuid(combatantId))?.Disengage();
         }
     }
 

@@ -726,6 +726,37 @@ because each duellist targets the other, a taunted player stays in because the m
 still names them, and a party standing over a corpse falls out because removing the corpse already
 cleared every target that pointed at it.
 
+**Mobs heal. A mob that leaves a fight alive is whole again, and a wounded idle one trends back to
+full.** Nothing restored a mob's health before: `RegenSystem` iterated players only, ending a fight
+touched neither side's vitals, no leash existed, and the spawner replaces a slot only when its
+occupant is *dead*. So a mob kept its wounds for the life of the process — chip something to 5%, walk
+away, come back an hour later and it is still at 5%. **Attrition was free and permanent**, and a
+camped room degraded monotonically until a restart.
+
+- **Two rules, and the second is mostly redundant on purpose.** `Mob.Disengage` — idle, untargeted,
+  healed — is the behaviour a player feels, and covers the fight ending naturally, a player dying,
+  either party walking out, and `flee`. The regen sweep is the invariant underneath it. Neither
+  replaces the other: a rule kept only by healing at every exit is a promise enforced by remembering
+  to find them all, which is precisely the class of defect the milestone review was about, and any
+  disengage path missed today or added later would leave a mob wounded until a restart.
+- **One method on `Mob`**, for the reason `Mob.DisplayName` gives in its own remark: the hand-written
+  version was already in two places, and the heal would have had to be remembered in both.
+- **The heal is guarded on being alive; the idling is not.** Healing a mob at zero health resurrects
+  it, quietly, with the corpse already looted. Clearing its combat state is still right. In practice
+  the guard never fires, because `HandleDeath` removes the dead from `Combatants` before the
+  end-of-fight sweep looks — it is there so the method is safe wherever it gets called from next.
+- **Health only.** Nothing reads a mob's focus or stamina: ability costs come off `character.Vitals`,
+  and combat only ever writes `mob.Vitals.Health`. Regenerating a bar with no readers is `itemPower`
+  in miniature.
+- **`RegenCalculator.HealthFor` is split out rather than handed a Path a mob does not have.**
+  `Calculate` takes the Path rather than defaulting it *because getting it wrong is silent*, and
+  passing a fake one to reuse the table would walk straight into that. Health never consults the Path,
+  so there is nothing to invent — and `Calculate` calls `HealthFor` for its own health term, so the
+  rate table stays one table. Mobs heal at the `Stand` rate with a zero vitality modifier: a mob's
+  attributes resolve into its damage, not into how fast it recovers between fights.
+- **No leashing.** Mobs do not walk home. That keeps `Mob` free of a home room and leaves the wander
+  rules alone; it is the half of this question that is still open.
+
 **Who an aggressive mob jumps: the room's threat leader, otherwise at random.** This was
 `occupants.FirstOrDefault()` over a list in arrival order, so every aggressive mob in a room attacked
 whoever had stood in it longest — deterministically, and for a reason no player could see. Three
@@ -2380,8 +2411,9 @@ Then **Phase 7**, the mobile client, planned in full in [MOBILE.md](MOBILE.md).
 
 - A changelog, or GitHub releases — nothing records what changed between two builds.
 - **The milestone review** over command, room, item, mob and quest — `BUGS.md` #6–#25. Its Tier 1 is
-  closed and so are the three guards it argued for; the aggression target rule it deferred is now
-  answered too (§4.6). What is left there is mob regeneration and leashing, and quest accept/decline.
+  closed and so are the three guards it argued for; two of the design questions it deferred are now
+  answered too — the aggression target rule and mob regeneration, both §4.6. What is left there is
+  **mob leashing**, quest accept/decline, and containers.
 - **Balance is unmeasured.** `MobAttackBaseline`, quest XP scaling, and solo/group difficulty per
   Path per band were all chosen rather than observed. This needs play, not review.
 - **The Reaches have still never been walked end to end.** Every act's chain is arithmetic that

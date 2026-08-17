@@ -390,17 +390,13 @@ public static class CombatCommands
             character.CurrentTarget = null;
 
             // A fight of one is no fight. Leave the mobs idle rather than stuck Fighting, which
-            // would keep them from ever engaging anyone again.
+            // would keep them from ever engaging anyone again - and whole, because fleeing is
+            // leaving a fight alive and the mob you fled from does not keep the wound (§4.6).
             if (combat.Combatants.Count < 2)
             {
                 foreach (var remaining in combat.Combatants.Where(EntityId.IsMob))
                 {
-                    var mob = ctx.World.GetMob(EntityId.ToGuid(remaining));
-                    if (mob != null)
-                    {
-                        mob.CombatState = CombatState.Idle;
-                        mob.CurrentTarget = null;
-                    }
+                    ctx.World.GetMob(EntityId.ToGuid(remaining))?.Disengage();
                 }
             }
 

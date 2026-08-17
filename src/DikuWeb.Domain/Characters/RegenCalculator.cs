@@ -37,6 +37,33 @@ public static class RegenCalculator
         path is CharacterPath.Adept or CharacterPath.Hallow ? CasterFocusRate : 1.0;
 
     /// <summary>
+    /// The health arm of <see cref="Calculate"/> on its own, for an entity that has no Path.
+    /// </summary>
+    /// <remarks>
+    /// <b>Split out for mobs, and split rather than defaulted on purpose.</b> Mobs regenerate now
+    /// (PLAN.md §4.6) and a mob has no <see cref="CharacterPath"/>, so the alternative was passing
+    /// one that is not true — which <see cref="Calculate"/>'s own doc argues against, because the
+    /// only symptom of the wrong Path is a rate nothing on screen reports. Health does not consult
+    /// the Path at all, so there is nothing to invent: this is the whole of what a mob needs, and
+    /// <see cref="Calculate"/> calls it for its own health term so the rate table stays one table.
+    ///
+    /// <b>Health only, for mobs.</b> Nothing reads a mob's focus or stamina — ability costs come off
+    /// <c>character.Vitals</c> and combat only ever writes <c>mob.Vitals.Health</c> — and
+    /// regenerating a bar with no readers is <c>itemPower</c> in miniature.
+    /// </remarks>
+    public static int HealthFor(CharacterRestState state, Vitals vitals, int vitalityModifier)
+    {
+        ArgumentNullException.ThrowIfNull(vitals);
+
+        return Math.Max(1, (int)Math.Floor(vitals.HealthMax * EffectivePercent(state, vitalityModifier)));
+    }
+
+    /// <summary>The share of a maximum that comes back this tick, before any per-vital rate.</summary>
+    private static double EffectivePercent(CharacterRestState state, int vitalityModifier) =>
+        // Each modifier point adds one percentage point.
+        BaseRegenPercent[state] + (vitalityModifier * 0.01);
+
+    /// <summary>
     /// Calculate how much of each vital regenerates in a single 60-second tick.
     /// Amount is always at least 1 per vital, floored after applying modifiers.
     /// </summary>
@@ -55,11 +82,9 @@ public static class RegenCalculator
         int vitalityModifier,
         CharacterPath path)
     {
-        var basePercent = BaseRegenPercent[state];
-        var modifierBonus = vitalityModifier * 0.01; // Each modifier point adds 1%
-        var effectivePercent = basePercent + modifierBonus;
+        var effectivePercent = EffectivePercent(state, vitalityModifier);
 
-        var health = Math.Max(1, (int)Math.Floor(vitals.HealthMax * effectivePercent));
+        var health = HealthFor(state, vitals, vitalityModifier);
         var focus = Math.Max(1, (int)Math.Floor(vitals.FocusMax * effectivePercent * FocusRateFor(path)));
         var stamina = Math.Max(1, (int)Math.Floor(vitals.StaminaMax * effectivePercent));
 

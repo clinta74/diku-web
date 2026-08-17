@@ -278,4 +278,48 @@ public sealed class RegenCalculatorTests
         Assert.Equal(warden.health, adept.health);
         Assert.Equal(warden.stamina, adept.stamina);
     }
+
+    /// <summary>
+    /// <c>HealthFor</c> is the health arm of <see cref="RegenCalculator.Calculate"/>, and has to stay
+    /// that way.
+    /// </summary>
+    /// <remarks>
+    /// It exists because mobs regenerate now and a mob has no Path, and the alternative was passing
+    /// one that is not true — which <c>Calculate</c>'s own doc argues against. Splitting rather than
+    /// faking only helps while the two still agree: two rate tables that drifted would mean a mob and
+    /// a standing player healing at different speeds with nothing saying so, which is the same silent
+    /// failure the split was meant to avoid. Across every state and both signs of modifier, because a
+    /// divergence in one cell is all it takes.
+    /// </remarks>
+    [Theory]
+    [InlineData(CharacterRestState.Sleep, 0)]
+    [InlineData(CharacterRestState.Rest, 0)]
+    [InlineData(CharacterRestState.Stand, 0)]
+    [InlineData(CharacterRestState.Stand, 10)]
+    [InlineData(CharacterRestState.Rest, -2)]
+    public void HealthFor_agrees_with_Calculate(CharacterRestState state, int vitalityModifier)
+    {
+        var vitals = Vitals.StartingFor(CharacterPath.Warden);
+
+        Assert.Equal(
+            RegenCalculator.Calculate(state, vitals, vitalityModifier, CharacterPath.Warden).health,
+            RegenCalculator.HealthFor(state, vitals, vitalityModifier));
+    }
+
+    /// <summary>
+    /// And it does not consult the Path — which is the reason it can be the one a mob calls.
+    /// </summary>
+    [Fact]
+    public void HealthFor_is_the_same_number_every_path_would_get()
+    {
+        var vitals = Vitals.StartingFor(CharacterPath.Adept);
+        var expected = RegenCalculator.HealthFor(CharacterRestState.Rest, vitals, vitalityModifier: 0);
+
+        foreach (var path in Enum.GetValues<CharacterPath>())
+        {
+            Assert.Equal(
+                expected,
+                RegenCalculator.Calculate(CharacterRestState.Rest, vitals, 0, path).health);
+        }
+    }
 }

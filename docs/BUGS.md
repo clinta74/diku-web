@@ -404,10 +404,13 @@ rather than keeping a copy, so the technique is in the repo — it just has not 
   test-race bug, and **runs two verbs' work off the loop thread** fire-and-forget, defeating the
   loop's own error boundary.
 - `rflag` treats any unrecognised word as "on". `RequiredCount = 0` completes a quest for free.
-  `abandon` takes the first unranked substring match and is destructive and unconfirmed. Mobs never
-  heal or reset. Buy price ignores the `itemValue` multiplier that sell price honours.
-  `SpawnMultipliers` records zone-only while claiming world × zone, and nothing reads it for items.
-  Three orphaned XML doc comments. A duplicated level-up loop.
+  `abandon` takes the first unranked substring match and is destructive and unconfirmed. Buy price
+  ignores the `itemValue` multiplier that sell price honours. `SpawnMultipliers` records zone-only
+  while claiming world × zone, and nothing reads it for items. Three orphaned XML doc comments. A
+  duplicated level-up loop.
+- ~~Mobs never heal or reset.~~ **Fixed.** `Mob.Disengage` restores a mob that leaves a fight alive,
+  and `RegenSystem` now sweeps mobs as well as players — see `PLAN.md` §4.6 and `MobRecoveryTests`.
+  Leashing was the half of the deferred question that stays deferred; mobs still do not walk home.
 
 **Done in this pass:** the five zero-caller members, the three word-splitters, all 29 hand-written
 `DisplayName` sites, both misplaced doc comments, the two dead branches, `rflag`'s fallthrough, and
@@ -416,18 +419,24 @@ the `BuilderCommands` statics.
 **Still open, and why.** `EquipmentResolver.ResolveAttackerStats`'s two overloads are called only by
 tests, so removing them means rewriting a test file that covers real arithmetic through a different
 door. `RoomFlagKind` is a field on the `RoomFlag` record, so removing it reshapes the record for no
-behaviour. The rest — refusal styling, `RequiredCount = 0`, `abandon`'s unranked match, mobs never
-healing, the buy/sell multiplier asymmetry, `SpawnMultipliers`, and the two builder verbs running
-off the loop thread — each change what something *does*, and this pass was behaviour-preserving by
-agreement.
+behaviour. The rest — refusal styling, `RequiredCount = 0`, `abandon`'s unranked match, the buy/sell
+multiplier asymmetry, `SpawnMultipliers`, and the two builder verbs running off the loop thread —
+each change what something *does*, and this pass was behaviour-preserving by agreement. Mobs never
+healing was on that list and has since been taken off it, as a design decision rather than a tidy-up.
 
 ---
 
 ## Not in this queue
 
-Design questions the review raised and deliberately did not answer: the aggression target rule
-(#20), mob regeneration and leashing, quest accept/decline, and containers — `ContainerItemId` is
-read once as a filter and written nowhere. Each needs a decision before it needs code.
+Design questions the review raised and deliberately did not answer: **mob leashing**, quest
+accept/decline, and containers — `ContainerItemId` is read once as a filter and written nowhere. Each
+needs a decision before it needs code.
+
+Two have since been decided and built, and are recorded in `PLAN.md` §4.6 rather than here: the
+**aggression target rule** (#20 — the room's threat leader, otherwise at random, link-dead characters
+excluded) and **mob regeneration** (a heal on disengage plus the regen tick). Leashing was the other
+half of that second question and is the half still open: a mob does not walk home, so `Mob` carries no
+home room and the wander rules are untouched.
 
 ---
 

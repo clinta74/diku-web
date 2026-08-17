@@ -1,0 +1,62 @@
+00:00.058    ~ registered as playtest_uhbrzatu, playing Theronpewju the Warden
+00:00.208    *(info) The Reaches hold, Theronpewju. Welcome back.
+00:00.208    [hp 60/60 fp 20/20 sp 100/100 lvl 1 xp 0 gold 0]
+00:00.208  The Gate Yard
+The gate stands where it has always stood: a ring of dark stone twice the height of a man, set into the cobbles with no foundation and no seam. Nothing moves in it. Nobody living has seen anything move in it.
+
+Gatetown grew up around it anyway and treats it the way a town treats a large rock. Crates lean against the near side, children are told not to climb it, and the stone is worn shiny at shoulder height by three generations of people touching it on their way past.
+
+Yrriska's shrine sits at its foot — a bowl of coins, a knot of ribbon, and somebody's dice. It is the only untidy thing in the yard, and the sweepers go around it.
+Exits: north, east, south, west
+Hesper, who sweeps around the shrine is here.
+00:01.072  > south
+00:01.211  You walk south.
+00:01.211  The Gate Road
+Exits: north, south
+00:01.257  > south
+00:01.458  You walk south.
+00:01.458  The Terrace Gate
+Exits: north, south
+00:11.308    ~ waited 10s for "The Well Yard" and never saw it
+00:11.309    ✗ test dummy
+00:11.309  
+── Open with the ability, from standing. Nothing has been attacked yet, so anything that
+happens next is the ability's doing.
+
+00:11.309  > kick dummy
+00:11.462  You don't see 'dummy' here.
+00:21.356    ~ waited 10s for "Your Kick" and never saw it
+00:21.356    ✗ You use Kick
+00:21.356    ✗ Your Kick hits a test dummy for
+00:21.356    ✓ not: takes effect
+00:21.356  
+── The whole plan. Left alone, the Warden's weapon should now be swinging at the thing the
+ability hit — and because the dummy cannot die to one kick, "You hit" can only have come
+from the opener having started a fight properly.
+
+00:51.386    ~ waited 30s for "You hit a test dummy" and never saw it
+00:51.386    ✗ You hit a test dummy
+00:51.386  
+── And the dummy should be fighting back in the sense that matters: the fight exists. Movement
+is refused while in one, which is the cheapest proof that this is a real engagement rather
+than a sequence of unrelated blows.
+
+00:51.386  > north
+00:51.463  You walk north.
+00:51.463  The Gate Road
+Exits: north, south
+00:52.003    ✗ while in combat
+00:52.003  
+── Leaving properly ends it, and then walking works again.
+
+00:52.003  > flee
+00:52.219  You're not in combat.
+01:02.048    ~ waited 10s for "escape" and never saw it
+01:02.048    ✗ You manage to escape
+01:02.048  > north
+01:02.217  You walk north.
+01:02.217  The Gate Yard
+Exits: north, east, south, west
+Hesper, who sweeps around the shrine is here.
+01:02.233    ✓ You walk north
+01:02.233    ✓ not: while in combat

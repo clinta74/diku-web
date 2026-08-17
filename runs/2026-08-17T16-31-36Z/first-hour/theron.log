@@ -1,0 +1,103 @@
+00:00.048    ~ registered as playtest_pgqnubjf, playing Theronjcxcc the Warden
+00:00.188    *(info) The Reaches hold, Theronjcxcc. Welcome back.
+00:00.188    [hp 60/60 fp 20/20 sp 100/100 lvl 1 xp 0 gold 0]
+00:00.189  The Gate Yard
+The gate stands where it has always stood: a ring of dark stone twice the height of a man, set into the cobbles with no foundation and no seam. Nothing moves in it. Nobody living has seen anything move in it.
+
+Gatetown grew up around it anyway and treats it the way a town treats a large rock. Crates lean against the near side, children are told not to climb it, and the stone is worn shiny at shoulder height by three generations of people touching it on their way past.
+
+Yrriska's shrine sits at its foot — a bowl of coins, a knot of ribbon, and somebody's dice. It is the only untidy thing in the yard, and the sweepers go around it.
+Exits: north, east, south, west
+Hesper, who sweeps around the shrine is here.
+00:01.052  
+── Entering the world should describe where you are without being asked. A MUD that opens on a
+blank screen has lost the player before they have typed anything.
+
+00:01.655    ✓ Exits:
+00:01.655  > look
+00:01.686  The Gate Yard
+The gate stands where it has always stood: a ring of dark stone twice the height of a man, set into the cobbles with no foundation and no seam. Nothing moves in it. Nobody living has seen anything move in it.
+
+Gatetown grew up around it anyway and treats it the way a town treats a large rock. Crates lean against the near side, children are told not to climb it, and the stone is worn shiny at shoulder height by three generations of people touching it on their way past.
+
+Yrriska's shrine sits at its foot — a bowl of coins, a knot of ribbon, and somebody's dice. It is the only untidy thing in the yard, and the sweepers go around it.
+Exits: north, east, south, west
+Hesper, who sweeps around the shrine is here.
+00:01.717    ✓ Exits:
+00:01.717  
+── Walking should say where you went, and the new room should describe itself.
+
+00:01.717  > north
+00:01.932  You walk north.
+00:01.932  The Common
+Exits: north, east, south, west
+00:01.962    ✓ You walk north
+00:01.962    ✓ Exits:
+00:01.962  > south
+00:02.193  You walk south.
+00:02.193  The Gate Yard
+Exits: north, east, south, west
+Hesper, who sweeps around the shrine is here.
+00:02.208    ✓ You walk south
+00:02.208  
+── A direction with no exit should be refused in words, never silently.
+
+00:02.208  > up
+00:02.439  You cannot go up from here.
+00:02.809    ✓ not: You walk up
+00:02.809  > who
+00:02.934  1 player online
+  Theronjcxcc  level 1 Warden
+00:02.995    ✓ Theron
+00:02.995  
+── `help` is the only thing a lost player knows to type, so it has to answer. This is also the
+cheapest check that the command table is loaded at all.
+
+00:02.995  > help
+00:03.185  Commands
+  n / e / s / w / u / d - move between rooms
+  look (l) - describe the room again
+  say <message> - speak to everyone in the room
+  who - list everyone online
+  inventory (i) - list what you're carrying
+  examine <item> (ex) - look closely at an item
+  get <item> - pick up an item from the ground
+  drop <item> - put down an item from your inventory
+  destroy <item> - permanently destroy an item you're carrying
+  wear <item> - equip an item on your body
+  wield <item> - equip an item in your hand
+  remove <item> (re) - unequip an item
+  give <item> <character> - give an item to someone
+  emote <message> - express an emotion or action
+  help - this list
+  stats - show your damage, armor, and combat stats
+  quit - save and leave the world
+  attack <target> (att) - attack target
+  assist <player> (as) - attack whatever they are attacking
+  consider <target> (con) - estimate target strength
+  flee (f) - attempt to escape combat
+  bind (b) - set respawn point in this room
+  sleep (sl) - rest deeply and regenerate quickly
+  rest (r) - sit and recover
+  stand (st) - wake up and be ready
+  cast <ability> [target] (ca) - cast an ability
+  abilities (ab) - list your known abilities
+  talk <npc> (t) - speak with an NPC about quests
+  quest [name] - your journal, or one quest in detail
+  quests - list your active quests
+  abandon <name> - give up an active quest
+  group [invite|accept|decline|leave|kick|disband] <who> (gr) - adventure together
+  gtell <message> (gt) - speak to your group, wherever they are
+  autofollow <player> (auto) - walk behind someone in your group
+  tell <who> <message> (te) - speak privately, anywhere in the world
+  reply <message> - answer the last person who told you something
+  chat <message> | chat on|off (ch) - the world channel
+  recall (rec) - return to where you bound your soul
+  list - see what a shopkeeper has
+  buy <item> - purchase an item from a shopkeeper
+  sell <item> - sell an item to a shopkeeper
+  buffs - list your active effects
+
+Most verbs accept a prefix, so 'l' is 'look'.
+No space needed after ' or " = say, ; or : = emote.
+00:03.598    ✓ not: is not something you can do

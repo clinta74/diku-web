@@ -1,0 +1,71 @@
+00:00.261    ~ registered as playtest_ysmevurj, playing Theron the Warden
+00:00.338    *(info) The Reaches hold, Theron. Welcome back.
+00:00.338    [hp 60/60 fp 20/20 sp 100/100 lvl 1 xp 0 gold 0]
+00:00.345  The Gate Yard
+The gate stands where it has always stood: a ring of dark stone twice the height of a man, set into the cobbles with no foundation and no seam. Nothing moves in it. Nobody living has seen anything move in it.
+
+Gatetown grew up around it anyway and treats it the way a town treats a large rock. Crates lean against the near side, children are told not to climb it, and the stone is worn shiny at shoulder height by three generations of people touching it on their way past.
+
+Yrriska's shrine sits at its foot — a bowl of coins, a knot of ribbon, and somebody's dice. It is the only untidy thing in the yard, and the sweepers go around it.
+Exits: north, east, south, west
+Hesper, who sweeps around the shrine is here.
+00:01.343  > south
+00:01.591  You walk south.
+00:01.591  The Gate Road
+Exits: north, south
+00:01.652  > east
+00:01.839  You cannot go east from here.
+00:11.700    ~ waited 10s for "You walk east" and never saw it
+00:11.700  > south
+00:11.836  You walk south.
+00:11.837  The Terrace Gate
+Exits: north, south
+00:21.745    ~ waited 10s for "The Drowned Rat" and never saw it
+00:21.745  
+── Abilities are verbs. `cast kick` should be refused by naming the verb form — the refusal is
+the teaching, and it is the whole reason the split between spells and skills is visible to
+a player at all.
+
+00:21.745  > cast kick rat
+00:21.843  Kick is a skill, not a spell. Just type 'kick rat'.
+00:22.360    ✓ skill, not a spell
+00:22.360    ✓ kick rat
+00:22.360    ✓ not: You use Kick
+00:22.360  
+── The ability must say what it actually did: who it hit, and for how much.
+
+00:22.360  > kick rat
+00:22.593  You don't see 'rat' here.
+00:32.418    ~ waited 10s for "Your Kick" and never saw it
+00:32.418    ✗ You use Kick
+00:32.418    ✗ Your Kick hits a rat for
+00:32.418    ✓ not: takes effect
+00:32.418  
+── The kill has to be a whole kill, whichever blow lands it. Experience arriving is the visible
+half of HandleDeath having run at all — when an ability killed something, none of it used to.
+
+01:32.456    ~ waited 60s for "a rat falls" and never saw it
+01:32.456    ✗ a rat falls
+01:32.456    ✗ xp 25
+01:32.456  
+── And the fight has to be over. This is the exact check the bug failed: movement is refused
+while fighting, so walking out is the proof that a corpse is not still holding you in a
+fight that can never end.
+
+01:32.456  > north
+01:32.595  You walk north.
+01:32.595  The Gate Road
+Exits: north, south
+01:32.641    ✓ You walk north
+01:32.641    ✓ not: while in combat
+01:32.641  
+── The other thing a stuck fight prevents.
+
+01:32.641  > south
+01:32.842  You walk south.
+01:32.843  The Terrace Gate
+Exits: north, south
+01:42.692    ~ waited 10s for "The Drowned Rat" and never saw it
+01:42.693  > attack rat
+01:42.833  You don't see 'rat' here.
+01:43.309    ✓ not: already in combat

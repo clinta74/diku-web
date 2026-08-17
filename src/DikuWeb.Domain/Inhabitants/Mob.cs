@@ -117,4 +117,45 @@ public sealed class Mob
 
     /// <summary>Free-form state: { "inCombat": true, "targetId": "...", "sentinelFlag": false }</summary>
     public Dictionary<string, object> State { get; set; } = new();
+
+    /// <summary>
+    /// Leaves a fight alive: idle, no target, and whole again (PLAN.md §4.6).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Mobs used to keep their wounds for the life of the process.</b> Nothing restored
+    /// <see cref="Vitals"/> — <c>RegenSystem</c> iterated players only, ending a fight touched
+    /// neither side's health, and the spawner replaces a slot only when its occupant is
+    /// <em>dead</em>. So chipping something to 5% and walking away left it at 5% an hour later:
+    /// attrition was free and permanent, and a camped room degraded monotonically until a restart
+    /// (BUGS.md #25).
+    /// </para>
+    /// <para>
+    /// <b>Here rather than at each call site, for the reason <see cref="DisplayName"/> gives</b> —
+    /// the hand-written version was already in two places and would have needed the heal added to
+    /// both. A promise kept by remembering to keep it at every exit is the defect class
+    /// <c>BUGS.md</c> opens by describing.
+    /// </para>
+    /// <para>
+    /// <b>The heal is guarded on being alive; the idling is not.</b> A mob at zero health is dead or
+    /// pending removal, and healing it would resurrect it — quietly, with the corpse already looted.
+    /// Clearing its combat state is still right, so the guard wraps the heal alone. In practice it
+    /// should never fire, because <c>HandleDeath</c> removes the dead from <c>Combatants</c> before
+    /// the end-of-fight sweep looks; it exists so this is safe wherever it gets called from next.
+    /// </para>
+    /// <para>
+    /// <b>No leashing.</b> A mob does not walk home, which is why this is a heal rather than a
+    /// journey: <see cref="Mob"/> carries no home room and the wander rules stay as they are.
+    /// </para>
+    /// </remarks>
+    public void Disengage()
+    {
+        CombatState = CombatState.Idle;
+        CurrentTarget = null;
+
+        if (Vitals.Health > 0)
+        {
+            Vitals.Health = Vitals.HealthMax;
+        }
+    }
 }

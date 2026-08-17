@@ -1,0 +1,104 @@
+00:00.001  apparatus │ 
+                      ── Plan: An ability opens a fight
+                      
+00:00.001  apparatus │   ~ The playtesting note of 2026-08-09, as a player would hit it. Two things were wrong and both
+                      were invisible to the test suite, because every assertion about them passed:
+                      
+                        * The ability said "Your Kick takes effect!" — no target, no amount, no outcome. A player
+                          could not tell a hit from a miss.
+                        * A mob killed by an ability sat in the fight at zero health for ever. No experience, no
+                          loot, no corpse, and the player was stuck Fighting: refused every later `kill`, and unable
+                          to walk out of the room.
+                      
+                      Kick is the Warden's level-1 opener, so a fresh character can run this with no admin and no
+                      levelling. That is deliberate: the plan guarding the most-reported bug should have the fewest
+                      reasons not to run. The one thing it does need is something to kick, and it builds that itself.
+                      
+                      Whether the kick kills outright is a dice roll — it is 1.1x damage with a floor of 3, against a
+                      city rat with barely more health than that. Both outcomes are worth having, so the plan waits for
+                      the rat to fall rather than assuming which one killed it:
+                      
+                        * one-shot, and the closing half of the note is on display — experience, gold, and a fight that
+                          ends;
+                        * survived, and so is the opening half, because the Warden's own weapon carries on and finishes
+                          it. A run where the kick rolled 9 instead of 10 caught exactly that: "Your Kick hits a rat for
+                          9." and then, two seconds later, "You hit a rat for 2 damage. A rat falls."
+                      
+                      An earlier version assumed the one-shot and flagged four expectations the first time the dice
+                      disagreed. `ability-then-melee` is the deterministic half — a dummy that reliably survives an
+                      opener — so this one keeps waiting for the outcome rather than predicting it, which is the
+                      honest shape for a plan about a real fight.
+                      
+                      The rat below is the one both this plan and `group-fight-ends` want, declared by both and built
+                      once: fixtures are matched by key, so the second plan to ask finds what the first one made.
+00:00.261  Theron   │   ~ registered as playtest_ysmevurj, playing Theron the Warden
+00:00.338  Theron   │   *(info) The Reaches hold, Theron. Welcome back.
+00:00.338  Theron   │   [hp 60/60 fp 20/20 sp 100/100 lvl 1 xp 0 gold 0]
+00:00.345  Theron   │ The Gate Yard
+                      The gate stands where it has always stood: a ring of dark stone twice the height of a man, set into the cobbles with no foundation and no seam. Nothing moves in it. Nobody living has seen anything move in it.
+                      
+                      Gatetown grew up around it anyway and treats it the way a town treats a large rock. Crates lean against the near side, children are told not to climb it, and the stone is worn shiny at shoulder height by three generations of people touching it on their way past.
+                      
+                      Yrriska's shrine sits at its foot — a bowl of coins, a knot of ribbon, and somebody's dice. It is the only untidy thing in the yard, and the sweepers go around it.
+                      Exits: north, east, south, west
+                      Hesper, who sweeps around the shrine is here.
+00:01.343  Theron   │ > south
+00:01.591  Theron   │ You walk south.
+00:01.591  Theron   │ The Gate Road
+                      Exits: north, south
+00:01.652  Theron   │ > east
+00:01.839  Theron   │ You cannot go east from here.
+00:11.700  Theron   │   ~ waited 10s for "You walk east" and never saw it
+00:11.700  Theron   │ > south
+00:11.836  Theron   │ You walk south.
+00:11.837  Theron   │ The Terrace Gate
+                      Exits: north, south
+00:21.745  Theron   │   ~ waited 10s for "The Drowned Rat" and never saw it
+00:21.745  Theron   │ 
+                      ── Abilities are verbs. `cast kick` should be refused by naming the verb form — the refusal is
+                      the teaching, and it is the whole reason the split between spells and skills is visible to
+                      a player at all.
+                      
+00:21.745  Theron   │ > cast kick rat
+00:21.843  Theron   │ Kick is a skill, not a spell. Just type 'kick rat'.
+00:22.360  Theron   │   ✓ skill, not a spell
+00:22.360  Theron   │   ✓ kick rat
+00:22.360  Theron   │   ✓ not: You use Kick
+00:22.360  Theron   │ 
+                      ── The ability must say what it actually did: who it hit, and for how much.
+                      
+00:22.360  Theron   │ > kick rat
+00:22.593  Theron   │ You don't see 'rat' here.
+00:32.418  Theron   │   ~ waited 10s for "Your Kick" and never saw it
+00:32.418  Theron   │   ✗ You use Kick
+00:32.418  Theron   │   ✗ Your Kick hits a rat for
+00:32.418  Theron   │   ✓ not: takes effect
+00:32.418  Theron   │ 
+                      ── The kill has to be a whole kill, whichever blow lands it. Experience arriving is the visible
+                      half of HandleDeath having run at all — when an ability killed something, none of it used to.
+                      
+01:32.456  Theron   │   ~ waited 60s for "a rat falls" and never saw it
+01:32.456  Theron   │   ✗ a rat falls
+01:32.456  Theron   │   ✗ xp 25
+01:32.456  Theron   │ 
+                      ── And the fight has to be over. This is the exact check the bug failed: movement is refused
+                      while fighting, so walking out is the proof that a corpse is not still holding you in a
+                      fight that can never end.
+                      
+01:32.456  Theron   │ > north
+01:32.595  Theron   │ You walk north.
+01:32.595  Theron   │ The Gate Road
+                      Exits: north, south
+01:32.641  Theron   │   ✓ You walk north
+01:32.641  Theron   │   ✓ not: while in combat
+01:32.641  Theron   │ 
+                      ── The other thing a stuck fight prevents.
+                      
+01:32.641  Theron   │ > south
+01:32.842  Theron   │ You walk south.
+01:32.843  Theron   │ The Terrace Gate
+                      Exits: north, south
+01:42.692  Theron   │   ~ waited 10s for "The Drowned Rat" and never saw it
+01:42.693  Theron   │ > attack rat
+01:42.833  Theron   │ You don't see 'rat' here.
+01:43.309  Theron   │   ✓ not: already in combat

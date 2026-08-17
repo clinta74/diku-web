@@ -1,0 +1,122 @@
+00:00.000  apparatus │ 
+                      ── Plan: Combat basics
+                      
+00:00.000  apparatus │   ~ Walk somewhere dangerous, fight what lives there, and be paid for it. The oldest loop in the
+                      genre, and the one that has to work before anything else is worth testing.
+                      
+                      It goes to the Sunken Crypt rather than the tavern, for two reasons. The crypt spawner keeps two
+                      rats where Millbrook keeps one, and a library of plans that all queue for the same single mob is
+                      a library that fails for reasons which have nothing to do with what it is testing. The second
+                      reason is free: the way down is a zone boundary, so this also covers walking between zones,
+                      which nothing else does.
+                      
+                      This plan was the one that found "a mob you are fighting can wander out of the room" — it used to
+                      flag "waited for falls and never saw it", because the rat left one swing into the fight. Fixed;
+                      the transcript now shows an exchange running its full length.
+                      
+                      The crypt below is the one fixture that builds *geography*: a zone, and two rooms dug down out of
+                      the chapel. A room can only be created by digging it, because a room made from nothing has no
+                      exit into it — so the passage and the room arrive together, which is how the builder does it too
+                      (§7.6). The rats are sentinels, so unlike the hand-built world they are reliably standing there;
+                      the wander-out-of-a-fight guard has its own coverage in the suite and does not need a plan to be
+                      flaky to prove it.
+00:00.045  Theron   │   ~ registered as playtest_urbsnqif, playing Theronhsmje the Warden
+00:00.189  Theron   │   *(info) The Reaches hold, Theronhsmje. Welcome back.
+00:00.189  Theron   │   [hp 60/60 fp 20/20 sp 100/100 lvl 1 xp 0 gold 0]
+00:00.189  Theron   │ The Gate Yard
+                      The gate stands where it has always stood: a ring of dark stone twice the height of a man, set into the cobbles with no foundation and no seam. Nothing moves in it. Nobody living has seen anything move in it.
+                      
+                      Gatetown grew up around it anyway and treats it the way a town treats a large rock. Crates lean against the near side, children are told not to climb it, and the stone is worn shiny at shoulder height by three generations of people touching it on their way past.
+                      
+                      Yrriska's shrine sits at its foot — a bowl of coins, a knot of ribbon, and somebody's dice. It is the only untidy thing in the yard, and the sweepers go around it.
+                      Exits: north, east, south, west
+                      Hesper, who sweeps around the shrine is here.
+00:01.052  Theron   │ 
+                      ── Down through the chapel to the crypt — four rooms, the last of them a zone boundary.
+                      
+00:01.052  Theron   │ > south
+00:01.191  Theron   │ You walk south.
+00:01.191  Theron   │ The Gate Road
+                      Exits: north, south
+00:01.237  Theron   │ > south
+00:01.439  Theron   │ You walk south.
+00:01.439  Theron   │ The Terrace Gate
+                      Exits: north, south
+00:11.296  Theron   │   ~ waited 10s for "The Well Yard" and never saw it
+00:11.296  Theron   │ > west
+00:11.434  Theron   │ You cannot go west from here.
+00:21.340  Theron   │   ~ waited 10s for "The Chapel Steps" and never saw it
+00:21.340  Theron   │ > down
+00:21.433  Theron   │ You cannot go down from here.
+00:31.383  Theron   │   ~ waited 10s for "The Chapel Nave" and never saw it
+00:31.383  Theron   │ 
+                      ── And down again, which crosses from Millbrook into the Sunken Crypt. A player should not be
+                      able to tell where a zone ends except by what lives there.
+                      
+00:31.383  Theron   │ > down
+00:31.431  Theron   │ You cannot go down from here.
+00:41.431  Theron   │   ~ waited 10s for "Crypt Hall" and never saw it
+00:41.432  Theron   │   ✗ Crypt Hall
+00:41.432  Theron   │ > south
+00:41.678  Theron   │ You walk south.
+00:41.678  Theron   │ The High Shelf
+                      Exits: north, east, south, west
+00:41.679  Theron   │ A terrace crow arrives from the south.
+00:51.484  Theron   │   ~ waited 10s for "The Crypt Chapel" and never saw it
+00:51.484  Theron   │ 
+                      ── Wait for something to fight rather than assuming it is standing there. The crypt rats wander
+                      between here and the ossuary, so the room is routinely empty on arrival — the first run of
+                      this plan walked in, found nothing, and spent two minutes waiting for a fight it had never
+                      started.
+                      
+                      This is as close to reliable as a plan against a live world gets: a rat can still wander out
+                      between this line and the next. A plan that needs certainty needs to build its own mob, which
+                      is what the world fixtures are for.
+                      
+01:29.678  Theron   │ A terrace crow leaves east.
+02:21.497  Theron   │   ~ waited 90s for "rat" and never saw it
+02:21.497  Theron   │   ✗ rat
+02:21.497  Theron   │ 
+                      ── `consider` before committing is what a careful player does, and it is the only warning the
+                      game offers before a fight it cannot win.
+                      
+02:21.497  Theron   │ > consider rat
+02:21.684  Theron   │ You don't see 'rat' here.
+02:22.114  Theron   │   ✗ Level
+02:22.114  Theron   │ 
+                      ── Opening a fight should say so, in the second person, naming what was attacked.
+                      
+02:22.114  Theron   │ > attack rat
+02:22.192  Theron   │ You don't see 'rat' here.
+02:32.163  Theron   │   ~ waited 10s for "You begin attacking" and never saw it
+02:32.163  Theron   │   ✗ You begin attacking
+02:32.163  Theron   │ 
+                      ── Then the exchange runs on its own. Both sides must be narrated: a fight reporting only your
+                      own blows reads as though nothing is fighting back.
+                      
+02:45.689  Theron   │ A terrace crow arrives from the east.
+03:29.685  Theron   │ A terrace crow leaves east.
+04:32.224  Theron   │   ~ waited 120s for "falls" and never saw it
+04:32.224  Theron   │   ✗ You hit a rat
+04:32.224  Theron   │   ✗ a rat falls
+04:32.224  Theron   │ 
+                      ── A kill should pay, and the fight should be over.
+                      
+04:32.224  Theron   │ > stats
+04:32.442  Theron   │ Combat Stats
+                      Level: 1
+                      Gold: 0
+                      Damage Range: 1-2
+                        Dice: 1-2, Might bonus: +0
+                        Speed: one swing every 2s
+                      Attack Rating: 0
+                      Defense: 10
+                        Armour: 0 rating, 0% of each hit absorbed
+04:32.840  Theron   │   ✓ not: is not something you can do
+04:32.840  Theron   │ 
+                      ── Two rats live here, so there should still be one — and being able to attack it is the proof
+                      that the first fight actually ended.
+                      
+04:32.840  Theron   │ > attack rat
+04:32.933  Theron   │ You don't see 'rat' here.
+04:33.455  Theron   │   ✓ not: already in combat
