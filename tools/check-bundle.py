@@ -14,6 +14,18 @@ authoring mistakes rather than import failures:
   - **Reciprocity.** An import applies `SetExit` per edge and never invents the return, since an
     export already carries both halves. So a bundle that only says `north` produces a one-way
     corridor, which imports perfectly and reads as a bug the first time somebody walks it.
+
+    A warning rather than an error, and it has to stay one: **a one-way can be the story.** A
+    mirror you arrive through and cannot go back out of is deliberate content, and nothing here can
+    tell that from a slip. What the pass is worth is that both kinds get *looked at* — it found the
+    Grask->Azhen gate leaving `west` and coming back `north` where every other realm gate is a
+    south/north pair, which no per-file run could see because reciprocity needs both rooms in the
+    same bundle.
+
+    If a deliberate one-way ever lands, this pass stops being all-signal and the mechanism to add
+    is an acknowledgement list with a stated reason — including a warning for an acknowledgement
+    that no longer matches a real one-way, or the list rots into a blanket exemption. Not worth
+    building before there is one to acknowledge.
   - **Connectivity.** A room with no path to the rest of its zone imports fine and is reachable
     only by `goto`.
   - **Room inside its own zone.** `ossara.gatetown.x` declaring `zoneKey: ossara.brackenfell`
@@ -334,13 +346,34 @@ def check(path):
     for message in errors:
         print('  ERROR  ' + message)
 
-    return len(errors)
+    return len(errors), len(warnings)
 
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         sys.exit(__doc__)
 
-    failures = sum(check(argument) for argument in sys.argv[1:])
-    print('FAILED' if failures else 'OK')
-    sys.exit(1 if failures else 0)
+    results = [check(argument) for argument in sys.argv[1:]]
+    failures = sum(count for count, _ in results)
+    cautions = sum(count for _, count in results)
+
+    # Warnings are advisory and say so out loud. Several of them are things content is allowed to
+    # be: a one-way exit can be the story - a mirror you arrive through and cannot go back out of -
+    # and the pass cannot tell that from a slip, so refusing would make the narrative case
+    # unauthorable. Only errors set the exit status.
+    #
+    # Said explicitly because "OK" above a list of warnings reads as a contradiction, and the next
+    # question is always whether it is safe to go on. It is; the dry run is what decides, since it
+    # is the only check that knows what is already in the target database.
+    if failures:
+        print('FAILED  %d error(s)%s. Nothing here is worth importing until they are fixed.'
+              % (failures, ', %d warning(s)' % cautions if cautions else ''))
+        sys.exit(1)
+
+    if cautions:
+        print('OK      %d warning(s), none blocking. Read them, then dry-run the import:' % cautions)
+        print('        POST /api/builder/import?dryRun=true')
+        sys.exit(0)
+
+    print('OK')
+    sys.exit(0)

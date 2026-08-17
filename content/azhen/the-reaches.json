@@ -880,7 +880,7 @@
       "editorY": 0,
       "exits": [
         {
-          "direction": "north",
+          "direction": "east",
           "to": "grask.the-owing.the-first-workings"
         },
         {

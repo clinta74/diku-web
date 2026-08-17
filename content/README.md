@@ -56,8 +56,15 @@ without a server, so it belongs in an editor loop.
 
 **Run it on the merged file, not the parts.** It can only judge an exit whose target is in the same
 bundle, so per file the four cross-realm gates are the one part of the world it cannot check at all.
-Run against the merge, it found one on the first attempt: the Grask→Azhen gate leaves `west` and
-comes back `north`, where every other gate is a proper south/north pair.
+Run against the merge it found one on the first attempt — the Grask→Azhen gate left `west` and came
+back `north`, where every other gate is a south/north pair — which is now fixed, and the merged world
+checks clean at 462 exits.
+
+**Warnings never block; only errors do.** That is deliberate, because some of what it warns about is
+content's right to do: a **one-way exit can be the story** — a mirror you arrive through and cannot go
+back out of — and no script can tell that from a slip. Read the warnings, then let the dry run decide,
+since it is the only check that knows what is already in the target database. A room whose exit does
+not come back should say so in its own prose; that part is authoring, not tooling.
 
 ## Three properties of the import path that shape how these are written
 
