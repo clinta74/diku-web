@@ -1,5 +1,5 @@
 {
-  "formatVersion": 11,
+  "formatVersion": 12,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -136,7 +136,8 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMultiplier": 2.4,
+        "damageMin": 3,
+        "damageMax": 6,
         "bonus": 2
       },
       "attackDelayPulses": 10,
@@ -158,7 +159,8 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMultiplier": 2.4,
+        "damageMin": 2,
+        "damageMax": 4,
         "bonus": 2
       },
       "attackDelayPulses": 8,
@@ -180,7 +182,8 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMultiplier": 2.0,
+        "damageMin": 2,
+        "damageMax": 4,
         "bonus": 1
       },
       "attackDelayPulses": 8,
@@ -202,7 +205,8 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMultiplier": 2.0,
+        "damageMin": 2,
+        "damageMax": 4,
         "bonus": 1
       },
       "attackDelayPulses": 6,

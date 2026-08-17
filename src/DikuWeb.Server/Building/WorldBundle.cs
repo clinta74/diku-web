@@ -58,6 +58,14 @@ public sealed record WorldBundle(
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
     ///
+    /// <b>12 because a weapon says what it hits for.</b> Weapons carry <c>damageMin</c> and
+    /// <c>damageMax</c>, and the item-level <c>damageMultiplier</c> is gone. This is the strong kind
+    /// of bump in both directions, which is unusual. A v11 bundle read as v12 loses every weapon's
+    /// only damage stat and arrives as a field of fists — 1–2, whatever the author wrote. A v12
+    /// bundle read as v11 is worse: the dice bind, but the *engine* on that build would still be
+    /// looking for a multiplier and would find none, so it too swings 1–2. Neither direction throws,
+    /// and both produce a world where nothing has a weapon. The number is what refuses them.
+    ///
     /// <b>11 because a spawner says how rare its thing is.</b> <c>respawnSeconds</c> is back on
     /// every spawner, and this time something reads it. A v10 bundle has no such key, so read as
     /// v11 every spawner in it would arrive at the record's default — which is 60 and harmless, but
@@ -125,7 +133,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 11;
+    public const int CurrentFormatVersion = 12;
 }
 
 /// <summary>

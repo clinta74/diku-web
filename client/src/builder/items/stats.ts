@@ -10,11 +10,18 @@
  * "carried through unchanged" while three inert boxes sat above it labelled as armour.
  *
  * A dead field is worse than a missing one: it reads as a dial a builder has set, and the number
- * they typed is stored, exported, and never consulted. `tools/check-builder-keys.py` now compares
- * this list against the engine so the next retirement cannot go unnoticed.
+ * they typed is stored, exported, and never consulted. `BundleValidator` now errors on any
+ * `baseStats` key outside `EquipmentResolver.KnownStatKeys`, so the next retirement cannot go
+ * unnoticed on either side.
+ *
+ * **`damageMultiplier` was the third instance, and the worst-behaved.** This form told authors that
+ * "a multiplier on an item that declares no damage does nothing" — which was false, because the
+ * engine fell back to the unarmed 1-2 and multiplied *that*. All 35 weapons in the game were written
+ * that way, so every one of them worked by accident of a fallback while the form said it could not,
+ * and 22 distinct multipliers resolved to only 14 distinct dice. Weapons declare their dice now.
  *
  * Labels are written out in words. The raw key is what goes in the bag, but a form that shows
- * "damageMultiplier" is asking a builder to read camelCase to find out what a field does.
+ * "baseDamage" is asking a builder to read camelCase to find out what a field does.
  */
 export type StatKind = 'int' | 'decimal'
 
@@ -35,12 +42,12 @@ export interface StatGroup {
 export const STAT_GROUPS: StatGroup[] = [
   {
     label: 'As a weapon',
-    hint: 'Read from the main hand only. Leave blank and the wielder falls back to unarmed 1-2.',
+    hint: 'Read from the hand this is equipped in. Leave the dice blank and it swings as a bare fist, 1-2.',
     fields: [
       {
         key: 'damageMin',
         label: 'Damage min',
-        hint: 'Low end of the damage roll.',
+        hint: 'Low end of the damage roll. Set this — a weapon that leaves it blank hits like a fist.',
         kind: 'int',
       },
       {
@@ -80,11 +87,6 @@ export const STAT_GROUPS: StatGroup[] = [
         kind: 'int',
       },
     ],
-  },
-  {
-    label: 'Multipliers',
-    hint: 'One only, and it scales the damage above — a multiplier on an item that declares no damage does nothing.',
-    fields: [{ key: 'damageMultiplier', label: 'Damage multiplier', kind: 'decimal' }],
   },
 ]
 

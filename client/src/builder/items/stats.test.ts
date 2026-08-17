@@ -18,7 +18,6 @@ const KEYS_THE_ENGINE_READS = [
   'damageMin',
   'damageMax',
   'baseDamage',
-  'damageMultiplier',
   // Armour slots only.
   'armor',
   'defense',
@@ -66,12 +65,6 @@ describe('item stat fields', () => {
     expect(kinds.get('bonus')).toBe('int')
   })
 
-  it('marks proportional stats as decimals', () => {
-    const kinds = new Map(STAT_GROUPS.flatMap((g) => g.fields).map((f) => [f.key, f.kind]))
-
-    expect(kinds.get('damageMultiplier')).toBe('decimal')
-  })
-
   it('offers no key the engine has retired', () => {
     // The armour rework's casualties, named so the failure says what happened rather than just
     // that a count changed. Stored, exported, and never read - the quietest failure here.
@@ -82,6 +75,10 @@ describe('item stat fields', () => {
       'healthMultiplier',
       'focusMultiplier',
       'staminaMultiplier',
+      // And the one this form was actively lying about: its hint said a multiplier without dice
+      // did nothing, while the engine fell back to the unarmed 1-2 and multiplied that. Every
+      // weapon in the game was authored that way. Weapons declare damageMin/damageMax now.
+      'damageMultiplier',
     ]) {
       expect(OWNED_STAT_KEYS).not.toContain(dead)
     }

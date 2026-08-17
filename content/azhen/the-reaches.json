@@ -1,5 +1,5 @@
 {
-  "formatVersion": 11,
+  "formatVersion": 12,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -244,7 +244,8 @@
       "weight": 3000,
       "baseValue": 480,
       "baseStats": {
-        "damageMultiplier": 3.6,
+        "damageMin": 4,
+        "damageMax": 8,
         "bonus": 3
       },
       "attackDelayPulses": 8,
@@ -264,7 +265,8 @@
       "weight": 1400,
       "baseValue": 560,
       "baseStats": {
-        "damageMultiplier": 3.2,
+        "damageMin": 3,
+        "damageMax": 6,
         "bonus": 4
       },
       "attackDelayPulses": 6,
@@ -284,7 +286,8 @@
       "weight": 5000,
       "baseValue": 440,
       "baseStats": {
-        "damageMultiplier": 4.0
+        "damageMin": 5,
+        "damageMax": 10
       },
       "attackDelayPulses": 10,
       "attackVerb": "crush",
@@ -354,7 +357,8 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMultiplier": 5.0,
+        "damageMin": 7,
+        "damageMax": 13,
         "bonus": 4
       },
       "attackDelayPulses": 10,
@@ -376,7 +380,8 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMultiplier": 5.0,
+        "damageMin": 5,
+        "damageMax": 9,
         "bonus": 4
       },
       "attackDelayPulses": 8,
@@ -398,7 +403,8 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMultiplier": 4.2,
+        "damageMin": 4,
+        "damageMax": 9,
         "bonus": 3
       },
       "attackDelayPulses": 8,
@@ -420,7 +426,8 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMultiplier": 4.2,
+        "damageMin": 4,
+        "damageMax": 9,
         "bonus": 3
       },
       "attackDelayPulses": 6,

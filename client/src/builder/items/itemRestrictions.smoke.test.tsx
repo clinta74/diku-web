@@ -20,7 +20,7 @@ const oathmaul = vi.hoisted(
     slot: 'MainHand',
     weight: 2600,
     baseValue: 0,
-    baseStats: { damageMultiplier: 2.4 },
+    baseStats: { damageMin: 5, damageMax: 10 },
     attackDelayPulses: 10,
     attackVerb: 'crush',
     isQuestItem: true,

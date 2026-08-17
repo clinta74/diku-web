@@ -7,19 +7,55 @@ namespace DikuWeb.Domain.Combat;
 /// (PLAN.md §4.6). Pure function that combines base stats with equipment bonuses.
 ///
 /// Equipment provides:
-/// - Weapons: <c>bonus</c> (to attack rating), <c>damageMin</c>/<c>damageMax</c>,
-///   <c>baseDamage</c>, and <c>damageMultiplier</c>
+/// - Weapons: <c>bonus</c> (to attack rating), <c>damageMin</c>/<c>damageMax</c>, <c>baseDamage</c>
 /// - Armour: <c>armor</c> (a rating, through <see cref="ArmorCurve"/>) and <c>defense</c>
 /// - Other: attribute bonuses (not implemented yet, Phase 5+)
 ///
 /// <b>This list is the contract the builder transcribes</b>, and it named the retired
 /// <c>armorFlat</c>/<c>armorPercent</c> pair for long enough that both editors were still offering
-/// them. `tools/check-builder-keys.py` compares the two sides now, but a stale summary here is
-/// where that drift starts.
+/// them. <see cref="KnownStatKeys"/> is now the machine-readable version, so the drift is caught
+/// rather than described.
 /// </summary>
 public static class EquipmentResolver
 {
-    /// <summary>Weapon dice used when nothing in the main hand declares its own.</summary>
+    /// <summary>
+    /// Every <c>baseStats</c> key this class reads. A key outside this set reaches nothing.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Named here for the reason <c>MobBehavior.KnownKeys</c> and <c>QuestDialogue.All</c> are: a
+    /// literal typed at the lookup site cannot be checked by anything, and this bag has already
+    /// carried dead keys twice — the retired <c>armorFlat</c>/<c>armorPercent</c>/
+    /// <c>armorMultiplier</c> trio, and the three vital multipliers no version ever read.
+    /// </para>
+    /// <para>
+    /// <b><c>damageMultiplier</c> is deliberately absent.</b> It scaled whatever dice the hand had,
+    /// which for every weapon in the game meant scaling the unarmed 1–2 — so a weapon's damage was
+    /// <c>ceil(1×m)</c>–<c>ceil(2×m)</c> and nothing about the authored number said so. 22 distinct
+    /// multipliers across 35 weapons resolved to 14 distinct dice, and the builder's own form told
+    /// authors a multiplier without dice does nothing, which was false and was how all 35 were
+    /// written. Weapons declare <c>damageMin</c>/<c>damageMax</c> now. A mob attack keeps its own
+    /// <c>DamageMultiplier</c>, which scales a real resolved quantity rather than a hidden constant.
+    /// </para>
+    /// </remarks>
+    public static IReadOnlySet<string> KnownStatKeys { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "bonus",
+        "damageMin",
+        "damageMax",
+        "baseDamage",
+        "armor",
+        "defense",
+    };
+
+    /// <summary>
+    /// Weapon dice used when nothing in the main hand declares its own — a bare fist.
+    /// </summary>
+    /// <remarks>
+    /// This was load-bearing for every weapon in the game until weapons declared dice: a
+    /// multiplier-only weapon multiplied <em>these</em>. It now means what it says and applies to an
+    /// empty hand alone.
+    /// </remarks>
     private const int UnarmedMinDamage = 1;
 
     private const int UnarmedMaxDamage = 2;
@@ -34,24 +70,20 @@ public static class EquipmentResolver
         ItemInstance? equippedMainHand) =>
         // The item is main hand by virtue of being passed here, whatever its EquippedSlot says -
         // callers using this overload are naming the hand, not asking us to search for it.
-        Resolve(
-            level,
-            mightModifier,
-            equippedMainHand,
-            equippedMainHand is null ? [] : [equippedMainHand]);
+        Resolve(level, mightModifier, equippedMainHand);
 
     /// <summary>
     /// Resolves the main hand's attacker stats from character level, attributes, and everything
     /// equipped. Shorthand for <see cref="ResolveAttackerStatsForHand"/> with the main hand.
     /// </summary>
     /// <remarks>
-    /// Weapon damage has two shapes and both are honoured. A weapon may declare explicit dice
-    /// (<c>damageMin</c>/<c>damageMax</c>), and it may declare a <c>damageMultiplier</c> that
-    /// scales whatever dice are in play. The multiplier is the only damage stat the builder UI
-    /// offers today, so it is what most authored weapons carry; scaling the unarmed baseline is
-    /// what lets such a weapon matter at all.
+    /// A weapon declares its dice outright (<c>damageMin</c>/<c>damageMax</c>) and an empty hand
+    /// rolls the unarmed baseline. There used to be a third shape - a <c>damageMultiplier</c>
+    /// scaling whatever dice were in play - and because it was the only damage stat the builder
+    /// offered, every authored weapon carried one and none carried dice. So every weapon in the
+    /// game was the unarmed 1-2 scaled, and its authored number said nothing about what it hit for.
     ///
-    /// The multiplier scales the dice only, not the flat modifier - a strong character does not
+    /// <c>baseDamage</c> is added after the roll and was never scaled: a strong character does not
     /// get their Might doubled by picking up a better sword.
     /// </remarks>
     /// <param name="level">Character level (used to derive base attackRating).</param>
@@ -68,10 +100,11 @@ public static class EquipmentResolver
     /// Resolves the stats one named hand swings with, from that hand's weapon alone.
     /// </summary>
     /// <remarks>
-    /// Each hand is its own attack on its own timer, so each must be its own set of stats. The
-    /// earlier shape folded both hands' multipliers into a single swing, which was right while
-    /// there was only one swing to fold them into - kept now, a dual-wielder would get the
-    /// off-hand multiplier on the main-hand blow *and* a whole extra attack.
+    /// Each hand is its own attack on its own timer, so each must be its own set of stats - this
+    /// reads one hand's weapon and nothing else, so a main-hand swing cannot see what is in the off
+    /// hand. That mattered acutely while weapons carried multipliers, since an earlier shape folded
+    /// both hands' into a single swing and a dual-wielder got the off-hand multiplier on the
+    /// main-hand blow *and* a whole extra attack. It still holds for dice.
     ///
     /// The hands differ in what an empty one means: an empty main hand is a fist and rolls the
     /// unarmed dice, an empty off hand does not attack and never reaches here.
@@ -89,14 +122,13 @@ public static class EquipmentResolver
             .Where(i => i?.ResolvedStats is not null)
             .FirstOrDefault(i => i.EquippedSlot == hand);
 
-        return Resolve(level, mightModifier, weapon, weapon is null ? [] : [weapon]);
+        return Resolve(level, mightModifier, weapon);
     }
 
     private static AttackerStats Resolve(
         int level,
         int mightModifier,
-        ItemInstance? mainHand,
-        IReadOnlyList<ItemInstance> held)
+        ItemInstance? mainHand)
     {
         // Base attack rating: half level + Might modifier (PLAN.md §4.6)
         var baseAttackRating = (level / 2) + mightModifier;
@@ -133,37 +165,6 @@ public static class EquipmentResolver
             {
                 baseDamage += damage;
             }
-        }
-
-        // Only this hand's weapon contributes its multiplier - the other hand is resolving its
-        // own swing separately. The named weapon counts even if its slot is unset, which is how
-        // the single-item overload behaves; ReferenceEquals keeps it from being counted twice
-        // when it is also in the list.
-        var damageMultiplier = 1m;
-
-        var multiplierSources = held.Where(i =>
-            i.EquippedSlot == ItemSlot.MainHand || i.EquippedSlot == ItemSlot.OffHand);
-
-        if (mainHand is not null && mainHand.EquippedSlot != ItemSlot.MainHand)
-        {
-            multiplierSources = multiplierSources
-                .Where(i => !ReferenceEquals(i, mainHand))
-                .Append(mainHand);
-        }
-
-        foreach (var item in multiplierSources)
-        {
-            if (TryReadDecimal(item, "damageMultiplier", out var multiplier) && multiplier > 0m)
-            {
-                damageMultiplier *= multiplier;
-            }
-        }
-
-        if (damageMultiplier != 1m)
-        {
-            // Ceiling so a multiplier can never round a die face down to nothing.
-            minDamage = (int)Math.Ceiling(minDamage * damageMultiplier);
-            maxDamage = (int)Math.Ceiling(maxDamage * damageMultiplier);
         }
 
         // A weapon authored with max below min would otherwise make the roll throw.
@@ -251,6 +252,4 @@ public static class EquipmentResolver
     private static bool TryReadInt(ItemInstance item, string key, out int value) =>
         StatReader.TryReadInt(item.ResolvedStats, key, out value);
 
-    private static bool TryReadDecimal(ItemInstance item, string key, out decimal value) =>
-        StatReader.TryReadDecimal(item.ResolvedStats, key, out value);
 }

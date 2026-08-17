@@ -230,66 +230,108 @@ public sealed class EquipmentResolverTests
     }
 
     // =========================================================================
-    // damageMultiplier - the only damage stat the builder UI can author today
+    // Weapon dice, and the multiplier that used to stand in for them
     // =========================================================================
 
+    /// <summary>
+    /// A weapon that declares no dice swings as a bare fist.
+    /// </summary>
+    /// <remarks>
+    /// This used to be the <em>normal</em> case rather than a mistake. <c>damageMultiplier</c> was
+    /// the only damage stat the builder offered, so every authored weapon carried one and no dice,
+    /// and this fallback was what a weapon's damage was built on - 1-2, scaled. The multiplier is
+    /// gone and the fallback means what it says, which makes a dice-less weapon a content bug that
+    /// <c>BundleValidator</c> reports rather than a shape the engine expects.
+    /// </remarks>
     [Fact]
-    public void ResolveAttackerStats_damage_multiplier_scales_the_unarmed_dice()
+    public void A_weapon_declaring_no_dice_swings_as_a_fist()
     {
-        // The reported bug. A weapon authored in the builder carries damageMultiplier and
-        // nothing else, so the resolver found no damageMin/damageMax, fell back to 1-2, and
-        // ignored the multiplier entirely - leaving a 4x sword contributing nothing at all.
-        var sword = new ItemInstance
+        var stick = new ItemInstance
         {
-            TemplateKey = "long-sword",
+            TemplateKey = "stick",
             EquippedSlot = ItemSlot.MainHand,
-            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", 4 } },
+            ResolvedStats = new Dictionary<string, object> { { "bonus", 1 } },
         };
 
-        var stats = EquipmentResolver.ResolveAttackerStats(
-            level: 1,
-            mightModifier: 2,
-            equipped: new[] { sword });
+        var stats = EquipmentResolver.ResolveAttackerStats(level: 1, mightModifier: 2, equipped: new[] { stick });
 
-        // Unarmed 1-2 scaled by 4.
-        Assert.Equal(4, stats.MinDamage);
-        Assert.Equal(8, stats.MaxDamage);
+        Assert.Equal(1, stats.MinDamage);
+        Assert.Equal(2, stats.MaxDamage);
 
-        // The multiplier scales dice only - Might is not multiplied by the weapon.
+        // The flat modifier is untouched by any of this - a strong character still hits harder.
         Assert.Equal(2, stats.BaseDamage);
     }
 
+    /// <summary>A weapon's dice are what it hits for, with nothing applied on top.</summary>
     [Fact]
-    public void ResolveAttackerStats_damage_multiplier_scales_declared_dice()
+    public void A_weapon_hits_for_the_dice_it_declares()
     {
         var axe = new ItemInstance
         {
             TemplateKey = "great-axe",
             EquippedSlot = ItemSlot.MainHand,
-            ResolvedStats = new Dictionary<string, object>
-            {
-                { "damageMin", 3 },
-                { "damageMax", 8 },
-                { "damageMultiplier", 1.5m },
-            },
+            ResolvedStats = new Dictionary<string, object> { { "damageMin", 3 }, { "damageMax", 8 } },
         };
 
-        var stats = EquipmentResolver.ResolveAttackerStats(
-            level: 1,
-            mightModifier: 0,
-            equipped: new[] { axe });
+        var stats = EquipmentResolver.ResolveAttackerStats(level: 1, mightModifier: 0, equipped: new[] { axe });
 
-        // Ceiling, so a fractional multiplier never rounds a die face down.
-        Assert.Equal(5, stats.MinDamage);
-        Assert.Equal(12, stats.MaxDamage);
+        Assert.Equal(3, stats.MinDamage);
+        Assert.Equal(8, stats.MaxDamage);
     }
 
     /// <summary>
-    /// Each hand rolls its own weapon and nothing else. The hands used to compound their
-    /// multipliers into one swing, which was right while there was only one swing; now that the
-    /// off hand strikes on its own timer, folding its multiplier into the main-hand blow as well
-    /// would count the same dagger twice.
+    /// <c>damageMultiplier</c> is retired, and a weapon still carrying one is not half-read.
     /// </summary>
+    /// <remarks>
+    /// The same guarantee the armour rework's casualties get below, and it matters more here: every
+    /// weapon in the game carried one until the dice landed, so an old row is the likely case rather
+    /// than the odd one. A weapon with a multiplier and dice hits for its dice; a weapon with a
+    /// multiplier and no dice hits like a fist. Silently scaling either would be the old behaviour
+    /// arriving back through a database rather than through the code.
+    /// </remarks>
+    [Fact]
+    public void A_retired_damage_multiplier_is_ignored_rather_than_applied()
+    {
+        var withDice = new ItemInstance
+        {
+            TemplateKey = "sword",
+            EquippedSlot = ItemSlot.MainHand,
+            ResolvedStats = new Dictionary<string, object>
+            {
+                { "damageMin", 4 },
+                { "damageMax", 9 },
+                { "damageMultiplier", 4 },
+            },
+        };
+
+        var stats = EquipmentResolver.ResolveAttackerStats(level: 1, mightModifier: 0, equipped: new[] { withDice });
+
+        Assert.Equal(4, stats.MinDamage);
+        Assert.Equal(9, stats.MaxDamage);
+
+        var multiplierOnly = new ItemInstance
+        {
+            TemplateKey = "old-sword",
+            EquippedSlot = ItemSlot.MainHand,
+            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", 4 } },
+        };
+
+        var fists = EquipmentResolver.ResolveAttackerStats(
+            level: 1, mightModifier: 0, equipped: new[] { multiplierOnly });
+
+        Assert.Equal(1, fists.MinDamage);
+        Assert.Equal(2, fists.MaxDamage);
+    }
+
+    /// <summary>
+    /// Each hand rolls its own weapon and nothing else, so a main-hand swing cannot see what is in
+    /// the off hand.
+    /// </summary>
+    /// <remarks>
+    /// Load-bearing for dual wielding: each hand is its own attack on its own timer, and an earlier
+    /// shape folded both hands' stats into one swing - right while there was only one swing to fold
+    /// them into, and now it would count the same dagger twice.
+    /// </remarks>
     [Fact]
     public void ResolveAttackerStatsForHand_reads_only_that_hands_weapon()
     {
@@ -297,29 +339,27 @@ public sealed class EquipmentResolverTests
         {
             TemplateKey = "sword",
             EquippedSlot = ItemSlot.MainHand,
-            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", 2 } },
+            ResolvedStats = new Dictionary<string, object> { { "damageMin", 4 }, { "damageMax", 9 } },
         };
 
         var off = new ItemInstance
         {
             TemplateKey = "dagger",
             EquippedSlot = ItemSlot.OffHand,
-            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", 3 } },
+            ResolvedStats = new Dictionary<string, object> { { "damageMin", 2 }, { "damageMax", 5 } },
         };
 
         var mainHand = EquipmentResolver.ResolveAttackerStatsForHand(
             level: 1, mightModifier: 0, equipped: new[] { main, off }, hand: ItemSlot.MainHand);
 
-        // 1-2 scaled by 2 only. The dagger's 3 belongs to the dagger's own swing.
-        Assert.Equal(2, mainHand.MinDamage);
-        Assert.Equal(4, mainHand.MaxDamage);
+        Assert.Equal(4, mainHand.MinDamage);
+        Assert.Equal(9, mainHand.MaxDamage);
 
         var offHand = EquipmentResolver.ResolveAttackerStatsForHand(
             level: 1, mightModifier: 0, equipped: new[] { main, off }, hand: ItemSlot.OffHand);
 
-        // 1-2 scaled by 3.
-        Assert.Equal(3, offHand.MinDamage);
-        Assert.Equal(6, offHand.MaxDamage);
+        Assert.Equal(2, offHand.MinDamage);
+        Assert.Equal(5, offHand.MaxDamage);
     }
 
     [Fact]
@@ -329,7 +369,7 @@ public sealed class EquipmentResolverTests
         {
             TemplateKey = "sword",
             EquippedSlot = ItemSlot.MainHand,
-            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", 2 } },
+            ResolvedStats = new Dictionary<string, object> { { "damageMin", 4 }, { "damageMax", 9 } },
         };
 
         var byDefault = EquipmentResolver.ResolveAttackerStats(
@@ -341,42 +381,38 @@ public sealed class EquipmentResolverTests
         Assert.Equal(named, byDefault);
     }
 
+    /// <summary>
+    /// jsonb round-trips hand these back as strings or <c>JsonElement</c>s rather than numbers, and
+    /// dice that silently fail to parse look like a balance problem rather than a bug.
+    /// </summary>
     [Fact]
-    public void ResolveAttackerStats_reads_a_multiplier_stored_as_a_string()
+    public void ResolveAttackerStats_reads_dice_stored_as_strings()
     {
-        // jsonb round-trips can hand these back as strings or JsonElements rather than numbers,
-        // and a multiplier that silently fails to parse is exactly the kind of thing that looks
-        // like a balance problem rather than a bug.
         var sword = new ItemInstance
         {
             TemplateKey = "long-sword",
             EquippedSlot = ItemSlot.MainHand,
-            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", "4" } },
+            ResolvedStats = new Dictionary<string, object> { { "damageMin", "4" }, { "damageMax", "8" } },
         };
 
-        var stats = EquipmentResolver.ResolveAttackerStats(
-            level: 1,
-            mightModifier: 0,
-            equipped: new[] { sword });
+        var stats = EquipmentResolver.ResolveAttackerStats(level: 1, mightModifier: 0, equipped: new[] { sword });
 
         Assert.Equal(4, stats.MinDamage);
         Assert.Equal(8, stats.MaxDamage);
     }
 
+    /// <summary>Weapon dice on an armour piece are not a weapon.</summary>
     [Fact]
-    public void ResolveAttackerStats_ignores_a_multiplier_on_armour()
+    public void ResolveAttackerStats_ignores_weapon_dice_on_armour()
     {
         var boots = new ItemInstance
         {
             TemplateKey = "boots",
             EquippedSlot = ItemSlot.Feet,
-            ResolvedStats = new Dictionary<string, object> { { "damageMultiplier", 10 } },
+            ResolvedStats = new Dictionary<string, object> { { "damageMin", 10 }, { "damageMax", 20 } },
         };
 
-        var stats = EquipmentResolver.ResolveAttackerStats(
-            level: 1,
-            mightModifier: 0,
-            equipped: new[] { boots });
+        var stats = EquipmentResolver.ResolveAttackerStats(level: 1, mightModifier: 0, equipped: new[] { boots });
 
         Assert.Equal(1, stats.MinDamage);
         Assert.Equal(2, stats.MaxDamage);

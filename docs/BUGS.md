@@ -433,6 +433,31 @@ Design questions the review raised and deliberately did not answer: **mob leashi
 accept/decline, and containers — `ContainerItemId` is read once as a filter and written nowhere. Each
 needs a decision before it needs code.
 
+**The weapon ladder overlaps by level**, found while retuning weapon damage and left alone because
+fixing it changes absolute difficulty, which needs play rather than arithmetic. Every tier's floor sits
+at or below the previous tier's ceiling:
+
+| Tier | Level | dps range |
+|---|---|---|
+| ossara shop | 1 | 1.50 – 1.67 |
+| epic 1 | 8 | 1.50 – 2.00 |
+| grask shop | 12 | 2.00 – 2.25 |
+| epic 2 | 20 | 2.25 – 3.00 |
+| azhen shop | 24 | 3.00 – 3.00 |
+| epic 3 | 30 | 3.25 – 4.33 |
+| nemhal shop | 34 | 4.00 – 4.00 |
+| epic 4 | 42 | 4.25 – 5.67 |
+| unlit shop | 46 | 5.25 – 5.40 |
+| epic 5 | 48 | 5.25 – 7.00 |
+
+So the weakest weapon of a tier is no better than the strongest of the tier before it, and at one point
+they were *identical*: `epic-adept-2` had the same dice, delay and attack rating as
+`grask-dredge-hook`, a shop weapon eight levels earlier — an Act II reward you could have bought at 12.
+That one is fixed (the epic carries higher accuracy), and `WeaponBalanceTests.No_two_weapons_share_a_stat_line`
+stops it recurring. The overlap itself is untouched: the retune held each tier at its existing mean
+deliberately, so this is inherited rather than introduced. The honest fix is deciding what an epic
+reward should be worth relative to the shop line below it, and that is a play question.
+
 Two have since been decided and built, and are recorded in `PLAN.md` §4.6 rather than here: the
 **aggression target rule** (#20 — the room's threat leader, otherwise at random, link-dead characters
 excluded) and **mob regeneration** (a heal on disengage plus the regen tick). Leashing was the other

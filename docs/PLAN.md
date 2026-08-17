@@ -726,6 +726,40 @@ because each duellist targets the other, a taunted player stays in because the m
 still names them, and a party standing over a corpse falls out because removing the corpse already
 cleared every target that pointed at it.
 
+**A weapon says what it hits for.** Damage is `damageMin`/`damageMax` on the weapon; speed is
+`attackDelayPulses`; accuracy is `bonus`. There is no item-level `damageMultiplier` any more, and
+there used to be nothing else — every one of the 35 weapons carried a multiplier and no dice, so a
+weapon's damage was `ceil(1 × m)`–`ceil(2 × m)` over the **unarmed** 1–2, and the authored number said
+nothing about what the thing hit for. `1.4` was worth exactly what `1.1` would have been; 22 distinct
+multipliers resolved to 14 distinct dice. The builder's own form told authors *"a multiplier on an item
+that declares no damage does nothing"*, which was false, and was how all 35 were written.
+
+- **What the opacity hid is the argument.** `epic-warden-2`, `-4` and `-5` carried **identical dice and
+  identical attack rating** to the Hallow line and swung slower — a Path's capstone strictly dominated
+  by another's, at three of five tiers. `ossara-hand-axe` and `ossara-walking-staff` were the same
+  item with two names. Neither is a balance opinion; both were unreadable in the numbers.
+- **Dice are derived from a target rate and the delay**, so speed stops being a free bonus:
+  `avgDice = dps × delay × 0.25`, then `min = round(avg × 2/3)` and `max = round(avg × 4/3)` — keeping
+  the `max ≈ 2 × min` shape the multiplier used to produce.
+- **The 15 shop weapons are one rate per tier.** They are Path-open, so the same weapon may be picked
+  by anyone and speed is all that separates them: bigger numbers less often, or smaller more often,
+  for the same output. Every realm sells a 6, an 8 and a 10.
+- **The 20 epic weapons are ranked by Path** — Shade, Warden, Hallow, Adept, with the casters close
+  together because melee is their backup and focus abilities are their output. Shares of the tier mean
+  are 1.15 / 1.05 / 0.94 / 0.86, which average to 1.0, so **each tier's total is unchanged**: this
+  redistributed power rather than inflating it. Whether the whole curve is right needs play.
+- **Tuned per weapon, not per hand.** Dual wielding is a passive both martial Paths get, so it drops
+  out of the comparison and a weapon's printed numbers mean what they say whatever is in the other
+  hand. The Shade therefore leads on total output, being fastest *and* dual-wielding earliest — which
+  is the Path's stated identity, now visible instead of accidental.
+- **Epic tier 1 cannot express the ranking**, and it is excluded by name in the test. At an average of
+  three damage the Hallow/Adept gap rounds away and both land on 2–4. Integer dice have a floor on how
+  fine a distinction they can carry — the same limit that made the multiplier lumpy, but now at least
+  legible in the authored numbers.
+- `EquipmentResolver.KnownStatKeys` names the six keys the engine reads, and `BundleValidator` errors
+  on any `baseStats` key outside it. That is the third arm of the content-key guard and the reason the
+  multiplier cannot drift back in.
+
 **Mobs heal. A mob that leaves a fight alive is whole again, and a wounded idle one trends back to
 full.** Nothing restored a mob's health before: `RegenSystem` iterated players only, ending a fight
 touched neither side's vitals, no leash existed, and the spawner replaces a slot only when its

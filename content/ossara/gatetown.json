@@ -1,5 +1,5 @@
 {
-  "formatVersion": 11,
+  "formatVersion": 12,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "zone",
@@ -139,7 +139,8 @@
       "weight": 900,
       "baseValue": 35,
       "baseStats": {
-        "damageMultiplier": 1.4,
+        "damageMin": 2,
+        "damageMax": 3,
         "bonus": 1
       },
       "attackDelayPulses": 6,
@@ -159,7 +160,8 @@
       "weight": 1400,
       "baseValue": 30,
       "baseStats": {
-        "damageMultiplier": 1.8
+        "damageMin": 2,
+        "damageMax": 4
       },
       "attackDelayPulses": 8,
       "attackVerb": "chop",
@@ -178,9 +180,10 @@
       "weight": 1100,
       "baseValue": 22,
       "baseStats": {
-        "damageMultiplier": 1.6
+        "damageMin": 3,
+        "damageMax": 5
       },
-      "attackDelayPulses": 8,
+      "attackDelayPulses": 10,
       "attackVerb": "crush",
       "isQuestItem": false,
       "isLore": false,

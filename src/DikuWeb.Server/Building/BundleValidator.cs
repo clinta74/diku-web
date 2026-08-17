@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Spawning;
@@ -112,6 +113,7 @@ public static class BundleValidator
         CheckReciprocity(edges, rooms, Warn);
         CheckConnectivity(edges, rooms, Error);
         CheckSpawners(bundle, zones, rooms, mobs, items, Error, Warn);
+        CheckItems(bundle, Error);
         CheckMobs(bundle, items, Error, Warn);
         CheckQuests(bundle, mobs, items, Error, Warn);
         CheckTerrain(bundle, Error, Warn);
@@ -324,6 +326,39 @@ public static class BundleValidator
             foreach (var roomKey in spawner.RoomKeys.Where(key => !rooms.Contains(key)))
             {
                 warn($"spawner {spawner.Id} places into room {roomKey}, which this bundle does not carry");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Every <c>baseStats</c> key on an item is one <see cref="EquipmentResolver"/> reads.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The third arm of the content-key guard, and the last one built. <c>baseStats</c> is a free
+    /// bag that survives the importer, the writer and the applier untouched, so nothing in the round
+    /// trip is in a position to notice a key nobody reads — the same shape as the quest dialogue that
+    /// silenced 35 quests, and it has already happened to this bag twice: the retired
+    /// <c>armorFlat</c>/<c>armorPercent</c>/<c>armorMultiplier</c> trio, and three vital multipliers
+    /// no version ever read.
+    /// </para>
+    /// <para>
+    /// An <b>error</b>, not a warning: there is no reading of an unread stat key under which the
+    /// content works. A builder typed a number, it was stored, exported and re-imported, and nothing
+    /// will ever consult it.
+    /// </para>
+    /// </remarks>
+    private static void CheckItems(WorldBundle bundle, Action<string> error)
+    {
+        foreach (var item in bundle.ItemTemplates)
+        {
+            foreach (var key in (item.BaseStats ?? [])
+                .Keys
+                .Where(k => !EquipmentResolver.KnownStatKeys.Contains(k))
+                .Order(StringComparer.Ordinal))
+            {
+                error($"{item.Key} has baseStats key '{key}', which the engine does not read; "
+                    + $"it reads {string.Join(", ", EquipmentResolver.KnownStatKeys.Order(StringComparer.Ordinal))}");
             }
         }
     }
