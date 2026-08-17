@@ -80,6 +80,17 @@ public sealed record ResolvedFlag(string Key, bool Value, string Source, string 
 
 public sealed record RoomFlagResponse(string Key, bool Default, string Summary, string Phase);
 
+/// <summary>
+/// The bundle format this build reads, so a client can compare before uploading.
+/// </summary>
+/// <remarks>
+/// One field, and deliberately not a build number or a commit. The question a builder holding a file
+/// actually has is "will this server take it", and the format version answers exactly that — where a
+/// build string would need the reader to know which builds changed the format. If more of the
+/// server's identity is ever wanted here, it belongs beside this rather than instead of it.
+/// </remarks>
+public sealed record BundleFormatResponse(int FormatVersion);
+
 /// <summary>An advisory warning. Never blocks a save (PLAN.md §7.4).</summary>
 public sealed record ValidationWarning(string Kind, string EntityKey, string Message);
 

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { builderApi, type ImportReport } from '../../net/builderApi'
 import { Button } from '../../ui/Button'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
@@ -40,6 +40,29 @@ function describe(bundle: unknown): string {
   return parts.length > 0 ? parts.join(', ') : 'empty'
 }
 
+/**
+ * Whether the server will take this file, said in the words the situation actually calls for.
+ *
+ * The two directions are different problems and used to produce the same 400. A file *older* than
+ * the server is a file to re-export; a file *newer* than the server means the server has not been
+ * updated yet, which is nothing the person holding the file can fix by editing it.
+ */
+function verdict(fileVersion: number, serverVersion: number | null): string | null {
+  if (serverVersion === null || fileVersion === serverVersion) return null
+
+  if (fileVersion > serverVersion) {
+    return (
+      `This file is format ${fileVersion} and this server reads ${serverVersion}. ` +
+      'The server has not been updated yet — deploy it before importing.'
+    )
+  }
+
+  return (
+    `This file is format ${fileVersion} and this server reads ${serverVersion}. ` +
+    'Re-export or re-merge it against this build.'
+  )
+}
+
 interface Props {
   onImported: () => void
 }
@@ -65,6 +88,33 @@ export function TransferPanel({ onImported }: Props) {
   const [report, setReport] = useState<ImportReport | null>(null)
   const [busy, setBusy] = useState(false)
   const [confirming, setConfirming] = useState(false)
+
+  /**
+   * What this server accepts. Null while unknown — either still loading or the request failed — and
+   * an unknown version must never block an import: the server refuses a bad one anyway, and a panel
+   * that stopped working because a metadata read failed would be worse than one that says nothing.
+   */
+  const [serverVersion, setServerVersion] = useState<number | null>(null)
+
+  useEffect(() => {
+    let live = true
+
+    builderApi
+      .bundleFormat()
+      .then((info) => {
+        if (live) setServerVersion(info.formatVersion)
+      })
+      .catch(() => {
+        // Deliberately silent. Not knowing is the default state and is already handled everywhere
+        // it matters; a toast here would fire on every builder open against an older server.
+      })
+
+    return () => {
+      live = false
+    }
+  }, [])
+
+  const mismatch = loaded ? verdict(loaded.formatVersion, serverVersion) : null
 
   function reset() {
     setLoaded(null)
@@ -166,6 +216,15 @@ export function TransferPanel({ onImported }: Props) {
         remove it from the world.
       </p>
 
+      {/* Shown whether or not a file is loaded, because "which version does this server take" is a
+          question worth being able to answer while looking at a deployment rather than only while
+          holding a bundle. */}
+      <p className="dim">
+        {serverVersion === null
+          ? 'This server has not said which bundle format it reads.'
+          : `This server reads bundle format ${serverVersion}.`}
+      </p>
+
       <Field label="Bundle file">
         <input
           ref={fileInput}
@@ -185,22 +244,26 @@ export function TransferPanel({ onImported }: Props) {
             <span className="dim"> · format {loaded.formatVersion} · {loaded.summary}</span>
           </p>
 
+          {/* Said here rather than discovered by uploading. The server refuses this anyway, so this
+              is not the check — it is the check arriving early enough to be useful. */}
+          {mismatch && <p className="bad">{mismatch}</p>}
+
           <div className="spawner-actions">
-            <Button variant="primary" disabled={busy} onClick={() => void run(true)}>
+            <Button variant="primary" disabled={busy || mismatch !== null} onClick={() => void run(true)}>
               {busy ? 'Checking…' : 'Dry run'}
             </Button>
 
             {/* Only after a rehearsal, and only if it came back clean enough to read. Applying
                 first and reading the report afterwards is the order that leaves a half-applied
                 world behind. */}
-            <Button disabled={busy || report === null} onClick={() => setConfirming(true)}>
+            <Button disabled={busy || report === null || mismatch !== null} onClick={() => setConfirming(true)}>
               Apply
             </Button>
 
             <Button onClick={reset}>Clear</Button>
           </div>
 
-          {report === null && (
+          {report === null && mismatch === null && (
             <p className="dim">Dry run first — it reports what would happen and changes nothing.</p>
           )}
         </div>

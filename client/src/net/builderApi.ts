@@ -12,6 +12,11 @@ export interface RoomFlagDefinition {
   phase: string
 }
 
+/** What bundle format the running server reads. See `builderApi.bundleFormat`. */
+export interface BundleFormatInfo {
+  formatVersion: number
+}
+
 /**
  * The §4.4 difficulty dial. Composition is `round(base × world × zone)`, so 1.0 everywhere is
  * "no change" and the two levels multiply rather than override.
@@ -455,6 +460,15 @@ export interface ImportReport {
 
 export const builderApi = {
   roomFlags: () => request<RoomFlagDefinition[]>(`${base}/room-flags`),
+
+  /**
+   * The bundle format version this server accepts.
+   *
+   * Asked so the Transfer panel can compare a file against the server *before* uploading it. The
+   * format version is the import path's only hard refusal, and without this the one way to find out
+   * a server had not been updated yet was to send it a bundle and read the 400.
+   */
+  bundleFormat: () => request<BundleFormatInfo>(`${base}/bundle-format`),
 
   worlds: () => request<WorldSummary[]>(`${base}/worlds`),
 

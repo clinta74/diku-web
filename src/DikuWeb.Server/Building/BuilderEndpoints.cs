@@ -37,6 +37,13 @@ public static class BuilderEndpoints
         group.MapGet("/room-flags", () => Results.Ok(
             RoomFlags.All.Select(f => new RoomFlagResponse(f.Key, f.Default, f.Summary, f.Phase))));
 
+        // What this build will accept, so the browser can say so before an upload rather than after
+        // a refusal. The format version is the only hard refusal in the import path, and until this
+        // existed the sole way to discover a server had not been updated yet was to send it a
+        // bundle and read the 400 - which is a slow way to learn something the server knew all along.
+        group.MapGet("/bundle-format", () => Results.Ok(
+            new BundleFormatResponse(BundleFormat.CurrentVersion)));
+
         // Named starter configurations (§4.16). Content, not deployment: an operator should not
         // need a container restart to move where new characters wake up, and a server can hold
         // several complete answers and swap between them.

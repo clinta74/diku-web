@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using DikuWeb.Domain.Accounts;
+using DikuWeb.Server.Building;
 using DikuWeb.Server.Tests.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -388,6 +389,28 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
         Assert.All(
             flags.EnumerateArray(),
             f => Assert.False(f.GetProperty("default").GetBoolean()));
+    }
+
+    /// <summary>
+    /// The server says which bundle format it reads, so the builder can compare a file against it
+    /// before uploading rather than discovering a mismatch as a 400.
+    /// </summary>
+    /// <remarks>
+    /// Asserted against <see cref="BundleFormat.CurrentVersion"/> rather than a literal. A test
+    /// carrying its own number would be one more copy of the thing that has already drifted twice,
+    /// and it would pass while telling the browser something untrue.
+    /// </remarks>
+    [Fact]
+    public async Task The_server_reports_the_bundle_format_it_accepts()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var info = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri("/api/builder/bundle-format", UriKind.Relative)));
+
+        Assert.Equal(BundleFormat.CurrentVersion, info.GetProperty("formatVersion").GetInt32());
     }
 
     [Fact]

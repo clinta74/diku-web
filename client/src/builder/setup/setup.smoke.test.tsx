@@ -4,6 +4,13 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter, Route, Routes } from 'react-router'
 import type { GameConfiguration, ImportReport } from '../../net/builderApi'
 
+/**
+ * What the mocked server accepts. Matches the fixture bundles below, so the tests about importing
+ * are about importing — a version mismatch now disables the buttons, which would make every one of
+ * them fail for a reason that has nothing to do with what it is checking.
+ */
+const SERVER_FORMAT_VERSION = vi.hoisted(() => 7)
+
 const reaches = vi.hoisted(
   (): GameConfiguration => ({
     key: 'the-reaches',
@@ -76,6 +83,10 @@ vi.mock('../../net/builderApi', async (importOriginal) => {
         calls.imports.push(dryRun)
         return Promise.resolve({ ...report, dryRun })
       },
+      // What the running server accepts. The panel compares a loaded file against this and refuses
+      // a mismatch before uploading, so it has to be here or every import test renders a panel
+      // that cannot say what it reads.
+      bundleFormat: () => Promise.resolve({ formatVersion: SERVER_FORMAT_VERSION }),
     },
   }
 })
@@ -167,4 +178,50 @@ it('dry runs a chosen file before offering to apply it', async () => {
   // button beside it carries the same words.
   expect(await screen.findByRole('heading', { name: 'Dry run' })).toBeTruthy()
   expect(screen.getByText(/16 new/)).toBeTruthy()
+})
+
+it('says which bundle format the running server reads', async () => {
+  // Answerable while looking at a deployment rather than only while holding a file, which is the
+  // point: it is how you tell whether a server has been updated yet.
+  renderSetup('/builder/setup/transfer')
+
+  expect(
+    await screen.findByText(`This server reads bundle format ${SERVER_FORMAT_VERSION}.`),
+  ).toBeTruthy()
+})
+
+it('refuses a file the server is too old for, without uploading it', async () => {
+  // The scenario this exists for: a bundle authored against a newer build. Nothing the person
+  // holding the file can fix by editing it, so the message names the deployment instead.
+  renderSetup('/builder/setup/transfer')
+
+  const input = (await screen.findByLabelText('Bundle file')) as HTMLInputElement
+  const newer = JSON.stringify({ formatVersion: SERVER_FORMAT_VERSION + 1, rooms: [{}] })
+
+  fireEvent.change(input, {
+    target: { files: [new File([newer], 'the-reaches.json', { type: 'application/json' })] },
+  })
+
+  expect(await screen.findByText(/The server has not been updated yet/)).toBeTruthy()
+
+  // Disabled rather than allowed-and-refused. The server would reject it anyway; the value is
+  // finding out before the upload rather than from a 400.
+  expect((await screen.findByRole('button', { name: 'Dry run' })).hasAttribute('disabled')).toBe(true)
+  expect(calls.imports).toHaveLength(0)
+})
+
+it('tells a builder to re-export a file older than the server', async () => {
+  // The other direction is a different problem with a different fix, and used to produce the same
+  // 400 as the case above.
+  renderSetup('/builder/setup/transfer')
+
+  const input = (await screen.findByLabelText('Bundle file')) as HTMLInputElement
+  const older = JSON.stringify({ formatVersion: SERVER_FORMAT_VERSION - 1, rooms: [{}] })
+
+  fireEvent.change(input, {
+    target: { files: [new File([older], 'stale.json', { type: 'application/json' })] },
+  })
+
+  expect(await screen.findByText(/Re-export or re-merge it against this build/)).toBeTruthy()
+  expect(calls.imports).toHaveLength(0)
 })
