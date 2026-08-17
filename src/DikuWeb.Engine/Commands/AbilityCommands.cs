@@ -26,7 +26,11 @@ public static class AbilityCommands
         var effectTable = effects ?? new EffectRegistry();
 
         commands.Add(new CommandDefinition(
-            "cast", 1, "cast <ability> [target] (c) - cast an ability",
+            // "(ca)", not "(c)". `consider` is registered first and also answers to one character,
+            // so `c bolt rat` reached Consider and answered "You don't see 'bolt rat' here" — a
+            // collision already known and commented in ChannelCommands while this line went on
+            // promising otherwise (BUGS.md #12).
+            "cast", 1, "cast <ability> [target] (ca) - cast an ability",
             ctx => Cast(ctx, abilityCache, clock, effectTable)));
 
         commands.Add(new CommandDefinition(
@@ -99,8 +103,13 @@ public static class AbilityCommands
         // Stamina.
         //
         // Refused rather than quietly allowed, because the point is to teach the vocabulary, and
-        // the verb form always works. Any prefix of "cast" reaches the verb, since it takes a
-        // single character - so this is asking "did they type cast", not "did they type c".
+        // the verb form always works. This asks "did they reach us through the cast verb" rather
+        // than naming the spellings: the ability fallback dispatches `kick rat` here too, and
+        // "cast".StartsWith("kick") is false, which is the whole distinction.
+        //
+        // It used to say "any prefix of cast reaches the verb, since it takes a single character".
+        // That was never true - `c` reaches `consider`, which is registered first - though the
+        // check is right anyway, because a verb that never arrives here cannot be tested for.
         if (kind == AbilityKind.Skill &&
             "cast".StartsWith(ctx.Verb, StringComparison.OrdinalIgnoreCase))
         {

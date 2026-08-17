@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using DikuWeb.Engine.Commands;
 using DikuWeb.Engine.Tests.Infrastructure;
 
@@ -71,6 +72,68 @@ public sealed class VerbReachabilityTests
         }
 
         Assert.Empty(stolen);
+    }
+
+    /// <summary>
+    /// Every abbreviation a help string advertises must reach the verb advertising it.
+    /// </summary>
+    /// <remarks>
+    /// <b>The half the test above was missing.</b> Its own comment describes exactly this — "a
+    /// verb whose own MinLength prefix reaches something else is half-dead" — and then only checks
+    /// that the prefix reaches <em>something</em>, never that it reaches the right thing. Being
+    /// reachable is not enough: a prefix has to reach the command the person typing it meant.
+    ///
+    /// Three help strings were lying when this was written. <c>examine (x)</c> advertised a letter
+    /// that is not a prefix of "examine" and could never match anything. <c>remove (r)</c>
+    /// advertised one character for a verb demanding two, so <c>r</c> reached <c>rest</c> — which
+    /// ignores its argument, so <c>r dagger</c> sat the player down. <c>cast (c)</c> lost to
+    /// <c>consider</c>, a collision already known and commented elsewhere while the help text went
+    /// on claiming otherwise (BUGS.md #12, #22).
+    ///
+    /// Parsed out of <c>Help</c> rather than declared separately, because a second field is a
+    /// second thing to forget — the point is that the sentence shown to the player is the thing
+    /// under test.
+    /// </remarks>
+    [Fact]
+    public void Every_advertised_abbreviation_reaches_the_verb_that_advertises_it()
+    {
+        var lies = new List<string>();
+
+        foreach (var command in AllCommands())
+        {
+            // The "(x)" or "(gr)" form only. Directions carry "n / north", which is a different
+            // shape and is covered by the resolution table below.
+            var advertised = Regex.Match(command.Help, @"\(([a-z]+)\)");
+            if (!advertised.Success)
+            {
+                continue;
+            }
+
+            var abbreviation = advertised.Groups[1].Value;
+
+            // The parenthetical is overloaded: most carry an abbreviation, and the restricted verbs
+            // carry who may run them. Skipping the role words rather than renaming the convention,
+            // because "(builder)" at the end of a help line is doing a useful job for a reader.
+            if (abbreviation is "builder" or "admin")
+            {
+                continue;
+            }
+            var resolved = AllCommands().FirstOrDefault(c => c.Matches(abbreviation));
+
+            if (resolved is null)
+            {
+                lies.Add($"'{command.Name}' advertises ({abbreviation}), which reaches nothing");
+            }
+            else if (resolved.Name != command.Name)
+            {
+                lies.Add($"'{command.Name}' advertises ({abbreviation}), which reaches '{resolved.Name}'");
+            }
+        }
+
+        Assert.True(
+            lies.Count == 0,
+            "A help string promises an abbreviation that does not work:\n  "
+            + string.Join("\n  ", lies));
     }
 
     [Theory]

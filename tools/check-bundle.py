@@ -72,6 +72,41 @@ def non_placeable_tiles():
     return set(re.findall(r'"([a-z]+)"', block.group(1))) if block else None
 
 
+def dialogue_keys():
+    """The dialogue keys QuestCommands actually looks up, read out of the source.
+
+    This is the check that would have caught the largest content defect found so far. Quest
+    dialogue is a free `Dictionary<string, string>` and passes through the importer, the writer and
+    the applier untouched, so no layer of the round trip is in a position to notice a key nobody
+    reads. All 35 authored quests used `offer` / `progress` / `complete` / `already` against an
+    engine reading `giverOffer` / `giverInProgress` / `giverComplete` / `turninReady` - zero
+    overlap, ~137 lines of prose replaced by four generic templates, and every test green.
+
+    Read from source rather than listed here for the reason the flags and tiles are: a second
+    transcription is a second thing to forget.
+    """
+    source = REPO / 'src' / 'DikuWeb.Engine' / 'Commands' / 'QuestCommands.cs'
+    try:
+        text = source.read_text(encoding='utf-8')
+    except OSError:
+        return None
+    return set(re.findall(r'Dialogue\.TryGetValue\("([a-zA-Z]+)"', text)) or None
+
+
+def behavior_keys():
+    """The mob behavior-bag keys the engine reads, harvested from MobBehavior.
+
+    Same argument, one bag over. `MobBehavior` is the single place the engine names these, so a
+    key that appears in content and not here reaches nothing.
+    """
+    source = REPO / 'src' / 'DikuWeb.Engine' / 'Inhabitants' / 'MobBehavior.cs'
+    try:
+        text = source.read_text(encoding='utf-8')
+    except OSError:
+        return None
+    return set(re.findall(r'"([a-z][a-zA-Z]*)"', text)) or None
+
+
 # The fewest open cells a room may leave. Entities are placed only on open ground and are simply
 # not drawn when there is none, so a room that is all water is a room whose occupants vanish.
 MIN_OPEN_CELLS = 40
@@ -201,6 +236,11 @@ def check(path):
                 warn('spawner %s places into room %s, which this bundle does not carry'
                      % (identifier, room_key))
 
+    # A key the engine does not read is content that will never be seen, and it is silent in both
+    # directions: the bag accepts anything and the fallback is plausible prose. This is the check
+    # the quest dialogue mismatch argued for - see dialogue_keys().
+    known_behavior = behavior_keys()
+
     for mob in bundle.get('mobTemplates') or []:
         behavior = mob.get('behavior') or {}
         for stocked in behavior.get('sells') or []:
@@ -208,6 +248,13 @@ def check(path):
                 warn('%s sells %s, which this bundle does not carry' % (mob['key'], stocked))
         if behavior.get('shopkeeper') and not behavior.get('sells'):
             warn('%s is flagged shopkeeper but stocks nothing' % mob['key'])
+
+        if known_behavior:
+            for key in sorted(set(behavior) - known_behavior):
+                error('%s has behavior key %r, which no engine source reads'
+                      % (mob['key'], key))
+
+    known_dialogue = dialogue_keys()
 
     for quest in bundle.get('quests') or []:
         for field, known, label in (
@@ -220,6 +267,15 @@ def check(path):
             if value and value not in known:
                 warn('quest %s names %s %s, which this bundle does not carry'
                      % (quest['key'], label, value))
+
+        # An error rather than a warning, because there is no reading of an unread dialogue key
+        # under which the content works. The line is authored, stored, exported, re-imported, and
+        # never spoken.
+        if known_dialogue:
+            for key in sorted(set(quest.get('dialogue') or {}) - known_dialogue):
+                error('quest %s has dialogue key %r, which no engine source reads; '
+                      'the engine reads %s'
+                      % (quest['key'], key, ', '.join(sorted(known_dialogue))))
 
     # Room terrain. All four of these are silent at runtime: an unlisted character draws a tile the
     # map legend cannot explain, a ragged grid renders as a ragged room, and a room with nowhere to
