@@ -778,6 +778,17 @@ public sealed class CommandRegistry
             return;
         }
 
+        // Asked before the bound check and worded exactly as `destroy` words it, because these
+        // four verbs are the four ways an item leaves a pack and a player should not have to learn
+        // which of them cares (BUGS.md #8).
+        if (targetItem.EquippedSlot is not null)
+        {
+            ctx.Reply(
+                $"You'll have to remove {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)} first.",
+                "bad");
+            return;
+        }
+
         if (ItemRules.IsNoDrop(ctx.ItemTemplates, targetItem.TemplateKey))
         {
             // The way out is 'destroy', and saying so is the whole point - a bound item with no
@@ -1153,6 +1164,14 @@ public sealed class CommandRegistry
         if (targetPlayer.CharacterId == ctx.Actor.CharacterId)
         {
             ctx.Reply("You can't give items to yourself.", "bad");
+            return;
+        }
+
+        if (targetItem.EquippedSlot is not null)
+        {
+            ctx.Reply(
+                $"You'll have to remove {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)} first.",
+                "bad");
             return;
         }
 

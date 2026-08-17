@@ -526,6 +526,9 @@ public sealed class WorldState(IRandomSource random)
 
         item.RoomKey = null;
         item.OwnerCharacterId = characterId;
+
+        // Whatever it was worn in, it is not worn now. See DropItem for why this belongs here.
+        item.EquippedSlot = null;
     }
 
     /// <summary>Moves an item to the ground in a room.</summary>
@@ -535,6 +538,19 @@ public sealed class WorldState(IRandomSource random)
 
         item.OwnerCharacterId = null;
         item.RoomKey = room.ToString();
+
+        // Leaving a character's possession takes it off them, and the invariant is enforced here
+        // rather than only in the commands because `EquippedSlot` is the *only* record of what
+        // somebody is wearing and EquipmentResolver sums across every item carrying one, with no
+        // per-slot dedup. The occupied-slot check in `wear` scans by ownership, so an item that
+        // left a pack still holding a slot is invisible to the check and counts toward armour the
+        // moment it comes back — which is exactly the stacking exploit this closes (BUGS.md #8).
+        //
+        // The commands refuse outright as well, so a player is told rather than quietly undressed.
+        // Both halves are needed: this one covers instances that arrive from a builder spawn or an
+        // import carrying a stale slot, which no command guard can reach.
+        item.EquippedSlot = null;
+
         ItemListFor(room).Add(item);
     }
 

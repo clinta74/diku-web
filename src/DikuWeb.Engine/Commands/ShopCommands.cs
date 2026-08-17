@@ -260,10 +260,32 @@ public static class ShopCommands
             return;
         }
 
+        // InventoryOf returns equipped items too, so without this you can sell the sword in your
+        // hand - which `destroy` has always refused. Same sentence, so the four exits agree.
+        if (itemToSell.EquippedSlot is not null)
+        {
+            ctx.Reply(
+                $"You'll have to remove {NarrationHelper.WithDefiniteArticle(itemToSell.TemplateName)} first.",
+                "bad");
+            return;
+        }
+
         if (ItemState.IsQuestItem(itemToSell))
         {
             ctx.Reply(
-                $"{NarrationHelper.WithArticle(shopkeeperTemplate.Name, capitalize: true)} refuses to buy a quest item.");
+                $"{NarrationHelper.WithArticle(shopkeeperTemplate.Name, capitalize: true)} refuses to buy a quest item.",
+                "bad");
+            return;
+        }
+
+        // A shop was an unsanctioned way out of a no-drop item that also paid for it, while `drop`
+        // was telling the player that destroying it was the only way to be rid of it (BUGS.md #9).
+        if (ItemRules.IsNoDrop(ctx.ItemTemplates, itemToSell.TemplateKey))
+        {
+            ctx.Reply(
+                $"{NarrationHelper.WithDefiniteArticle(itemToSell.TemplateName, capitalize: true)} "
+                + "will not leave your hand. You could destroy it, if you truly meant to.",
+                "bad");
             return;
         }
 
