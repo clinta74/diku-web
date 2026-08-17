@@ -57,6 +57,28 @@ public static class MobBehavior
     /// <summary>The behavior key saying whether this mob wanders between rooms at all.</summary>
     public const string WandersKey = "wanders";
 
+    /// <summary>
+    /// Every key this class reads out of a behavior bag. A key outside this set reaches nothing.
+    /// </summary>
+    /// <remarks>
+    /// <b>Top-level bag keys only.</b> <see cref="MobEmote"/>'s three — <c>text</c>,
+    /// <c>minSeconds</c>, <c>maxSeconds</c> — live one level down inside an entry of
+    /// <see cref="EmotesKey"/> and are not valid here, and neither are the <em>values</em> of
+    /// <see cref="TypeKey"/>. Both distinctions were lost by the regex that used to harvest this
+    /// list out of the source file, which swept up every lowercase literal in it and so quietly
+    /// accepted <c>aggressive</c> and <c>minSeconds</c> as behavior keys of their own.
+    /// </remarks>
+    public static IReadOnlySet<string> KnownKeys { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        TypeKey,
+        EmotesKey,
+        ShopkeeperKey,
+        SellsKey,
+        MarkupKey,
+        RoamsKey,
+        WandersKey,
+    };
+
     /// <summary>The persisted string for a disposition, for writers and for the builder API.</summary>
     public static string NameOf(MobDisposition disposition) => disposition switch
     {

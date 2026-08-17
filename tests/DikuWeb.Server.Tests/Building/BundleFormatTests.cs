@@ -90,6 +90,29 @@ public sealed class BundleFormatTests
         // would mean the field did not bind rather than that the author left it out.
         Assert.DoesNotContain(bundle!.Spawners, spawner => spawner.Id == Guid.Empty);
 
+        // Mob attacks are authored in PascalCase, so a case-sensitive reader binds none of the four
+        // properties and hands back the record's defaults - a generic "hit" every eight pulses with
+        // any effect on it gone. That is what a bare camelCase options object did here, silently,
+        // which is why SerializerOptions is seeded from JsonSerializerDefaults.Web.
+        foreach (var attack in bundle.MobTemplates.SelectMany(m => m.Attacks))
+        {
+            Assert.False(
+                string.IsNullOrWhiteSpace(attack.Verb),
+                $"{relativePath}: an attack bound no verb, so the authored attacks are not being read");
+        }
+
+        var verbs = bundle.MobTemplates.SelectMany(m => m.Attacks).Select(a => a.Verb).Distinct().ToList();
+
+        // Every mob in the Reaches has an authored verb, so a bundle where they are all "hit" is a
+        // bundle whose attacks silently defaulted rather than one written by a lazy author.
+        if (verbs.Count > 0)
+        {
+            Assert.True(
+                verbs.Count > 1 || verbs[0] != Domain.Combat.AttackTiming.DefaultVerb,
+                $"{relativePath}: every attack came back as the default verb, which means none of "
+                + "them bound. See BundleFormat.SerializerOptions.");
+        }
+
         // Enum-valued fields the general converter is responsible for. Named individually because
         // "it deserialised" is true of a record whose every enum silently defaulted.
         Assert.All(bundle.Spawners, spawner => Assert.True(Enum.IsDefined(spawner.TemplateKind)));
@@ -177,27 +200,42 @@ public sealed class BundleFormatTests
     }
 
     /// <summary>
-    /// <c>tools/check-bundle.py</c> keeps its own copy of the number, since it runs with no .NET.
+    /// No tool restates the version any more, and none should start.
     /// </summary>
     /// <remarks>
-    /// <b>Interim.</b> This guards a copy that only exists because the checker is in another
-    /// language, and it goes away with the copy when that tool is ported to C# and can reference
-    /// <see cref="BundleFormat.CurrentVersion"/> outright. Skipped rather than failed if the file
-    /// is gone, so the port does not have to land as one commit with this deletion.
+    /// This replaced a guard on <c>tools/check-bundle.py</c>'s hand-kept <c>FORMAT_VERSION = 11</c>.
+    /// That copy existed only because the checker was in another language; the C# shims reference
+    /// <see cref="BundleFormat.CurrentVersion"/> and cannot drift. What is worth keeping is the
+    /// rule that produced the copy in the first place — so this fails if a new tool appears
+    /// carrying its own number.
     /// </remarks>
     [Fact]
-    public void The_python_checker_agrees_about_the_version_while_it_still_exists()
+    public void No_tool_keeps_its_own_copy_of_the_version()
     {
-        var path = Path.Combine(RepoRoot(), "tools", "check-bundle.py");
+        var tools = Path.Combine(RepoRoot(), "tools");
 
-        if (!File.Exists(path))
-        {
-            return;
-        }
+        // Anything that looks like a version constant assigned a bare integer. Deliberately loose:
+        // this is meant to catch a shape, not a spelling.
+        var suspicious = new Regex(
+            @"(FORMAT_VERSION|FormatVersion|formatVersion)\s*[:=]\s*\d+",
+            RegexOptions.IgnoreCase);
 
-        var declared = Regex.Match(File.ReadAllText(path), @"^FORMAT_VERSION = (\d+)", RegexOptions.Multiline);
+        var offenders = Directory
+            .EnumerateFiles(tools, "*", SearchOption.AllDirectories)
+            .Where(f => f.EndsWith(".py", StringComparison.OrdinalIgnoreCase)
+                || f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
+                || f.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase)
+                || f.EndsWith(".ts", StringComparison.OrdinalIgnoreCase))
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Where(f => suspicious.IsMatch(File.ReadAllText(f)))
+            .Select(f => Path.GetRelativePath(RepoRoot(), f))
+            .ToList();
 
-        Assert.True(declared.Success, "tools/check-bundle.py no longer declares FORMAT_VERSION where this looks.");
-        Assert.Equal(BundleFormat.CurrentVersion.ToString(), declared.Groups[1].Value);
+        Assert.True(
+            offenders.Count == 0,
+            "a tool is carrying its own copy of the bundle format version, which is how content and "
+            + "code drifted apart twice. Reference BundleFormat.CurrentVersion instead:\n  "
+            + string.Join("\n  ", offenders));
     }
 }

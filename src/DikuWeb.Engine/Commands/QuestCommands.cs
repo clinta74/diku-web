@@ -111,7 +111,7 @@ public static class QuestCommands
             else if (questState?.Status == QuestStatus.Active)
             {
                 // Quest is already active
-                var inProgress = quest.Dialogue.TryGetValue("giverInProgress", out var inProgressText)
+                var inProgress = quest.Dialogue.TryGetValue(QuestDialogue.GiverInProgress, out var inProgressText)
                     ? inProgressText
                     : $"Still working on {quest.Name}?";
                 narrations.Add(inProgress);
@@ -119,7 +119,7 @@ public static class QuestCommands
             else if (questState?.Status == QuestStatus.Completed && !quest.IsRepeatable)
             {
                 // Quest is complete and non-repeatable
-                var complete = quest.Dialogue.TryGetValue("giverComplete", out var completeText)
+                var complete = quest.Dialogue.TryGetValue(QuestDialogue.GiverComplete, out var completeText)
                     ? completeText
                     : $"You've already completed {quest.Name}.";
                 narrations.Add(complete);
@@ -343,7 +343,7 @@ public static class QuestCommands
         ctx.QuestSaveQueue?.Enqueue(new CharacterQuestSnapshot(
             characterId, quest.Key, QuestStatus.Active, startedAt, null, timesCompleted));
 
-        return quest.Dialogue.TryGetValue("giverOffer", out var offer)
+        return quest.Dialogue.TryGetValue(QuestDialogue.GiverOffer, out var offer)
             ? offer
             : $"I have a job for you: {quest.Summary}";
     }
@@ -719,7 +719,7 @@ public static class QuestCommands
         }
 
         // Narrate turn-in
-        var turninReady = matchingQuest.Dialogue.TryGetValue("turninReady", out var turninText)
+        var turninReady = matchingQuest.Dialogue.TryGetValue(QuestDialogue.TurninReady, out var turninText)
             ? turninText
             : $"Excellent work! You've completed {matchingQuest.Name}.";
         ctx.Reply(turninReady);

@@ -59,18 +59,26 @@ public static class BundleFormat
     /// Reading a bundle outside the request pipeline: tooling, tests, anything with a file path.
     /// </summary>
     /// <remarks>
-    /// camelCase to match what the pipeline applies by default, plus the same converters. Built
-    /// once and reused, which also freezes it — so a caller cannot quietly add a converter here and
-    /// leave the endpoint reading something else.
+    /// <para>
+    /// <b>Seeded from <see cref="JsonSerializerDefaults.Web"/>, which is where a minimal API
+    /// starts.</b> Not camelCase alone: Web also sets <c>PropertyNameCaseInsensitive</c>, and that
+    /// one is load-bearing here. The authored content carries <c>MobAttack</c> in PascalCase, so a
+    /// case-sensitive reader binds <em>none</em> of its four properties and every attack in the
+    /// world comes back as the record's defaults — a generic "hit" every eight pulses, with any
+    /// effect on it gone. It reads clean, throws nothing, and is wrong.
+    /// </para>
+    /// <para>
+    /// That is not a hypothetical either: this type was written with a bare camelCase options
+    /// object and did exactly that, silently, until a merge round-tripped a mob and the clamp arm
+    /// came back swinging a fist. The endpoint was always fine, which is the point — a reader that
+    /// is <em>nearly</em> the endpoint's is worse than an obviously different one.
+    /// </para>
     /// </remarks>
     public static JsonSerializerOptions SerializerOptions { get; } = Build();
 
     private static JsonSerializerOptions Build()
     {
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        };
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
         foreach (var converter in Converters())
         {
@@ -105,6 +113,26 @@ public static class BundleFormat
             error = failure.Message;
             return false;
         }
+    }
+
+    /// <summary>
+    /// Writes a bundle the way an export does: same converters, indented to stay readable.
+    /// </summary>
+    /// <remarks>
+    /// Here rather than at the call site so a tool never touches <see cref="JsonSerializer"/>
+    /// directly. That is not only symmetry with <see cref="TryRead"/>: a file-based app
+    /// (<c>dotnet run tools/*.cs</c>) turns on trim analysis, and this solution treats warnings as
+    /// errors, so a bare <c>Serialize</c> call in a shim fails the build with IL2026 and IL3050.
+    /// Inside this project — which is neither trimmed nor AOT-published — it compiles clean, and
+    /// the shim stays thin, which it should be anyway.
+    /// </remarks>
+    public static string Write(WorldBundle bundle)
+    {
+        ArgumentNullException.ThrowIfNull(bundle);
+
+        return JsonSerializer.Serialize(
+            bundle,
+            new JsonSerializerOptions(SerializerOptions) { WriteIndented = true });
     }
 
     /// <summary>Whether this build can import that bundle at all.</summary>

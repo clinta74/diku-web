@@ -48,8 +48,8 @@ Add anything noticed while playing here. Cleared as items are done.
   cache and the database, a content key must be one the engine reads, and an advertised abbreviation
   must reach the verb advertising it.
 
-  **Re-import**: `formatVersion` is **10**, the dialogue keys moved, and `spawners.respawn_seconds`
-  is dropped by a migration.
+  **Re-import**: `formatVersion` is **11**, the dialogue keys moved, and `spawners.respawn_seconds`
+  came back as a real per-spawner rarity dial.
 
   **Left deliberately**, as design questions rather than bugs: the aggression target rule (a
   link-dead player soaks every aggressive mob in the room), mob regeneration and leashing, quest
@@ -184,7 +184,7 @@ Add anything noticed while playing here. Cleared as items are done.
 
 - **Room terrain: done.** All 224 rooms carry a 21×9 grid (`WORLD.md` §10.1). Generated per zone
   kind and seeded from the room key, so regeneration is byte-identical and a re-import is safe to
-  repeat. `check-bundle.py` now refuses ragged grids, characters missing from a legend, and rooms
+  repeat. `check-bundle` now refuses ragged grids, characters missing from a legend, and rooms
   with under 40 cells to stand on — the last is the silent one, since occupants are simply not
   drawn when a room has nowhere open.
 

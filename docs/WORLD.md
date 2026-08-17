@@ -643,7 +643,7 @@ Twenty-one kinds cover the Reaches — `field`, `scrub`, `marsh`, `pier`, `hall`
 **Solid tiles are named from the engine's list.** `RoomLayoutService.NonPlaceableTiles` decides what
 a mob may be drawn standing on and matches on the *legend name*, so calling a pillar "column" would
 silently put a rat inside it. The Reaches added five names to that set — `void`, `pillar`, `rock`,
-`crate`, `brazier` — and `tools/check-bundle.py` reads the set out of the engine source rather than
+`crate`, `brazier` — and `tools/check-bundle.cs` reads the set off `RoomLayoutService.NonPlaceable` rather than
 transcribing it, then refuses any room whose grid is ragged, whose legend misses a character it
 draws, or which leaves under 40 cells to stand on. That last one matters: entities are placed only
 on open ground and are simply *not drawn* when there is none, so an all-water room is a room whose

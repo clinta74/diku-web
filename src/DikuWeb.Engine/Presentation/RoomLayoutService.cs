@@ -41,6 +41,17 @@ public sealed class RoomLayoutService
     /// stops. Void is the opposite of solid and just as un-standable, and the question this set
     /// answers is "may something be drawn here", not "is it made of stone".
     /// </remarks>
+    /// <summary>
+    /// The same set, for anything that needs to ask the question without drawing a room.
+    /// </summary>
+    /// <remarks>
+    /// Exposed for the bundle validator, which checks that a room leaves somewhere to stand — a
+    /// room that does not renders with its occupants missing entirely, silently. That check used to
+    /// recover this list by running a regex over this file, which is a second transcription and so
+    /// a second thing to get wrong.
+    /// </remarks>
+    public static IReadOnlySet<string> NonPlaceable => NonPlaceableTiles;
+
     private static readonly HashSet<string> NonPlaceableTiles =
         new(StringComparer.OrdinalIgnoreCase)
         {

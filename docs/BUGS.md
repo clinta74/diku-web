@@ -379,6 +379,7 @@ tool asks: **does the engine read this key the content authors?** That is #6, an
 `roams` key the engine reads and no content sets.
 
 `check-bundle.py` already parses `RoomFlags.cs` and `RoomLayoutService.cs` straight out of the C#
+(both now *referenced* rather than parsed, since the checker was ported to C# — see `BundleValidator`)
 rather than keeping a copy, so the technique is in the repo — it just has not been pointed at
 `dialogue`, `behavior` or `baseStats`.
 

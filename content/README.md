@@ -34,11 +34,20 @@ not work and walking is the only way home.
 Merge the six into one bundle, check it, then import it once:
 
 ```
-python tools/merge-bundles.py content -o build/the-reaches.json
-python tools/check-bundle.py build/the-reaches.json
+dotnet run tools/merge-bundles.cs content -o build/the-reaches.json
+dotnet run tools/check-bundle.cs build/the-reaches.json
 POST /api/builder/import?dryRun=true    # what would happen; changes nothing
 POST /api/builder/import                # do it
 ```
+
+Both were Python and are now file-based C# apps, so checking this repo needs only .NET and Node —
+the two things building it already needed. They are **shims**: every rule lives in `BundleValidator`
+and `BundleMerge` and runs in `dotnet test`, which is the half that matters, since a check nobody
+remembers to run reports nothing. What the port bought is that the rules now *reference*
+`WorldBundle`, `RoomKey`, `RoomFlags`, `MobBehavior` and `QuestDialogue` instead of recovering them
+with regular expressions over the C# — and reading a bundle through the real record catches things
+raw JSON cannot, which is how a case-sensitivity bug that silently blanked every mob attack was
+found.
 
 The import endpoint requires the Builder role and cookie authentication, so scripting it means
 logging in first. **Always dry-run first**: an import is **not atomic** — one entity is one loop
@@ -50,7 +59,7 @@ one dry run covers the whole world instead of six.
 these six, and six times the same words — committing it would make it a second source of truth that
 drifts, invisibly, inside a diff nobody reads. Rebuild it when you import.
 
-`check-bundle.py` catches the three mistakes the dry run does not treat as failures — a one-way exit,
+`check-bundle.cs` catches the three mistakes the dry run does not treat as failures — a one-way exit,
 a room with no path to the rest of its zone, and a room declaring a zone it does not live in. It runs
 without a server, so it belongs in an editor loop.
 
@@ -70,8 +79,9 @@ not come back should say so in its own prose; that part is authoring, not toolin
 
 - **`formatVersion` must match the server exactly.** It is the one hard refusal in the whole path.
   Author against `WorldBundle.CurrentFormatVersion` — these files are at **11** — not against this
-  sentence, which has now been wrong twice. `check-bundle.py` reads the number out of the C# and is
-  the thing to trust; `merge-bundles.py` refuses a set of files that disagree with each other.
+  sentence, which has now been wrong twice — and is now the last hand-kept copy, because a test
+  fails if it disagrees with `BundleFormat.CurrentVersion` or if any tool starts carrying its own.
+  The shims reference the constant and cannot drift; the merge refuses files that disagree.
 - **Import is a merge, not a mirror.** Deleting an entity from a file does not delete it from the
   world, and renaming a room key produces *both* rooms on the next import. Removals are explicit
   `DELETE` calls.
