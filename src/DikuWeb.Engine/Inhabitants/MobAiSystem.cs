@@ -89,7 +89,7 @@ public sealed class MobAiSystem(
         TryEmote(world, roomKey, mob, template, pulse);
 
         // Wander: pick a random exit and move (respects noMob flag, sentinel flag)
-        if (ShouldWander(mob, template, room, pulse))
+        if (ShouldWander(world, mob, template, room, pulse))
         {
             TryWander(world, roomKey, mob, room, template);
         }
@@ -175,7 +175,7 @@ public sealed class MobAiSystem(
         MobState.SetEmoteSchedule(mob, schedule, emotes.Select(e => e.Text));
     }
 
-    private bool ShouldWander(Mob mob, MobTemplate template, Room room, long pulse)
+    private bool ShouldWander(WorldState world, Mob mob, MobTemplate template, Room room, long pulse)
     {
         // A fight is a claim on a mob's attention, and something that strolls out of one reads as
         // combat having done nothing - the same argument the stun guard in Tick already makes for
@@ -199,8 +199,11 @@ public sealed class MobAiSystem(
             return false;
         }
 
-        // Check room noMob flag: this room forbids wandering mobs
-        if (room.Flags.BooleanOrNull(RoomFlags.NoMob.Key) == true)
+        // Through IsFlagSet, which resolves room -> zone -> world -> default (PLAN.md §4.10).
+        // This read the room's own flags directly, so `noMob` set on a zone showed as "on, from
+        // zone" in the builder and was ignored by the AI - the only flag reader in the engine not
+        // going through the hierarchy (BUGS.md #18).
+        if (world.IsFlagSet(room.Key, RoomFlags.NoMob))
         {
             return false;
         }
@@ -293,7 +296,7 @@ public sealed class MobAiSystem(
         {
             var exit = exits[(startIdx + i) % exits.Count];
             var targetRoom = world.FindRoom(exit.ToRoomKey);
-            if (targetRoom is null || targetRoom.Flags.BooleanOrNull(RoomFlags.NoMob.Key) == true)
+            if (targetRoom is null || world.IsFlagSet(targetRoom.Key, RoomFlags.NoMob))
             {
                 continue;
             }

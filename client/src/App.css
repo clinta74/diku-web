@@ -1428,6 +1428,13 @@ code.dim {
   margin: var(--space-1) 0 var(--space-2);
 }
 
+/* A flag whose registry entry says "later" — registered and read by nothing. Warned in the
+   builder rather than hidden, because a builder can still have a reason to set one ahead of the
+   code, and the honest thing is to say so rather than to silently accept it. */
+.flag-later {
+  color: var(--warn, #d8a657);
+}
+
 .flag-controls {
   display: flex;
   gap: var(--space-1);

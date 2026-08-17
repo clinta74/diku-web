@@ -60,10 +60,11 @@ public static class PartyCommands
             return;
         }
 
-        var target = world.OthersIn(actor.RoomKey, actor)
-            .FirstOrDefault(p => string.Equals(p.Name, ctx.Argument, StringComparison.OrdinalIgnoreCase))
-            ?? world.AllPlayers.FirstOrDefault(
-                p => string.Equals(p.Name, ctx.Argument, StringComparison.OrdinalIgnoreCase));
+        var target = NameMatch.Best(
+                world.OthersIn(actor.RoomKey, actor), ctx.Argument, p => p.Name, _ => null)
+            ?? NameMatch.Best(
+                world.AllPlayers.Where(p => p.CharacterId != actor.CharacterId).ToList(),
+                ctx.Argument, p => p.Name, _ => null);
 
         if (target is null || target.CharacterId == actor.CharacterId)
         {

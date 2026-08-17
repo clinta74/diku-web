@@ -283,6 +283,42 @@ public sealed class WalkAndBuildTests
         Assert.True(harness.World.IsFlagSet(West, RoomFlags.Pvp));
     }
 
+    /// <summary>
+    /// A word that is not on, off or clear is refused rather than read as "on".
+    /// </summary>
+    /// <remarks>
+    /// The fallthrough was `_ => true`, so `rflag pvp of` — one keystroke short of "off" — turned
+    /// PvP on and reported that it had. A careful three-state design undone for a typo
+    /// (BUGS.md #25).
+    /// </remarks>
+    [Theory]
+    [InlineData("of")]
+    [InlineData("0")]
+    [InlineData("maybe")]
+    public void Rflag_refuses_a_value_it_does_not_understand(string value)
+    {
+        var harness = Loaded();
+        var mira = harness.AddPlayer("Mira", West, AccountRole.Builder);
+        harness.Drain(mira);
+
+        harness.Execute(mira, $"rflag pvp {value}");
+
+        Assert.False(harness.World.IsFlagSet(West, RoomFlags.Pvp));
+        Assert.Contains("is not on, off, or clear", harness.DrainText(mira), StringComparison.Ordinal);
+    }
+
+    /// <summary>Bare `rflag <name>` still means on, which is the useful shorthand.</summary>
+    [Fact]
+    public void Rflag_with_no_value_still_turns_it_on()
+    {
+        var harness = Loaded();
+        var mira = harness.AddPlayer("Mira", West, AccountRole.Builder);
+
+        harness.Execute(mira, "rflag pvp");
+
+        Assert.True(harness.World.IsFlagSet(West, RoomFlags.Pvp));
+    }
+
     [Fact]
     public void Bare_rflag_says_where_each_value_came_from()
     {

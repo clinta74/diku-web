@@ -22,10 +22,23 @@ namespace DikuWeb.Engine.Commands;
 /// </remarks>
 internal static class BuilderCommands
 {
-    private static IMobTemplateRepository? _mobTemplates;
-    private static IItemTemplateRepository? _itemTemplates;
-    private static MobSpawner? _mobSpawner;
-    private static ItemSpawner? _itemSpawner;
+    /// <summary>
+    /// What `spawn` needs, captured per registration rather than held in statics.
+    /// </summary>
+    /// <remarks>
+    /// These four were <c>private static</c> and assigned in <see cref="Register"/>. Every sibling
+    /// command file documents that exact pattern as a fixed bug — a static made the
+    /// last-constructed registry the one every other registry read from, which is harmless in the
+    /// server, where one is built, and a race in the tests, which build one per case and run
+    /// classes in parallel. Builder commands were simply missed (BUGS.md #25).
+    ///
+    /// Captured in a closure, the way <c>AbilityCommands</c> passes its cache and clock.
+    /// </remarks>
+    private sealed record SpawnTools(
+        IMobTemplateRepository? MobTemplates,
+        IItemTemplateRepository? ItemTemplates,
+        MobSpawner? MobSpawner,
+        ItemSpawner? ItemSpawner);
 
     public static void Register(List<CommandDefinition> commands,
         IMobTemplateRepository? mobTemplates = null,
@@ -33,10 +46,7 @@ internal static class BuilderCommands
         MobSpawner? mobSpawner = null,
         ItemSpawner? itemSpawner = null)
     {
-        _mobTemplates = mobTemplates;
-        _itemTemplates = itemTemplates;
-        _mobSpawner = mobSpawner;
-        _itemSpawner = itemSpawner;
+        var tools = new SpawnTools(mobTemplates, itemTemplates, mobSpawner, itemSpawner);
         // Full words, no prefixes. These are rare, destructive, and share their first letters
         // with movement - "d" must stay "down" forever.
         commands.Add(new CommandDefinition(
@@ -58,7 +68,8 @@ internal static class BuilderCommands
             "goto", 4, "goto <room-key> - jump anywhere, no exits required (builder)", Goto, Requires: AccountRole.Builder));
 
         commands.Add(new CommandDefinition(
-            "spawn", 5, "spawn <item|mob> <template-key> - create an item or mob here (builder)", Spawn, Requires: AccountRole.Builder));
+            "spawn", 5, "spawn <item|mob> <template-key> - create an item or mob here (builder)",
+            ctx => Spawn(ctx, tools), Requires: AccountRole.Builder));
 
         commands.Add(new CommandDefinition(
             "despawn", 5, "despawn <item|mob> <template-key> - remove an item or mob here (builder)", Despawn, Requires: AccountRole.Builder));
@@ -223,15 +234,37 @@ internal static class BuilderCommands
 
         // Three states, not two: "clear" removes the key so the room inherits again, which is
         // different from setting it explicitly false.
-        bool? value = parts.Length < 2
-            ? true
-            : parts[1].ToLowerInvariant() switch
+        //
+        // A word that is none of the nine is refused rather than read as "on". The fallthrough
+        // used to be `_ => true`, so `rflag pvp of` — one keystroke short of "off" — turned PvP on
+        // and reported that it had, which undoes the whole point of a careful three-state design
+        // (BUGS.md #25).
+        bool? value;
+
+        if (parts.Length < 2)
+        {
+            value = true;
+        }
+        else
+        {
+            switch (parts[1].ToLowerInvariant())
             {
-                "on" or "true" or "yes" => true,
-                "off" or "false" or "no" => false,
-                "clear" or "inherit" => null,
-                _ => true,
-            };
+                case "on" or "true" or "yes":
+                    value = true;
+                    break;
+                case "off" or "false" or "no":
+                    value = false;
+                    break;
+                case "clear" or "inherit":
+                    value = null;
+                    break;
+                default:
+                    ctx.Reply(
+                        $"'{parts[1]}' is not on, off, or clear.",
+                        "bad");
+                    return;
+            }
+        }
 
         var result = ctx.Edit(new SetRoomFlag(room.Key, flag.Key, value));
 
@@ -318,7 +351,7 @@ internal static class BuilderCommands
     /// Unknown-verb wording rather than "you are not a builder": a player has no business
     /// learning that these commands exist.
     /// </summary>
-    private static void Spawn(CommandContext ctx)
+    private static void Spawn(CommandContext ctx, SpawnTools tools)
     {
         if (!RequireBuilder(ctx))
         {
@@ -337,11 +370,11 @@ internal static class BuilderCommands
 
         if (type == "item")
         {
-            SpawnItem(ctx, templateKey);
+            SpawnItem(ctx, tools, templateKey);
         }
         else if (type == "mob")
         {
-            SpawnMob(ctx, templateKey);
+            SpawnMob(ctx, tools, templateKey);
         }
         else
         {
@@ -349,9 +382,9 @@ internal static class BuilderCommands
         }
     }
 
-    private static void SpawnItem(CommandContext ctx, string templateKey)
+    private static void SpawnItem(CommandContext ctx, SpawnTools tools, string templateKey)
     {
-        if (_itemTemplates == null || _itemSpawner == null)
+        if (tools.ItemTemplates is null || tools.ItemSpawner is null)
         {
             ctx.Reply("Item spawning is not available.", "bad");
             return;
@@ -376,22 +409,22 @@ internal static class BuilderCommands
 
         // Load template (this is sync, so we need to call async version differently)
         // For now, we'll do this fire-and-forget since builder commands are typed manually
-        _ = SpawnItemAsync(ctx, templateKey, zone, world, roomKey);
+        _ = SpawnItemAsync(ctx, tools, templateKey, zone, world, roomKey);
     }
 
-    private static async System.Threading.Tasks.Task SpawnItemAsync(CommandContext ctx, string templateKey,
+    private static async System.Threading.Tasks.Task SpawnItemAsync(CommandContext ctx, SpawnTools tools, string templateKey,
         Zone zone, global::DikuWeb.Domain.Worlds.World world, RoomKey roomKey)
     {
         try
         {
-            var template = await _itemTemplates!.GetByKeyAsync(templateKey, System.Threading.CancellationToken.None);
+            var template = await tools.ItemTemplates!.GetByKeyAsync(templateKey, System.Threading.CancellationToken.None);
             if (template == null)
             {
                 ctx.Reply($"Item template '{templateKey}' not found.", "bad");
                 return;
             }
 
-            var item = _itemSpawner!.Spawn(template, zone, world, roomKey);
+            var item = tools.ItemSpawner!.Spawn(template, zone, world, roomKey);
             ctx.World.AddItem(item);
             ctx.ItemSaveQueue?.Enqueue(item);
 
@@ -405,9 +438,9 @@ internal static class BuilderCommands
         }
     }
 
-    private static void SpawnMob(CommandContext ctx, string templateKey)
+    private static void SpawnMob(CommandContext ctx, SpawnTools tools, string templateKey)
     {
-        if (_mobTemplates == null || _mobSpawner == null)
+        if (tools.MobTemplates is null || tools.MobSpawner is null)
         {
             ctx.Reply("Mob spawning is not available.", "bad");
             return;
@@ -431,22 +464,22 @@ internal static class BuilderCommands
         }
 
         // Load template and spawn (fire-and-forget like above)
-        _ = SpawnMobAsync(ctx, templateKey, zone, world, roomKey);
+        _ = SpawnMobAsync(ctx, tools, templateKey, zone, world, roomKey);
     }
 
-    private static async System.Threading.Tasks.Task SpawnMobAsync(CommandContext ctx, string templateKey,
+    private static async System.Threading.Tasks.Task SpawnMobAsync(CommandContext ctx, SpawnTools tools, string templateKey,
         Zone zone, global::DikuWeb.Domain.Worlds.World world, RoomKey roomKey)
     {
         try
         {
-            var template = await _mobTemplates!.GetByKeyAsync(templateKey, System.Threading.CancellationToken.None);
+            var template = await tools.MobTemplates!.GetByKeyAsync(templateKey, System.Threading.CancellationToken.None);
             if (template == null)
             {
                 ctx.Reply($"Mob template '{templateKey}' not found.", "bad");
                 return;
             }
 
-            var mob = _mobSpawner!.Spawn(template, zone, world, roomKey);
+            var mob = tools.MobSpawner!.Spawn(template, zone, world, roomKey);
             ctx.World.AddMob(mob);
 
             var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;

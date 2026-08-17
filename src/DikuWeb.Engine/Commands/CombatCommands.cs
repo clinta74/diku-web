@@ -66,9 +66,12 @@ public static class CombatCommands
             return;
         }
 
-        // Find target in room
-        var targetActor = ctx.World.OthersIn(character.RoomKey, actor)
-            .FirstOrDefault(p => string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase));
+        // Through NameMatch, like every other targeting verb. These five - attack, assist,
+        // consider, cast's target, and autofollow - were exact-match on the name while tell, group
+        // invite, group kick and every admin verb ranked prefixes, so `tell kae hello` worked and
+        // `attack kae` answered "You don't see 'kae' here" (BUGS.md #21).
+        var targetActor = NameMatch.Best(
+            ctx.World.OthersIn(character.RoomKey, actor), targetName, p => p.Name, _ => null);
 
         var targetMob = NameMatch.Best(
             ctx.World.MobsIn(character.RoomKey), targetName, m => m.TemplateName, m => m.TemplateKey);
@@ -146,8 +149,8 @@ public static class CombatCommands
             return;
         }
 
-        var ally = ctx.World.OthersIn(character.RoomKey, actor)
-            .FirstOrDefault(p => string.Equals(p.Name, ctx.Argument, StringComparison.OrdinalIgnoreCase));
+        var ally = NameMatch.Best(
+            ctx.World.OthersIn(character.RoomKey, actor), ctx.Argument, p => p.Name, _ => null);
 
         if (ally is null)
         {
@@ -269,8 +272,8 @@ public static class CombatCommands
         var actor = ctx.Actor;
 
         // Find target
-        var targetActor = ctx.World.OthersIn(actor.Character.RoomKey, actor)
-            .FirstOrDefault(p => string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase));
+        var targetActor = NameMatch.Best(
+            ctx.World.OthersIn(actor.Character.RoomKey, actor), targetName, p => p.Name, _ => null);
 
         var targetMob = NameMatch.Best(
             ctx.World.MobsIn(actor.Character.RoomKey), targetName, m => m.TemplateName, m => m.TemplateKey);

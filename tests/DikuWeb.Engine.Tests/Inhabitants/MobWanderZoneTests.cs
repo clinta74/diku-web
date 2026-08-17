@@ -213,4 +213,59 @@ public sealed class MobWanderZoneTests
 
         Assert.Equal("test.zone", MobState.HomeZoneOf(mob));
     }
+
+    /// <summary>
+    /// <c>noMob</c> set on the destination's <em>zone</em> keeps a roamer out, not just on the room.
+    /// </summary>
+    /// <remarks>
+    /// Flags resolve room → zone → world → default (PLAN.md §4.10), and every reader in the engine
+    /// goes through <c>WorldState.IsFlagSet</c> — except these two, which read <c>room.Flags</c>
+    /// directly. So a builder could set <c>noMob</c> on a zone, watch the flags tab report it as
+    /// "on, from zone", and have the AI ignore it (BUGS.md #18). No content sets it, which is why
+    /// nothing had noticed.
+    /// </remarks>
+    [Fact]
+    public async Task A_zone_level_noMob_keeps_a_roamer_out()
+    {
+        var harness = TwoZones();
+        var template = Rat(roams: true);
+
+        harness.World.FindZone("test.beyond")!.Flags.Set(RoomFlags.NoMob.Key, true);
+
+        var mob = SpawnAtHome(harness, template);
+        await WanderAsync(harness, template);
+
+        Assert.Equal(Home.ToString(), mob.RoomKey);
+    }
+
+    /// <summary>And the room-level flag, which always worked, still does.</summary>
+    [Fact]
+    public async Task A_room_level_noMob_still_keeps_a_roamer_out()
+    {
+        var harness = TwoZones();
+        var template = Rat(roams: true);
+
+        harness.World.FindRoom(Neighbour)!.Flags.Set(RoomFlags.NoMob.Key, true);
+
+        var mob = SpawnAtHome(harness, template);
+        await WanderAsync(harness, template);
+
+        Assert.Equal(Home.ToString(), mob.RoomKey);
+    }
+
+    /// <summary>
+    /// The control: without the flag anywhere, a roamer does cross. Otherwise the two cases above
+    /// would pass on any bug that stopped wandering altogether.
+    /// </summary>
+    [Fact]
+    public async Task A_roamer_crosses_when_nothing_forbids_it()
+    {
+        var harness = TwoZones();
+        var template = Rat(roams: true);
+
+        var mob = SpawnAtHome(harness, template);
+        await WanderAsync(harness, template);
+
+        Assert.Equal(Neighbour.ToString(), mob.RoomKey);
+    }
 }

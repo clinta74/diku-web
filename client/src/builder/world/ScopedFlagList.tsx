@@ -55,7 +55,18 @@ export function ScopedFlagList({ scope, flags, inheritedNote, onSet }: Props) {
                 )}
               </div>
 
-              <p className="dim detail">{definition.summary}</p>
+              <p className="dim detail">
+                {definition.summary}
+                {/*
+                  The phase is what tells a builder this flag is not wired up yet. It has been on
+                  the wire since the registry existed and was rendered by neither consumer, which
+                  is why `indoors` — 30 authored rooms, zero readers — looked exactly like `pvp`
+                  (BUGS.md #19). The field meant to prevent that defect was an instance of it.
+                */}
+                {definition.phase === 'later' && (
+                  <span className="flag-later"> · not implemented yet</span>
+                )}
+              </p>
 
               <div className="flag-controls">
                 <button

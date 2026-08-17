@@ -291,8 +291,8 @@ public static class AbilityCommands
                 return EntityId.ForCharacter(actor.CharacterId);
             }
 
-            var player = ctx.World.OthersIn(roomKey, actor)
-                .FirstOrDefault(p => string.Equals(p.Name, targetName, StringComparison.OrdinalIgnoreCase));
+            var player = NameMatch.Best(
+                ctx.World.OthersIn(roomKey, actor), targetName, p => p.Name, _ => null);
 
             if (player is not null)
             {
