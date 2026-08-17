@@ -49,7 +49,7 @@ class. Only going and looking is, which is what #22–#24 are meant to replace.
 | 14 | Authoring keys still reaching players in four places | Moderate | By inspection | **Fixed** |
 | 15 | `set` reports the value it was given, not the one it wrote | Minor | By inspection | **Fixed** |
 | 16 | `quest <name>` shows `0/0` progress for a quest with no fetch step | Minor | By inspection | **Fixed** |
-| 17 | Three dials authored and wired to nothing | Latent | Call-site sweep | **Fixed** |
+| 17 | Three dials authored and wired to nothing | Latent | Call-site sweep | **Fixed** (two deleted, one built) |
 | 18 | `noMob` skips flag inheritance | Latent | By inspection | **Fixed** |
 | 19 | `RoomFlag.Phase` is plumbed to the browser and rendered by nothing | Latent | By inspection | **Fixed** |
 | 20 | `TryAggress` targets by arrival order; link-dead players soak aggro | Latent | By inspection | Open |
@@ -237,14 +237,26 @@ fetch step renders `Progress: 0/0 — something`.
 |---|---|---|
 | `itemPower` | 4 worlds/zones, up to 1.4 | nothing — `ItemSpawner` copies `BaseStats` verbatim |
 | `spawnDensity` | 8 zones, 0.6–1.4 | nothing — the sweep refills straight to `TargetCount` |
-| `Spawner.RespawnSeconds` | every spawner, default 60 | nothing — the sweep runs every 15s regardless |
+| `Spawner.RespawnSeconds` | every spawner, default 30 | nothing — the sweep ran every 15s regardless |
 
 All three have a live arm in `Multipliers.Resolve` or a field on the entity, a builder control, a
 bundle field, and an exporter entry. `MultiplierType.ItemPower` and `.SpawnDensity` have **zero
 production call sites**; the only caller is a unit test asserting the arithmetic of a function
 nothing invokes, which is what makes them look alive.
 
-**Decision: delete.** Wiring them up would change balance on content that has never been played.
+**Decision at the time: delete all three.** Wiring them up changes balance on content nobody has
+played, which needs play behind it.
+
+**Revised for `respawnSeconds`, and the revision is the interesting part.** Deleting it surfaced the
+question the dead field had been hiding: *how do you make one thing rarer than another?* There was
+no answer, and the absence of one is a design hole rather than a tidy codebase. So it is **built**
+now, not deleted — default 60 seconds, one replacement per window, instant fill on a cold start
+(PLAN.md §4.8). The other two stay deleted: `itemPower` duplicates authoring item stats at final
+numbers, and `spawnDensity` duplicates `TargetCount`.
+
+Worth recording plainly: the sweep's 15-second cadence *was* the respawn rate for every mob and item
+in the game, which is why a room could be camped indefinitely. That was never a decision anyone
+made — it was the default of a field nothing read.
 
 ---
 

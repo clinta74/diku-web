@@ -139,7 +139,7 @@ public sealed class TickSystemTemplateLookupTests
         // Four sweeps is a minute of wall-clock at the real cadence.
         for (var i = 0; i < 4; i++)
         {
-            await system.RunAsync(harness.World, CancellationToken.None);
+            await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
         }
 
         // GetAllAsync during the load is not a per-entity query and is not counted; what must be
@@ -177,8 +177,8 @@ public sealed class TickSystemTemplateLookupTests
             new ItemTemplateCache(),
             new SpawnerCache());
 
-        await system.RunAsync(harness.World, CancellationToken.None);
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         Assert.Equal(2, spawnerRepo.Queries);
         Assert.Single(harness.World.MobsIn(West));
@@ -213,12 +213,12 @@ public sealed class TickSystemTemplateLookupTests
             new ItemTemplateCache(),
             spawnerCache);
 
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
         Assert.Empty(harness.World.MobsIn(West));
 
         var spawner = MobSpawnerFor("rat");
         spawnerCache.Put(spawner);
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         Assert.Single(harness.World.MobsIn(West));
 
@@ -226,7 +226,7 @@ public sealed class TickSystemTemplateLookupTests
         // exactly as it did when the sweep read the table.
         spawnerCache.Remove(spawner.Id);
         harness.World.RemoveMob(harness.World.MobsIn(West).Single());
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         Assert.Empty(harness.World.MobsIn(West));
         Assert.Equal(1, spawnerRepo.Queries);
@@ -254,7 +254,7 @@ public sealed class TickSystemTemplateLookupTests
             new MobTemplateCache(),
             new ItemTemplateCache());
 
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         Assert.Equal(1, mobRepo.Queries);
         Assert.Single(harness.World.MobsIn(West));
@@ -275,7 +275,7 @@ public sealed class TickSystemTemplateLookupTests
             NullLogger<SpawnerSystem>.Instance,
             harness.View);
 
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         Assert.Single(harness.World.MobsIn(West));
     }
@@ -306,7 +306,7 @@ public sealed class TickSystemTemplateLookupTests
 
         for (var i = 0; i < 5; i++)
         {
-            await system.RunAsync(harness.World, CancellationToken.None);
+            await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
         }
 
         Assert.Equal(0, mobRepo.Queries);
@@ -336,12 +336,12 @@ public sealed class TickSystemTemplateLookupTests
             mobCache,
             new ItemTemplateCache());
 
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
         Assert.Empty(harness.World.MobsIn(West));
 
         // The template is created in the builder, which puts it straight into the cache.
         mobCache.Put(Rat());
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         Assert.Single(harness.World.MobsIn(West));
         Assert.Equal(0, mobRepo.Queries);

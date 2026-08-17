@@ -58,6 +58,12 @@ public sealed record WorldBundle(
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
     ///
+    /// <b>11 because a spawner says how rare its thing is.</b> <c>respawnSeconds</c> is back on
+    /// every spawner, and this time something reads it. A v10 bundle has no such key, so read as
+    /// v11 every spawner in it would arrive at the record's default — which is 60 and harmless, but
+    /// the same is not true in the other direction: an authored hourly boss re-read as v10 would
+    /// silently become a minute, and a version number is what stops that being invisible.
+    ///
     /// <b>10 because three dials that never did anything are gone.</b> A v9 bundle carries
     /// <c>itemPower</c> and <c>spawnDensity</c> on its multipliers and <c>respawnSeconds</c> on
     /// every spawner. Read as v10 those keys are simply ignored, which is harmless — they were
@@ -119,7 +125,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 10;
+    public const int CurrentFormatVersion = 11;
 }
 
 /// <summary>
@@ -261,6 +267,7 @@ public sealed record BundleSpawner(
     TemplateKind TemplateKind,
     List<string> RoomKeys,
     int TargetCount,
+    int RespawnSeconds,
     bool? Wanders,
     /// <summary>
     /// The level these mobs fight at, or null to let the zone decide (PLAN.md §4.7).

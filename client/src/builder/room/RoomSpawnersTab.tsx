@@ -79,7 +79,7 @@ export function RoomSpawnersTab({ room }: Props) {
                   <strong>{spawner.templateKey}</strong>
                   <span className="dim">
                     {spawner.templateKind === 'Item' ? 'item · ' : ''}
-                    {spawner.targetCount}×
+                    {spawner.targetCount}× · respawn {spawner.respawnSeconds}s
                     {/* Unlike the wander note below, this is printed on every mob row rather than
                         only when it is unusual. The level is not a setting with a quiet default —
                         it is what the fight is, it decides whether killing it teaches anyone

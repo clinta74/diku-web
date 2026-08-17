@@ -896,12 +896,31 @@ and a second field for it would be a second source of truth to disagree with.
 
 - **Template → Instance.** `MobTemplate`/`ItemTemplate` hold the baseline; `Mob`/`Item` are
   runtime instances with concrete, multiplier-resolved stats. Replaces Diku "resets".
-- **Spawner.** A declarative rule on a zone: *maintain N of template X across these rooms.* A
-  population target, not an imperative reset script. **There is no per-spawner respawn delay** —
-  the field existed, defaulted to 30, and was offered in the builder while `SpawnerSystem` refilled
-  to the target on its own 15-second sweep and never read it, so it has been removed rather than
-  left reading as tuned (BUGS.md #17). Staggering a respawn is a pacing decision that should start
-  from the design, not from a number somebody typed into a dead field.
+- **Spawner.** A declarative rule on a zone: *maintain N of template X across these rooms, and
+  wait `respawnSeconds` before replacing one that is gone.* A population target, not an imperative
+  reset script.
+
+  **`respawnSeconds` is how rare a thing is**, and it is the one dial that decides whether a room is
+  worth leaving. Three rules:
+
+  - **A cold spawner fills to target at once**, however rare it is. A world that has just loaded is
+    not a world where everything has just died. The consequence is deliberate: **a restart re-arms
+    everything**, so a boss killed a minute before a restart is standing again after it. Persisting
+    the timers would fix that and would let a shutdown bank an hour of somebody else's wait, which
+    is worse.
+  - **One replacement per window, not a refill to target.** Clearing a room of four at sixty seconds
+    buys four minutes, not sixty seconds.
+  - **The clock starts when the sweep notices**, not when the thing died — nothing tells the sweep
+    about a death, it counts heads. So the real delay is the authored one plus up to 15 seconds:
+    immaterial at a minute, invisible at an hour, and the price of not threading spawner bookkeeping
+    through every death and pickup path.
+
+  **The default is 60 seconds.** It was 30 and read by nothing at all, so everything in the game
+  actually came back on the sweep's own cadence — nought to fifteen seconds — which meant a player
+  could stand in one room and kill the same mob forever instead of going to look for another. That
+  is the defect the dial now answers (BUGS.md #17). It lives on the spawner rather than the template
+  because rarity is a property of the *placement*: the same chassis can be a nuisance in one zone
+  and the only one of its kind in another.
   **A mob spawner counts what it made, wherever that has got to** — not what is standing in its
   rooms. Counting by room meant a mob that wandered one step out stopped counting and was
   replaced, and the replacement wandered off as well.

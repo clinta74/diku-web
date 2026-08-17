@@ -15,6 +15,12 @@ namespace DikuWeb.Engine.Spawning;
 /// Reads the spawner rules and templates out of memory, checks current population, and calls
 /// MobSpawner/ItemSpawner to create new instances as needed.
 /// </summary>
+/// <remarks>
+/// <b>The sweep's cadence is not the respawn rate.</b> It used to be: every pass refilled every
+/// spawner to its target, so everything in the game came back within fifteen seconds whatever it
+/// was authored at. <see cref="SpawnerSchedule"/> now decides how many placements each spawner may
+/// make, from its own <c>RespawnSeconds</c> (PLAN.md §4.8).
+/// </remarks>
 public sealed class SpawnerSystem(
     ISpawnerRepository spawners,
     IMobTemplateRepository mobTemplates,
@@ -69,7 +75,15 @@ public sealed class SpawnerSystem(
             ? [.. spawnerCache.All]
             : await spawners.GetAllAsync(ct);
 
-    public async Task RunAsync(WorldState world, CancellationToken ct)
+    private readonly SpawnerSchedule _schedule = new();
+
+    /// <param name="pulse">
+    /// Taken rather than read off a clock, following <c>CombatSystem.Tick</c>. An optional clock
+    /// would default to null, every spawner's window would sit at pulse zero forever, and nothing
+    /// would ever respawn after the first fill - a silent failure of exactly the kind this whole
+    /// feature exists to undo.
+    /// </param>
+    public async Task RunAsync(WorldState world, long pulse, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(world);
 
@@ -78,9 +92,11 @@ public sealed class SpawnerSystem(
             var allSpawners = await SpawnersAsync(ct);
             EngineLog.SpawnerSweepStarting(logger, allSpawners.Count);
 
+            _schedule.Retain(allSpawners.Select(s => s.Id));
+
             foreach (var spawner in allSpawners)
             {
-                await ProcessSpawnerAsync(world, spawner, ct);
+                await ProcessSpawnerAsync(world, spawner, pulse, ct);
             }
         }
         catch (Exception ex)
@@ -89,19 +105,19 @@ public sealed class SpawnerSystem(
         }
     }
 
-    private async Task ProcessSpawnerAsync(WorldState world, Spawner spawner, CancellationToken ct)
+    private async Task ProcessSpawnerAsync(WorldState world, Spawner spawner, long pulse, CancellationToken ct)
     {
         if (spawner.TemplateKind == TemplateKind.Mob)
         {
-            await ProcessMobSpawnerAsync(world, spawner, ct);
+            await ProcessMobSpawnerAsync(world, spawner, pulse, ct);
         }
         else if (spawner.TemplateKind == TemplateKind.Item)
         {
-            await ProcessItemSpawnerAsync(world, spawner, ct);
+            await ProcessItemSpawnerAsync(world, spawner, pulse, ct);
         }
     }
 
-    private async Task ProcessMobSpawnerAsync(WorldState world, Spawner spawner, CancellationToken ct)
+    private async Task ProcessMobSpawnerAsync(WorldState world, Spawner spawner, long pulse, CancellationToken ct)
     {
         try
         {
@@ -143,7 +159,9 @@ public sealed class SpawnerSystem(
             // the resolution is a coalesce rather than a polarity flip.
             var wanders = spawner.Wanders ?? MobBehavior.Wanders(template.Behavior);
 
-            for (var i = currentCount; i < spawner.TargetCount; i++)
+            var allowance = _schedule.Allowance(spawner, currentCount, pulse);
+
+            for (var i = 0; i < allowance; i++)
             {
                 var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
                 var mob = mobSpawner.Spawn(
@@ -177,7 +195,7 @@ public sealed class SpawnerSystem(
         }
     }
 
-    private async Task ProcessItemSpawnerAsync(WorldState world, Spawner spawner, CancellationToken ct)
+    private async Task ProcessItemSpawnerAsync(WorldState world, Spawner spawner, long pulse, CancellationToken ct)
     {
         var template = await ItemTemplateAsync(spawner.TemplateKey, ct);
         if (template is null)
@@ -207,7 +225,9 @@ public sealed class SpawnerSystem(
 
         var touched = new HashSet<RoomKey>();
 
-        for (var i = currentCount; i < spawner.TargetCount; i++)
+        var allowance = _schedule.Allowance(spawner, currentCount, pulse);
+
+        for (var i = 0; i < allowance; i++)
         {
             var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
             var item = itemSpawner.Spawn(template, zone, worldEnt, room, spawner.Id);

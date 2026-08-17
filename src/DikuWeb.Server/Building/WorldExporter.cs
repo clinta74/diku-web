@@ -267,7 +267,7 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
 
         return [.. spawners.Select(s => new BundleSpawner(
             s.Id, s.ZoneKey, s.TemplateKey, s.TemplateKind,
-            [.. s.RoomKeys], s.TargetCount, s.Wanders, s.FightsAtLevel))];
+            [.. s.RoomKeys], s.TargetCount, s.RespawnSeconds, s.Wanders, s.FightsAtLevel))];
     }
 
     private async Task<IReadOnlyList<BundleQuest>> QuestsAsync(

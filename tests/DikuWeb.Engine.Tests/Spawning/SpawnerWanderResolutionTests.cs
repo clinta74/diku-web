@@ -95,7 +95,7 @@ public sealed class SpawnerWanderResolutionTests
             NullLogger<SpawnerSystem>.Instance,
             harness.View);
 
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         var mob = Assert.Single(harness.World.MobsIn(West));
 

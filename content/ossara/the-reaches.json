@@ -1,5 +1,5 @@
 {
-  "formatVersion": 10,
+  "formatVersion": 11,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -1913,6 +1913,7 @@
         "ossara.the-terraces.the-cellar-mouth"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1927,6 +1928,7 @@
         "ossara.the-terraces.the-lower-rows"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": true,
       "fightsAtLevel": null
     },
@@ -1940,6 +1942,7 @@
         "ossara.the-terraces.the-goat-fold"
       ],
       "targetCount": 3,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1953,6 +1956,7 @@
         "ossara.the-terraces.the-beehives"
       ],
       "targetCount": 2,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1965,6 +1969,7 @@
         "ossara.the-terraces.the-water-race"
       ],
       "targetCount": 1,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1978,6 +1983,7 @@
         "ossara.brackenfell.the-birch-stand"
       ],
       "targetCount": 3,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1991,6 +1997,7 @@
         "ossara.brackenfell.the-thorn-hollow"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2004,6 +2011,7 @@
         "ossara.brackenfell.the-charcoal-burn"
       ],
       "targetCount": 3,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2018,6 +2026,7 @@
         "ossara.brackenfell.the-alder-carr"
       ],
       "targetCount": 3,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2032,6 +2041,7 @@
         "ossara.brackenfell.the-old-quarry"
       ],
       "targetCount": 5,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2045,6 +2055,7 @@
         "ossara.brackenfell.the-far-blaze"
       ],
       "targetCount": 2,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2058,6 +2069,7 @@
         "ossara.the-rimwalk.the-thinning"
       ],
       "targetCount": 3,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2071,6 +2083,7 @@
         "ossara.the-rimwalk.the-watch-stone"
       ],
       "targetCount": 3,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2086,6 +2099,7 @@
         "ossara.the-rimwalk.the-spur-end"
       ],
       "targetCount": 6,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2098,6 +2112,7 @@
         "ossara.the-rimwalk.the-last-marker"
       ],
       "targetCount": 1,
+      "respawnSeconds": 600,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2110,6 +2125,7 @@
         "ossara.the-rimwalk.the-keepers-stone"
       ],
       "targetCount": 1,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2126,6 +2142,7 @@
         "ossara.the-rimwalk.the-thinning"
       ],
       "targetCount": 5,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2138,6 +2155,7 @@
         "ossara.the-rimwalk.the-picnic-stones"
       ],
       "targetCount": 1,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     }

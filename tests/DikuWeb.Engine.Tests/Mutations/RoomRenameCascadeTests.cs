@@ -39,7 +39,7 @@ public sealed class RoomRenameCascadeTests
         var id = Guid.CreateVersion7();
 
         harness.Mutate(new UpsertSpawner(
-            id, "test.zone", "rat", TemplateKind.Mob, [.. rooms], 2, Wanders: null, fightsAtLevel));
+            id, "test.zone", "rat", TemplateKind.Mob, [.. rooms], 2, RespawnSeconds: 60, Wanders: null, fightsAtLevel));
 
         return id;
     }

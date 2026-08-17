@@ -158,14 +158,29 @@ Add anything noticed while playing here. Cleared as items are done.
   the engine reads and no form offers is a missing feature, a key the form offers and nothing reads
   is a lie, and only the second is silent.
 
-- **`itemPower`: done, and it took two others with it.** It was recorded into `SpawnMultipliers`
-  and read by nothing; the milestone review found `spawnDensity` (eight zones, 0.6–1.4) and a
-  spawner's `respawnSeconds` (all 100 of them) in the same state — authored, editable in the
-  builder, previewed, exported, and applied nowhere. All three are **deleted** rather than
-  implemented: wiring them up would change the balance of content nobody has played yet, which is a
-  decision that needs play behind it. `WORLD.md` had already judged deleting the smaller lie.
+- **`itemPower`: done, and it took two others with it — then one came back built.** All three were
+  recorded and read by nothing: `itemPower`, `spawnDensity` (eight zones), and a spawner's
+  `respawnSeconds` (all 100). `itemPower` and `spawnDensity` are **deleted** — each duplicates
+  something already authored directly.
 
-  `formatVersion` is **10**, and `spawners.respawn_seconds` is dropped by a migration. Re-import.
+  `respawnSeconds` is **implemented**, because deleting it surfaced the question it had been hiding:
+  *how is one thing rarer than another?* There was no answer. The sweep's own 15-second cadence was
+  the respawn rate for every mob and item in the game, which nobody chose — it was the default of a
+  dead field, and it is why a room could be camped forever.
+
+  Now: **default 60 seconds**, **one replacement per window** (clearing a room of four buys four
+  windows, not one), and **a cold spawner fills at once** so a restart does not leave the world
+  empty. `PLAN.md` §4.8 has the rest, including that a restart re-arms every timer.
+
+  **The five act bosses are at 600 seconds, not the hour you asked for**, and the reason is worth a
+  look: each drops its act's gate item at chance 1.0, so its respawn *is* a progression gate — at an
+  hour, a wipe costs an hour and two players wanting the same item queue. A genuinely hourly boss
+  wants loot that gates nothing, which is content work rather than a dial.
+
+  **No rare ground spawn exists yet.** All five item spawners are act quest supply and stay at the
+  default; a four-hour `ossara-fallen-marker` would make Act I unfinishable.
+
+  `formatVersion` is **11**. Re-import.
 
 - **Room terrain: done.** All 224 rooms carry a 21×9 grid (`WORLD.md` §10.1). Generated per zone
   kind and seeded from the room key, so regeneration is byte-identical and a re-import is safe to

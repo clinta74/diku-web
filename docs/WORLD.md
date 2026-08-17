@@ -721,10 +721,26 @@ Four things beyond that are deliberately left as *later* rather than assumed:
   `BuilderEndpoints`. Until it is, editing a zone's multipliers only affects future spawns and
   tuning a zone means restarting the server. This will be felt immediately when the tables in §3 and
   §4 meet reality.
-- ~~**`itemPower` is snapshotted and never applied.**~~ **Deleted**, along with `spawnDensity` and
-  the spawner's `respawnSeconds`, in the milestone review — all three were authored, editable and
-  applied by nothing (BUGS.md #17). The design never depended on any of them: every realm's set is
-  authored at final numbers, and that is now the only way it is said.
+- ~~**`itemPower` is snapshotted and never applied.**~~ **Deleted**, along with `spawnDensity`, in
+  the milestone review — both were authored, editable and applied by nothing (BUGS.md #17). The
+  design never depended on either: every realm's set is authored at final numbers, and that is now
+  the only way it is said.
+- **Rarity is authored now, and mostly unused.** The spawner's `respawnSeconds` was in the same dead
+  state and came back built rather than deleted, because deleting it surfaced the question it had
+  been hiding: *how is one thing rarer than another?* Default 60 seconds; one replacement per
+  window, so clearing a room of four buys four windows (`PLAN.md` §4.8).
+
+  **The five act bosses are at 600 seconds** — `ossara-the-unclaimed`, `grask-the-creditor`,
+  `azhen-the-last-reader`, `nemhal-the-first-mourner`, `unlit-the-oldest-held`. Ten minutes rather
+  than the hour first proposed, and the reason is worth keeping: **each one drops its act's gate item
+  at chance 1.0**, so its respawn is a progression gate. At an hour, a wipe costs an hour and two
+  players who both need the item queue. A boss that should genuinely be hourly wants loot that gates
+  nothing — which is a content change, not a dial.
+
+  **Nothing in `content/` is a rare ground spawn yet.** All five item spawners are act quest supply
+  (`ossara-fallen-marker` and its siblings) and sit at the default deliberately: a four-hour marker
+  would make Act I unfinishable. The capability is there for the first genuinely rare item somebody
+  authors.
 - **`Trinket` is not wired to anything.** It is absent from `IsArmorSlot` and is not one of the two
   hands the damage multiplier is read from, so the eighth slot equips and does nothing. Worth one
   of: adding it to the armour sweep, giving it its own stat vocabulary, or dropping it from the

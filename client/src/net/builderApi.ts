@@ -295,6 +295,8 @@ export interface Spawner {
   templateKind: 'Mob' | 'Item'
   roomKeys: string[]
   targetCount: number
+  /** Seconds before one lost instance is replaced. How rare the thing is. */
+  respawnSeconds: number
   wander: WanderMode
   /**
    * What mobs from this spawner fight at (PLAN.md §4.7). Server-computed and read-only; zero for

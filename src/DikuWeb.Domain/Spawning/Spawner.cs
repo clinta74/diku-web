@@ -28,12 +28,29 @@ public sealed class Spawner
     /// </remarks>
     public int TargetCount { get; set; } = 1;
 
-    // `RespawnSeconds` used to sit here, defaulting to 30 and offered as a number field in the
-    // builder. `SpawnerSystem` refills straight to TargetCount on its own 15-second sweep and
-    // never read it, so a builder who typed "respawn after 600 seconds" got 15. Deleted rather
-    // than implemented, for the reason the two multipliers were: staggered respawn is a design
-    // decision about pacing, and reintroducing it should start from that rather than from a
-    // number somebody typed into a field that did nothing (BUGS.md #17).
+    /// <summary>
+    /// Seconds to wait after a loss before replacing one of this spawner's instances.
+    /// </summary>
+    /// <remarks>
+    /// <b>This is how rare a thing is.</b> A boss that should be an event rather than a rotation
+    /// sets minutes or hours here; a patch of herbs that exists to be picked leaves the default.
+    /// It is on the spawner rather than the template because rarity is a property of the
+    /// *placement*: the same chassis can be a nuisance in one zone and the only one of its kind in
+    /// another, which is the same argument <see cref="TargetCount"/> and <see cref="FightsAtLevel"/>
+    /// already make.
+    ///
+    /// <b>Sixty, not thirty.</b> The old default was 30 and read by nothing at all, so every
+    /// spawner in the game actually refilled on the sweep's own 15-second cadence — which meant a
+    /// player could stand in one room and kill the same mob forever rather than going to look for
+    /// another (BUGS.md #17, and PLAN.md §4.8 for what the sweep does with this).
+    ///
+    /// <b>One replacement per window, not a refill to target.</b> A cleared room of four comes back
+    /// over four windows, so clearing it buys real time rather than fifteen seconds.
+    ///
+    /// Resolution is the sweep's, so the real delay is this plus up to 15 seconds. That is
+    /// immaterial at a minute and invisible at an hour.
+    /// </remarks>
+    public int RespawnSeconds { get; set; } = 60;
 
     /// <summary>
     /// Whether mobs from this spawner wander. <b>Null defers to the template</b>, which is the

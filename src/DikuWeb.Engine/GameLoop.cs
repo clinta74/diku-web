@@ -170,7 +170,7 @@ public sealed class GameLoop(
         if (spawnerSystem != null && GameTiming.RunsOn(pulse, GameTiming.SpawnSweepPulses))
         {
             // Fire and forget - spawner runs on thread pool, never blocks the loop
-            _ = spawnerSystem.RunAsync(world, CancellationToken.None);
+            _ = spawnerSystem.RunAsync(world, pulse, CancellationToken.None);
         }
 
         if (mobAiSystem != null && GameTiming.RunsOn(pulse, GameTiming.MobAiPulses))

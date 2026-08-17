@@ -95,7 +95,7 @@ public sealed class SpawnerLevelOverrideTests
             NullLogger<SpawnerSystem>.Instance,
             harness.View);
 
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         return Assert.Single(harness.World.MobsIn(West));
     }
@@ -200,7 +200,7 @@ public sealed class SpawnerLevelOverrideTests
 
         // The item template is unknown, so this exercises the dormant-spawner path (§7.4) as well:
         // whatever happens, it must not be a throw.
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         Assert.Empty(harness.World.MobsIn(West));
     }

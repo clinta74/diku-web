@@ -1,5 +1,5 @@
 {
-  "formatVersion": 10,
+  "formatVersion": 11,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -1277,6 +1277,7 @@
         "the-unlit.the-crossing.the-scatter"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1290,6 +1291,7 @@
         "the-unlit.the-crossing.the-standing-crowd"
       ],
       "targetCount": 5,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1304,6 +1306,7 @@
         "the-unlit.the-crossing.the-turning-point"
       ],
       "targetCount": 3,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1317,6 +1320,7 @@
         "the-unlit.the-regard.the-worn-place"
       ],
       "targetCount": 3,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1332,6 +1336,7 @@
         "the-unlit.the-regard.the-first-way-in"
       ],
       "targetCount": 5,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1344,6 +1349,7 @@
         "the-unlit.the-regard.the-facing-place"
       ],
       "targetCount": 1,
+      "respawnSeconds": 600,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1356,6 +1362,7 @@
         "the-unlit.the-regard.the-owed-question"
       ],
       "targetCount": 1,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1371,6 +1378,7 @@
         "the-unlit.the-crossing.the-first-stretch"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -1383,6 +1391,7 @@
         "the-unlit.the-regard.the-standing-ground"
       ],
       "targetCount": 1,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     }

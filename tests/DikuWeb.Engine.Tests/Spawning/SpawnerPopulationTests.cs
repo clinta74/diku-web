@@ -85,11 +85,11 @@ public sealed class SpawnerPopulationTests
         var spawner = RatSpawner();
         var system = SystemFor(harness, spawner);
 
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
         var rat = Assert.Single(harness.World.MobsIn(West));
 
         harness.World.MoveMob(rat, East);
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         Assert.Single(harness.World.AllMobs);
         Assert.Empty(harness.World.MobsIn(West));
@@ -107,7 +107,7 @@ public sealed class SpawnerPopulationTests
 
         for (var sweep = 0; sweep < 10; sweep++)
         {
-            await system.RunAsync(harness.World, CancellationToken.None);
+            await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
             foreach (var mob in harness.World.AllMobs.ToList())
             {
@@ -118,22 +118,40 @@ public sealed class SpawnerPopulationTests
         Assert.Equal(3, harness.World.AllMobs.Count());
     }
 
+    /// <summary>
+    /// The count must fall as well as rise, or a spawner stops working the first time something it
+    /// made dies — but the replacement waits out the spawner's own window (PLAN.md §4.8).
+    /// </summary>
+    /// <remarks>
+    /// This used to sweep twice at the same pulse and assert the rat was back, which passed because
+    /// the sweep refilled to target unconditionally. That was the defect: every spawner in the game
+    /// respawned on the sweep's 15-second cadence whatever it was authored at, so a player could
+    /// stand in one room and kill the same mob forever (BUGS.md #17).
+    /// </remarks>
     [Fact]
-    public async Task A_killed_mob_is_replaced()
+    public async Task A_killed_mob_is_replaced_after_its_respawn_window()
     {
-        // The count must fall as well as rise, or a spawner stops working the first time
-        // something it made dies.
         var harness = new WorldHarness();
         harness.LoadTestWorld();
 
+        // The default, 60 seconds, which is 240 pulses.
         var system = SystemFor(harness, RatSpawner());
 
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
         var rat = Assert.Single(harness.World.AllMobs);
 
         harness.World.RemoveMob(rat);
-        await system.RunAsync(harness.World, CancellationToken.None);
 
+        // The sweep that notices the loss starts the clock rather than filling the gap.
+        await system.RunAsync(harness.World, pulse: 60, CancellationToken.None);
+        Assert.Empty(harness.World.AllMobs);
+
+        // Still inside the window.
+        await system.RunAsync(harness.World, pulse: 240, CancellationToken.None);
+        Assert.Empty(harness.World.AllMobs);
+
+        // Past it.
+        await system.RunAsync(harness.World, pulse: 300, CancellationToken.None);
         Assert.Single(harness.World.AllMobs);
     }
 
@@ -149,8 +167,8 @@ public sealed class SpawnerPopulationTests
         var second = RatSpawner();
         second.RoomKeys = [East.ToString()];
 
-        await SystemFor(harness, first).RunAsync(harness.World, CancellationToken.None);
-        await SystemFor(harness, second).RunAsync(harness.World, CancellationToken.None);
+        await SystemFor(harness, first).RunAsync(harness.World, pulse: 0, CancellationToken.None);
+        await SystemFor(harness, second).RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         Assert.Equal(2, harness.World.AllMobs.Count());
     }
@@ -164,7 +182,7 @@ public sealed class SpawnerPopulationTests
         harness.LoadTestWorld();
         harness.AddMob("rat", West);
 
-        await SystemFor(harness, RatSpawner()).RunAsync(harness.World, CancellationToken.None);
+        await SystemFor(harness, RatSpawner()).RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         Assert.Equal(2, harness.World.MobsIn(West).Count);
     }

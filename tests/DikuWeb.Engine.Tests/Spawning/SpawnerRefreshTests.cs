@@ -80,7 +80,7 @@ public sealed class SpawnerRefreshTests
             NullLogger<SpawnerSystem>.Instance,
             harness.View);
 
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         var events = harness.Drain(kael);
 
@@ -111,7 +111,7 @@ public sealed class SpawnerRefreshTests
             NullLogger<SpawnerSystem>.Instance,
             harness.View);
 
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         var events = harness.Drain(kael);
 
@@ -136,11 +136,11 @@ public sealed class SpawnerRefreshTests
             NullLogger<SpawnerSystem>.Instance,
             harness.View);
 
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
         harness.Drain(kael);
 
         // Second sweep: the target is met, so it must be silent - no prose, no redraw.
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         Assert.Empty(harness.Drain(kael));
     }
@@ -171,7 +171,7 @@ public sealed class SpawnerRefreshTests
         using var provider = services.BuildServiceProvider();
         var system = provider.GetRequiredService<SpawnerSystem>();
 
-        await system.RunAsync(harness.World, CancellationToken.None);
+        await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
 
         var events = harness.Drain(kael);
         Assert.Contains(events, e => e.Type == EventTypes.Map);

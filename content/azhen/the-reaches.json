@@ -1,5 +1,5 @@
 {
-  "formatVersion": 10,
+  "formatVersion": 11,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -2822,6 +2822,7 @@
         "azhen.the-camp.the-traders-tent"
       ],
       "targetCount": 1,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2834,6 +2835,7 @@
         "azhen.the-camp.the-catalogue-tent"
       ],
       "targetCount": 1,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2846,6 +2848,7 @@
         "azhen.the-camp.the-plate-bench"
       ],
       "targetCount": 1,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2860,6 +2863,7 @@
         "azhen.ummath.the-cross-hall"
       ],
       "targetCount": 6,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2873,6 +2877,7 @@
         "azhen.ummath.the-cog-gallery"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": true,
       "fightsAtLevel": null
     },
@@ -2886,6 +2891,7 @@
         "azhen.ummath.the-glass-store"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2899,6 +2905,7 @@
         "azhen.ummath.the-cross-hall"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2912,6 +2919,7 @@
         "azhen.ummath.the-water-stair"
       ],
       "targetCount": 3,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2926,6 +2934,7 @@
         "azhen.ummath.the-empty-library"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2939,6 +2948,7 @@
         "azhen.serrivet.the-tension-house"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2952,6 +2962,7 @@
         "azhen.serrivet.the-second-yard"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2966,6 +2977,7 @@
         "azhen.serrivet.the-quadrant"
       ],
       "targetCount": 5,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2980,6 +2992,7 @@
         "azhen.serrivet.the-mirror-walk"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -2993,6 +3006,7 @@
         "azhen.serrivet.the-shadow-court"
       ],
       "targetCount": 3,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3005,6 +3019,7 @@
         "azhen.serrivet.the-alignment-marks"
       ],
       "targetCount": 3,
+      "respawnSeconds": 60,
       "wanders": true,
       "fightsAtLevel": null
     },
@@ -3019,6 +3034,7 @@
         "azhen.thessivar.the-counterweight-well"
       ],
       "targetCount": 5,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3032,6 +3048,7 @@
         "azhen.thessivar.the-drum-floor"
       ],
       "targetCount": 4,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3048,6 +3065,7 @@
         "azhen.thessivar.the-silent-room"
       ],
       "targetCount": 8,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3060,6 +3078,7 @@
         "azhen.thessivar.the-housing"
       ],
       "targetCount": 1,
+      "respawnSeconds": 600,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3073,6 +3092,7 @@
         "azhen.thessivar.the-registry"
       ],
       "targetCount": 2,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     },
@@ -3085,6 +3105,7 @@
         "azhen.thessivar.the-entry-court"
       ],
       "targetCount": 1,
+      "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null
     }
