@@ -192,8 +192,23 @@ internal static class AdminWorldCommands
                 return;
         }
 
-        ctx.Reply($"{target.Name}: {field} {before} → {value}.", "heading");
-        target.SendSys($"An administrator set your {field} to {value}.", SysKinds.Warning);
+        // Read back rather than echoing the input. Health, focus and stamina are clamped to their
+        // maxima and level is floored at 1, so `set kael health 9999` used to report and announce
+        // 9999 — which defeats the whole reason this prints both numbers: an admin who cannot see
+        // what it became cannot tell whether they fixed it (BUGS.md #15).
+        var after = field switch
+        {
+            "health" => vitals.Health,
+            "focus" => vitals.Focus,
+            "stamina" => vitals.Stamina,
+            "gold" => character.Gold,
+            "xp" => character.Xp,
+            "level" => character.Level,
+            _ => value,
+        };
+
+        ctx.Reply($"{target.Name}: {field} {before} → {after}.", "heading");
+        target.SendSys($"An administrator set your {field} to {after}.", SysKinds.Warning);
     }
 
     /// <summary>

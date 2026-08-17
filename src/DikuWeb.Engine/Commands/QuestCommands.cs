@@ -539,12 +539,19 @@ public static class QuestCommands
             ctx.Reply($"Objective: {questDef.Summary}");
         }
 
-        // Show progress
-        if (questState.Status == QuestStatus.Active)
+        // Show progress, but only for a quest that has something to count. RequiredItemKey is
+        // nullable by design, and with it null nothing ever matches - so a non-fetch quest printed
+        // `Progress: 0/0 — something`, a bar that could not move and a noun that named nothing
+        // (BUGS.md #16).
+        if (questState.Status == QuestStatus.Active && !string.IsNullOrEmpty(questDef.RequiredItemKey))
         {
             var inventory = ctx.World.InventoryOf(character.Id);
             var count = inventory.Count(i => i.TemplateKey.Equals(questDef.RequiredItemKey, StringComparison.OrdinalIgnoreCase));
             ctx.Reply($"Progress: {count}/{questDef.RequiredCount} — {ItemName(ctx, questDef.RequiredItemKey)}");
+        }
+        else if (questState.Status == QuestStatus.Active)
+        {
+            ctx.Reply("Status: In progress");
         }
         else if (questState.Status == QuestStatus.Completed)
         {

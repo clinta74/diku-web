@@ -446,9 +446,19 @@ public static class CombatCommands
         // Says what it replaced. The verb is one keystroke and overwrites without asking, and
         // `quit` demands all four characters precisely because a stray keypress should not cost
         // you something you only discover the next time you die.
-        ctx.Reply(previous is { } old
-            ? $"You bind your soul to this place: {character.RoomKey} (unbound from {old})."
-            : $"You bind your soul to this place: {character.RoomKey}");
+        // Named, not keyed. `RoomKey.ToString()` is "ossara.gatetown.the-gate-yard", which is an
+        // authoring identifier and the same class of leak as the innkeeper who answered to
+        // `ossara-innkeeper` (BUGS.md #14). The title is in hand either way.
+        var here = ctx.World.FindRoom(character.RoomKey)?.Title;
+        var hereName = string.IsNullOrEmpty(here) ? character.RoomKey.ToString() : here;
+
+        var previousName = previous is { } old
+            ? ctx.World.FindRoom(old)?.Title is { Length: > 0 } title ? title : old.ToString()
+            : null;
+
+        ctx.Reply(previousName is null
+            ? $"You bind your soul to this place: {hereName}."
+            : $"You bind your soul to this place: {hereName} (unbound from {previousName}).");
 
         ctx.Broadcast($"{ctx.Actor.Name} binds their soul here.");
     }

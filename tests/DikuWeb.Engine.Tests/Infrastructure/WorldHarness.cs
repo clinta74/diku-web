@@ -630,13 +630,14 @@ internal sealed class WorldHarness
         int damageMin = 1,
         int damageMax = 1,
         Dictionary<string, object>? behavior = null,
-        int level = 1)
+        int level = 1,
+        string icon = "r")
     {
         MobTemplates.Put(new MobTemplate
         {
             Key = templateKey,
             Name = name,
-            Icon = "r",
+            Icon = icon,
             Level = level,
             Attacks = [.. attacks ?? []],
             Behavior = behavior ?? [],
@@ -656,6 +657,9 @@ internal sealed class WorldHarness
         {
             TemplateKey = templateKey,
             TemplateName = name,
+            // Stamped from the template, exactly as MobSpawner does it. A harness that builds an
+            // instance the spawner would not is how a field goes untested for a phase.
+            Icon = icon,
             RoomKey = at.ToString(),
             Level = level,
             EffectiveLevel = effectiveLevel,

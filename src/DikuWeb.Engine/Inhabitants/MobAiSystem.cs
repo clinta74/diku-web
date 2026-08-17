@@ -158,8 +158,13 @@ public sealed class MobAiSystem(
                     continue;
                 }
 
+                // MobLabel, not template.Name. Every other narration path in the game - the room
+                // listing, examine, combat, death - disambiguates two of a kind as "a terrace crow
+                // (2)", and the AI lines are the ones a player reads most often (BUGS.md #13).
                 player.SendText(
-                    NarrationHelper.BuildSentence(template.Name, due.Text), "mob-action");
+                    NarrationHelper.BuildSentence(
+                        MobLabel.For(world.MobsIn(roomKey), mob), due.Text),
+                    "mob-action");
             }
 
             schedule[due.Text] = due.NextPulseAfter(pulse, random);
@@ -313,8 +318,12 @@ public sealed class MobAiSystem(
             }
 
             // Valid destination found: move the mob
-            var leaveProse = NarrationHelper.BuildSentence(template.Name, $"leaves {exit.Direction.ToLowerName()}");
-            var arriveProse = NarrationHelper.BuildSentence(template.Name, $"arrives from the {exit.Direction.Opposite().ToLowerName()}");
+            // Labelled against the room it is leaving, and then against the room it arrives in -
+            // the ordinal is positional, so the crow that was (2) where it came from may well be
+            // (1) where it lands, and each room's watchers should read their own.
+            var leaveProse = NarrationHelper.BuildSentence(
+                MobLabel.For(world.MobsIn(fromRoomKey), mob),
+                $"leaves {exit.Direction.ToLowerName()}");
 
             // Notify in source room with direction
             var fromOccupants = world.OccupantsOf(fromRoomKey);
@@ -325,6 +334,12 @@ public sealed class MobAiSystem(
 
             // Move the mob
             world.MoveMob(mob, exit.ToRoomKey);
+
+            // Built after the move, because the ordinal is positional: what this crow is called in
+            // the room it just entered depends on what was already standing there.
+            var arriveProse = NarrationHelper.BuildSentence(
+                MobLabel.For(world.MobsIn(exit.ToRoomKey), mob),
+                $"arrives from the {exit.Direction.Opposite().ToLowerName()}");
 
             // Notify in destination room
             var toOccupants = world.OccupantsOf(exit.ToRoomKey);
@@ -393,14 +408,16 @@ public sealed class MobAiSystem(
         target.Character.CombatState = CombatState.Fighting;
         // Note: Don't set target.Character.CurrentTarget — player must `kill` to fight back
 
+        var label = MobLabel.For(world.MobsIn(roomKey), mob);
+
         target.SendText(
-            NarrationHelper.BuildSentence(template.Name, "attacks you!"), "combat");
+            NarrationHelper.BuildSentence(label, "attacks you!"), "combat");
         foreach (var other in world.OccupantsOf(roomKey))
         {
             if (other.CharacterId != target.CharacterId)
             {
                 other.SendText(
-                    NarrationHelper.BuildSentence(template.Name, $"attacks {target.Name}!"),
+                    NarrationHelper.BuildSentence(label, $"attacks {target.Name}!"),
                     "combat");
             }
         }

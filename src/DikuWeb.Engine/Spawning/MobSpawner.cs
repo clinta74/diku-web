@@ -76,6 +76,7 @@ public sealed class MobSpawner
             TemplateKey = template.Key,
             SpawnerId = spawnerId,
             TemplateName = template.Name,
+            Icon = template.Icon,
             Level = template.Level,
             EffectiveLevel = scaling.Level,
             RoomKey = roomKey.ToString(),

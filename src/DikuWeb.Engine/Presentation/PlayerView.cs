@@ -510,7 +510,7 @@ public sealed class PlayerView(RoomLayoutService layout, ItemTemplateCache? item
         occupantEntries.AddRange(mobs
             .OrderBy(m => m.TemplateKey)
             .Select(m => {
-                var icon = m.DisplayName[0].ToString();
+                var icon = m.MapGlyph;
                 return new ContentEntry(icon, MobLabel.For(mobs, m), m.TemplateKey.ToLowerInvariant());
             }));
 

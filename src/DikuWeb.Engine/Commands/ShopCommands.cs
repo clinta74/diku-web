@@ -101,7 +101,16 @@ public static class ShopCommands
                 {
                     // The shop lists a template that no longer exists. Saying so beats a short
                     // list the builder cannot account for - the shop equivalent of a dangling exit.
-                    ctx.Reply($"  (an empty space where {itemKey} should be)", "dim");
+                    //
+                    // The key used to be in this line, which made it the one place an ordinary
+                    // customer could read an authoring identifier off a shelf (BUGS.md #14). A
+                    // builder still gets it, through the same gate every other key goes through.
+                    ctx.Reply("  (an empty space where something should be)", "dim");
+
+                    if (ctx.Actor.IsBuilder)
+                    {
+                        ctx.Reply($"    missing template: {itemKey}", "dim");
+                    }
                     continue;
                 }
 

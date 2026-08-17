@@ -68,7 +68,7 @@ public sealed class CommandRegistry
             "inventory", 1, "inventory (i) - list what you're carrying", Inventory));
 
         _commands.Add(new CommandDefinition(
-            "examine", 1, "examine <item> (x) - look closely at an item", Examine));
+            "examine", 1, "examine <item> (ex) - look closely at an item", Examine));
 
         _commands.Add(new CommandDefinition(
             "get", 1, "get <item> - pick up an item from the ground", Get));
@@ -87,7 +87,7 @@ public sealed class CommandRegistry
             "wield", 1, "wield <item> - equip an item in your hand", Wield));
 
         _commands.Add(new CommandDefinition(
-            "remove", 2, "remove <item> (r) - unequip an item", Remove));
+            "remove", 2, "remove <item> (re) - unequip an item", Remove));
 
         _commands.Add(new CommandDefinition(
             "give", 1, "give <item> <character> - give an item to someone", Give));
@@ -1303,9 +1303,13 @@ public sealed class CommandRegistry
             {
                 var slot = item.EquippedSlot?.ToString() ?? "Unknown";
                 var displayName = DisplayNameOf(item);
-                var statsStr = string.Join(", ", item.ResolvedStats
-                    .Where(kv => kv.Key.Contains("Multiplier", StringComparison.OrdinalIgnoreCase))
-                    .Select(kv => $"{kv.Key}: {kv.Value}"));
+                // Every stat the item carries, not the ones whose key happens to contain
+                // "Multiplier". Across content that filter admitted `damageMultiplier` and hid
+                // `armor`, `bonus` and `defense` — so every armour piece printed under a heading
+                // promising bonuses and then showed nothing (BUGS.md #11). `examine` never
+                // filtered, which is why the builder view was right and only the player's was
+                // wrong.
+                var statsStr = Describe(item.ResolvedStats);
 
                 spans.Add(new TextSpan($"\n  [{slot}] {displayName}"));
                 if (!string.IsNullOrEmpty(statsStr))

@@ -39,6 +39,29 @@ public sealed class Mob
     public string DisplayName =>
         string.IsNullOrEmpty(TemplateName) ? TemplateKey : TemplateName;
 
+    /// <summary>
+    /// Single character for the map, from the template at spawn time.
+    /// </summary>
+    /// <remarks>
+    /// <b>The instance carries it for the same reason <see cref="TemplateName"/> does</b>: the map
+    /// is drawn from what is standing in the room, not from a template lookup per entity per frame.
+    ///
+    /// This did not exist until the milestone review, and neither render path had anything to read
+    /// — both took <c>DisplayName[0]</c> instead. Every mob name in the Reaches begins with its
+    /// article, so the map was a field of lowercase <c>a</c> while 68 templates carried a
+    /// deliberate scheme: <c>r</c> vermin, <c>c</c> flyers, <c>d</c> canines, <c>@</c> named NPCs
+    /// (BUGS.md #10). Item icons were read correctly the whole time, which is what made the map
+    /// look intentional rather than broken.
+    ///
+    /// The first letter stays as the fallback for an instance built without one, which is the same
+    /// trade <see cref="DisplayName"/> makes: something recognisable beats nothing.
+    /// </remarks>
+    public string Icon { get; init; } = string.Empty;
+
+    /// <summary>What to draw for this mob: its icon, or the first letter of its name.</summary>
+    public string MapGlyph =>
+        string.IsNullOrEmpty(Icon) ? DisplayName[..1] : Icon[..1];
+
     /// <summary>Level, unchanged from template (not stat-adjusted).</summary>
     public int Level { get; set; }
 

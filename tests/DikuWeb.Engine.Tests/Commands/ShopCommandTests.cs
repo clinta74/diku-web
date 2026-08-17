@@ -187,7 +187,27 @@ public sealed class ShopCommandTests
 
         harness.Execute(kael, "list");
 
-        Assert.Contains("ghost-item", harness.DrainText(kael), StringComparison.Ordinal);
+        // The gap is admitted; the key is not. This was the one place an ordinary customer could
+        // read an authoring identifier off a shelf (BUGS.md #14).
+        var text = harness.DrainText(kael);
+        Assert.Contains("empty space", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("ghost-item", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A builder gets the key, through the same gate every other authoring detail goes through.
+    /// </summary>
+    [Fact]
+    public void A_builder_listing_the_same_shop_is_told_which_template_is_missing()
+    {
+        var harness = Loaded();
+        var builder = harness.AddPlayer("Root", Room, role: DikuWeb.Domain.Accounts.AccountRole.Builder);
+        AddShopkeeper(harness, "ghost-item");
+        harness.Drain(builder);
+
+        harness.Execute(builder, "list");
+
+        Assert.Contains("ghost-item", harness.DrainText(builder), StringComparison.Ordinal);
     }
 
     [Fact]

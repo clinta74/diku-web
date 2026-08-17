@@ -88,7 +88,13 @@ public sealed class BindTests
         harness.Execute(actor, "bind");
 
         Assert.Equal(East, actor.Character.RespawnRoomKey);
-        Assert.Contains(West.ToString(), harness.DrainText(actor), StringComparison.Ordinal);
+
+        // By name, not by key. It used to assert the raw "test.zone.west", which is an authoring
+        // identifier and exactly what a player should never be shown (BUGS.md #14) - so the old
+        // assertion was pinning the leak rather than the behaviour it was written for.
+        var text = harness.DrainText(actor);
+        Assert.Contains("The west room", text, StringComparison.Ordinal);
+        Assert.DoesNotContain(West.ToString(), text, StringComparison.Ordinal);
     }
 
     [Fact]

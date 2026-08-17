@@ -151,9 +151,10 @@ public sealed class SpawnerSystem(
                 world.AddMob(mob);
                 touched.Add(room);
 
-                // Narrate spawn to room occupants
-                var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
-                var prose = NarrationHelper.BuildSentence(displayName, "appears.");
+                // Narrate spawn to room occupants. `mob.DisplayName`, not a hand-written copy of
+                // the same fallback - which is the duplication Mob.DisplayName exists to end, and
+                // this was one of three surviving copies (BUGS.md #14).
+                var prose = NarrationHelper.BuildSentence(mob.DisplayName, "appears.");
                 foreach (var occupant in world.OccupantsOf(room))
                 {
                     occupant.SendText(prose, "arrival");
@@ -213,9 +214,9 @@ public sealed class SpawnerSystem(
             world.AddItem(item);
             touched.Add(room);
 
-            // Narrate spawn to room occupants
-            var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
-            var prose = NarrationHelper.BuildSentence(displayName, "appears.");
+            // Narrate spawn to room occupants. See the mob branch above: ItemInstance carries the
+            // same DisplayName property for the same reason.
+            var prose = NarrationHelper.BuildSentence(item.DisplayName, "appears.");
             foreach (var occupant in world.OccupantsOf(room))
             {
                 occupant.SendText(prose, "arrival");

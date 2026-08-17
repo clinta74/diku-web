@@ -123,7 +123,7 @@ public sealed class RoomLayoutService
             }
 
             var (x, y) = placeable[index];
-            var icon = mob.DisplayName[0].ToString();
+            var icon = mob.MapGlyph;
             entities.Add(new MapEntity(entityId, icon, x, y, MobLabel.For(mobs, mob), "mob"));
         }
 
@@ -138,8 +138,7 @@ public sealed class RoomLayoutService
             }
 
             var (x, y) = placeable[index];
-            var displayName = string.IsNullOrEmpty(item.TemplateName) ? item.TemplateKey : item.TemplateName;
-            entities.Add(new MapEntity(entityId, item.Icon, x, y, displayName, "item"));
+            entities.Add(new MapEntity(entityId, item.Icon, x, y, item.DisplayName, "item"));
         }
 
         return new MapPayload(width, height, terrain, entities);
