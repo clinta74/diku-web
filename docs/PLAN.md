@@ -726,6 +726,41 @@ because each duellist targets the other, a taunted player stays in because the m
 still names them, and a party standing over a corpse falls out because removing the corpse already
 cleared every target that pointed at it.
 
+**Who an aggressive mob jumps: the room's threat leader, otherwise at random.** This was
+`occupants.FirstOrDefault()` over a list in arrival order, so every aggressive mob in a room attacked
+whoever had stood in it longest — deterministically, and for a reason no player could see. Three
+things came out of that, and the rule now has a clause for each:
+
+| | Rule |
+|---|---|
+| **Eligibility** | **A link-dead character is never an opening target.** §3.6 leaves a dropped player standing in the room for the whole grace window, and being the longest-standing occupant they soaked every aggressive mob in it and could be killed while offline. A room holding nothing but dropped connections starts no fight at all |
+| **The pick** | The eligible occupant holding the **most threat against any one mob** in this room's fight — the tank — and at **random** when nobody holds any |
+| **The floor** | Threat counts as earned only **above `CombatEngagement.OpeningThreat`**. A bare seed is not evidence of tanking |
+
+- **Only the opening target.** Everything after it was already right, and the review's claim that
+  tanking was "impossible and unimplementable" was wrong: a hate list is a cumulative damage meter
+  and the loop re-reads `GetTopHater` every round, so a taunt and simply out-damaging everyone both
+  pull an engaged mob. A Warden can even taunt-*pull*, because `taunt` engages. What no amount of
+  threat could reach was the mob that opened the fight itself — and **an add walking into a fight and
+  ignoring the tank holding it** was the sharp end of that.
+- **The floor is load-bearing, not defensive.** Engaging seeds one point of threat so the mob has
+  somebody to swing at. Read as earned, that would make the first person a mob rolled onto the room's
+  leader and send every other mob after them — the deterministic pile-on again, with a random first
+  step. For the same reason the measure is the **highest** threat held against one mob rather than the
+  total across mobs: a sum lets two seeds add up to something that reads as earned before anyone has
+  struck a blow.
+- **Random is the honest answer for an unprovoked mob**, not a shrug. Nobody has earned its
+  attention, and arrival order was never something a player could read or plan around. Being jumped
+  in a quiet room is the drama a taunt answers.
+- **Dropping out mid-fight is deliberately not covered.** `CombatSystem` keeps swinging at a player
+  whose connection fails, and they may well die and rebind. Mobs disengaging on a lost connection
+  would make pulling the plug the safest escape in the game. There is a test asserting this so it
+  does not get tidied into a fix.
+- `TryAggress` goes through `CombatEngagement.Engage` with `retarget: false` — the fourth caller, and
+  it had already drifted: it seeded hate unconditionally rather than as a floor, handing a free point
+  of threat to whoever a mob re-aggressed on. `retarget: false` is why being jumped gives you a combat
+  state and no target: you still have to `attack` to fight back.
+
 ### 4.7 Progression
 
 Levels 1–50. XP from kills, quest completion, and first-time room discovery — rewarding
@@ -2345,9 +2380,8 @@ Then **Phase 7**, the mobile client, planned in full in [MOBILE.md](MOBILE.md).
 
 - A changelog, or GitHub releases — nothing records what changed between two builds.
 - **The milestone review** over command, room, item, mob and quest — `BUGS.md` #6–#25. Its Tier 1 is
-  closed and so are the three guards it argued for; what is left there is the design questions it
-  deliberately did not answer, chiefly the aggression target rule, mob regeneration and leashing,
-  and quest accept/decline.
+  closed and so are the three guards it argued for; the aggression target rule it deferred is now
+  answered too (§4.6). What is left there is mob regeneration and leashing, and quest accept/decline.
 - **Balance is unmeasured.** `MobAttackBaseline`, quest XP scaling, and solo/group difficulty per
   Path per band were all chosen rather than observed. This needs play, not review.
 - **The Reaches have still never been walked end to end.** Every act's chain is arithmetic that

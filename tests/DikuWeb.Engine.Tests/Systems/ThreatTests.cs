@@ -256,4 +256,33 @@ public sealed class ThreatTests
 
         Assert.Equal(40, combat.HateOf(mobId, playerId));
     }
+
+    /// <summary>
+    /// "How angry is the angriest thing here at you" — the question an aggressive mob asks when it
+    /// decides who to open on (BUGS.md #20).
+    /// </summary>
+    /// <remarks>
+    /// A maximum rather than a total across mobs, and that is load-bearing. Engaging seeds one point
+    /// of threat, so summing would let two mobs jumping the same person add up to something that
+    /// reads as earned threat before anyone has struck a blow.
+    /// </remarks>
+    [Fact]
+    public void The_threat_someone_holds_is_the_highest_against_one_mob_not_the_sum()
+    {
+        var harness = Loaded();
+        var combat = harness.World.GetOrCreateCombat(West);
+
+        var wolf = EntityId.ForMob(Guid.CreateVersion7());
+        var hound = EntityId.ForMob(Guid.CreateVersion7());
+        var player = EntityId.ForCharacter(Guid.CreateVersion7());
+        var stranger = EntityId.ForCharacter(Guid.CreateVersion7());
+
+        combat.AddCombatant(wolf);
+        combat.AddCombatant(hound);
+        combat.AddToHateList(wolf, player, 30);
+        combat.AddToHateList(hound, player, 70);
+
+        Assert.Equal(70, combat.HighestHateHeldBy(player));
+        Assert.Equal(0, combat.HighestHateHeldBy(stranger));
+    }
 }

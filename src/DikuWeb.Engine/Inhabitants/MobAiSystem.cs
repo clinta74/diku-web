@@ -6,6 +6,7 @@ using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Randomness;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Presentation;
+using DikuWeb.Engine.Systems;
 using DikuWeb.Engine.Time;
 using DikuWeb.Engine.World;
 
@@ -97,7 +98,7 @@ public sealed class MobAiSystem(
         // Aggression: attack valid targets in the room
         if (ShouldAggress(mob, template, roomKey, world))
         {
-            TryAggress(world, roomKey, mob, template);
+            TryAggress(world, roomKey, mob);
         }
     }
 
@@ -380,36 +381,99 @@ public sealed class MobAiSystem(
             return false;
         }
 
-        // At least one player must be in the room
-        return world.OccupantsOf(roomKey).Count > 0;
+        // At least one player must be a target it is allowed to open on
+        return EligibleTargets(world, roomKey).Count > 0;
     }
 
-    private void TryAggress(WorldState world, RoomKey roomKey, Mob mob, MobTemplate template)
+    /// <summary>
+    /// Who an aggressive mob may open a fight on (BUGS.md #20).
+    /// </summary>
+    /// <remarks>
+    /// <b>Link-dead characters are not targets.</b> §3.6 leaves a dropped player standing in the
+    /// room for the whole grace window, and they were both an occupant and — being whoever had
+    /// stood there longest — the one the old arrival-order rule always picked. So a disconnected
+    /// body soaked every aggressive mob in the room and could be killed while its owner was
+    /// offline.
+    ///
+    /// <b>Only the opening target.</b> Going link-dead in the middle of a fight is not covered here
+    /// and deliberately not covered anywhere: <c>CombatSystem</c> keeps swinging, and a player who
+    /// drops mid-fight may well die and rebind. Dropping out is not a way to leave a fight.
+    /// </remarks>
+    private static List<PlayerActor> EligibleTargets(WorldState world, RoomKey roomKey) =>
+        [.. world.OccupantsOf(roomKey).Where(occupant => !occupant.IsLinkDead)];
+
+    /// <summary>
+    /// Which of them it jumps: the room's threat leader if there is one, otherwise at random.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This used to be <c>occupants.FirstOrDefault()</c> over a list in strict arrival order, so
+    /// every aggressive mob in a room attacked whoever had stood in it longest, deterministically
+    /// and for reasons no player could see (BUGS.md #20).
+    /// </para>
+    /// <para>
+    /// <b>An add joins the fight on whoever is already holding it.</b> That is the case tanking
+    /// actually turns on — the threat machinery already answers the rest, because a hate list is a
+    /// cumulative damage meter and <c>CombatSystem</c> re-reads <c>GetTopHater</c> every round, so
+    /// both a taunt and simply out-damaging everyone pull a mob that is already engaged. What no
+    /// amount of threat could reach was the opening target, and a wandering add walking into a fight
+    /// that ignored the tank entirely was the sharp end of it.
+    /// </para>
+    /// <para>
+    /// <b>Above the opening seed, not merely above zero.</b> Engaging seeds
+    /// <see cref="CombatEngagement.OpeningThreat"/> so a mob has someone to swing at, which means a
+    /// bare seed is not evidence of anyone tanking anything — without the floor the first mob to
+    /// roll at random would make its victim the room's leader and every other mob would pile onto
+    /// them, which is the deterministic pile-on again with a random first step.
+    /// </para>
+    /// <para>
+    /// <b>Otherwise at random.</b> A mob that starts a fight in a quiet room is the drama the tank
+    /// answers with a taunt; nobody has earned its attention yet, and arrival order was never
+    /// something the player could read or plan around. Ties among equal threat fall back to arrival
+    /// order, which is arbitrary but only reachable between two people tanking equally hard.
+    /// </para>
+    /// </remarks>
+    private PlayerActor PickAggressionTarget(
+        WorldState world,
+        RoomKey roomKey,
+        List<PlayerActor> eligible)
     {
-        // Find first valid player target
-        var occupants = world.OccupantsOf(roomKey).ToList();
-        var target = occupants.FirstOrDefault();
-        if (target == null)
+        var combat = world.FindCombat(roomKey);
+
+        var leader = combat is null
+            ? null
+            : eligible
+                .Select(occupant => (
+                    Actor: occupant,
+                    Threat: combat.HighestHateHeldBy(EntityId.ForCharacter(occupant.CharacterId))))
+                .Where(held => held.Threat > CombatEngagement.OpeningThreat)
+                .OrderByDescending(held => held.Threat)
+                .Select(held => held.Actor)
+                .FirstOrDefault();
+
+        return leader ?? eligible[random.Next(0, eligible.Count)];
+    }
+
+    private void TryAggress(WorldState world, RoomKey roomKey, Mob mob)
+    {
+        var eligible = EligibleTargets(world, roomKey);
+        if (eligible.Count == 0)
         {
             return;
         }
 
-        // Initiate combat
+        var target = PickAggressionTarget(world, roomKey, eligible);
         var targetId = EntityId.ForCharacter(target.CharacterId);
-        var mobId = EntityId.ForMob(mob.Id);
 
-        var combat = world.GetOrCreateCombat(roomKey);
-        combat.AddCombatant(mobId);
-        combat.AddCombatant(targetId);
+        // The six steps of starting a fight live in one place. This is the fourth caller, and it
+        // had already drifted from the other three: it seeded hate unconditionally rather than only
+        // as a floor, which handed a point of threat to whoever a mob re-aggressed on.
+        //
+        // retarget: false — the mob is choosing, not the player. Being jumped must not swing your
+        // sword round at something you did not pick; you still have to `attack` to fight back.
+        CombatEngagement.Engage(world, target.Character, mob, retarget: false);
 
-        // Seed hate list so GetTopHater works on first tick
-        combat.AddToHateList(mobId, targetId, 1);
-
-        mob.CombatState = CombatState.Fighting;
         mob.CurrentTarget = targetId;
-
-        target.Character.CombatState = CombatState.Fighting;
-        // Note: Don't set target.Character.CurrentTarget — player must `kill` to fight back
 
         var label = MobLabel.For(world.MobsIn(roomKey), mob);
 

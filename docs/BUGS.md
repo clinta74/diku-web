@@ -52,7 +52,7 @@ class. Only going and looking is, which is what #22–#24 are meant to replace.
 | 17 | Three dials authored and wired to nothing | Latent | Call-site sweep | **Fixed** (two deleted, one built) |
 | 18 | `noMob` skips flag inheritance | Latent | By inspection | **Fixed** |
 | 19 | `RoomFlag.Phase` is plumbed to the browser and rendered by nothing | Latent | By inspection | **Fixed** |
-| 20 | `TryAggress` targets by arrival order; link-dead players soak aggro | Latent | By inspection | Open |
+| 20 | `TryAggress` targets by arrival order; link-dead players soak aggro | Latent | By inspection | **Fixed** |
 | 21 | Player targeting is exact-match in combat, prefix elsewhere | Latent | By inspection | **Fixed** |
 | 22 | `VerbReachabilityTests` does not test what its comment says | Coverage gap | By inspection | **Fixed** |
 | 23 | No guard that a change record reaches the cache and the database | Coverage gap | Found 2 live bugs | **Fixed** |
@@ -297,6 +297,41 @@ attacks whoever has stood in the room longest. In severity order:
 **Limited by**: only the *opening* target is chosen this way. Once engaged, the mob switches to
 whoever has done the most damage. Changing the rule is a design decision and is **out of scope**;
 filtering link-dead characters is not, and should be split out.
+
+**Correction — item 2 was wrong.** Tanking is built and works. A hate list is a cumulative damage
+meter, `CombatSystem.ResolveTargetOf` re-reads `GetTopHater` every round, and `taunt` writes threat
+through `Combat.ForceTopHater` — so both routes pull an *engaged* mob, and `taunt` engages, so a
+Warden can even taunt-pull. Only the opening target was out of reach, which makes the real complaint
+narrower and sharper than what was written: **an add walking into a fight and ignoring the tank
+holding it.**
+
+**Fix.** The rule is now the room's threat leader, otherwise at random, with link-dead characters
+excluded from eligibility — recorded in full in `PLAN.md` §4.6. Three parts:
+
+- `EligibleTargets` drops link-dead occupants. `ShouldAggress` counts eligible occupants rather than
+  all of them, so a room holding nothing but dropped connections starts no fight instead of engaging
+  a body and swinging at it for the grace window.
+- `PickAggressionTarget` takes the eligible occupant with the highest threat against any one mob in
+  the room's fight, above `CombatEngagement.OpeningThreat`, and rolls `IRandomSource` when nobody
+  qualifies. The floor and the use of a maximum rather than a sum are both there to stop a bare
+  opening seed reading as earned threat — without them the first person a mob rolled onto would
+  become the room's leader and every other mob would pile onto them, which is the old determinism
+  with a random first step.
+- `TryAggress` now goes through `CombatEngagement.Engage`. It was the fourth hand-rolled copy of the
+  six steps and had already drifted the way that file's own doc warns about: it called
+  `AddToHateList(mobId, targetId, 1)` unconditionally instead of honouring the `HateOf == 0` floor,
+  handing a free point of threat to whoever a mob re-aggressed on.
+
+**Deliberately not fixed:** going link-dead *mid-fight*. `CombatSystem` keeps swinging and the
+player may die and rebind, because mobs disengaging on a lost connection would make pulling the plug
+the safest escape in the game. There is a test asserting it so it does not get tidied into a fix.
+
+**Test.** `AggressionTargetTests` — nine cases, **six of which fail against the arrival-order rule**:
+the link-dead body is passed over, a room of only link-dead bodies starts no fight, an add joins on
+whoever holds the room, the leader is threat and not arrival order, the seed floor holds in both
+directions (a theory over twelve seeds, because "not forced" is the claim and one seed could agree by
+luck), an unprovoked mob does not always pick the same player, and being jumped leaves you engaged but
+untargeted. Plus `ThreatTests` for `Combat.HighestHateHeldBy` being a maximum and not a sum.
 
 ---
 

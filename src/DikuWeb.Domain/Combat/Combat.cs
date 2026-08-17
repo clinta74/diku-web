@@ -155,6 +155,23 @@ public sealed class Combat
             : 0;
 
     /// <summary>
+    /// The highest threat <paramref name="attackerId"/> holds against any one mob in this fight —
+    /// the mirror of <see cref="HighestHate"/>, and zero for someone nothing here is angry at.
+    /// </summary>
+    /// <remarks>
+    /// <b>The highest single figure, not the total across mobs.</b> Reading it as "who is tanking
+    /// something here" is the point, and a sum would not answer that: threat is seeded at
+    /// <c>OpeningThreat</c> whenever a fight opens, so two mobs jumping the same person would total
+    /// enough to read as earned threat when nobody has struck a blow. A maximum ignores how many
+    /// things are angry and reports only how angry the angriest one is.
+    /// </remarks>
+    public int HighestHateHeldBy(string attackerId) =>
+        HateLists.Values
+            .Select(list => list.TryGetValue(attackerId, out var hate) ? hate : 0)
+            .DefaultIfEmpty(0)
+            .Max();
+
+    /// <summary>
     /// Puts one attacker at the top of a mob's hate list, ahead of the current leader by
     /// <paramref name="lead"/>, and returns the threat they now hold.
     /// </summary>

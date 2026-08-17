@@ -274,9 +274,14 @@ Add anything noticed while playing here. Cleared as items are done.
     `assist` now inherits that rule for consistency. Untested against play: if mis-targeting in a
     group turns out to be common, the fix is relaxing it for both verbs at once, not for one.
 
-  - **An aggressive mob always jumps the same player.** `MobAiSystem.TryAggress` takes
-    `occupants.FirstOrDefault()`, so who gets attacked is decided by room-list order rather than by
-    anything about the party. Found while investigating the above; not fixed.
+  - **An aggressive mob always jumps the same player: fixed, and a link-dead body was soaking it.**
+    `MobAiSystem.TryAggress` took `occupants.FirstOrDefault()`, so who got attacked was decided by
+    room-list order. The worst case was not a party one — a disconnected character stands in the room
+    for the whole grace window and, having stood there longest, absorbed every aggressive mob in it and
+    could be killed while offline. Now the room's **threat leader**, so an add joins the fight on
+    whoever is holding it, and **at random** when nobody has earned its attention. Link-dead characters
+    are not opening targets; dropping out *mid*-fight still gets you killed, which is deliberate
+    (BUGS.md #20, PLAN.md §4.6).
 
   - **quest items were named by key: done, and there were three of them.** Reported as
     `You don't have enough ossara-fallen-marker.`; the other two were the **progress** line
