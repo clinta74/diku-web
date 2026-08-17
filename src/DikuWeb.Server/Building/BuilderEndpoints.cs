@@ -716,11 +716,11 @@ public static class BuilderEndpoints
             return Invalid("An import needs a bundle.");
         }
 
-        if (bundle.FormatVersion != WorldBundle.CurrentFormatVersion)
+        if (!BundleFormat.IsCurrent(bundle))
         {
-            return Invalid(
-                $"This is a version {bundle.FormatVersion} bundle; this server reads version "
-                + $"{WorldBundle.CurrentFormatVersion}.");
+            // Worded in one place, so a builder who trips this at the command line and again at
+            // the endpoint reads the same sentence rather than two accounts of the same refusal.
+            return Invalid(BundleFormat.VersionRefusal(bundle.FormatVersion));
         }
 
         http.TryGetAccountId(out var accountId);

@@ -3,6 +3,13 @@
 
     python tools/check-builder-keys.py
 
+**A one-off sweep, kept for re-running by hand. Not part of the toolchain.** Everything else under
+tools/ that a contributor needs is being moved to C# or TypeScript, so building and checking this
+repo needs only .NET and Node - the two it already needs. This one stays in Python deliberately: it
+is not a tool others need, it is a sweep that found three bugs (below), and porting it would buy
+nothing. Do not wire it into CI, and do not assume it has been kept in step with the engine since
+the last time somebody ran it.
+
 The builder's field lists are a **transcription** of engine contracts written in another language,
 and a wrong entry fails in the quietest way this codebase has: the value is typed by a builder,
 stored, exported, re-imported, and never consulted. Nothing throws, nothing logs, and the number

@@ -163,20 +163,21 @@ builder.Services
 
 builder.Services.AddAuthorization(options => options.AddDikuWebPolicies());
 
-// Enums cross the wire as their names, not their ordinals.
+// Enums cross the wire as their names, not their ordinals. The general converter is what a
+// bespoke converter per enum could not be - an ability's Path, cost type, and targeting mode all
+// serialised as integers until it was added, so the Abilities tab filtered `path === 'Warden'`
+// against a 0 and rendered an empty list.
 //
-// TemplateKindConverter came first and stays first, because converters are consulted in order and
-// it is stricter than the general one: it refuses a number outright. The general converter behind
-// it covers every other enum, which is what a bespoke converter per enum could not - an ability's
-// Path, cost type, and targeting mode all serialised as integers until it was added, so the
-// Abilities tab filtered `path === 'Warden'` against a 0 and rendered an empty list.
-//
-// Property-level [JsonConverter] attributes still win over both, so the nullable request enums
-// keep NullableEnumConverter and its tolerance for an unrecognised value.
+// The set comes from BundleFormat, and the ordering rationale lives there with it. That is not
+// tidiness: a bundle reaches the import endpoint through this pipeline and reaches tooling through
+// a file read, and the two agreeing used to depend on nobody noticing they had drifted. Reading a
+// bundle with anything less than this throws on the first path-restricted item in the Reaches.
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
-    options.SerializerOptions.Converters.Add(new TemplateKindConverter());
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    foreach (var converter in BundleFormat.Converters())
+    {
+        options.SerializerOptions.Converters.Add(converter);
+    }
 });
 
 // The world builder (PLAN.md §7). Queries and writes are scoped because they own a DbContext;
