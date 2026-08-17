@@ -347,10 +347,6 @@ internal static class BuilderCommands
         ctx.View.RefreshRoom(ctx.World, destination.Key);
     }
 
-    /// <summary>
-    /// Unknown-verb wording rather than "you are not a builder": a player has no business
-    /// learning that these commands exist.
-    /// </summary>
     private static void Spawn(CommandContext ctx, SpawnTools tools)
     {
         if (!RequireBuilder(ctx))
@@ -622,6 +618,13 @@ internal static class BuilderCommands
         ctx.View.RefreshRoom(ctx.World, roomKey);
     }
 
+    /// <summary>
+    /// Unknown-verb wording rather than "you are not a builder": a player has no business
+    /// learning that these commands exist.
+    /// </summary>
+    /// <remarks>
+    /// This doc sat over <c>Spawn</c>, which is not what it describes.
+    /// </remarks>
     private static bool RequireBuilder(CommandContext ctx)
     {
         if (ctx.Actor.IsBuilder)

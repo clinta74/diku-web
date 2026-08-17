@@ -414,7 +414,7 @@ public sealed class CommandRegistry
             foreach (var item in equipped.OrderBy(i => i.EquippedSlot))
             {
                 var slot = item.EquippedSlot?.ToString() ?? "Unknown";
-                spans.Add(new TextSpan($"\n  [{slot}] {DisplayNameOf(item)}"));
+                spans.Add(new TextSpan($"\n  [{slot}] {item.DisplayName}"));
 
                 // Worn quest items are tagged too. A quest reward with a slot is ordinary
                 // content, and it would be odd for the tag to disappear the moment it is put on.
@@ -441,7 +441,7 @@ public sealed class CommandRegistry
             // reads as a bug. The collapse is a sentence, not a data structure: nothing about the
             // instances merges, and get / drop / sell / examine still act on one item.
             foreach (var group in unequipped
-                .GroupBy(i => (Name: DisplayNameOf(i), Quest: ItemState.IsQuestItem(i)))
+                .GroupBy(i => (Name: i.DisplayName, Quest: ItemState.IsQuestItem(i)))
                 .OrderBy(g => g.Key.Name, StringComparer.OrdinalIgnoreCase))
             {
                 spans.Add(new TextSpan($"\n  {group.Key.Name}"));
@@ -479,18 +479,6 @@ public sealed class CommandRegistry
         ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
     }
 
-    /// <summary>
-    /// What to call an item on screen, falling back to its key when the instance carries no name.
-    /// </summary>
-    /// <remarks>
-    /// The fallback matters more than it looks: a nameless line is unmatchable by every verb that
-    /// takes an item, so showing the key at least tells the player what to type. It is also the
-    /// grouping key the pack listing collapses on (§4.14) - by what is displayed rather than by
-    /// the template, because two things a player cannot tell apart should not read as two lines.
-    /// </remarks>
-    private static string DisplayNameOf(ItemInstance item) =>
-        item.DisplayName;
-
     private static void Examine(CommandContext ctx)
     {
         if (!ctx.HasArgument)
@@ -527,7 +515,7 @@ public sealed class CommandRegistry
     private static void ExamineItem(CommandContext ctx, ItemInstance item)
     {
         var template = ctx.ItemTemplates?.Get(item.TemplateKey);
-        var article = NarrationHelper.WithDefiniteArticle(item.TemplateName);
+        var article = NarrationHelper.WithDefiniteArticle(item.DisplayName);
 
         var spans = new List<TextSpan>
         {
@@ -747,7 +735,7 @@ public sealed class CommandRegistry
             ItemRules.AlreadyHolds(ctx.World, ctx.Actor.CharacterId, targetItem.TemplateKey))
         {
             ctx.Reply(
-                $"You already carry {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}, "
+                $"You already carry {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}, "
                 + "and one is all anyone gets.",
                 "bad");
             return;
@@ -756,8 +744,8 @@ public sealed class CommandRegistry
         ctx.World.PickUpItem(targetItem, ctx.Actor.CharacterId);
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
-        ctx.Reply($"You take {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} takes {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "movement");
+        ctx.Reply($"You take {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} takes {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "movement");
         ctx.MarkRoomForRefresh(ctx.Actor.RoomKey);
     }
 
@@ -784,7 +772,7 @@ public sealed class CommandRegistry
         if (targetItem.EquippedSlot is not null)
         {
             ctx.Reply(
-                $"You'll have to remove {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)} first.",
+                $"You'll have to remove {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)} first.",
                 "bad");
             return;
         }
@@ -794,7 +782,7 @@ public sealed class CommandRegistry
             // The way out is 'destroy', and saying so is the whole point - a bound item with no
             // stated way to be rid of it is a slot in the pack the player cannot reason about.
             ctx.Reply(
-                $"{NarrationHelper.WithDefiniteArticle(targetItem.TemplateName, capitalize: true)} "
+                $"{NarrationHelper.WithDefiniteArticle(targetItem.DisplayName, capitalize: true)} "
                 + "will not leave your hand. You could destroy it, if you truly meant to.",
                 "bad");
             return;
@@ -803,8 +791,8 @@ public sealed class CommandRegistry
         ctx.World.DropItem(targetItem, ctx.Actor.RoomKey);
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
-        ctx.Reply($"You drop {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} drops {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "movement");
+        ctx.Reply($"You drop {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} drops {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "movement");
         ctx.MarkRoomForRefresh(ctx.Actor.RoomKey);
     }
 
@@ -834,7 +822,7 @@ public sealed class CommandRegistry
             return;
         }
 
-        var article = NarrationHelper.WithDefiniteArticle(targetItem.TemplateName);
+        var article = NarrationHelper.WithDefiniteArticle(targetItem.DisplayName);
 
         if (targetItem.EquippedSlot is not null)
         {
@@ -876,11 +864,11 @@ public sealed class CommandRegistry
 
         if (targetItem.EquippedSlot is not null)
         {
-            ctx.Reply($"You're already wearing {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "bad");
+            ctx.Reply($"You're already wearing {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "bad");
             return;
         }
 
-        var article = NarrationHelper.WithDefiniteArticle(targetItem.TemplateName);
+        var article = NarrationHelper.WithDefiniteArticle(targetItem.DisplayName);
         var slot = SlotFor(ctx, targetItem);
 
         if (slot is null)
@@ -897,10 +885,7 @@ public sealed class CommandRegistry
             return;
         }
 
-        if (!TryEquip(ctx, targetItem, slot.Value, "wear", "wears"))
-        {
-            return;
-        }
+        TryEquip(ctx, targetItem, slot.Value, "wear", "wears");
     }
 
     private static void Wield(CommandContext ctx)
@@ -922,11 +907,11 @@ public sealed class CommandRegistry
 
         if (targetItem.EquippedSlot is not null)
         {
-            ctx.Reply($"You're already wielding {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "bad");
+            ctx.Reply($"You're already wielding {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "bad");
             return;
         }
 
-        var article = NarrationHelper.WithDefiniteArticle(targetItem.TemplateName);
+        var article = NarrationHelper.WithDefiniteArticle(targetItem.DisplayName);
         var slot = SlotFor(ctx, targetItem);
 
         if (slot is null)
@@ -1045,7 +1030,7 @@ public sealed class CommandRegistry
                 ctx.ItemTemplates,
                 item.TemplateKey,
                 ctx.Actor.Character.Path,
-                NarrationHelper.WithDefiniteArticle(item.TemplateName, capitalize: true)) is { } wrongPath)
+                NarrationHelper.WithDefiniteArticle(item.DisplayName, capitalize: true)) is { } wrongPath)
         {
             ctx.Reply(wrongPath, "bad");
             return false;
@@ -1056,12 +1041,12 @@ public sealed class CommandRegistry
 
         if (occupant is not null)
         {
-            var occupantName = NarrationHelper.WithDefiniteArticle(occupant.TemplateName);
+            var occupantName = NarrationHelper.WithDefiniteArticle(occupant.DisplayName);
             ctx.Reply($"You're already using your {SlotName(slot)} for {occupantName}.", "bad");
             return false;
         }
 
-        var article = NarrationHelper.WithDefiniteArticle(item.TemplateName);
+        var article = NarrationHelper.WithDefiniteArticle(item.DisplayName);
         ctx.World.EquipItem(item, slot);
         ctx.ItemSaveQueue?.Enqueue(item);
 
@@ -1097,15 +1082,15 @@ public sealed class CommandRegistry
 
         if (targetItem.EquippedSlot is null)
         {
-            ctx.Reply($"You're not wearing {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "bad");
+            ctx.Reply($"You're not wearing {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "bad");
             return;
         }
 
         ctx.World.UnequipItem(targetItem);
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
-        ctx.Reply($"You remove {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} removes {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "movement");
+        ctx.Reply($"You remove {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} removes {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "movement");
     }
 
     private static void Give(CommandContext ctx)
@@ -1170,7 +1155,7 @@ public sealed class CommandRegistry
         if (targetItem.EquippedSlot is not null)
         {
             ctx.Reply(
-                $"You'll have to remove {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)} first.",
+                $"You'll have to remove {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)} first.",
                 "bad");
             return;
         }
@@ -1180,7 +1165,7 @@ public sealed class CommandRegistry
         if (ItemRules.IsNoDrop(ctx.ItemTemplates, targetItem.TemplateKey))
         {
             ctx.Reply(
-                $"{NarrationHelper.WithDefiniteArticle(targetItem.TemplateName, capitalize: true)} "
+                $"{NarrationHelper.WithDefiniteArticle(targetItem.DisplayName, capitalize: true)} "
                 + "is yours and will not go to anyone else.",
                 "bad");
             return;
@@ -1199,9 +1184,9 @@ public sealed class CommandRegistry
         ctx.World.PickUpItem(targetItem, targetPlayer.CharacterId);
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
-        ctx.Reply($"You give {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)} to {targetPlayer.Name}.", "good");
-        targetPlayer.SendText($"{ctx.Actor.Name} gives you {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} gives {NarrationHelper.WithDefiniteArticle(targetItem.TemplateName)} to {targetPlayer.Name}.", "movement");
+        ctx.Reply($"You give {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)} to {targetPlayer.Name}.", "good");
+        targetPlayer.SendText($"{ctx.Actor.Name} gives you {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "good");
+        ctx.Broadcast($"{ctx.Actor.Name} gives {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)} to {targetPlayer.Name}.", "movement");
         ctx.MarkRoomForRefresh(ctx.Actor.RoomKey);
     }
 
@@ -1302,7 +1287,7 @@ public sealed class CommandRegistry
             foreach (var item in equipped.OrderBy(i => i.EquippedSlot))
             {
                 var slot = item.EquippedSlot?.ToString() ?? "Unknown";
-                var displayName = DisplayNameOf(item);
+                var displayName = item.DisplayName;
                 // Every stat the item carries, not the ones whose key happens to contain
                 // "Multiplier". Across content that filter admitted `damageMultiplier` and hid
                 // `armor`, `bonus` and `defense` — so every armour piece printed under a heading
@@ -1393,14 +1378,6 @@ public sealed class CommandRegistry
     }
 
     /// <summary>
-    /// The item in this list that the player meant.
-    /// </summary>
-    /// <remarks>
-    /// This demanded the whole display name or the whole key, so an "old coin" answered to
-    /// "old coin" and "old-coin" and nothing else - <c>get coin</c> failed on the only thing in
-    /// the room. See <see cref="NameMatch"/> for what counts as a match now.
-    /// </remarks>
-    /// <summary>
     /// Decides where the item name ends and the recipient begins in <c>give a b c</c>.
     /// </summary>
     /// <remarks>
@@ -1468,8 +1445,8 @@ public sealed class CommandRegistry
     /// </remarks>
     private static string RefuseGiftTo(CommandContext ctx, Mob mob, ItemInstance item)
     {
-        var who = NarrationHelper.WithDefiniteArticle(mob.TemplateName, capitalize: true);
-        var what = NarrationHelper.WithDefiniteArticle(item.TemplateName);
+        var who = NarrationHelper.WithDefiniteArticle(mob.DisplayName, capitalize: true);
+        var what = NarrationHelper.WithDefiniteArticle(item.DisplayName);
 
         var inQuests = ctx.Quests is not null
             && (ctx.Quests.GetByGiverMobKey(mob.TemplateKey).Count > 0
@@ -1494,6 +1471,17 @@ public sealed class CommandRegistry
             ctx.World.MobsIn(ctx.Actor.RoomKey), name, m => m.TemplateName, m => m.TemplateKey)
             is not null;
 
+    /// <summary>
+    /// The item in this list that the player meant.
+    /// </summary>
+    /// <remarks>
+    /// This demanded the whole display name or the whole key, so an "old coin" answered to
+    /// "old coin" and "old-coin" and nothing else - <c>get coin</c> failed on the only thing in
+    /// the room. See <see cref="NameMatch"/> for what counts as a match now.
+    ///
+    /// The doc above used to sit over <c>SplitGive</c>, where a second <c>summary</c> followed it
+    /// immediately — so the compiler discarded this one and the method it describes had none.
+    /// </remarks>
     private static ItemInstance? FindItemByName(IEnumerable<ItemInstance> items, string name) =>
         NameMatch.Best(items, name, i => i.TemplateName, i => i.TemplateKey);
 

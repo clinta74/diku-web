@@ -180,21 +180,22 @@ internal static class AdminCommands
         });
     }
 
-    /// <summary>Splits "kael being rude" into the name and whatever followed it.</summary>
+    /// <summary>
+    /// Splits "kael being rude" into the name and whatever followed it.
+    /// </summary>
+    /// <remarks>
+    /// Kept as a named wrapper because "name" is what these four verbs mean by the first word, and
+    /// because it converts empty to null: the callers test <c>is null</c>, and the shared helper
+    /// deliberately returns empty strings so a caller that does not care needs no special case.
+    /// </remarks>
     private static (string? Name, string? Remainder) SplitName(string argument)
     {
-        var trimmed = (argument ?? string.Empty).Trim();
+        // Not lowercased: this is a character name, and the caller wants what was typed.
+        var (name, rest) = CommandText.SplitFirstWord(argument, lowercase: false);
 
-        if (trimmed.Length == 0)
-        {
-            return (null, null);
-        }
-
-        var space = trimmed.IndexOf(' ', StringComparison.Ordinal);
-
-        return space < 0
-            ? (trimmed, null)
-            : (trimmed[..space], trimmed[(space + 1)..].TrimStart() is { Length: > 0 } rest ? rest : null);
+        return (
+            name.Length > 0 ? name : null,
+            rest.Length > 0 ? rest : null);
     }
 
     private static void Promote(CommandContext ctx)

@@ -147,11 +147,11 @@ public static class QuestCommands
                 // Repeatable quest can be re-offered, keeping the count of earlier runs.
                 narrations.Add(Begin(ctx, character.Id, quest, questState.TimesCompleted));
             }
-            else if (!prerequisitesMet)
-            {
-                // Prerequisites not met - silently skip
-                continue;
-            }
+
+
+            // Anything left over is a quest whose prerequisites are unmet, and it is simply not
+            // mentioned. There used to be an `else if (!prerequisitesMet) continue;` here, which
+            // was the last statement of the loop body and so did nothing the fall-through did not.
         }
 
         if (narrations.Count == 0)

@@ -22,8 +22,6 @@ public sealed class FlagSet
         _values = new Dictionary<string, FlagValue>(values, StringComparer.Ordinal);
     }
 
-    public static FlagSet Empty => new();
-
     public int Count => _values.Count;
 
     public IReadOnlyDictionary<string, FlagValue> Values => _values;
@@ -34,8 +32,6 @@ public sealed class FlagSet
     public IEnumerable<string> UnknownKeys => _values.Keys.Where(k => !RoomFlags.IsKnown(k));
 
     public bool Has(string key) => _values.ContainsKey(key);
-
-    public bool TryGet(string key, out FlagValue value) => _values.TryGetValue(key, out value);
 
     /// <summary>
     /// The boolean stored under this key, or null when absent <em>or stored as another kind</em>.

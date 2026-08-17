@@ -138,7 +138,8 @@ public static class PartyCommands
 
     private static void Group(CommandContext ctx)
     {
-        var (subcommand, rest) = SplitFirstWord(ctx.Argument);
+        // Lowercased: a subcommand is matched against a fixed vocabulary.
+        var (subcommand, rest) = CommandText.SplitFirstWord(ctx.Argument, lowercase: true);
 
         switch (subcommand)
         {
@@ -509,18 +510,4 @@ public static class PartyCommands
             ?.SendText("You are the last one left. The group breaks up.", "party");
     }
 
-    /// <summary>Splits "invite kael" into its subcommand and whatever followed it.</summary>
-    private static (string Subcommand, string Remainder) SplitFirstWord(string argument)
-    {
-        var trimmed = (argument ?? string.Empty).Trim();
-        if (trimmed.Length == 0)
-        {
-            return (string.Empty, string.Empty);
-        }
-
-        var space = trimmed.IndexOf(' ', StringComparison.Ordinal);
-        return space < 0
-            ? (trimmed.ToLowerInvariant(), string.Empty)
-            : (trimmed[..space].ToLowerInvariant(), trimmed[(space + 1)..].TrimStart());
-    }
 }

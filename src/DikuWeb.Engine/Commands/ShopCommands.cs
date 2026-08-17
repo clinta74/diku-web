@@ -274,7 +274,7 @@ public static class ShopCommands
         if (itemToSell.EquippedSlot is not null)
         {
             ctx.Reply(
-                $"You'll have to remove {NarrationHelper.WithDefiniteArticle(itemToSell.TemplateName)} first.",
+                $"You'll have to remove {NarrationHelper.WithDefiniteArticle(itemToSell.DisplayName)} first.",
                 "bad");
             return;
         }
@@ -292,7 +292,7 @@ public static class ShopCommands
         if (ItemRules.IsNoDrop(ctx.ItemTemplates, itemToSell.TemplateKey))
         {
             ctx.Reply(
-                $"{NarrationHelper.WithDefiniteArticle(itemToSell.TemplateName, capitalize: true)} "
+                $"{NarrationHelper.WithDefiniteArticle(itemToSell.DisplayName, capitalize: true)} "
                 + "will not leave your hand. You could destroy it, if you truly meant to.",
                 "bad");
             return;
@@ -310,7 +310,7 @@ public static class ShopCommands
         character.Gold += sellPrice;
 
         ctx.Reply(
-            $"You sell {NarrationHelper.WithDefiniteArticle(itemToSell.TemplateName)} for {sellPrice} gold.",
+            $"You sell {NarrationHelper.WithDefiniteArticle(itemToSell.DisplayName)} for {sellPrice} gold.",
             "success");
         ctx.Broadcast(
             $"{character.Name} sells something to {NarrationHelper.WithArticle(shopkeeperTemplate.Name)}.",

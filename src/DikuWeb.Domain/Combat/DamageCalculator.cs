@@ -144,21 +144,6 @@ public static class DamageCalculator
     }
 
     /// <summary>
-    /// Build attacker stats from a player character.
-    /// Unarmed damage: 1d4 + might modifier.
-    /// </summary>
-    public static AttackerStats StatsFrom(Character character)
-    {
-        var attackRating = (character.Level / 2) + character.Attributes.MightModifier;
-        var mightMod = character.Attributes.MightModifier;
-        return new AttackerStats(
-            AttackRating: attackRating,
-            BaseDamage: mightMod,
-            MinDamage: 1,
-            MaxDamage: 4);
-    }
-
-    /// <summary>
     /// Build attacker stats from a mob, preferring what its template declares and falling back
     /// to level-derived defaults for anything it leaves out.
     /// </summary>
@@ -263,23 +248,6 @@ public static class DamageCalculator
     /// not a rate. Raising it makes every fight in the game bloodier; that is what it is for.
     /// </remarks>
     private const int MobAttackBaseline = 6;
-
-    /// <summary>
-    /// Build defender stats from a player character, ignoring equipment.
-    /// </summary>
-    /// <remarks>
-    /// Equipment is <see cref="EquipmentResolver.ResolveDefenderStats"/>'s job — this is the
-    /// unarmoured baseline used where there is no inventory to hand, chiefly tests and previews.
-    /// </remarks>
-    public static DefenderStats DefenderStatsFrom(Character character)
-    {
-        ArgumentNullException.ThrowIfNull(character);
-
-        return new DefenderStats(
-            Level: character.Level,
-            DefenseRating: character.Attributes.AgilityModifier,
-            Armor: 0);
-    }
 
     /// <summary>
     /// Build defender stats from a mob, preferring what its template declares and falling back

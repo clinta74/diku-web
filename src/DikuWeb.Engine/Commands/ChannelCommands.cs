@@ -31,7 +31,9 @@ public static class ChannelCommands
 
     private static void Tell(CommandContext ctx)
     {
-        var (name, message) = SplitFirstWord(ctx.Argument);
+        // Not lowercased: this is who the tell is for, and NameMatch is case-insensitive
+        // anyway, so folding the case here would only make the refusal message wrong.
+        var (name, message) = CommandText.SplitFirstWord(ctx.Argument, lowercase: false);
 
         if (string.IsNullOrEmpty(name))
         {
@@ -171,17 +173,4 @@ public static class ChannelCommands
     }
 
     /// <summary>Splits "kael hello there" into the name and the rest of the line.</summary>
-    private static (string First, string Remainder) SplitFirstWord(string argument)
-    {
-        var trimmed = (argument ?? string.Empty).Trim();
-        if (trimmed.Length == 0)
-        {
-            return (string.Empty, string.Empty);
-        }
-
-        var space = trimmed.IndexOf(' ', StringComparison.Ordinal);
-        return space < 0
-            ? (trimmed, string.Empty)
-            : (trimmed[..space], trimmed[(space + 1)..].TrimStart());
-    }
 }

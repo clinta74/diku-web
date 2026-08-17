@@ -34,8 +34,6 @@ public readonly record struct RoomKey
 
     public string WorldKey => World;
 
-    public bool IsEmpty => World is null;
-
     public override string ToString() => $"{World}.{Zone}.{Room}";
 
     public static RoomKey Parse(string value) =>
