@@ -3102,10 +3102,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vance does not look up from the list. 'Every tag is issued against a name. I have names with no tags and I cannot close the book. Bring me eight and I will pay you properly and we will both stop thinking about it.'",
-        "progress": "'Eight. They are down the Owing, mostly. I am not going to pretend otherwise and I would rather you heard it from me.'",
-        "complete": "He lays them out in a row and reads each one before he writes it off. 'These are first-company names,' he says. 'Every one. I have been hiring for eleven years and I have never once seen a first-company tag come back up.'",
-        "already": "'Eight, and do not clean them. I need to read them.'"
+        "giverOffer": "Vance does not look up from the list. 'Every tag is issued against a name. I have names with no tags and I cannot close the book. Bring me eight and I will pay you properly and we will both stop thinking about it.'",
+        "giverInProgress": "'Eight. They are down the Owing, mostly. I am not going to pretend otherwise and I would rather you heard it from me.'",
+        "giverComplete": "'Eight, and do not clean them. I need to read them.'",
+        "turninReady": "He lays them out in a row and reads each one before he writes it off. 'These are first-company names,' he says. 'Every one. I have been hiring for eleven years and I have never once seen a first-company tag come back up.'"
       },
       "sortOrder": 1
     },
@@ -3130,10 +3130,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Roan checks her lamp. 'There is a room down there with books in it, dry as a bone, four hundred feet under a marsh. Bring me five pages. I want to know what is being written and I have stopped being able to go and look.'",
-        "progress": "'Five leaves. Do not read them on the stair. Read them up here where I can see your face.'",
-        "complete": "She spreads them out and goes down the columns with a fingernail. 'Wages,' she says. 'Paid weekly. Same names as Vance's tags, and the last entry is this week.' She sits down on a crate. 'Somebody is still settling up. Nobody has been down there to do it.'",
-        "already": "'Five. And mind the rope in the sump. Do not touch the rope in the sump.'"
+        "giverOffer": "Roan checks her lamp. 'There is a room down there with books in it, dry as a bone, four hundred feet under a marsh. Bring me five pages. I want to know what is being written and I have stopped being able to go and look.'",
+        "giverInProgress": "'Five leaves. Do not read them on the stair. Read them up here where I can see your face.'",
+        "giverComplete": "'Five. And mind the rope in the sump. Do not touch the rope in the sump.'",
+        "turninReady": "She spreads them out and goes down the columns with a fingernail. 'Wages,' she says. 'Paid weekly. Same names as Vance's tags, and the last entry is this week.' She sits down on a crate. 'Somebody is still settling up. Nobody has been down there to do it.'"
       },
       "sortOrder": 2
     },
@@ -3158,10 +3158,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "'The richest hole in the Reaches and it does not pay a copper,' Roan says. 'You noticed. Everyone notices and nobody says it out loud. That is because the gold from the Owing is going somewhere, and it has been going there since before the Landing had a name.'",
-        "progress": "'Past the first workings. There is a chamber that nobody cut - you will know it, the walls are gate-stone all the way round. He is in there with the book. Bring me the mark.'",
-        "complete": "Roan turns the wedge over twice and puts it down as though it were hot. 'They opened the gate on credit,' she says. 'Two generations of us eating well on it. Mhorrek is not a punishment, he is an invoice.' She presses the mark into your hand. 'Azhen built the gates. Go and ask them what the terms were, because we plainly did not.'",
-        "already": "'He is still down there. He is not going anywhere. That is rather the point of him.'"
+        "giverOffer": "'The richest hole in the Reaches and it does not pay a copper,' Roan says. 'You noticed. Everyone notices and nobody says it out loud. That is because the gold from the Owing is going somewhere, and it has been going there since before the Landing had a name.'",
+        "giverInProgress": "'Past the first workings. There is a chamber that nobody cut - you will know it, the walls are gate-stone all the way round. He is in there with the book. Bring me the mark.'",
+        "giverComplete": "'He is still down there. He is not going anywhere. That is rather the point of him.'",
+        "turninReady": "Roan turns the wedge over twice and puts it down as though it were hot. 'They opened the gate on credit,' she says. 'Two generations of us eating well on it. Mhorrek is not a punishment, he is an invoice.' She presses the mark into your hand. 'Azhen built the gates. Go and ask them what the terms were, because we plainly did not.'"
       },
       "sortOrder": 3
     },
@@ -3187,10 +3187,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
-        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
-        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
-        "already": "'When it has been through something. Not before.'"
+        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 12
     },
@@ -3216,10 +3216,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
-        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
-        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
-        "already": "'When it has been through something. Not before.'"
+        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 12
     },
@@ -3245,10 +3245,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
-        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
-        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
-        "already": "'When it has been through something. Not before.'"
+        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 12
     },
@@ -3274,10 +3274,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
-        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
-        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
-        "already": "'When it has been through something. Not before.'"
+        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 12
     }

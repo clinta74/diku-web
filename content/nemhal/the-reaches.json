@@ -3186,10 +3186,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Aveth does not soften it. 'Every one of them is on a rota, and every one of them has a token. I want ten. You will have to take them, and they will not understand why, because nobody has told them anything.'",
-        "progress": "'Ten tokens. Carved bone. They wear them under everything, which tells you what they think of them.'",
-        "complete": "She lays them in a line and counts under her breath. 'Two hundred years of issue and the numbers are still climbing,' she says. 'They are not leftovers. They are being replaced.'",
-        "already": "'Ten. And do not apologise to them. It does not reach.'"
+        "giverOffer": "Aveth does not soften it. 'Every one of them is on a rota, and every one of them has a token. I want ten. You will have to take them, and they will not understand why, because nobody has told them anything.'",
+        "giverInProgress": "'Ten tokens. Carved bone. They wear them under everything, which tells you what they think of them.'",
+        "giverComplete": "'Ten. And do not apologise to them. It does not reach.'",
+        "turninReady": "She lays them in a line and counts under her breath. 'Two hundred years of issue and the numbers are still climbing,' she says. 'They are not leftovers. They are being replaced.'"
       },
       "sortOrder": 1
     },
@@ -3214,10 +3214,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "'They read it on the hour,' Aveth says. 'I have heard it through a wall for nine years and I have never once seen the text. Bring me pages.'",
-        "progress": "'Six. From the cloister if you can - the chapter house copies are corrected and I want the ones they actually read.'",
-        "complete": "She reads all six without stopping. 'Every prayer is for a recovery,' she says at last. 'Not for the dead. For the sick. They are not mourning her.' She folds them very carefully. 'They are nursing her.'",
-        "already": "'Six pages. Any six. They are all the same and I want to be sure of that.'"
+        "giverOffer": "'They read it on the hour,' Aveth says. 'I have heard it through a wall for nine years and I have never once seen the text. Bring me pages.'",
+        "giverInProgress": "'Six. From the cloister if you can - the chapter house copies are corrected and I want the ones they actually read.'",
+        "giverComplete": "'Six pages. Any six. They are all the same and I want to be sure of that.'",
+        "turninReady": "She reads all six without stopping. 'Every prayer is for a recovery,' she says at last. 'Not for the dead. For the sick. They are not mourning her.' She folds them very carefully. 'They are nursing her.'"
       },
       "sortOrder": 2
     },
@@ -3242,10 +3242,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "'I have been within forty feet of her for nine years,' Aveth says. 'I have never gone down. Not out of respect. I did not want to be right.' She looks at you steadily. 'Bring me a corner of the shroud. And look past her while you are down there. Properly.'",
-        "progress": "'Past the bier the chamber narrows. Go to the end of it. The First Mourner is in the niche and she will not let you take anything, so do not plan on asking.'",
-        "complete": "Aveth holds the linen and does not look at it. 'You saw it, then,' she says. 'She is not lying in a tomb. She is lying in the gap. She stood in the way and it cost her all of it and it worked - and Nemhal has been coming apart at exactly the rate she has, because she is what is left holding it.' She hands the corner back. 'Take it with you. And listen: past the next gate, recall does not work. Not weakened. Does not work. You walk in and you walk out, or you die and pay for it. Say it back to me before you go.'",
-        "already": "'She is still there. She has been still there for two hundred years and she has never once been relieved.'"
+        "giverOffer": "'I have been within forty feet of her for nine years,' Aveth says. 'I have never gone down. Not out of respect. I did not want to be right.' She looks at you steadily. 'Bring me a corner of the shroud. And look past her while you are down there. Properly.'",
+        "giverInProgress": "'Past the bier the chamber narrows. Go to the end of it. The First Mourner is in the niche and she will not let you take anything, so do not plan on asking.'",
+        "giverComplete": "'She is still there. She has been still there for two hundred years and she has never once been relieved.'",
+        "turninReady": "Aveth holds the linen and does not look at it. 'You saw it, then,' she says. 'She is not lying in a tomb. She is lying in the gap. She stood in the way and it cost her all of it and it worked - and Nemhal has been coming apart at exactly the rate she has, because she is what is left holding it.' She hands the corner back. 'Take it with you. And listen: past the next gate, recall does not work. Not weakened. Does not work. You walk in and you walk out, or you die and pay for it. Say it back to me before you go.'"
       },
       "sortOrder": 3
     },
@@ -3271,10 +3271,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
-        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
-        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
-        "already": "'When it has been through something. Not before.'"
+        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 14
     },
@@ -3300,10 +3300,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
-        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
-        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
-        "already": "'When it has been through something. Not before.'"
+        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 14
     },
@@ -3329,10 +3329,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
-        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
-        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
-        "already": "'When it has been through something. Not before.'"
+        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 14
     },
@@ -3358,10 +3358,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
-        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
-        "complete": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
-        "already": "'When it has been through something. Not before.'"
+        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 14
     }

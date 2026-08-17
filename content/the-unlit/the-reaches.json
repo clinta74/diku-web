@@ -1422,9 +1422,9 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "'You can go back,' she says first. 'Say it back to me.' Then, when you have: 'Good. Bring me eight things that people carried in. Not things they dropped - things they were still holding.'",
-        "progress": "'Eight. The long held have them. They will not give them up, because that is the entire remaining content of them.'",
-        "complete": "She turns each one over. 'Forty sets of gear on the standing ground,' she says, 'and I have been counting arrivals for a very long time, and the number is much higher than forty.' She sets them down in a row. 'Most people go back. I want that written down somewhere.'"
+        "giverOffer": "'You can go back,' she says first. 'Say it back to me.' Then, when you have: 'Good. Bring me eight things that people carried in. Not things they dropped - things they were still holding.'",
+        "giverInProgress": "'Eight. The long held have them. They will not give them up, because that is the entire remaining content of them.'",
+        "turninReady": "She turns each one over. 'Forty sets of gear on the standing ground,' she says, 'and I have been counting arrivals for a very long time, and the number is much higher than forty.' She sets them down in a row. 'Most people go back. I want that written down somewhere.'"
       },
       "sortOrder": 1
     },
@@ -1449,9 +1449,9 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "'You noticed the stones,' she says. 'Everyone notices the stones and nobody asks. Bring me five worn ones. The worn ones are the old ones and the old ones are the ones I want.'",
-        "progress": "'Five. The further in, the smoother. That is not weather. There is no weather.'",
-        "complete": "She lines them up by wear, oldest first, and does not touch the oldest. 'I set that one,' she says. 'I was going to walk out to the face and back and I wanted to be able to find the door.' She sits back. 'I never did walk back. I have been about to for rather a long time.'"
+        "giverOffer": "'You noticed the stones,' she says. 'Everyone notices the stones and nobody asks. Bring me five worn ones. The worn ones are the old ones and the old ones are the ones I want.'",
+        "giverInProgress": "'Five. The further in, the smoother. That is not weather. There is no weather.'",
+        "turninReady": "She lines them up by wear, oldest first, and does not touch the oldest. 'I set that one,' she says. 'I was going to walk out to the face and back and I wanted to be able to find the door.' She sits back. 'I never did walk back. I have been about to for rather a long time.'"
       },
       "sortOrder": 2
     },
@@ -1476,9 +1476,9 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "'Here is what nobody has told you,' she says, 'because nobody has been in a position to. The Regard is not looking at the Reaches. It is looking *for* something, it has never once lost it, and if you stand at the facing place you will work out what it is in about four seconds.' She stands up. 'There is one thing still holding on down there that was here before I was. It has the answer. It has been keeping it because nobody came.'",
-        "progress": "'Under the face. It is not a god and it is not a boss and it will not negotiate, because there is nothing left in it that could. Take the answer off it and bring it to the niche.'",
-        "complete": "She takes it, and does not look at it, and puts it into the niche in the face, and sits down on the stone seat.\\n\\n'Kheddran binds people by their word,' she says. 'The Unlit binds the Reaches by being there. Nobody ever asked it to and nobody has ever thanked it and it has never once let go.' She looks up at you. 'It has been watching for somebody to notice. That is the whole of it. That is what recognition means.'\\n\\n'You can go back now. Most people do. I would like you to.'"
+        "giverOffer": "'Here is what nobody has told you,' she says, 'because nobody has been in a position to. The Regard is not looking at the Reaches. It is looking *for* something, it has never once lost it, and if you stand at the facing place you will work out what it is in about four seconds.' She stands up. 'There is one thing still holding on down there that was here before I was. It has the answer. It has been keeping it because nobody came.'",
+        "giverInProgress": "'Under the face. It is not a god and it is not a boss and it will not negotiate, because there is nothing left in it that could. Take the answer off it and bring it to the niche.'",
+        "turninReady": "She takes it, and does not look at it, and puts it into the niche in the face, and sits down on the stone seat.\\n\\n'Kheddran binds people by their word,' she says. 'The Unlit binds the Reaches by being there. Nobody ever asked it to and nobody has ever thanked it and it has never once let go.' She looks up at you. 'It has been watching for somebody to notice. That is the whole of it. That is what recognition means.'\\n\\n'You can go back now. Most people do. I would like you to.'"
       },
       "sortOrder": 3
     },
@@ -1504,10 +1504,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
-        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
-        "complete": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'",
-        "already": "'When it has been through something. Not before.'"
+        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "turninReady": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
       },
       "sortOrder": 15
     },
@@ -1533,10 +1533,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
-        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
-        "complete": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'",
-        "already": "'When it has been through something. Not before.'"
+        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "turninReady": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
       },
       "sortOrder": 15
     },
@@ -1562,10 +1562,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
-        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
-        "complete": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'",
-        "already": "'When it has been through something. Not before.'"
+        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "turninReady": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
       },
       "sortOrder": 15
     },
@@ -1591,10 +1591,10 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "offer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
-        "progress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
-        "complete": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'",
-        "already": "'When it has been through something. Not before.'"
+        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "turninReady": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
       },
       "sortOrder": 15
     }

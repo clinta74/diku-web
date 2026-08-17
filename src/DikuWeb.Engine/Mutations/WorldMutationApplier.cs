@@ -1259,6 +1259,11 @@ public sealed class WorldMutationApplier(
             RewardGold = change.RewardGold,
             RewardItemKey = change.RewardItemKey,
             RewardItemCount = change.RewardItemCount,
+            // Missed until the milestone review, and it was the expensive one to miss: the row was
+            // written correctly and only the live cache was wrong, so a gate quest granted nothing
+            // until the next restart. The four attunement flags are the game's only progression
+            // lock (BUGS.md #7). Guarded now by the change-record completeness test.
+            RewardFlagKey = change.RewardFlagKey,
             PrerequisiteQuestKeys = [.. change.PrerequisiteQuestKeys],
             IsRepeatable = change.IsRepeatable,
             AutoStart = change.AutoStart,
