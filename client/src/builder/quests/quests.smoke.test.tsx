@@ -24,6 +24,9 @@ const quest = vi.hoisted(
     prerequisiteQuestKeys: [],
     isRepeatable: false,
     autoStart: false,
+    // Empty means anyone, which is what almost every quest is. Only the four epic chains
+    // name a Path, because they share one giver and their rewards are Path-locked.
+    paths: [],
     dialogue: {},
     sortOrder: 0,
   }),

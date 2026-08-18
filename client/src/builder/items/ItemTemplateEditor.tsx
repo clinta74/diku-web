@@ -10,7 +10,6 @@ import {
 import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
-import { Select } from '../../ui/Select'
 import { NumberInput } from '../../ui/NumberInput'
 import { OptionalSecondsInput } from '../../ui/SecondsInput'
 import { NumberField } from '../../ui/NumberField'

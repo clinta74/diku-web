@@ -2586,6 +2586,18 @@ codebase and their return.
 | Two devices, one character | A second device **entering** turns the first out at once, before it has opened a stream. The turned-out device's retry is refused *and* the new device still has the character. A reconnect under the same id is not a takeover; being displaced does not take the character out of the world. Plus the one that cost the most: **a re-render must not reopen the stream**, counted across three re-renders passing fresh inline callbacks. |
 | The prompt | Typing anywhere focuses the input — but not Ctrl+C over selected scrollback, not Tab, not Enter over a focused button, and not while the builder is up. Tab is *reported rather than swallowed* when nothing matches. History survives a reload, stays per-character, and treats its storage as hostile. The scrollback follows the newest line only while already at the bottom. |
 
+**Type-check the client with `npm run build`, never with `npx tsc --noEmit`.** The bare command
+checks **nothing**: `client/tsconfig.json` is a solution-style file — `"files": []` with only
+references to `tsconfig.app.json` and `tsconfig.node.json` — so `tsc` run against it compiles zero
+source files and exits 0. `--listFiles` confirms no `src/` file enters the program. Vitest
+transpiles without type-checking, so a green suite says nothing about types either.
+
+Only `tsc -b` follows the references into the projects that actually `include` `src/` and set
+`noUnusedLocals`, and `npm run build` is what the Dockerfile runs. Two type errors reached `main`
+behind the no-op version — an unused import and a fixture missing a field that had become required
+— and the Docker build was the first thing to notice. It is this codebase's usual defect in
+test-tooling clothes: a check that reads as configured and is connected to nothing.
+
 Determinism is not polish here — a game loop you cannot replay exactly is a game loop you cannot
 debug. `IGameClock` and `IRandomSource` go in from the first commit.
 
