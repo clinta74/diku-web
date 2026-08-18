@@ -28,6 +28,40 @@ public sealed class MaxHealthEffect : IBuffEffect
 
     public bool IsHarmful => false;
 
+    /// <summary>How long the ceiling stays raised when the ability does not say.</summary>
+    public const long DefaultDurationPulses = 80L;
+
+    private static (int Bonus, long Duration) Dials(Dictionary<string, string> parameters)
+    {
+        var bonus = parameters.TryGetValue("maxHealth", out var raw) && int.TryParse(raw, out var value)
+            ? value
+            : 0;
+
+        var duration = parameters.TryGetValue("durationPulses", out var durRaw)
+            && long.TryParse(durRaw, out var dur)
+            ? dur
+            : DefaultDurationPulses;
+
+        return (bonus, duration);
+    }
+
+    /// <summary>
+    /// Says the grant as well as the ceiling, because the grant is the half that keeps somebody
+    /// alive and the half a player would otherwise have to infer.
+    /// </summary>
+    public string Describe(Dictionary<string, string> parameters, TargetingType targeting)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+
+        var (bonus, duration) = Dials(parameters);
+        var whose = AbilityAudience.Whose(targeting, IsHarmful);
+
+        return bonus == 0
+            ? $"leaves {whose} maximum health where it is"
+            : $"raises {whose} maximum health by {bonus} and grants that much health, " +
+              $"for {AbilityAudience.Seconds(duration)}";
+    }
+
     public void Apply(
         object caster,
         object? target,
@@ -47,14 +81,7 @@ public sealed class MaxHealthEffect : IBuffEffect
     {
         ArgumentNullException.ThrowIfNull(parameters);
 
-        var bonus = parameters.TryGetValue("maxHealth", out var raw) && int.TryParse(raw, out var value)
-            ? value
-            : 0;
-
-        var duration = parameters.TryGetValue("durationPulses", out var durRaw)
-            && long.TryParse(durRaw, out var dur)
-            ? dur
-            : 80L;
+        var (bonus, duration) = Dials(parameters);
 
         var name = parameters.TryGetValue("name", out var authored) && !string.IsNullOrWhiteSpace(authored)
             ? authored

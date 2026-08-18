@@ -15,9 +15,75 @@ namespace DikuWeb.Domain.Abilities.Effects;
 /// </remarks>
 public sealed class DebuffEffect : IBuffEffect
 {
+    /// <summary>Neither dial moves anything when the ability does not set it.</summary>
+    public const decimal NoChange = 1.0m;
+
+    /// <summary>How long it lasts when the ability does not say - a minute.</summary>
+    public const long DefaultDurationPulses = 240L;
+
     public string EffectKey => "debuff.weaken";
 
     public bool IsHarmful => true;
+
+    /// <summary>The two directions and the clock, read once for both the effect and the phrase.</summary>
+    private static (decimal Incoming, decimal Outgoing, long Duration) Dials(
+        Dictionary<string, string> parameters)
+    {
+        var incoming = parameters.TryGetValue("incomingMultiplier", out var inStr) &&
+                       decimal.TryParse(inStr, out var inMult)
+            ? inMult
+            : NoChange;
+
+        var outgoing = parameters.TryGetValue("outgoingMultiplier", out var outStr) &&
+                       decimal.TryParse(outStr, out var outMult)
+            ? outMult
+            : NoChange;
+
+        var duration = parameters.TryGetValue("durationPulses", out var durStr) &&
+                       long.TryParse(durStr, out var dur)
+            ? dur
+            : DefaultDurationPulses;
+
+        return (incoming, outgoing, duration);
+    }
+
+    /// <summary>
+    /// Says which of the two things it is doing, because they are two things.
+    /// </summary>
+    /// <remarks>
+    /// The direction is the whole danger with this effect - a "weaken" written as
+    /// <c>incomingMultiplier</c> below 1.0 protects its target, which shipped once to every debuff
+    /// in the game. Naming the direction out loud in play is a second pair of eyes on it: a debuff
+    /// that reads "raises your target's damage" is wrong in a way nobody has to read code to see.
+    /// </remarks>
+    public string Describe(Dictionary<string, string> parameters, TargetingType targeting)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+
+        var (incoming, outgoing, duration) = Dials(parameters);
+        var whom = AbilityAudience.Whom(targeting, IsHarmful);
+        var whose = AbilityAudience.Whose(targeting, IsHarmful);
+
+        var parts = new List<string>();
+
+        if (outgoing != NoChange)
+        {
+            parts.Add(outgoing < NoChange
+                ? $"cuts {whose} damage by {AbilityAudience.Percent(outgoing, above: false)}%"
+                : $"raises {whose} damage by {AbilityAudience.Percent(outgoing, above: true)}%");
+        }
+
+        if (incoming != NoChange)
+        {
+            parts.Add(incoming > NoChange
+                ? $"raises the damage {whom} takes by {AbilityAudience.Percent(incoming, above: true)}%"
+                : $"cuts the damage {whom} takes by {AbilityAudience.Percent(incoming, above: false)}%");
+        }
+
+        return parts.Count == 0
+            ? $"does nothing to {whom}"
+            : $"{string.Join(" and ", parts)} for {AbilityAudience.Seconds(duration)}";
+    }
 
     public void Apply(
         object caster,
@@ -36,9 +102,9 @@ public sealed class DebuffEffect : IBuffEffect
     {
         ArgumentNullException.ThrowIfNull(parameters);
 
-        var incomingMultiplier = 1.0m;
-        var outgoingMultiplier = 1.0m;
-        var durationPulses = 240L;
+        var incomingMultiplier = NoChange;
+        var outgoingMultiplier = NoChange;
+        var durationPulses = DefaultDurationPulses;
         var maxStacks = 1;
         var stackingRule = EffectStackingRule.Refresh;
         // A participle, not a noun - see BuffEffect. This one is reachable in play: weaken is in

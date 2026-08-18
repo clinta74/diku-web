@@ -25,6 +25,32 @@ public interface IAbilityEffect
     bool IsHarmful { get; }
 
     /// <summary>
+    /// What this effect does, in one phrase, from the parameters it is about to be given.
+    /// </summary>
+    /// <param name="parameters">The same dictionary <see cref="Apply"/> would be handed.</param>
+    /// <param name="targeting">Who the ability aims at, for the words to use about them.</param>
+    /// <returns>
+    /// A lower-case phrase with no full stop - "deals 10-14 damage to your target" - so several can
+    /// be joined into one line for an ability that does several things.
+    /// </returns>
+    /// <remarks>
+    /// <b>On the executor because the executor is the thing that knows</b> - the same argument
+    /// <see cref="IsHarmful"/> makes, for the same reason. An effect reads its parameters by name
+    /// and skips what it does not recognise, so the only code that can say what a dial is worth is
+    /// the code that reads it. A describer written elsewhere would be a second copy of every
+    /// formula, free to drift from the one that runs.
+    ///
+    /// <b>Describe what happens, not what was meant.</b> Where an executor clamps a value, or
+    /// floors it, or ignores it, the phrase says the clamped number - a description that reported
+    /// the authored one would be a screen disagreeing with the game, which is the failure this
+    /// codebase keeps finding.
+    ///
+    /// A new executor cannot be written without answering the question, which is the point of
+    /// putting it here rather than in a lookup that would quietly have no entry.
+    /// </remarks>
+    string Describe(Dictionary<string, string> parameters, TargetingType targeting);
+
+    /// <summary>
     /// Apply this effect to a target.
     /// </summary>
     /// <param name="caster">The character casting the ability.</param>

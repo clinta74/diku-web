@@ -427,6 +427,42 @@ healing was on that list and has since been taken off it, as a design decision r
 
 ---
 
+## 26. `warden.last-stand` grants 1000 maximum health at level 20 — content, likely a typo
+
+Found by reading the derived ability descriptions (PLAN.md §4.5), which is the whole argument for
+having them: the dial had been sitting in the catalogue in plain sight and nobody had put it beside
+its neighbours.
+
+| Ability | Level | `maxHealth` |
+|---|---|---|
+| Ground and Centre | 32 | 120 |
+| Unbreakable | 40 | 200 |
+| The Last Wall | 50 | 400 |
+| **Last Stand** | **20** | **1000** |
+
+A Warden at 20 does not have anything like 1000 maximum health, so this multiplies the bar several
+times over, and it is granted as health as well as ceiling. **100 is almost certainly what was
+meant** — it would sit just under Ground and Centre's 120 at 32, which is the shape the rest of the
+line has.
+
+Worth stating plainly: `AbilityCatalogue` is the seed set, so changing it retunes a *fresh* install
+and nothing else. A live server needs the row changed through the builder or an imported bundle.
+
+---
+
+## 27. `warden.shield-wall` is a damage buff wearing a defensive name — content
+
+`buff.damage-up` at 1.4, named "Shield Wall", flavoured *"Set yourself. Nothing moves you for a
+while."* Both the name and the prose promise defence; the ability raises damage by 40%. The Warden's
+actual guard at that end of the ladder is Bulwark at 28, so this is not a duplicate — it is one
+ability describing itself as another.
+
+Two ways out and they are a design call, not a bug fix: retune it to `buff.defense` and leave the
+name alone, or rename it and leave the effect alone. Surfaced by the same derived descriptions as
+#26.
+
+---
+
 ## Not in this queue
 
 Design questions the review raised and deliberately did not answer: **mob leashing**, quest

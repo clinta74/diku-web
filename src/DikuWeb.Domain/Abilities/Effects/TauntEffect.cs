@@ -80,6 +80,18 @@ public sealed class TauntEffect : IAbilityEffect, IThreatEffect
     }
 
     /// <summary>
+    /// Says what the lead is worth in the terms it is measured in - a share of the target's health
+    /// bar, rather than a number of threat points nothing on screen ever shows.
+    /// </summary>
+    public string Describe(Dictionary<string, string> parameters, TargetingType targeting)
+    {
+        var lead = LeadFraction(parameters);
+
+        return $"makes {AbilityAudience.Whom(targeting, IsHarmful)} fight you, by a lead worth " +
+               $"{AbilityAudience.Share(lead)}% of its health";
+    }
+
+    /// <summary>
     /// Deliberately does nothing. The threat change needs the room's combat, which only
     /// <c>AbilitySystem</c> can reach - see <see cref="IThreatEffect"/>.
     /// </summary>

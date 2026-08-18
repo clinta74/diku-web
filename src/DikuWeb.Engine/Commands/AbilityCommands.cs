@@ -35,7 +35,7 @@ public static class AbilityCommands
 
         commands.Add(new CommandDefinition(
             "abilities", 0, "abilities (ab) - list your known abilities",
-            ctx => ListAbilities(ctx, abilityCache)));
+            ctx => ListAbilities(ctx, abilityCache, effectTable)));
     }
 
     private static void Cast(
@@ -315,7 +315,7 @@ public static class AbilityCommands
             : EntityId.ForCharacter(actor.CharacterId);
     }
 
-    private static void ListAbilities(CommandContext ctx, AbilityCache? cache)
+    private static void ListAbilities(CommandContext ctx, AbilityCache? cache, EffectRegistry effects)
     {
         var character = ctx.Actor.Character;
         var knownAbilities = AbilityProgression.GetKnownAbilitiesForLevel(
@@ -354,8 +354,12 @@ public static class AbilityCommands
 
             foreach (var (_, ability) in group)
             {
+                // What it costs, then what it does. The second half is derived from the ability's
+                // own parameters rather than from its authored flavour text, so a retune moves it
+                // and a builder cannot leave a sentence behind that the ability stopped matching.
                 ctx.Reply(
-                    $"  • {ability!.Name}  ({ability.CostValue} {ability.CostType.ToString().ToLowerInvariant()})");
+                    $"  • {ability!.Name}  ({ability.CostValue} {ability.CostType.ToString().ToLowerInvariant()})" +
+                    $" — {AbilityDescriber.Describe(ability, effects)}");
             }
         }
 

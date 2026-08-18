@@ -597,6 +597,31 @@ expires before it ticks; it warns about progression shape. This is the one place
 that refuses on content grounds rather than following §7.4, and the reason is that a broken exit
 announces itself the moment somebody walks into it while a broken ability never does.
 
+**`abilities` says what each one does, and the line is derived rather than written.** The listing
+gave a name and a price, so the only way to learn what Mend restored was to cast it at something and
+watch. `Ability.Description` existed the whole time and reached nobody but the builder — and it is
+authored prose, free to go on describing a heal that was halved last week. So the line is built from
+the ability's own parameters every time it is shown: *Mend (20 focus) — restores 23-27 health to your
+target.*
+
+The phrases come from the executors, through `IAbilityEffect.Describe`, for the same reason
+`IsHarmful` lives there: **an effect reads its parameters by name and skips what it does not
+recognise, so the only code that can say what a dial is worth is the code that reads it.** A
+describer written anywhere else would be a second copy of every formula, free to drift from the one
+that runs — and a new executor could ship saying nothing, which an interface member makes impossible.
+
+**It describes what happens, not what was authored.** Where an executor clamps, floors, or drops a
+value, the phrase reports the clamped number: a stun written as 400 pulses is described at the 24 it
+will run for, and a wound is described by the ticks that actually land, which is one fewer than its
+two numbers read as — the tick loop skips an effect whose expiry has arrived and the first tick lands
+a whole interval after the cast, so 72 pulses ticking every 12 ticks five times. `AbilityValidator`
+warns about the first of those at the point of authoring; this is the half a player sees.
+
+The direction of a debuff is named out loud for the same reason. Every weaken in the game was once
+written as `incomingMultiplier` below 1.0, which made its target 25–45% *harder* to kill and was
+found by reading code rather than by anything going wrong. A line that says *cuts the damage your
+target takes by 30%* needs no code review to spot.
+
 **Cooldowns are whole numbers of the 2-second combat beat** (§2.3), and their length follows how
 much an ability changes the fight — for anything with a duration, *duration ÷ target uptime*, so
 nothing with a refresh rule can be held up permanently.

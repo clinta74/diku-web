@@ -29,6 +29,30 @@ public sealed class StunEffect : IBuffEffect
     /// </summary>
     public const long MaxDurationPulses = 24;
 
+    /// <summary>
+    /// The clamped duration, not the authored one - the executor clamps, so the clamp is what a player is told.
+    /// </summary>
+    /// <remarks>
+    /// <c>AbilityValidator</c> warns when an authored duration exceeds the ceiling, and this is the
+    /// same fact said in the other direction: whatever the editor holds, the description reports
+    /// the {0} pulses the effect will actually run for.
+    /// </remarks>
+    public static long DurationOf(Dictionary<string, string> parameters)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+
+        var duration = parameters.TryGetValue("durationPulses", out var raw) &&
+                       long.TryParse(raw, out var parsed)
+            ? parsed
+            : 8;
+
+        return Math.Clamp(duration, 1, MaxDurationPulses);
+    }
+
+    public string Describe(Dictionary<string, string> parameters, TargetingType targeting) =>
+        $"stops {AbilityAudience.Whom(targeting, IsHarmful)} acting " +
+        $"for {AbilityAudience.Seconds(DurationOf(parameters))}";
+
     public void Apply(
         object caster,
         object? target,
@@ -46,14 +70,9 @@ public sealed class StunEffect : IBuffEffect
     {
         ArgumentNullException.ThrowIfNull(parameters);
 
-        var duration = parameters.TryGetValue("durationPulses", out var raw) &&
-                       long.TryParse(raw, out var parsed)
-            ? parsed
-            : 8;
-
         // Clamped rather than trusted. These parameters are authored content, and a typo that
         // added a zero would be a target that never acts again.
-        duration = Math.Clamp(duration, 1, MaxDurationPulses);
+        var duration = DurationOf(parameters);
 
         var name = parameters.TryGetValue("name", out var nameStr) && !string.IsNullOrEmpty(nameStr)
             ? nameStr

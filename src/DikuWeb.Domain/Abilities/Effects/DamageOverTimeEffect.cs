@@ -22,6 +22,46 @@ public sealed class DamageOverTimeEffect : IBuffEffect
 
     public bool IsHarmful => true;
 
+    /// <summary>
+    /// How many times a wound of this shape actually ticks.
+    /// </summary>
+    /// <remarks>
+    /// <b>Not <c>duration / interval</c>, which is what the two numbers read as.</b>
+    /// <c>CombatSystem.TickDamageOverTime</c> skips an effect whose expiry has arrived - the test is
+    /// <c>ExpiresAtPulse &lt;= currentPulse</c> - and the first tick lands one whole interval after
+    /// the cast, so a tick falling exactly on the expiry pulse never happens. A wound authored as
+    /// 72 pulses ticking every 12 ticks five times, not six.
+    ///
+    /// That is a real trap in the dials and the reason this is worth stating in play: the total a
+    /// player is shown is the total they get.
+    /// </remarks>
+    public static long TickCount(long durationPulses, long tickIntervalPulses) =>
+        durationPulses <= 0 || tickIntervalPulses <= 0
+            ? 0
+            : (durationPulses - 1) / tickIntervalPulses;
+
+    public string Describe(Dictionary<string, string> parameters, TargetingType targeting)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+
+        var tickDamage = Read(parameters, "tickDamage", 4);
+        var tickInterval = Read(parameters, "tickIntervalPulses", 8);
+        var durationPulses = Read(parameters, "durationPulses", 48);
+
+        var ticks = TickCount(durationPulses, tickInterval);
+        var whom = AbilityAudience.Whom(targeting, IsHarmful);
+
+        if (ticks == 0)
+        {
+            // Reachable only through content the validator refused or never saw, and worth saying
+            // out loud rather than describing an effect that will not land.
+            return $"wounds {whom}, but expires before it ticks";
+        }
+
+        return $"deals {tickDamage} damage to {whom} every {AbilityAudience.Seconds(tickInterval)} " +
+               $"for {AbilityAudience.Seconds(durationPulses)} ({tickDamage * ticks} in all)";
+    }
+
     public void Apply(
         object caster,
         object? target,

@@ -32,6 +32,66 @@ public abstract class GuardEffect : IBuffEffect
     /// <summary>What to call it when the author did not.</summary>
     protected abstract string DefaultName { get; }
 
+    /// <summary>How long the stance holds when the ability does not say - twenty seconds.</summary>
+    public const long DefaultDurationPulses = 80L;
+
+    /// <summary>
+    /// Both dials and the clock, read once for the effect and for the phrase.
+    /// </summary>
+    /// <remarks>
+    /// The sign is not applied here: it belongs to which effect this is, and the description says
+    /// the direction in words instead - "guards" against "strips".
+    /// </remarks>
+    private static (int DefenseRating, int Mitigation, long Duration) Dials(
+        Dictionary<string, string> parameters)
+    {
+        var duration = parameters.TryGetValue("durationPulses", out var raw)
+            && long.TryParse(raw, out var value)
+            ? value
+            : DefaultDurationPulses;
+
+        return (Math.Abs(Read(parameters, "defenseRating")), Math.Abs(Read(parameters, "mitigation")), duration);
+    }
+
+    /// <summary>
+    /// The two dials said separately, because they are two different things: one changes how often
+    /// a blow lands and the other what it costs.
+    /// </summary>
+    public string Describe(Dictionary<string, string> parameters, TargetingType targeting)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+
+        var (defenseRating, mitigation, duration) = Dials(parameters);
+        var hardens = Sign > 0;
+        var whom = AbilityAudience.Whom(targeting, IsHarmful);
+        var whose = AbilityAudience.Whose(targeting, IsHarmful);
+
+        var parts = new List<string>();
+
+        if (defenseRating != 0)
+        {
+            parts.Add(hardens
+                ? $"makes {whom} {defenseRating} harder to hit"
+                : $"makes {whom} {defenseRating} easier to hit");
+        }
+
+        if (mitigation != 0)
+        {
+            parts.Add(hardens
+                ? $"turns aside {mitigation}% of each blow"
+                : $"lets through {mitigation}% more of each blow");
+        }
+
+        if (parts.Count == 0)
+        {
+            // Both dials at zero is an ability that costs its resource and changes nothing, which
+            // no validator currently refuses. Saying so is cheaper than finding it in a fight.
+            return $"leaves {whose} guard exactly as it was";
+        }
+
+        return $"{string.Join(" and ", parts)} for {AbilityAudience.Seconds(duration)}";
+    }
+
     public void Apply(
         object caster,
         object? target,
@@ -56,10 +116,7 @@ public abstract class GuardEffect : IBuffEffect
         var defenseRating = Sign * Math.Abs(Read(parameters, "defenseRating"));
         var mitigation = Sign * Math.Abs(Read(parameters, "mitigation")) / 100m;
 
-        var duration = parameters.TryGetValue("durationPulses", out var raw)
-            && long.TryParse(raw, out var value)
-            ? value
-            : 80L;
+        var duration = Dials(parameters).Duration;
 
         var name = parameters.TryGetValue("name", out var authored) && !string.IsNullOrWhiteSpace(authored)
             ? authored
