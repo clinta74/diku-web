@@ -115,10 +115,11 @@ foreach (var ability in chosen)
 
     sql.AppendLine(
         "INSERT INTO abilities (key, path, unlock_level, name, description, cost_type, cost_value, "
-        + "cooldown_pulses, cast_time_pulses, targeting_type, effects) VALUES ("
+        + "cooldown_pulses, cooldown_group, cast_time_pulses, targeting_type, effects) VALUES ("
         + $"{Text(ability.Key)}, {(int)ability.Path}, {ability.UnlockLevel}, {Text(ability.Name)}, "
         + $"{Text(ability.Description)}, {(int)ability.CostType}, {ability.CostValue}, "
-        + $"{ability.CooldownPulses}, {Number(ability.CastTimePulses)}, {(int)ability.TargetingType}, "
+        + $"{ability.CooldownPulses}, {Number((long?)ability.CooldownGroup)}, "
+        + $"{Number(ability.CastTimePulses)}, {(int)ability.TargetingType}, "
         + $"{Text(JsonSerializer.Serialize(ability.Effects))}::jsonb)");
 
     sql.AppendLine(
@@ -126,6 +127,7 @@ foreach (var ability in chosen)
         + "unlock_level = EXCLUDED.unlock_level, name = EXCLUDED.name, "
         + "description = EXCLUDED.description, cost_type = EXCLUDED.cost_type, "
         + "cost_value = EXCLUDED.cost_value, cooldown_pulses = EXCLUDED.cooldown_pulses, "
+        + "cooldown_group = EXCLUDED.cooldown_group, "
         + "cast_time_pulses = EXCLUDED.cast_time_pulses, targeting_type = EXCLUDED.targeting_type, "
         + "effects = EXCLUDED.effects;");
 }

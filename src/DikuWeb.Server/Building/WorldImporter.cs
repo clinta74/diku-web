@@ -244,6 +244,7 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
             a.CostType ?? Domain.Abilities.CostType.Stamina,
             a.CostValue,
             a.CooldownPulses,
+            a.CooldownGroup,
             a.CastTimePulses,
             a.TargetingType ?? Domain.Abilities.TargetingType.SingleTarget,
             [.. (a.Effects ?? []).Select(e =>

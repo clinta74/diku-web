@@ -43,6 +43,31 @@ public sealed class Ability
     /// <summary>Cooldown duration in pulses (250ms each). 0 = no cooldown.</summary>
     public required long CooldownPulses { get; init; }
 
+    /// <summary>
+    /// A timer this ability shares with others, or null when it shares with nothing.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Using any ability on the timer puts the whole timer on cooldown</b>, for that ability's own
+    /// <see cref="CooldownPulses"/>. It exists for the case where several abilities do the same job
+    /// and having all of them is worth more than the sum of the parts: the Warden's four
+    /// maximum-health walls chain into 470 seconds of continuous cover, which no one of them was
+    /// tuned to give.
+    /// </para>
+    /// <para>
+    /// <b>Scoped to the <see cref="Path"/>, so the identity is (Path, number) rather than the number
+    /// alone.</b> A character only ever knows one Path's abilities, so Warden 1 and Shade 1 can never
+    /// meet in play — and scoping it lets each Path number from 1 independently, which is what an
+    /// author will do anyway.
+    /// </para>
+    /// <para>
+    /// Nothing about the timer is stored. <c>AbilityCooldowns</c> derives it from the per-ability
+    /// cooldowns the world already records, so there is nothing to clear on logout and nothing that
+    /// can disagree with what a player last cast.
+    /// </para>
+    /// </remarks>
+    public int? CooldownGroup { get; init; }
+
     /// <summary>Time before effect lands, in pulses. Null or 0 = instant cast.</summary>
     public long? CastTimePulses { get; init; }
 

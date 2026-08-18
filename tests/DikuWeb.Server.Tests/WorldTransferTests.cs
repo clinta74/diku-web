@@ -551,6 +551,45 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task A_shared_timer_survives_a_round_trip()
+    {
+        // The delivery path for a grouping, end to end. Worth its own test because the field is
+        // nullable and a v12 bundle simply has no such key: a reader that dropped it would produce
+        // a Warden whose four walls no longer share a timer, with nothing on screen to say so -
+        // which is exactly the silent direction the format version bump exists to refuse.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var content = await AuthorZoneAsync(client);
+
+        (await client.PatchAsJsonAsync(
+            "/api/builder/abilities/warden.kick",
+            new { cooldownGroup = 9 })).EnsureSuccessStatusCode();
+
+        var json = await ExportZoneJsonAsync(client, content.ZoneKey);
+
+        // Taken off again, so the import has something to restore rather than something to agree
+        // with - an assertion against a value that never moved would pass on a dropped field.
+        (await client.PatchAsJsonAsync(
+            "/api/builder/abilities/warden.kick",
+            new { cooldownGroup = (int?)null })).EnsureSuccessStatusCode();
+
+        var report = await ImportAsync(client, json);
+        Assert.True(report.GetProperty("failures").GetArrayLength() == 0, Raw(report));
+
+        var after = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri("/api/builder/abilities/warden.kick", UriKind.Relative)));
+
+        Assert.Equal(9, after.GetProperty("cooldownGroup").GetInt32());
+
+        // Left as it was found, since the suite shares one database.
+        (await client.PatchAsJsonAsync(
+            "/api/builder/abilities/warden.kick",
+            new { cooldownGroup = (int?)null })).EnsureSuccessStatusCode();
+    }
+
+    [Fact]
     public async Task An_ability_authored_here_survives_an_import()
     {
         // An import is a merge, not a mirror (§6.1). A bundle that does not mention an ability

@@ -230,21 +230,26 @@ public sealed class PlayerView(RoomLayoutService layout, ItemTemplateCache? item
         SendAbilities(actor, world, cache, currentPulse);
     }
 
-    /// <summary>Pulses left before this ability may be used again. Zero when it is ready.</summary>
+    /// <summary>
+    /// Pulses left of this ability's <em>own</em> cooldown. Zero when that has run out.
+    /// </summary>
+    /// <remarks>
+    /// <b>Own cooldown, deliberately - not "when can this be used".</b> An ability held down by a
+    /// timer it shares would answer differently, and the cooling bar is a list of what the player
+    /// used: a group-mate they never touched appearing there would be a bar they cannot explain.
+    /// It also keeps the live path and the reconnect path agreeing, since the bar counts down from
+    /// this number and only ever hears about abilities that actually fired.
+    ///
+    /// The shared timer is answered where it is acted on, by <c>AbilityCooldowns.Blocking</c> in
+    /// the cast path, and told to the player in the refusal. Both read the arithmetic below.
+    /// </remarks>
     private static long RemainingCooldown(
         WorldState world,
         Guid characterId,
         Ability ability,
-        long currentPulse)
-    {
-        if (world.GetAbilityCooldown(characterId, ability.Key) is not { } startedAt)
-        {
-            return 0;
-        }
-
-        var remaining = (startedAt + ability.CooldownPulses) - currentPulse;
-        return remaining > 0 ? remaining : 0;
-    }
+        long currentPulse) =>
+        AbilityCooldowns.OwnRemaining(
+            ability, world.GetAbilityCooldown(characterId, ability.Key), currentPulse);
 
     /// <summary>
     /// Names whatever the levels just crossed granted, one line each.

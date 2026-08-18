@@ -123,6 +123,15 @@ public static class AbilityValidator
             Error("A cooldown cannot be negative.");
         }
 
+        // Zero and negative are both refused rather than read as "no timer", because null already
+        // means that and a second spelling of it is a value an author could set and then wonder
+        // about. Whether the number names a timer anything else is on is a question about the whole
+        // set, and is asked in ValidateSet.
+        if (ability.CooldownGroup is <= 0)
+        {
+            Error("A shared timer is a positive number. Leave it empty for an ability that shares none.");
+        }
+
         if (ability.CastTimePulses is < 0)
         {
             Error("A cast time cannot be negative.");
@@ -265,6 +274,25 @@ public static class AbilityValidator
             {
                 problems.Add(new("", AbilityProblemSeverity.Warning,
                     $"{path} stops unlocking at level {previous}, short of {ProgressionCompleteLevel}."));
+            }
+
+            // A timer with one ability on it shares with nothing, which is the silent-does-nothing
+            // shape the rest of this class exists for: the field is set, the editor shows it, and no
+            // cast is ever refused because of it. Only answerable across the set, which is why it is
+            // here rather than beside the positive-number check in ValidateOne.
+            //
+            // Grouped within the Path, because the number is only half a timer's identity - see
+            // Ability.CooldownGroup. Two Paths using 1 are two timers, not a shared one.
+            var lonely = forPath
+                .Where(a => a.CooldownGroup is not null and > 0)
+                .GroupBy(a => a.CooldownGroup!.Value)
+                .Where(g => g.Count() == 1)
+                .OrderBy(g => g.Key);
+
+            foreach (var timer in lonely)
+            {
+                problems.Add(new(timer.Single().Key, AbilityProblemSeverity.Warning,
+                    $"{path} timer {timer.Key} has only this ability on it, so it shares with nothing."));
             }
         }
 

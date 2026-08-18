@@ -622,6 +622,52 @@ written as `incomingMultiplier` below 1.0, which made its target 25–45% *harde
 found by reading code rather than by anything going wrong. A line that says *cuts the damage your
 target takes by 30%* needs no code review to spot.
 
+**Abilities can share a timer, and using one uses all of them.** `cooldownGroup` is a number on the
+ability; using any ability on a timer puts the whole timer down for *that ability's own* cooldown.
+It exists for the case where several abilities do one job and holding all of them is worth more than
+the sum: the Warden's four maximum-health walls chain into 470 seconds of continuous cover, and
+Ground and Centre alone is nearly permanent at a 100s cooldown against an 80s duration. **They are
+the only shared timer the shipped set has** — a timer is for two variations of one thing, and a kick
+and a bash are different enough to keep apart.
+
+The identity is **(Path, number)**, not the number alone. A character only knows one Path's
+abilities, so Warden 1 and Shade 1 can never meet in play, and scoping it lets each Path number from
+1 independently.
+
+**Nothing about the timer is stored.** It is derived from the per-ability cooldowns the world already
+records — the longest remaining among the abilities that share it — so there is no second piece of
+state to clear on logout, none to persist, and none that can drift from what a player last cast. It
+collapses to the old behaviour exactly when nothing is grouped, which is what makes the ungrouped
+path unchanged by construction rather than by inspection.
+
+**A cast is only recorded as used when it *resolves*, and the loop drains several commands before
+resolving any of them** — so a character may start only one action at a time. Without that gate two
+abilities on one timer typed into the same pulse would both find it cold and both land. The gate
+closes an older hole of its own: two `bolt` commands in one pulse both queued, both charged, and both
+resolved.
+
+The cooling bar still lists **only what was used**, so a group-mate held down by something else never
+appears on it. The refusal is what explains itself — *"it shares a timer with Unbreakable, which needs
+another 41s"* — and `abilities` names the others on a timer, which is where it is learnable out of
+combat.
+
+**A stronger application of an effect replaces a weaker one; a weaker one does nothing at all.**
+`WorldState.ApplyEffect` dedupes on `(EffectKey, SourceEntityId)`, so every one of a Path's
+maximum-health buffs collides with the rest — and `Refresh` kept the *first* effect's numbers.
+Sanctuary cast over Fortitude was worth +150 rather than +220: the weaker buff won and then outlived
+itself. Worse, re-applying the weaker ability refreshed the clock while leaving the stronger numbers
+in place, so a Shade could hold Hemorrhage's 16-damage bleed open indefinitely with a cheap Ambush.
+
+Strength is the **unlock level of the ability that applied it**, carried on the effect. Level rather
+than magnitude because these effects measure themselves in health, defence, mitigation, tick damage
+and multipliers, and a field-by-field comparison would have to decide whether +12 defence and 9%
+beats +10 and 12%. Effects with no ability behind them — every mob attack rider — sit at zero, compare
+equal, and keep the behaviour they always had.
+
+The two rules cover different ground and both are needed. The Warden's walls all have duration
+shorter than cooldown, so two are never active at once and only the timer bites. The Hallow's wards
+and the Shade's wounds overlap constantly and carry no timer, so only the magnitude rule does.
+
 **Cooldowns are whole numbers of the 2-second combat beat** (§2.3), and their length follows how
 much an ability changes the fight — for anything with a duration, *duration ÷ target uptime*, so
 nothing with a refresh rule can be held up permanently.

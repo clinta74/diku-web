@@ -58,6 +58,15 @@ public sealed record WorldBundle(
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
     ///
+    /// <b>13 because abilities can share a timer.</b> An ability carries <c>cooldownGroup</c>, and
+    /// using any ability on a timer puts the whole timer on cooldown. This is the *weak* kind of
+    /// bump, like 5 and 7: a v12 bundle has no such key, so read as v13 every ability arrives
+    /// ungrouped — which is exactly what a v12 ability meant, so nothing is silently lost. It is
+    /// here because the exporter now writes a key a v12 reader would drop, and a file labelled 12
+    /// that carries a v13 field is a lie about its own shape. The other direction is the one worth
+    /// refusing on: a v13 bundle read as v12 loses the grouping, and a Warden whose four walls
+    /// stopped sharing a timer is back to 470 seconds of continuous cover with nothing to say so.
+    ///
     /// <b>12 because a weapon says what it hits for.</b> Weapons carry <c>damageMin</c> and
     /// <c>damageMax</c>, and the item-level <c>damageMultiplier</c> is gone. This is the strong kind
     /// of bump in both directions, which is unusual. A v11 bundle read as v12 loses every weapon's
@@ -133,7 +142,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 12;
+    public const int CurrentFormatVersion = 13;
 }
 
 /// <summary>
@@ -244,6 +253,7 @@ public sealed record BundleAbility(
     CostType? CostType,
     int CostValue,
     long CooldownPulses,
+    int? CooldownGroup,
     long? CastTimePulses,
     [property: JsonConverter(typeof(NullableEnumConverter<TargetingType>))]
     TargetingType? TargetingType,

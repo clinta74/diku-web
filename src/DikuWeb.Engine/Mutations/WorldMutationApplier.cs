@@ -1142,6 +1142,7 @@ public sealed class WorldMutationApplier(
             CostType = change.CostType,
             CostValue = change.CostValue,
             CooldownPulses = change.CooldownPulses,
+            CooldownGroup = change.CooldownGroup,
             CastTimePulses = change.CastTimePulses,
             TargetingType = change.TargetingType,
             Effects = [.. change.Effects.Select(e =>

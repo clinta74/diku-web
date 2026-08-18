@@ -16,6 +16,37 @@ public sealed class ActiveEffect
     /// <summary>Caster entity ID: "c_<guid>" (character) or "m_<guid>" (mob).</summary>
     public required string SourceEntityId { get; init; }
 
+    /// <summary>
+    /// The unlock level of the ability that applied this, and so how strong an application it is.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>What decides which of two colliding applications survives.</b> <c>WorldState.ApplyEffect</c>
+    /// dedupes on (<see cref="EffectKey"/>, <see cref="SourceEntityId"/>), so every one of a Path's
+    /// maximum-health buffs collides with the rest — and refreshing kept the <em>first</em>
+    /// magnitude, which made Sanctuary over Fortitude worth +150 rather than +220 and let a cheap
+    /// Ambush hold a Hemorrhage-sized bleed open forever. A higher level now replaces outright and a
+    /// lower one is ignored.
+    /// </para>
+    /// <para>
+    /// <b>Level rather than magnitude</b>, because these effects measure themselves in health,
+    /// defence, mitigation, tick damage and multipliers, and a field-by-field comparison would have
+    /// to decide whether +12 defence and 9% beats +10 and 12%. The level is the one scalar that means
+    /// the same thing for all of them.
+    /// </para>
+    /// <para>
+    /// <b>Zero means no ability was behind it</b>, which is every mob attack rider. Two of those
+    /// compare equal and refresh each other exactly as they always did, so no tuned fight changes.
+    /// </para>
+    /// <para>
+    /// Settable rather than <c>init</c>, like <see cref="ExpiresAtPulse"/> and <see cref="Stacks"/>:
+    /// it is stamped by <c>AbilitySystem</c> after the executor builds the effect, because which
+    /// ability invoked an executor is none of the executor's business — and threading it through
+    /// <c>IBuffEffect.CreateActiveEffect</c> would change eight implementors to serve one comparison.
+    /// </para>
+    /// </remarks>
+    public int SourceUnlockLevel { get; set; }
+
     /// <summary>Outgoing damage multiplier (default 1.0 = no change).</summary>
     public decimal OutgoingDamageMultiplier { get; init; } = 1.0m;
 

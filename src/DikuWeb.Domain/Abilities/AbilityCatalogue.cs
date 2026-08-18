@@ -86,7 +86,26 @@ public static class AbilityCatalogue
         long? CastTimePulses,
         TargetingType TargetingType,
         List<AbilityEffectSpec> Effects,
-        bool Maintainable = false);
+        bool Maintainable = false,
+        int? CooldownGroup = null);
+
+    /// <summary>
+    /// The Warden's four maximum-health walls, on one timer.
+    /// </summary>
+    /// <remarks>
+    /// <b>The only shared timer the shipped set needs.</b> Last Stand, Ground and Centre,
+    /// Unbreakable and The Last Wall all raise the same ceiling, and chained they are 470 seconds of
+    /// continuous cover - Ground and Centre alone is nearly permanent, at a 100s cooldown against an
+    /// 80s duration. No one of them is tuned to give that; having all four is.
+    ///
+    /// Every other ability is deliberately ungrouped. A timer is for the case where two abilities do
+    /// the same job well enough that holding both is worth more than the parts - two variations of
+    /// one strike, say. A kick and a bash are different enough to keep apart.
+    ///
+    /// Named rather than written as a bare 1 at four call sites, so the group reads as a decision.
+    /// The number is scoped to the Path, so a Shade timer 1 would be a different timer entirely.
+    /// </remarks>
+    private const int TheWalls = 1;
 
     /// <summary>One effect, which is what all thirty-seven starter abilities have.</summary>
     /// <summary>One effect, which is what most starter abilities have.</summary>
@@ -363,7 +382,8 @@ public static class AbilityCatalogue
                 // is granted as health as well as ceiling. Its neighbours at 32, 40 and 50 give
                 // 120, 200 and 400, so this now opens the line rather than dwarfing it.
                 Part("buff.max-health", MaxHealth("80", "480", "standing ground")),
-                Part("buff.defense", Guard("6", "6", "480", "standing ground")))),
+                Part("buff.defense", Guard("6", "6", "480", "standing ground"))),
+            CooldownGroup: TheWalls),
 
         // -------------------------------------------------------------------
         // Warden, past 20 - holding a room rather than a target.
@@ -388,7 +408,8 @@ public static class AbilityCatalogue
             CostType.Stamina, 36, 400, null, TargetingType.Self,
             Together(
                 Part("buff.max-health", MaxHealth("120", "320", "grounded")),
-                Part("buff.defense", Guard("6", "6", "320", "grounded")))),
+                Part("buff.defense", Guard("6", "6", "320", "grounded"))),
+            CooldownGroup: TheWalls),
 
         new(CharacterPath.Warden, 36, "warden.reprisal", "Reprisal",
             "Answer it, and make sure it noticed who did.",
@@ -402,7 +423,8 @@ public static class AbilityCatalogue
             CostType.Stamina, 45, 1200, null, TargetingType.Self,
             Together(
                 Part("buff.max-health", MaxHealth("200", "480", "unbreakable")),
-                Part("buff.defense", Guard("12", "12", "480", "unbreakable")))),
+                Part("buff.defense", Guard("12", "12", "480", "unbreakable"))),
+            CooldownGroup: TheWalls),
 
         new(CharacterPath.Warden, 43, "warden.sundering-blow", "Sundering Blow",
             "Take the guard apart so that everyone else's work lands on what is left.",
@@ -423,7 +445,8 @@ public static class AbilityCatalogue
             CostType.Stamina, 50, 2400, null, TargetingType.Self,
             Together(
                 Part("buff.max-health", MaxHealth("400", "600", "the last wall")),
-                Part("buff.defense", Guard("18", "18", "600", "the last wall")))),
+                Part("buff.defense", Guard("18", "18", "600", "the last wall"))),
+            CooldownGroup: TheWalls),
 
         // -------------------------------------------------------------------
         // Adept - focus caster. Expensive, slow, and hits hardest at range.
@@ -820,6 +843,7 @@ public static class AbilityCatalogue
             CostType = entry.CostType,
             CostValue = entry.CostValue,
             CooldownPulses = entry.CooldownPulses,
+            CooldownGroup = entry.CooldownGroup,
             CastTimePulses = entry.CastTimePulses,
             TargetingType = entry.TargetingType,
             Effects = [.. entry.Effects.Select(e =>

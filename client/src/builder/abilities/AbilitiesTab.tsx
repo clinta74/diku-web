@@ -131,6 +131,11 @@ export function AbilitiesTab() {
                   <AbilityEditor
                     key={selectedKey}
                     abilityKey={selectedKey}
+                    // The whole roster, so the editor can name the other abilities on a shared
+                    // timer. Passed down rather than fetched again: this is the same list the
+                    // sidebar is drawn from, and it is what the database holds - the catalogue in
+                    // code only ever seeds a fresh install.
+                    roster={abilities}
                     onChanged={() => void refresh()}
                     onDeleted={() => {
                       void refresh()

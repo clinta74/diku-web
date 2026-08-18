@@ -920,6 +920,7 @@ public static class BuilderEndpoints
             CostType = request.CostType ?? Domain.Abilities.CostType.Stamina,
             CostValue = request.CostValue ?? 10,
             CooldownPulses = request.CooldownPulses ?? 24,
+            CooldownGroup = request.CooldownGroup,
             CastTimePulses = request.CastTimePulses,
             TargetingType = request.TargetingType ?? Domain.Abilities.TargetingType.SingleTarget,
             Effects = effectList,
@@ -959,6 +960,10 @@ public static class BuilderEndpoints
             CostValue = request.CostValue ?? existing.CostValue,
             CooldownPulses = request.CooldownPulses ?? existing.CooldownPulses,
 
+            // Uncoalesced for the same reason the cast time below is: null *means* "shares no
+            // timer", so `?? existing` would leave a builder no way to take an ability off one.
+            CooldownGroup = request.CooldownGroup,
+
             // Deliberately not coalesced against what is stored. A null cast time *means*
             // instant, so `?? existing` would make an ability that is being made instant keep
             // its old cast bar, with no way to clear one from the editor at all.
@@ -986,7 +991,7 @@ public static class BuilderEndpoints
 
     private static UpsertAbility ChangeFor(Domain.Abilities.Ability a) =>
         new(a.Key, a.Path, a.UnlockLevel, a.Name, a.Description, a.CostType, a.CostValue,
-            a.CooldownPulses, a.CastTimePulses, a.TargetingType,
+            a.CooldownPulses, a.CooldownGroup, a.CastTimePulses, a.TargetingType,
             [.. a.Effects.Select(e =>
                 new AbilityEffectSpec(e.Key, new Dictionary<string, string>(e.Params, StringComparer.Ordinal)))]);
 

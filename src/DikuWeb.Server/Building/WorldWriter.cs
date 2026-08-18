@@ -265,6 +265,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         CostType = c.CostType,
                         CostValue = c.CostValue,
                         CooldownPulses = c.CooldownPulses,
+                        CooldownGroup = c.CooldownGroup,
                         CastTimePulses = c.CastTimePulses,
                         TargetingType = c.TargetingType,
                         Effects = [.. c.Effects.Select(e =>
@@ -292,6 +293,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                             .SetProperty(a => a.CostType, c.CostType)
                             .SetProperty(a => a.CostValue, c.CostValue)
                             .SetProperty(a => a.CooldownPulses, c.CooldownPulses)
+                            .SetProperty(a => a.CooldownGroup, c.CooldownGroup)
                             .SetProperty(a => a.CastTimePulses, c.CastTimePulses)
                             .SetProperty(a => a.TargetingType, c.TargetingType)
                             .SetProperty(

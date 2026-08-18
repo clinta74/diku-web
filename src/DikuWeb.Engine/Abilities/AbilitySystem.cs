@@ -204,6 +204,14 @@ public sealed class AbilitySystem(
                 {
                     var activeEffect = buffEffect.CreateActiveEffect(
                         caster, target, spec.Params, clock.CurrentPulse);
+
+                    // How strong an application this is, for the collision in ApplyEffect: a higher
+                    // level replaces a lower one and a lower one is ignored. Stamped here rather
+                    // than passed into CreateActiveEffect because which ability invoked an executor
+                    // is none of the executor's business - and threading it through IBuffEffect
+                    // would change eight implementors to serve one comparison.
+                    activeEffect.SourceUnlockLevel = ability.UnlockLevel;
+
                     var targetEntityId = target is Character c ? c.Id : ((Mob)target).Id;
                     world.ApplyEffect(targetEntityId, activeEffect);
 

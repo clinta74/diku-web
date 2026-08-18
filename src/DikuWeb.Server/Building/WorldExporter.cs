@@ -104,7 +104,7 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
 
         return [.. abilities.Select(a => new BundleAbility(
             a.Key, a.Path, a.UnlockLevel, a.Name, a.Description, a.CostType, a.CostValue,
-            a.CooldownPulses, a.CastTimePulses, a.TargetingType,
+            a.CooldownPulses, a.CooldownGroup, a.CastTimePulses, a.TargetingType,
             [.. a.Effects.Select(e =>
                 new AbilityEffectSpec(e.Key, new Dictionary<string, string>(e.Params, StringComparer.Ordinal)))]))];
     }

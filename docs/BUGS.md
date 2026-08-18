@@ -475,6 +475,47 @@ would push the catalogue over the top of every retune made through the editor, s
 
 ---
 
+## 28. A buff refresh kept the weaker magnitude — **fixed**
+
+`WorldState.ApplyEffect` dedupes on `(EffectKey, SourceEntityId)`, and `EffectStackingRule.Refresh`
+reset the expiry while keeping **everything else** — including the first effect's numbers. Since every
+one of a Path's maximum-health buffs applies `buff.max-health` from the same caster, they all collided
+with each other:
+
+| Cast | Was worth | Should be |
+|---|---|---|
+| Fortitude (+150) then Sanctuary (+220) | +150, on Sanctuary's clock | +220 |
+| Ambush (tick 5) then Hemorrhage (tick 16) | tick 5 | tick 16 |
+| Hemorrhage then Ambush, repeatedly | tick 16, **forever** | tick 16 until it expires |
+
+That last row is the one that was exploitable: a cheap ability refreshed a expensive effect's clock
+without touching its magnitude, so a Shade could hold Hemorrhage open indefinitely with Ambush.
+
+**Now a stronger application replaces a weaker one outright and a weaker one is ignored entirely** —
+no refresh, no stack, no extension. Strength is the unlock level of the ability that applied it,
+carried on the effect as `SourceUnlockLevel` and stamped by `AbilitySystem`. Equal strength keeps the
+old `Refresh`/`Stack` behaviour, which is what a recast of the same ability is — and what every mob
+attack rider is, since those carry no ability and sit at zero.
+
+Found while planning shared cooldowns (PLAN.md §4.5), by working out whether the Warden's four walls
+could stack. They could not, but only by accident, and the accident was doing more harm than the
+stacking would have.
+
+---
+
+## 29. Two abilities typed in one pulse both landed — **fixed**
+
+A cast is recorded as used when it **resolves**, not when the command is parsed, and
+`GameLoop.DrainInbound` handles up to `MaxCommandsPerPulse` commands before `abilitySystem.Tick`
+runs. So two `bolt` commands in the same pulse both queued, both charged their cost, and both
+resolved — and the same window would have made a shared timer bypassable by typing fast.
+
+**A character now starts one action at a time**, refused at the top of `AbilityCommands.Cast` beside
+the stun and rest gates, worded by the kind of whatever is in flight: *"You are already casting
+Bolt"*, *"You are still in the middle of Kick"*.
+
+---
+
 ## Not in this queue
 
 Design questions the review raised and deliberately did not answer: **mob leashing**, quest

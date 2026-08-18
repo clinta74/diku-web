@@ -229,6 +229,7 @@ public sealed record AbilityResponse(
     CostType CostType,
     int CostValue,
     long CooldownPulses,
+    int? CooldownGroup,
     long? CastTimePulses,
     TargetingType TargetingType,
     IReadOnlyList<AbilityEffectSpec> Effects,
@@ -252,6 +253,14 @@ public sealed record SaveAbilityRequest(
     CostType? CostType,
     int? CostValue,
     long? CooldownPulses,
+
+    /// <remarks>
+    /// Deliberately not coalesced against what is stored, for the same reason
+    /// <see cref="CastTimePulses"/> is not: null <em>means</em> "shares no timer", so
+    /// <c>?? existing</c> would make a timer impossible to clear from the editor.
+    /// </remarks>
+    int? CooldownGroup,
+
     long? CastTimePulses,
     [property: JsonConverter(typeof(NullableEnumConverter<TargetingType>))]
     TargetingType? TargetingType,

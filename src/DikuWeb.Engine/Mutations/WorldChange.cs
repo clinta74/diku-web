@@ -295,6 +295,7 @@ public sealed record UpsertAbility(
     CostType CostType,
     int CostValue,
     long CooldownPulses,
+    int? CooldownGroup,
     long? CastTimePulses,
     TargetingType TargetingType,
     List<AbilityEffectSpec> Effects) : WorldChange

@@ -11,7 +11,7 @@ import { ParamInput } from '../ParamInput'
 import { Button } from '../../ui/Button'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { Field } from '../../ui/Field'
-import { NumberInput } from '../../ui/NumberInput'
+import { NumberInput, OptionalNumberInput } from '../../ui/NumberInput'
 import { SecondsInput } from '../../ui/SecondsInput'
 import { Select } from '../../ui/Select'
 import { Textarea } from '../../ui/Textarea'
@@ -19,6 +19,8 @@ import { useToast } from '../../ui/Toast'
 
 interface Props {
   abilityKey: string
+  /** Every ability in the database, for naming the others on a shared timer. */
+  roster: Ability[]
   onChanged: () => void
   onDeleted: () => void
 }
@@ -33,7 +35,7 @@ const TARGETING: Array<{ value: TargetingType; label: string }> = [
 /** One swing. Cooldowns that are not a multiple of this drift against the fight (PLAN.md §2.3). */
 const PULSES_PER_BEAT = 8
 
-export function AbilityEditor({ abilityKey, onChanged, onDeleted }: Props) {
+export function AbilityEditor({ abilityKey, roster, onChanged, onDeleted }: Props) {
   const toast = useToast()
   const [ability, setAbility] = useState<Ability | null>(null)
   const [draft, setDraft] = useState<Ability | null>(null)
@@ -69,6 +71,19 @@ export function AbilityEditor({ abilityKey, onChanged, onDeleted }: Props) {
   const beats = draft.cooldownPulses / PULSES_PER_BEAT
   const onBeat = draft.cooldownPulses % PULSES_PER_BEAT === 0
 
+  // The others on this timer. Matched on Path as well as on the number, because the number is only
+  // half a timer's identity: a character only ever knows one Path's abilities, so Warden 1 and
+  // Shade 1 can never meet in play and are two timers rather than one.
+  const onTimer =
+    draft.cooldownGroup === null
+      ? []
+      : roster.filter(
+          (a) =>
+            a.key !== draft.key &&
+            a.path === draft.path &&
+            a.cooldownGroup === draft.cooldownGroup,
+        )
+
   async function save() {
     if (!draft) return
     setBusy(true)
@@ -82,6 +97,7 @@ export function AbilityEditor({ abilityKey, onChanged, onDeleted }: Props) {
         costType: draft.costType,
         costValue: draft.costValue,
         cooldownPulses: draft.cooldownPulses,
+        cooldownGroup: draft.cooldownGroup,
         castTimePulses: draft.castTimePulses,
         targetingType: draft.targetingType,
         effects: draft.effects.map((e) => ({
@@ -202,7 +218,34 @@ export function AbilityEditor({ abilityKey, onChanged, onDeleted }: Props) {
             onChange={(v) => set({ castTimePulses: v === 0 ? null : v })}
           />
         </Field>
+        <Field
+          label="Shared timer"
+          hint={`Blank shares nothing. Numbered per Path, so ${draft.path} 1 and another Path's 1 are different timers.`}
+        >
+          <OptionalNumberInput
+            min={1}
+            value={draft.cooldownGroup}
+            onChange={(v) => set({ cooldownGroup: v })}
+            aria-label="Shared timer"
+          />
+        </Field>
       </div>
+
+      {draft.cooldownGroup !== null && (
+        <p className={onTimer.length === 0 ? 'warn' : 'dim'}>
+          {onTimer.length === 0 ? (
+            <>
+              Nothing else is on {draft.path} timer {draft.cooldownGroup}, so this shares with
+              nothing. Put another ability on the same number to make it mean something.
+            </>
+          ) : (
+            <>
+              On {draft.path} timer {draft.cooldownGroup}: {onTimer.map((a) => a.name).join(' · ')}.
+              Using any one of these puts the whole timer on that ability&rsquo;s cooldown.
+            </>
+          )}
+        </p>
+      )}
 
       <fieldset className="behavior-editor">
         <legend>Effects</legend>

@@ -278,6 +278,14 @@ export interface Ability {
   costType: CostType
   costValue: number
   cooldownPulses: number
+  /**
+   * A timer this ability shares with others on the same Path, or null when it shares none.
+   *
+   * Using any ability on the timer puts the whole timer on cooldown, for that ability's own
+   * cooldown. Scoped to the Path, so Warden 1 and Shade 1 are different timers — a character only
+   * ever knows one Path's abilities, so the two can never meet in play.
+   */
+  cooldownGroup: number | null
   castTimePulses: number | null
   targetingType: TargetingType
   /**

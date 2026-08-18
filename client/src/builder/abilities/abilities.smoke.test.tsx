@@ -14,9 +14,29 @@ const kick = vi.hoisted(
     costType: 'Stamina',
     costValue: 10,
     cooldownPulses: 24,
+    cooldownGroup: 1,
     castTimePulses: null,
     targetingType: 'SingleTarget',
     effects: [{ key: 'damage.physical', params: { scalingFactor: '1.1', minDamage: '3' } }],
+    problems: [],
+  }),
+)
+
+/** On the same Path and the same timer as Kick, so the editor has a name to print. */
+const stomp = vi.hoisted(
+  (): Ability => ({
+    key: 'warden.stomp',
+    path: 'Warden',
+    unlockLevel: 3,
+    name: 'Stomp',
+    description: 'The other half of a boot.',
+    costType: 'Stamina',
+    costValue: 12,
+    cooldownPulses: 24,
+    cooldownGroup: 1,
+    castTimePulses: null,
+    targetingType: 'SingleTarget',
+    effects: [{ key: 'damage.physical', params: { scalingFactor: '1.2', minDamage: '4' } }],
     problems: [],
   }),
 )
@@ -31,6 +51,7 @@ const broken = vi.hoisted(
     costType: 'Focus',
     costValue: 12,
     cooldownPulses: 24,
+    cooldownGroup: null,
     castTimePulses: null,
     targetingType: 'SingleTarget',
     effects: [{ key: 'damage.nonexistent', params: {} }],
@@ -51,7 +72,7 @@ vi.mock('../../net/builderApi', async (importOriginal) => {
         calls.list++
         return calls.fail
           ? Promise.reject(new Error('Request failed: 404'))
-          : Promise.resolve([kick, broken])
+          : Promise.resolve([kick, stomp, broken])
       },
       ability: (key: string) => Promise.resolve(key === kick.key ? kick : broken),
       updateAbility: (_key: string, body: unknown) => {
@@ -136,6 +157,54 @@ it('saves an edited cooldown, typed in seconds and stored in pulses', async () =
 
   await waitFor(() => expect(calls.updated).not.toBeNull())
   expect((calls.updated as { cooldownPulses: number }).cooldownPulses).toBe(48)
+})
+
+it('names the other abilities on a shared timer', async () => {
+  // The timer is the one thing about an ability a builder cannot check by looking at the ability:
+  // the number alone says nothing about whether anything else carries it. Read from the roster the
+  // tab already loaded, which is the database's answer rather than the catalogue's.
+  renderTab('/builder/abilities/warden.kick')
+
+  expect(await screen.findByText(/On Warden timer 1: Stomp/)).toBeTruthy()
+})
+
+it('warns when a timer has nothing else on it', async () => {
+  // A timer of one is set, shown, and refuses nothing - the silent-does-nothing shape the ability
+  // validator exists for, and cheaper to catch here than on the next save.
+  renderTab('/builder/abilities/warden.kick')
+
+  const timer = await screen.findByLabelText('Shared timer')
+  fireEvent.change(timer, { target: { value: '4' } })
+  fireEvent.blur(timer)
+
+  expect(await screen.findByText(/Nothing else is on Warden timer 4/)).toBeTruthy()
+})
+
+it('saves a shared timer, and saves clearing one', async () => {
+  // Clearing has to be expressible or a timer can never be undone, which is why neither the
+  // request nor the endpoint coalesces this field against what is stored.
+  renderTab('/builder/abilities/warden.kick')
+
+  const timer = await screen.findByLabelText('Shared timer')
+  fireEvent.change(timer, { target: { value: '2' } })
+  fireEvent.blur(timer)
+
+  const save = screen.getByRole('button', { name: 'Save' })
+  await waitFor(() => expect(save.hasAttribute('disabled')).toBe(false))
+  fireEvent.click(save)
+
+  await waitFor(() => expect(calls.updated).not.toBeNull())
+  expect((calls.updated as { cooldownGroup: number | null }).cooldownGroup).toBe(2)
+
+  calls.updated = null
+  fireEvent.change(timer, { target: { value: '' } })
+  fireEvent.blur(timer)
+
+  await waitFor(() => expect(save.hasAttribute('disabled')).toBe(false))
+  fireEvent.click(save)
+
+  await waitFor(() => expect(calls.updated).not.toBeNull())
+  expect((calls.updated as { cooldownGroup: number | null }).cooldownGroup).toBeNull()
 })
 
 it('says so when the list cannot be loaded', async () => {

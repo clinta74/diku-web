@@ -63,6 +63,8 @@ export function AbilityCreateDialog({ open, onOpenChange, onCreated }: Props) {
         costType: 'Stamina',
         costValue: 10,
         cooldownPulses: 24,
+        // No shared timer. A new ability shares nothing until somebody says otherwise.
+        cooldownGroup: null,
         castTimePulses: null,
         targetingType: 'SingleTarget',
         // One effect to begin with; more are added in the editor. Seeded with each parameter's

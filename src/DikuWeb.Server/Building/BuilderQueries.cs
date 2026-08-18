@@ -251,6 +251,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             ability.CostType,
             ability.CostValue,
             ability.CooldownPulses,
+            ability.CooldownGroup,
             ability.CastTimePulses,
             ability.TargetingType,
             [.. ability.Effects],

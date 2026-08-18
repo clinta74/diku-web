@@ -663,9 +663,39 @@ public sealed class WorldState(IRandomSource random)
             // Here rather than in the executor because only this method can tell the two apart.
             GrantMaxHealth(entityId, effect);
         }
+        else if (effect.SourceUnlockLevel > existing.SourceUnlockLevel)
+        {
+            // A stronger application of the same effect from the same caster replaces the weaker
+            // one outright - its magnitude and its expiry, as though the weaker had never run.
+            //
+            // Refreshing was the old answer and it kept the *first* effect's numbers, so Sanctuary
+            // cast over Fortitude was worth +150 rather than +220: the weaker buff won and then
+            // outlived itself. Every one of a Path's maximum-health buffs collides here, because
+            // this method dedupes on (EffectKey, SourceEntityId) and they share both.
+            //
+            // Remove-then-add rather than mutation, because ActiveEffect is init-only for
+            // everything that matters - and because it is also the correct arithmetic: revoking
+            // takes the old ceiling back down and clamps health to it, and granting puts the new
+            // one up as a first application. A player who was at 140/200 on a 120 base ends at
+            // 320/320, exactly where the stronger buff alone would have left them.
+            effects.Remove(existing);
+            RevokeMaxHealth(entityId, existing);
+
+            effects.Add(effect);
+            GrantMaxHealth(entityId, effect);
+        }
+        else if (effect.SourceUnlockLevel < existing.SourceUnlockLevel)
+        {
+            // A weaker application does nothing at all - it does not stack, and it does not extend
+            // what is already running. Extending was the real cost of the old behaviour: a Shade
+            // could hold Hemorrhage's 16-damage bleed open indefinitely by re-applying a cheap
+            // Ambush, which refreshed the clock and left the bigger tick in place.
+        }
         else
         {
-            // Existing effect found, apply stacking rule
+            // Same strength - which is a recast of the same ability, or two effects with no ability
+            // behind them at all. Mob attack riders are the second case: they leave the level at
+            // zero, compare equal to each other, and so keep exactly the behaviour they always had.
             switch (existing.StackingRule)
             {
                 case EffectStackingRule.Refresh:

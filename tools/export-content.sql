@@ -137,15 +137,16 @@ select '-- abilities';
 -- overwrote whatever was restored.
 select format(
     'INSERT INTO abilities (key, path, unlock_level, name, description, cost_type, cost_value, '
-    || 'cooldown_pulses, cast_time_pulses, targeting_type, effects) '
-    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L) ON CONFLICT (key) DO UPDATE SET '
+    || 'cooldown_pulses, cooldown_group, cast_time_pulses, targeting_type, effects) '
+    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L) ON CONFLICT (key) DO UPDATE SET '
     || 'path = EXCLUDED.path, unlock_level = EXCLUDED.unlock_level, name = EXCLUDED.name, '
     || 'description = EXCLUDED.description, cost_type = EXCLUDED.cost_type, '
     || 'cost_value = EXCLUDED.cost_value, cooldown_pulses = EXCLUDED.cooldown_pulses, '
+    || 'cooldown_group = EXCLUDED.cooldown_group, '
     || 'cast_time_pulses = EXCLUDED.cast_time_pulses, targeting_type = EXCLUDED.targeting_type, '
     || 'effects = EXCLUDED.effects;',
     key, path, unlock_level, name, description, cost_type, cost_value,
-    cooldown_pulses, cast_time_pulses, targeting_type, effects)
+    cooldown_pulses, cooldown_group, cast_time_pulses, targeting_type, effects)
 from abilities order by path, unlock_level, key;
 
 select '';

@@ -71,6 +71,22 @@ public static class AbilityCommands
             return;
         }
 
+        // One action in flight at a time.
+        //
+        // <b>Load-bearing for shared timers, not a nicety.</b> A cast is only recorded as used when
+        // it *resolves*, and the loop drains up to MaxCommandsPerPulse commands before
+        // AbilitySystem.Tick runs - so without this, two abilities sharing a timer typed into the
+        // same pulse would both find the timer cold and both land. This is what guarantees at most
+        // one unrecorded cast exists per character, which is what makes the check below complete.
+        //
+        // It closes an older hole of its own: two `bolt` commands in one pulse both queued, both
+        // charged, and both resolved, because neither had set a cooldown yet.
+        if (AlreadyActing(ctx, cache) is { } acting)
+        {
+            ctx.Reply(acting, "bad");
+            return;
+        }
+
         // Determine which abilities the character knows (at their level). Read from the loaded
         // table, so a retune or a newly authored ability takes effect without a restart.
         var knownAbilityKeys = AbilityProgression.GetKnownAbilitiesForLevel(
@@ -121,18 +137,28 @@ public static class AbilityCommands
             return;
         }
 
-        // Check cooldown. An ability this character has never cast has no last-cast pulse at
-        // all, which is not the same as having cast it on pulse 0.
+        // Check cooldown - this ability's own, and any timer it shares with others. An ability this
+        // character has never cast has no last-cast pulse at all, which is not the same as having
+        // cast it on pulse 0.
         var currentPulse = clock?.CurrentPulse ?? 0L;
-        if (ctx.World.GetAbilityCooldown(character.Id, matchingKey) is { } lastCastPulse)
+
+        if (AbilityCooldowns.Blocking(
+                ability,
+                cache?.All.Values ?? [],
+                a => ctx.World.GetAbilityCooldown(character.Id, a.Key),
+                currentPulse) is { } blocked)
         {
-            var cooldownRemaining = (lastCastPulse + ability.CooldownPulses) - currentPulse;
-            if (cooldownRemaining > 0)
-            {
-                var secondsRemaining = Math.Ceiling(cooldownRemaining * 0.25); // 250ms per pulse
-                ctx.Reply($"{ability.Name} is on cooldown ({secondsRemaining}s remaining).");
-                return;
-            }
+            var seconds = Math.Ceiling(blocked.RemainingPulses * 0.25); // 250ms per pulse
+
+            // Which ability is responsible is most of the message when it is not the one they
+            // typed: a cooldown a player can see on screen explains itself, and one they cannot -
+            // because the cooling bar only lists what was actually used - does not.
+            ctx.Reply(
+                ReferenceEquals(blocked.Source, ability)
+                    ? $"{ability.Name} is on cooldown ({seconds}s remaining)."
+                    : $"You cannot use {ability.Name} yet — it shares a timer with "
+                      + $"{blocked.Source.Name}, which needs another {seconds}s.");
+            return;
         }
 
         // Check cost
@@ -217,6 +243,38 @@ public static class AbilityCommands
         {
             ctx.Broadcast($"{ctx.Actor.Name} {third} {ability.Name}!");
         }
+    }
+
+    /// <summary>
+    /// Why this character cannot start anything new, or null when they can.
+    /// </summary>
+    /// <remarks>
+    /// The wording follows the kind of whatever is in flight, the way the rest of this file does: a
+    /// Warden mid-kick is not "casting", and telling them so teaches the wrong vocabulary at exactly
+    /// the moment they are paying attention to it.
+    ///
+    /// A pending ability the cache cannot resolve falls back to neutral wording rather than to
+    /// letting the cast through - a queue entry is a queue entry whether or not its row still exists.
+    /// </remarks>
+    private static string? AlreadyActing(CommandContext ctx, AbilityCache? cache)
+    {
+        var pending = ctx.World.CastQueue.GetPendingForCharacter(ctx.Actor.CharacterId);
+
+        if (pending.Count == 0)
+        {
+            return null;
+        }
+
+        var inFlight = cache?.Get(pending[0].AbilityKey);
+
+        if (inFlight is null)
+        {
+            return "You are already doing something.";
+        }
+
+        return AbilityKinds.Of(inFlight) == AbilityKind.Spell
+            ? $"You are already casting {inFlight.Name}."
+            : $"You are still in the middle of {inFlight.Name}.";
     }
 
     /// <summary>
@@ -360,6 +418,19 @@ public static class AbilityCommands
                 ctx.Reply(
                     $"  • {ability!.Name}  ({ability.CostValue} {ability.CostType.ToString().ToLowerInvariant()})" +
                     $" — {AbilityDescriber.Describe(ability, effects)}");
+
+                // A shared timer is the one thing about an ability a player cannot discover by
+                // using it: the cooling bar lists what was used, so a group-mate held down by
+                // something else never appears there. This is where it is learnable out of combat.
+                var mates = AbilityCooldowns
+                    .GroupMates(ability, resolved.Select(r => r.Ability).OfType<Ability>())
+                    .Select(a => a.Name)
+                    .ToList();
+
+                if (mates.Count > 0)
+                {
+                    ctx.Reply($"      shares a timer with {string.Join(", ", mates)}");
+                }
             }
         }
 
