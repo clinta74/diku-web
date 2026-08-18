@@ -185,7 +185,76 @@ exception, and it inserts a baseline rather than skipping anything.
 
 ---
 
-## 5. Triage
+## 5. Applying an ability retune
+
+**Why this is not just a deploy.** `AbilityCatalogue` is the set a *fresh* database is seeded with,
+and the startup reconcile only plants rows that are **missing** — it never updates and never deletes.
+That is deliberate: it is what stops a restart from reverting a builder's work. The consequence is
+that editing the catalogue retunes new installs and reaches a running server not at all.
+
+**Nor does a bundle import.** The files in `content/` carry no abilities, so importing them cannot
+change one — or clobber one. (A bundle *exported from a live server* does carry abilities. If you
+re-export, that bundle now becomes another way these rows can move, so know which you are holding.)
+
+So an ability change reaches production by the builder UI, or by SQL.
+
+### The procedure
+
+**Order matters.** The column has to exist before the SQL that fills it.
+
+1. **Deploy the new build.** `StartupMigrator` applies pending migrations on boot; for this change
+   that is `AbilityCooldownGroup`, which adds a nullable `cooldown_group` to `abilities`. Confirm it
+   landed before going on:
+
+   ```
+   docker exec <pg> psql -U dikuweb -d dikuweb -c      "select column_name from information_schema.columns
+      where table_name='abilities' and column_name='cooldown_group';"
+   ```
+
+   One row back means yes. No rows means the deploy has not taken; stop here (§4).
+
+2. **Generate the patch**, naming only the abilities you mean to change:
+
+   ```
+   dotnet run tools/export-abilities.cs warden.shield-wall warden.last-stand      warden.ground-and-centre warden.unbreakable warden.the-last-wall      -o backups/ability-patch.sql
+   ```
+
+   Each statement is preceded by the ability's derived description, so what a `jsonb` blob will
+   actually do is readable before you run it. **Read those lines.** They are the review.
+
+3. **Snapshot the rows you are about to overwrite**, so you can diff and so you can put them back:
+
+   ```
+   docker exec <pg> psql -U dikuweb -d dikuweb -At -c      "select key, cooldown_group, effects from abilities where key like 'warden.%' order by key;"      > before.txt
+   ```
+
+4. **Apply.** The file is one transaction, so it is all-or-nothing:
+
+   ```
+   docker exec -i <pg> psql -U dikuweb -d dikuweb < backups/ability-patch.sql
+   ```
+
+5. **Diff.** Re-run the query from step 3 into `after.txt` and compare. Only the rows you named
+   should differ, and only in the fields you meant.
+
+6. **Restart `web`**, or edit any one ability through the builder. The cast path reads
+   `AbilityCache`, which is loaded at boot and updated by builder edits — **it does not notice a
+   direct SQL write.** Skip this and the table is right while the game keeps playing the old values.
+
+### What to know before you run one
+
+- **An upsert overwrites the whole row**, including any retune a builder made through the editor.
+  That is why the tool names keys and does not export everything by default; `--all` exists for a
+  database being rebuilt from nothing.
+- **It is idempotent.** Re-applying against an already-patched database changes nothing, so a
+  half-finished run is safe to repeat.
+- **Diff with the changing field masked out.** Masking `cooldown_group` and diffing the rest is what
+  caught a `maxHealth` of 1000 that a previous patch was believed to have fixed and had not. A diff
+  that only looks at the field you meant to change will confirm what you already believe.
+
+---
+
+## 6. Triage
 
 | Symptom | Likely cause | First move |
 |---|---|---|
@@ -194,12 +263,13 @@ exception, and it inserts a baseline rather than skipping anything.
 | Players connected, commands do nothing | Loop wedged or stopped | `logs web` for the slow-pulse watchdog; restart `web`. Progress is saved (§11) |
 | Everyone disconnected, page loads | SSE buffering somewhere in front | `proxy_buffering off`; `X-Accel-Buffering: no` on the stream |
 | Content missing after a deploy | Migration data loss, or someone deleted it | `content_audit` has before/after per mutation. Prefer that over a restore |
-| Auth failing for everyone | Rate limit — behind a proxy every caller shares one address | Known weakness, §6 below |
+| An ability retune did not take | SQL written, `AbilityCache` never reloaded | Restart `web`, or touch the ability in the builder. §5 |
+| Auth failing for everyone | Rate limit — behind a proxy every caller shares one address | Known weakness, §7 below |
 | `last-verified` stale | Backups failing | `logs backup` |
 
 ---
 
-## 6. Known gaps
+## 7. Known gaps
 
 Named rather than hidden.
 
@@ -210,14 +280,14 @@ Named rather than hidden.
   survives a bad migration and does not survive losing the host. Copying `./backups` off-box is not
   automated.
 - **A ban or role change waits for revalidation** (~60s) rather than taking effect instantly.
-- **No off-hours alerting.** The backup sidecar logs a failure; nothing pages anyone. §7's Grafana
+- **No off-hours alerting.** The backup sidecar logs a failure; nothing pages anyone. §8's Grafana
   dashboard is where that would go.
 - **The restore drill is Windows/PowerShell.** It runs where development happens, not on the
   production host.
 
 ---
 
-## 7. Metrics
+## 8. Metrics
 
 `EngineMetrics` publishes six instruments on the `DikuWeb.Engine` meter; `docker-compose.prod.yml`
 runs Prometheus and Grafana against them. Dashboard at `:3000`, and the four §11 targets are the
