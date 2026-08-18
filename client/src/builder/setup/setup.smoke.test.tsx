@@ -42,6 +42,8 @@ const calls = vi.hoisted(() => ({
   deleted: null as string | null,
   saved: null as string | null,
   imports: [] as boolean[],
+  /** Set by the test that checks what a refused apply leaves on screen. The dry run still passes. */
+  importFails: false,
 }))
 
 const report = vi.hoisted(
@@ -81,7 +83,11 @@ vi.mock('../../net/builderApi', async (importOriginal) => {
       exportUrl: () => '/api/builder/export',
       importBundle: (_bundle: unknown, dryRun: boolean) => {
         calls.imports.push(dryRun)
-        return Promise.resolve({ ...report, dryRun })
+        // Only the apply fails, which is the case worth covering: the rehearsal came back clean,
+        // so the builder is looking at a report that says it will work.
+        return calls.importFails && !dryRun
+          ? Promise.reject(new Error('The world is locked for maintenance.'))
+          : Promise.resolve({ ...report, dryRun })
       },
       // What the running server accepts. The panel compares a loaded file against this and refuses
       // a mismatch before uploading, so it has to be here or every import test renders a panel
@@ -99,6 +105,7 @@ beforeEach(() => {
   calls.deleted = null
   calls.saved = null
   calls.imports = []
+  calls.importFails = false
 })
 
 afterEach(cleanup)
@@ -178,6 +185,81 @@ it('dry runs a chosen file before offering to apply it', async () => {
   // button beside it carries the same words.
   expect(await screen.findByRole('heading', { name: 'Dry run' })).toBeTruthy()
   expect(screen.getByText(/16 new/)).toBeTruthy()
+})
+
+/** Loads a file and dry runs it, leaving the panel with Apply available. */
+async function dryRun() {
+  const input = (await screen.findByLabelText('Bundle file')) as HTMLInputElement
+  const file = new File([JSON.stringify({ formatVersion: 7, rooms: [{}] })], 'gatetown.json', {
+    type: 'application/json',
+  })
+
+  fireEvent.change(input, { target: { files: [file] } })
+  fireEvent.click(await screen.findByRole('button', { name: 'Dry run' }))
+  await waitFor(() => expect(calls.imports).toEqual([true]))
+}
+
+/** Clicks Apply and confirms in the dialog. */
+async function apply() {
+  fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+  const dialog = await screen.findByRole('alertdialog')
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Apply' }))
+}
+
+it('closes the confirmation once an import has been applied', async () => {
+  renderSetup('/builder/setup/transfer')
+  await dryRun()
+  await apply()
+
+  await waitFor(() => expect(calls.imports).toEqual([true, false]))
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
+})
+
+it('says the import is done rather than looking ready to run again', async () => {
+  // Reported from the builder: after applying, the panel reads as though nothing had happened -
+  // the file is still loaded, the buttons are still there, and the only difference is one word in
+  // a heading further down the page.
+  renderSetup('/builder/setup/transfer')
+  await dryRun()
+  await apply()
+
+  await waitFor(() => expect(calls.imports).toEqual([true, false]))
+  expect(await screen.findByRole('heading', { name: 'Applied' })).toBeTruthy()
+  expect(screen.getByText(/applied to this server/i)).toBeTruthy()
+})
+
+it('will not apply the same bundle twice without another dry run', async () => {
+  // An import is not atomic, and the gate is meant to be "only after a rehearsal". But an *apply*
+  // also produces a report, so the flag that gates Apply was satisfied by the apply itself - and
+  // the button came straight back, ready to write the whole bundle again.
+  renderSetup('/builder/setup/transfer')
+  await dryRun()
+  await apply()
+
+  await waitFor(() => expect(calls.imports).toEqual([true, false]))
+
+  const again = screen.queryByRole('button', { name: 'Apply' })
+  expect(again === null || again.hasAttribute('disabled')).toBe(true)
+})
+
+it('keeps a refused import on screen with the reason, rather than resetting', async () => {
+  // The confirmation deliberately does not close itself, so a throw leaves it open with the button
+  // re-enabled and nothing in it to say why - which reads as the apply having quietly done nothing.
+  calls.importFails = true
+
+  renderSetup('/builder/setup/transfer')
+  await dryRun()
+  await apply()
+
+  await waitFor(() => expect(calls.imports).toEqual([true, false]))
+
+  // The dialog is the one that has to carry it: it stays open by design, so a re-enabled Apply
+  // with nothing beside it is the whole of what a builder would see.
+  const dialog = await screen.findByRole('alertdialog')
+  expect(within(dialog).getByText(/locked for maintenance/)).toBeTruthy()
+
+  // And Apply is offered again rather than the panel pretending the write happened.
+  expect(screen.getAllByRole('button', { name: 'Apply' }).length).toBeGreaterThan(0)
 })
 
 it('says which bundle format the running server reads', async () => {

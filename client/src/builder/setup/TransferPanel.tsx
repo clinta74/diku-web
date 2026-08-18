@@ -90,6 +90,13 @@ export function TransferPanel({ onImported }: Props) {
   const [confirming, setConfirming] = useState(false)
 
   /**
+   * Why the last run was refused, or null. Held rather than only toasted: the confirmation does
+   * not close itself on a throw, so without this the dialog comes back to its resting state with
+   * Apply available again and nothing in it saying the import did not happen.
+   */
+  const [error, setError] = useState<string | null>(null)
+
+  /**
    * What this server accepts. Null while unknown — either still loading or the request failed — and
    * an unknown version must never block an import: the server refuses a bad one anyway, and a panel
    * that stopped working because a metadata read failed would be worse than one that says nothing.
@@ -119,11 +126,22 @@ export function TransferPanel({ onImported }: Props) {
   function reset() {
     setLoaded(null)
     setReport(null)
+    setError(null)
     if (fileInput.current) fileInput.current.value = ''
   }
 
+  /**
+   * Whether the bundle on screen has already been written.
+   *
+   * <b>Read from the report rather than tracked alongside it</b>, because the report already knows:
+   * a dry run comes back <c>dryRun: true</c> and an apply does not. Keeping a second flag in step
+   * with it would be one more thing to forget.
+   */
+  const applied = report !== null && !report.dryRun
+
   async function onFile(file: File) {
     setReport(null)
+    setError(null)
 
     try {
       const text = await file.text()
@@ -148,6 +166,7 @@ export function TransferPanel({ onImported }: Props) {
     if (!loaded) return
 
     setBusy(true)
+    setError(null)
     try {
       const result = await builderApi.importBundle(loaded.bundle, dryRun)
       setReport(result)
@@ -158,7 +177,9 @@ export function TransferPanel({ onImported }: Props) {
         onImported()
       }
     } catch (e: unknown) {
-      toast.notify(e instanceof Error ? e.message : 'The import was refused.', 'bad')
+      const message = e instanceof Error ? e.message : 'The import was refused.'
+      setError(message)
+      toast.notify(message, 'bad')
     } finally {
       setBusy(false)
     }
@@ -247,24 +268,58 @@ export function TransferPanel({ onImported }: Props) {
           {/* Said here rather than discovered by uploading. The server refuses this anyway, so this
               is not the check — it is the check arriving early enough to be useful. */}
           {mismatch && <p className="bad">{mismatch}</p>}
+          {error && <p className="bad">{error}</p>}
 
-          <div className="spawner-actions">
-            <Button variant="primary" disabled={busy || mismatch !== null} onClick={() => void run(true)}>
-              {busy ? 'Checking…' : 'Dry run'}
-            </Button>
+          {applied ? (
+            <>
+              {/* The panel used to come back to exactly the state it was in before, with Apply
+                  still lit - the only thing that changed was one word in a heading further down.
+                  It read as though nothing had happened, which for a write to the live world is
+                  the wrong thing for a screen to say. */}
+              <p className="good">
+                <strong>{loaded.filename}</strong> has been applied to this server.
+              </p>
 
-            {/* Only after a rehearsal, and only if it came back clean enough to read. Applying
-                first and reading the report afterwards is the order that leaves a half-applied
-                world behind. */}
-            <Button disabled={busy || report === null || mismatch !== null} onClick={() => setConfirming(true)}>
-              Apply
-            </Button>
+              <div className="spawner-actions">
+                <Button variant="primary" onClick={reset}>
+                  Import another file
+                </Button>
+              </div>
 
-            <Button onClick={reset}>Clear</Button>
-          </div>
+              <p className="dim">
+                Applying it again would write every entity in it a second time. Load the file afresh
+                and dry run it if that is what you mean to do.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="spawner-actions">
+                <Button variant="primary" disabled={busy || mismatch !== null} onClick={() => void run(true)}>
+                  {busy ? 'Checking…' : 'Dry run'}
+                </Button>
 
-          {report === null && mismatch === null && (
-            <p className="dim">Dry run first — it reports what would happen and changes nothing.</p>
+                {/* Only after a rehearsal, and only if it came back clean enough to read. Applying
+                    first and reading the report afterwards is the order that leaves a half-applied
+                    world behind.
+
+                    Gated on the report being a *dry run*, not merely on there being one. An apply
+                    produces a report too, so `report === null` was satisfied by the apply itself
+                    and the button came straight back - one click from writing the whole
+                    non-atomic bundle a second time. */}
+                <Button
+                  disabled={busy || report === null || !report.dryRun || mismatch !== null}
+                  onClick={() => setConfirming(true)}
+                >
+                  Apply
+                </Button>
+
+                <Button onClick={reset}>Clear</Button>
+              </div>
+
+              {report === null && mismatch === null && (
+                <p className="dim">Dry run first — it reports what would happen and changes nothing.</p>
+              )}
+            </>
           )}
         </div>
       )}
@@ -330,6 +385,15 @@ export function TransferPanel({ onImported }: Props) {
             This writes to the live world and players standing in these rooms will see the change.
             An import is <strong>not atomic</strong> — if it fails part way through, everything
             before that point stays applied.
+            {/* Said in the dialog as well as in the panel behind it, because this is the one place
+                the dialog stays open after a failed run - and a re-enabled Apply with no reason
+                beside it reads as the import having quietly done nothing. */}
+            {error && (
+              <>
+                {' '}
+                <span className="bad">The last attempt was refused: {error}</span>
+              </>
+            )}
           </>
         }
         confirmLabel="Apply"
