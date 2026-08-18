@@ -994,6 +994,17 @@ picking fights.
   being there. An even split, whatever the levels.
 - **Zero says why**, because a silent zero reads as a broken reward, and a player who believes the
   reward is broken reports it rather than hunting something else.
+- **A drop says what it was.** Loot landed on the floor and nothing said so: the room listing
+  redraws, so the item was *there*, but a player who killed something and walked on had no way to
+  know they had left anything behind, and a group had no way to know a drop had happened. The kill
+  credit is now told — *"A large rat drops a tarnished fang."* — naming what actually dropped, not
+  what the table might have.
+
+  **The same people the experience went to, read from the same helper** (`CombatSystem.KillCredit`).
+  Two answers to "the group that got the kill" would mean a member seeing loot they were not paid
+  for, or the reverse, and that is the kind of disagreement nobody notices for months. **A bystander
+  is not told**: the room already learns there is something on the floor, so this line is the answer
+  to *did I get anything for that* rather than news about the floor.
 
 One ordering carries real weight: **the window is applied after the experience multiplier** (§4.4),
 so a generous zone scales a reward and can never resurrect a worthless one. Reverse it and an

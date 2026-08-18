@@ -142,7 +142,10 @@ internal sealed class WorldHarness
             View,
             ItemTemplates,
             MobTemplates,
-            itemSpawner: null,
+            // A real one. This was null, so RollLoot returned on its first line and no Engine test
+            // could ever see a mob drop anything - the same shape as the AbilityCache that was left
+            // null and made every `cast` test pass without reaching the cast path.
+            itemSpawner: new DikuWeb.Engine.Spawning.ItemSpawner(),
             logger: null,
             effects: new Domain.Abilities.Effects.EffectRegistry(),
             // The same cache `cast` resolves against, so a kill that levels somebody announces
@@ -631,7 +634,8 @@ internal sealed class WorldHarness
         int damageMax = 1,
         Dictionary<string, object>? behavior = null,
         int level = 1,
-        string icon = "r")
+        string icon = "r",
+        IEnumerable<Dictionary<string, object>>? loot = null)
     {
         MobTemplates.Put(new MobTemplate
         {
@@ -641,6 +645,7 @@ internal sealed class WorldHarness
             Level = level,
             Attacks = [.. attacks ?? []],
             Behavior = behavior ?? [],
+            Loot = [.. loot ?? []],
         });
 
         // Resolved the way MobSpawner resolves it, so a test that sets a zone's band or its

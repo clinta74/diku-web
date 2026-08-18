@@ -202,6 +202,28 @@ public static class NarrationHelper
         return needsEs ? word + "es" : word + "s";
     }
 
+    /// <summary>
+    /// Joins names into an English list: "a rat", "a rat and a crow", "a rat, a crow and a dog".
+    /// </summary>
+    /// <remarks>
+    /// A joiner and nothing more - articles are the caller's business, because the same list is
+    /// wanted with them ("drops a fang and a token") and without ("Bram, Wen and Kaeda").
+    ///
+    /// No Oxford comma, to match the rest of the game's prose.
+    /// </remarks>
+    public static string List(IReadOnlyList<string> names)
+    {
+        ArgumentNullException.ThrowIfNull(names);
+
+        return names.Count switch
+        {
+            0 => string.Empty,
+            1 => names[0],
+            2 => $"{names[0]} and {names[1]}",
+            _ => $"{string.Join(", ", names.Take(names.Count - 1))} and {names[^1]}",
+        };
+    }
+
     /// <summary>Gets the appropriate article for a name (a or an).</summary>
     public static string GetArticle(string name)
     {

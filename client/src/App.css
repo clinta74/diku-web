@@ -472,6 +472,17 @@ input:focus {
   color: var(--accent);
   font-weight: 600;
 }
+/*
+ * What a kill left on the floor. Gold like a level-up, because both are "you gained something",
+ * but not bold - a drop happens on most kills and a level-up does not, so the weight is what keeps
+ * the rarer line the louder one.
+ *
+ * Defined rather than left to fall back to the body colour: a style name the client does not render
+ * is the defect BUGS.md #19 is about, and adding one is exactly when it gets introduced.
+ */
+.line .loot {
+  color: var(--accent);
+}
 .line .occupant {
   color: var(--text);
 }

@@ -1246,18 +1246,46 @@ public sealed class CombatSystem(
 
         var mobRoomKey = RoomKey.Parse(mob.RoomKey);
 
+        // Named once, while it is still standing there. MobLabel reads the room to decide whether
+        // an ordinal is needed, and the mob is removed further down - so both lines below have to
+        // be built from the same label or the loot line could disagree with the death line about
+        // which crow it was.
+        var label = MobLabel.For(world, mob);
+
         if (killerChar != null)
         {
             AwardKill(world, killerChar, mob, mobRoomKey);
         }
 
-        RollLoot(world, mob, mobRoomKey);
+        var dropped = RollLoot(world, mob, mobRoomKey);
 
         // Narrate mob death to the room
-        var deathProse = NarrationHelper.BuildSentence(MobLabel.For(world, mob), "falls.");
+        var deathProse = NarrationHelper.BuildSentence(label, "falls.");
         foreach (var occupant in world.OccupantsOf(mobRoomKey))
         {
             occupant.SendText(deathProse, "death");
+        }
+
+        // What it left behind, named, to whoever earned it.
+        //
+        // <b>Only the kill credit, not the room.</b> The room already learns there is something on
+        // the floor - RefreshRoom below redraws the contents for everybody standing in it - so this
+        // line is not information about the room, it is the answer to "did I get anything for
+        // that". A bystander who wants to know what is lying there can look.
+        //
+        // The same people the experience went to, read from the same helper, because "the group
+        // that got the kill" answered two different ways is the kind of disagreement nobody
+        // notices until a party member sees loot they were not paid for.
+        if (killerChar is not null && dropped.Count > 0)
+        {
+            var lootProse = NarrationHelper.BuildSentence(
+                label,
+                $"drops {NarrationHelper.List([.. dropped.Select(d => NarrationHelper.WithArticle(d))])}.");
+
+            foreach (var earner in KillCredit(world, killerChar, mobRoomKey))
+            {
+                world.FindByCharacter(earner.Id)?.SendText(lootProse, "loot");
+            }
         }
 
         // Remove mob from world
@@ -1295,7 +1323,22 @@ public sealed class CombatSystem(
     /// level scaled by its zone (<see cref="MobLevel"/>) is the measure of what was actually
     /// survived, and it applies to each person the same way whether they came alone or not.
     /// </remarks>
-    private void AwardKill(WorldState world, Character killer, Mob mob, RoomKey roomKey)
+    /// <summary>
+    /// Who a kill belongs to: the killer, plus any party member standing where it died.
+    /// </summary>
+    /// <remarks>
+    /// <b>Present means standing where it died.</b> A member who fled the room a moment ago is out,
+    /// which is the same rule combat itself uses for staying in a fight (§4.2), and a group that
+    /// could farm by scattering across the map would make the split an exploit rather than a
+    /// convenience.
+    ///
+    /// The killer is always first, so an odd remainder goes to whoever landed the blow.
+    ///
+    /// Extracted because two things now ask the question - the reward split and the loot line - and
+    /// a party member who saw the loot announced but was not paid for it, or the reverse, is a
+    /// disagreement that would take a long time to notice.
+    /// </remarks>
+    private static List<Character> KillCredit(WorldState world, Character killer, RoomKey roomKey)
     {
         var sharers = new List<Character> { killer };
 
@@ -1306,13 +1349,18 @@ public sealed class CombatSystem(
                 continue;
             }
 
-            // Present means standing where it died. A member who fled the room a moment ago is
-            // out, which is the same rule combat itself uses for staying in a fight (§4.2).
             if (member.RoomKey == roomKey)
             {
                 sharers.Add(member.Character);
             }
         }
+
+        return sharers;
+    }
+
+    private void AwardKill(WorldState world, Character killer, Mob mob, RoomKey roomKey)
+    {
+        var sharers = KillCredit(world, killer, roomKey);
 
         var mobLevel = world.EffectiveLevelOf(mob);
 
@@ -1388,23 +1436,35 @@ public sealed class CombatSystem(
     /// repositories, which is what lets this run on the loop thread - and means a builder's edit
     /// to a loot table takes effect without a restart.
     /// </summary>
-    private void RollLoot(WorldState world, Mob mob, RoomKey roomKey)
+    /// <returns>
+    /// The display names of what actually dropped, in table order, so the caller can name them.
+    /// Empty when the table was empty, every roll missed, or the caches are not wired up - and the
+    /// caller says nothing rather than announcing a drop of nothing.
+    /// </returns>
+    /// <remarks>
+    /// Returns names rather than the instances themselves: what the caller wants is a sentence, and
+    /// handing out live world objects for the sake of reading one property off them invites somebody
+    /// to mutate them later.
+    /// </remarks>
+    private List<string> RollLoot(WorldState world, Mob mob, RoomKey roomKey)
     {
+        var dropped = new List<string>();
+
         if (mobTemplates is null || itemTemplates is null || itemSpawner is null)
         {
-            return;
+            return dropped;
         }
 
         if (world.FindRoom(roomKey) is not { } room ||
             world.FindZone(room.ZoneKey) is not { } zone ||
             world.FindWorld(zone.WorldKey) is not { } worldEntity)
         {
-            return;
+            return dropped;
         }
 
         if (mobTemplates.Get(mob.TemplateKey)?.Loot is not { } loot)
         {
-            return;
+            return dropped;
         }
 
         foreach (var lootEntry in loot)
@@ -1443,9 +1503,17 @@ public sealed class CombatSystem(
 
             if (itemTemplates.Get(itemKey) is { } itemTemplate)
             {
-                world.AddItem(itemSpawner.Spawn(itemTemplate, zone, worldEntity, roomKey));
+                var instance = itemSpawner.Spawn(itemTemplate, zone, worldEntity, roomKey);
+                world.AddItem(instance);
+
+                // The instance's name, not the template's: DisplayName is what every other verb
+                // shows and what a player would type, and it falls back to the key for a nameless
+                // template rather than announcing a blank.
+                dropped.Add(instance.DisplayName);
             }
         }
+
+        return dropped;
     }
 
     /// <summary>
