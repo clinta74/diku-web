@@ -427,7 +427,7 @@ healing was on that list and has since been taken off it, as a design decision r
 
 ---
 
-## 26. `warden.last-stand` grants 1000 maximum health at level 20 — content, likely a typo
+## 26. `warden.last-stand` granted 1000 maximum health at level 20 — **fixed**
 
 Found by reading the derived ability descriptions (PLAN.md §4.5), which is the whole argument for
 having them: the dial had been sitting in the catalogue in plain sight and nobody had put it beside
@@ -440,26 +440,38 @@ its neighbours.
 | The Last Wall | 50 | 400 |
 | **Last Stand** | **20** | **1000** |
 
-A Warden at 20 does not have anything like 1000 maximum health, so this multiplies the bar several
-times over, and it is granted as health as well as ceiling. **100 is almost certainly what was
-meant** — it would sit just under Ground and Centre's 120 at 32, which is the shape the rest of the
-line has.
+A Warden at 20 does not have anything like 1000 maximum health, so this multiplied the bar several
+times over, and it is granted as health as well as ceiling.
 
-Worth stating plainly: `AbilityCatalogue` is the seed set, so changing it retunes a *fresh* install
-and nothing else. A live server needs the row changed through the builder or an imported bundle.
+**Now 80**, which opens the line rather than dwarfing it. Applied to the catalogue and exported to
+the live database with `tools/export-abilities.cs` — see #27 for why that tool exists.
 
 ---
 
-## 27. `warden.shield-wall` is a damage buff wearing a defensive name — content
+## 27. `warden.shield-wall` was a damage buff wearing a defensive name — **fixed**
 
 `buff.damage-up` at 1.4, named "Shield Wall", flavoured *"Set yourself. Nothing moves you for a
 while."* Both the name and the prose promise defence; the ability raises damage by 40%. The Warden's
 actual guard at that end of the ladder is Bulwark at 28, so this is not a duplicate — it is one
 ability describing itself as another.
 
-Two ways out and they are a design call, not a bug fix: retune it to `buff.defense` and leave the
-name alone, or rename it and leave the effect alone. Surfaced by the same derived descriptions as
-#26.
+**Retuned to `buff.defense`, keeping the name and the flavour** — 6 defence and 6% mitigation for
+25s, a step under Bulwark's 8/8. The name was the half worth keeping: Battle Fury at 5 is already a
+damage buff, so a second one at 13 was redundant, and it left the Warden with no guard at all until
+28.
+
+Both fixes needed a way to reach a running server, because `AbilityCatalogue` seeds only a *fresh*
+database and the startup reconcile plants what is missing without ever updating — deliberately, so
+a restart cannot revert a builder's work. Hence `tools/export-abilities.cs`, which writes named
+catalogue rows out as upsert SQL with the derived description above each one, so what a statement
+will do is readable before it is run:
+
+```
+dotnet run tools/export-abilities.cs warden.last-stand warden.shield-wall -o backups/fix.sql
+```
+
+It names keys rather than exporting everything by default, because an upsert overwrites: `--all`
+would push the catalogue over the top of every retune made through the editor, silently.
 
 ---
 

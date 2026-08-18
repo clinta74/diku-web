@@ -335,10 +335,14 @@ public static class AbilityCatalogue
             CostType.Stamina, 22, 96, 4, TargetingType.Self,
             (Effect("heal.restore", Heal("40")))),
 
+        // Was a 40% damage buff, under this name and this flavour line - one ability describing
+        // itself as another (BUGS.md #27). It is also the second damage buff a Warden would have
+        // had, after Battle Fury at 5, while their first actual guard waited until Bulwark at 28.
+        // Now it guards, which is what "set yourself" means, and it sits a step under Bulwark.
         new(CharacterPath.Warden, 13, "warden.shield-wall", "Shield Wall",
             "Set yourself. Nothing moves you for a while.",
             CostType.Stamina, 25, 240, null, TargetingType.Self,
-            (Effect("buff.damage-up", Buff("1.4", "100", "shield wall")))),
+            (Effect("buff.defense", Guard("6", "6", "100", "shield wall")))),
 
         new(CharacterPath.Warden, 16, "warden.crushing-blow", "Crushing Blow",
             "One heavy swing, wound up and committed to.",
@@ -354,7 +358,11 @@ public static class AbilityCatalogue
             "Refuse to fall. The refusal is most of it.",
             CostType.Stamina, 30, 2400, null, TargetingType.Self,
             Together(
-                Part("buff.max-health", MaxHealth("1000", "480", "standing ground")),
+                // 80, not the 1000 this shipped with (BUGS.md #26). A Warden at 20 has nothing
+                // like 1000 maximum health, so it multiplied the bar several times over - and it
+                // is granted as health as well as ceiling. Its neighbours at 32, 40 and 50 give
+                // 120, 200 and 400, so this now opens the line rather than dwarfing it.
+                Part("buff.max-health", MaxHealth("80", "480", "standing ground")),
                 Part("buff.defense", Guard("6", "6", "480", "standing ground")))),
 
         // -------------------------------------------------------------------
