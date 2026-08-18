@@ -350,7 +350,7 @@ public sealed class BundleValidatorTests
             GiverMobKey: string.Empty, TurninMobKey: string.Empty,
             RequiredItemKey: null, RequiredCount: 1,
             RewardXp: 10, RewardGold: 1, RewardItemKey: null, RewardItemCount: 0, RewardFlagKey: null,
-            PrerequisiteQuestKeys: [], IsRepeatable: false, AutoStart: false,
+            PrerequisiteQuestKeys: [], IsRepeatable: false, AutoStart: false, Paths: [],
             Dialogue: dialogue, SortOrder: 0);
 
     // -----------------------------------------------------------------------

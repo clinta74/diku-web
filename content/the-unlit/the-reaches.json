@@ -1,5 +1,5 @@
 {
-  "formatVersion": 13,
+  "formatVersion": 14,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -1427,7 +1427,8 @@
         "giverInProgress": "'Eight. The long held have them. They will not give them up, because that is the entire remaining content of them.'",
         "turninReady": "She turns each one over. 'Forty sets of gear on the standing ground,' she says, 'and I have been counting arrivals for a very long time, and the number is much higher than forty.' She sets them down in a row. 'Most people go back. I want that written down somewhere.'"
       },
-      "sortOrder": 1
+      "sortOrder": 1,
+      "paths": []
     },
     {
       "key": "a5-2-who-set-the-stones",
@@ -1454,7 +1455,8 @@
         "giverInProgress": "'Five. The further in, the smoother. That is not weather. There is no weather.'",
         "turninReady": "She lines them up by wear, oldest first, and does not touch the oldest. 'I set that one,' she says. 'I was going to walk out to the face and back and I wanted to be able to find the door.' She sits back. 'I never did walk back. I have been about to for rather a long time.'"
       },
-      "sortOrder": 2
+      "sortOrder": 2,
+      "paths": []
     },
     {
       "key": "a5-3-what-is-owed",
@@ -1481,7 +1483,8 @@
         "giverInProgress": "'Under the face. It is not a god and it is not a boss and it will not negotiate, because there is nothing left in it that could. Take the answer off it and bring it to the niche.'",
         "turninReady": "She takes it, and does not look at it, and puts it into the niche in the face, and sits down on the stone seat.\\n\\n'Kheddran binds people by their word,' she says. 'The Unlit binds the Reaches by being there. Nobody ever asked it to and nobody has ever thanked it and it has never once let go.' She looks up at you. 'It has been watching for somebody to notice. That is the whole of it. That is what recognition means.'\\n\\n'You can go back now. Most people do. I would like you to.'"
       },
-      "sortOrder": 3
+      "sortOrder": 3,
+      "paths": []
     },
     {
       "key": "e5-warden",
@@ -1510,7 +1513,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
       },
-      "sortOrder": 15
+      "sortOrder": 15,
+      "paths": [
+        "Warden"
+      ]
     },
     {
       "key": "e5-hallow",
@@ -1539,7 +1545,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
       },
-      "sortOrder": 15
+      "sortOrder": 15,
+      "paths": [
+        "Hallow"
+      ]
     },
     {
       "key": "e5-adept",
@@ -1568,7 +1577,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
       },
-      "sortOrder": 15
+      "sortOrder": 15,
+      "paths": [
+        "Adept"
+      ]
     },
     {
       "key": "e5-shade",
@@ -1597,7 +1609,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
       },
-      "sortOrder": 15
+      "sortOrder": 15,
+      "paths": [
+        "Shade"
+      ]
     }
   ],
   "configurations": []

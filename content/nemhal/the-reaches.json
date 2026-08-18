@@ -1,5 +1,5 @@
 {
-  "formatVersion": 13,
+  "formatVersion": 14,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -3188,7 +3188,8 @@
         "giverComplete": "'Ten. And do not apologise to them. It does not reach.'",
         "turninReady": "She lays them in a line and counts under her breath. 'Two hundred years of issue and the numbers are still climbing,' she says. 'They are not leftovers. They are being replaced.'"
       },
-      "sortOrder": 1
+      "sortOrder": 1,
+      "paths": []
     },
     {
       "key": "a4-2-the-office",
@@ -3216,7 +3217,8 @@
         "giverComplete": "'Six pages. Any six. They are all the same and I want to be sure of that.'",
         "turninReady": "She reads all six without stopping. 'Every prayer is for a recovery,' she says at last. 'Not for the dead. For the sick. They are not mourning her.' She folds them very carefully. 'They are nursing her.'"
       },
-      "sortOrder": 2
+      "sortOrder": 2,
+      "paths": []
     },
     {
       "key": "a4-3-she-stood-in-the-way",
@@ -3244,7 +3246,8 @@
         "giverComplete": "'She is still there. She has been still there for two hundred years and she has never once been relieved.'",
         "turninReady": "Aveth holds the linen and does not look at it. 'You saw it, then,' she says. 'She is not lying in a tomb. She is lying in the gap. She stood in the way and it cost her all of it and it worked - and Nemhal has been coming apart at exactly the rate she has, because she is what is left holding it.' She hands the corner back. 'Take it with you. And listen: past the next gate, recall does not work. Not weakened. Does not work. You walk in and you walk out, or you die and pay for it. Say it back to me before you go.'"
       },
-      "sortOrder": 3
+      "sortOrder": 3,
+      "paths": []
     },
     {
       "key": "e4-warden",
@@ -3273,7 +3276,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 14
+      "sortOrder": 14,
+      "paths": [
+        "Warden"
+      ]
     },
     {
       "key": "e4-hallow",
@@ -3302,7 +3308,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 14
+      "sortOrder": 14,
+      "paths": [
+        "Hallow"
+      ]
     },
     {
       "key": "e4-adept",
@@ -3331,7 +3340,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 14
+      "sortOrder": 14,
+      "paths": [
+        "Adept"
+      ]
     },
     {
       "key": "e4-shade",
@@ -3360,7 +3372,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 14
+      "sortOrder": 14,
+      "paths": [
+        "Shade"
+      ]
     }
   ],
   "configurations": []

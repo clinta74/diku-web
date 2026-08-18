@@ -133,6 +133,7 @@ public sealed class QuestFlagRewardTests
             PrerequisiteQuestKeys: [],
             IsRepeatable: false,
             AutoStart: false,
+            Paths: [],
             Dialogue: [],
             SortOrder: 0));
 

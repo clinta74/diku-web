@@ -58,6 +58,14 @@ public sealed record WorldBundle(
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
     ///
+    /// <b>14 because a quest can be for one Path.</b> A quest carries <c>paths</c>, and a giver
+    /// offers only what the character in front of them can use. The weak kind of bump, like 13: a
+    /// v13 bundle has no such key, so read as v14 every quest arrives unrestricted - which is
+    /// exactly what a v13 quest meant. It is here because the exporter now writes a key a v13
+    /// reader would drop. The other direction is the one worth refusing on: a v14 bundle read as
+    /// v13 loses the restriction, and one smith starts handing every character all four epic
+    /// chains again - four Path-locked rewards, three of them unusable and undroppable.
+    ///
     /// <b>13 because abilities can share a timer.</b> An ability carries <c>cooldownGroup</c>, and
     /// using any ability on a timer puts the whole timer on cooldown. This is the *weak* kind of
     /// bump, like 5 and 7: a v12 bundle has no such key, so read as v13 every ability arrives
@@ -142,7 +150,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 13;
+    public const int CurrentFormatVersion = 14;
 }
 
 /// <summary>
@@ -315,6 +323,7 @@ public sealed record BundleQuest(
     List<string> PrerequisiteQuestKeys,
     bool IsRepeatable,
     bool AutoStart,
+    List<CharacterPath>? Paths,
     Dictionary<string, string> Dialogue,
     int SortOrder);
 

@@ -382,6 +382,7 @@ public sealed record UpsertQuest(
     List<string> PrerequisiteQuestKeys,
     bool IsRepeatable,
     bool AutoStart,
+    List<CharacterPath> Paths,
     Dictionary<string, string> Dialogue,
     int SortOrder) : WorldChange
 {

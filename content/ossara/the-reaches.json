@@ -1,5 +1,5 @@
 {
-  "formatVersion": 13,
+  "formatVersion": 14,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -2189,7 +2189,8 @@
         "giverComplete": "'Still up there, are they? They are not getting lighter.'",
         "turninReady": "He turns one over twice. 'Right. So they are cut on both faces. Nobody mentioned that. Take a rest, and then would you mind terribly—'"
       },
-      "sortOrder": 1
+      "sortOrder": 1,
+      "paths": []
     },
     {
       "key": "a1-2-what-sulveth-keeps",
@@ -2217,7 +2218,8 @@
         "giverComplete": "'Six. And do not sort them. I will sort them.'",
         "turninReady": "Vess lays them out on the blank stone without hurrying. 'These went first,' she says. 'The stones went second. The gate went third. He has the order backwards and the right idea.'"
       },
-      "sortOrder": 2
+      "sortOrder": 2,
+      "paths": []
     },
     {
       "key": "a1-3-a-gate-does-not-break",
@@ -2245,7 +2247,8 @@
         "giverComplete": "'Still standing there, is it. Yes. It does that.'",
         "turninReady": "She turns the shard so the smooth broken face catches the light. 'A gate does not break,' she says. 'It forgets. Somebody stopped saying the name of the other side and it stopped being able to find it.' She presses the shard into your hand. 'It knows you now. Go and see what is left of Grask, and mind what looks back.'"
       },
-      "sortOrder": 3
+      "sortOrder": 3,
+      "paths": []
     },
     {
       "key": "e1-warden",
@@ -2273,7 +2276,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 11
+      "sortOrder": 11,
+      "paths": [
+        "Warden"
+      ]
     },
     {
       "key": "e1-hallow",
@@ -2301,7 +2307,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 11
+      "sortOrder": 11,
+      "paths": [
+        "Hallow"
+      ]
     },
     {
       "key": "e1-adept",
@@ -2329,7 +2338,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 11
+      "sortOrder": 11,
+      "paths": [
+        "Adept"
+      ]
     },
     {
       "key": "e1-shade",
@@ -2357,7 +2369,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 11
+      "sortOrder": 11,
+      "paths": [
+        "Shade"
+      ]
     }
   ],
   "configurations": [

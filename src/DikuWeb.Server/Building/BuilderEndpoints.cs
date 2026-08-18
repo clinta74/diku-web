@@ -1331,6 +1331,7 @@ public static class BuilderEndpoints
             request.PrerequisiteQuestKeys ?? [],
             request.IsRepeatable ?? false,
             request.AutoStart ?? false,
+            request.Paths ?? [],
             request.Dialogue ?? [],
             request.SortOrder ?? 0);
 
@@ -1368,6 +1369,7 @@ public static class BuilderEndpoints
             request.PrerequisiteQuestKeys ?? existing.PrerequisiteQuestKeys,
             request.IsRepeatable ?? existing.IsRepeatable,
             request.AutoStart ?? existing.AutoStart,
+            request.Paths ?? [.. existing.Paths],
             request.Dialogue ?? existing.Dialogue,
             request.SortOrder ?? existing.SortOrder);
 

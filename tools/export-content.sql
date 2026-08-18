@@ -4,9 +4,12 @@
 -- a hand-written copy of the schema, and nothing compiles or tests this file. When
 -- `spawners.sentinel` was renamed to `wanders`, this script went on emitting `sentinel` and would
 -- have produced an export that failed to load, and an existing backup that no longer applied. The
--- fault surfaced only because somebody went looking, and it has now happened twice: `quests`
+-- fault surfaced only because somebody went looking, and it has now happened three times: `quests`
 -- omitted `auto_start` from the day that column was added, so every SQL restore quietly reset every
--- quest's auto-start to the column default. **Add or rename a column in one of the nine tables
+-- quest's auto-start to the column default - and `reward_flag_key` was missing from the same list
+-- from the day *it* was added, which meant a restore silently cleared the four attunement gates
+-- (BUGS.md #6, #7) that are the game's only progression lock. Both were found while adding `paths`,
+-- by diffing this list against information_schema rather than by reading it. **Add or rename a column in one of the nine tables
 -- below and you must edit this file in the same commit.** The JSON path (§6.1) has tests behind it
 -- and should be preferred for anything that can use it; this one is guarded by nothing but reading.
 --
@@ -169,9 +172,9 @@ select '-- quests';
 select format(
     'INSERT INTO quests (key, zone_key, name, summary, description, giver_mob_key, turnin_mob_key, '
     || 'required_item_key, required_count, reward_xp, reward_gold, reward_item_key, '
-    || 'reward_item_count, prerequisite_quest_keys, is_repeatable, auto_start, dialogue, '
-    || 'sort_order) '
-    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L) '
+    || 'reward_item_count, reward_flag_key, prerequisite_quest_keys, is_repeatable, auto_start, '
+    || 'paths, dialogue, sort_order) '
+    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L) '
     || 'ON CONFLICT (key) DO UPDATE SET '
     || 'zone_key = EXCLUDED.zone_key, name = EXCLUDED.name, summary = EXCLUDED.summary, '
     || 'description = EXCLUDED.description, giver_mob_key = EXCLUDED.giver_mob_key, '
@@ -179,12 +182,15 @@ select format(
     || 'required_count = EXCLUDED.required_count, reward_xp = EXCLUDED.reward_xp, '
     || 'reward_gold = EXCLUDED.reward_gold, reward_item_key = EXCLUDED.reward_item_key, '
     || 'reward_item_count = EXCLUDED.reward_item_count, '
+    || 'reward_flag_key = EXCLUDED.reward_flag_key, '
     || 'prerequisite_quest_keys = EXCLUDED.prerequisite_quest_keys, '
     || 'is_repeatable = EXCLUDED.is_repeatable, auto_start = EXCLUDED.auto_start, '
+    || 'paths = EXCLUDED.paths, '
     || 'dialogue = EXCLUDED.dialogue, sort_order = EXCLUDED.sort_order;',
     key, zone_key, name, summary, description, giver_mob_key, turnin_mob_key,
     required_item_key, required_count, reward_xp, reward_gold, reward_item_key,
-    reward_item_count, prerequisite_quest_keys, is_repeatable, auto_start, dialogue, sort_order)
+    reward_item_count, reward_flag_key, prerequisite_quest_keys, is_repeatable, auto_start,
+    paths, dialogue, sort_order)
 from quests order by key;
 
 select '';

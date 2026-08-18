@@ -73,6 +73,41 @@ public sealed class QuestConfiguration : IEntityTypeConfiguration<Quest>
         builder.Property(q => q.IsRepeatable)
             .HasColumnName("is_repeatable");
 
+        // The Paths this quest is for, as a jsonb array of names - the same shape and the same
+
+        // argument as ItemTemplateConfiguration's: a short, unordered, read-only list only ever
+
+        // wanted alongside its row.
+
+        builder.Property(q => q.Paths)
+
+            .HasColumnName("paths")
+
+            .HasColumnType("jsonb")
+
+            .HasConversion(
+
+                v => System.Text.Json.JsonSerializer.Serialize(
+
+                    v.Select(x => x.ToString()), (System.Text.Json.JsonSerializerOptions?)null),
+
+                v => System.Text.Json.JsonSerializer
+
+                        .Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null)!
+
+                        .Select(Enum.Parse<DikuWeb.Domain.Characters.CharacterPath>)
+
+                        .ToList(),
+
+                new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<List<DikuWeb.Domain.Characters.CharacterPath>>(
+
+                    (a, b) => a!.SequenceEqual(b!),
+
+                    v => v.Aggregate(0, (acc, x) => HashCode.Combine(acc, x.GetHashCode())),
+
+                    v => v.ToList()));
+
+
         builder.Property(q => q.AutoStart)
             .HasColumnName("auto_start");
 

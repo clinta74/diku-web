@@ -397,3 +397,5 @@ Add anything noticed while playing here. Cleared as items are done.
     **Untested in play:** whether three six-cell bars per member is readable at a glance on a phone
     with five in the group, and whether *elsewhere* is the right thing to say about somebody one
     room away versus one realm away — it does not currently distinguish.
+
+  - it's hard to get off-hand weapons. some weapons should work in either hand, others in only the main hand, and some use both hands and prevent an off hand weapon. I think this means that items need a mutliselect for slot that gives more freedom in choices. some items may able to be worn in mutliple slots as an outcome of this.

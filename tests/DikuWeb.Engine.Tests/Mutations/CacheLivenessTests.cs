@@ -22,7 +22,7 @@ namespace DikuWeb.Engine.Tests.Mutations;
 public sealed class CacheLivenessTests
 {
     private static UpsertQuest NewQuest(string key, string giver, string name = "A Quest") =>
-        new(key, "test.zone", name, "", "", giver, giver, null, 1, 0, 0, null, 1, null, [], false, false, [], 0);
+        new(key, "test.zone", name, "", "", giver, giver, null, 1, 0, 0, null, 1, null, [], false, false, [], [], 0);
 
     private static (WorldMutationApplier Applier, QuestCache Quests, MobTemplateCache Mobs, ItemTemplateCache Items, SpawnerCache Spawners) NewApplier()
     {

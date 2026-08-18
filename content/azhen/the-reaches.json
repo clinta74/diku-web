@@ -1,5 +1,5 @@
 {
-  "formatVersion": 13,
+  "formatVersion": 14,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -3142,7 +3142,8 @@
         "giverComplete": "'Six. And do not clean the teeth. I want to see the wear.'",
         "turninReady": "He fits one without measuring it and it seats with a click. 'You understand what that means,' he says. 'Made to a tolerance, four hundred years ago, by people who expected to be replacing them today.'"
       },
-      "sortOrder": 1
+      "sortOrder": 1,
+      "paths": []
     },
     {
       "key": "a3-2-the-scraped-plates",
@@ -3170,7 +3171,8 @@
         "giverComplete": "'Four. Bring me the worst ones. The worst ones are the least well scraped.'",
         "turninReady": "He works one under the lamp for a long time. 'It is a position,' he says finally. 'Not a brightness, not a distance. A position, and it is the same on all four, and the dates are ninety years apart.' He sets it down. 'It has not moved.'"
       },
-      "sortOrder": 2
+      "sortOrder": 2,
+      "paths": []
     },
     {
       "key": "a3-3-what-it-is-watching-for",
@@ -3198,7 +3200,8 @@
         "giverComplete": "'They are still sitting there. They will be sitting there tomorrow.'",
         "turninReady": "Vane holds the blank up and does not need a lamp for it. 'The Regard is not attention,' he says quietly. 'We have all been saying attention. It is recognition. It is not watching the Reaches. It is watching for something, it has been watching for the same something since before Azhen, and it has never once had to look away and find it again.' He sits down. 'Nemhal is closer to the edge than we are. Go and ask them what it looks like from there.'"
       },
-      "sortOrder": 3
+      "sortOrder": 3,
+      "paths": []
     },
     {
       "key": "e3-warden",
@@ -3227,7 +3230,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 13
+      "sortOrder": 13,
+      "paths": [
+        "Warden"
+      ]
     },
     {
       "key": "e3-hallow",
@@ -3256,7 +3262,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 13
+      "sortOrder": 13,
+      "paths": [
+        "Hallow"
+      ]
     },
     {
       "key": "e3-adept",
@@ -3285,7 +3294,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 13
+      "sortOrder": 13,
+      "paths": [
+        "Adept"
+      ]
     },
     {
       "key": "e3-shade",
@@ -3314,7 +3326,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 13
+      "sortOrder": 13,
+      "paths": [
+        "Shade"
+      ]
     }
   ],
   "configurations": []

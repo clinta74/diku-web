@@ -104,6 +104,18 @@ public static class QuestCommands
                 continue;
             }
 
+            // Not for this Path: not offered at all, and if they are somehow holding it, told why
+            // rather than left to discover it at the turn-in.
+            if (WrongPathNote(quest, character) is { } wrongPath)
+            {
+                if (questState?.Status == QuestStatus.Active)
+                {
+                    narrations.Add(wrongPath);
+                }
+
+                continue;
+            }
+
             if (questState is null && prerequisitesMet)
             {
                 narrations.Add(Begin(ctx, character.Id, quest, timesCompleted: 0));
@@ -200,6 +212,35 @@ public static class QuestCommands
         return !string.IsNullOrEmpty(quest.RequiredItemKey) &&
                ctx.ItemTemplates?.Get(quest.RequiredItemKey) is null;
     }
+
+    /// <summary>
+    /// Whether this quest is meant for this character's Path.
+    /// </summary>
+    /// <remarks>
+    /// <b>Empty means anyone</b>, exactly as <c>ItemTemplate.Paths</c> does, so the fifteen quests
+    /// authored before this field are unrestricted without being touched.
+    ///
+    /// The four epic chains are why this exists. All twenty are given by one smith, so Vesh handed
+    /// every character all four - and a Shade who finished the Adept chain received a stormrod they
+    /// could not wield and, being lore and no-drop, could not get rid of either.
+    /// </remarks>
+    private static bool IsForPath(Quest quest, Character character) =>
+        quest.Paths.Count == 0 || quest.Paths.Contains(character.Path);
+
+    /// <summary>
+    /// What to say to somebody holding a quest their Path cannot finish, or null when there is
+    /// nothing to say.
+    /// </summary>
+    /// <remarks>
+    /// Held, not removed. A gate edited by mistake would otherwise wipe journals silently, and
+    /// taking progress away from under a player is worse than telling them plainly - <c>abandon</c>
+    /// is how they clear it, and it already exists.
+    /// </remarks>
+    private static string? WrongPathNote(Quest quest, Character character) =>
+        IsForPath(quest, character)
+            ? null
+            : $"{quest.Name} was never yours to finish — it is not {character.Path} work. "
+              + $"'abandon {quest.Name.ToLowerInvariant()}' when you are ready to let it go.";
 
     private static void Quests(CommandContext ctx)
     {
@@ -379,6 +420,13 @@ public static class QuestCommands
             .OrderBy(q => q.SortOrder))
         {
             if (IsDormant(ctx, next) || !CheckPrerequisites(ctx.World, characterId, next))
+            {
+                continue;
+            }
+
+            // A chain that starts itself must not reach a state a player could not have reached by
+            // asking for it - the same rule this method already applies to dormancy and repeats.
+            if (ctx.World.GetCharacter(characterId) is { } follower && !IsForPath(next, follower))
             {
                 continue;
             }
@@ -676,6 +724,19 @@ public static class QuestCommands
         if (matchingQuest is null)
         {
             return false;
+        }
+
+        // Refused here as well as at the offer, because a character can be holding a quest the
+        // gate would not hand out now: one taken before the Paths were authored, or before this
+        // rule existed. Handing over the reward anyway is the whole defect - the item is Path
+        // locked, lore and no-drop, so it lands in a pack that can never use it or empty it.
+        if (WrongPathNote(matchingQuest, character) is { } wrongPath)
+        {
+            ctx.Reply(wrongPath);
+
+            // True, not false: the give *was* about this quest and was answered. Returning false
+            // would fall through to the ordinary give, handing the smith the embers for nothing.
+            return true;
         }
 
         // Count items in inventory that match the quest requirement

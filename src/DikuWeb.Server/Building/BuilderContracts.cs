@@ -482,6 +482,7 @@ public sealed record QuestResponse(
     List<string> PrerequisiteQuestKeys,
     bool IsRepeatable,
     bool AutoStart,
+    IReadOnlyList<CharacterPath> Paths,
     Dictionary<string, string> Dialogue,
     int SortOrder)
 {
@@ -498,7 +499,7 @@ public sealed record QuestResponse(
             quest.GiverMobKey, quest.TurninMobKey, quest.RequiredItemKey, quest.RequiredCount,
             quest.RewardXp, quest.RewardGold, quest.RewardItemKey, quest.RewardItemCount,
             quest.RewardFlagKey, quest.PrerequisiteQuestKeys, quest.IsRepeatable, quest.AutoStart,
-            quest.Dialogue, quest.SortOrder);
+            [.. quest.Paths], quest.Dialogue, quest.SortOrder);
     }
 }
 
@@ -535,6 +536,7 @@ public sealed record SaveQuestRequest(
     List<string>? PrerequisiteQuestKeys,
     bool? IsRepeatable,
     bool? AutoStart,
+    List<CharacterPath>? Paths,
     Dictionary<string, string>? Dialogue,
     int? SortOrder);
 

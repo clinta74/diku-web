@@ -289,7 +289,7 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
             q.Key, q.ZoneKey, q.Name, q.Summary, q.Description,
             q.GiverMobKey, q.TurninMobKey, q.RequiredItemKey, q.RequiredCount,
             q.RewardXp, q.RewardGold, q.RewardItemKey, q.RewardItemCount, q.RewardFlagKey,
-            [.. q.PrerequisiteQuestKeys], q.IsRepeatable, q.AutoStart,
+            [.. q.PrerequisiteQuestKeys], q.IsRepeatable, q.AutoStart, [.. q.Paths],
             new Dictionary<string, string>(q.Dialogue, StringComparer.Ordinal), q.SortOrder))];
     }
 

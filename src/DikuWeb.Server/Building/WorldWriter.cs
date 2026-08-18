@@ -527,6 +527,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         PrerequisiteQuestKeys = new List<string>(c.PrerequisiteQuestKeys),
                         IsRepeatable = c.IsRepeatable,
                         AutoStart = c.AutoStart,
+                        Paths = [.. c.Paths],
                         Dialogue = new Dictionary<string, string>(c.Dialogue, StringComparer.Ordinal),
                         SortOrder = c.SortOrder,
                     });
@@ -549,6 +550,7 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 entity.PrerequisiteQuestKeys = new List<string>(c.PrerequisiteQuestKeys);
                 entity.IsRepeatable = c.IsRepeatable;
                 entity.AutoStart = c.AutoStart;
+                entity.Paths = [.. c.Paths];
                 entity.Dialogue = new Dictionary<string, string>(c.Dialogue, StringComparer.Ordinal);
                 entity.SortOrder = c.SortOrder;
                 return ContentAction.Update;

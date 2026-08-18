@@ -358,6 +358,15 @@ export interface Quest {
   prerequisiteQuestKeys: string[]
   isRepeatable: boolean
   autoStart: boolean
+  /**
+   * The Paths this quest is for. **Empty means anyone**, the same way an item's does — a quest is
+   * unrestricted until a builder opts in, so nothing authored before this field changed behaviour.
+   *
+   * It exists because the four epic chains have one giver and Path-locked rewards: every character
+   * was handed all four, and finishing the wrong one produced a weapon they could not wield and,
+   * being lore and no-drop, could not get rid of.
+   */
+  paths: CharacterPath[]
   dialogue: Record<string, string>
   sortOrder: number
 }

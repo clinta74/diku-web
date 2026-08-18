@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import {
   builderApi,
+  CHARACTER_PATHS,
+  type CharacterPath,
   type Quest,
   type ReachabilityWarning,
 } from '../../net/builderApi'
@@ -51,6 +53,7 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
   const [prerequisites, setPrerequisites] = useState('')
   const [isRepeatable, setIsRepeatable] = useState(false)
   const [autoStart, setAutoStart] = useState(false)
+  const [paths, setPaths] = useState<CharacterPath[]>([])
   const [dialogue, setDialogue] = useState<Record<string, string>>({})
   const [sortOrder, setSortOrder] = useState(0)
 
@@ -86,6 +89,9 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
         setPrerequisites(formatKeyList(loaded.prerequisiteQuestKeys))
         setIsRepeatable(loaded.isRepeatable)
         setAutoStart(loaded.autoStart)
+        // Ordered to CHARACTER_PATHS rather than to whatever came back, so the checkboxes and the
+        // saved list agree and a save with nothing changed is not a change.
+        setPaths(CHARACTER_PATHS.filter((p) => (loaded.paths ?? []).includes(p)))
         setDialogue({ ...loaded.dialogue })
         setSortOrder(loaded.sortOrder)
         setDirty(false)
@@ -145,6 +151,7 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
         prerequisiteQuestKeys: parseKeyList(prerequisites),
         isRepeatable,
         autoStart,
+        paths,
         dialogue: strippedDialogue(),
         sortOrder,
       })
@@ -423,6 +430,39 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
             : autoStart
               ? 'Hand in the quest above and this one opens on the spot, with its own offer line — which reads best when the same NPC takes the turn-in and gives this one. It still refuses everything a talk would refuse, so it can never reach a state a player could not have reached by asking.'
               : 'The player has to seek out the giver and talk. Right for a chain that should send them somewhere.'}
+        </p>
+
+        <Field
+          label="Paths"
+          hint="None ticked means anyone may take it. Ticking any offers it only to those."
+        >
+          <div className="check-row">
+            {CHARACTER_PATHS.map((path) => (
+              <label className="field-check" key={path}>
+                <input
+                  type="checkbox"
+                  checked={paths.includes(path)}
+                  onChange={(e) => {
+                    // Rebuilt from CHARACTER_PATHS rather than pushed onto, so the saved order is
+                    // the enum's however they were ticked - the same reasoning as the item editor's.
+                    setPaths(
+                      CHARACTER_PATHS.filter((p) =>
+                        p === path ? e.target.checked : paths.includes(p),
+                      ),
+                    )
+                    touch()
+                  }}
+                />
+                {path}
+              </label>
+            ))}
+          </div>
+        </Field>
+
+        <p className="dim">
+          {paths.length === 0
+            ? 'Anyone may be offered this. Right for almost every quest.'
+            : `Only a ${paths.join(' or ')} is offered this, and only they can hand it in. For a chain whose reward only one Path can use — the epic weapons are the reason this exists.`}
         </p>
 
         <label className="field-check">

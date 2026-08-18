@@ -1225,6 +1225,18 @@ strings per quest, stored as `jsonb`:
 multipliers (§4.4) exactly as kill rewards do, so a storyline running through a high-tier zone
 pays out at that tier without re-authoring numbers.
 
+**A quest can be for one Path.** `Quest.Paths` is empty for almost every quest and empty means
+anyone — the same shape and the same argument as `ItemTemplate.Paths`, so a quest is unrestricted
+until a builder opts in. It exists because the four epic chains have **one giver and Path-locked
+rewards**: Vesh handed every character all four, and a Shade who finished the Adept chain received a
+stormrod they could not wield and — being lore and no-drop — could not drop, sell or destroy either.
+
+It gates **being offered and being handed in**, not being held. A character already carrying a chain
+their Path cannot use keeps it and is told plainly, because a gate edited by mistake must not wipe
+journals; `abandon` is how they clear it. The follow-on starter answers to it too, for the reason it
+answers to dormancy and the repeat gates: *a quest that starts itself must not reach a state a player
+could not have reached by asking for it.*
+
 **Quest items are ordinary items with one flag.** They come from the normal spawner and loot
 systems — no separate quest-item pipeline. `questItem: true` only means *cannot be sold or
 destroyed*; they can still be dropped. Soft-locking is mostly prevented by the spawner system

@@ -1,5 +1,5 @@
 {
-  "formatVersion": 13,
+  "formatVersion": 14,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -3104,7 +3104,8 @@
         "giverComplete": "'Eight, and do not clean them. I need to read them.'",
         "turninReady": "He lays them out in a row and reads each one before he writes it off. 'These are first-company names,' he says. 'Every one. I have been hiring for eleven years and I have never once seen a first-company tag come back up.'"
       },
-      "sortOrder": 1
+      "sortOrder": 1,
+      "paths": []
     },
     {
       "key": "a2-2-the-deep-ledger",
@@ -3132,7 +3133,8 @@
         "giverComplete": "'Five. And mind the rope in the sump. Do not touch the rope in the sump.'",
         "turninReady": "She spreads them out and goes down the columns with a fingernail. 'Wages,' she says. 'Paid weekly. Same names as Vance's tags, and the last entry is this week.' She sits down on a crate. 'Somebody is still settling up. Nobody has been down there to do it.'"
       },
-      "sortOrder": 2
+      "sortOrder": 2,
+      "paths": []
     },
     {
       "key": "a2-3-what-was-paid",
@@ -3160,7 +3162,8 @@
         "giverComplete": "'He is still down there. He is not going anywhere. That is rather the point of him.'",
         "turninReady": "Roan turns the wedge over twice and puts it down as though it were hot. 'They opened the gate on credit,' she says. 'Two generations of us eating well on it. Mhorrek is not a punishment, he is an invoice.' She presses the mark into your hand. 'Azhen built the gates. Go and ask them what the terms were, because we plainly did not.'"
       },
-      "sortOrder": 3
+      "sortOrder": 3,
+      "paths": []
     },
     {
       "key": "e2-warden",
@@ -3189,7 +3192,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 12
+      "sortOrder": 12,
+      "paths": [
+        "Warden"
+      ]
     },
     {
       "key": "e2-hallow",
@@ -3218,7 +3224,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 12
+      "sortOrder": 12,
+      "paths": [
+        "Hallow"
+      ]
     },
     {
       "key": "e2-adept",
@@ -3247,7 +3256,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 12
+      "sortOrder": 12,
+      "paths": [
+        "Adept"
+      ]
     },
     {
       "key": "e2-shade",
@@ -3276,7 +3288,10 @@
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
-      "sortOrder": 12
+      "sortOrder": 12,
+      "paths": [
+        "Shade"
+      ]
     }
   ],
   "configurations": []

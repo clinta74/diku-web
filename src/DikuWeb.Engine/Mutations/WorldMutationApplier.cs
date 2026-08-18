@@ -1268,6 +1268,7 @@ public sealed class WorldMutationApplier(
             PrerequisiteQuestKeys = [.. change.PrerequisiteQuestKeys],
             IsRepeatable = change.IsRepeatable,
             AutoStart = change.AutoStart,
+            Paths = [.. change.Paths],
             Dialogue = new Dictionary<string, string>(change.Dialogue, StringComparer.Ordinal),
             SortOrder = change.SortOrder,
         });

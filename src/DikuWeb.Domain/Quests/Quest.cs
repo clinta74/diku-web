@@ -1,3 +1,5 @@
+using DikuWeb.Domain.Characters;
+
 namespace DikuWeb.Domain.Quests;
 
 /// <summary>
@@ -63,6 +65,29 @@ public sealed class Quest
 
     /// <summary>Whether this quest can be completed multiple times.</summary>
     public bool IsRepeatable { get; set; }
+
+    /// <summary>
+    /// The Paths this quest is for. Empty means anyone.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The same shape as <c>ItemTemplate.Paths</c>, and for the same reason.</b> Empty rather
+    /// than null-or-all, so an authored quest is unrestricted until a builder opts in - which keeps
+    /// every quest that existed before this field behaving exactly as it did.
+    /// </para>
+    /// <para>
+    /// It exists because the four epic chains have Path-locked rewards and one giver. Vesh handed
+    /// every character all four, so a Shade finished the Adept chain and received a stormrod they
+    /// could not wield - and, being lore and no-drop, could not get rid of either. A quest whose
+    /// reward only one Path can use is a quest only that Path should be offered.
+    /// </para>
+    /// <para>
+    /// This gates <em>being offered and being finished</em>, not being held. A character already
+    /// carrying a quest their Path cannot use keeps it in the journal and is told plainly, rather
+    /// than having progress removed from under them - <c>abandon</c> is how they clear it.
+    /// </para>
+    /// </remarks>
+    public List<CharacterPath> Paths { get; set; } = [];
 
     /// <summary>
     /// Starts by itself the moment its prerequisites are all complete, with no <c>talk</c>.
