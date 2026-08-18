@@ -1241,11 +1241,32 @@ answers to dormancy and the repeat gates: *a quest that starts itself must not r
 could not have reached by asking for it.*
 
 **Quest items are ordinary items with one flag.** They come from the normal spawner and loot
-systems — no separate quest-item pipeline. `questItem: true` only means *cannot be sold or
-destroyed*; they can still be dropped. Soft-locking is mostly prevented by the spawner system
-already: kill the mob again, or wait for the ground spawn to respawn, and the item is
-obtainable again. The flag exists so a player cannot vendor the ledger and then wait out a
-respawn timer for no reason.
+systems — no separate quest-item pipeline. `questItem: true` means *cannot be sold*, and
+*cannot be destroyed while a quest you are on is counting it*; they can still be dropped.
+
+**Destruction asks the narrower question**, because the flag alone protected far more than a
+chain: it protected the ledger of a quest the character had never met, would never take, and —
+since the Path gate above — in the epic chains *could not* take. The worst of it was the
+rewards. An epic reward is a quest item **and** no-drop **and** Path-locked, so a Shade holding
+an Adept stormrod could not wield it, drop it, sell it or destroy it: a pack slot with nothing
+that could ever be done about it.
+
+`QuestBinding.SpokenFor` answers it — only an **Active** quest of *this* character, and only
+through `RequiredItemKey`. A reward is never spoken for, since no quest asks you to go on
+holding what it has already paid you, and that is what releases the stormrod. A Completed quest
+has been paid and cannot be stranded; somebody else's quest is not yours. It **fails closed**
+where the restrictions in `ItemRules` fail open, and the difference is the point: those are
+restrictions, where a cache miss costs one rule unenforced once, and this is a protection,
+where it costs a chain that cannot be finished or re-earned.
+
+**The shop still refuses every quest item**, and that asymmetry is deliberate: destroying is
+disposal and selling is profit, so relaxing the counter as well would make any quest item a
+thing to farm and vendor. The refusal names the quest now — *"the ledger is what An Errand for
+Mira asks for"* — which is the difference between a wall and something a player can act on.
+
+Soft-locking is mostly prevented by the spawner system already: kill the mob again, or wait
+for the ground spawn to respawn, and the item is obtainable again. The sale ban exists so a
+player cannot vendor the ledger and then wait out a respawn timer for no reason.
 
 **Commands:** `talk <npc>`, `give <item> <npc>` (already Phase 3), `quests` for the journal, and
 `quest <name>` for detail on one.

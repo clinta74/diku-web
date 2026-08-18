@@ -532,7 +532,19 @@ public sealed class CommandRegistry
 
         if (ItemState.IsQuestItem(item))
         {
-            spans.Add(new TextSpan("\nIt is bound to a quest — it cannot be sold or destroyed.", "dim"));
+            // Which of the two it is, because they are different situations for the player.
+            // The line said "it cannot be sold or destroyed" of both, which was the wrong
+            // half of the truth for the commoner one: a quest item nobody is waiting for is
+            // disposable, and a player who reads otherwise carries it forever.
+            var spokenFor = QuestBinding.SpokenFor(
+                ctx.Quests, ctx.World, ctx.Actor.CharacterId, item.TemplateKey);
+
+            spans.Add(new TextSpan(
+                spokenFor is not null
+                    ? $"\n{spokenFor.Name} is waiting for this — it cannot be sold or destroyed."
+                    : "\nIt is bound to a quest, so no shop will take it — but no quest of yours "
+                      + "is waiting for it, and you could destroy it.",
+                "dim"));
         }
 
         AppendBuilderDetail(ctx, spans, item.TemplateKey, BuilderLinks.ToItem(item.TemplateKey), () =>
@@ -832,8 +844,18 @@ public sealed class CommandRegistry
     /// <remarks>
     /// Drop leaves something to pick back up; this does not. The two losses a player would most
     /// regret are refused outright rather than merely warned about - what they are wearing, which
-    /// they can only have destroyed by mistyping, and a quest item, which would strand the quest
-    /// with no way to re-earn it. The shopkeeper refuses quest items on the same grounds.
+    /// they can only have destroyed by mistyping, and an item a quest they are <em>on</em> is
+    /// counting, which would strand that quest.
+    ///
+    /// <b>Only a quest they are on.</b> The flag alone used to refuse, which protected the ledger
+    /// of a quest the character had never met and, in the Path-gated chains, could not take - and
+    /// an epic reward is a quest item and no-drop and Path-locked at once, so a Shade holding an
+    /// Adept stormrod had a pack slot nothing could ever be done about. <c>QuestBinding</c> asks
+    /// the narrower question.
+    ///
+    /// The shopkeeper still refuses every quest item, and that asymmetry is deliberate: destroying
+    /// is disposal and selling is profit, so relaxing the counter as well would make any quest item
+    /// a thing to farm and vendor.
     /// </remarks>
     private static void Destroy(CommandContext ctx)
     {
@@ -860,9 +882,10 @@ public sealed class CommandRegistry
             return;
         }
 
-        if (ItemState.IsQuestItem(targetItem))
+        if (QuestBinding.RefuseDestroy(
+                ctx.Quests, ctx.World, ctx.Actor.CharacterId, targetItem, article) is { } bound)
         {
-            ctx.Reply($"Something stays your hand: {article} is bound to a quest.", "bad");
+            ctx.Reply(bound, "bad");
             return;
         }
 

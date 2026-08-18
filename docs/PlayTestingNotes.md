@@ -448,6 +448,26 @@ Add anything noticed while playing here. Cleared as items are done.
     `twoHanded`, so every maul quietly becomes one-handed. **Re-import** — or run
     `tools/retag-weapon-slots.sql` and restart, if the world is otherwise not up to date.
 
+  - **a quest item you are not on a quest for can be destroyed now.** The flag alone used to
+    refuse, which protected the ledger of a quest the character had never met, would never take,
+    and — since the Path gate — in the epic chains *could not* take.
+
+    The case that forced it is the one `QuestPathGateTests` wrote down and could not fix: **an epic
+    reward is a quest item and no-drop and Path-locked at once**, so a Shade holding an Adept
+    stormrod could not wield it, drop it, sell it or destroy it. A pack slot with nothing that could
+    ever be done about it, forever.
+
+    `QuestBinding.SpokenFor` asks the narrower question — only an **Active** quest of *this*
+    character, and only through `requiredItemKey`. So a reward is never spoken for (nothing asks you
+    to keep holding what it already paid you), a Completed quest cannot be stranded, and somebody
+    else's quest does not protect your copy. It fails **closed** where `ItemRules` fails open, which
+    is the right way round: those are restrictions, this is a protection.
+
+    **The shop still refuses every quest item** — destroying is disposal, selling is profit, and
+    relaxing the counter too would make any quest item a thing to farm and vendor. The refusal names
+    the quest now, and `examine` says which of the two situations you are in rather than telling
+    everyone their disposable item cannot be destroyed.
+
   - **the two test weapons are resolved, and one of them was content.** `ossara-brass-knuckle` and
     `ossara-long-sword` existed in the database and in no content file — builder work never
     exported back, which is the drift `content/README.md` warns about. Both were held *and
