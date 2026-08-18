@@ -94,7 +94,8 @@ public static class EquipmentResolver
         int level,
         int mightModifier,
         IEnumerable<ItemInstance> equipped) =>
-        ResolveAttackerStatsForHand(level, mightModifier, equipped, ItemSlot.MainHand);
+        // The share is an off-hand concept; the main hand always swings whole.
+        ResolveAttackerStatsForHand(level, mightModifier, equipped, ItemSlot.MainHand, 1m);
 
     /// <summary>
     /// Resolves the stats one named hand swings with, from that hand's weapon alone.
@@ -110,11 +111,22 @@ public static class EquipmentResolver
     /// unarmed dice, an empty off hand does not attack and never reaches here.
     /// </remarks>
     /// <param name="hand">Which hand to resolve. Anything but a hand slot resolves as unarmed.</param>
+    /// <param name="offHandShare">
+    /// The fraction of its damage an off-hand weapon deals, from
+    /// <c>AbilityProgression.OffHandDamageShare</c>. Ignored for any other hand.
+    ///
+    /// <b>Required rather than defaulted, and applied here rather than by the caller.</b> Combat and
+    /// the <c>stats</c> screen both resolve an off hand, and a share applied in one and forgotten in
+    /// the other is a screen that reports a damage range the weapon will never roll - which is the
+    /// exact lie that screen was rewritten to stop telling. With no default, a new caller cannot
+    /// omit it by accident.
+    /// </param>
     public static AttackerStats ResolveAttackerStatsForHand(
         int level,
         int mightModifier,
         IEnumerable<ItemInstance> equipped,
-        ItemSlot hand)
+        ItemSlot hand,
+        decimal offHandShare)
     {
         ArgumentNullException.ThrowIfNull(equipped);
 
@@ -122,7 +134,49 @@ public static class EquipmentResolver
             .Where(i => i?.ResolvedStats is not null)
             .FirstOrDefault(i => i.EquippedSlot == hand);
 
-        return Resolve(level, mightModifier, weapon);
+        var stats = Resolve(level, mightModifier, weapon);
+
+        return hand == ItemSlot.OffHand ? Scaled(stats, offHandShare) : stats;
+    }
+
+    /// <summary>
+    /// An off hand's swing at the share of it the character has grown into.
+    /// </summary>
+    /// <remarks>
+    /// <b>The whole swing, dice and flat together</b> - not the dice alone. <c>BaseDamage</c> is the
+    /// Might modifier and it is added per swing, so at the levels this ramp is steepest it is the
+    /// larger half: a Warden's +4 Might dwarfs two fifths of a starter weapon's 2-3 dice, and
+    /// scaling only the dice would leave the ramp barely biting where it is meant to bite hardest.
+    ///
+    /// <b>Attack rating is untouched.</b> An off hand that <em>misses</em> more is a different and
+    /// worse feeling than one that hits softer, and accuracy is not what the ramp is limiting.
+    ///
+    /// Floors at one damage rather than zero: a swing that lands does something, which is the same
+    /// promise <c>DamageCalculator</c> makes at the other end.
+    /// </remarks>
+    private static AttackerStats Scaled(AttackerStats stats, decimal share)
+    {
+        if (share >= 1m)
+        {
+            return stats;
+        }
+
+        if (share <= 0m)
+        {
+            // Not reachable through combat - an untrained off hand never swings - but a caller
+            // asking what a share of nothing looks like gets nothing rather than a full swing.
+            return stats with { MinDamage = 0, MaxDamage = 0, BaseDamage = 0 };
+        }
+
+        var min = (int)Math.Round(stats.MinDamage * share, MidpointRounding.AwayFromZero);
+        var max = (int)Math.Round(stats.MaxDamage * share, MidpointRounding.AwayFromZero);
+
+        return stats with
+        {
+            MinDamage = Math.Max(1, min),
+            MaxDamage = Math.Max(Math.Max(1, min), max),
+            BaseDamage = (int)Math.Round(stats.BaseDamage * share, MidpointRounding.AwayFromZero),
+        };
     }
 
     private static AttackerStats Resolve(

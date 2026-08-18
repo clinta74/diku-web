@@ -366,7 +366,8 @@ public sealed class CombatSystem(
         if (main.CanSwing && IsDue(combat, strike.AttackerId, AttackSlot.MainHand, pulse, main.DelayPulses))
         {
             var stats = EquipmentResolver.ResolveAttackerStatsForHand(
-                character.Level, character.Attributes.MightModifier, held, ItemSlot.MainHand);
+                character.Level, character.Attributes.MightModifier, held, ItemSlot.MainHand,
+                offHandShare: 1m);
 
             if (Strike(world, strike, AttackSlot.MainHand, stats, main.Verb))
             {
@@ -401,8 +402,11 @@ public sealed class CombatSystem(
             }
         }
 
+        // A second weapon is grown into rather than granted whole (PLAN.md §4.6): the share ramps
+        // from half at the Dual Wield unlock to the Path's full value at level 40.
         var offStats = EquipmentResolver.ResolveAttackerStatsForHand(
-            character.Level, character.Attributes.MightModifier, held, ItemSlot.OffHand);
+            character.Level, character.Attributes.MightModifier, held, ItemSlot.OffHand,
+            AbilityProgression.OffHandDamageShare(character.Path, character.Level));
 
         Strike(world, strike, AttackSlot.OffHand, offStats, off.Verb);
     }

@@ -986,8 +986,9 @@ public sealed class CommandRegistry
             return;
         }
 
+        var share = AbilityProgression.OffHandDamageShare(character.Path, character.Level);
         var offAttack = EquipmentResolver.ResolveAttackerStatsForHand(
-            character.Level, character.Attributes.MightModifier, equipped, ItemSlot.OffHand);
+            character.Level, character.Attributes.MightModifier, equipped, ItemSlot.OffHand, share);
         var delay = AttackTiming.Clamp(template.AttackDelayPulses);
         var independent = AbilityProgression.KnowsPassive(
             character.Path, character.Level, PassiveKeys.Ambidextrous);
@@ -1248,7 +1249,8 @@ public sealed class CommandRegistry
             character.Level,
             character.Attributes.MightModifier,
             equipped,
-            ItemSlot.MainHand);
+            ItemSlot.MainHand,
+            offHandShare: 1m);
 
         var defense = EquipmentResolver.ResolveDefenderStats(
             character.Level,

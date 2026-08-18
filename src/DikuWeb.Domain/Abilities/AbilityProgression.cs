@@ -119,6 +119,76 @@ public static class AbilityProgression
             : 0.0;
 
     /// <summary>
+    /// The level by which a dual-wielder's off hand reaches its full share of damage.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately far out. The obvious axis for this was Agility, and it does not work: Agility
+    /// caps at <c>AttributeSet.MaxValue</c>, which a Shade reaches at level 6 and a Warden at 11, so
+    /// the ramp would have been over before the passive had been held for long.
+    /// </remarks>
+    public const int OffHandMasteryLevel = 40;
+
+    /// <summary>
+    /// The share, 0.0-1.0, of its damage an off-hand weapon actually deals.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>A second weapon arrives partly trained and grows into being a second weapon.</b> Before
+    /// this it arrived whole: the day a Shade learned Dual Wield their off hand hit for everything
+    /// the main hand did, and Ambidextrous later doubled the rate as well. The doubling at the top
+    /// is intended and untouched - a Shade at <see cref="OffHandMasteryLevel"/> and beyond is
+    /// exactly where it was. What changes is everything before it.
+    /// </para>
+    /// <para>
+    /// Straight line from the level the Path learns <c>DualWield</c> to
+    /// <see cref="OffHandMasteryLevel"/>, starting at half the eventual share so the passive is
+    /// worth having on the day it is granted rather than being a promise about level 40. The
+    /// endpoints are the Path's identity: a Shade ends at <b>all</b> of it, because two blades is
+    /// what the Path is, and a Warden at <b>four fifths</b>, because the hand is also holding a
+    /// shield most of the time.
+    /// </para>
+    /// <para>
+    /// Zero for anyone who has not learned to strike with an off hand at all - an Adept may hold a
+    /// blade there and it simply never swings.
+    /// </para>
+    /// </remarks>
+    public static decimal OffHandDamageShare(CharacterPath path, int level)
+    {
+        if (!KnowsPassive(path, level, PassiveKeys.DualWield))
+        {
+            return 0m;
+        }
+
+        var full = path switch
+        {
+            CharacterPath.Shade => 1.00m,
+            CharacterPath.Warden => 0.80m,
+            _ => 0m,
+        };
+
+        if (full == 0m)
+        {
+            return 0m;
+        }
+
+        var unlock = GetPassivesForPath(path)
+            .Where(x => string.Equals(x.PassiveKey, PassiveKeys.DualWield, StringComparison.Ordinal))
+            .Select(x => x.UnlockLevel)
+            .DefaultIfEmpty(1)
+            .Min();
+
+        if (level >= OffHandMasteryLevel || OffHandMasteryLevel <= unlock)
+        {
+            return full;
+        }
+
+        // Half at the unlock, full at mastery, straight line between.
+        var progress = (decimal)(level - unlock) / (OffHandMasteryLevel - unlock);
+
+        return (full / 2m) + (full / 2m * Math.Clamp(progress, 0m, 1m));
+    }
+
+    /// <summary>
     /// Get the passives a character currently has (at or below their level).
     /// </summary>
     public static IReadOnlyList<string> GetKnownPassivesForLevel(CharacterPath path, int level) =>

@@ -726,6 +726,38 @@ because each duellist targets the other, a taunted player stays in because the m
 still names them, and a party standing over a corpse falls out because removing the corpse already
 cleared every target that pointed at it.
 
+**A second weapon is grown into, not granted whole.** An off hand deals a *share* of its damage,
+rising with level from the day the Path learns Dual Wield to level 40. Before this it arrived
+complete: a Shade at level 3 had an off hand hitting for everything the main hand did, and
+Ambidextrous later doubled the rate on top of it.
+
+| | Learns it | At the unlock | At 40+ |
+|---|---|---|---|
+| **Shade** | 3 | 50% | **100%** |
+| **Warden** | 5 | 40% | **80%** |
+
+- **Level, not Agility, and that was the second answer.** Agility was the obvious axis and does not
+  work: it caps at `AttributeSet.MaxValue`, which a Shade reaches at level **6** and a Warden at 11,
+  so the ramp would have been over before the passive had been held for long. Level 40 is four to
+  seven times further out. The endpoints are unchanged by the switch — 4%×20 and 5%×20 are the same
+  80% and 100%.
+- **Half at the unlock**, so the passive is worth having on the day it is granted rather than being a
+  promise about level 40. A straight line from there, so every level of the climb is worth the same.
+- **The endpoints are the Path's identity.** A Shade ends at all of it, because two blades is what
+  that Path is. A Warden at four fifths, because the hand is also holding a shield.
+- **The top is untouched.** A Shade at 40+ is exactly where it was, so the Ambidextrous doubling
+  stands. This ramps the early and middle game and nothing else — worth saying plainly, because it
+  does *not* address endgame dual-wield output.
+- **The whole swing, dice and flat together.** `BaseDamage` is the Might modifier, added per swing,
+  and at the levels the ramp is steepest it is the larger half — a Warden's +4 Might dwarfs two
+  fifths of a starter weapon's dice. Scaling dice alone would leave the ramp barely biting where it
+  is meant to bite hardest. **Attack rating is untouched**: an off hand that *misses* more is a
+  different and worse feeling than one that hits softer.
+- **Applied inside `ResolveAttackerStatsForHand`**, with the share a required parameter and no
+  default. Combat and the `stats` screen both resolve an off hand, and a share applied in one and
+  forgotten in the other is a screen reporting a range the weapon will never roll — the exact lie
+  that screen was rewritten to stop telling.
+
 **A weapon says what it hits for.** Damage is `damageMin`/`damageMax` on the weapon; speed is
 `attackDelayPulses`; accuracy is `bonus`. There is no item-level `damageMultiplier` any more, and
 there used to be nothing else — every one of the 35 weapons carried a multiplier and no dice, so a

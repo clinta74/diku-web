@@ -350,13 +350,13 @@ public sealed class EquipmentResolverTests
         };
 
         var mainHand = EquipmentResolver.ResolveAttackerStatsForHand(
-            level: 1, mightModifier: 0, equipped: new[] { main, off }, hand: ItemSlot.MainHand);
+            level: 1, mightModifier: 0, equipped: new[] { main, off }, hand: ItemSlot.MainHand, offHandShare: 1m);
 
         Assert.Equal(4, mainHand.MinDamage);
         Assert.Equal(9, mainHand.MaxDamage);
 
         var offHand = EquipmentResolver.ResolveAttackerStatsForHand(
-            level: 1, mightModifier: 0, equipped: new[] { main, off }, hand: ItemSlot.OffHand);
+            level: 1, mightModifier: 0, equipped: new[] { main, off }, hand: ItemSlot.OffHand, offHandShare: 1m);
 
         Assert.Equal(2, offHand.MinDamage);
         Assert.Equal(5, offHand.MaxDamage);
@@ -376,7 +376,7 @@ public sealed class EquipmentResolverTests
             level: 1, mightModifier: 0, equipped: new[] { main });
 
         var named = EquipmentResolver.ResolveAttackerStatsForHand(
-            level: 1, mightModifier: 0, equipped: new[] { main }, hand: ItemSlot.MainHand);
+            level: 1, mightModifier: 0, equipped: new[] { main }, hand: ItemSlot.MainHand, offHandShare: 1m);
 
         Assert.Equal(named, byDefault);
     }
