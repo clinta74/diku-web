@@ -2338,11 +2338,30 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
       export is **closed over its references, not merely filtered**: `?zone=` also carries the
       templates its spawners place, the mobs and items its quests name, the items those mobs drop,
       and the world above it — a bundle that was only filtered imports cleanly and then spawns
-      nothing. Every entity goes through `WorldEditor` one primitive at a time, so the loop stays
-      the single writer and each lands a `content_audit` row. An import is a **merge, not a
-      mirror**; there is deliberately no replace mode that deletes the difference. **It is not
-      atomic** — one mutation per entity is one transaction — so `?dryRun=true` reports collisions
-      while changing nothing and a partial import answers **207**.
+      nothing. Every entity goes through `WorldEditor`, so the loop stays the single writer and each
+      lands a `content_audit` row. An import is a **merge, not a mirror**; there is deliberately no
+      replace mode that deletes the difference. **It is not atomic** — a batch is one transaction —
+      so `?dryRun=true` reports collisions while changing nothing and a partial import answers
+      **207**.
+
+      **Entities go in batches of 128, which is the difference between seconds and minutes.** The
+      loop drains up to 512 messages a pulse, but awaiting each change before submitting the next
+      pays a full 250ms pulse per entity — so the Reaches bundle's 1005 entities took about four
+      minutes, essentially all of it waiting, and outlived every sensible proxy timeout.
+      `GameGateway.MutateManyAsync` submits a batch and awaits it as a whole; `WorldEditor.ApplyManyAsync`
+      then persists the lot in one transaction, which is *stronger* than the per-entity transaction it
+      replaced. `ApplyAsync` is a batch of one, so the twenty-odd builder endpoints keep one code path.
+
+      128 rather than everything, for four reasons that agree on the number: it fits inside one pulse
+      while leaving three quarters of `MaxCommandsPerPulse` for player commands; a bystander standing
+      in a room being rewritten gets a frame per change; `WorldWriter` uses tracking queries so the
+      change tracker grows across a batch; and `InboundCapacity` is 4096.
+
+      **The apply phase is deliberately not cancellable.** The endpoint's token is `RequestAborted`,
+      and a disconnect used to stop the import where it stood — at a 60s proxy timeout that meant
+      every template applied, a quarter of the rooms, not one exit, and no report. A two-second
+      import that the browser abandons now finishes instead. The reads and the dry run stay
+      cancellable, since they touch nothing.
 - [x] **Exporter and dashboard.** A Prometheus scrape endpoint on the server
       (`MetricsExport`), with Prometheus and Grafana in `docker-compose.prod.yml` and the
       dashboard provisioned from `tools/monitoring/` so it lives in git rather than only in

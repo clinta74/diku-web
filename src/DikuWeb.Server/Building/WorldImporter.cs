@@ -30,16 +30,41 @@ namespace DikuWeb.Server.Building;
 /// deliberate, per-entity act.
 /// </para>
 /// <para>
-/// <b>An import is not atomic, and says so.</b> One mutation per entity is one loop round trip
-/// and one transaction, so a failure part way through leaves the entities before it applied.
-/// Making the whole bundle atomic would need a batch primitive the loop does not have, and the
-/// honest mitigation is cheaper: <c>dryRun</c> reports every collision and dangling reference
-/// without touching anything, and <see cref="ImportReport.Failures"/> names precisely what did
-/// not land.
+/// <b>Entities go through in batches of <see cref="BatchSize"/>, and that is the difference between
+/// seconds and minutes.</b> A change costs a full 250ms pulse if you wait for it before submitting
+/// the next, and the loop will drain 512 messages in one pulse - so the old one-at-a-time loop spent
+/// about four minutes importing the Reaches bundle's 1005 entities, essentially all of it waiting.
+/// It also meant the request outlived every sensible proxy timeout, and a 504 stopped the import
+/// half way with no report. See <c>WorldEditor.ApplyManyAsync</c>.
+/// </para>
+/// <para>
+/// <b>An import is not atomic, and says so.</b> A batch is one transaction, so a failure part way
+/// through a bundle leaves the batches before it applied. Making the *whole* bundle atomic would need
+/// a loop primitive that does not exist, and the honest mitigation is cheaper: <c>dryRun</c> reports
+/// every collision and dangling reference without touching anything, and
+/// <see cref="ImportReport.Failures"/> names precisely what did not land.
 /// </para>
 /// </remarks>
 public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
 {
+    /// <summary>
+    /// How many entities go to the loop at once.
+    /// </summary>
+    /// <remarks>
+    /// Not "all of them", for four reasons that all point at a similar number:
+    /// <list type="bullet">
+    ///   <item><description><c>GameLoop.MaxCommandsPerPulse</c> is 512. At 128 a batch lands inside
+    ///     one pulse and still leaves three quarters of the budget for player commands.</description></item>
+    ///   <item><description>A player standing in a room being rewritten gets a frame per change. This
+    ///     bounds what a bystander sees at once.</description></item>
+    ///   <item><description><c>WorldWriter</c> uses tracking queries, so the change tracker grows
+    ///     across a batch.</description></item>
+    ///   <item><description><c>EngineOptions.InboundCapacity</c> is 4096, and a larger bundle must not
+    ///     saturate the queue.</description></item>
+    /// </list>
+    /// </remarks>
+    private const int BatchSize = 128;
+
     public async Task<ImportReport> ImportAsync(
         WorldBundle bundle,
         Guid? accountId,
@@ -47,6 +72,8 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(bundle);
+
+        // The reads below are cancellable; the writes deliberately are not. See ApplyBatchAsync.
 
         var existing = await ExistingKeysAsync(bundle, cancellationToken);
         var warnings = await WarningsAsync(bundle, cancellationToken);
@@ -75,9 +102,9 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
 
         return new ImportReport(bundle.FormatVersion, dryRun, counts, warnings, failures);
 
-        // Shared per-kind loop: count what would happen, then - unless this is a rehearsal -
-        // make it happen. Counting before applying is what lets a dry run answer the same
-        // question a real run does, from the same code.
+        // Shared per-kind loop: count what would happen, then - unless this is a rehearsal - make
+        // it happen. Counting before applying is what lets a dry run answer the same question a
+        // real run does, from the same code, and is the whole of what a rehearsal does.
         async Task ApplyAsync<T>(
             string kind,
             IReadOnlyList<T> entities,
@@ -86,6 +113,10 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
         {
             var created = 0;
             var updated = 0;
+
+            // Gathered first, then handed over in batches, rather than one at a time - see
+            // BatchSize.
+            var batch = new List<(string Key, WorldChange Change)>();
 
             foreach (var entity in entities ?? [])
             {
@@ -111,15 +142,38 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
                     continue;
                 }
 
-                var outcome = await editor.ApplyAsync(change, accountId, cancellationToken);
-
-                if (!outcome.Ok)
-                {
-                    failures.Add(new ImportFailure(kind, key, Describe(outcome)));
-                }
+                batch.Add((key, change));
             }
 
+            await ApplyBatchesAsync(kind, batch);
+
             counts.Add(new ImportCount(kind, created, updated));
+        }
+
+        // Sends one kind's changes to the loop BatchSize at a time, and puts each outcome back
+        // beside the key it came from so the report keeps naming individual entities.
+        async Task ApplyBatchesAsync(string kind, List<(string Key, WorldChange Change)> batch)
+        {
+            for (var start = 0; start < batch.Count; start += BatchSize)
+            {
+                var slice = batch.GetRange(start, Math.Min(BatchSize, batch.Count - start));
+
+                // CancellationToken.None, deliberately. The endpoint's token is RequestAborted, and
+                // a browser that gives up mid-import used to stop it where it stood - at a 60s proxy
+                // timeout that was every template applied, a quarter of the rooms, not one exit, and
+                // no report to say so. Batching makes the whole import a couple of seconds, so
+                // finishing it is both cheap and the only answer that cannot leave the world torn.
+                var outcomes = await editor.ApplyManyAsync(
+                    [.. slice.Select(x => x.Change)], accountId, CancellationToken.None);
+
+                for (var i = 0; i < slice.Count; i++)
+                {
+                    if (!outcomes[i].Ok)
+                    {
+                        failures.Add(new ImportFailure(kind, slice[i].Key, Describe(outcomes[i])));
+                    }
+                }
+            }
         }
 
         // Exits are counted per edge rather than per room, since that is the unit that lands or
@@ -128,6 +182,7 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
         {
             var created = 0;
             var updated = 0;
+            var batch = new List<(string Key, WorldChange Change)>();
 
             foreach (var room in b.Rooms ?? [])
             {
@@ -173,23 +228,19 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
                     // SetExit, not LinkExit: an export already carries both halves of a two-way
                     // link as separate edges, so asking for the reciprocal would invent an exit
                     // the source environment does not have.
-                    var outcome = await editor.ApplyAsync(
-                        new SetExit(
-                            from,
-                            direction,
-                            to,
-                            exit.RequiredFlagKey,
-                            exit.RequiredItemKey,
-                            exit.RefusalMessage),
-                        accountId,
-                        cancellationToken);
-
-                    if (!outcome.Ok)
-                    {
-                        failures.Add(new ImportFailure("exit", label, Describe(outcome)));
-                    }
+                    batch.Add((label, new SetExit(
+                        from,
+                        direction,
+                        to,
+                        exit.RequiredFlagKey,
+                        exit.RequiredItemKey,
+                        exit.RefusalMessage)));
                 }
             }
+
+            // After every room in the bundle has been walked, so the batches are as full as they can
+            // be - 462 exits is four batches rather than 224 batches of one or two.
+            await ApplyBatchesAsync("exit", batch);
 
             counts.Add(new ImportCount("exit", created, updated));
         }

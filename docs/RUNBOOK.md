@@ -264,7 +264,7 @@ So an ability change reaches production by the builder UI, or by SQL.
 | Everyone disconnected, page loads | SSE buffering somewhere in front | `proxy_buffering off`; `X-Accel-Buffering: no` on the stream |
 | Content missing after a deploy | Migration data loss, or someone deleted it | `content_audit` has before/after per mutation. Prefer that over a restore |
 | An ability retune did not take | SQL written, `AbilityCache` never reloaded | Restart `web`, or touch the ability in the builder. §5 |
-| 504 on `POST /api/builder/import` | Proxy read timeout. An import is ~250ms per entity, so a full bundle takes minutes | Raise `proxy_read_timeout` in **every** proxy in front, including your own TLS terminator. Then check what landed — the world is partly imported |
+| 504 on `POST /api/builder/import` | Proxy read timeout. Imports are batched now and take seconds, so suspect a proxy still on a short timeout — or a bundle far larger than the Reaches one | Raise `proxy_read_timeout` in **every** proxy in front, including your own TLS terminator. The import itself finishes regardless of the disconnect, so the world is not left half-written |
 | Auth failing for everyone | Rate limit — behind a proxy every caller shares one address | Known weakness, §7 below |
 | `last-verified` stale | Backups failing | `logs backup` |
 
