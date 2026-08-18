@@ -1,5 +1,5 @@
 {
-  "formatVersion": 14,
+  "formatVersion": 15,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -81,7 +81,8 @@
       "name": "a fallen road marker",
       "description": "A shaped stone the length of a forearm, cut with the old road mark. It has been face down in the gorse long enough for moss to take one side.",
       "icon": "|",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 6000,
       "baseValue": 0,
       "baseStats": {},
@@ -98,7 +99,8 @@
       "name": "somebody's keepsake",
       "description": "A wedding ring, a whittled bird, a key to a door that is no longer anywhere. Every one of them used to belong to somebody, and says so.",
       "icon": "*",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 30,
       "baseValue": 0,
       "baseStats": {},
@@ -115,7 +117,8 @@
       "name": "a shard of gate-stone",
       "description": "Dark stone, cool in a way the afternoon cannot fix. The broken face is not rough. It is as smooth as the outside, which means it was never one piece.",
       "icon": "^",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 400,
       "baseValue": 0,
       "baseStats": {},
@@ -132,7 +135,10 @@
       "name": "an unproven oathmaul",
       "description": "Head like a milestone, haft the length of a person. It was made to stop something. Newly made and honest about it. Vesh will not pretend this is finished.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -155,7 +161,10 @@
       "name": "an unproven hearthcenser",
       "description": "A censer on a chain, weighted for swinging and never once used for incense. Newly made and honest about it. Vesh will not pretend this is finished.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -178,7 +187,10 @@
       "name": "an unproven stormrod",
       "description": "Bronze wound with wire that stands the hair up on your arm when the weather turns. Newly made and honest about it. Vesh will not pretend this is finished.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -201,7 +213,11 @@
       "name": "an unproven quiet knife",
       "description": "It does not catch the light. Somebody took a great deal of trouble over that. Newly made and honest about it. Vesh will not pretend this is finished.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand",
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -224,7 +240,8 @@
       "name": "a banked ember",
       "description": "It is not warm and it has not gone out. Vesh keeps a jar of them and will not say where the first one came from.",
       "icon": "*",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 10,
       "baseValue": 0,
       "baseStats": {},

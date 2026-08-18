@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using DikuWeb.Domain.Building;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
@@ -388,7 +389,8 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         Name = c.Name,
                         Description = c.Description,
                         Icon = c.Icon,
-                        Slot = c.Slot,
+                        Slots = [.. SlotRules.Normalize(c.Slots)],
+                        IsTwoHanded = c.IsTwoHanded,
                         Weight = c.Weight,
                         BaseValue = c.BaseValue,
                         BaseStats = c.BaseStats,
@@ -407,7 +409,8 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 entity.Name = c.Name;
                 entity.Description = c.Description;
                 entity.Icon = c.Icon;
-                entity.Slot = c.Slot;
+                entity.Slots = [.. SlotRules.Normalize(c.Slots)];
+                entity.IsTwoHanded = c.IsTwoHanded;
                 entity.Weight = c.Weight;
                 entity.BaseValue = c.BaseValue;
                 entity.BaseStats = c.BaseStats;
@@ -779,7 +782,9 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                     ["name"] = entity.Name,
                     ["description"] = entity.Description,
                     ["icon"] = entity.Icon,
-                    ["slot"] = entity.Slot?.ToString(),
+                    ["slots"] = new JsonArray(
+                        [.. entity.Slots.Select(sl => (JsonNode)JsonValue.Create(sl.ToString()))]),
+                    ["twoHanded"] = entity.IsTwoHanded,
                     ["weight"] = entity.Weight,
                     ["baseValue"] = entity.BaseValue,
                     ["baseStats"] = JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(entity.BaseStats)),

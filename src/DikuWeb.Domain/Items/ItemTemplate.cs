@@ -19,8 +19,36 @@ public sealed class ItemTemplate
     /// <summary>Single character icon for the map display.</summary>
     public required string Icon { get; set; }
 
-    /// <summary>Equipment slot this fills, if any. null for ground items.</summary>
-    public ItemSlot? Slot { get; set; }
+    /// <summary>Equipment slots this may fill. Empty means it is not equippable at all.</summary>
+    /// <remarks>
+    /// <para>
+    /// A list rather than one slot, because "either hand" is a real property of a weapon and there
+    /// was no way to say it: every one of the 35 authored weapons was <c>MainHand</c>, all six
+    /// off-hand items were shields or a torch, and so the whole off-hand combat path -
+    /// <c>DualWield</c> from level 3, <c>Ambidextrous</c>, <c>OffHandDamageShare</c>, the second
+    /// strike in <c>CombatSystem</c> - had nothing in the world that could reach it.
+    /// </para>
+    /// <para>
+    /// <b>Empty means nowhere</b>, which is the opposite of <see cref="Paths"/>, where empty means
+    /// anyone. The two read alike and mean opposite things, so they are worth keeping straight: a
+    /// slot list is a capability and starts at none, a Path list is a restriction and starts at no
+    /// restriction. Both defaults are "the item as authored does the unsurprising thing".
+    /// </para>
+    /// <para>
+    /// Held in enum order, which is also the order the hands are tried in - so an either-hand
+    /// weapon reaches for the main hand first without anything having to say so separately.
+    /// </para>
+    /// </remarks>
+    public List<ItemSlot> Slots { get; set; } = [];
+
+    /// <summary>Whether wielding this claims the off hand as well as the main one.</summary>
+    /// <remarks>
+    /// Not expressible as a slot list: a two-handed weapon does not go in two places, it goes in
+    /// one and denies the other. Only meaningful with <see cref="ItemSlot.MainHand"/>, and the
+    /// builder refuses any other combination rather than normalising it quietly -
+    /// <c>slots: [OffHand], twoHanded: true</c> is a mistake, not a shorthand.
+    /// </remarks>
+    public bool IsTwoHanded { get; set; }
 
     /// <summary>Weight in grams, for encumbrance calculation.</summary>
     public int Weight { get; set; }

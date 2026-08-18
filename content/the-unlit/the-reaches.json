@@ -1,5 +1,5 @@
 {
-  "formatVersion": 14,
+  "formatVersion": 15,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -69,7 +69,10 @@
       "name": "a hood worn thin",
       "description": "It was somebody's, and the binding has had it long enough to take the colour out and nothing else.",
       "icon": "^",
-      "slot": "Head",
+      "slots": [
+        "Head"
+      ],
+      "isTwoHanded": false,
       "weight": 400,
       "baseValue": 0,
       "baseStats": {
@@ -88,7 +91,10 @@
       "name": "a coat still being held",
       "description": "Whoever wore it did not let go of it. That is the only reason it is still a coat.",
       "icon": "[",
-      "slot": "Chest",
+      "slots": [
+        "Chest"
+      ],
+      "isTwoHanded": false,
       "weight": 5000,
       "baseValue": 0,
       "baseStats": {
@@ -107,7 +113,10 @@
       "name": "a pair of keeping gloves",
       "description": "Closed, and hard to open, and worth the trouble.",
       "icon": "[",
-      "slot": "Hands",
+      "slots": [
+        "Hands"
+      ],
+      "isTwoHanded": false,
       "weight": 300,
       "baseValue": 0,
       "baseStats": {
@@ -126,7 +135,10 @@
       "name": "a pair of standing greaves",
       "description": "Made for holding a position. Everything down here that still exists was holding a position.",
       "icon": "[",
-      "slot": "Legs",
+      "slots": [
+        "Legs"
+      ],
+      "isTwoHanded": false,
       "weight": 3400,
       "baseValue": 0,
       "baseStats": {
@@ -145,7 +157,10 @@
       "name": "a pair of walking boots",
       "description": "Nothing in the binding is fast. The only thing that has ever got anyone out of here is walking.",
       "icon": "[",
-      "slot": "Feet",
+      "slots": [
+        "Feet"
+      ],
+      "isTwoHanded": false,
       "weight": 2000,
       "baseValue": 0,
       "baseStats": {
@@ -164,7 +179,10 @@
       "name": "a shield turned outward",
       "description": "It has been held facing the same way for so long that the other side is bright.",
       "icon": ")",
-      "slot": "OffHand",
+      "slots": [
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 3800,
       "baseValue": 0,
       "baseStats": {
@@ -184,7 +202,10 @@
       "name": "a thing somebody kept",
       "description": "Small, and worn, and carried by somebody all the way in here and not put down.",
       "icon": "*",
-      "slot": "Trinket",
+      "slots": [
+        "Trinket"
+      ],
+      "isTwoHanded": false,
       "weight": 20,
       "baseValue": 0,
       "baseStats": {
@@ -203,7 +224,11 @@
       "name": "a blade gone long in the dark",
       "description": "The edge is wrong in a way that is entirely to your advantage.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand",
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2400,
       "baseValue": 0,
       "baseStats": {
@@ -224,7 +249,10 @@
       "name": "a binding spike",
       "description": "Gate-stone, whole, never cut - the binding does not have seams. Somebody shaped this by wearing it away.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 3000,
       "baseValue": 0,
       "baseStats": {
@@ -245,7 +273,10 @@
       "name": "a hammer for standing still with",
       "description": "Heavy enough that you have to plant your feet, which down here is the point.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": true,
       "weight": 6400,
       "baseValue": 0,
       "baseStats": {
@@ -265,7 +296,8 @@
       "name": "something carried in",
       "description": "It belonged to a person who walked in here on purpose. There have been more of those than anyone in the Reaches admits.",
       "icon": "*",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 0,
       "baseValue": 0,
       "baseStats": {},
@@ -282,7 +314,8 @@
       "name": "a marker worn smooth",
       "description": "One of the road stones, carried this far by something that had no reason to and did it anyway.",
       "icon": "|",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 0,
       "baseValue": 0,
       "baseStats": {},
@@ -299,7 +332,8 @@
       "name": "an answer",
       "description": "Not a thing. A position - the one the instrument at Thessivar has been holding for four hundred years, and it is here, and it is yours to give back.",
       "icon": "?",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 0,
       "baseValue": 0,
       "baseStats": {},
@@ -316,7 +350,10 @@
       "name": "an answered oathmaul",
       "description": "Head like a milestone, haft the length of a person. It was made to stop something. Finished. It has been all the way in and come back out, which almost nothing has.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -339,7 +376,10 @@
       "name": "an answered hearthcenser",
       "description": "A censer on a chain, weighted for swinging and never once used for incense. Finished. It has been all the way in and come back out, which almost nothing has.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -362,7 +402,10 @@
       "name": "an answered stormrod",
       "description": "Bronze wound with wire that stands the hair up on your arm when the weather turns. Finished. It has been all the way in and come back out, which almost nothing has.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -385,7 +428,11 @@
       "name": "an answered quiet knife",
       "description": "It does not catch the light. Somebody took a great deal of trouble over that. Finished. It has been all the way in and come back out, which almost nothing has.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand",
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {

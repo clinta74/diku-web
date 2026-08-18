@@ -3,6 +3,7 @@ using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine;
@@ -1042,12 +1043,18 @@ public static class BuilderEndpoints
             return refusal;
         }
 
+        if (ValidateSlots(request.Slots, request.IsTwoHanded) is { } badSlots)
+        {
+            return badSlots;
+        }
+
         var change = new UpsertItemTemplate(
             key,
             Trim(request.Name) ?? key,
             request.Description ?? string.Empty,
             request.Icon ?? "$",
-            request.Slot,
+            [.. SlotRules.Normalize(request.Slots)],
+            request.IsTwoHanded ?? false,
             request.Weight ?? 1,
             request.BaseValue ?? 0,
             request.BaseStats ?? new Dictionary<string, object>(),
@@ -1080,12 +1087,22 @@ public static class BuilderEndpoints
             return refusal;
         }
 
+        // The merged values, not the request's. A PATCH that sends only `twoHanded: true` against
+        // a row whose slots are [Chest] is incoherent even though neither half arrived wrong.
+        if (ValidateSlots(
+                request.Slots ?? existing.Slots,
+                request.IsTwoHanded ?? existing.IsTwoHanded) is { } badSlots)
+        {
+            return badSlots;
+        }
+
         var change = new UpsertItemTemplate(
             key,
             Trim(request.Name) ?? existing.Name,
             request.Description ?? existing.Description,
             request.Icon ?? existing.Icon,
-            request.Slot ?? existing.Slot,
+            [.. SlotRules.Normalize(request.Slots ?? existing.Slots)],
+            request.IsTwoHanded ?? existing.IsTwoHanded,
             request.Weight ?? existing.Weight,
             request.BaseValue ?? existing.BaseValue,
             request.BaseStats ?? existing.BaseStats,
@@ -1777,6 +1794,29 @@ public static class BuilderEndpoints
     /// but silently honouring a save that says 1 and running at 4 would leave a builder tuning a
     /// number the game ignores.
     /// </summary>
+    /// <summary>
+    /// Refuses a slot list that could never be equipped as authored.
+    /// </summary>
+    /// <remarks>
+    /// A refusal rather than a quiet normalisation, because "two-handed shield" is a mistake and
+    /// silently dropping half of it is how a builder ends up sure they authored something they
+    /// did not. The rule itself lives in <see cref="SlotRules"/>, so this endpoint and the
+    /// <c>check-bundle</c> tool cannot disagree about what is authorable.
+    /// </remarks>
+    private static IResult? ValidateSlots(IReadOnlyList<ItemSlot>? slots, bool? isTwoHanded)
+    {
+        if (slots is null && isTwoHanded is null)
+        {
+            return null;
+        }
+
+        var normalized = SlotRules.Normalize(slots);
+
+        return SlotRules.Incoherent(normalized, isTwoHanded ?? false) is { } why
+            ? Invalid(why)
+            : null;
+    }
+
     private static IResult? ValidateWeapon(int? delayPulses, string? verb)
     {
         if (delayPulses is { } delay && delay < AttackTiming.MinDelayPulses)

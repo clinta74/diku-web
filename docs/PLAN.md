@@ -1199,9 +1199,12 @@ The giver and the turn-in NPC **may be different mobs** — that is what turns a
 story ("take this to the captain at the gate"). When they are the same mob, it reads as an
 ordinary errand.
 
-**No accept step.** Talking to the giver starts the quest outright. An accept/decline prompt
-adds a round trip and a state (`Offered`) that earns nothing here, since accepting a fetch
-quest costs the player nothing.
+**No accept step — under revision.** Talking to the giver starts the quest outright. The original
+argument was that an accept/decline prompt adds a round trip and a state (`Offered`) that earns
+nothing, since accepting a fetch quest costs the player nothing. That has stopped being true at 35
+quests and four Path-locked chains behind one giver: `talk` is the only way to ask a question, so
+reading what a giver wants means taking the job. §13 has the agreed shape, including why the offer
+can stay transient and no fifth state is needed.
 
 **Turn-in is strict.** Handing over the item only completes a quest the character has
 *Active*. A player who stumbles across the ledger before ever meeting Kaelen cannot skip
@@ -1697,6 +1700,92 @@ changes is that you cannot tell what is in the room before you swing at it.
 
 **Fuel is not modelled.** A torch does not burn down. If it ever should, it is a charge on the
 instance and an expiry sweep, not a change to any of the above.
+
+---
+
+### 4.19 Slots — every place an item fits, and the weapon that claims two
+
+An item template carries **`slots`, a list**, and **`isTwoHanded`, a flag**. `slot` is gone.
+
+**Why it changed.** "It's hard to get off-hand weapons" was the report; the truth was that there
+were none. Every one of the 35 authored weapons was `MainHand`, and all six off-hand items were
+shields or the torch — every one of them with no `attackDelayPulses`, which is the only thing that
+makes an item a weapon. So the entire off-hand half of combat was unreachable content:
+
+| Built | Reachable by |
+|---|---|
+| `DualWield`, granted at level 3 (Shade) and 5 (Warden) | nothing |
+| `Ambidextrous`, the off hand's own timer | nothing |
+| `OffHandDamageShare`, per Path per level | nothing |
+| `AttackSlot.OffHand` in `CombatSystem` | nothing |
+| `stats`' off-hand block: damage range, speed | only its "not a weapon" line |
+| `wield`'s "you've not the training to strike with it" | nothing — it has never fired |
+
+A Shade was told *"You can strike with a weapon in your off hand"* at level 3 and there was no such
+weapon in the world. §12's lesson in its rarer direction: usually a field is authored and read by
+nobody, and here an engine was built and authored for by nobody.
+
+**Empty means nowhere**, which is the opposite of `Paths`, where empty means anyone. They read alike
+and mean opposite things, so: *a slot list is a capability and starts at none; a Path list is a
+restriction and starts at no restriction.* Both defaults leave an authored item doing the
+unsurprising thing.
+
+**The list is held in `ItemSlot` order, and the order is the rule.** An either-hand weapon reaches
+for the main hand and settles for the off hand, and nothing has to say so separately — the enum's
+order *is* the preference. `SlotRules.Normalize` is the one place that sorts, so what a builder
+ticked first cannot change what the game does. The same argument as ordering `paths` to
+`CHARACTER_PATHS`.
+
+**Ambiguity fills the first free slot rather than asking.** `wield` on an either-hand blade takes
+the main hand when it is free and the off hand when it is not, so a bare verb always does something
+— which is how every other command in the game behaves, and the alternative costs a round trip on
+the commonest action there is. When nothing is free the refusal names *every* occupant, because with
+two candidates "your main hand" alone reads as an invitation to free it.
+
+**Two-handed is a flag, not a slot.** A two-handed weapon does not go in two places; it goes in one
+and denies the other, which no list can express. It is only ever valid alongside a `slots` of
+**exactly `[MainHand]`** — not merely including it — and the builder, the API and `check-bundle` all
+refuse anything else through `SlotRules.Incoherent` rather than normalising it quietly. `slots:
+[OffHand], twoHanded: true` is a mistake, and silently dropping half of it is how a builder ends up
+certain they authored something they did not.
+
+The rule is enforced from **both sides**, which is what makes it a state rather than a wall:
+wielding one is refused while the off hand is full (naming what is in it, not the empty main hand it
+wants), and nothing can enter the off hand while one is held. Putting it down frees the hand.
+Armour is untouched — a worn item is not a held one.
+
+**What the content says now.** Retagged by weapon shape, no new items and no changed numbers:
+
+| Shape | Slots | Which |
+|---|---|---|
+| Blades, cleavers, a hand axe, a dredging hook, the Shade's quiet knife at every act | `[MainHand, OffHand]` | 12 |
+| Mauls, staves, a long pick, a standing hammer — the shop line only | `[MainHand]` + two-handed | 5 |
+| Spears, spikes, rods, censers, and the other three Paths' epics | `[MainHand]` | 18 |
+| Shields and the torch | `[OffHand]` | 6 |
+
+**Epic rewards stay one-handed on purpose.** By shape the Warden's oathmaul is a two-handed weapon,
+and it is the one item that must not be: it is the Path's own reward, arriving with a restriction
+the player never chose, on the Path whose off-hand share is 80% *"because the hand is also holding a
+shield most of the time"*. Two-handedness belongs where it is a purchase decision, so it lives on
+the shop line.
+
+**Two things this makes true that have never been played**, both recorded rather than resolved:
+
+- **Dual wielding is now reachable, and it is large.** At mastery a Shade's off hand deals 100% of
+  its weapon's damage and a Warden's 80%, on its own timer once Ambidextrous lands. Two same-tier
+  blades is therefore close to *double* a single blade's damage for a Shade. That is what the
+  progression was designed to pay out and no character has ever collected it.
+- **The two-handed tier is, on today's numbers, strictly worse.** Within a shop tier the delay-6,
+  delay-8 and delay-10 weapons all sit at the same dps — the ossara line is 1.67 / 1.50 / 1.60 —
+  so the heavy weapon now costs a hand and buys nothing. Nobody would choose one. The honest fix is
+  a damage premium on two-handed weapons, and the size of it is a play question, not an arithmetic
+  one: it depends on whether the off hand it displaces would have held a shield or a second blade.
+  Deliberately not guessed here, for the same reason the weapon ladder's overlap was left alone.
+
+**An instance is still in one slot.** `ItemInstance.EquippedSlot` is unchanged and singular —
+however many places an item *could* go, it is in one of them at a time. All of this is template
+state; none of it touched the instance side, which is why combat, the resolver and the equipment
+display needed no changes at all.
 
 ---
 
@@ -2677,6 +2766,56 @@ side.
 One asymmetry, noted rather than scheduled: clicking a room keyword inserts the *template key*
 (`bar-maiden`), while Tab inserts the *label* (`a bar maiden`). Both target correctly, because
 `NameMatch` accepts either.
+
+### Quest accept, and a `quest` verb that owns its own words
+
+**Status: agreed, not scheduled.** The Path gate (§4.9) closed the damage — Vesh no longer hands a
+Shade the Adept chain — but it closed it by narrowing *who is offered what*, not by giving the
+player a say. Those are two different problems and only the first one is done.
+
+**What an accept step buys, now that it is not free.** §4.9 argued there was no accept step because
+accepting a fetch quest costs the player nothing. That was true when a quest was an errand and a
+journal held two of them. It is not true at 35 quests with four Path-locked chains behind a single
+giver: `talk` is the only way to ask a giver a question, so a player who wants to **read** what Vesh
+wants has no way to do it without taking the job. The journal entry *is* the cost, and the proof that
+it is a real one is that `abandon` had to be built.
+
+**The intended shape, so it is not re-derived:**
+
+- `talk <npc>` **offers** rather than starts — it prints what the giver wants and what it pays, and
+  stops there.
+- `accept <name>` takes one.
+- **Offers stay transient.** Standing in front of the giver *is* the offer, so `accept` re-checks
+  that the giver is present and that the quest still qualifies. Nothing is persisted, no `Offered`
+  status joins the four-state machine, and **declining is walking away** — a verb whose only job is
+  to clear state that nobody stored would be a verb that does nothing.
+- `AutoStart` follow-ons keep starting themselves. The next link in a chain is not an offer; the
+  player already said yes to the chain.
+
+Beyond politeness, the offer is the only place a quest's `offer` dialogue, its reward and its Path
+restriction can be **read before they bind** — the Path gate currently makes a wrong-Path quest
+simply not appear, which is correct and also invisible.
+
+**Which is where the naming problem starts, and it is the more interesting half.** Quests own four
+root verbs already — `talk`, `quest`, `quests`, `abandon` — and `accept` would be a fifth. Root verbs
+are one shared namespace with one prefix rule across the whole of it, and this corner is already the
+worst of it: `quest` had to be registered *ahead* of `quests` or it was unreachable at all, and both
+had to settle on three characters. `accept` would put a third claimant on `a`, beside `abandon` at
+three and `abilities` at zero.
+
+The alternative is one verb with subcommands — `quest`, `quest <name>`, `quest accept <name>`,
+`quest abandon <name>` — so the feature grows inside a namespace it owns rather than the global one.
+**`group` is the precedent and it is already documented as one**: `PartyCommands` says in as many
+words that six top-level verbs "would cost every other command a prefix for something typed twice an
+hour."
+
+**And that same sentence is the argument against doing it here**, which is why this is a decision
+rather than an obvious improvement. Grouping is occasional; a journal is not. `quests` is typed
+constantly, and `quest list` is more keystrokes for the commonest thing in the feature. The likely
+answer is *both* — subcommands as the real surface, with the one or two most-typed forms kept as
+top-level aliases — but that is a call to make once, for the whole command set, rather than
+quest-by-quest. The admin verbs (nine of them) and the builder verbs (eight) are the other two
+families with the same shape, and whatever is decided here should be what they get too.
 
 ### Per-template alias lists
 

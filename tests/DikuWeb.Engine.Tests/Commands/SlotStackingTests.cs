@@ -47,7 +47,7 @@ public sealed class SlotStackingTests
             Key = key,
             Name = $"a {key}",
             Icon = "=",
-            Slot = ItemSlot.Trinket,
+            Slots = [ItemSlot.Trinket],
             BaseStats = new Dictionary<string, object> { ["armor"] = 10 },
         });
 
@@ -220,7 +220,7 @@ public sealed class SlotStackingTests
             Key = "bound-ring",
             Name = "a bound ring",
             Icon = "=",
-            Slot = ItemSlot.Trinket,
+            Slots = [ItemSlot.Trinket],
             IsNoDrop = true,
             BaseValue = 100,
         });

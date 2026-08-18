@@ -1,5 +1,5 @@
 {
-  "formatVersion": 14,
+  "formatVersion": 15,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -106,7 +106,10 @@
       "name": "a lens hood",
       "description": "Bronze, fitted to the head, with smoked glass on a hinge. It was made for looking at something too bright and works on blows as well.",
       "icon": "^",
-      "slot": "Head",
+      "slots": [
+        "Head"
+      ],
+      "isTwoHanded": false,
       "weight": 900,
       "baseValue": 260,
       "baseStats": {
@@ -125,7 +128,10 @@
       "name": "a scaled mantle",
       "description": "Overlapping bronze scales on a linen backing, each scale numbered. The numbering does not run in order.",
       "icon": "[",
-      "slot": "Chest",
+      "slots": [
+        "Chest"
+      ],
+      "isTwoHanded": false,
       "weight": 7000,
       "baseValue": 700,
       "baseStats": {
@@ -144,7 +150,10 @@
       "name": "a pair of measurer's gloves",
       "description": "Fine work, with the fingertips left bare and a scale printed down the back of each hand.",
       "icon": "[",
-      "slot": "Hands",
+      "slots": [
+        "Hands"
+      ],
+      "isTwoHanded": false,
       "weight": 400,
       "baseValue": 190,
       "baseStats": {
@@ -163,7 +172,10 @@
       "name": "a plated skirt",
       "description": "Bronze strips on a belt, cut to let a person kneel at an instrument all day.",
       "icon": "[",
-      "slot": "Legs",
+      "slots": [
+        "Legs"
+      ],
+      "isTwoHanded": false,
       "weight": 3200,
       "baseValue": 460,
       "baseStats": {
@@ -182,7 +194,10 @@
       "name": "a pair of shod sandals",
       "description": "Bronze soles over cork. They ring on a floor and every floor in Azhen was made to be rung on.",
       "icon": "[",
-      "slot": "Feet",
+      "slots": [
+        "Feet"
+      ],
+      "isTwoHanded": false,
       "weight": 1800,
       "baseValue": 300,
       "baseStats": {
@@ -201,7 +216,10 @@
       "name": "an orrery guard",
       "description": "A hinged bronze fan, part of a housing, taken off something and strapped to an arm by somebody in a hurry.",
       "icon": ")",
-      "slot": "OffHand",
+      "slots": [
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 3400,
       "baseValue": 520,
       "baseStats": {
@@ -221,7 +239,10 @@
       "name": "a reading stone",
       "description": "A disc of clear glass on a chain, ground so true it has no distortion at all. Looking through it is exactly like not.",
       "icon": "*",
-      "slot": "Trinket",
+      "slots": [
+        "Trinket"
+      ],
+      "isTwoHanded": false,
       "weight": 60,
       "baseValue": 240,
       "baseStats": {
@@ -240,7 +261,10 @@
       "name": "a measuring rod",
       "description": "Bronze, a shade over five feet, graduated the whole way. Azhen made everything to be measured and some of it to be hit.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 3000,
       "baseValue": 480,
       "baseStats": {
@@ -261,7 +285,11 @@
       "name": "a gate stylus",
       "description": "A hand-length spike of gate-stone in a bronze grip, for cutting marks into things that do not take marks.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand",
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 1400,
       "baseValue": 560,
       "baseStats": {
@@ -282,7 +310,10 @@
       "name": "a counterweight maul",
       "description": "A housing counterweight on a shaft. It was never a weapon and it is a very good one.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": true,
       "weight": 5000,
       "baseValue": 440,
       "baseStats": {
@@ -302,7 +333,8 @@
       "name": "a lens blank",
       "description": "Uncut glass, still in its shipping straw, ground on one face only. There are crates of them and no one to finish them.",
       "icon": "o",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 800,
       "baseValue": 0,
       "baseStats": {},
@@ -319,7 +351,8 @@
       "name": "a drive cog",
       "description": "Bronze, hand-sized, with teeth cut to a tolerance nobody in the Reaches can match now.",
       "icon": "o",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 600,
       "baseValue": 0,
       "baseStats": {},
@@ -336,7 +369,8 @@
       "name": "a silenced plate",
       "description": "A reading plate with its entry scraped off. The scraping was done carefully, and it was done from the inside of the housing.",
       "icon": "?",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 900,
       "baseValue": 0,
       "baseStats": {},
@@ -353,7 +387,10 @@
       "name": "a measured oathmaul",
       "description": "Head like a milestone, haft the length of a person. It was made to stop something. Trued against an Azhen rule. Every measurement on it is a measurement of something else.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -376,7 +413,10 @@
       "name": "a measured hearthcenser",
       "description": "A censer on a chain, weighted for swinging and never once used for incense. Trued against an Azhen rule. Every measurement on it is a measurement of something else.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -399,7 +439,10 @@
       "name": "a measured stormrod",
       "description": "Bronze wound with wire that stands the hair up on your arm when the weather turns. Trued against an Azhen rule. Every measurement on it is a measurement of something else.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -422,7 +465,11 @@
       "name": "a measured quiet knife",
       "description": "It does not catch the light. Somebody took a great deal of trouble over that. Trued against an Azhen rule. Every measurement on it is a measurement of something else.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand",
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {

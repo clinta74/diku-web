@@ -254,6 +254,29 @@ So an ability change reaches production by the builder UI, or by SQL.
 
 ---
 
+## 5a. Applying a content retune by SQL
+
+The ability case above generalises. Anything written straight into Postgres — a retune, a retag,
+a one-column correction — meets the same two traps, and they are the two steps people skip:
+
+1. **Confirm the migration landed before running the SQL.** A patch that sets a column added by a
+   migration that has not applied fails on the column, which is the good case; a patch that sets a
+   column whose *meaning* changed in a migration silently writes the old meaning, which is not.
+2. **Restart `web` afterwards.** The template and ability caches load at startup and do not notice
+   a direct SQL write. Until the process reloads, the database is right and the game is wrong —
+   which reads exactly like the patch not having worked, and invites running it again.
+
+**`tools/retag-weapon-slots.sql`** is the current worked example: it sets 12 weapons to either hand
+and 5 to two-handed, after the `ItemSlotList` migration has converted every `slot` into a one-element
+`slots`. It is idempotent — it sets values rather than toggling them — and it ends with a count that
+should read 12 and 5.
+
+Prefer **importing `build/the-reaches.json`** when the world is otherwise up to date, since that
+carries everything else authored since the last import and goes through the loop, the audit trail
+and the validator. Prefer the SQL when it is not, and you only want the one change.
+
+---
+
 ## 6. Triage
 
 | Symptom | Likely cause | First move |

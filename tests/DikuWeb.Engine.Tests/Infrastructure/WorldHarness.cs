@@ -507,7 +507,7 @@ internal sealed class WorldHarness
             Key = key,
             Name = name,
             Icon = "$",
-            Slot = slot,
+            Slots = slot is null ? [] : [slot.Value],
             Description = description,
             BaseValue = value,
         };
@@ -533,14 +533,30 @@ internal sealed class WorldHarness
         string? verb = null,
         int damageMin = 1,
         int damageMax = 1,
-        int attackBonus = 100)
+        int attackBonus = 100) =>
+        DefineWeapon(key, name, [slot], delayPulses, verb, damageMin, damageMax, attackBonus);
+
+    /// <summary>
+    /// The same, for a weapon that fits more than one slot - or that claims both hands.
+    /// </summary>
+    public ItemTemplate DefineWeapon(
+        string key,
+        string name,
+        IReadOnlyList<ItemSlot> slots,
+        int? delayPulses,
+        string? verb = null,
+        int damageMin = 1,
+        int damageMax = 1,
+        int attackBonus = 100,
+        bool twoHanded = false)
     {
         var template = new ItemTemplate
         {
             Key = key,
             Name = name,
             Icon = "/",
-            Slot = slot,
+            Slots = [.. SlotRules.Normalize(slots)],
+            IsTwoHanded = twoHanded,
             AttackDelayPulses = delayPulses,
             AttackVerb = verb,
             BaseStats = new Dictionary<string, object>

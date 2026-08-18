@@ -58,6 +58,16 @@ public sealed record WorldBundle(
     /// be partially applied usefully - it would import the fields that happened to match and
     /// silently drop the rest, which is the failure mode a version number exists to prevent.
     ///
+    /// <b>15 because an item names every slot it fits, and may claim two.</b> <c>slot</c> is gone
+    /// and <c>slots</c> plus <c>twoHanded</c> stand in its place. <b>The strong kind of bump, in
+    /// both directions.</b> A v14 bundle read as v15 has no <c>slots</c> key at all, so every item
+    /// in it arrives equippable nowhere: a world of armour that cannot be worn and weapons that
+    /// cannot be held, which is the loudest failure on this list and the only reason it is not the
+    /// dangerous one. The other direction is the quiet one and it is why this is strong rather than
+    /// weak - a v15 bundle read as v14 drops <c>twoHanded</c>, so every maul and staff in it
+    /// becomes a one-handed weapon that leaves the off hand free, and a character wielding one with
+    /// a shield is a rules change nothing announces.
+    ///
     /// <b>14 because a quest can be for one Path.</b> A quest carries <c>paths</c>, and a giver
     /// offers only what the character in front of them can use. The weak kind of bump, like 13: a
     /// v13 bundle has no such key, so read as v14 every quest arrives unrestricted - which is
@@ -150,7 +160,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 14;
+    public const int CurrentFormatVersion = 15;
 }
 
 /// <summary>
@@ -227,8 +237,9 @@ public sealed record BundleItemTemplate(
     string Name,
     string Description,
     string Icon,
-    [property: JsonConverter(typeof(NullableEnumConverter<ItemSlot>))]
-    ItemSlot? Slot,
+    [property: JsonConverter(typeof(JsonStringEnumListConverter<ItemSlot>))]
+    List<ItemSlot>? Slots,
+    bool IsTwoHanded,
     int Weight,
     int BaseValue,
     Dictionary<string, object> BaseStats,

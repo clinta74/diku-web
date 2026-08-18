@@ -27,7 +27,7 @@ public sealed class ItemRestrictionTests
             Key = key,
             Name = key.Replace('-', ' '),
             Icon = "/",
-            Slot = slot,
+            Slots = slot is null ? [] : [slot.Value],
             BaseValue = 10,
             IsLore = lore,
             IsNoDrop = noDrop,

@@ -21,7 +21,7 @@ export function ItemsTab() {
                   items={itemTemplates}
                   keyOf={(t) => t.key}
                   labelOf={(t) => t.name}
-                  badgeOf={(t) => t.slot ?? 'ground'}
+                  badgeOf={(t) => (t.isTwoHanded ? 'both hands' : (t.slots.join('/') || 'ground'))}
                   selectedKey={selectedKey}
                   onSelect={(key) => navigate(toItemsPath(key))}
                   createTitle="New item template"
@@ -31,7 +31,8 @@ export function ItemsTab() {
                       name: name || key,
                       description: '',
                       icon: 'i',
-                      slot: null,
+                      slots: [],
+                      isTwoHanded: false,
                       weight: 0,
                       baseValue: 0,
                       baseStats: {},

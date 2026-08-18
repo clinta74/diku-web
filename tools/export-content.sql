@@ -1,17 +1,23 @@
 -- Export the authored world as a re-runnable SQL script.
 --
--- MAINTENANCE HAZARD, stated first because it has already bitten once: every column list below is
--- a hand-written copy of the schema, and nothing compiles or tests this file. When
--- `spawners.sentinel` was renamed to `wanders`, this script went on emitting `sentinel` and would
--- have produced an export that failed to load, and an existing backup that no longer applied. The
--- fault surfaced only because somebody went looking, and it has now happened three times: `quests`
--- omitted `auto_start` from the day that column was added, so every SQL restore quietly reset every
--- quest's auto-start to the column default - and `reward_flag_key` was missing from the same list
--- from the day *it* was added, which meant a restore silently cleared the four attunement gates
--- (BUGS.md #6, #7) that are the game's only progression lock. Both were found while adding `paths`,
--- by diffing this list against information_schema rather than by reading it. **Add or rename a column in one of the nine tables
--- below and you must edit this file in the same commit.** The JSON path (§6.1) has tests behind it
--- and should be preferred for anything that can use it; this one is guarded by nothing but reading.
+-- MAINTENANCE HAZARD - and it is now guarded, which the rest of this paragraph is the reason for.
+-- Every column list below is a hand-written copy of the schema, and it has drifted **five times**:
+--
+--   1. `spawners.sentinel` was renamed to `wanders` and this went on emitting `sentinel`, so the
+--      export failed to load and every existing backup stopped applying.
+--   2. `quests.auto_start` was never listed, so a restore reset every quest's auto-start.
+--   3. `quests.reward_flag_key` was never listed, so a restore silently cleared the four
+--      attunement gates (BUGS.md #6, #7) - the game's only progression lock.
+--   4. `item_templates` never listed `is_lore`, `is_no_drop`, `is_light_source` or `paths`, so a
+--      restore un-bound every epic reward and put out every lamp.
+--   5. `room_exits` never listed `required_flag_key`, `required_item_key` or `refusal_message`, so
+--      a restore opened every locked door and portal in the game (§4.15).
+--
+-- Every one of them was silent, every one was found by diffing this list against the schema rather
+-- than by reading it, and four of the five were found by somebody who had come here to do something
+-- else. So that diff is now a test: `ExportScriptCompletenessTests` parses this file and fails if
+-- any column of the nine tables below is missing from its INSERT. **Add or rename a column and you
+-- must edit this file in the same commit** - but the test will say so rather than a restore.
 --
 -- PLAN.md §6 makes Postgres the only source of truth for content: there are no world files, so
 -- everything a builder authored lives in these nine tables and nowhere else. That is fine until
@@ -99,10 +105,13 @@ select '-- room_exits';
 -- to_room_key is deliberately not a foreign key (§6), so an exit may point at a room that does
 -- not exist yet. Restoring one is therefore always safe, whatever order the rooms arrived in.
 select format(
-    'INSERT INTO room_exits (from_room_key, direction, to_room_key) '
-    || 'VALUES (%L, %L, %L) ON CONFLICT (from_room_key, direction) DO UPDATE SET '
-    || 'to_room_key = EXCLUDED.to_room_key;',
-    from_room_key, direction, to_room_key)
+    'INSERT INTO room_exits (from_room_key, direction, to_room_key, required_flag_key, '
+    || 'required_item_key, refusal_message) '
+    || 'VALUES (%L, %L, %L, %L, %L, %L) ON CONFLICT (from_room_key, direction) DO UPDATE SET '
+    || 'to_room_key = EXCLUDED.to_room_key, required_flag_key = EXCLUDED.required_flag_key, '
+    || 'required_item_key = EXCLUDED.required_item_key, refusal_message = EXCLUDED.refusal_message;',
+    from_room_key, direction, to_room_key, required_flag_key,
+    required_item_key, refusal_message)
 from room_exits order by from_room_key, direction;
 
 select '';
@@ -122,15 +131,21 @@ from mob_templates order by key;
 select '';
 select '-- item_templates';
 select format(
-    'INSERT INTO item_templates (key, name, description, icon, slot, weight, base_value, '
-    || 'base_stats, attack_delay_pulses, attack_verb, is_quest_item) '
-    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L) ON CONFLICT (key) DO UPDATE SET '
+    'INSERT INTO item_templates (key, name, description, icon, slots, is_two_handed, weight, '
+    || 'base_value, base_stats, attack_delay_pulses, attack_verb, is_quest_item, is_lore, '
+    || 'is_no_drop, is_light_source, paths) '
+    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L) '
+    || 'ON CONFLICT (key) DO UPDATE SET '
     || 'name = EXCLUDED.name, description = EXCLUDED.description, icon = EXCLUDED.icon, '
-    || 'slot = EXCLUDED.slot, weight = EXCLUDED.weight, base_value = EXCLUDED.base_value, '
-    || 'base_stats = EXCLUDED.base_stats, attack_delay_pulses = EXCLUDED.attack_delay_pulses, '
-    || 'attack_verb = EXCLUDED.attack_verb, is_quest_item = EXCLUDED.is_quest_item;',
-    key, name, description, icon, slot, weight, base_value,
-    base_stats, attack_delay_pulses, attack_verb, is_quest_item)
+    || 'slots = EXCLUDED.slots, is_two_handed = EXCLUDED.is_two_handed, weight = EXCLUDED.weight, '
+    || 'base_value = EXCLUDED.base_value, base_stats = EXCLUDED.base_stats, '
+    || 'attack_delay_pulses = EXCLUDED.attack_delay_pulses, attack_verb = EXCLUDED.attack_verb, '
+    || 'is_quest_item = EXCLUDED.is_quest_item, is_lore = EXCLUDED.is_lore, '
+    || 'is_no_drop = EXCLUDED.is_no_drop, is_light_source = EXCLUDED.is_light_source, '
+    || 'paths = EXCLUDED.paths;',
+    key, name, description, icon, slots, is_two_handed, weight,
+    base_value, base_stats, attack_delay_pulses, attack_verb, is_quest_item, is_lore,
+    is_no_drop, is_light_source, paths)
 from item_templates order by key;
 
 select '';

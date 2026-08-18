@@ -288,7 +288,7 @@ public sealed class BundleValidatorTests
             behavior ?? [], [], []);
 
     private static BundleItemTemplate Item(string key) =>
-        new(key, "a torch", "", "t", null, 1, 1, new Dictionary<string, object>(),
+        new(key, "a torch", "", "t", null, false, 1, 1, new Dictionary<string, object>(),
             null, null, false, false, false, false, null);
 
     /// <summary>

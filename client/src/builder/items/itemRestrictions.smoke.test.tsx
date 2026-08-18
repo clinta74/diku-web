@@ -17,7 +17,8 @@ const oathmaul = vi.hoisted(
     name: 'an unproven oathmaul',
     description: 'Head like a milestone.',
     icon: '/',
-    slot: 'MainHand',
+    slots: ['MainHand'],
+    isTwoHanded: false,
     weight: 2600,
     baseValue: 0,
     baseStats: { damageMin: 5, damageMax: 10 },
@@ -133,9 +134,9 @@ it('says when a Path list can never be consulted', async () => {
   // wield, and a ground item is neither.
   await open()
 
-  // By role: `Field` renders its label as a span rather than a `<label for>`, so only the
-  // checkboxes above — which are wrapped in real labels — answer to getByLabelText.
-  fireEvent.change(screen.getByRole('combobox'), { target: { value: '' } })
+  // Untick its only slot, which is what "make this a ground item" is now: slots are checkboxes
+  // rather than a select, and each is wrapped in a real label so it answers to getByLabelText.
+  fireEvent.click(screen.getByLabelText('MainHand'))
 
   expect(
     await screen.findByText(/never worn or wielded/),

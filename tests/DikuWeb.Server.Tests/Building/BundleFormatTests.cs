@@ -120,8 +120,8 @@ public sealed class BundleFormatTests
             bundle.ItemTemplates.Where(item => item.Paths is not null).SelectMany(item => item.Paths!),
             path => Assert.True(Enum.IsDefined(path)));
         Assert.All(
-            bundle.ItemTemplates.Where(item => item.Slot is not null),
-            item => Assert.True(Enum.IsDefined(item.Slot!.Value)));
+            bundle.ItemTemplates.Where(item => item.Slots is not null).SelectMany(item => item.Slots!),
+            slot => Assert.True(Enum.IsDefined(slot)));
     }
 
     /// <summary>

@@ -111,7 +111,8 @@ public sealed class CacheLivenessTests
         var (applier, _, _, items, _) = NewApplier();
 
         applier.Apply(new UpsertItemTemplate(
-            "blade", "a blade", "", "/", ItemSlot.MainHand, 10, 25, [], 8, "slash", false, false, false, false, []));
+            "blade", "a blade", "", "/", [ItemSlot.MainHand], false, 10, 25, [], 8, "slash", false, false, false,
+            false, []));
 
         Assert.Equal(25, items.Get("blade")?.BaseValue);
         Assert.Equal(8, items.Get("blade")?.AttackDelayPulses);
@@ -121,8 +122,8 @@ public sealed class CacheLivenessTests
         // So does weapon speed - combat resolves the delay through this same cache every pulse.
         // The quest-item flag rides along: the spawner reads it from this cache too.
         applier.Apply(new UpsertItemTemplate(
-            "blade", "a blade", "", "/", ItemSlot.MainHand, 10, 99, [], 4, "cleave", true, true, true, true,
-            [CharacterPath.Warden]));
+            "blade", "a blade", "", "/", [ItemSlot.MainHand], true, 10, 99, [], 4, "cleave", true, true, true,
+            true, [CharacterPath.Warden]));
 
         // The three restrictions ride along too - they are read from this cache at pick-up,
         // at the shop counter and at the moment of equipping.

@@ -516,11 +516,60 @@ Bolt"*, *"You are still in the middle of Kick"*.
 
 ---
 
+## 30. The SQL export dropped every item restriction and every exit gate — **fixed**
+
+`tools/export-content.sql` is a hand-written copy of the schema. Two of its nine column lists had
+drifted, and both drifted the quiet way — a missing column does not break the restore, it applies
+cleanly and writes the column default, so the world comes back looking right:
+
+- **`item_templates`** never listed `is_lore`, `is_no_drop`, `is_light_source` or `paths`, missing
+  since the `ItemRestrictions` migration. A restore un-bound every epic reward — twenty items carry
+  one — and put out every lamp, so the four dark zones became unreadable with no item able to answer
+  them.
+- **`room_exits`** never listed `required_flag_key`, `required_item_key` or `refusal_message`. **A
+  restore opened every locked door and portal in the game** (§4.15), the four attunement gates
+  included — the same damage as #7 by the same mechanism, in a different table.
+
+That is the fourth and fifth drift in this one file, after `spawners.sentinel`, `quests.auto_start`
+and `quests.reward_flag_key`. All five were found by diffing the list against the schema rather than
+by reading it, and four of the five by somebody who had come here to do something else.
+
+**Fixed, and now guarded.** `ExportScriptCompletenessTests` builds the EF model, parses the script,
+and fails on any column of the nine tables its `INSERT` does not name — and, separately, on any it
+names that no longer exists, which is the `sentinel` case. Demonstrated failing against the pre-fix
+file first. The exemption list is empty and every future entry is a hole in the guard.
+
+---
+
+## 31. Nothing in the world could be held in an off hand — **fixed**
+
+Reported as *"it's hard to get off-hand weapons"*. There were none. All 35 authored weapons were
+`MainHand`; all six off-hand items were shields or the torch, and every one of those had no
+`attackDelayPulses`, which is the only thing that makes an item a weapon.
+
+So an entire built subsystem had no reachable content: `DualWield` (Shade 3, Warden 5),
+`Ambidextrous`, `OffHandDamageShare`, `AttackSlot.OffHand` in `CombatSystem`, the off-hand block in
+`stats`, and `wield`'s *"you've not the training to strike with it"* — **which has never fired for
+any player**, being gated on an off-hand item that declares a speed. A Shade is told at level 3 that
+they can strike with a weapon in their off hand.
+
+The same defect class as the rest of this file, in the rarer direction: usually a field is authored
+and read by nobody; here an engine was built and authored for by nobody. `check-builder-keys.py` is
+one-directional by design and could not have caught it.
+
+**Fixed** by making `slots` a list and adding `isTwoHanded` (`PLAN.md` §4.19), and by retagging 17
+weapons by shape. `BundleValidator` now errors on a template that declares an attack speed and
+reaches neither hand — a weapon that can never swing — which is the shape this was.
+
+---
+
 ## Not in this queue
 
-Design questions the review raised and deliberately did not answer: **mob leashing**, quest
-accept/decline, and containers — `ContainerItemId` is read once as a filter and written nowhere. Each
-needs a decision before it needs code.
+Design questions the review raised and deliberately did not answer: **mob leashing** and
+containers — `ContainerItemId` is read once as a filter and written nowhere. Each
+needs a decision before it needs code. **Quest accept/decline has since been decided** and
+written up in `PLAN.md` §13, together with the verb-namespace question it raises — it is scheduled
+work now rather than an open question.
 
 **The weapon ladder overlaps by level**, found while retuning weapon damage and left alone because
 fixing it changes absolute difficulty, which needs play rather than arithmetic. Every tier's floor sits

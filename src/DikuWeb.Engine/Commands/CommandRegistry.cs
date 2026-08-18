@@ -528,7 +528,7 @@ public sealed class CommandRegistry
             spans.Add(new TextSpan($"\n{description}"));
         }
 
-        spans.Add(new TextSpan($"\n{UsageProse(template?.Slot)}", "dim"));
+        spans.Add(new TextSpan($"\n{UsageProse(template)}", "dim"));
 
         if (ItemState.IsQuestItem(item))
         {
@@ -539,7 +539,9 @@ public sealed class CommandRegistry
         [
             ("value", item.Value.ToString(CultureInfo.InvariantCulture)),
             ("weight", template?.Weight.ToString(CultureInfo.InvariantCulture) ?? "?"),
-            ("slot", template?.Slot?.ToString() ?? "none"),
+            ("slots", template is null || template.Slots.Count == 0
+                ? "none"
+                : string.Join("/", template.Slots) + (template.IsTwoHanded ? " (two-handed)" : string.Empty)),
             ("speed", template?.AttackDelayPulses?.ToString(CultureInfo.InvariantCulture) ?? "—"),
             ("verb", template?.AttackVerb ?? "—"),
             ("stats", Describe(item.ResolvedStats)),
@@ -694,7 +696,35 @@ public sealed class CommandRegistry
                 .Select(kv => $"{kv.Key}={kv.Value}"));
 
     /// <summary>Prose telling a player, in-world, how (or whether) an item can be equipped.</summary>
-    private static string UsageProse(ItemSlot? slot) => slot switch
+    /// <remarks>
+    /// The three hand cases are answered before the per-slot lines, because "either hand" and
+    /// "both hands" are what a player most needs off this screen and neither is a slot — they are
+    /// the shape of the list. Everything else is still one slot and reads as it always did.
+    /// </remarks>
+    private static string UsageProse(ItemTemplate? template)
+    {
+        var slots = SlotRules.Normalize(template?.Slots);
+
+        if (slots.Count == 0)
+        {
+            return "It isn't something you can wear or wield.";
+        }
+
+        if (SlotRules.ClaimsBothHands(template))
+        {
+            return "It takes both hands — there is no wielding anything alongside it.";
+        }
+
+        var hands = SlotRules.HandSlots(template);
+        if (hands.Count == 2)
+        {
+            return "It is balanced for either hand — you could wield it in whichever is free.";
+        }
+
+        return NarrationHelper.List([.. slots.Select(SlotLine)]);
+    }
+
+    private static string SlotLine(ItemSlot slot) => slot switch
     {
         ItemSlot.Head => "It looks made to be worn on your head.",
         ItemSlot.Chest => "It looks made to be worn over your chest.",
@@ -869,23 +899,27 @@ public sealed class CommandRegistry
         }
 
         var article = NarrationHelper.WithDefiniteArticle(targetItem.DisplayName);
-        var slot = SlotFor(ctx, targetItem);
+        var template = ctx.ItemTemplates?.Get(targetItem.TemplateKey);
+        var candidates = SlotRules.WornSlots(template);
 
-        if (slot is null)
+        if (candidates.Count == 0)
         {
-            ctx.Reply($"You can't wear {article} — it isn't something you can equip.", "bad");
+            // "wear" is for armour and trinkets; hands are wielded, not worn. Sending someone to
+            // the right verb is friendlier than silently jamming a sword onto their chest.
+            ctx.Reply(
+                SlotRules.HandSlots(template).Count > 0
+                    ? $"You can't wear {article} — try wielding it instead."
+                    : $"You can't wear {article} — it isn't something you can equip.",
+                "bad");
             return;
         }
 
-        // "wear" is for armour and trinkets; hands are wielded, not worn. Sending someone to the
-        // right verb is friendlier than silently jamming a sword onto their chest.
-        if (IsHandSlot(slot.Value))
+        if (ChooseSlot(ctx, candidates, article, "wearing") is not { } slot)
         {
-            ctx.Reply($"You can't wear {article} — try wielding it instead.", "bad");
             return;
         }
 
-        TryEquip(ctx, targetItem, slot.Value, "wear", "wears");
+        TryEquip(ctx, targetItem, slot, "wear", "wears");
     }
 
     private static void Wield(CommandContext ctx)
@@ -912,22 +946,49 @@ public sealed class CommandRegistry
         }
 
         var article = NarrationHelper.WithDefiniteArticle(targetItem.DisplayName);
-        var slot = SlotFor(ctx, targetItem);
+        var template = ctx.ItemTemplates?.Get(targetItem.TemplateKey);
+        var candidates = SlotRules.HandSlots(template);
 
-        if (slot is null)
+        if (candidates.Count == 0)
         {
-            ctx.Reply($"You can't wield {article} — it isn't something you can equip.", "bad");
+            // The mirror of Wear: only hand slots are wielded; armour is worn.
+            ctx.Reply(
+                SlotRules.IsEquippable(template)
+                    ? $"You can't wield {article} — try wearing it instead."
+                    : $"You can't wield {article} — it isn't something you can equip.",
+                "bad");
             return;
         }
 
-        // The mirror of Wear: only hand slots are wielded; armour is worn.
-        if (!IsHandSlot(slot.Value))
+        // A weapon that needs both hands is refused before the hands are searched, because the
+        // free hand it would otherwise fall through to is the one it is about to claim.
+        if (SlotRules.ClaimsBothHands(template) && OccupantOf(ctx, ItemSlot.OffHand) is { } inTheWay)
         {
-            ctx.Reply($"You can't wield {article} — try wearing it instead.", "bad");
+            ctx.Reply(
+                $"You need both hands for {article}, and your off hand is holding "
+                + $"{NarrationHelper.WithDefiniteArticle(inTheWay.DisplayName)}.",
+                "bad");
             return;
         }
 
-        if (!TryEquip(ctx, targetItem, slot.Value, "wield", "wields"))
+        if (ChooseSlot(ctx, candidates, article, "wielding") is not { } slot)
+        {
+            return;
+        }
+
+        // The other side of the same rule: nothing joins a hand the main hand has already claimed.
+        if (slot == ItemSlot.OffHand
+            && OccupantOf(ctx, ItemSlot.MainHand) is { } heldMain
+            && SlotRules.ClaimsBothHands(ctx.ItemTemplates?.Get(heldMain.TemplateKey)))
+        {
+            ctx.Reply(
+                $"{NarrationHelper.WithDefiniteArticle(heldMain.DisplayName, capitalize: true)} "
+                + "takes both hands — there is no off hand free.",
+                "bad");
+            return;
+        }
+
+        if (!TryEquip(ctx, targetItem, slot, "wield", "wields"))
         {
             return;
         }
@@ -939,8 +1000,8 @@ public sealed class CommandRegistry
         // declares no attack delay never swings however trained you are (`AttackDelayPulses`), so
         // blaming the training would name a fix that does not exist - which is what the `stats`
         // screen has always said correctly one screen over.
-        if (slot.Value == ItemSlot.OffHand &&
-            ctx.ItemTemplates?.Get(targetItem.TemplateKey)?.AttackDelayPulses is not null &&
+        if (slot == ItemSlot.OffHand &&
+            template?.AttackDelayPulses is not null &&
             !CanStrikeWithOffHand(ctx.Actor.Character))
         {
             ctx.Reply(
@@ -1003,15 +1064,52 @@ public sealed class CommandRegistry
             "dim"));
     }
 
-    /// <summary>
-    /// The slot an item declares on its template, or null if it is not equippable. Resolved from
-    /// the template cache because an <see cref="ItemInstance"/> only caches its key.
-    /// </summary>
-    private static ItemSlot? SlotFor(CommandContext ctx, ItemInstance item) =>
-        ctx.ItemTemplates?.Get(item.TemplateKey)?.Slot;
+    /// <summary>Whatever is equipped in a slot right now, or null if it is free.</summary>
+    private static ItemInstance? OccupantOf(CommandContext ctx, ItemSlot slot) =>
+        ctx.World.InventoryOf(ctx.Actor.CharacterId).FirstOrDefault(i => i.EquippedSlot == slot);
 
-    private static bool IsHandSlot(ItemSlot slot) =>
-        slot is ItemSlot.MainHand or ItemSlot.OffHand;
+    /// <summary>
+    /// The first free slot among the ones an item declares, or null having explained why there
+    /// is none.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>First free rather than asking.</b> The candidates arrive in enum order, which puts the
+    /// main hand ahead of the off hand, so an either-hand blade reaches for the main hand and
+    /// settles for the other - and a bare verb still always does something, which is how every
+    /// other command in the game behaves.
+    /// </para>
+    /// <para>
+    /// When nothing is free the refusal names every occupant rather than the first, because with
+    /// one candidate that is the message this always gave and with two "your main hand" alone
+    /// would read as an invitation to free it.
+    /// </para>
+    /// </remarks>
+    private static ItemSlot? ChooseSlot(
+        CommandContext ctx,
+        IReadOnlyList<ItemSlot> candidates,
+        string article,
+        string gerund)
+    {
+        foreach (var slot in candidates)
+        {
+            if (OccupantOf(ctx, slot) is null)
+            {
+                return slot;
+            }
+        }
+
+        var occupied = candidates
+            .Select(slot => $"your {SlotRules.Name(slot)} for "
+                + NarrationHelper.WithDefiniteArticle(OccupantOf(ctx, slot)!.DisplayName))
+            .ToList();
+
+        ctx.Reply(
+            $"You have nowhere to put {article} — you're already using {NarrationHelper.List(occupied)}.",
+            "bad");
+
+        return null;
+    }
 
     /// <summary>
     /// Equips into the item's own slot, refusing if that slot is already filled. Returns false
@@ -1043,7 +1141,7 @@ public sealed class CommandRegistry
         if (occupant is not null)
         {
             var occupantName = NarrationHelper.WithDefiniteArticle(occupant.DisplayName);
-            ctx.Reply($"You're already using your {SlotName(slot)} for {occupantName}.", "bad");
+            ctx.Reply($"You're already using your {SlotRules.Name(slot)} for {occupantName}.", "bad");
             return false;
         }
 
@@ -1055,14 +1153,6 @@ public sealed class CommandRegistry
         ctx.Broadcast($"{ctx.Actor.Name} {othersVerb} {article}.", "movement");
         return true;
     }
-
-    /// <summary>A human-readable name for a slot, for prose like "your main hand".</summary>
-    private static string SlotName(ItemSlot slot) => slot switch
-    {
-        ItemSlot.MainHand => "main hand",
-        ItemSlot.OffHand => "off hand",
-        _ => slot.ToString().ToLowerInvariant(),
-    };
 
     private static void Remove(CommandContext ctx)
     {

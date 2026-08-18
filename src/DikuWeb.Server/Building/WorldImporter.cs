@@ -1,6 +1,7 @@
-using DikuWeb.Domain.Abilities;
 using System.Text.Json;
+using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Mutations;
 using DikuWeb.Persistence;
@@ -271,7 +272,8 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
             : null;
 
     private static WorldChange ItemChangeFor(BundleItemTemplate i) =>
-        new UpsertItemTemplate(i.Key, i.Name, i.Description, i.Icon, i.Slot, i.Weight, i.BaseValue,
+        new UpsertItemTemplate(i.Key, i.Name, i.Description, i.Icon, [.. SlotRules.Normalize(i.Slots)],
+            i.IsTwoHanded, i.Weight, i.BaseValue,
             i.BaseStats ?? [], i.AttackDelayPulses, i.AttackVerb, i.IsQuestItem,
             i.IsLore, i.IsNoDrop, i.IsLightSource, i.Paths ?? []);
 

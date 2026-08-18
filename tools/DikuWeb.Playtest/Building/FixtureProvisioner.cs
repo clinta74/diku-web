@@ -216,7 +216,7 @@ public sealed class FixtureProvisioner(HttpClient builder)
                     name = Named(item.Name, item.Key),
                     description = item.Description ?? string.Empty,
                     icon = item.Icon ?? "$",
-                    slot = item.Slot,
+                    slots = item.Slot is null ? Array.Empty<string>() : [item.Slot],
                     baseValue = item.Value,
                     isQuestItem = item.QuestItem,
                 },

@@ -398,4 +398,72 @@ Add anything noticed while playing here. Cleared as items are done.
     with five in the group, and whether *elsewhere* is the right thing to say about somebody one
     room away versus one realm away — it does not currently distinguish.
 
-  - it's hard to get off-hand weapons. some weapons should work in either hand, others in only the main hand, and some use both hands and prevent an off hand weapon. I think this means that items need a mutliselect for slot that gives more freedom in choices. some items may able to be worn in mutliple slots as an outcome of this.
+  - **off-hand weapons: done, and there were none at all.** Reported as "it's hard to get off-hand
+    weapons". The arithmetic says otherwise: **all 35 authored weapons were `MainHand`, and all six
+    off-hand items were shields or the torch** — every one of them with no `attackDelayPulses`,
+    which is the only thing that makes an item a weapon. So there was no weapon in the game that
+    could enter an off hand, and the whole off-hand half of combat was unreachable content:
+    `DualWield` (a Shade at level 3, a Warden at 5), `Ambidextrous`, `OffHandDamageShare`, the
+    second strike in `CombatSystem`, the damage range and speed in `stats`, and `wield`'s
+    *"you've not the training to strike with it"* — **which has never fired for anybody.** A Shade
+    is told at level 3 that they can strike with a weapon in their off hand, and could not.
+
+    Built as you described it: an item carries a **list** of slots, plus a **two-handed flag** for
+    the weapon that claims a hand rather than filling it (`PLAN.md` §4.19). Empty means nowhere,
+    which is deliberately the opposite of `paths`, where empty means anyone — a slot list is a
+    capability and starts at none. The list is held in enum order and that order *is* the
+    preference, so an either-hand blade reaches for the main hand and settles for the off hand with
+    nothing having to say so. A bare `wield` still always does something.
+
+    Two-handed could not be a slot, because it is not a place an item goes — it is a place it
+    denies. It is valid only alongside `slots: [MainHand]` exactly, and the builder, the API and
+    `check-bundle` all **refuse** anything else rather than normalising it, since a quietly-dropped
+    half is how you end up sure you authored something you did not.
+
+    | Shape | Slots | Count |
+    |---|---|---|
+    | Blades, cleavers, hand axe, dredging hook, the Shade's quiet knife each act | either hand | 12 |
+    | Mauls, staves, long pick, standing hammer — shop line only | two-handed | 5 |
+    | Spears, spikes, rods, censers, the other three epics | main hand | 18 |
+    | Shields and the torch | off hand | 6 |
+
+    **Epic rewards stay one-handed on purpose.** By shape the Warden's oathmaul is two-handed, and
+    it is the one weapon that must not be: a Path's own reward should not arrive forbidding the
+    shield that Path's 80% off-hand share explicitly assumes.
+
+    **Two things to watch on the first play, neither of them fixed here:**
+
+    - **Dual wielding is now reachable and it is a large number.** At mastery a Shade's off hand
+      deals 100% of its weapon's damage on its own timer — two same-tier blades is close to
+      *double* a single blade. That is what the progression was written to pay and nobody has ever
+      collected it.
+    - **The two-handed tier is strictly worse on today's numbers.** Within a shop tier every
+      weapon sits at the same dps — ossara is 1.67 / 1.50 / 1.60 — so a two-handed weapon now costs
+      a hand and buys nothing, and no one would choose one. It wants a damage premium; the size of
+      it depends on whether the hand it displaces would have held a shield or a second blade, which
+      is a play question. Left alone for the same reason the weapon ladder's overlap was.
+
+    `formatVersion` is **15** and the change is strong in both directions: a v14 bundle has no
+    `slots` at all, so every item in it arrives equippable nowhere; a v15 read as v14 drops
+    `twoHanded`, so every maul quietly becomes one-handed. **Re-import** — or run
+    `tools/retag-weapon-slots.sql` and restart, if the world is otherwise not up to date.
+
+  - **`tools/export-content.sql` was dropping two more tables' worth of columns — and it is now
+    tested.** Found by re-running the diff-against-the-schema check while adding `slots`. Both were
+    silent, both restore *cleanly* and write the column default, so the world comes back looking
+    right:
+
+    - **`item_templates` never listed `is_lore`, `is_no_drop`, `is_light_source` or `paths`** —
+      missing since the `ItemRestrictions` migration. A SQL restore un-bound every epic reward and
+      put out every lamp.
+    - **`room_exits` never listed `required_flag_key`, `required_item_key` or `refusal_message`** —
+      **a restore opened every locked door and portal in the game** (§4.15), including the four
+      attunement gates, which is the same damage as the `reward_flag_key` find and by the same
+      mechanism.
+
+    That is the fourth and fifth drift in that one file, every one of them found by somebody who
+    came here to do something else. So the diff is now a test: `ExportScriptCompletenessTests`
+    builds the EF model, parses the script, and fails on any column of the nine tables that its
+    `INSERT` does not name — and on any it names that no longer exists, which is the `sentinel`
+    case. Demonstrated failing against the pre-fix file first; it names all three `room_exits`
+    columns. The exemption list is empty and should stay that way.

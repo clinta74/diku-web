@@ -255,6 +255,10 @@ public sealed class ItemFixture
     /// <summary>Where these lie on the ground. Null creates the template and no spawner.</summary>
     public string? Room { get; set; }
 
+    /// <summary>
+    /// Where it can be equipped. A plan writes one slot because a fixture is a prop, not content -
+    /// the multi-slot and two-handed cases are authored in the builder and pinned by its own tests.
+    /// </summary>
     public string? Slot { get; set; }
 
     public int Value { get; set; }

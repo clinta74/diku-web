@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import {
   builderApi,
   CHARACTER_PATHS,
+  ITEM_SLOTS,
   type CharacterPath,
+  type ItemSlot,
   type ItemTemplate,
 } from '../../net/builderApi'
 import { Button } from '../../ui/Button'
@@ -23,15 +25,14 @@ interface Props {
   onDeleted: (key: string) => void
 }
 
-const ITEM_SLOTS = ['Head', 'Chest', 'Hands', 'Legs', 'Feet', 'MainHand', 'OffHand', 'Trinket']
-
 export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props) {
   const toast = useToast()
   const [template, setTemplate] = useState<ItemTemplate | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [icon, setIcon] = useState('i')
-  const [slot, setSlot] = useState<string | null>(null)
+  const [slots, setSlots] = useState<ItemSlot[]>([])
+  const [isTwoHanded, setIsTwoHanded] = useState(false)
   const [weight, setWeight] = useState(0)
   const [baseValue, setBaseValue] = useState(0)
   // Deliberately `unknown`, not `number`. This bag is schemaless (PLAN.md §4.8) and carries
@@ -65,7 +66,10 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         setName(loaded.name)
         setDescription(loaded.description)
         setIcon(loaded.icon)
-        setSlot(loaded.slot)
+        // Ordered to ITEM_SLOTS for the same reason paths are ordered to CHARACTER_PATHS:
+        // the boxes and the saved list have to agree, or an untouched form saves a change.
+        setSlots(ITEM_SLOTS.filter((sl) => (loaded.slots ?? []).includes(sl)))
+        setIsTwoHanded(loaded.isTwoHanded)
         setWeight(loaded.weight)
         setBaseValue(loaded.baseValue)
         // Kept verbatim. Only the keys this form owns are ever written, in place.
@@ -99,7 +103,8 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         name,
         description,
         icon,
-        slot,
+        slots,
+        isTwoHanded,
         weight,
         baseValue,
         baseStats,
@@ -112,7 +117,8 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         paths,
       })
       setTemplate(updated)
-      setSlot(updated.slot)
+      setSlots(ITEM_SLOTS.filter((sl) => updated.slots.includes(sl)))
+      setIsTwoHanded(updated.isTwoHanded)
       setDirty(false)
       onChanged(updated)
       toast.notify('Template saved')
@@ -195,24 +201,68 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
           />
         </Field>
 
-        <Field label="Slot">
-          {/* slot ?? '' - Head is 0-valued on the server, so `slot || ''` used to hide it. */}
-          <Select
-            value={slot ?? ''}
-            onChange={(v) => {
-              setSlot(v || null)
+      </div>
+
+      <fieldset className="multiplier-set">
+        <legend>Slots</legend>
+        <p className="dim detail">
+          Where it can be equipped. Tick more than one to let it go in any of them — a blade set to
+          both hands is wielded in the main hand when that is free, and the off hand otherwise.
+          Nothing ticked is a ground item.
+        </p>
+
+        <div className="check-row">
+          {ITEM_SLOTS.map((s) => (
+            <label className="field-check" key={s}>
+              <input
+                type="checkbox"
+                checked={slots.includes(s)}
+                onChange={(e) => {
+                  // Rebuilt from ITEM_SLOTS rather than pushed onto, so the saved order is the
+                  // server's enum order however they were ticked - and that order is what decides
+                  // which hand is reached for first.
+                  setSlots(
+                    ITEM_SLOTS.filter((other) =>
+                      other === s ? e.target.checked : slots.includes(other),
+                    ),
+                  )
+                  touch()
+                }}
+              />
+              {s}
+            </label>
+          ))}
+        </div>
+
+        <label className="field-check">
+          <input
+            type="checkbox"
+            checked={isTwoHanded}
+            onChange={(e) => {
+              setIsTwoHanded(e.target.checked)
               touch()
             }}
-          >
-            <option value="">— None (ground item) —</option>
-            {ITEM_SLOTS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      </div>
+          />
+          Takes both hands
+        </label>
+
+        {isTwoHanded && (slots.length !== 1 || slots[0] !== 'MainHand') && (
+          /* Said here rather than only on save, because the server refuses this outright and a
+             400 after typing a description is a worse way to learn it. A two-handed item claims
+             the off hand, so it cannot also be something that goes there. */
+          <p className="dim detail">
+            A two-handed item must be main hand and nothing else — it claims the off hand rather
+            than filling it. This will be refused on save.
+          </p>
+        )}
+
+        {isTwoHanded && slots.length === 1 && slots[0] === 'MainHand' && (
+          <p className="dim detail">
+            Nothing can be wielded in the off hand while this is held — no shield, no torch, no
+            second weapon.
+          </p>
+        )}
+      </fieldset>
 
       <div className="field-row">
         <Field label="Weight (grams)">
@@ -373,7 +423,7 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
           </div>
         </Field>
 
-        {paths.length > 0 && slot === null && (
+        {paths.length > 0 && slots.length === 0 && (
           /* A Path list on something with no slot restricts nothing: the check runs when an item
              is worn or wielded, and this one never is. Said rather than refused, because an
              authored slot may be on its way. */

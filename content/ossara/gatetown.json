@@ -1,5 +1,5 @@
 {
-  "formatVersion": 14,
+  "formatVersion": 15,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "zone",
@@ -50,7 +50,8 @@
       "name": "a loaf of dark bread",
       "description": "Heavy, close-grained, and baked at Khaldra's Hearth like everything else in this town. Keeps four days and admits it.",
       "icon": "b",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 400,
       "baseValue": 2,
       "baseStats": {},
@@ -67,7 +68,8 @@
       "name": "a stitched waterskin",
       "description": "Goat hide, double-stitched, with a wooden stopper on a cord so you cannot lose it. You will lose it.",
       "icon": "w",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 300,
       "baseValue": 6,
       "baseStats": {},
@@ -84,7 +86,10 @@
       "name": "a pitch torch",
       "description": "A hand's length of ash wrapped in pitch-soaked rag. Takes a hand to carry and smells like it the whole time.",
       "icon": "!",
-      "slot": "OffHand",
+      "slots": [
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 500,
       "baseValue": 6,
       "baseStats": {},
@@ -101,7 +106,8 @@
       "name": "a coil of hemp rope",
       "description": "Twenty feet, laid three-strand, with the ends whipped properly. Whoever made this was not in a hurry.",
       "icon": "%",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 1200,
       "baseValue": 14,
       "baseStats": {},
@@ -118,7 +124,8 @@
       "name": "a roll of clean bandage",
       "description": "Boiled linen, rolled tight, tied with a scrap of the same. Sold by the roll because nobody needs half of one.",
       "icon": "+",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 100,
       "baseValue": 9,
       "baseStats": {},
@@ -135,7 +142,11 @@
       "name": "a short blade",
       "description": "A foot of straight steel with a wrapped grip, made for people who have never owned a sword and may not own this one for long. Berrin sharpens it before it leaves the shop.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand",
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 900,
       "baseValue": 35,
       "baseStats": {
@@ -156,7 +167,11 @@
       "name": "a hand axe",
       "description": "A wood axe with the handle cut down. Half the town owns one for the wood and has never thought of it as anything else.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand",
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 1400,
       "baseValue": 30,
       "baseStats": {
@@ -176,7 +191,10 @@
       "name": "an ash walking staff",
       "description": "Shoulder height, banded at both ends, worn pale where a hand goes. Sold as a walking staff. Bought, mostly, as the other thing.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": true,
       "weight": 1100,
       "baseValue": 22,
       "baseStats": {
@@ -196,7 +214,10 @@
       "name": "a boiled leather cap",
       "description": "Moulded to a head that was not yours and stubborn about it for the first week.",
       "icon": "^",
-      "slot": "Head",
+      "slots": [
+        "Head"
+      ],
+      "isTwoHanded": false,
       "weight": 400,
       "baseValue": 18,
       "baseStats": {
@@ -215,7 +236,10 @@
       "name": "a studded leather jerkin",
       "description": "Ox hide over a linen backing, studded across the chest and shoulders. Tessa makes them in four sizes and alters them free for a year.",
       "icon": "[",
-      "slot": "Chest",
+      "slots": [
+        "Chest"
+      ],
+      "isTwoHanded": false,
       "weight": 3500,
       "baseValue": 55,
       "baseStats": {
@@ -234,7 +258,10 @@
       "name": "a pair of working gloves",
       "description": "Cut for holding things rather than for hitting them, which turns out to matter less than you would think.",
       "icon": "[",
-      "slot": "Hands",
+      "slots": [
+        "Hands"
+      ],
+      "isTwoHanded": false,
       "weight": 300,
       "baseValue": 14,
       "baseStats": {
@@ -253,7 +280,10 @@
       "name": "a pair of leather leggings",
       "description": "Split hide laced up the outside of each leg, so they go on over boots. Everyone works out why eventually.",
       "icon": "[",
-      "slot": "Legs",
+      "slots": [
+        "Legs"
+      ],
+      "isTwoHanded": false,
       "weight": 2200,
       "baseValue": 38,
       "baseStats": {
@@ -272,7 +302,10 @@
       "name": "a pair of hobnailed boots",
       "description": "Nailed soles, ankle high, resoleable twice. The armourer will point that out unprompted.",
       "icon": "[",
-      "slot": "Feet",
+      "slots": [
+        "Feet"
+      ],
+      "isTwoHanded": false,
       "weight": 1600,
       "baseValue": 26,
       "baseStats": {
@@ -291,7 +324,10 @@
       "name": "a banded plank shield",
       "description": "Four boards, a strap, and an iron rim. It is exactly as good as it looks and has saved more Ossarans than the wall has.",
       "icon": ")",
-      "slot": "OffHand",
+      "slots": [
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 3000,
       "baseValue": 42,
       "baseStats": {
@@ -311,7 +347,10 @@
       "name": "a gate-shrine token",
       "description": "A pierced copper disc from the bowl at Yrriska's shrine, worn smooth on one face. Taking one is fine. Taking one without leaving something is the part people have opinions about.",
       "icon": "*",
-      "slot": "Trinket",
+      "slots": [
+        "Trinket"
+      ],
+      "isTwoHanded": false,
       "weight": 20,
       "baseValue": 11,
       "baseStats": {

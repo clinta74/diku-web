@@ -1,5 +1,5 @@
 {
-  "formatVersion": 14,
+  "formatVersion": 15,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -103,7 +103,10 @@
       "name": "a vigil helm",
       "description": "Kept oiled by somebody, on a rack, in a Reach where nobody is coming to inspect it.",
       "icon": "^",
-      "slot": "Head",
+      "slots": [
+        "Head"
+      ],
+      "isTwoHanded": false,
       "weight": 1600,
       "baseValue": 380,
       "baseStats": {
@@ -122,7 +125,10 @@
       "name": "a relic harness",
       "description": "Plate over quilt, with a reliquary let into the breast that is empty and has been polished anyway.",
       "icon": "[",
-      "slot": "Chest",
+      "slots": [
+        "Chest"
+      ],
+      "isTwoHanded": false,
       "weight": 9000,
       "baseValue": 900,
       "baseStats": {
@@ -141,7 +147,10 @@
       "name": "a pair of bearer's gauntlets",
       "description": "Made for carrying something heavy a long way without setting it down.",
       "icon": "[",
-      "slot": "Hands",
+      "slots": [
+        "Hands"
+      ],
+      "isTwoHanded": false,
       "weight": 900,
       "baseValue": 280,
       "baseStats": {
@@ -160,7 +169,10 @@
       "name": "a pair of kneeling greaves",
       "description": "Padded at the knee, worn through at the knee, repaired at the knee.",
       "icon": "[",
-      "slot": "Legs",
+      "slots": [
+        "Legs"
+      ],
+      "isTwoHanded": false,
       "weight": 4200,
       "baseValue": 560,
       "baseStats": {
@@ -179,7 +191,10 @@
       "name": "a pair of processional boots",
       "description": "Soled for stone and for walking slowly in step with other people.",
       "icon": "[",
-      "slot": "Feet",
+      "slots": [
+        "Feet"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 400,
       "baseStats": {
@@ -198,7 +213,10 @@
       "name": "a bier shield",
       "description": "One of the panels from a carrying frame, with handles added later and badly.",
       "icon": ")",
-      "slot": "OffHand",
+      "slots": [
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 4400,
       "baseValue": 640,
       "baseStats": {
@@ -218,7 +236,10 @@
       "name": "an unlit lamp",
       "description": "A hanging lamp of the kind carried in the vigil, never lit, kept filled.",
       "icon": "*",
-      "slot": "Trinket",
+      "slots": [
+        "Trinket"
+      ],
+      "isTwoHanded": false,
       "weight": 300,
       "baseValue": 340,
       "baseStats": {
@@ -237,7 +258,10 @@
       "name": "a vigil spear",
       "description": "Carried at the shoulder for two hundred years and never once levelled.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 3600,
       "baseValue": 720,
       "baseStats": {
@@ -258,7 +282,11 @@
       "name": "a keening blade",
       "description": "It sounds when it moves. The cult say that is grief. The smith who made it knew exactly which groove does it.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand",
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2400,
       "baseValue": 820,
       "baseStats": {
@@ -279,7 +307,10 @@
       "name": "a standing maul",
       "description": "Head the size of a loaf, haft the length of a person. Built to stop something rather than to kill it.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": true,
       "weight": 6000,
       "baseValue": 660,
       "baseStats": {
@@ -299,7 +330,8 @@
       "name": "a vigil token",
       "description": "Carved bone on a cord, issued to everyone who stands a watch. The cult has issued them continuously for two hundred years.",
       "icon": "*",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 40,
       "baseValue": 0,
       "baseStats": {},
@@ -316,7 +348,8 @@
       "name": "a page of the office",
       "description": "One leaf of the daily office, worn soft. The prayers are all for a recovery.",
       "icon": "?",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 60,
       "baseValue": 0,
       "baseStats": {},
@@ -333,7 +366,8 @@
       "name": "a corner of the shroud",
       "description": "Linen, clean, changed weekly for two hundred years by people who have not been told.",
       "icon": "?",
-      "slot": null,
+      "slots": [],
+      "isTwoHanded": false,
       "weight": 1200,
       "baseValue": 0,
       "baseStats": {},
@@ -350,7 +384,10 @@
       "name": "a kept oathmaul",
       "description": "Head like a milestone, haft the length of a person. It was made to stop something. Carried through Nemhal and kept, which is the only word the cult there would use.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -373,7 +410,10 @@
       "name": "a kept hearthcenser",
       "description": "A censer on a chain, weighted for swinging and never once used for incense. Carried through Nemhal and kept, which is the only word the cult there would use.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -396,7 +436,10 @@
       "name": "a kept stormrod",
       "description": "Bronze wound with wire that stands the hair up on your arm when the weather turns. Carried through Nemhal and kept, which is the only word the cult there would use.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
@@ -419,7 +462,11 @@
       "name": "a kept quiet knife",
       "description": "It does not catch the light. Somebody took a great deal of trouble over that. Carried through Nemhal and kept, which is the only word the cult there would use.",
       "icon": "/",
-      "slot": "MainHand",
+      "slots": [
+        "MainHand",
+        "OffHand"
+      ],
+      "isTwoHanded": false,
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {

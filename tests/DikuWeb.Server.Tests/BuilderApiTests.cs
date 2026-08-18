@@ -974,10 +974,11 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
     // -----------------------------------------------------------------------
 
     [Fact]
-    public async Task An_item_templates_slot_survives_as_a_name_not_a_number()
+    public async Task An_item_templates_slots_survive_as_names_not_numbers()
     {
         // The response record serialised Slot as an int while the client reads a string, so a
         // slot could not survive a load-edit-save round trip - and Head, being 0, read as unset.
+        // The list has the same problem per element, which is why it carries its own converter.
         var factory = postgres.App;
         using var client = NewClient(factory);
         await BuilderClient.RegisterBuilderAsync(factory, client);
@@ -987,15 +988,88 @@ public sealed class BuilderApiTests(PostgresFixture postgres)
         (await client.PostAsJsonAsync($"/api/builder/item-templates/{key}", new
         {
             name = "A plumed helm",
-            slot = "Head",
+            slots = new[] { "Head" },
         })).EnsureSuccessStatusCode();
 
         var template = await BuilderClient.JsonAsync(
             await client.GetAsync(new Uri($"/api/builder/item-templates/{key}", UriKind.Relative)));
 
-        var slot = template.GetProperty("slot");
-        Assert.Equal(JsonValueKind.String, slot.ValueKind);
-        Assert.Equal("Head", slot.GetString());
+        var slots = template.GetProperty("slots").EnumerateArray().ToList();
+        Assert.All(slots, slot => Assert.Equal(JsonValueKind.String, slot.ValueKind));
+        Assert.Equal(["Head"], slots.Select(s => s.GetString()));
+    }
+
+    [Fact]
+    public async Task An_either_hand_weapons_slots_come_back_in_enum_order()
+    {
+        // The order is the preference order - main hand first is what makes an either-hand weapon
+        // reach for it - so a list that came back as authored rather than as ordered would decide
+        // which hand a blade lands in by which box a builder ticked first.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var key = BuilderClient.UniqueName("i").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/item-templates/{key}", new
+        {
+            name = "A short blade",
+            slots = new[] { "OffHand", "MainHand" },
+            attackDelayPulses = 6,
+            attackVerb = "slash",
+        })).EnsureSuccessStatusCode();
+
+        var template = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/item-templates/{key}", UriKind.Relative)));
+
+        Assert.Equal(
+            ["MainHand", "OffHand"],
+            template.GetProperty("slots").EnumerateArray().Select(s => s.GetString()));
+    }
+
+    [Fact]
+    public async Task A_two_handed_item_that_is_not_a_main_hand_item_is_refused()
+    {
+        // Refused rather than normalised: "two-handed shield" is a mistake, and quietly dropping
+        // half of it is how a builder ends up certain they authored something they did not.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var key = BuilderClient.UniqueName("i").ToLowerInvariant();
+
+        var refused = await client.PostAsJsonAsync($"/api/builder/item-templates/{key}", new
+        {
+            name = "A confused shield",
+            slots = new[] { "OffHand" },
+            isTwoHanded = true,
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+    }
+
+    [Fact]
+    public async Task Setting_two_handed_on_an_existing_worn_item_is_refused()
+    {
+        // The merged state is what has to be coherent. A PATCH carrying only `isTwoHanded` is not
+        // wrong in itself; it is wrong against the slots already stored, and validating the
+        // request alone would let it through.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var key = BuilderClient.UniqueName("i").ToLowerInvariant();
+
+        (await client.PostAsJsonAsync($"/api/builder/item-templates/{key}", new
+        {
+            name = "A plumed helm",
+            slots = new[] { "Head" },
+        })).EnsureSuccessStatusCode();
+
+        var refused = await client.PatchAsJsonAsync(
+            $"/api/builder/item-templates/{key}", new { isTwoHanded = true });
+
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
     }
 
     [Fact]

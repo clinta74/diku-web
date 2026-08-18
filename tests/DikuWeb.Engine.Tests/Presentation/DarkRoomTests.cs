@@ -37,7 +37,7 @@ public sealed class DarkRoomTests
             Key = lights ? "a-lantern" : "a-cold-lantern",
             Name = lights ? "a brass lantern" : "an unlit lantern",
             Icon = "(",
-            Slot = ItemSlot.OffHand,
+            Slots = [ItemSlot.OffHand],
             IsLightSource = lights,
         });
 
@@ -193,7 +193,7 @@ public sealed class DarkRoomTests
             Key = "a-lamped-helm",
             Name = "a helm with a lamp on it",
             Icon = "^",
-            Slot = ItemSlot.Head,
+            Slots = [ItemSlot.Head],
             IsLightSource = true,
         });
 

@@ -271,11 +271,13 @@ public sealed record ItemTemplateResponse(
     string Name,
     string Description,
     string Icon,
-    // Same converter as the request side. Without it this serialises as an integer while the
-    // client reads a string, so a slot could not survive a load-edit-save round trip - and
-    // Head, being 0, was falsy on the way through.
-    [property: JsonConverter(typeof(NullableEnumConverter<ItemSlot>))]
-    ItemSlot? Slot,
+    // Names, not numbers. The single-slot field carried a converter for exactly this reason:
+    // without it the enum serialised as an integer while the client read a string, and Head -
+    // being 0 - was falsy the whole way through. A list has the same problem per element, and
+    // JsonStringEnumConverter is the list-shaped answer to it.
+    [property: JsonConverter(typeof(JsonStringEnumListConverter<ItemSlot>))]
+    List<ItemSlot> Slots,
+    bool IsTwoHanded,
     int Weight,
     int BaseValue,
     Dictionary<string, object> BaseStats,
@@ -291,8 +293,9 @@ public sealed record SaveItemTemplateRequest(
     string? Name,
     string? Description,
     string? Icon,
-    [property: JsonConverter(typeof(NullableEnumConverter<ItemSlot>))]
-    ItemSlot? Slot,
+    [property: JsonConverter(typeof(JsonStringEnumListConverter<ItemSlot>))]
+    List<ItemSlot>? Slots,
+    bool? IsTwoHanded,
     int? Weight,
     int? BaseValue,
     Dictionary<string, object>? BaseStats,

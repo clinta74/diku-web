@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
@@ -359,6 +360,23 @@ public static class BundleValidator
             {
                 error($"{item.Key} has baseStats key '{key}', which the engine does not read; "
                     + $"it reads {string.Join(", ", EquipmentResolver.KnownStatKeys.Order(StringComparer.Ordinal))}");
+            }
+
+            // The same rule the builder enforces on save, asked of an authored file - a two-handed
+            // shield is not something the API would have accepted, so a bundle carrying one was
+            // written by hand or by a generator and nothing else would ever say so.
+            if (SlotRules.Incoherent(SlotRules.Normalize(item.Slots), item.IsTwoHanded) is { } why)
+            {
+                error($"{item.Key}: {why}");
+            }
+
+            // A speed on something that reaches neither hand. The delay is the only thing that
+            // makes an item a weapon, so this is a weapon that can never swing - and it reads as
+            // configured from every screen, which is the failure this whole file exists to catch.
+            if (item.AttackDelayPulses is not null && SlotRules.HandSlotsIn(item.Slots).Count == 0)
+            {
+                error($"{item.Key} declares an attack speed but reaches neither hand, so it can "
+                    + "never swing");
             }
         }
     }

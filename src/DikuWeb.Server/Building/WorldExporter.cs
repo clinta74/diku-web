@@ -360,7 +360,7 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
         return (
             [
                 .. items.Select(i => new BundleItemTemplate(
-                    i.Key, i.Name, i.Description, i.Icon, i.Slot, i.Weight, i.BaseValue,
+                    i.Key, i.Name, i.Description, i.Icon, i.Slots, i.IsTwoHanded, i.Weight, i.BaseValue,
                     new Dictionary<string, object>(i.BaseStats),
                     i.AttackDelayPulses, i.AttackVerb, i.IsQuestItem,
                     i.IsLore, i.IsNoDrop, i.IsLightSource, i.Paths)),

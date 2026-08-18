@@ -202,12 +202,49 @@ export interface MobTemplate {
   attacks: MobAttack[]
 }
 
+/**
+ * Where an item can be equipped. Names rather than numbers on the wire: `Head` is 0 on the server,
+ * so an integer slot was falsy the whole way through the editor.
+ */
+export type ItemSlot =
+  | 'Head'
+  | 'Chest'
+  | 'Hands'
+  | 'Legs'
+  | 'Feet'
+  | 'MainHand'
+  | 'OffHand'
+  | 'Trinket'
+
+/** Every slot, in the server's enum order — which is also the order the hands are tried in. */
+export const ITEM_SLOTS: ItemSlot[] = [
+  'Head',
+  'Chest',
+  'Hands',
+  'Legs',
+  'Feet',
+  'MainHand',
+  'OffHand',
+  'Trinket',
+]
+
 export interface ItemTemplate {
   key: string
   name: string
   description: string
   icon: string
-  slot: string | null
+  /**
+   * Every slot it fits, in `ItemSlot` order — so the first hand in the list is the one the game
+   * reaches for. **Empty means it cannot be equipped at all**, which is the opposite of `paths`
+   * below: a slot list is a capability and starts at none, a Path list is a restriction and starts
+   * at no restriction.
+   */
+  slots: ItemSlot[]
+  /**
+   * Wielding it claims the off hand too. Only ever set alongside a `slots` of exactly
+   * `['MainHand']`; the server refuses any other combination rather than normalising it.
+   */
+  isTwoHanded: boolean
   weight: number
   baseValue: number
   baseStats: Record<string, unknown>

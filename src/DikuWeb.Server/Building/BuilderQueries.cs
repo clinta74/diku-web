@@ -294,7 +294,7 @@ public sealed class BuilderQueries(DikuWebDbContext db)
     {
         var templates = await db.ItemTemplates.AsNoTracking().OrderBy(t => t.Key).ToListAsync(cancellationToken);
         return [.. templates.Select(t => new ItemTemplateResponse(
-            t.Key, t.Name, t.Description, t.Icon, t.Slot, t.Weight, t.BaseValue,
+            t.Key, t.Name, t.Description, t.Icon, t.Slots, t.IsTwoHanded, t.Weight, t.BaseValue,
             new Dictionary<string, object>(t.BaseStats),
             t.AttackDelayPulses, t.AttackVerb, t.IsQuestItem,
             t.IsLore, t.IsNoDrop, t.IsLightSource, t.Paths))];
@@ -311,8 +311,8 @@ public sealed class BuilderQueries(DikuWebDbContext db)
             return null;
         }
         return new ItemTemplateResponse(
-            template.Key, template.Name, template.Description, template.Icon, template.Slot,
-            template.Weight, template.BaseValue,
+            template.Key, template.Name, template.Description, template.Icon, template.Slots,
+            template.IsTwoHanded, template.Weight, template.BaseValue,
             new Dictionary<string, object>(template.BaseStats),
             template.AttackDelayPulses, template.AttackVerb, template.IsQuestItem,
             template.IsLore, template.IsNoDrop, template.IsLightSource, template.Paths);
