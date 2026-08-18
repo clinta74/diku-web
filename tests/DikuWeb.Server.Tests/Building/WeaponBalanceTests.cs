@@ -123,7 +123,10 @@ public sealed class WeaponBalanceTests
     {
         // The whole point of the change. A weapon without dice is a fist with a name on it.
         var weapons = Weapons();
-        Assert.Equal(35, weapons.Count);
+
+        // 36 since the brass knuckle: the first weapon in the game authored for the off hand and
+        // nothing else, and for a while the only one that could go there at all.
+        Assert.Equal(36, weapons.Count);
 
         foreach (var weapon in weapons.Values)
         {

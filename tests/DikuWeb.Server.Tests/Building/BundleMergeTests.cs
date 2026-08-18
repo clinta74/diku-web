@@ -167,7 +167,7 @@ public sealed class BundleMergeTests
         Assert.Equal(18, bundle.Zones.Count);
         Assert.Equal(224, bundle.Rooms.Count);
         Assert.Equal(68, bundle.MobTemplates.Count);
-        Assert.Equal(92, bundle.ItemTemplates.Count);
+        Assert.Equal(93, bundle.ItemTemplates.Count);
         Assert.Equal(100, bundle.Spawners.Count);
         Assert.Equal(35, bundle.Quests.Count);
     }

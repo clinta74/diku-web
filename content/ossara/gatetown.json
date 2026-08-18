@@ -210,6 +210,30 @@
       "paths": []
     },
     {
+      "key": "ossara-brass-knuckle",
+      "name": "a brass knuckle",
+      "description": "Four finger-holes cast in a single piece, worn smooth on the inside and not on the outside. Berrin keeps a box of them under the counter and does not display them, which is its own kind of recommendation. It is not a weapon you win a fight with; it is a weapon you have in the hand that is not holding one.",
+      "icon": "/",
+      "slots": [
+        "OffHand"
+      ],
+      "isTwoHanded": false,
+      "weight": 300,
+      "baseValue": 10,
+      "baseStats": {
+        "damageMin": 2,
+        "damageMax": 3,
+        "baseDamage": 1
+      },
+      "attackDelayPulses": 8,
+      "attackVerb": "punch",
+      "isQuestItem": false,
+      "isLore": false,
+      "isNoDrop": false,
+      "isLightSource": false,
+      "paths": []
+    },
+    {
       "key": "ossara-leather-cap",
       "name": "a boiled leather cap",
       "description": "Moulded to a head that was not yours and stubborn about it for the first week.",
@@ -500,7 +524,8 @@
         "sells": [
           "ossara-short-blade",
           "ossara-hand-axe",
-          "ossara-walking-staff"
+          "ossara-walking-staff",
+          "ossara-brass-knuckle"
         ],
         "emotes": [
           {

@@ -448,6 +448,31 @@ Add anything noticed while playing here. Cleared as items are done.
     `twoHanded`, so every maul quietly becomes one-handed. **Re-import** — or run
     `tools/retag-weapon-slots.sql` and restart, if the world is otherwise not up to date.
 
+  - **the two test weapons are resolved, and one of them was content.** `ossara-brass-knuckle` and
+    `ossara-long-sword` existed in the database and in no content file — builder work never
+    exported back, which is the drift `content/README.md` warns about. Both were held *and
+    equipped* by live characters, so neither was safe to simply delete.
+
+    The knuckle was made to test having an off-hand weapon when nothing in the world was one. It is
+    **real content now**: stocked by the Gatetown weaponwright at 10 gold, the cheapest thing in the
+    shop and the first weapon in the game authored for the off hand and nothing else. Its combat
+    numbers are exactly as authored; only the three placeholder fields were filled — an empty
+    description, the default `i` icon, and a weight of 25 grams against the short blade's 900.
+
+    The long sword is **retired**: at delay 7 for 2–6 damage it beat every weapon the weaponwright
+    sells, at half the short blade's price, which is right for a prop and would have made the
+    starter shop pointless. Atupe's instance was converted to a short blade in the same
+    transaction rather than deleted, so nobody lost a main hand mid-session.
+
+    Content and database now agree exactly — 93 item templates each, nothing on either side that
+    is not on the other.
+
+    **Worth watching:** a second short blade in the off hand is faster than the knuckle for the
+    same damage, so the knuckle is dominated the moment a player can afford 35 gold rather than 10.
+    That is fine for a starter item and is the intended shape — but it is the same dominance
+    question as the two-handed tier, and both want answering from play at once rather than
+    separately.
+
   - **`tools/export-content.sql` was dropping two more tables' worth of columns — and it is now
     tested.** Found by re-running the diff-against-the-schema check while adding `slots`. Both were
     silent, both restore *cleanly* and write the column default, so the world comes back looking
