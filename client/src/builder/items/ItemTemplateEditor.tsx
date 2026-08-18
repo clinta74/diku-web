@@ -10,7 +10,7 @@ import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
 import { Select } from '../../ui/Select'
 import { NumberInput } from '../../ui/NumberInput'
-import { toPulses, toSeconds } from '../../ui/SecondsInput'
+import { OptionalSecondsInput } from '../../ui/SecondsInput'
 import { NumberField } from '../../ui/NumberField'
 import { OverflowMenu } from '../../ui/OverflowMenu'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
@@ -245,20 +245,17 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
           pulses, in an off hand it never strikes at all.
         </p>
         <div className="field-row">
-          {/* Free text rather than a stepper, because blank is a real value here - it means the
-              weapon declares no speed of its own and swings at the default. Seconds in, pulses
-              stored, like every other duration in the builder. */}
-          <Field label="Attack delay (seconds)" hint="Blank uses the default. Minimum 1.">
-            <input
-              type="text"
-              inputMode="decimal"
-              value={attackDelayPulses === null ? '' : toSeconds(attackDelayPulses)}
-              onChange={(e) => {
-                const raw = e.target.value.trim()
-                const seconds = Number(raw)
-                setAttackDelayPulses(
-                  raw === '' || Number.isNaN(seconds) ? null : Math.max(4, toPulses(seconds)),
-                )
+          {/* OptionalSecondsInput rather than a hand-rolled field, because blank is a real value
+              here - it means the weapon declares no speed of its own - and because the hand-rolled
+              version could not accept a decimal at all: it round-tripped every keystroke through
+              toPulses, so the point in "1." was erased as it was typed and 1.5 was unreachable. */}
+          <Field label="Attack delay (seconds)" hint="Blank uses the default. Minimum 1, in quarter seconds.">
+            <OptionalSecondsInput
+              pulses={attackDelayPulses}
+              minPulses={4}
+              aria-label="Attack delay (seconds)"
+              onChange={(pulses) => {
+                setAttackDelayPulses(pulses)
                 touch()
               }}
             />

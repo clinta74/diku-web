@@ -1,4 +1,4 @@
-import { NumberInput } from './NumberInput'
+import { NumberInput, OptionalNumberInput } from './NumberInput'
 
 /** One pulse in seconds (PLAN.md §2.3). The engine counts in pulses; people do not. */
 export const PULSE_SECONDS = 0.25
@@ -48,6 +48,48 @@ export function SecondsInput({ pulses, onChange, minPulses = 0, disabled, ...res
       allowDecimal
       disabled={disabled}
       aria-label={rest['aria-label']}
+    />
+  )
+}
+
+interface OptionalProps {
+  /** The stored value in pulses, or null when this duration is not set at all. */
+  pulses: number | null
+  /** Called with pulses, or null when the field is cleared. */
+  onChange: (pulses: number | null) => void
+  /** Floor, in pulses. Applied on blur, never mid-keystroke. */
+  minPulses?: number
+  disabled?: boolean
+  'aria-label'?: string
+}
+
+/**
+ * A duration in seconds where blank means the duration is not set at all.
+ *
+ * <b>The field this replaced could not accept a decimal.</b> It was fully controlled off the stored
+ * pulse count, so every keystroke went through `toPulses` and back: typing "1." parsed as 1, stored
+ * 4 pulses, and re-rendered as "1", erasing the point as it was typed. A weapon speed of 1.5 seconds
+ * was unreachable, and on a quarter-second grid so was every value that is not a whole number of
+ * seconds — three options in four.
+ *
+ * The buffer that fixes it lives in `OptionalNumberInput`, because a second field had the same bug.
+ * This is only the unit conversion: seconds to the builder, pulses to the engine.
+ */
+export function OptionalSecondsInput({
+  pulses,
+  onChange,
+  minPulses = 0,
+  disabled,
+  ...rest
+}: OptionalProps) {
+  return (
+    <OptionalNumberInput
+      value={pulses === null ? null : toSeconds(pulses)}
+      min={toSeconds(minPulses)}
+      allowDecimal
+      disabled={disabled}
+      aria-label={rest['aria-label']}
+      onChange={(seconds) => onChange(seconds === null ? null : toPulses(seconds))}
     />
   )
 }

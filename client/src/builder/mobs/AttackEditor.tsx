@@ -1,6 +1,7 @@
 import type { MobAttack } from '../../net/builderApi'
 import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
+import { OptionalNumberInput } from '../../ui/NumberInput'
 import { SecondsInput } from '../../ui/SecondsInput'
 import { Select } from '../../ui/Select'
 import { ATTACK_EFFECTS, effectOption, pruneParams } from '../effects'
@@ -86,16 +87,15 @@ export function AttackEditor({ attacks, onChange }: Props) {
                 />
               </Field>
               <Field label="Damage ×" hint="Blank = the mob’s own damage.">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={attack.damageMultiplier ?? ''}
-                  onChange={(e) => {
-                    const raw = e.target.value.trim()
-                    edit(index, {
-                      damageMultiplier: raw === '' || Number.isNaN(Number(raw)) ? null : Number(raw),
-                    })
-                  }}
+                {/* Same bug the weapon delay had: fully controlled off the parsed number, so
+                    typing "1." rendered back as "1" and the point was erased. A multiplier that
+                    cannot take a decimal is not a multiplier. */}
+                <OptionalNumberInput
+                  value={attack.damageMultiplier ?? null}
+                  allowDecimal
+                  min={0}
+                  aria-label="Damage multiplier"
+                  onChange={(v) => edit(index, { damageMultiplier: v })}
                 />
               </Field>
             </div>

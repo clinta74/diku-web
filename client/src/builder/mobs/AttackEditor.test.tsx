@@ -106,3 +106,37 @@ describe('AttackEditor', () => {
     ])
   })
 })
+
+/**
+ * A multiplier that cannot take a decimal is not a multiplier.
+ *
+ * The field was fully controlled off the parsed number, so typing "1." parsed as 1 and re-rendered
+ * as "1" — the point erased as it was typed. Only whole multipliers were reachable, on a dial whose
+ * authored values are 1.5, 2.4, 3.6. The same bug the weapon delay had, in the one place a
+ * multiplier is still a real dial.
+ */
+describe('the damage multiplier', () => {
+  it('accepts a decimal typed one character at a time', () => {
+    render(<Harness initial={[attack('bite')]} />)
+
+    const field = screen.getByLabelText('Damage multiplier') as HTMLInputElement
+
+    for (const so_far of ['1', '1.', '1.5']) {
+      fireEvent.change(field, { target: { value: so_far } })
+      expect(field.value).toBe(so_far)
+    }
+
+    expect(state()[0].damageMultiplier).toBe(1.5)
+  })
+
+  it('reads blank as the mob using its own damage', () => {
+    render(<Harness initial={[{ ...attack('bite'), damageMultiplier: 2.4 }]} />)
+
+    const field = screen.getByLabelText('Damage multiplier') as HTMLInputElement
+    expect(field.value).toBe('2.4')
+
+    fireEvent.change(field, { target: { value: '' } })
+
+    expect(state()[0].damageMultiplier).toBeNull()
+  })
+})
