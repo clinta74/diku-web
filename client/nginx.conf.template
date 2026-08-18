@@ -79,6 +79,47 @@ http {
             add_header Content-Type text/plain;
         }
 
+        # The world import, which is the one request in the app that legitimately takes minutes.
+        #
+        # An import is one loop round trip per entity, sequentially - see WorldImporter - and the
+        # loop drains on a 250ms pulse, so the cost is about a quarter second an entity however
+        # fast the database is. The full Reaches bundle is 1005 entities: five worlds, 18 zones, 92
+        # item templates, 68 mob templates, 224 rooms, 462 exits, 100 spawners, 35 quests and a
+        # configuration. That is a little over four minutes, and nothing is written to the response
+        # until all of it has landed - so unlike the SSE stream below, there is no traffic to keep
+        # proxy_read_timeout from firing.
+        #
+        # <b>And a 504 here is not a clean failure.</b> The endpoint's CancellationToken is
+        # RequestAborted, so when the proxy gives up and drops the connection the import stops where
+        # it is: at 60 seconds that is every world, zone and template applied, about a quarter of
+        # the rooms, and not one exit, spawner or quest - with no report coming back to say so.
+        #
+        # An exact-match location, so it wins over the /api/ prefix below without depending on
+        # order. The proxy directives are duplicated rather than inherited, because sibling
+        # locations do not inherit from each other and proxy_read_timeout does not accept a
+        # variable - so the two blocks have to be kept in step by hand.
+        location = /api/builder/import {
+            set $backend "${BACKEND_ORIGIN}";
+            proxy_pass $backend$request_uri;
+            proxy_http_version 1.1;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $server_name;
+
+            proxy_set_header Connection "";
+            proxy_buffering off;
+            proxy_request_buffering off;
+
+            # Fifteen minutes: comfortably over four times the largest bundle authored so far, so a
+            # slower host or a bigger world does not have to come back here.
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 900s;
+            proxy_read_timeout 900s;
+        }
+
         # API proxy - forward all /api requests to backend
         location /api/ {
             # Through a variable on purpose - see the resolver note above. The trailing $request_uri
