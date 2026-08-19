@@ -1,3 +1,4 @@
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
@@ -6,6 +7,7 @@ using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Presentation;
+using DikuWeb.Engine.Quests;
 
 namespace DikuWeb.Server.Building;
 
@@ -443,8 +445,122 @@ public static class BundleValidator
                 error($"quest {quest.Key} has dialogue key '{key}', which the engine does not read; "
                     + $"it reads {string.Join(", ", QuestDialogue.All.Order(StringComparer.Ordinal))}");
             }
+
+            // A marker the parser cannot read leaves its brackets showing in the room. Falling
+            // open is the right runtime behaviour and the wrong thing to ship, so it is an error
+            // here - this is the only layer positioned to see it before a player does.
+            if (Offer(quest) is { } offer && QuestOffer.Malformed(offer) is { } complaint)
+            {
+                error($"quest {quest.Key} has a broken offer marker: {complaint}");
+            }
+        }
+
+        CheckOfferKeywords(bundle, error);
+    }
+
+    /// <summary>
+    /// Two quests one giver could offer at the same time must not answer to the same words.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The marked words in an offer are what a click sends back (<see cref="QuestOffer"/>), and
+    /// the engine resolves them against everything that giver can start right now. Two quests
+    /// marking the same phrase means the click lands on whichever the engine reaches first — so
+    /// the engine declines to render the link at all and falls back to naming the quest, and this
+    /// is where the author finds out why.
+    /// </para>
+    /// <para>
+    /// <b>"Same giver" alone would be useless here.</b> Vesh hands out twenty quests, all of them
+    /// either later steps of a chain or written for a different Path, and she can only ever put
+    /// one of them on the table — every pair of the twenty would be reported. So a pair is only
+    /// checked when it could genuinely coincide: neither reachable from the other through
+    /// prerequisites, and their Paths overlapping. Empty Paths means anyone, so it overlaps
+    /// everything.
+    /// </para>
+    /// </remarks>
+    private static void CheckOfferKeywords(WorldBundle bundle, Action<string> error)
+    {
+        var reaches = Reachability(bundle.Quests);
+
+        foreach (var group in bundle.Quests
+            .Where(q => !string.IsNullOrEmpty(q.GiverMobKey))
+            .GroupBy(q => q.GiverMobKey, StringComparer.Ordinal))
+        {
+            var quests = group.ToList();
+
+            for (var i = 0; i < quests.Count; i++)
+            {
+                for (var j = i + 1; j < quests.Count; j++)
+                {
+                    var (first, second) = (quests[i], quests[j]);
+
+                    if (reaches[(first.Key, second.Key)] || reaches[(second.Key, first.Key)]
+                        || Disjoint(first.Paths, second.Paths))
+                    {
+                        continue;
+                    }
+
+                    var shared = QuestOffer.Keywords(Offer(first))
+                        .Intersect(QuestOffer.Keywords(Offer(second)), StringComparer.OrdinalIgnoreCase)
+                        .Order(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    if (shared.Count > 0)
+                    {
+                        error($"quests {first.Key} and {second.Key} share giver {group.Key} and can "
+                            + $"be offered together, but both mark {string.Join(", ", shared.Select(w => $"'{w}'"))}");
+                    }
+                }
+            }
         }
     }
+
+    /// <summary>Which quests are reachable from which, following prerequisites transitively.</summary>
+    private static Dictionary<(string, string), bool> Reachability(IReadOnlyList<BundleQuest> quests)
+    {
+        var reaches = new Dictionary<(string, string), bool>();
+
+        // Small n (35 today, and this runs once per import), so the plain transitive closure is
+        // cheaper to read than anything cleverer.
+        foreach (var from in quests)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var pending = new Stack<string>(from.PrerequisiteQuestKeys ?? []);
+
+            while (pending.Count > 0)
+            {
+                var key = pending.Pop();
+
+                if (!seen.Add(key))
+                {
+                    continue;
+                }
+
+                foreach (var next in quests.FirstOrDefault(q => q.Key == key)?.PrerequisiteQuestKeys ?? [])
+                {
+                    pending.Push(next);
+                }
+            }
+
+            foreach (var to in quests)
+            {
+                reaches[(from.Key, to.Key)] = seen.Contains(to.Key);
+            }
+        }
+
+        return reaches;
+    }
+
+    /// <summary>Whether these two Path lists can never describe the same character.</summary>
+    private static bool Disjoint(List<CharacterPath>? left, List<CharacterPath>? right) =>
+        left is { Count: > 0 } && right is { Count: > 0 } && !left.Intersect(right).Any();
+
+    /// <summary>The offer line, or null when the quest leaves it to the engine.</summary>
+    private static string? Offer(BundleQuest quest) =>
+        quest.Dialogue is not null
+            && quest.Dialogue.TryGetValue(QuestDialogue.GiverOffer, out var offer)
+                ? offer
+                : null;
 
     /// <summary>
     /// All of these are silent at runtime: an unlisted character draws a tile the legend cannot

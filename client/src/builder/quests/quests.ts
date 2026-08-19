@@ -20,13 +20,19 @@ export const DIALOGUE_FIELDS: DialogueField[] = [
   {
     key: 'giverOffer',
     label: 'Offer',
-    hint: 'When the giver hands the quest over. Also used to re-offer a repeatable one.',
+    hint:
+      'What the giver says to pitch the quest. Wrap the words the errand is about in angle '
+      + 'brackets — "missing those <things>" — and they become a link that takes it on, and the '
+      + 'word a player can type. Leave them out and the offer ends with a line naming the command '
+      + 'instead.',
     fallback: 'I have a job for you: {summary}',
   },
   {
     key: 'giverInProgress',
     label: 'In progress',
-    hint: 'Talking to the giver again while the quest is still open.',
+    hint:
+      'What to actually do. Said when the quest is accepted, and again every time the giver is '
+      + 'asked while it is open. Blank on accepting reads "Right. {summary}".',
     fallback: 'Still working on {name}?',
   },
   {

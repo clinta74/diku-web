@@ -103,6 +103,29 @@ public sealed class AutoStartQuestTests
             harness.World.GetQuestState(player.Character.Id, Second)?.Status);
     }
 
+    /// <summary>
+    /// A step that starts itself speaks its offer, with the markers taken out.
+    /// </summary>
+    /// <remarks>
+    /// The offer is the right line here — nobody pitched this one, so the in-progress instruction
+    /// would arrive without its setup — but the words a giver marked are an invitation to take a
+    /// quest on, and this one is already in the journal. So they are shown as the prose they are.
+    /// </remarks>
+    [Fact]
+    public void A_step_that_starts_itself_shows_no_markers()
+    {
+        var harness = Chain();
+        harness.Quests.Get(Second)!.Dialogue["giverOffer"] = "She'll want that <back>.";
+
+        var player = ReadyToHandIn(harness);
+        harness.Execute(player, "give beer old man");
+
+        var text = harness.DrainText(player);
+
+        Assert.Contains("She'll want that back.", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("<", text, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void The_offer_comes_after_the_turn_in_rather_than_inside_it()
     {

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Spawning;
 using DikuWeb.Server.Building;
 
@@ -344,6 +345,116 @@ public sealed class BundleValidatorTests
 
         Assert.True(Check(bundle with { Quests = [Quest("q1", dialogue)] }).Ok);
     }
+
+    // -----------------------------------------------------------------------
+    // Offer markers
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// A marker the parser cannot read shows its brackets to a player, so it stops the import.
+    /// </summary>
+    /// <remarks>
+    /// The engine falls open on these — the sentence still reads, with the punctuation in it —
+    /// which is the right thing to do at runtime and the wrong thing to ship. This is the only
+    /// layer positioned to see it before a player does.
+    /// </remarks>
+    [Theory]
+    [InlineData("Bring me those <things.", "never closed")]
+    [InlineData("Bring me those things>.", "never opened")]
+    [InlineData("Bring me those <>.", "marks no words")]
+    [InlineData("Bring me <those <things>>.", "second marker")]
+    public void A_broken_offer_marker_is_an_error(string offer, string complaint)
+    {
+        var bundle = Valid();
+        var quest = Quest("q1", new Dictionary<string, string> { ["giverOffer"] = offer });
+
+        AssertError(bundle with { Quests = [quest] }, complaint);
+    }
+
+    [Fact]
+    public void A_marked_offer_is_accepted()
+    {
+        var bundle = Valid();
+        var quest = Quest(
+            "q1", new Dictionary<string, string> { ["giverOffer"] = "Bring me those <things>." });
+
+        Assert.True(Check(bundle with { Quests = [quest] }).Ok);
+    }
+
+    /// <summary>
+    /// Two quests one giver could put on the table together must not answer to the same words.
+    /// </summary>
+    /// <remarks>
+    /// The engine refuses to render either link in this case, which is safe and silent. Here is
+    /// where the author is told why the link they wrote did not appear.
+    /// </remarks>
+    [Fact]
+    public void Two_quests_offered_together_may_not_mark_the_same_words()
+    {
+        var bundle = Valid();
+
+        AssertError(
+            bundle with { Quests = [Marked("q1", "pell"), Marked("q2", "pell")] },
+            "both mark 'things'");
+    }
+
+    /// <summary>Different givers, so the command names a different person and cannot collide.</summary>
+    [Fact]
+    public void The_same_words_are_fine_from_two_different_givers()
+    {
+        var bundle = Valid();
+
+        Assert.True(Check(bundle with { Quests = [Marked("q1", "pell"), Marked("q2", "vess")] }).Ok);
+    }
+
+    /// <summary>
+    /// A chain step cannot coincide with the step it follows, however far back that is.
+    /// </summary>
+    /// <remarks>
+    /// Without the transitive walk this rule would be useless on the content it was written for:
+    /// Vesh hands out twenty quests and can only ever offer one, and every pair of the twenty
+    /// would be reported.
+    /// </remarks>
+    [Fact]
+    public void A_later_step_of_a_chain_may_reuse_the_words()
+    {
+        var bundle = Valid();
+
+        var first = Marked("q1", "vesh");
+        var second = Marked("q2", "vesh") with { PrerequisiteQuestKeys = ["q1"] };
+        var third = Marked("q3", "vesh") with { PrerequisiteQuestKeys = ["q2"] };
+
+        Assert.True(Check(bundle with { Quests = [first, second, third] }).Ok);
+    }
+
+    /// <summary>Nor can two quests written for Paths that no character holds at once.</summary>
+    [Fact]
+    public void Quests_for_different_paths_may_reuse_the_words()
+    {
+        var bundle = Valid();
+
+        var warden = Marked("q1", "vesh") with { Paths = [CharacterPath.Warden] };
+        var shade = Marked("q2", "vesh") with { Paths = [CharacterPath.Shade] };
+
+        Assert.True(Check(bundle with { Quests = [warden, shade] }).Ok);
+    }
+
+    /// <summary>An empty Path list means anyone, so it overlaps everything.</summary>
+    [Fact]
+    public void A_quest_for_anyone_still_collides_with_one_for_a_path()
+    {
+        var bundle = Valid();
+
+        var anyone = Marked("q1", "vesh");
+        var shade = Marked("q2", "vesh") with { Paths = [CharacterPath.Shade] };
+
+        AssertError(bundle with { Quests = [anyone, shade] }, "both mark 'things'");
+    }
+
+    /// <summary>A quest marking the same words as itself is one quest, and fine.</summary>
+    private static BundleQuest Marked(string key, string giver) =>
+        Quest(key, new Dictionary<string, string> { ["giverOffer"] = "Bring me those <things>." })
+            with { GiverMobKey = giver };
 
     private static BundleQuest Quest(string key, Dictionary<string, string> dialogue) =>
         new(key, "test.zone", "A quest", "Do the thing", "At length.",

@@ -479,15 +479,50 @@ describe('a command span in the transcript', () => {
     expect(input.value).toBe('')
   })
 
-  it('echoes what it sent, which is why the span text and its command must match', () => {
+  it('echoes what it sent, so a span showing a command must run that command', () => {
     play()
     offer()
 
     fireEvent.click(screen.getByRole('button', { name: 'talk elder ledger' }))
 
-    // The transcript shows the player's own words back. A span that displayed one string and ran
-    // another would put something here they never typed.
+    // The transcript shows the player's own words back. A span that *displayed* a command and ran
+    // a different one would put something here they never typed.
     expect(screen.getByText('> talk elder ledger')).toBeTruthy()
+  })
+
+  // The other shape: a word inside the giver's own sentence. Its label is prose, not a command,
+  // so text and command deliberately differ - and the echo is the point, because watching
+  // "talk elder things" appear is how a player learns the sentence rather than just the button.
+  function marked() {
+    emit({
+      type: 'text',
+      data: {
+        spans: [
+          { t: 'Somebody is missing those ', s: null },
+          { t: 'things', s: null, c: 'talk elder things' },
+          { t: '.', s: null },
+        ],
+      },
+    })
+  }
+
+  it('renders a marked word in the prose as a link', () => {
+    play()
+    marked()
+
+    expect(screen.getByRole('button', { name: 'things' })).toBeTruthy()
+    expect(screen.getByText(/Somebody is missing those/)).toBeTruthy()
+  })
+
+  it('runs the command the marked word stands for, and shows it', () => {
+    const input = play()
+    marked()
+
+    fireEvent.click(screen.getByRole('button', { name: 'things' }))
+
+    expect(sent).toEqual(['talk elder things'])
+    expect(input.value).toBe('')
+    expect(screen.getByText('> talk elder things')).toBeTruthy()
   })
 
   it('leaves the words around it as ordinary prose', () => {

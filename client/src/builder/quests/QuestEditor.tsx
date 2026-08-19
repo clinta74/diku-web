@@ -501,6 +501,12 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
           Every line is optional. Left blank, the NPC says the generated line shown under each
           field — which is often fine, and always better than silence.
         </p>
+        <p className="dim">
+          In the offer, <code>&lt;angle brackets&gt;</code> mark the words a player clicks to take
+          the quest on. Those words are also what they can type, so there is nothing else to keep
+          in step — but two quests the same giver can offer at once must not mark the same words,
+          and the import will say so.
+        </p>
 
         {DIALOGUE_FIELDS.map((field) => (
           <Field key={field.key} label={field.label} hint={field.hint}>

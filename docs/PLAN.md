@@ -1213,30 +1213,68 @@ the offer, so answering re-checks that they are here and the quest still qualifi
 walking away. And it costs no root verb — `accept` would have been a third claimant on `a` beside
 `abandon` and `abilities`, where `talk` is already registered at one character.
 
-**No keyword field either.** What was said is matched through `NameMatch` over the quest's name and
-key, which already ranks an exact title above a last word above any word. So "The Scraped Plates"
+**No keyword field.** What was said is matched through `NameMatch` over the quest's name and key,
+which already ranks an exact title above a last word above any word. So "The Scraped Plates"
 answers to `plates`, to `scraped`, to its key, and to the whole title — and a *sentence* works,
 because its words are searched the same way. Nothing to author, and nothing new to keep in step
-with the prose. A `Quest.Keywords` field is only worth adding for transactional givers who name the
-thing they want in the offer itself, which is a content voice this game does not currently use.
+with the prose.
 
-The offer ends with a dim line naming the command, because a keyword scheme whose word must be
-guessed is the classic MUD dead end. **That command is clickable**, carried on the span as `c`
-(§3.5), and clicking it *runs* it rather than typing it into the input — unlike a contents-panel
-keyword, which inserts. The difference is ambiguity: clicking "a rat" could mean look, attack or
-get, where an offer's command is already a resolved verb and object.
+**The link is authored into the offer, in angle brackets.** `'Somebody is missing those
+<things>.'` renders *things* as something to click, and the command it runs is `talk pell things`.
+The marked words are the keyword — parsed back out of the same string, so there is still nothing
+to keep in step. A `Quest.Keywords` field was the obvious alternative and is the worse one: a list
+can name a word the sentence does not contain, and the only way anyone finds out is a player
+clicking a link that does nothing.
 
-**The span's text and its command are one value**, which is load-bearing twice over. The client
-echoes what it sends, so a span reading `talk vane cogs` that fired the quest key would put a
-string in the player's transcript they never typed. And a label that cannot differ from its action
-is why the link is generated from the command rather than authored as markup inside the prose —
-markup in prose can name a keyword the quest does not have, and nothing would ever report it.
+Angle brackets specifically. Square brackets are what a writer reaches for when inserting an aside
+and this prose is full of people trailing off; braces are taken, since `{name}` already means
+*substitute a value* in the login greeting, and one bracket meaning two things in text the same
+builder edits is the collision worth dodging. Angle brackets appear nowhere in the Reaches — not in
+prose, and not in the single-character item icons, which is where the pipes and square brackets
+turned out to live.
 
-The words either side stay plain text, so a client that renders no commands — the phone, a screen
-reader, anything reading the raw stream — still shows a whole instruction rather than a sentence
-with a hole in it. The word it suggests is the longest non-grammatical word of the
-quest's name — a heuristic that is **display only and deliberately not load-bearing**, since
-matching accepts any word and a poor suggestion therefore costs nothing.
+**An offer with no markers ends with a dim line naming the command instead**, because a keyword
+scheme whose word must be guessed is the classic MUD dead end. That fallback is what let 35
+authored quests keep working the day this landed and be re-authored one at a time. The word it
+suggests is the longest non-grammatical word of the quest's name.
+
+Either way the command is carried on the span as `c` (§3.5), and clicking *runs* it rather than
+typing it into the input — unlike a contents-panel keyword, which inserts. The difference is
+ambiguity: clicking "a rat" could mean look, attack or get, where a quest link is already a
+resolved verb and object.
+
+**The two shapes differ on whether the label is the command, and deliberately.** The parenthetical
+*displays* a command, so it must run exactly what it shows — the client echoes what it sends, and a
+span reading `talk vane cogs` that fired something else would put a string in the player's
+transcript they never typed. A marked word displays a *word*, so clicking "things" echoes `talk
+pell things`, which is the teaching mechanism: the link shows the player the sentence they could
+have typed. The invariant that matters in both is that the echo is what ran.
+
+**Every link is round-tripped before it is sent.** The command is fed back through the same
+targeting and matching a player's typing goes through, and rendered only if it comes back holding
+this mob and this quest. So a link that starts the wrong quest is not a thing that can ship: an
+ambiguous marker degrades to the parenthetical. Two quests one giver could offer at once marking
+the same word means the word means neither — the validator refuses it at import (§6), and the
+engine declines to link either if it gets in anyway.
+
+That round trip is also what makes the address heuristic safe. It used to be the last word of the
+mob's name, on the reasoning that English puts the noun last — true of "a bar maiden" and false of
+**six of the eight givers in the Reaches**, who are named and then described: it told players to
+type `talk house` at Deacon Pell of Ilvaro's house and `talk gates` at Vesh, who follows the gates.
+The name is now cut at the first word that opens a describing clause, with the full name and the
+template key behind it as fallbacks, and whichever first reaches the right mob is used.
+
+The words either side of a link stay plain text, so a client that renders no commands — the phone,
+a screen reader, anything reading the raw stream — still shows a whole sentence rather than one
+with a hole in it. A malformed marker falls open the same way: the line is spoken exactly as
+written, brackets and all, so a builder sees their own mistake in the room.
+
+**Accepting says what to do, not the pitch again.** Answering a giver replies with `giverInProgress`
+— the same line they repeat every time they are asked while the quest is open, which is what makes
+coming back a way to remember the job. The offer is what talked you into it and you have just read
+it. A chain step that **starts itself** is the exception and gets the offer, because nobody pitched
+it; markers are stripped there, since an invitation to take on a quest already in the journal is a
+lie.
 
 **`talk` is for everybody now, not only givers.** A mob with no quests used to answer *"has nothing
 to say to you about quests"*, which names the subsystem rather than the world — a shopkeeper said it
@@ -1264,7 +1302,7 @@ strings per quest, stored as `jsonb`:
 | Speaker | State | Example |
 |---|---|---|
 | Giver | `offer` | *"My ledger was taken when the kobolds came through. Find it?"* |
-| Giver | `inProgress` | *"Still no ledger? They fled north, toward the gate."* |
+| Giver | `inProgress` | *"Still no ledger? They fled north, toward the gate."* — said on accepting as well as on asking again, because it is the instruction |
 | Giver | `complete` | *"You have my thanks. The captain should hear of this."* |
 | Turn-in | `ready` | *"That ledger — Kaelen sent you? Give it here."* |
 
@@ -2242,6 +2280,8 @@ because of it. Failure is always closed and always narrated:
 | Flag value is the wrong type (`"pvp": "yes"`) | Treated as absent, so it resolves to the registry default — which is always the safe value. Advisory warning. |
 | `pvp` cleared on a room mid-fight | The fight ends on the next round, exactly as if the combatants had walked out (§4.11). A live edit can stop a duel; it can never start one retroactively. |
 | A character's bind room is deleted | Death falls through to the next respawn candidate (§4.12). The stale `respawn_room_key` is cleared the first time it fails to resolve. |
+| Quest offer has a marker nothing closed | The line is spoken exactly as written, brackets and all, and the quest is still takeable through the parenthetical. The import refuses it outright (§4.9), which is where a builder should find out. |
+| Two quests one giver can offer at once mark the same words | Neither word is a link — a word that means two errands means neither — and both fall back to naming themselves. Refused at import. |
 | Room has no description | Renders a placeholder; the room still works. |
 | Grid rows ragged or legend incomplete | Map falls back to a plain floor rectangle of the same size. |
 | Zone deleted with players inside | Blocked outright — the one destructive edit that requires the zone be empty. |

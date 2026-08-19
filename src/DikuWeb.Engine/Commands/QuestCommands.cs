@@ -141,8 +141,13 @@ public static class QuestCommands
     private static void Greet(CommandContext ctx, Mob mob)
     {
         var character = ctx.Actor.Character;
-        var lines = new List<string>();
-        var offers = new List<Quest>();
+        var lines = new List<IReadOnlyList<TextSpan>>();
+        var unlinked = new List<Quest>();
+
+        // What answering this mob could start right now, which is exactly the set Answer will
+        // resolve against. Computed once here so the link written into the offer is checked
+        // against the same candidates that will decide where a click lands.
+        var available = Available(ctx, mob, character);
 
         foreach (var quest in OfferedBy(ctx, mob))
         {
@@ -155,8 +160,8 @@ public static class QuestCommands
             {
                 if (questState?.Status == QuestStatus.Active)
                 {
-                    lines.Add(
-                        $"About {quest.Name} — that business is closed for now. Hold on to what you have.");
+                    lines.Add(Prose(
+                        $"About {quest.Name} — that business is closed for now. Hold on to what you have."));
                 }
 
                 continue;
@@ -168,7 +173,7 @@ public static class QuestCommands
             {
                 if (questState?.Status == QuestStatus.Active)
                 {
-                    lines.Add(wrongPath);
+                    lines.Add(Prose(wrongPath));
                 }
 
                 continue;
@@ -177,27 +182,26 @@ public static class QuestCommands
             if (questState is null && CheckPrerequisites(ctx.World, character.Id, quest))
             {
                 // Offered, not begun. The one line in this method that used to have a side effect.
-                lines.Add(OfferText(quest));
-                offers.Add(quest);
+                Offer(ctx, mob, quest, available, lines, unlinked);
             }
             else if (questState?.Status == QuestStatus.Active)
             {
-                lines.Add(quest.Dialogue.TryGetValue(QuestDialogue.GiverInProgress, out var inProgress)
+                lines.Add(Prose(quest.Dialogue.TryGetValue(QuestDialogue.GiverInProgress, out var inProgress)
                     ? inProgress
-                    : $"Still working on {quest.Name}?");
+                    : $"Still working on {quest.Name}?"));
             }
             else if (questState?.Status == QuestStatus.Completed && !quest.IsRepeatable)
             {
-                lines.Add(quest.Dialogue.TryGetValue(QuestDialogue.GiverComplete, out var complete)
+                lines.Add(Prose(quest.Dialogue.TryGetValue(QuestDialogue.GiverComplete, out var complete)
                     ? complete
-                    : $"You've already completed {quest.Name}.");
+                    : $"You've already completed {quest.Name}."));
             }
             else if (questState?.Status == QuestStatus.Completed && quest.IsRepeatable
                 && ChainStillRunning(ctx, character.Id, quest.Key) is { } blocking)
             {
                 // Repeatable, finished, but something further down the chain is still open. Taking
                 // it again now would reset a step whose consequences are still in play.
-                lines.Add($"About {quest.Name} — finish {blocking.Name} first, or give it up.");
+                lines.Add(Prose($"About {quest.Name} — finish {blocking.Name} first, or give it up."));
             }
             else if (questState?.Status == QuestStatus.Completed && quest.IsRepeatable
                 && !UpstreamHasRunAgain(ctx, character.Id, quest, questState))
@@ -207,12 +211,11 @@ public static class QuestCommands
                 // would hand out the second errand to somebody with no glass and no way to get
                 // one, because taking the first errand is then blocked by this one being active.
                 // Recoverable by abandoning, but a chain should be re-entered at its head.
-                lines.Add($"About {quest.Name} — that comes later. First things first.");
+                lines.Add(Prose($"About {quest.Name} — that comes later. First things first."));
             }
             else if (questState?.Status == QuestStatus.Completed && quest.IsRepeatable)
             {
-                lines.Add(OfferText(quest));
-                offers.Add(quest);
+                Offer(ctx, mob, quest, available, lines, unlinked);
             }
 
             // Anything left over is a quest whose prerequisites are unmet, and it is simply not
@@ -221,20 +224,113 @@ public static class QuestCommands
 
         if (lines.Count == 0)
         {
-            lines.Add(SmallTalk(ctx, mob));
+            lines.Add(Prose(SmallTalk(ctx, mob)));
         }
 
         foreach (var line in lines)
         {
-            ctx.Reply(line);
+            ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(line)));
         }
 
-        // How to say yes, once per quest actually on the table. Dim, and after the prose, because
-        // it is stage direction rather than something anybody says out loud.
-        foreach (var quest in offers)
+        // How to say yes, for any quest whose own prose could not carry the link. Dim, and after
+        // everything else, because it is stage direction rather than something anybody says.
+        foreach (var quest in unlinked)
         {
-            Affordance(ctx, mob, quest);
+            Affordance(ctx, mob, quest, available);
         }
+    }
+
+    /// <summary>A line nobody can click: one plain span, which is what most lines are.</summary>
+    private static IReadOnlyList<TextSpan> Prose(string text) => [new TextSpan(text)];
+
+    /// <summary>
+    /// Adds the giver's offer, with the words they marked rendered as something to click.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The marker is authored into the prose (<see cref="QuestOffer"/>), so the link sits on the
+    /// noun the errand is about rather than in a parenthetical bolted onto the end. An offer with
+    /// no markers — or one whose markers do not survive the check below — falls back to that
+    /// parenthetical, which is why 35 quests kept working the day this landed and could be
+    /// re-authored one at a time.
+    /// </para>
+    /// <para>
+    /// <b>Every link is round-tripped before it is sent.</b> The command is fed back through the
+    /// same <see cref="FindTarget"/> and <see cref="Match"/> the player's own typing goes through,
+    /// and it is only rendered if it comes back holding this mob and this quest. A link that would
+    /// start the wrong quest is therefore not a thing that can be shipped: the worst an ambiguous
+    /// marker can do is degrade to the parenthetical.
+    /// </para>
+    /// </remarks>
+    private static void Offer(
+        CommandContext ctx,
+        Mob mob,
+        Quest quest,
+        IReadOnlyList<Quest> available,
+        List<IReadOnlyList<TextSpan>> lines,
+        List<Quest> unlinked)
+    {
+        var text = OfferText(quest);
+        var segments = QuestOffer.Parse(text);
+        var spans = new List<TextSpan>();
+        var linked = false;
+
+        foreach (var segment in segments)
+        {
+            if (!segment.IsLink)
+            {
+                spans.Add(new TextSpan(segment.Text));
+                continue;
+            }
+
+            if (Command(ctx, mob, quest, available, segment.Text) is not { } command)
+            {
+                // The marked words do not lead back here. Keep them as prose - the sentence still
+                // reads - and let the parenthetical say how to take it on.
+                spans.Add(new TextSpan(segment.Text));
+                continue;
+            }
+
+            spans.Add(new TextSpan(segment.Text, null, C: command));
+            linked = true;
+        }
+
+        lines.Add(spans);
+
+        if (!linked)
+        {
+            unlinked.Add(quest);
+        }
+    }
+
+    /// <summary>
+    /// The command that says yes to this quest using <paramref name="phrase"/>, or null when no
+    /// way of addressing this mob makes those words land here.
+    /// </summary>
+    private static string? Command(
+        CommandContext ctx, Mob mob, Quest quest, IReadOnlyList<Quest> available, string phrase)
+    {
+        var said = phrase.Trim();
+
+        if (said.Length == 0)
+        {
+            return null;
+        }
+
+        foreach (var address in Addresses(mob))
+        {
+            var command = $"talk {address} {said}".ToLowerInvariant();
+
+            var (who, spoken) = FindTarget(
+                ctx.World.MobsIn(ctx.Actor.Character.RoomKey), command["talk ".Length..]);
+
+            if (ReferenceEquals(who, mob) && spoken is not null && Match(available, spoken) == quest)
+            {
+                return command;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -253,9 +349,19 @@ public static class QuestCommands
     /// than a sentence with a hole in it.
     /// </para>
     /// </remarks>
-    private static void Affordance(CommandContext ctx, Mob mob, Quest quest)
+    private static void Affordance(
+        CommandContext ctx, Mob mob, Quest quest, IReadOnlyList<Quest> available)
     {
-        var command = $"talk {Address(mob)} {Cue(quest)}";
+        // The same round trip the inline links get, over the words worth suggesting: a cue drawn
+        // from the name, then the whole name, then the key, which cannot fail to identify it.
+        var command = new[] { Cue(quest), quest.Name, quest.Key }
+            .Select(phrase => Command(ctx, mob, quest, available, phrase))
+            .FirstOrDefault(c => c is not null);
+
+        if (command is null)
+        {
+            return;
+        }
 
         ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(
         [
@@ -280,24 +386,24 @@ public static class QuestCommands
     private static void Answer(CommandContext ctx, Mob mob, string said)
     {
         var character = ctx.Actor.Character;
-
-        var available = OfferedBy(ctx, mob)
-            .Where(q => !IsDormant(ctx, q)
-                && WrongPathNote(q, character) is null
-                && Startable(ctx, character.Id, q))
-            .ToList();
+        var available = Available(ctx, mob, character);
 
         // What they said whole, then its words longest first. Whole first so an exact title or an
         // exact key lands at rank 0 or 1 and cannot be beaten by a stray word; words after, so a
         // sentence reaches the quest the way a bare keyword does, without a special case.
         foreach (var word in Spoken(said))
         {
-            if (NameMatch.Best(available, word, q => q.Name, q => q.Key) is { } quest)
+            if (Match(available, word) is { } quest)
             {
                 var timesCompleted =
                     ctx.World.GetQuestState(character.Id, quest.Key)?.TimesCompleted ?? 0;
 
-                ctx.Reply(Begin(ctx, character.Id, quest, timesCompleted));
+                Begin(ctx, character.Id, quest, timesCompleted);
+
+                // The instruction, not the pitch a second time: the offer is what talked them
+                // into it and they have just read it. This is also what the giver repeats when
+                // asked again later, which is what makes coming back a way to remember the job.
+                ctx.Reply(Instruction(quest));
                 ctx.Reply($"You take on {quest.Name}.", "good");
                 return;
             }
@@ -319,6 +425,51 @@ public static class QuestCommands
         }
 
         ctx.Reply($"{mob.DisplayName} does not know what you mean by that.");
+    }
+
+    /// <summary>
+    /// The quests this mob could start for this character right now.
+    /// </summary>
+    /// <remarks>
+    /// One definition, read by <see cref="Answer"/> to decide where a word lands and by
+    /// <see cref="Offer"/> to check that a link it is about to render lands there too. Two copies
+    /// of this predicate would be two answers to "which quest does this word mean", and the one
+    /// the player gets would be the one that was not checked.
+    /// </remarks>
+    private static List<Quest> Available(CommandContext ctx, Mob mob, Character character) =>
+        [.. OfferedBy(ctx, mob)
+            .Where(q => !IsDormant(ctx, q)
+                && WrongPathNote(q, character) is null
+                && Startable(ctx, character.Id, q))];
+
+    /// <summary>
+    /// The quest a word means, if any: what its giver marked in the prose, then its name and key.
+    /// </summary>
+    /// <remarks>
+    /// Authored markers are tried first because they were written on purpose, and a word derived
+    /// from a title is a guess by comparison. Both are needed: the marker is how the link in the
+    /// prose works, and the name is how somebody typing at the prompt gets there without having
+    /// read the exact wording.
+    /// </remarks>
+    private static Quest? Match(IReadOnlyList<Quest> available, string needle)
+    {
+        var said = needle.Trim();
+
+        var marked = available
+            .Where(quest => QuestOffer.Keywords(OfferText(quest))
+                .Any(keyword => keyword.Equals(said, StringComparison.OrdinalIgnoreCase)))
+            .Take(2)
+            .ToList();
+
+        // Exactly one, or none. Two errands marking the same word is a word that means neither -
+        // taking the first would give one of them the link and leave the other's identical word
+        // sitting inert beside it, which is worse than both falling back to naming themselves.
+        if (marked.Count == 1)
+        {
+            return marked[0];
+        }
+
+        return marked.Count > 1 ? null : NameMatch.Best(available, said, q => q.Name, q => q.Key);
     }
 
     /// <summary>The quests this mob gives, in authored order. Empty when quests are unavailable.</summary>
@@ -343,7 +494,10 @@ public static class QuestCommands
             && UpstreamHasRunAgain(ctx, characterId, quest, state);
     }
 
-    /// <summary>What the giver says when offering, without starting anything.</summary>
+    /// <summary>
+    /// What the giver says when offering, without starting anything. Markers included — every
+    /// caller either renders them (<see cref="Offer"/>) or reads them (<see cref="Match"/>).
+    /// </summary>
     private static string OfferText(Quest quest) =>
         quest.Dialogue.TryGetValue(QuestDialogue.GiverOffer, out var offer)
             ? offer
@@ -383,16 +537,67 @@ public static class QuestCommands
             : $"{name} has nothing to say just now.";
     }
 
-    /// <summary>The word a player would use to address this mob: the noun of its name.</summary>
+    /// <summary>
+    /// Ways of addressing this mob, likeliest first, for <see cref="Command"/> to try in turn.
+    /// </summary>
     /// <remarks>
-    /// The last word, because that is the one <see cref="NameMatch"/> ranks best and the one
-    /// English puts the noun in — "a bar maiden" is addressed as "maiden".
+    /// <para>
+    /// <b>The last word is wrong more often than it is right.</b> That was the rule here, on the
+    /// reasoning that English puts the noun last — true of "a bar maiden", and false of every
+    /// giver in the Reaches but two. It told players to type <c>talk house</c> at Deacon Pell of
+    /// Ilvaro's house, <c>talk gates</c> at Vesh, who follows the gates, and <c>talk expelled</c>
+    /// at Sister Aveth, who was expelled. Six of eight givers, including the one who hands out the
+    /// first quest in the game.
+    /// </para>
+    /// <para>
+    /// What those names have in common is a trailing clause: the mob is named, and then described.
+    /// So the name is cut at the first word that opens one, and the noun is taken from what is
+    /// left — "Deacon Pell" gives <c>pell</c>. The whole name and the template key follow as
+    /// fallbacks, and <see cref="Command"/> keeps the first that actually reaches this mob, so a
+    /// name this heuristic reads badly costs nothing but a longer command.
+    /// </para>
     /// </remarks>
-    private static string Address(Mob mob)
+    private static IEnumerable<string> Addresses(Mob mob)
     {
         var words = Words(mob.TemplateName);
-        return words.Count > 0 ? words[^1].ToLowerInvariant() : mob.TemplateKey;
+        var core = new List<string>();
+
+        foreach (var word in words)
+        {
+            if (core.Count > 0 && Clausal.Contains(word))
+            {
+                break;
+            }
+
+            core.Add(word);
+        }
+
+        if (core.Count > 0)
+        {
+            yield return core[^1];
+        }
+
+        if (words.Count > core.Count)
+        {
+            yield return string.Join(' ', core);
+        }
+
+        if (!string.IsNullOrWhiteSpace(mob.TemplateName))
+        {
+            yield return mob.TemplateName;
+        }
+
+        yield return mob.TemplateKey;
     }
+
+    /// <summary>
+    /// Words that begin a describing clause, and so end the part of a name that names somebody.
+    /// </summary>
+    private static readonly HashSet<string> Clausal = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "at", "by", "for", "from", "in", "of", "that", "the", "to", "which", "who", "whose",
+        "with",
+    };
 
     /// <summary>
     /// A word from the quest's name to suggest saying, for the stage-direction line.
@@ -626,15 +831,21 @@ public static class QuestCommands
     }
 
     /// <summary>
-    /// Puts a quest in a character's journal as Active and returns the line the giver says.
+    /// Puts a quest in a character's journal as Active. <b>Says nothing</b> — the two ways in
+    /// want different lines.
     /// </summary>
+    /// <remarks>
+    /// Answering a giver gets <see cref="Instruction"/>, because the offer has just been read.
+    /// A chain step that starts itself gets the offer, because nobody pitched it — and it is the
+    /// plain offer, since a link to take on a quest already in the journal would be a lie.
+    /// </remarks>
     /// <remarks>
     /// One place, because there are now three ways in — a first offer, a repeat, and a chain step
     /// starting itself — and three copies of "set Active, keep the count, enqueue the snapshot"
     /// is three chances to forget the count. <paramref name="timesCompleted"/> is carried rather
     /// than reset because it is the history the repeat gates read.
     /// </remarks>
-    private static string Begin(
+    private static void Begin(
         CommandContext ctx, Guid characterId, Quest quest, int timesCompleted)
     {
         var startedAt = DateTimeOffset.UtcNow;
@@ -651,10 +862,13 @@ public static class QuestCommands
         ctx.QuestSaveQueue?.Enqueue(new CharacterQuestSnapshot(
             characterId, quest.Key, QuestStatus.Active, startedAt, null, timesCompleted));
 
-        return quest.Dialogue.TryGetValue(QuestDialogue.GiverOffer, out var offer)
-            ? offer
-            : $"I have a job for you: {quest.Summary}";
     }
+
+    /// <summary>What to actually do: the same line the giver repeats when asked again later.</summary>
+    private static string Instruction(Quest quest) =>
+        quest.Dialogue.TryGetValue(QuestDialogue.GiverInProgress, out var inProgress)
+            ? inProgress
+            : $"Right. {quest.Summary}";
 
     /// <summary>
     /// Starts any quest that follows the one just finished and has asked to begin by itself.
@@ -702,7 +916,8 @@ public static class QuestCommands
 
             if (state is null)
             {
-                ctx.Reply(Begin(ctx, characterId, next, timesCompleted: 0));
+                Begin(ctx, characterId, next, timesCompleted: 0);
+                ctx.Reply(QuestOffer.Plain(OfferText(next)));
                 continue;
             }
 
@@ -716,7 +931,8 @@ public static class QuestCommands
                 continue;
             }
 
-            ctx.Reply(Begin(ctx, characterId, next, state.TimesCompleted));
+            Begin(ctx, characterId, next, state.TimesCompleted);
+            ctx.Reply(QuestOffer.Plain(OfferText(next)));
         }
     }
 

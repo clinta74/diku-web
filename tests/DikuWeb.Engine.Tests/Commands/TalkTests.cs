@@ -1,6 +1,7 @@
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.Tests.Infrastructure;
 using DikuWeb.Engine.World;
 
@@ -49,6 +50,24 @@ public sealed class TalkTests
 
         return harness;
     }
+
+    /// <summary>A giver whose offer marks the words the errand is about.</summary>
+    private static WorldHarness WithMarkedGiver(
+        WorldHarness harness, string offer = "Somebody is missing those <things>.")
+        => WithGiver(harness, offer);
+
+    /// <summary>The spans of the last thing said, so a link can be told from the prose.</summary>
+    private static IReadOnlyList<TextSpan> Spans(
+        WorldHarness harness, PlayerActor actor, string command)
+    {
+        harness.Drain(actor);
+        harness.Execute(actor, command);
+        return harness.DrainSpans(actor);
+    }
+
+    /// <summary>The one span carrying a command, or null when the line offers nothing to click.</summary>
+    private static TextSpan? Link(IReadOnlyList<TextSpan> spans) =>
+        spans.SingleOrDefault(span => span.C is not null);
 
     private static string Say(WorldHarness harness, PlayerActor actor, string command)
     {
@@ -107,13 +126,15 @@ public sealed class TalkTests
     }
 
     /// <summary>
-    /// The command in the offer is clickable, and <b>runs exactly the text it shows</b>.
+    /// The parenthetical is clickable, and <b>runs exactly the text it shows</b>.
     /// </summary>
     /// <remarks>
-    /// The equality is the test. The client echoes what it sends, so a span reading "talk elder
-    /// ledger" that fired the quest key would put a string in the transcript the player never
-    /// typed — and text and command being one value is also what stops a label drifting from its
-    /// action, which is the failure authoring the link inside the prose would have invited.
+    /// The equality holds <em>here</em> because this span displays a command: the client echoes
+    /// what it sends, so a span reading "talk elder ledger" that fired something else would put a
+    /// string in the transcript the player never typed. A marked word in the prose displays a
+    /// word rather than a command, so the two differ by design — see
+    /// <see cref="Clicking_marked_words_shows_the_command_they_stand_for"/>, where the echo is
+    /// what teaches the syntax.
     /// </remarks>
     [Fact]
     public void The_command_in_the_offer_is_clickable_and_runs_what_it_says()
@@ -121,12 +142,9 @@ public sealed class TalkTests
         var (harness, actor) = Ready();
         WithGiver(harness);
 
-        harness.Drain(actor);
-        harness.Execute(actor, "talk elder");
+        var span = Link(Spans(harness, actor, "talk elder"));
 
-        var clickable = harness.DrainSpans(actor).Where(span => span.C is not null).ToList();
-
-        var span = Assert.Single(clickable);
+        Assert.NotNull(span);
         Assert.Equal(span.T, span.C);
         Assert.StartsWith("talk elder", span.C!, StringComparison.Ordinal);
     }
@@ -177,6 +195,232 @@ public sealed class TalkTests
     }
 
     // -----------------------------------------------------------------------
+    // Marked in the prose
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// The words the giver marked are the link, sitting in the sentence rather than after it.
+    /// </summary>
+    [Fact]
+    public void Marked_words_in_the_offer_are_the_link()
+    {
+        var (harness, actor) = Ready();
+        WithMarkedGiver(harness);
+
+        var span = Link(Spans(harness, actor, "talk elder"));
+
+        Assert.NotNull(span);
+        Assert.Equal("things", span.T);
+        Assert.Equal("talk elder things", span.C);
+    }
+
+    /// <summary>
+    /// The label is a word and the command is a command, which is the rule the parenthetical
+    /// cannot follow and this one must.
+    /// </summary>
+    /// <remarks>
+    /// Clicking sends the command, and the client echoes what it sends — so the player who clicks
+    /// "things" watches "talk elder things" appear in their own transcript. That is the entire
+    /// discoverability argument: the link teaches the sentence rather than replacing it.
+    /// </remarks>
+    [Fact]
+    public void Clicking_marked_words_shows_the_command_they_stand_for()
+    {
+        var (harness, actor) = Ready();
+        WithMarkedGiver(harness);
+
+        var span = Link(Spans(harness, actor, "talk elder"));
+
+        Assert.NotNull(span);
+        Assert.NotEqual(span.T, span.C);
+
+        harness.Execute(actor, span.C!);
+
+        Assert.True(OnQuest(harness, actor, "fetch-ledger"));
+    }
+
+    /// <summary>The marker never reaches the player as punctuation.</summary>
+    [Fact]
+    public void The_brackets_are_not_spoken()
+    {
+        var (harness, actor) = Ready();
+        WithMarkedGiver(harness);
+
+        var said = Say(harness, actor, "talk elder");
+
+        Assert.Equal("Somebody is missing those things.", said);
+    }
+
+    /// <summary>
+    /// And with the link carrying the instruction, the stage direction goes away.
+    /// </summary>
+    [Fact]
+    public void A_marked_offer_drops_the_parenthetical()
+    {
+        var (harness, actor) = Ready();
+        WithMarkedGiver(harness);
+
+        Assert.DoesNotContain("to take it on", Say(harness, actor, "talk elder"), StringComparison.Ordinal);
+    }
+
+    /// <summary>The words either side are prose, and only the marked ones are not.</summary>
+    [Fact]
+    public void Only_the_marked_words_are_clickable()
+    {
+        var (harness, actor) = Ready();
+        WithMarkedGiver(harness);
+
+        var spans = Spans(harness, actor, "talk elder");
+
+        Assert.Equal(
+            ["Somebody is missing those ", "things", "."],
+            spans.Select(span => span.T));
+        Assert.Equal(["things"], spans.Where(span => span.C is not null).Select(span => span.T));
+    }
+
+    /// <summary>
+    /// The marked words are the keyword, so they work typed as well as clicked.
+    /// </summary>
+    /// <remarks>
+    /// This is the whole reason the keyword is parsed out of the prose rather than authored in a
+    /// field of its own: a separate list can name a word the sentence does not contain, and
+    /// nothing downstream is in a position to notice.
+    /// </remarks>
+    [Fact]
+    public void Marked_words_can_be_typed_as_well_as_clicked()
+    {
+        var (harness, actor) = Ready();
+        WithMarkedGiver(harness);
+
+        Say(harness, actor, "talk elder things");
+
+        Assert.True(OnQuest(harness, actor, "fetch-ledger"));
+    }
+
+    /// <summary>
+    /// A marker that does not lead back to its own quest is never rendered as a link.
+    /// </summary>
+    /// <remarks>
+    /// Two errands on one table marking the same word: the click could only land on one of them,
+    /// so neither is linked and both fall back to naming themselves. The bundle validator refuses
+    /// this at import — this is what the engine does with content that got in anyway, and the
+    /// point is that the failure is a missing link rather than the wrong quest starting.
+    /// </remarks>
+    [Fact]
+    public void A_marker_that_could_mean_two_quests_is_not_a_link()
+    {
+        var (harness, actor) = Ready();
+        WithMarkedGiver(harness);
+        harness.DefineQuest(
+            "fetch-crate",
+            giverMobKey: "elder",
+            requiredItemKey: "ledger",
+            dialogue: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["giverOffer"] = "And somebody wants those <things> too.",
+            });
+
+        var spans = Spans(harness, actor, "talk elder");
+        var commands = spans.Where(span => span.C is not null).Select(span => span.C!).ToList();
+
+        Assert.DoesNotContain("talk elder things", commands);
+        Assert.Equal(2, commands.Count);
+
+        // Both are still takeable, each by a parenthetical that names it unambiguously.
+        harness.Execute(actor, commands[0]);
+        harness.Execute(actor, commands[1]);
+
+        Assert.True(OnQuest(harness, actor, "fetch-ledger"));
+        Assert.True(OnQuest(harness, actor, "fetch-crate"));
+    }
+
+    /// <summary>
+    /// A marker nobody closed leaves the line readable, brackets and all.
+    /// </summary>
+    /// <remarks>
+    /// Falling open rather than swallowing the rest of the sentence: the builder sees their own
+    /// mistake in the room, and the quest is still takeable through the parenthetical. The import
+    /// refuses it long before this, which is where it should be caught.
+    /// </remarks>
+    [Fact]
+    public void A_broken_marker_leaves_the_sentence_alone()
+    {
+        var (harness, actor) = Ready();
+        WithGiver(harness, "Somebody is missing those <things.");
+
+        var said = Say(harness, actor, "talk elder");
+
+        Assert.Contains("those <things.", said, StringComparison.Ordinal);
+        Assert.Contains("to take it on", said, StringComparison.Ordinal);
+    }
+
+    // -----------------------------------------------------------------------
+    // Being addressed
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Somebody named and then described is addressed by their name.
+    /// </summary>
+    /// <remarks>
+    /// The last word used to be the address, on the reasoning that English puts the noun last.
+    /// It told players to type <c>talk house</c> at Deacon Pell of Ilvaro's house — six of the
+    /// eight givers in the Reaches, including the one who hands out the first quest in the game.
+    /// </remarks>
+    [Theory]
+    [InlineData("Deacon Pell of Ilvaro's house", "pell")]
+    [InlineData("Vesh, who follows the gates", "vesh")]
+    [InlineData("Sister Aveth, who was expelled", "aveth")]
+    [InlineData("Keeper Vess of Sulveth's stone", "vess")]
+    [InlineData("Ista Roan, deep foreman", "foreman")]
+    [InlineData("a bar maiden", "maiden")]
+    public void A_giver_is_addressed_by_their_name_and_not_their_description(
+        string name, string expected)
+    {
+        var (harness, actor) = Ready();
+        harness.AddMob("giver", Room, name: name);
+        harness.DefineQuest(
+            "fetch-ledger",
+            giverMobKey: "giver",
+            dialogue: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["giverOffer"] = "Somebody is missing those <things>.",
+            });
+
+        var span = Link(Spans(harness, actor, $"talk {expected}"));
+
+        Assert.NotNull(span);
+        Assert.Equal($"talk {expected} things", span.C);
+    }
+
+    /// <summary>
+    /// An address somebody else answers to first is lengthened until it reaches the right person.
+    /// </summary>
+    /// <remarks>
+    /// The heuristic above is allowed to be wrong because nothing rests on it: every command is
+    /// fed back through the same matching the player's typing goes through, and only kept if it
+    /// comes back holding this mob and this quest.
+    /// </remarks>
+    [Fact]
+    public void An_address_that_would_reach_somebody_else_is_lengthened()
+    {
+        var (harness, actor) = Ready();
+        harness.AddMob("pell", Room, name: "Pell");
+        harness.AddMob("deacon", Room, name: "Deacon Pell of Ilvaro's house");
+        harness.DefineQuest(
+            "fetch-ledger",
+            giverMobKey: "deacon",
+            dialogue: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["giverOffer"] = "Somebody is missing those <things>.",
+            });
+
+        var span = Link(Spans(harness, actor, "talk deacon"));
+
+        Assert.NotNull(span);
+        Assert.Equal("talk deacon pell things", span.C);
+    }
+
+    // -----------------------------------------------------------------------
     // Taking it on
     // -----------------------------------------------------------------------
 
@@ -189,6 +433,54 @@ public sealed class TalkTests
         Say(harness, actor, "talk elder fetch-ledger");
 
         Assert.True(OnQuest(harness, actor, "fetch-ledger"));
+    }
+
+    /// <summary>
+    /// Saying yes gets the instruction, not the pitch a second time.
+    /// </summary>
+    /// <remarks>
+    /// The offer is what talked you into it and you have just read it; what you need on accepting
+    /// is what to actually do. It is the same line the giver repeats when you come back and ask
+    /// again, which is what makes talking to them a way to remember what you were doing.
+    /// </remarks>
+    [Fact]
+    public void Accepting_says_what_to_do_rather_than_the_offer_again()
+    {
+        var (harness, actor) = Ready();
+        harness.AddMob("elder", Room, name: "the village elder");
+        harness.DefineQuest(
+            "fetch-ledger",
+            giverMobKey: "elder",
+            dialogue: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["giverOffer"] = "Somebody is missing those <things>.",
+                ["giverInProgress"] = "Six should do. Take them to the Keeper.",
+            });
+
+        var said = Say(harness, actor, "talk elder things");
+
+        Assert.Contains("Six should do.", said, StringComparison.Ordinal);
+        Assert.DoesNotContain("Somebody is missing", said, StringComparison.Ordinal);
+    }
+
+    /// <summary>And asking again later says the same thing, which is the point of it.</summary>
+    [Fact]
+    public void The_giver_repeats_the_instruction_when_asked_again()
+    {
+        var (harness, actor) = Ready();
+        harness.AddMob("elder", Room, name: "the village elder");
+        harness.DefineQuest(
+            "fetch-ledger",
+            giverMobKey: "elder",
+            dialogue: new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["giverOffer"] = "Somebody is missing those <things>.",
+                ["giverInProgress"] = "Six should do. Take them to the Keeper.",
+            });
+
+        Say(harness, actor, "talk elder things");
+
+        Assert.Contains("Six should do.", Say(harness, actor, "talk elder"), StringComparison.Ordinal);
     }
 
     /// <summary>
