@@ -74,12 +74,30 @@ public sealed class QuestPathGateTests
         return (harness, harness.AddPlayer("Kaeda", West, path: path, level: 20));
     }
 
-    private static string Talk(WorldHarness harness, PlayerActor actor)
+    /// <summary>
+    /// Hears what Vesh has to say, then asks for each named quest by key.
+    /// </summary>
+    /// <remarks>
+    /// <c>talk</c> stopped starting quests by itself (PLAN.md §4.9), so the gate is now tested the
+    /// harder way round: the character does not merely fail to be offered the other three chains,
+    /// they <b>ask for them by name and are refused</b>. A gate that only stopped advertising
+    /// would pass the old shape of these tests and fail these.
+    /// </remarks>
+    private static string Talk(WorldHarness harness, PlayerActor actor, params string[] askFor)
     {
         harness.Drain(actor);
         harness.Execute(actor, "talk vesh");
+
+        foreach (var key in askFor)
+        {
+            harness.Execute(actor, $"talk vesh {key}");
+        }
+
         return harness.DrainText(actor);
     }
+
+    /// <summary>The four epic chains, as keys — what a character asks for and is judged on.</summary>
+    private static readonly string[] AllFour = ["e1-adept", "e1-hallow", "e1-shade", "e1-warden"];
 
     private static IReadOnlyList<string> Journal(WorldHarness harness, PlayerActor actor) =>
         [.. harness.World.QuestsFor(actor.CharacterId).Select(q => q.QuestKey)];
@@ -99,7 +117,7 @@ public sealed class QuestPathGateTests
             Quest("e1-shade", "The Quiet Knife", [CharacterPath.Shade]),
             Quest("e1-warden", "The Oathmaul", [CharacterPath.Warden]));
 
-        Talk(harness, actor);
+        Talk(harness, actor, AllFour);
 
         Assert.Equal(["e1-shade"], Journal(harness, actor));
     }
@@ -118,7 +136,7 @@ public sealed class QuestPathGateTests
             Quest("e1-shade", "The Quiet Knife", [CharacterPath.Shade]),
             Quest("e1-warden", "The Oathmaul", [CharacterPath.Warden]));
 
-        Talk(harness, actor);
+        Talk(harness, actor, AllFour);
 
         Assert.Equal([expected], Journal(harness, actor));
     }
@@ -137,7 +155,7 @@ public sealed class QuestPathGateTests
     {
         var (harness, actor) = AtTheSmith(path, Quest("road-out", "The Road Out"));
 
-        Talk(harness, actor);
+        Talk(harness, actor, "road-out");
 
         Assert.Equal(["road-out"], Journal(harness, actor));
     }
@@ -149,11 +167,11 @@ public sealed class QuestPathGateTests
         var martial = new[] { CharacterPath.Warden, CharacterPath.Shade };
 
         var (forShade, shade) = AtTheSmith(CharacterPath.Shade, Quest("blades", "Blades", martial));
-        Talk(forShade, shade);
+        Talk(forShade, shade, "blades");
         Assert.Equal(["blades"], Journal(forShade, shade));
 
         var (forAdept, adept) = AtTheSmith(CharacterPath.Adept, Quest("blades", "Blades", martial));
-        Talk(forAdept, adept);
+        Talk(forAdept, adept, "blades");
         Assert.Empty(Journal(forAdept, adept));
     }
 
@@ -184,7 +202,7 @@ public sealed class QuestPathGateTests
         // Offered while unrestricted, then restricted underneath them - which is exactly what an
         // import of the newly-tagged content does to every character mid-chain.
         var (harness, actor) = AtTheSmith(CharacterPath.Shade, Quest("e1-adept", "The Stormrod"));
-        Talk(harness, actor);
+        Talk(harness, actor, "e1-adept");
         Assert.Equal(["e1-adept"], Journal(harness, actor));
 
         harness.Mutate(Quest("e1-adept", "The Stormrod", [CharacterPath.Adept]));
@@ -217,7 +235,7 @@ public sealed class QuestPathGateTests
 
         harness.ItemTemplates.Put(ember);
 
-        Talk(harness, actor);
+        Talk(harness, actor, "e1-adept");
         Assert.Equal(["e1-adept"], Journal(harness, actor));
 
         harness.Mutate(Quest("e1-adept", "The Stormrod", [CharacterPath.Adept], requiredItem: "ember"));
@@ -241,7 +259,7 @@ public sealed class QuestPathGateTests
     public void Abandon_clears_a_quest_the_gate_now_refuses()
     {
         var (harness, actor) = AtTheSmith(CharacterPath.Shade, Quest("e1-adept", "The Stormrod"));
-        Talk(harness, actor);
+        Talk(harness, actor, "e1-adept");
 
         harness.Mutate(Quest("e1-adept", "The Stormrod", [CharacterPath.Adept]));
 

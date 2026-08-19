@@ -41,7 +41,7 @@ public sealed class DormantQuestTests
         var (harness, kael) = Ready();
         harness.MobTemplates.Remove("elder");
 
-        harness.Execute(kael, "talk elder");
+        harness.TakeQuest(kael, "elder", "fetch-ledger");
 
         Assert.Null(harness.World.GetQuestState(kael.CharacterId, "fetch-ledger"));
     }
@@ -52,7 +52,7 @@ public sealed class DormantQuestTests
         var (harness, kael) = Ready();
         harness.ItemTemplates.Remove("ledger");
 
-        harness.Execute(kael, "talk elder");
+        harness.TakeQuest(kael, "elder", "fetch-ledger");
 
         Assert.Null(harness.World.GetQuestState(kael.CharacterId, "fetch-ledger"));
     }
@@ -62,7 +62,7 @@ public sealed class DormantQuestTests
     {
         // The whole point. Deleting a mob must not reach into anybody's journal.
         var (harness, kael) = Ready();
-        harness.Execute(kael, "talk elder");
+        harness.TakeQuest(kael, "elder", "fetch-ledger");
         Assert.NotNull(harness.World.GetQuestState(kael.CharacterId, "fetch-ledger"));
 
         harness.ItemTemplates.Remove("ledger");
@@ -76,7 +76,7 @@ public sealed class DormantQuestTests
     public void The_journal_marks_a_dormant_quest_unavailable()
     {
         var (harness, kael) = Ready();
-        harness.Execute(kael, "talk elder");
+        harness.TakeQuest(kael, "elder", "fetch-ledger");
         harness.ItemTemplates.Remove("ledger");
         harness.Drain(kael);
 
@@ -91,7 +91,7 @@ public sealed class DormantQuestTests
     public void The_journal_does_not_mark_a_healthy_quest_unavailable()
     {
         var (harness, kael) = Ready();
-        harness.Execute(kael, "talk elder");
+        harness.TakeQuest(kael, "elder", "fetch-ledger");
         harness.Drain(kael);
 
         harness.Execute(kael, "quests");
@@ -103,10 +103,12 @@ public sealed class DormantQuestTests
     public void The_giver_says_the_business_is_closed_rather_than_repeating_the_brief()
     {
         var (harness, kael) = Ready();
-        harness.Execute(kael, "talk elder");
+        harness.TakeQuest(kael, "elder", "fetch-ledger");
         harness.ItemTemplates.Remove("ledger");
         harness.Drain(kael);
 
+        // Plain talk, not TakeQuest: this reads what the giver says, and the answer is the thing
+        // under test.
         harness.Execute(kael, "talk elder");
 
         Assert.Contains("closed for now", harness.DrainText(kael), StringComparison.Ordinal);
@@ -121,11 +123,11 @@ public sealed class DormantQuestTests
     {
         var (harness, kael) = Ready();
         harness.ItemTemplates.Remove("ledger");
-        harness.Execute(kael, "talk elder");
+        harness.TakeQuest(kael, "elder", "fetch-ledger");
         Assert.Null(harness.World.GetQuestState(kael.CharacterId, "fetch-ledger"));
 
         harness.DefineItem("ledger", "dusty ledger", slot: null);
-        harness.Execute(kael, "talk elder");
+        harness.TakeQuest(kael, "elder", "fetch-ledger");
 
         Assert.NotNull(harness.World.GetQuestState(kael.CharacterId, "fetch-ledger"));
     }
@@ -142,7 +144,7 @@ public sealed class DormantQuestTests
 
         var kael = harness.AddPlayer("Kael", Room);
 
-        harness.Execute(kael, "talk elder");
+        harness.TakeQuest(kael, "elder", "greet-elder");
 
         Assert.NotNull(harness.World.GetQuestState(kael.CharacterId, "greet-elder"));
     }

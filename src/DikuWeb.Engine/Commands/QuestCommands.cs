@@ -1,7 +1,9 @@
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Engine.Quests;
 using DikuWeb.Engine.World;
 
@@ -20,7 +22,7 @@ public static class QuestCommands
     public static void Register(List<CommandDefinition> commands)
     {
         commands.Add(new CommandDefinition(
-            "talk", 1, "talk <npc> (t) - speak with an NPC about quests", Talk));
+            "talk", 1, "talk <npc> [what you say] (t) - speak to someone; answer a giver to take a quest", Talk));
 
         // "quest" goes in FIRST, and the order is load-bearing. A verb matches on any prefix of
         // its name, and Find takes the first definition that matches - so with "quests" ahead of
@@ -45,50 +47,105 @@ public static class QuestCommands
             "abandon", 3, "abandon <name> - give up an active quest", Abandon));
     }
 
+    /// <summary>
+    /// Speaks to somebody in the room (PLAN.md §4.9).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Two shapes. <c>talk vane</c> asks what they have to say; <c>talk vane cogs</c> answers
+    /// them, and answering a quest giver is how a quest is taken on.
+    /// </para>
+    /// <para>
+    /// <b>Talking no longer starts anything by itself.</b> It used to begin every quest the giver
+    /// had available, which meant there was no way to <em>read</em> what somebody wanted without
+    /// taking the job — and with all 35 quests authored <c>autoStart: false</c>, this verb is how
+    /// the entire game progresses, so that was the only reading anyone got.
+    /// </para>
+    /// <para>
+    /// <b>And it is for everybody now, not only givers.</b> A mob with no quests answered
+    /// <em>"has nothing to say to you about quests"</em>, which names the subsystem rather than
+    /// the world; a shopkeeper said it while standing behind a counter. <c>talk</c> is registered
+    /// at one character, which is too good a verb to point at one subsystem.
+    /// </para>
+    /// </remarks>
     private static void Talk(CommandContext ctx)
     {
-        if (ctx.Quests is null || !ctx.Quests.IsLoaded)
-        {
-            ctx.Reply("Quests are not available.");
-            return;
-        }
-
         if (!ctx.HasArgument)
         {
             ctx.Reply("Talk to whom?");
             return;
         }
 
-        var npcName = ctx.Argument;
         var character = ctx.Actor.Character;
-
-        // Find the mob in the current room
-        var targetMob = NameMatch.Best(
-            ctx.World.MobsIn(character.RoomKey), npcName, m => m.TemplateName, m => m.TemplateKey);
+        var (targetMob, said) = FindTarget(ctx.World.MobsIn(character.RoomKey), ctx.Argument);
 
         if (targetMob is null)
         {
-            ctx.Reply($"You don't see '{npcName}' here.");
+            ctx.Reply($"You don't see '{ctx.Argument}' here.");
             return;
         }
 
-        // Find quests offered by this mob
-        var offeredQuests = ctx.Quests.GetByGiverMobKey(targetMob.TemplateKey);
-
-        if (offeredQuests.Count == 0)
+        if (said is null)
         {
-            ctx.Reply($"{targetMob.DisplayName} has nothing to say about quests.");
-            return;
+            Greet(ctx, targetMob);
+        }
+        else
+        {
+            Answer(ctx, targetMob, said);
+        }
+    }
+
+    /// <summary>
+    /// Splits <c>talk &lt;who&gt; [what]</c> into the mob addressed and what was said to them.
+    /// </summary>
+    /// <remarks>
+    /// <b>The whole argument is tried as a name first</b>, so a mob called "bar maiden" wins over
+    /// "bar" plus the word "maiden". Only then are split points walked, longest name first, and the
+    /// first one that names somebody standing here takes the rest as speech — the same
+    /// find-the-split rule <c>give &lt;item&gt; &lt;recipient&gt;</c> uses, for the same reason:
+    /// both halves can be several words and neither length is knowable in advance.
+    ///
+    /// Unlike that one, the right half does not have to resolve to anything. "I will get you your
+    /// widgets" is a sentence, not a keyword, and it should still reach the quest called Widgets.
+    /// </remarks>
+    private static (Mob? Mob, string? Said) FindTarget(IReadOnlyList<Mob> mobs, string argument)
+    {
+        Mob? ByName(string name) =>
+            NameMatch.Best(mobs, name, m => m.TemplateName, m => m.TemplateKey);
+
+        if (ByName(argument) is { } whole)
+        {
+            return (whole, null);
         }
 
-        var narrations = new List<string>();
+        for (var split = argument.LastIndexOf(' ');
+             split > 0;
+             split = argument.LastIndexOf(' ', split - 1))
+        {
+            var name = argument[..split].TrimEnd();
+            var rest = argument[(split + 1)..].Trim();
 
-        foreach (var quest in offeredQuests.OrderBy(q => q.SortOrder))
+            if (rest.Length > 0 && ByName(name) is { } found)
+            {
+                return (found, rest);
+            }
+        }
+
+        return (null, null);
+    }
+
+    /// <summary>
+    /// What somebody says when spoken to: their quests, their counter, or their own line.
+    /// </summary>
+    private static void Greet(CommandContext ctx, Mob mob)
+    {
+        var character = ctx.Actor.Character;
+        var lines = new List<string>();
+        var offers = new List<Quest>();
+
+        foreach (var quest in OfferedBy(ctx, mob))
         {
             var questState = ctx.World.GetQuestState(character.Id, quest.Key);
-
-            // Check prerequisites
-            var prerequisitesMet = CheckPrerequisites(ctx.World, character.Id, quest);
 
             // A quest whose content has been deleted is dormant: it stops being offered, and
             // anyone already holding it is told so rather than left hunting for an item that no
@@ -97,7 +154,7 @@ public static class QuestCommands
             {
                 if (questState?.Status == QuestStatus.Active)
                 {
-                    narrations.Add(
+                    lines.Add(
                         $"About {quest.Name} — that business is closed for now. Hold on to what you have.");
                 }
 
@@ -110,39 +167,36 @@ public static class QuestCommands
             {
                 if (questState?.Status == QuestStatus.Active)
                 {
-                    narrations.Add(wrongPath);
+                    lines.Add(wrongPath);
                 }
 
                 continue;
             }
 
-            if (questState is null && prerequisitesMet)
+            if (questState is null && CheckPrerequisites(ctx.World, character.Id, quest))
             {
-                narrations.Add(Begin(ctx, character.Id, quest, timesCompleted: 0));
+                // Offered, not begun. The one line in this method that used to have a side effect.
+                lines.Add(OfferText(quest));
+                offers.Add(quest);
             }
             else if (questState?.Status == QuestStatus.Active)
             {
-                // Quest is already active
-                var inProgress = quest.Dialogue.TryGetValue(QuestDialogue.GiverInProgress, out var inProgressText)
-                    ? inProgressText
-                    : $"Still working on {quest.Name}?";
-                narrations.Add(inProgress);
+                lines.Add(quest.Dialogue.TryGetValue(QuestDialogue.GiverInProgress, out var inProgress)
+                    ? inProgress
+                    : $"Still working on {quest.Name}?");
             }
             else if (questState?.Status == QuestStatus.Completed && !quest.IsRepeatable)
             {
-                // Quest is complete and non-repeatable
-                var complete = quest.Dialogue.TryGetValue(QuestDialogue.GiverComplete, out var completeText)
-                    ? completeText
-                    : $"You've already completed {quest.Name}.";
-                narrations.Add(complete);
+                lines.Add(quest.Dialogue.TryGetValue(QuestDialogue.GiverComplete, out var complete)
+                    ? complete
+                    : $"You've already completed {quest.Name}.");
             }
             else if (questState?.Status == QuestStatus.Completed && quest.IsRepeatable
                 && ChainStillRunning(ctx, character.Id, quest.Key) is { } blocking)
             {
                 // Repeatable, finished, but something further down the chain is still open. Taking
                 // it again now would reset a step whose consequences are still in play.
-                narrations.Add(
-                    $"About {quest.Name} — finish {blocking.Name} first, or give it up.");
+                lines.Add($"About {quest.Name} — finish {blocking.Name} first, or give it up.");
             }
             else if (questState?.Status == QuestStatus.Completed && quest.IsRepeatable
                 && !UpstreamHasRunAgain(ctx, character.Id, quest, questState))
@@ -152,31 +206,215 @@ public static class QuestCommands
                 // would hand out the second errand to somebody with no glass and no way to get
                 // one, because taking the first errand is then blocked by this one being active.
                 // Recoverable by abandoning, but a chain should be re-entered at its head.
-                narrations.Add($"About {quest.Name} — that comes later. First things first.");
+                lines.Add($"About {quest.Name} — that comes later. First things first.");
             }
             else if (questState?.Status == QuestStatus.Completed && quest.IsRepeatable)
             {
-                // Repeatable quest can be re-offered, keeping the count of earlier runs.
-                narrations.Add(Begin(ctx, character.Id, quest, questState.TimesCompleted));
+                lines.Add(OfferText(quest));
+                offers.Add(quest);
             }
 
-
             // Anything left over is a quest whose prerequisites are unmet, and it is simply not
-            // mentioned. There used to be an `else if (!prerequisitesMet) continue;` here, which
-            // was the last statement of the loop body and so did nothing the fall-through did not.
+            // mentioned.
         }
 
-        if (narrations.Count == 0)
+        if (lines.Count == 0)
         {
-            ctx.Reply($"{targetMob.DisplayName} has nothing to say to you about quests.");
-            return;
+            lines.Add(SmallTalk(ctx, mob));
         }
 
-        foreach (var narration in narrations)
+        foreach (var line in lines)
         {
-            ctx.Reply(narration);
+            ctx.Reply(line);
+        }
+
+        // How to say yes, once per quest actually on the table. Dim, and after the prose, because
+        // it is stage direction rather than something anybody says out loud.
+        foreach (var quest in offers)
+        {
+            ctx.Reply(
+                $"({quest.Name} — 'talk {Address(mob)} {Cue(quest)}' to take it on.)",
+                "dim");
         }
     }
+
+    /// <summary>
+    /// Answers somebody. Against a quest giver that is how a quest is accepted.
+    /// </summary>
+    /// <remarks>
+    /// Matched through <see cref="NameMatch"/> over the quest's name and key, which already ranks
+    /// an exact name above a last word above any word — so "The Scraped Plates" answers to
+    /// <c>plates</c>, to <c>scraped</c>, and to the whole title, with no keyword field to author
+    /// and nothing new to keep in step. A sentence works too: the last word of "I will fetch your
+    /// plates" is the one that matches.
+    /// </remarks>
+    private static void Answer(CommandContext ctx, Mob mob, string said)
+    {
+        var character = ctx.Actor.Character;
+
+        var available = OfferedBy(ctx, mob)
+            .Where(q => !IsDormant(ctx, q)
+                && WrongPathNote(q, character) is null
+                && Startable(ctx, character.Id, q))
+            .ToList();
+
+        // What they said whole, then its words longest first. Whole first so an exact title or an
+        // exact key lands at rank 0 or 1 and cannot be beaten by a stray word; words after, so a
+        // sentence reaches the quest the way a bare keyword does, without a special case.
+        foreach (var word in Spoken(said))
+        {
+            if (NameMatch.Best(available, word, q => q.Name, q => q.Key) is { } quest)
+            {
+                var timesCompleted =
+                    ctx.World.GetQuestState(character.Id, quest.Key)?.TimesCompleted ?? 0;
+
+                ctx.Reply(Begin(ctx, character.Id, quest, timesCompleted));
+                ctx.Reply($"You take on {quest.Name}.", "good");
+                return;
+            }
+        }
+
+        // Nothing matched. If they named something they are already on, say that rather than
+        // pretending not to understand - it is the likeliest reason a word stops working.
+        foreach (var word in Spoken(said))
+        {
+            var held = OfferedBy(ctx, mob).FirstOrDefault(q =>
+                NameMatch.Matches(word, q.Name, q.Key)
+                && ctx.World.GetQuestState(character.Id, q.Key)?.Status == QuestStatus.Active);
+
+            if (held is not null)
+            {
+                ctx.Reply($"You are already on {held.Name}.");
+                return;
+            }
+        }
+
+        ctx.Reply($"{mob.DisplayName} does not know what you mean by that.");
+    }
+
+    /// <summary>The quests this mob gives, in authored order. Empty when quests are unavailable.</summary>
+    private static IReadOnlyList<Quest> OfferedBy(CommandContext ctx, Mob mob) =>
+        ctx.Quests is { IsLoaded: true }
+            ? [.. ctx.Quests.GetByGiverMobKey(mob.TemplateKey).OrderBy(q => q.SortOrder)]
+            : [];
+
+    /// <summary>Whether this character could take this quest on right now.</summary>
+    private static bool Startable(CommandContext ctx, Guid characterId, Quest quest)
+    {
+        var state = ctx.World.GetQuestState(characterId, quest.Key);
+
+        if (state is null)
+        {
+            return CheckPrerequisites(ctx.World, characterId, quest);
+        }
+
+        return state.Status == QuestStatus.Completed
+            && quest.IsRepeatable
+            && ChainStillRunning(ctx, characterId, quest.Key) is null
+            && UpstreamHasRunAgain(ctx, characterId, quest, state);
+    }
+
+    /// <summary>What the giver says when offering, without starting anything.</summary>
+    private static string OfferText(Quest quest) =>
+        quest.Dialogue.TryGetValue(QuestDialogue.GiverOffer, out var offer)
+            ? offer
+            : $"I have a job for you: {quest.Summary}";
+
+    /// <summary>
+    /// What a mob with nothing to offer says: their own line, their counter, or a stock one.
+    /// </summary>
+    /// <remarks>
+    /// Authored greetings are a list and are cycled by pulse rather than chosen at random, because
+    /// the command layer has no random source and a clock it already has does the job — the same
+    /// line twice running is what makes a world read thin, and which order they arrive in does not
+    /// matter.
+    /// </remarks>
+    private static string SmallTalk(CommandContext ctx, Mob mob)
+    {
+        var behavior = ctx.MobTemplates?.Get(mob.TemplateKey)?.Behavior;
+        var greetings = MobBehavior.GreetingsOf(behavior);
+
+        if (greetings.Count > 0)
+        {
+            var index = (int)(Math.Abs(ctx.Clock?.CurrentPulse ?? 0) % greetings.Count);
+            return greetings[index];
+        }
+
+        var name = NarrationHelper.WithDefiniteArticle(mob.DisplayName, capitalize: true);
+
+        // A shopkeeper always has something to say, and `list` is three characters that a player
+        // has no way to discover from the room description.
+        if (MobBehavior.IsShopkeeper(behavior))
+        {
+            return $"{name} nods towards the counter. Try 'list' to see what is for sale.";
+        }
+
+        return MobBehavior.DispositionOf(behavior) == MobDisposition.Aggressive
+            ? $"{name} is in no mood for talking."
+            : $"{name} has nothing to say just now.";
+    }
+
+    /// <summary>The word a player would use to address this mob: the noun of its name.</summary>
+    /// <remarks>
+    /// The last word, because that is the one <see cref="NameMatch"/> ranks best and the one
+    /// English puts the noun in — "a bar maiden" is addressed as "maiden".
+    /// </remarks>
+    private static string Address(Mob mob)
+    {
+        var words = Words(mob.TemplateName);
+        return words.Count > 0 ? words[^1].ToLowerInvariant() : mob.TemplateKey;
+    }
+
+    /// <summary>
+    /// A word from the quest's name to suggest saying, for the stage-direction line.
+    /// </summary>
+    /// <remarks>
+    /// <b>Display only, and deliberately not load-bearing.</b> Matching accepts any word of the
+    /// name or key, so a poor suggestion costs nothing — which is what lets this be a heuristic at
+    /// all. It takes the longest word that is not a grammatical one, because the last word is
+    /// often the weakest: "The Road Out" would suggest <c>out</c>, and "What It Is Watching For"
+    /// would suggest <c>for</c>.
+    /// </remarks>
+    private static string Cue(Quest quest)
+    {
+        var words = Words(quest.Name)
+            .Where(w => !Grammatical.Contains(w))
+            .OrderByDescending(w => w.Length)
+            .ToList();
+
+
+        return (words.Count > 0 ? words[0] : quest.Key).ToLowerInvariant();
+    }
+
+    /// <summary>Words that carry no meaning on their own, for <see cref="Cue"/>.</summary>
+    private static readonly HashSet<string> Grammatical = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "a", "an", "and", "at", "for", "in", "is", "it", "not", "of", "on", "or", "out",
+        "the", "to", "was", "what", "who", "with",
+    };
+
+    /// <summary>What was said, whole first and then word by word, longest word first.</summary>
+    /// <remarks>
+    /// Longest first so the most specific word gets its chance before a short one that happens to
+    /// collide — "I will find your ledger" should reach the ledger quest, not something called
+    /// "I".
+    /// </remarks>
+    private static IEnumerable<string> Spoken(string said) =>
+        [said, .. Words(said).OrderByDescending(w => w.Length)];
+
+    /// <summary>
+    /// Splits authored text into its words, <b>in the order they were written</b>.
+    /// </summary>
+    /// <remarks>
+    /// Order is load-bearing for <see cref="Address"/>, which wants the last word because that is
+    /// the noun. Callers that want the most distinctive word sort for themselves — this returning
+    /// them pre-sorted is what made "the village elder" answer to "the".
+    /// </remarks>
+    private static List<string> Words(string? text) =>
+        string.IsNullOrWhiteSpace(text)
+            ? []
+            : [.. text.Split([' ', '-', '_', ',', '.', '\'', '"'],
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
 
     /// <summary>
     /// Whether this quest points at content that no longer exists.

@@ -92,7 +92,7 @@ public sealed class QuestItemDisposalTests
         var ember = QuestItem(harness, "ember", "a banked ember");
         harness.Mutate(Fetch("errand", "The Banked Ember", "ember"));
 
-        harness.Execute(actor, "talk vesh");
+        harness.TakeQuest(actor, "vesh", "errand");
         Carry(harness, actor, ember);
 
         harness.Drain(actor);
@@ -110,7 +110,7 @@ public sealed class QuestItemDisposalTests
         var ember = QuestItem(harness, "ember", "a banked ember");
         harness.Mutate(Fetch("errand", "The Banked Ember", "ember"));
 
-        harness.Execute(actor, "talk vesh");
+        harness.TakeQuest(actor, "vesh", "errand");
         Carry(harness, actor, ember);
 
         harness.Drain(actor);
@@ -155,7 +155,7 @@ public sealed class QuestItemDisposalTests
         // A quest that *pays* the stormrod and asks for something else entirely.
         harness.Mutate(Fetch("epic", "The Stormrod", "ember"));
         QuestItem(harness, "ember", "a banked ember");
-        harness.Execute(actor, "talk vesh");
+        harness.TakeQuest(actor, "vesh", "epic");
 
         Carry(harness, actor, stormrod);
 
@@ -176,7 +176,7 @@ public sealed class QuestItemDisposalTests
         var ember = QuestItem(harness, "ember", "a banked ember");
         harness.Mutate(Fetch("errand", "The Banked Ember", "ember"));
 
-        harness.Execute(actor, "talk vesh");
+        harness.TakeQuest(actor, "vesh", "errand");
 
         var state = harness.World.GetQuestState(actor.CharacterId, "errand");
         Assert.NotNull(state);
@@ -201,7 +201,7 @@ public sealed class QuestItemDisposalTests
         var ember = QuestItem(harness, "ember", "a banked ember");
         harness.Mutate(Fetch("errand", "The Banked Ember", "ember"));
 
-        harness.Execute(onQuest, "talk vesh");
+        harness.TakeQuest(onQuest, "vesh", "errand");
 
         var bystander = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 20);
         Carry(harness, bystander, ember);

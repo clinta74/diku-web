@@ -42,6 +42,14 @@ public static class MobBehavior
     /// <summary>The behavior key holding the idle emote list.</summary>
     public const string EmotesKey = "emotes";
 
+    /// <summary>The behavior key holding what this mob says when talked to.</summary>
+    /// <remarks>
+    /// A list, picked from at random, exactly like <see cref="EmotesKey"/> — the difference
+    /// being that an emote is unprompted and a greeting is an answer. Both are lists for the
+    /// same reason: one line repeated is how a populated world starts reading thin.
+    /// </remarks>
+    public const string GreetingKey = "greeting";
+
     /// <summary>The behavior key marking a mob as a shopkeeper.</summary>
     public const string ShopkeeperKey = "shopkeeper";
 
@@ -72,6 +80,7 @@ public static class MobBehavior
     {
         TypeKey,
         EmotesKey,
+        GreetingKey,
         ShopkeeperKey,
         SellsKey,
         MarkupKey,
@@ -161,6 +170,15 @@ public static class MobBehavior
     /// </remarks>
     public static IReadOnlyList<string> EmotesOf(IReadOnlyDictionary<string, object>? behavior) =>
         [.. EmoteScheduleOf(behavior).Select(e => e.Text)];
+
+    /// <summary>What this mob says when talked to. Empty when it has nothing authored.</summary>
+    /// <remarks>
+    /// Bare strings rather than the timed rows emotes accept: a greeting has no cadence,
+    /// because it happens when somebody speaks to it rather than on a schedule.
+    /// </remarks>
+    public static IReadOnlyList<string> GreetingsOf(
+        IReadOnlyDictionary<string, object>? behavior) =>
+        JsonBag.Strings(behavior, GreetingKey);
 
     /// <summary>The keys a timed emote row is authored with.</summary>
     public const string EmoteTextKey = "text";

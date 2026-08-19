@@ -28,6 +28,14 @@ export const DEFAULT_EMOTE_MAX_SECONDS = 60
 export interface BehaviorDraft {
   disposition: Disposition
   emotes: EmoteDraft[]
+  /**
+   * What this mob says when a player uses `talk` on it. A list, picked from in turn, so a mob
+   * spoken to twice does not answer the same way — the same reason `emotes` is a list.
+   *
+   * Plain strings rather than the timed rows emotes accept: a greeting has no cadence, because it
+   * happens when somebody speaks rather than on a schedule.
+   */
+  greeting: string[]
   shopkeeper: boolean
   sells: string[]
   /** How far over base value this shop prices its stock: 0.1 is 1.1x. Zero is base price. */
@@ -138,6 +146,7 @@ export function readBehavior(behavior: Record<string, unknown> | undefined): Beh
   return {
     disposition: type === 'aggressive' || type === 'npc' ? type : 'passive',
     emotes: asEmotes(behavior?.emotes),
+    greeting: asStrings(behavior?.greeting),
     shopkeeper: behavior?.shopkeeper === true || behavior?.shopkeeper === 'true',
     sells: asStrings(behavior?.sells),
     // Absent, unreadable, or negative all mean base price, matching the engine: §4.13 keeps
@@ -189,6 +198,13 @@ export function writeBehavior(
   } else {
     delete next.emotes
   }
+
+  // Same rule as emotes: blank rows are dropped, and an empty list removes the key rather than
+  // storing one that says nothing.
+  const greeting = draft.greeting.map((line) => line.trim()).filter((line) => line.length > 0)
+
+  if (greeting.length > 0) next.greeting = greeting
+  else delete next.greeting
 
   if (draft.shopkeeper) {
     next.shopkeeper = true

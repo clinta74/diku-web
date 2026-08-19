@@ -19,6 +19,7 @@ describe('readBehavior', () => {
     expect(draft).toEqual({
       disposition: 'passive',
       emotes: [],
+      greeting: [],
       shopkeeper: false,
       sells: [],
       markup: 0,
@@ -202,6 +203,7 @@ describe('writeBehavior', () => {
       {
         disposition: 'npc',
         emotes: [],
+        greeting: [],
         shopkeeper: true,
         sells: ['bread', 'torch'],
         markup: 0,

@@ -421,6 +421,10 @@
             "minSeconds": 150,
             "maxSeconds": 300
           }
+        ],
+        "greeting": [
+          "'Mind your feet. I have done that bit.'",
+          "'The pigeons are not sacred. I have asked. Twice.'"
         ]
       },
       "loot": [],
@@ -616,6 +620,10 @@
             "minSeconds": 200,
             "maxSeconds": 400
           }
+        ],
+        "greeting": [
+          "'Sit where you like. The near side is warmer and everyone chooses the far.'",
+          "'Nineteen years I have kept this in. Ask me in twenty and it will be twenty.'"
         ]
       },
       "loot": [],
@@ -678,6 +686,10 @@
             "minSeconds": 300,
             "maxSeconds": 600
           }
+        ],
+        "greeting": [
+          "'You want across? Then you want me standing up. Give me a moment.'",
+          "'Ossa is the river and Ossa is me. Pick whichever one gets you over.'"
         ]
       },
       "loot": [],

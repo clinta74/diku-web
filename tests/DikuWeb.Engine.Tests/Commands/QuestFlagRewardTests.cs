@@ -39,7 +39,7 @@ public sealed class QuestFlagRewardTests
         var token = harness.DefineItem("token", "gate token", slot: null);
         harness.GiveItem(kael, token);
 
-        harness.Execute(kael, "talk keeper");
+        harness.TakeQuest(kael, "keeper", "attune-grask");
         harness.Drain(kael);
 
         return (harness, kael);
@@ -85,7 +85,7 @@ public sealed class QuestFlagRewardTests
 
         var token = harness.DefineItem("token", "gate token", slot: null);
         harness.GiveItem(kael, token);
-        harness.Execute(kael, "talk keeper");
+        harness.TakeQuest(kael, "keeper", "attune-grask");
         harness.Execute(kael, "give token keeper");
 
         Assert.Single(kael.Character.Flags, f => string.Equals(f, Flag, StringComparison.Ordinal));
@@ -140,7 +140,7 @@ public sealed class QuestFlagRewardTests
         var token = harness.DefineItem("token", "gate token", slot: null);
         harness.GiveItem(kael, token);
 
-        harness.Execute(kael, "talk keeper");
+        harness.TakeQuest(kael, "keeper", "attune-grask");
         harness.Execute(kael, "give token keeper");
 
         Assert.True(kael.Character.HasFlag(Flag));

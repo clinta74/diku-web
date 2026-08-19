@@ -821,6 +821,10 @@
             "minSeconds": 300,
             "maxSeconds": 600
           }
+        ],
+        "greeting": [
+          "'If you carried it through the gate, it is in the book. If it is not in the book, you did not.'",
+          "He blinks at you, slowly. 'Name and load. Or step aside. Preferably both.'"
         ]
       },
       "loot": [],

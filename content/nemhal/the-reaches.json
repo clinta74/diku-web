@@ -857,6 +857,10 @@
             "minSeconds": 300,
             "maxSeconds": 600
           }
+        ],
+        "greeting": [
+          "'Eleven of us hold this. You would be the twelfth, if you were staying. You are not staying.'",
+          "'Do not go west of the wall after dark. That is not an order I can enforce, which is why I am asking.'"
         ]
       },
       "loot": [],

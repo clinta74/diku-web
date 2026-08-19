@@ -1199,12 +1199,43 @@ The giver and the turn-in NPC **may be different mobs** — that is what turns a
 story ("take this to the captain at the gate"). When they are the same mob, it reads as an
 ordinary errand.
 
-**No accept step — under revision.** Talking to the giver starts the quest outright. The original
-argument was that an accept/decline prompt adds a round trip and a state (`Offered`) that earns
-nothing, since accepting a fetch quest costs the player nothing. That has stopped being true at 35
-quests and four Path-locked chains behind one giver: `talk` is the only way to ask a question, so
-reading what a giver wants means taking the job. §13 has the agreed shape, including why the offer
-can stay transient and no fifth state is needed.
+**Talking offers; answering accepts.** `talk vane` asks what somebody has to say. `talk vane cogs`
+answers them, and answering a giver is how a quest is taken on.
+
+It used to start every available quest outright, on the argument that an accept step adds a round
+trip and an `Offered` state that earns nothing. That stopped being true: with 35 quests, four
+Path-locked chains behind one giver, and **`autoStart: false` on every authored quest**, `talk` is
+both the only way to ask a question and the way the entire game progresses — so there was no way to
+read what a giver wanted without taking the job.
+
+**No new state, and no `accept` verb.** The offer is transient: standing in front of the giver *is*
+the offer, so answering re-checks that they are here and the quest still qualifies. Declining is
+walking away. And it costs no root verb — `accept` would have been a third claimant on `a` beside
+`abandon` and `abilities`, where `talk` is already registered at one character.
+
+**No keyword field either.** What was said is matched through `NameMatch` over the quest's name and
+key, which already ranks an exact title above a last word above any word. So "The Scraped Plates"
+answers to `plates`, to `scraped`, to its key, and to the whole title — and a *sentence* works,
+because its words are searched the same way. Nothing to author, and nothing new to keep in step
+with the prose. A `Quest.Keywords` field is only worth adding for transactional givers who name the
+thing they want in the offer itself, which is a content voice this game does not currently use.
+
+The offer ends with a dim line naming the command, because a keyword scheme whose word must be
+guessed is the classic MUD dead end. The word it suggests is the longest non-grammatical word of the
+quest's name — a heuristic that is **display only and deliberately not load-bearing**, since
+matching accepts any word and a poor suggestion therefore costs nothing.
+
+**`talk` is for everybody now, not only givers.** A mob with no quests used to answer *"has nothing
+to say to you about quests"*, which names the subsystem rather than the world — a shopkeeper said it
+while standing behind their own counter. Now a shopkeeper is pointed at `list` (three characters a
+player has no way to discover from a room description), an ordinary NPC says an authored `greeting`,
+and anything with nothing authored still answers in fiction rather than in engine terms.
+
+`greeting` is a list on the mob's behavior bag, cycled by pulse — the same shape as `emotes` and for
+the same reason, that one line repeated is how a populated world starts reading thin. The difference
+is that an emote is unprompted and a greeting is an answer, so greetings carry no cadence. Being a
+new key in an open bag, it needs no format bump: an older bundle simply lacks it and gets the stock
+line.
 
 **Turn-in is strict.** Handing over the item only completes a quest the character has
 *Active*. A player who stumbles across the ledger before ever meeting Kaelen cannot skip
@@ -2802,7 +2833,13 @@ One asymmetry, noted rather than scheduled: clicking a room keyword inserts the 
 
 ### Quest accept, and a `quest` verb that owns its own words
 
-**Status: agreed, not scheduled.** The Path gate (§4.9) closed the damage — Vesh no longer hands a
+**Status: the accept half is built** (§4.9) — and built without a new verb, so the namespace
+question below is the part still open. It turned out `talk` could carry the whole thing: `talk
+vane` offers, `talk vane cogs` accepts, and `NameMatch` was already ranked well enough to need no
+keyword field. What follows is the reasoning that got there, kept because the *nesting* decision it
+raises is unmade.
+
+**Original status: agreed, not scheduled.** The Path gate (§4.9) closed the damage — Vesh no longer hands a
 Shade the Adept chain — but it closed it by narrowing *who is offered what*, not by giving the
 player a say. Those are two different problems and only the first one is done.
 
@@ -2813,11 +2850,10 @@ giver: `talk` is the only way to ask a giver a question, so a player who wants t
 wants has no way to do it without taking the job. The journal entry *is* the cost, and the proof that
 it is a real one is that `abandon` had to be built.
 
-**The intended shape, so it is not re-derived:**
+**What shipped, which is a shorter list than the one this section planned:**
 
-- `talk <npc>` **offers** rather than starts — it prints what the giver wants and what it pays, and
-  stops there.
-- `accept <name>` takes one.
+- `talk <npc>` **offers** rather than starts — it prints what the giver wants and stops there.
+- `talk <npc> <anything>` takes one, so there is no `accept` verb at all.
 - **Offers stay transient.** Standing in front of the giver *is* the offer, so `accept` re-checks
   that the giver is present and that the quest still qualifies. Nothing is persisted, no `Offered`
   status joins the four-state machine, and **declining is walking away** — a verb whose only job is

@@ -48,7 +48,7 @@ public sealed class QuestRewardTests
         var ledger = harness.DefineItem("ledger", "dusty ledger", slot: null);
         harness.GiveItem(kael, ledger);
 
-        harness.Execute(kael, "talk elder");
+        harness.TakeQuest(kael, "elder", "fetch-ledger");
         harness.Drain(kael);
 
         return (harness, kael);
@@ -68,7 +68,7 @@ public sealed class QuestRewardTests
         harness.DefineQuest("fetch-ledger", giverMobKey: "elder", requiredItemKey: "ledger");
         harness.Drain(kael);
 
-        harness.Execute(kael, "talk elder");
+        harness.TakeQuest(kael, "elder", "fetch-ledger");
 
         Assert.NotNull(harness.World.GetQuestState(kael.CharacterId, "fetch-ledger"));
     }

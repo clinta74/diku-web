@@ -450,6 +450,24 @@ internal sealed class WorldHarness
     /// Defaults to the harness's own zone, because a quest whose zone is not loaded cannot
     /// resolve its rewards through any multiplier and would quietly pay its authored numbers.
     /// </remarks>
+    /// <summary>
+    /// Takes a quest on the way a player now does: hear the offer, then answer with its name.
+    /// </summary>
+    /// <remarks>
+    /// <c>talk &lt;giver&gt;</c> stopped starting quests by itself (PLAN.md §4.9), so a test that
+    /// wants a quest Active has to say yes. The <em>key</em> is used as the answer rather than a
+    /// keyword, because it is an exact match at rank 1 and cannot be made ambiguous by a quest
+    /// added to the same giver later.
+    ///
+    /// The offer itself is sent first, even though answering does not require it, so the sequence
+    /// under test is the one a player actually types.
+    /// </remarks>
+    public void TakeQuest(PlayerActor actor, string giver, string questKey)
+    {
+        Execute(actor, $"talk {giver}");
+        Execute(actor, $"talk {giver} {questKey}");
+    }
+
     public Quest DefineQuest(
         string key,
         string giverMobKey,

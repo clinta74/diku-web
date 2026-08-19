@@ -864,6 +864,10 @@
             "minSeconds": 300,
             "maxSeconds": 600
           }
+        ],
+        "greeting": [
+          "'Nine years,' she says, not looking up. 'I am about a third through. Do not ask me a third of what.'",
+          "'If you find a room in Azhen that is not square, come and tell me. It has not happened yet.'"
         ]
       },
       "loot": [],

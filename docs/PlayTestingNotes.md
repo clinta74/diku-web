@@ -448,6 +448,42 @@ Add anything noticed while playing here. Cleared as items are done.
     `twoHanded`, so every maul quietly becomes one-handed. **Re-import** — or run
     `tools/retag-weapon-slots.sql` and restart, if the world is otherwise not up to date.
 
+  - **`talk` offers rather than commits, and it works on everybody.** Two changes, one verb.
+
+    **Talking to a giver no longer starts the quest.** `talk vane` prints what they want and stops;
+    `talk vane cogs` takes it on. That matters more than it sounds, because **every one of the 35
+    quests is authored `autoStart: false`** — `talk` is not just how a quest is taken, it is how the
+    whole game progresses, so before this there was no way to read what somebody wanted without
+    accepting the job.
+
+    **No `accept` verb and no keyword field**, which were the two things this looked like it needed.
+    `NameMatch` already ranks an exact title above a last word above any word, over the quest's name
+    *and* key — so "The Scraped Plates" answers to `plates`, `scraped`, its key, or the whole title,
+    and a sentence works because its words are searched the same way. `talk` is registered at one
+    character and had room for the argument; `accept` would have been a third claimant on `a`
+    beside `abandon` and `abilities`.
+
+    The offer ends with a dim line naming the command, because a keyword you have to guess is the
+    classic MUD dead end. The suggested word is the longest non-grammatical word of the quest name —
+    **display only**, since matching accepts any word, so a poor guess costs nothing. That is
+    deliberate: "The Road Out" would otherwise suggest `out`.
+
+    **And `talk` answers for everyone now.** It used to say *"has nothing to say to you about
+    quests"* — the subsystem, not the world, and a shopkeeper said it while standing behind a
+    counter. Now a shopkeeper is pointed at `list` (three characters nothing in a room description
+    reveals), an ordinary NPC says an authored `greeting`, and a mob with nothing authored still
+    answers in fiction. Seven NPCs who are neither giver nor shopkeeper have greetings written —
+    Immeth, Vech, Orrun, Hesper, Corun, Old Ossa and Sesk — two lines each, cycled, so a second
+    visit reads differently.
+
+    `greeting` is a new key in the behavior bag, so **no format bump**: an older bundle simply lacks
+    it and gets the stock line. The builder's mob editor has a field for it.
+
+    **The price, stated:** taking a quest is two commands instead of one, on every link of every
+    chain. That is what an accept step costs and it is paid 35 times per character. Worth watching
+    in play — the thing to ask is whether the re-readable giver feels worth the extra keystroke, or
+    whether it starts reading as ceremony.
+
   - **a quest item you are not on a quest for can be destroyed now.** The flag alone used to
     refuse, which protected the ledger of a quest the character had never met, would never take,
     and — since the Path gate — in the epic chains *could not* take.

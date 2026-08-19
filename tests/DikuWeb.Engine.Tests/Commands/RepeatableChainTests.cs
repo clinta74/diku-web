@@ -129,7 +129,7 @@ public sealed class RepeatableChainTests
             (Second, QuestStatus.Completed),
             (Third, QuestStatus.Completed));
 
-        harness.Execute(player, "talk maiden");
+        harness.TakeQuest(player, "maiden", First);
 
         Assert.Contains("Take him a fresh one", harness.DrainText(player), StringComparison.Ordinal);
         Assert.Equal(
@@ -146,7 +146,7 @@ public sealed class RepeatableChainTests
             (First, QuestStatus.Completed),
             (Second, QuestStatus.Active));
 
-        harness.Execute(player, "talk maiden");
+        harness.TakeQuest(player, "maiden", First);
 
         var text = harness.DrainText(player);
         Assert.Contains("finish The Empty Glass first", text, StringComparison.Ordinal);
@@ -171,7 +171,7 @@ public sealed class RepeatableChainTests
             (Second, QuestStatus.Completed),
             (Third, QuestStatus.Active));
 
-        harness.Execute(player, "talk maiden");
+        harness.TakeQuest(player, "maiden", First);
 
         Assert.Contains("finish The Last Word first", harness.DrainText(player), StringComparison.Ordinal);
     }
@@ -188,7 +188,7 @@ public sealed class RepeatableChainTests
 
         harness.Execute(player, "abandon empty glass");
         harness.Drain(player);
-        harness.Execute(player, "talk maiden");
+        harness.TakeQuest(player, "maiden", First);
 
         Assert.Contains("Take him a fresh one", harness.DrainText(player), StringComparison.Ordinal);
     }
@@ -205,7 +205,7 @@ public sealed class RepeatableChainTests
             (Second, QuestStatus.Completed),
             (Third, QuestStatus.Completed));
 
-        harness.Execute(player, "talk maiden");
+        harness.TakeQuest(player, "maiden", First);
 
         var text = harness.DrainText(player);
         Assert.DoesNotContain("Take him a fresh one", text, StringComparison.Ordinal);
@@ -228,7 +228,7 @@ public sealed class RepeatableChainTests
             (First, QuestStatus.Completed),
             (Second, QuestStatus.Completed));
 
-        harness.Execute(player, "talk old man");
+        harness.TakeQuest(player, "old man", Second);
 
         var text = harness.DrainText(player);
         Assert.Contains("that comes later", text, StringComparison.Ordinal);
@@ -251,7 +251,7 @@ public sealed class RepeatableChainTests
         SetState(harness, player, Second, QuestStatus.Completed, timesCompleted: 1);
         harness.Drain(player);
 
-        harness.Execute(player, "talk old man");
+        harness.TakeQuest(player, "old man", Second);
 
         Assert.Equal(
             QuestStatus.Active,
@@ -278,7 +278,7 @@ public sealed class RepeatableChainTests
         var harness = Chain();
         var player = PlayerWith(harness);
 
-        harness.Execute(player, "talk maiden");
+        harness.TakeQuest(player, "maiden", First);
 
         Assert.Contains("Take him a fresh one", harness.DrainText(player), StringComparison.Ordinal);
     }

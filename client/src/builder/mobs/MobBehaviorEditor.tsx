@@ -130,6 +130,42 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
         </button>
       </div>
 
+      <div className="emote-list">
+        <span className="field-label">Greetings</span>
+        <p className="dim">
+          What this mob says when a player uses <strong>talk</strong> on it. Answered in turn, so
+          two lines means the second visit reads differently. A quest giver with something to offer
+          says that instead; a shopkeeper with no lines here is pointed at their own counter.
+          Leave it empty and an ordinary NPC gets a stock line.
+        </p>
+
+        {draft.greeting.map((line, index) => (
+          <div className="field-row" key={index}>
+            <Field label="Says">
+              <input
+                value={line}
+                placeholder="'Mind the step.'"
+                onChange={(e) =>
+                  set({
+                    greeting: draft.greeting.map((g, i) => (i === index ? e.target.value : g)),
+                  })
+                }
+              />
+            </Field>
+            <Button
+              variant="danger"
+              onClick={() => set({ greeting: draft.greeting.filter((_, i) => i !== index) })}
+            >
+              Remove
+            </Button>
+          </div>
+        ))}
+
+        <button type="button" onClick={() => set({ greeting: [...draft.greeting, ''] })}>
+          Add greeting
+        </button>
+      </div>
+
       <label className="field-check">
         <input
           type="checkbox"

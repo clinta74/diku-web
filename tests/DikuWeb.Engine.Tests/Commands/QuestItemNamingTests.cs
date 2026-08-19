@@ -45,7 +45,7 @@ public sealed class QuestItemNamingTests
             harness.GiveItem(kael, marker);
         }
 
-        harness.Execute(kael, "talk pell");
+        harness.TakeQuest(kael, "pell", "a1-1-the-road-out");
         harness.Drain(kael);
 
         return (harness, kael);
@@ -103,7 +103,7 @@ public sealed class QuestItemNamingTests
             rewardItemKey: Marker, rewardItemCount: 1);
 
         var kael = harness.AddPlayer("Kael", Room);
-        harness.Execute(kael, "talk pell");
+        harness.TakeQuest(kael, "pell", "single");
         harness.Drain(kael);
 
         harness.Execute(kael, "quest single");
@@ -128,7 +128,7 @@ public sealed class QuestItemNamingTests
             "dangling", giverMobKey: "ossara-deacon", requiredItemKey: "never-authored");
 
         var kael = harness.AddPlayer("Kael", Room);
-        harness.Execute(kael, "talk pell");
+        harness.TakeQuest(kael, "pell", "dangling");
         harness.ItemTemplates.Remove("never-authored");
         harness.Drain(kael);
 
