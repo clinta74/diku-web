@@ -444,6 +444,69 @@ describe('holding on to the stream', () => {
   })
 })
 
+describe('a command span in the transcript', () => {
+  // The offer line a quest giver sends: prose either side, and the command itself clickable.
+  // Written the way the server writes it, which is the only shape this has to render.
+  function offer() {
+    emit({
+      type: 'text',
+      data: {
+        spans: [
+          { t: "(fetch-ledger — '", s: 'dim' },
+          { t: 'talk elder ledger', s: 'dim', c: 'talk elder ledger' },
+          { t: "' to take it on.)", s: 'dim' },
+        ],
+      },
+    })
+  }
+
+  it('renders the command as something you can press', () => {
+    play()
+    offer()
+
+    expect(screen.getByRole('button', { name: 'talk elder ledger' })).toBeTruthy()
+  })
+
+  it('runs the command when pressed, rather than typing it into the input', () => {
+    const input = play()
+    offer()
+
+    fireEvent.click(screen.getByRole('button', { name: 'talk elder ledger' }))
+
+    // Sent, not staged. A contents-panel keyword inserts and lets the player finish the sentence
+    // because that click is ambiguous; this one is already a resolved verb and object.
+    expect(sent).toEqual(['talk elder ledger'])
+    expect(input.value).toBe('')
+  })
+
+  it('echoes what it sent, which is why the span text and its command must match', () => {
+    play()
+    offer()
+
+    fireEvent.click(screen.getByRole('button', { name: 'talk elder ledger' }))
+
+    // The transcript shows the player's own words back. A span that displayed one string and ran
+    // another would put something here they never typed.
+    expect(screen.getByText('> talk elder ledger')).toBeTruthy()
+  })
+
+  it('leaves the words around it as ordinary prose', () => {
+    play()
+    offer()
+
+    expect(screen.queryByRole('button', { name: "(fetch-ledger — '" })).toBeNull()
+    expect(screen.getByText(/to take it on/)).toBeTruthy()
+  })
+
+  it('renders a span with no command as plain text', () => {
+    play()
+    emit({ type: 'text', data: { spans: [{ t: 'A rat scurries past.', s: null }] } })
+
+    expect(screen.queryByRole('button', { name: 'A rat scurries past.' })).toBeNull()
+    expect(screen.getByText('A rat scurries past.')).toBeTruthy()
+  })
+})
+
 describe('the group bar', () => {
   function member(name: string, over: Partial<PartyMemberEntry> = {}): PartyMemberEntry {
     return {

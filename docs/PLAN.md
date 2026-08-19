@@ -333,7 +333,7 @@ Required server behavior:
 
 | `event:` | Payload | Notes |
 |---|---|---|
-| `text` | `{ spans: [{ t, style? }] }` | Styled markup, **not** raw ANSI — client owns the theme |
+| `text` | `{ spans: [{ t, s?, b?, c? }] }` | Styled markup, **not** raw ANSI — client owns the theme. `b` opens a builder path (builders only); `c` is a command the span runs when clicked, and is always identical to `t` |
 | `room` | key, title, description, exits | Title/description panel |
 | `map` | w, h, terrain rows, entity list with icon + x,y | Full snapshot, sent on room entry |
 | `mapdelta` | added / removed / moved entities | Sent when the room's contents change |
@@ -1221,7 +1221,20 @@ with the prose. A `Quest.Keywords` field is only worth adding for transactional 
 thing they want in the offer itself, which is a content voice this game does not currently use.
 
 The offer ends with a dim line naming the command, because a keyword scheme whose word must be
-guessed is the classic MUD dead end. The word it suggests is the longest non-grammatical word of the
+guessed is the classic MUD dead end. **That command is clickable**, carried on the span as `c`
+(§3.5), and clicking it *runs* it rather than typing it into the input — unlike a contents-panel
+keyword, which inserts. The difference is ambiguity: clicking "a rat" could mean look, attack or
+get, where an offer's command is already a resolved verb and object.
+
+**The span's text and its command are one value**, which is load-bearing twice over. The client
+echoes what it sends, so a span reading `talk vane cogs` that fired the quest key would put a
+string in the player's transcript they never typed. And a label that cannot differ from its action
+is why the link is generated from the command rather than authored as markup inside the prose —
+markup in prose can name a keyword the quest does not have, and nothing would ever report it.
+
+The words either side stay plain text, so a client that renders no commands — the phone, a screen
+reader, anything reading the raw stream — still shows a whole instruction rather than a sentence
+with a hole in it. The word it suggests is the longest non-grammatical word of the
 quest's name — a heuristic that is **display only and deliberately not load-bearing**, since
 matching accepts any word and a poor suggestion therefore costs nothing.
 

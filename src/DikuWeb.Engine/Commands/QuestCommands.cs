@@ -4,6 +4,7 @@ using DikuWeb.Domain.Narration;
 using DikuWeb.Domain.Quests;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine.Inhabitants;
+using DikuWeb.Engine.Protocol;
 using DikuWeb.Engine.Quests;
 using DikuWeb.Engine.World;
 
@@ -232,10 +233,38 @@ public static class QuestCommands
         // it is stage direction rather than something anybody says out loud.
         foreach (var quest in offers)
         {
-            ctx.Reply(
-                $"({quest.Name} — 'talk {Address(mob)} {Cue(quest)}' to take it on.)",
-                "dim");
+            Affordance(ctx, mob, quest);
         }
+    }
+
+    /// <summary>
+    /// The line that says how to take a quest on, with the command itself clickable.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The clickable part is the command, verbatim.</b> The client echoes what it sends, so a
+    /// span that read one thing and ran another would put a string in the player's transcript they
+    /// never typed — and keeping them identical is also what stops the label and the action
+    /// drifting apart, which is what authoring the link inside the prose would have risked.
+    /// </para>
+    /// <para>
+    /// The words around it stay plain text, so a client that renders no links — the phone, a
+    /// screen reader, anything reading the raw stream — still shows a complete instruction rather
+    /// than a sentence with a hole in it.
+    /// </para>
+    /// </remarks>
+    private static void Affordance(CommandContext ctx, Mob mob, Quest quest)
+    {
+        var command = $"talk {Address(mob)} {Cue(quest)}";
+
+        ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(
+        [
+            new TextSpan($"({quest.Name} — '", "dim"),
+            // Styled dim like the words around it: a client that renders no commands shows one
+            // uniform sentence rather than a stray highlight, and the button carries its own look.
+            new TextSpan(command, "dim", C: command),
+            new TextSpan("' to take it on.)", "dim"),
+        ])));
     }
 
     /// <summary>

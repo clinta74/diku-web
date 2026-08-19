@@ -83,12 +83,29 @@ public sealed record CooldownPayload(string Key, long Pulses);
 /// A builder path this span opens, e.g. <c>/builder/items/rusty-dagger</c>. Null for ordinary
 /// prose, which is nearly all of it.
 /// </param>
+/// <param name="C">
+/// A command this span runs when clicked, e.g. <c>talk vane cogs</c>. Null for ordinary prose.
+/// </param>
 /// <remarks>
+/// <para>
 /// The link is a *path*, not a URL: the client routes it internally rather than navigating, so
 /// following one from the game keeps the session and the stream alive. Only builders are ever
 /// sent one — the server decides, so a player cannot discover the builder by reading the wire.
+/// </para>
+/// <para>
+/// <b>A command span must carry the same text it runs.</b> The client echoes what it sends, so a
+/// span reading "talk vane cogs" that fired <c>talk vane a3-1-blanks-and-cogs</c> would put a key
+/// in the player's transcript that they never typed. Keeping them identical also means the label
+/// and the action cannot drift apart, which is the failure mode of authoring the link as markup
+/// inside the prose.
+/// </para>
+/// <para>
+/// It <em>runs</em> rather than inserting, unlike the contents panel, whose clicks type a keyword
+/// and let the player finish the sentence. The difference is ambiguity: clicking "a rat" could
+/// mean look, attack or get, while a command span is already a resolved verb and object.
+/// </para>
 /// </remarks>
-public sealed record TextSpan(string T, string? S = null, string? B = null);
+public sealed record TextSpan(string T, string? S = null, string? B = null, string? C = null);
 
 public sealed record TextPayload(IReadOnlyList<TextSpan> Spans)
 {

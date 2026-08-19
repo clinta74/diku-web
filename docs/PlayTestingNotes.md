@@ -479,6 +479,18 @@ Add anything noticed while playing here. Cleared as items are done.
     `greeting` is a new key in the behavior bag, so **no format bump**: an older bundle simply lacks
     it and gets the stock line. The builder's mob editor has a field for it.
 
+    **The command in the offer is clickable**, which is the discoverability half of your design.
+    A span can now carry `c`, a command it runs when pressed — and it *runs* rather than typing
+    into the input, because unlike a contents-panel keyword ("a rat" could mean look, attack or
+    get) an offer's command is already a resolved verb and object.
+
+    Two things fell out of that which are worth keeping straight. The span's **text and command are
+    the same value**: the client echoes what it sends, so a link reading `talk vane cogs` that fired
+    the quest key would put a string in your transcript you never typed. And that identity is why
+    the link is generated rather than authored as `<a>` markup in the prose — markup can name a
+    keyword the quest does not have, and nothing would ever report it. The words either side stay
+    plain, so the phone and anything reading the raw stream still get a whole sentence.
+
     **The price, stated:** taking a quest is two commands instead of one, on every link of every
     chain. That is what an accept step costs and it is paid 35 times per character. Worth watching
     in play — the thing to ask is whether the re-readable giver feels worth the extra keystroke, or

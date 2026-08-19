@@ -281,7 +281,7 @@ export function GameScreen({
           touch={coarse}
         />
       </div>
-      <Scrollback lines={state.scrollback} onOpenBuilder={onOpenBuilder} />
+      <Scrollback lines={state.scrollback} onOpenBuilder={onOpenBuilder} onCommand={send} />
 
       {/*
         Shown whenever the stream is down. It says what is happening and nothing more.
@@ -522,9 +522,11 @@ function RoomPanel({
 function Scrollback({
   lines,
   onOpenBuilder,
+  onCommand,
 }: {
   lines: { id: number; spans: TextSpan[] }[]
   onOpenBuilder?: (path?: string) => void
+  onCommand?: (command: string) => void
 }) {
   const boxRef = useRef<HTMLElement>(null)
 
@@ -558,6 +560,18 @@ function Scrollback({
                 type="button"
                 className="span-link"
                 onClick={() => onOpenBuilder(span.b ?? undefined)}
+              >
+                {span.t}
+              </button>
+            ) : span.c && onCommand ? (
+              // A span carrying a command runs it. Same shape as the builder link above, and
+              // same reasoning about the optional handler: without one this stays prose rather
+              // than becoming a button that does nothing.
+              <button
+                key={i}
+                type="button"
+                className="span-command"
+                onClick={() => onCommand(span.c as string)}
               >
                 {span.t}
               </button>

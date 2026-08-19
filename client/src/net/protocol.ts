@@ -7,6 +7,17 @@ export interface TextSpan {
   t: string
   s?: string | null
   /**
+   * A command this span runs when clicked, e.g. `talk vane cogs`.
+   *
+   * Always identical to `t`. The client echoes what it sends, so a span that displayed one thing
+   * and ran another would put a string in the transcript the player never typed — and identical
+   * text is also what stops a label and its action drifting apart.
+   *
+   * It runs rather than inserting, unlike a contents-panel keyword: that click is ambiguous
+   * ("a rat" could mean look, attack or get) where this one is already a resolved verb and object.
+   */
+  c?: string | null
+  /**
    * A builder path this span opens, e.g. `/builder/items/rusty-dagger`. Routed internally
    * rather than navigated, so following one keeps the session and the event stream alive.
    * Only ever sent to builders — the server decides, so its absence is not a permission check

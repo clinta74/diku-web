@@ -757,4 +757,18 @@ internal sealed class WorldHarness
             .Where(e => e.Type == EventTypes.Text)
             .Cast<OutboundEvent>()
             .Select(e => string.Concat(((TextPayload)e.Payload).Spans.Select(s => s.T))));
+
+    /// <summary>
+    /// The spans themselves, for the properties that live in a span rather than in its text.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="DrainText"/> concatenates <c>T</c> and throws the rest away, which is right for
+    /// nearly every assertion and useless for the two fields that make a span do something: the
+    /// builder path and the command.
+    /// </remarks>
+    public IReadOnlyList<TextSpan> DrainSpans(PlayerActor actor) =>
+        [.. Drain(actor)
+            .Where(e => e.Type == EventTypes.Text)
+            .Cast<OutboundEvent>()
+            .SelectMany(e => ((TextPayload)e.Payload).Spans)];
 }

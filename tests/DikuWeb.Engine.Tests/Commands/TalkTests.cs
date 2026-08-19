@@ -106,6 +106,76 @@ public sealed class TalkTests
         Assert.Contains("to take it on", said, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The command in the offer is clickable, and <b>runs exactly the text it shows</b>.
+    /// </summary>
+    /// <remarks>
+    /// The equality is the test. The client echoes what it sends, so a span reading "talk elder
+    /// ledger" that fired the quest key would put a string in the transcript the player never
+    /// typed — and text and command being one value is also what stops a label drifting from its
+    /// action, which is the failure authoring the link inside the prose would have invited.
+    /// </remarks>
+    [Fact]
+    public void The_command_in_the_offer_is_clickable_and_runs_what_it_says()
+    {
+        var (harness, actor) = Ready();
+        WithGiver(harness);
+
+        harness.Drain(actor);
+        harness.Execute(actor, "talk elder");
+
+        var clickable = harness.DrainSpans(actor).Where(span => span.C is not null).ToList();
+
+        var span = Assert.Single(clickable);
+        Assert.Equal(span.T, span.C);
+        Assert.StartsWith("talk elder", span.C!, StringComparison.Ordinal);
+    }
+
+    /// <summary>And what it runs actually takes the quest, rather than merely looking right.</summary>
+    [Fact]
+    public void Clicking_the_offer_takes_the_quest()
+    {
+        var (harness, actor) = Ready();
+        WithGiver(harness);
+
+        harness.Drain(actor);
+        harness.Execute(actor, "talk elder");
+
+        var command = harness.DrainSpans(actor).First(span => span.C is not null).C!;
+        harness.Execute(actor, command);
+
+        Assert.True(OnQuest(harness, actor, "fetch-ledger"));
+    }
+
+    /// <summary>
+    /// The words around it stay prose, so a client that renders no commands still shows a whole
+    /// instruction rather than a sentence with a hole in it.
+    /// </summary>
+    [Fact]
+    public void The_offer_reads_as_a_sentence_without_the_link()
+    {
+        var (harness, actor) = Ready();
+        WithGiver(harness);
+
+        var said = Say(harness, actor, "talk elder");
+
+        Assert.Contains("fetch-ledger — 'talk elder", said, StringComparison.Ordinal);
+        Assert.Contains("' to take it on.)", said, StringComparison.Ordinal);
+    }
+
+    /// <summary>Nothing on the table, nothing to click.</summary>
+    [Fact]
+    public void A_mob_with_nothing_to_offer_sends_no_command_span()
+    {
+        var (harness, actor) = Ready();
+        harness.AddMob("corun", Room, name: "Corun");
+
+        harness.Drain(actor);
+        harness.Execute(actor, "talk corun");
+
+        Assert.DoesNotContain(harness.DrainSpans(actor), span => span.C is not null);
+    }
+
     // -----------------------------------------------------------------------
     // Taking it on
     // -----------------------------------------------------------------------
