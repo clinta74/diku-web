@@ -2205,7 +2205,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "Pell has a map with more crossings-out than lines. 'The stones came down and the gate stopped. In that order. I am not saying it is the reason. I am saying nobody has checked.'",
+        "giverOffer": "Pell has a map with more crossings-out than lines. '<The stones> came down and the gate stopped. In that order. I am not saying it is the reason. I am saying nobody has checked.'",
         "giverInProgress": "'Four. Any four. They all weigh the same amount of nothing to Ilvaro and rather a lot to you, I imagine.'",
         "giverComplete": "'Still up there, are they? They are not getting lighter.'",
         "turninReady": "He turns one over twice. 'Right. So they are cut on both faces. Nobody mentioned that. Take a rest, and then would you mind terribly—'"
@@ -2234,7 +2234,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "'They are holding things,' Pell says, and stops, and starts again. 'Somebody is missing those things. That is all I am confident about.'",
+        "giverOffer": "'They are holding things,' Pell says, and stops, and starts again. 'Somebody is missing those <things>. That is all I am confident about.'",
         "giverInProgress": "'Six should do. Take them to the Keeper, not to me. She will know what they are. I will only guess and be wrong in front of you.'",
         "giverComplete": "'Six. And do not sort them. I will sort them.'",
         "turninReady": "Vess lays them out on the blank stone without hurrying. 'These went first,' she says. 'The stones went second. The gate went third. He has the order backwards and the right idea.'"
@@ -2263,7 +2263,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "Vess does not look up. 'Last stone still has its piece. The big one is standing on it. I am seventy and I am not going to be the one to ask it to move.'",
+        "giverOffer": "Vess does not look up. '<Last stone> still has its piece. The big one is standing on it. I am seventy and I am not going to be the one to ask it to move.'",
         "giverInProgress": "'One shard. Out past the ring, where the ground gives. Mind your footing and mind the thing that is already there.'",
         "giverComplete": "'Still standing there, is it. Yes. It does that.'",
         "turninReady": "She turns the shard so the smooth broken face catches the light. 'A gate does not break,' she says. 'It forgets. Somebody stopped saying the name of the other side and it stopped being able to find it.' She presses the shard into your hand. 'It knows you now. Go and see what is left of Grask, and mind what looks back.'"
@@ -2292,7 +2292,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "Vesh looks at you rather than at your hands. 'You are a Warden. I know what a Warden needs and I have known for a long time.' She sets down a bag. 'Three embers. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
+        "giverOffer": "Vesh looks at you rather than at your hands. 'You are a Warden. I know what a Warden needs and I have known for a long time.' She sets down a bag. '<Three embers>. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
         "giverInProgress": "'Three. They do not go out and they do not warm anything. Bring them.'",
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
@@ -2323,7 +2323,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "Vesh looks at you rather than at your hands. 'You are a Hallow. I know what a Hallow needs and I have known for a long time.' She sets down a bag. 'Three embers. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
+        "giverOffer": "Vesh looks at you rather than at your hands. 'You are a Hallow. I know what a Hallow needs and I have known for a long time.' She sets down a bag. '<Three embers>. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
         "giverInProgress": "'Three. They do not go out and they do not warm anything. Bring them.'",
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
@@ -2354,7 +2354,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "Vesh looks at you rather than at your hands. 'You are a Adept. I know what a Adept needs and I have known for a long time.' She sets down a bag. 'Three embers. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
+        "giverOffer": "Vesh looks at you rather than at your hands. 'You are a Adept. I know what a Adept needs and I have known for a long time.' She sets down a bag. '<Three embers>. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
         "giverInProgress": "'Three. They do not go out and they do not warm anything. Bring them.'",
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
@@ -2385,7 +2385,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "Vesh looks at you rather than at your hands. 'You are a Shade. I know what a Shade needs and I have known for a long time.' She sets down a bag. 'Three embers. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
+        "giverOffer": "Vesh looks at you rather than at your hands. 'You are a Shade. I know what a Shade needs and I have known for a long time.' She sets down a bag. '<Three embers>. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
         "giverInProgress": "'Three. They do not go out and they do not warm anything. Bring them.'",
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."

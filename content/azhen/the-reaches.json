@@ -3188,7 +3188,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "Vane has a housing open on the bench. 'It is not broken. Nothing here is broken. It is short of parts, because somebody carried them off, and I would like to put some back.'",
+        "giverOffer": "Vane has a housing open on the bench. 'It is not broken. Nothing here is broken. It is short of <parts>, because somebody carried them off, and I would like to put some back.'",
         "giverInProgress": "'Cogs. Bronze, hand-sized, teeth cut better than anything you have ever held. The yards are full of them and so are the things in the yards.'",
         "giverComplete": "'Six. And do not clean the teeth. I want to see the wear.'",
         "turninReady": "He fits one without measuring it and it seats with a click. 'You understand what that means,' he says. 'Made to a tolerance, four hundred years ago, by people who expected to be replacing them today.'"
@@ -3217,7 +3217,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "'Four hundred years of readings,' Vane says, 'and the last hundred are blank. Not missing. Scraped. By hand, carefully, from the inside.' He looks up. 'People do not carefully destroy a thing they think is wrong.'",
+        "giverOffer": "'Four hundred years of readings,' Vane says, 'and the last hundred are blank. Not missing. <Scraped>. By hand, carefully, from the inside.' He looks up. 'People do not carefully destroy a thing they think is wrong.'",
         "giverInProgress": "'Four plates. Scraped ones. I can read a scraping - there is always something left in the cut.'",
         "giverComplete": "'Four. Bring me the worst ones. The worst ones are the least well scraped.'",
         "turninReady": "He works one under the lamp for a long time. 'It is a position,' he says finally. 'Not a brightness, not a distance. A position, and it is the same on all four, and the dates are ninety years apart.' He sets it down. 'It has not moved.'"
@@ -3246,7 +3246,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "'There is one seat taken up there,' Vane says. 'The same one. They took the last reading and then they scraped it off, and then they stayed.' He puts his brush down. 'I would like to know what a person reads and then sits down for four hundred years.'",
+        "giverOffer": "'There is <one seat> taken up there,' Vane says. 'The same one. They took the last reading and then they scraped it off, and then they stayed.' He puts his brush down. 'I would like to know what a person reads and then sits down for four hundred years.'",
         "giverInProgress": "'The housing, at the top. Take the blank from the seat. Do not look through the eyepiece on the way past. I am asking, not instructing.'",
         "giverComplete": "'They are still sitting there. They will be sitting there tomorrow.'",
         "turninReady": "Vane holds the blank up and does not need a lamp for it. 'The Regard is not attention,' he says quietly. 'We have all been saying attention. It is recognition. It is not watching the Reaches. It is watching for something, it has been watching for the same something since before Azhen, and it has never once had to look away and find it again.' He sits down. 'Nemhal is closer to the edge than we are. Go and ask them what it looks like from there.'"
@@ -3276,7 +3276,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
         "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
@@ -3308,7 +3308,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
         "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
@@ -3340,7 +3340,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
         "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
@@ -3372,7 +3372,7 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "Vesh holds a hand out without looking up. 'Give it here. It has been through something and I can do more with it now than I could before.'",
+        "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
         "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
