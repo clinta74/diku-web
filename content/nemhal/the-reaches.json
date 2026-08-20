@@ -459,8 +459,8 @@
     },
     {
       "key": "epic-temper-4",
-      "name": "a kept quiet knife",
-      "description": "It does not catch the light. Somebody took a great deal of trouble over that. Carried through Nemhal and kept, which is the only word the cult there would use.",
+      "name": "kept quiet wraps",
+      "description": "They make no sound until they land. Somebody took a great deal of trouble over that. Carried through Nemhal and kept, which is the only word the cult there would use.",
       "icon": "/",
       "slots": [
         "MainHand",
@@ -3323,9 +3323,9 @@
       "autoStart": false,
       "dialogue": {
         "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
-        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverInProgress": "'The pair I gave you. I am not making a second set - I am making those again, and better.'",
         "giverComplete": "'When it has been through something. Not before.'",
-        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
+        "turninReady": "She works without hurrying and hands them back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 14,
       "paths": [
@@ -3355,9 +3355,9 @@
       "autoStart": false,
       "dialogue": {
         "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
-        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverInProgress": "'The pair I gave you. I am not making a second set - I am making those again, and better.'",
         "giverComplete": "'When it has been through something. Not before.'",
-        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
+        "turninReady": "She works without hurrying and hands them back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 14,
       "paths": [
@@ -3387,9 +3387,9 @@
       "autoStart": false,
       "dialogue": {
         "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
-        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverInProgress": "'The pair I gave you. I am not making a second set - I am making those again, and better.'",
         "giverComplete": "'When it has been through something. Not before.'",
-        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
+        "turninReady": "She works without hurrying and hands them back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 14,
       "paths": [
@@ -3399,8 +3399,8 @@
     {
       "key": "e4-temper",
       "zoneKey": "nemhal.keshvaun",
-      "name": "The Quiet Knife, kept",
-      "summary": "Have Vesh reforge your quiet knife.",
+      "name": "The Quiet Hands, kept",
+      "summary": "Have Vesh remake your quiet wraps.",
       "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
       "giverMobKey": "epic-smith-vesh",
       "turninMobKey": "epic-smith-vesh",
@@ -3419,9 +3419,9 @@
       "autoStart": false,
       "dialogue": {
         "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
-        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverInProgress": "'The pair I gave you. I am not making a second set - I am making those again, and better.'",
         "giverComplete": "'When it has been through something. Not before.'",
-        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
+        "turninReady": "She works without hurrying and hands them back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 14,
       "paths": [

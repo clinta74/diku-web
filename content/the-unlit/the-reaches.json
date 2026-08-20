@@ -425,8 +425,8 @@
     },
     {
       "key": "epic-temper-5",
-      "name": "an answered quiet knife",
-      "description": "It does not catch the light. Somebody took a great deal of trouble over that. Finished. It has been all the way in and come back out, which almost nothing has.",
+      "name": "answered quiet wraps",
+      "description": "They make no sound until they land. Somebody took a great deal of trouble over that. Finished. It has been all the way in and come back out, which almost nothing has.",
       "icon": "/",
       "slots": [
         "MainHand",
@@ -1556,9 +1556,9 @@
       "autoStart": false,
       "dialogue": {
         "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
-        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverInProgress": "'The pair I gave you. I am not making a second set - I am making those again, and better.'",
         "giverComplete": "'When it has been through something. Not before.'",
-        "turninReady": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
+        "turninReady": "She takes a long time over them. When she gives them back she keeps hold a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
       },
       "sortOrder": 15,
       "paths": [
@@ -1588,9 +1588,9 @@
       "autoStart": false,
       "dialogue": {
         "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
-        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverInProgress": "'The pair I gave you. I am not making a second set - I am making those again, and better.'",
         "giverComplete": "'When it has been through something. Not before.'",
-        "turninReady": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
+        "turninReady": "She takes a long time over them. When she gives them back she keeps hold a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
       },
       "sortOrder": 15,
       "paths": [
@@ -1620,9 +1620,9 @@
       "autoStart": false,
       "dialogue": {
         "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
-        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverInProgress": "'The pair I gave you. I am not making a second set - I am making those again, and better.'",
         "giverComplete": "'When it has been through something. Not before.'",
-        "turninReady": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
+        "turninReady": "She takes a long time over them. When she gives them back she keeps hold a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
       },
       "sortOrder": 15,
       "paths": [
@@ -1632,8 +1632,8 @@
     {
       "key": "e5-temper",
       "zoneKey": "the-unlit.the-regard",
-      "name": "The Quiet Knife, answered",
-      "summary": "Have Vesh reforge your quiet knife.",
+      "name": "The Quiet Hands, answered",
+      "summary": "Have Vesh remake your quiet wraps.",
       "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
       "giverMobKey": "epic-smith-vesh",
       "turninMobKey": "epic-smith-vesh",
@@ -1652,9 +1652,9 @@
       "autoStart": false,
       "dialogue": {
         "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
-        "giverInProgress": "'The one I gave you. I am not making a second - I am making that one again, and better.'",
+        "giverInProgress": "'The pair I gave you. I am not making a second set - I am making those again, and better.'",
         "giverComplete": "'When it has been through something. Not before.'",
-        "turninReady": "She takes a long time over it. When she gives it back she keeps hold of it a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
+        "turninReady": "She takes a long time over them. When she gives them back she keeps hold a moment longer than she needs to. 'That is as far as it goes,' she says. 'There is nothing past here to make it out of.'"
       },
       "sortOrder": 15,
       "paths": [

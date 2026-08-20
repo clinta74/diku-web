@@ -597,6 +597,14 @@ one moved a name through a catalogue the seeder rebuilt on every boot. This one 
 deletes — so nothing at startup can fix a missed key, and a rename done in code alone leaves
 seventeen orphan `shade.` rows with seventeen fresh `temper.` rows planted beside them.
 
+**Two things moved with the name.** The epic line is *The Quiet Hands* now rather than *The Quiet
+Knife* — five tiers of quiet wraps, same dice, same speeds, same slots, since §4.5's rule that a
+Path does not hard-gate equipment makes that a flavor decision. And the growth spread moved a point
+from Insight to Might: Insight was chosen for a Path called Shade and nothing a Temper does scales
+off it. The per-level total stays at six, so it redistributes rather than buffs — and existing
+characters keep the curve they levelled on, because growth is applied at each level-up and stored
+rather than derived, so recomputing it would destroy whatever point-buy a player spent.
+
 The Path is stored as a *name* on `characters` and inside the `paths` arrays of `quests` and
 `item_templates`, and as an *ordinal* on `abilities` — so the migration touches three tables and
 not the fourth, and `AbilityValidator` requiring a key to begin with its Path is what makes the
@@ -1894,7 +1902,7 @@ Armour is untouched — a worn item is not a held one.
 
 | Shape | Slots | Which |
 |---|---|---|
-| Blades, cleavers, a hand axe, a dredging hook, the Temper's quiet knife at every act | `[MainHand, OffHand]` | 12 |
+| Blades, cleavers, a hand axe, a dredging hook, the Temper's quiet wraps at every act | `[MainHand, OffHand]` | 12 |
 | Mauls, staves, a long pick, a standing hammer — the shop line only | `[MainHand]` + two-handed | 5 |
 | Spears, spikes, rods, censers, and the other three Paths' epics | `[MainHand]` | 18 |
 | Shields and the torch | `[OffHand]` | 6 |

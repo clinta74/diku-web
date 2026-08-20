@@ -26,15 +26,37 @@ public sealed class PathGrowthTests
         Assert.Equal(1, growth.Vitality);
     }
 
+    /// <summary>
+    /// Might and Agility, since the rename. Insight was chosen for a Path called Shade and
+    /// nothing a Temper does scales off it.
+    /// </summary>
     [Fact]
-    public void Temper_growth_favors_agility_and_insight()
+    public void Temper_growth_favors_might_and_agility()
     {
         var growth = PathGrowth.TemperGrowth;
+        Assert.Equal(2, growth.Might);
         Assert.Equal(2, growth.Agility);
-        Assert.Equal(2, growth.Insight);
-        Assert.Equal(1, growth.Might);
+        Assert.Equal(1, growth.Insight);
         Assert.Equal(0, growth.Vitality);
         Assert.Equal(1, growth.Resolve);
+    }
+
+    /// <summary>
+    /// Every Path gains the same six points a level, which is what makes the spread a choice of
+    /// shape rather than a choice of how much.
+    /// </summary>
+    [Theory]
+    [InlineData(CharacterPath.Warden)]
+    [InlineData(CharacterPath.Adept)]
+    [InlineData(CharacterPath.Temper)]
+    [InlineData(CharacterPath.Hallow)]
+    public void Every_path_gains_the_same_total(CharacterPath path)
+    {
+        var growth = PathGrowth.For(path);
+
+        Assert.Equal(
+            6,
+            growth.Might + growth.Agility + growth.Vitality + growth.Insight + growth.Resolve);
     }
 
     [Fact]

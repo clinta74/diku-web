@@ -210,8 +210,8 @@
     },
     {
       "key": "epic-temper-1",
-      "name": "an unproven quiet knife",
-      "description": "It does not catch the light. Somebody took a great deal of trouble over that. Newly made and honest about it. Vesh will not pretend this is finished.",
+      "name": "unproven quiet wraps",
+      "description": "They make no sound until they land. Somebody took a great deal of trouble over that. Newly made and honest about it. Vesh will not pretend this is finished.",
       "icon": "/",
       "slots": [
         "MainHand",
@@ -2295,7 +2295,7 @@
         "giverOffer": "Vesh looks at you rather than at your hands. 'You are a Warden. I know what a Warden needs and I have known for a long time.' She sets down a bag. '<Three embers>. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
         "giverInProgress": "'Three. They do not go out and they do not warm anything. Bring them.'",
         "giverComplete": "'When it has been through something. Not before.'",
-        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
+        "turninReady": "She works without hurrying and hands them back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 11,
       "paths": [
@@ -2326,7 +2326,7 @@
         "giverOffer": "Vesh looks at you rather than at your hands. 'You are a Hallow. I know what a Hallow needs and I have known for a long time.' She sets down a bag. '<Three embers>. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
         "giverInProgress": "'Three. They do not go out and they do not warm anything. Bring them.'",
         "giverComplete": "'When it has been through something. Not before.'",
-        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
+        "turninReady": "She works without hurrying and hands them back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 11,
       "paths": [
@@ -2357,7 +2357,7 @@
         "giverOffer": "Vesh looks at you rather than at your hands. 'You are a Adept. I know what a Adept needs and I have known for a long time.' She sets down a bag. '<Three embers>. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
         "giverInProgress": "'Three. They do not go out and they do not warm anything. Bring them.'",
         "giverComplete": "'When it has been through something. Not before.'",
-        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
+        "turninReady": "She works without hurrying and hands them back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 11,
       "paths": [
@@ -2367,8 +2367,8 @@
     {
       "key": "e1-temper",
       "zoneKey": "ossara.the-rimwalk",
-      "name": "The Quiet Knife, unproven",
-      "summary": "Have Vesh reforge your quiet knife.",
+      "name": "The Quiet Hands, unproven",
+      "summary": "Have Vesh remake your quiet wraps.",
       "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
       "giverMobKey": "epic-smith-vesh",
       "turninMobKey": "epic-smith-vesh",
@@ -2388,7 +2388,7 @@
         "giverOffer": "Vesh looks at your hands rather than at you. 'You go at things with these. I know what that needs, and I have known for a long time.' She sets down a bag. '<Three embers>. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
         "giverInProgress": "'Three. They do not go out and they do not warm anything. Bring them.'",
         "giverComplete": "'When it has been through something. Not before.'",
-        "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
+        "turninReady": "She works without hurrying and hands them back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 11,
       "paths": [
