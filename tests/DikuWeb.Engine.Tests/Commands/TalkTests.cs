@@ -31,7 +31,7 @@ public sealed class TalkTests
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        return (harness, harness.AddPlayer("Kael", Room, path: CharacterPath.Shade, level: 10));
+        return (harness, harness.AddPlayer("Kael", Room, path: CharacterPath.Temper, level: 10));
     }
 
     /// <summary>A giver with one errand on the table, authored the way the content is.</summary>

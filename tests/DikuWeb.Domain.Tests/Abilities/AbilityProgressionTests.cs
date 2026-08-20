@@ -3,13 +3,23 @@ using DikuWeb.Domain.Characters;
 
 namespace DikuWeb.Domain.Tests.Abilities;
 
+/// <summary>
+/// What a Path knows at a level, over <see cref="ExampleAbilities"/> rather than over content.
+/// </summary>
+/// <remarks>
+/// These ran against <c>AbilityCatalogue</c> while it was the shipped set. It is four examples
+/// now and the set is <c>content/abilities.json</c>, but the change these tests wanted was never
+/// content anyway: "level 3 grants what level 3 unlocks" is a question about
+/// <see cref="AbilityProgression"/>, and a logic test that fails when a designer retunes an
+/// unlock level reports the wrong thing.
+/// </remarks>
 public sealed class AbilityProgressionTests
 {
     [Fact]
     public void GetAbilitiesForPath_Warden_ReturnsWardenAbilities()
     {
         // Act
-        var abilities = AbilityProgression.GetAbilitiesForPath(AbilityCatalogue.AsAbilities, CharacterPath.Warden);
+        var abilities = AbilityProgression.GetAbilitiesForPath(ExampleAbilities.Set, CharacterPath.Warden);
 
         // Assert
         Assert.NotEmpty(abilities);
@@ -21,7 +31,7 @@ public sealed class AbilityProgressionTests
     public void GetAbilitiesForPath_Adept_ReturnsAdeptAbilities()
     {
         // Act
-        var abilities = AbilityProgression.GetAbilitiesForPath(AbilityCatalogue.AsAbilities, CharacterPath.Adept);
+        var abilities = AbilityProgression.GetAbilitiesForPath(ExampleAbilities.Set, CharacterPath.Adept);
 
         // Assert
         Assert.NotEmpty(abilities);
@@ -30,21 +40,21 @@ public sealed class AbilityProgressionTests
     }
 
     [Fact]
-    public void GetAbilitiesForPath_Shade_ReturnsShadeAbilities()
+    public void GetAbilitiesForPath_Temper_ReturnsBladeAbilities()
     {
         // Act
-        var abilities = AbilityProgression.GetAbilitiesForPath(AbilityCatalogue.AsAbilities, CharacterPath.Shade);
+        var abilities = AbilityProgression.GetAbilitiesForPath(ExampleAbilities.Set, CharacterPath.Temper);
 
         // Assert
         Assert.NotEmpty(abilities);
-        Assert.All(abilities, a => Assert.StartsWith("shade.", a.AbilityKey));
+        Assert.All(abilities, a => Assert.StartsWith("temper.", a.AbilityKey));
     }
 
     [Fact]
     public void GetAbilitiesForPath_Hallow_ReturnsHallowAbilities()
     {
         // Act
-        var abilities = AbilityProgression.GetAbilitiesForPath(AbilityCatalogue.AsAbilities, CharacterPath.Hallow);
+        var abilities = AbilityProgression.GetAbilitiesForPath(ExampleAbilities.Set, CharacterPath.Hallow);
 
         // Assert
         Assert.NotEmpty(abilities);
@@ -56,7 +66,7 @@ public sealed class AbilityProgressionTests
     public void GetKnownAbilitiesForLevel_Level1_ReturnsLevel1Only()
     {
         // Act
-        var known = AbilityProgression.GetKnownAbilitiesForLevel(AbilityCatalogue.AsAbilities, CharacterPath.Warden, 1);
+        var known = AbilityProgression.GetKnownAbilitiesForLevel(ExampleAbilities.Set, CharacterPath.Warden, 1);
 
         // Assert
         Assert.Single(known);
@@ -67,7 +77,7 @@ public sealed class AbilityProgressionTests
     public void GetKnownAbilitiesForLevel_Level3_ReturnsLevel1And3()
     {
         // Act
-        var known = AbilityProgression.GetKnownAbilitiesForLevel(AbilityCatalogue.AsAbilities, CharacterPath.Warden, 3);
+        var known = AbilityProgression.GetKnownAbilitiesForLevel(ExampleAbilities.Set, CharacterPath.Warden, 3);
 
         // Assert
         Assert.Equal(2, known.Count);
@@ -79,7 +89,7 @@ public sealed class AbilityProgressionTests
     public void GetKnownAbilitiesForLevel_Level6_ReturnsEverythingUnlockedSoFar()
     {
         // Act
-        var known = AbilityProgression.GetKnownAbilitiesForLevel(AbilityCatalogue.AsAbilities, CharacterPath.Warden, 6);
+        var known = AbilityProgression.GetKnownAbilitiesForLevel(ExampleAbilities.Set, CharacterPath.Warden, 6);
 
         // Assert
         Assert.Equal(3, known.Count);
@@ -96,8 +106,8 @@ public sealed class AbilityProgressionTests
     [Fact]
     public void GetKnownAbilitiesForLevel_KeepsGrantingPastLevelSix()
     {
-        var atSix = AbilityProgression.GetKnownAbilitiesForLevel(AbilityCatalogue.AsAbilities, CharacterPath.Warden, 6);
-        var atTwenty = AbilityProgression.GetKnownAbilitiesForLevel(AbilityCatalogue.AsAbilities, CharacterPath.Warden, 20);
+        var atSix = AbilityProgression.GetKnownAbilitiesForLevel(ExampleAbilities.Set, CharacterPath.Warden, 6);
+        var atTwenty = AbilityProgression.GetKnownAbilitiesForLevel(ExampleAbilities.Set, CharacterPath.Warden, 20);
 
         Assert.True(atTwenty.Count > atSix.Count);
     }
@@ -106,7 +116,7 @@ public sealed class AbilityProgressionTests
     public void Knows_WithKnownAbility_ReturnsTrue()
     {
         // Act
-        var knows = AbilityProgression.Knows(AbilityCatalogue.AsAbilities, CharacterPath.Hallow, 1, "hallow.mend");
+        var knows = AbilityProgression.Knows(ExampleAbilities.Set, CharacterPath.Hallow, 1, "hallow.mend");
 
         // Assert
         Assert.True(knows);
@@ -116,17 +126,40 @@ public sealed class AbilityProgressionTests
     public void Knows_BelowUnlockLevel_ReturnsFalse()
     {
         // Act - Warden only gets bash at level 3
-        var knows = AbilityProgression.Knows(AbilityCatalogue.AsAbilities, CharacterPath.Warden, 2, "warden.bash");
+        var knows = AbilityProgression.Knows(ExampleAbilities.Set, CharacterPath.Warden, 2, "warden.bash");
 
         // Assert
         Assert.False(knows);
     }
 
     [Fact]
+    public void A_character_knows_only_what_their_level_has_reached()
+    {
+        var atOne = AbilityProgression.GetKnownAbilitiesForLevel(
+            ExampleAbilities.Set, CharacterPath.Warden, 1);
+        var atSeven = AbilityProgression.GetKnownAbilitiesForLevel(
+            ExampleAbilities.Set, CharacterPath.Warden, 7);
+
+        Assert.Contains("warden.kick", atOne);
+        Assert.DoesNotContain("warden.sunder", atOne);
+        Assert.Contains("warden.sunder", atSeven);
+    }
+
+    [Fact]
+    public void A_path_does_not_learn_another_paths_abilities()
+    {
+        var warden = AbilityProgression.GetKnownAbilitiesForLevel(
+            ExampleAbilities.Set, CharacterPath.Warden, 20);
+
+        Assert.DoesNotContain("adept.bolt", warden);
+        Assert.DoesNotContain("temper.strike", warden);
+    }
+
+    [Fact]
     public void Knows_WithUnknownAbility_ReturnsFalse()
     {
         // Act
-        var knows = AbilityProgression.Knows(AbilityCatalogue.AsAbilities, CharacterPath.Warden, 10, "nonexistent.ability");
+        var knows = AbilityProgression.Knows(ExampleAbilities.Set, CharacterPath.Warden, 10, "nonexistent.ability");
 
         // Assert
         Assert.False(knows);

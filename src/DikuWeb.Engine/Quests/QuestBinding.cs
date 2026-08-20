@@ -16,7 +16,7 @@ namespace DikuWeb.Engine.Quests;
 /// </para>
 /// <para>
 /// The worst of it is the epic rewards, which are quest items <em>and</em> no-drop <em>and</em>
-/// Path-locked. A Shade who finished the Adept chain before the Path gate existed holds a stormrod
+/// Path-locked. A Temper who finished the Adept chain before the Path gate existed holds a stormrod
 /// they cannot wield, cannot drop, cannot sell and cannot destroy — a pack slot with nothing that
 /// can ever be done about it.
 /// </para>

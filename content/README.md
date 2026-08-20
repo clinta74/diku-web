@@ -19,6 +19,7 @@ next one and each file's exits are applied before the next file's rooms exist.
 | `azhen/the-reaches.json` | the Camp, Ummath, Serrivet, Thessivar |
 | `nemhal/the-reaches.json` | the Hold, Vurrach, Olmenneth, Keshvaun |
 | `the-unlit/the-reaches.json` | the Crossing, the Regard |
+| `abilities.json` | every ability all four Paths learn — no rooms, no world, just the set |
 
 A bundle carries the world row above its zones, so any one file is enough to stand its realm up in
 an empty database.

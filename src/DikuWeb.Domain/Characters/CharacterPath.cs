@@ -20,8 +20,17 @@ public enum CharacterPath
     /// <summary>Focus-caster.</summary>
     Adept = 1,
 
-    /// <summary>Stealth and burst.</summary>
-    Shade = 2,
+    /// <summary>
+    /// Two weapons, one target. Fast, cheap strikes and wounds that keep working.
+    /// </summary>
+    /// <remarks>
+    /// <b>Called Shade until it was read carefully.</b> The name promised stealth and the game has
+    /// none — no sneak, no hide, nothing to be unseen by — and four of its ability names promised
+    /// mechanics that were not there either: Evasion and Vanish were self-heals, Death Mark was a
+    /// flat hit with no mark, Shadowstep did not move you. What the Path is, and always was, is
+    /// the one that duals to a full off hand, stacks bleeds, and kills one thing properly.
+    /// </remarks>
+    Temper = 2,
 
     /// <summary>Support and control.</summary>
     Hallow = 3,

@@ -13,16 +13,44 @@ This says what the missing thirty levels should contain.
 
 ---
 
+## 0. Two renames since this was written
+
+**Shade is Temper.** The name promised stealth and the game has none, so the identity was flavor
+pretending to be a system — and the Path plays as a fast striker, which is a boxer rather than an
+assassin. Every `shade.` key in here is `temper.` now.
+
+**Nine abilities were reflavored with it** — martial rather than bladed, and in two cases honest
+rather than aspirational. No mechanics moved: same effects, same parameters, same costs, same
+cooldowns, same unlock levels.
+
+| Lv | Was | Is | Why |
+|---|---|---|---|
+| 7 | Hamstring | **Low Kick** | a hamstring wants a blade |
+| 10 | Ambush | **Body Blow** | the wound is an internal injury, not a cut from behind |
+| 13 | Vanish | **Second Wind** | it heals 45; this says so |
+| 16 | Assassinate | **Heart Strike** | |
+| 20 | Death Mark | **Pressure Point** | it applies no mark |
+| 28 | Exploit | **Opening** | martial term for the same idea |
+| 43 | Shadowstep | **Temple Strike** | it stuns — a concussion, not a teleport |
+| 46 | A Thousand Cuts | **A Hundred Hands** | cuts → hands, same stacking joke |
+| 50 | Severance | **Collapse** | burst, bleed and weaken, and the target goes down |
+
+**And the set moved out of C#.** `AbilityCatalogue` held all sixty-nine; it holds four examples for
+an empty database, and `content/abilities.json` is the set, imported like any other content. The
+numbers this document argues for are enforced by `AbilityContentTests` against that file.
+
+---
+
 ## 1. The problem, stated in numbers
 
 Every Path unlocks at **1, 3, 5, 7, 10, 13, 16, 18, 20** and then stops. Warden has two extra at 8
-and 9, Shade one at 12. Thirty-seven rows, and the last of them arrives at level 20.
+and 9, Temper one at 12. Thirty-seven rows, and the last of them arrives at level 20.
 
 | Path | Unlock levels | Count |
 |---|---|---|
 | Warden | 1, 3, 5, 7, 8, 9, 10, 13, 16, 20 | 10 |
 | Adept | 1, 3, 5, 7, 10, 13, 16, 18, 20 | 9 |
-| Shade | 1, 3, 5, 7, 10, 12, 13, 16, 20 | 9 |
+| Temper | 1, 3, 5, 7, 10, 12, 13, 16, 20 | 9 |
 | Hallow | 1, 3, 5, 7, 10, 13, 16, 18, 20 | 9 |
 
 **Levels 21 to 50 are empty.** That is 60% of the level range, and because `XpForLevel` is
@@ -44,7 +72,7 @@ that already exist and already have executors:
 | Hallow: better heals, health and protection buffs | `heal.restore`, `buff.max-health`, `buff.defense` | All registered |
 | Warden: better tanking, AoE taunts | `control.taunt` + `TargetingType.Aoe` | Both work |
 | Adept: more damage, AoE spells | `damage.physical` + `Aoe` | Already used by Firestorm |
-| Shade: damage over time and burst | `damage.overtime`, `damage.physical` | Both registered |
+| Temper: damage over time and burst | `damage.overtime`, `damage.physical` | Both registered |
 
 **AoE resolves by direction already**, which is the part worth confirming rather than assuming
 ([AbilitySystem.cs](../src/DikuWeb.Engine/Abilities/AbilitySystem.cs) `AreaTargets`). A harmful area
@@ -156,7 +184,7 @@ now records it: only Adept and Hallow used to, on the argument that an area abil
 strongest thing the executors express and spreading it everywhere costs each Path its shape. The
 distinction that lets Warden in is that an area *taunt* is not an area *attack* — it buys no damage
 and no survival, only the attention of everything present, which is the one thing the Path exists
-to take. Shade still gets none.
+to take. Temper still gets none.
 
 ## 6. Adept — from one target to the room
 
@@ -174,26 +202,26 @@ is missing is everything after them.
 | 46 | `adept.gravity-well` | Gravity Well | `control.root` (Aoe), `damage.overtime` (Aoe) | Holds the room still and burns it. The Path's only real crowd control |
 | 50 | `adept.the-unwriting` | The Unwriting | `damage.physical` (Aoe), `debuff.expose` | **Capstone.** The largest single number in the game, and it leaves what survives easier to finish |
 
-## 7. Shade — burst now, bleeding after
+## 7. Temper — burst now, bleeding after
 
-The two halves asked for map exactly onto two effects the engine already has, so a Shade's back half
+The two halves asked for map exactly onto two effects the engine already has, so a Temper's back half
 is about the interplay between them: land the sustained damage, then spend the burst while it ticks.
 
 | Level | Key | Name | Effects | The idea |
 |---|---|---|---|---|
-| 24 | `shade.rupture` | Rupture | `damage.physical`, `damage.overtime` | The first real bleed. Hits, then keeps hitting |
-| 28 | `shade.exploit` | Exploit | `damage.physical`, `debuff.expose` | Refines Quick Strike: cheap, fast, and makes everything after it land harder |
-| 32 | `shade.flurry` | Flurry | `damage.physical`, `buff.damage-up` (Self) | Burst that buys more burst |
-| 36 | `shade.hemorrhage` | Hemorrhage | `damage.overtime` | Refinement: the long bleed, cheap, meant to be kept running |
-| 40 | `shade.execution` | Execution | `damage.physical` | **Signature.** The biggest single-target instant in the game, on a cooldown that makes it a moment |
-| 43 | `shade.shadowstep` | Shadowstep | `damage.physical`, `control.stun` | Refines Ambush — opens or interrupts, and hurts either way |
-| 46 | `shade.thousand-cuts` | A Thousand Cuts | `damage.overtime` (stacks to 5) | Cheap and fast, on a cooldown shorter than its own duration so the cuts pile up. **Single-target** — see below |
-| 50 | `shade.severance` | Severance | `damage.physical`, `damage.overtime`, `debuff.weaken` | **Capstone.** Burst, bleed, and the target hits back softer while it dies |
+| 24 | `temper.rupture` | Rupture | `damage.physical`, `damage.overtime` | The first real bleed. Hits, then keeps hitting |
+| 28 | `temper.exploit` | Exploit | `damage.physical`, `debuff.expose` | Refines Quick Strike: cheap, fast, and makes everything after it land harder |
+| 32 | `temper.flurry` | Flurry | `damage.physical`, `buff.damage-up` (Self) | Burst that buys more burst |
+| 36 | `temper.hemorrhage` | Hemorrhage | `damage.overtime` | Refinement: the long bleed, cheap, meant to be kept running |
+| 40 | `temper.execution` | Execution | `damage.physical` | **Signature.** The biggest single-target instant in the game, on a cooldown that makes it a moment |
+| 43 | `temper.shadowstep` | Shadowstep | `damage.physical`, `control.stun` | Refines Ambush — opens or interrupts, and hurts either way |
+| 46 | `temper.thousand-cuts` | A Thousand Cuts | `damage.overtime` (stacks to 5) | Cheap and fast, on a cooldown shorter than its own duration so the cuts pile up. **Single-target** — see below |
+| 50 | `temper.severance` | Severance | `damage.physical`, `damage.overtime`, `debuff.weaken` | **Capstone.** Burst, bleed, and the target hits back softer while it dies |
 
 **Death Mark at 20 stays the setup and is not replaced.** The back half is built to be spent through
 it rather than around it.
 
-**Shade is the one Path with no area ability, and that is deliberate.** The draft gave A Thousand
+**Temper is the one Path with no area ability, and that is deliberate.** The draft gave A Thousand
 Cuts an `Aoe` bleed; it was authored single-target instead, because killing one thing properly is
 the Path's shape and an area tool on every Path costs each of them their identity. What it got
 instead is the only multi-stack effect in the game outside Ambush: a 32-pulse cooldown under a

@@ -18,7 +18,7 @@ namespace DikuWeb.Engine.Tests.Systems;
 /// </para>
 /// <para>
 /// The other half is the one that was exploitable. Re-applying the weaker ability refreshed the
-/// clock while leaving the stronger numbers in place, so a Shade could hold Hemorrhage's
+/// clock while leaving the stronger numbers in place, so a Temper could hold Hemorrhage's
 /// 16-damage bleed open indefinitely with a cheap Ambush. A weaker application is now ignored
 /// outright rather than extending anything.
 /// </para>
@@ -357,7 +357,7 @@ public sealed class EffectReplacementTests
     }
 
     /// <summary>
-    /// And the Shade's bleed: a cheap Ambush cannot hold Hemorrhage's tick open.
+    /// And the Temper's bleed: a cheap Ambush cannot hold Hemorrhage's tick open.
     /// </summary>
     [Fact]
     public void A_weak_wound_cannot_keep_a_strong_one_alive()

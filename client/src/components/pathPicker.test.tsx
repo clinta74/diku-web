@@ -69,7 +69,7 @@ it('offers exactly the four Paths the server accepts', () => {
 
   // Names, not descriptions: the create endpoint parses these against the CharacterPath enum, so
   // a typo here is a 400 the player cannot do anything about.
-  for (const path of ['Warden', 'Adept', 'Shade', 'Hallow']) {
+  for (const path of ['Warden', 'Adept', 'Temper', 'Hallow']) {
     expect(screen.getByText(path)).toBeTruthy()
   }
 })

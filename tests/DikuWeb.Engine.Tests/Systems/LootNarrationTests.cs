@@ -228,7 +228,7 @@ public sealed class LootNarrationTests
         var (harness, killer) = Kill(Always("fang"));
         DefineItem(harness, "fang", "a tarnished fang");
 
-        var onlooker = harness.AddPlayer("Kaeda", West, path: CharacterPath.Shade, level: 10);
+        var onlooker = harness.AddPlayer("Kaeda", West, path: CharacterPath.Temper, level: 10);
 
         harness.Drain(onlooker);
         FightToTheDeath(harness, killer);

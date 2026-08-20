@@ -575,13 +575,41 @@ resource rather than a blanket buff. `RegenCalculator` takes the Path rather tha
 because getting it wrong is silent.
 
 Four Paths chosen at creation: **Warden** (armored frontline), **Adept** (focus-caster),
-**Shade** (stealth/burst), **Hallow** (support/control). A Path grants an ability list and
-shapes stat growth; it does not hard-gate equipment.
+**Temper** (strikes and bleeding), **Hallow** (support/control). A Path grants an ability list
+and shapes stat growth; it does not hard-gate equipment.
 
-**Abilities are content, held in the `abilities` table.** `AbilityCatalogue` is the set a fresh
-database is seeded with — the same standing as the Millbrook rooms — and stops being consulted the
-moment a row exists; the startup reconcile plants what is missing and never updates or deletes, so
-a retune survives a restart. The table carries `path` and `unlock_level` as well as the mechanics,
+**Temper was called Shade.** The name promised stealth in a game that has none — no sneak, no
+hide, nothing to be unseen by — so the identity was flavor pretending to be a system, and the Path
+plays as a fast striker rather than an assassin. *Temper* does what *Hallow* does: a plain word
+that names the role and carries a second meaning covering the rest of the kit, since to temper
+steel is to make it hard and to lose your temper is the other thing.
+
+**The abilities were reflavored with it, and nothing else changed** — same effects, same numbers,
+same unlock levels, same cooldowns. Nine of the seventeen were named for a knife or for hiding:
+Hamstring is **Low Kick**, Ambush is **Body Blow**, Vanish is **Second Wind** (it was always a
+self-heal), Assassinate is **Heart Strike**, Death Mark is **Pressure Point**, Exploit is
+**Opening**, Shadowstep is **Temple Strike** (it stuns; it never moved anybody), A Thousand Cuts is
+**A Hundred Hands**, and Severance is **Collapse**.
+
+**This rename cost more than Channeler → Hallow did**, and the difference is worth recording. That
+one moved a name through a catalogue the seeder rebuilt on every boot. This one moves it through
+`abilities`, a live builder-editable table whose reconcile is insert-if-absent and never updates or
+deletes — so nothing at startup can fix a missed key, and a rename done in code alone leaves
+seventeen orphan `shade.` rows with seventeen fresh `temper.` rows planted beside them.
+
+The Path is stored as a *name* on `characters` and inside the `paths` arrays of `quests` and
+`item_templates`, and as an *ordinal* on `abilities` — so the migration touches three tables and
+not the fourth, and `AbilityValidator` requiring a key to begin with its Path is what makes the
+key rename mandatory rather than cosmetic. The epic line names the Path in its own keys as well,
+and those are referenced from four more places, none of them a foreign key.
+
+**Abilities are content, held in the `abilities` table, and authored in `content/abilities.json`.**
+`AbilityCatalogue` is four examples — one per Path at level 1 — for a database with nothing in it,
+the same standing as the Millbrook rooms; the sixty-nine that are the game travel through the same
+import as rooms and quests do. It held all of them once, which had the defect that moved them:
+editing the catalogue retuned a fresh install and reached a running server not at all. The startup
+reconcile plants what is missing and never updates or deletes, so a retune survives a restart —
+and so the four examples can never overwrite the imported set. The table carries `path` and `unlock_level` as well as the mechanics,
 because *who learns this and when* is as much a tuning decision as a cooldown. **Passives are the
 exception and stay in code**: parry, dual-wield, and ambidextrous have no row, no cost, and nothing
 to target, so they are Path-and-level thresholds the combat system reads directly. That is two
@@ -591,9 +619,14 @@ collide.
 
 Because a free jsonb parameter bag fails silently — an effect skips a key it does not recognise, so
 a plausible misspelling produces an ability that costs its resource and does nothing —
-`AbilityValidator` runs on every save and on every boot. It refuses an unknown effect key, a
-missing required parameter, a buff below 1.0, a debuff on the wrong multiplier, and a wound that
-expires before it ticks; it warns about progression shape. This is the one place in the builder API
+`AbilityValidator` runs on every save, on every boot, **and on every import** — the last of those
+was missing while abilities already travelled in bundles, so a key naming the wrong Path or an
+effect no executor implements landed in the table and failed at cast time, which is the furthest
+possible point from whoever wrote it. It refuses an unknown effect key, a missing required
+parameter, a buff below 1.0, a debuff on the wrong multiplier, and a wound that expires before it
+ticks; it warns about progression shape. The set-level rules — does a Path keep unlocking, are the
+gaps playable — are asked of a bundle only when it carries all four Paths, since a bundle carrying
+one retuned ability would fail every one of them while being perfectly correct. This is the one place in the builder API
 that refuses on content grounds rather than following §7.4, and the reason is that a broken exit
 announces itself the moment somebody walks into it while a broken ability never does.
 
@@ -631,7 +664,7 @@ the only shared timer the shipped set has** — a timer is for two variations of
 and a bash are different enough to keep apart.
 
 The identity is **(Path, number)**, not the number alone. A character only knows one Path's
-abilities, so Warden 1 and Shade 1 can never meet in play, and scoping it lets each Path number from
+abilities, so Warden 1 and Temper 1 can never meet in play, and scoping it lets each Path number from
 1 independently.
 
 **Nothing about the timer is stored.** It is derived from the per-ability cooldowns the world already
@@ -656,7 +689,7 @@ combat.
 maximum-health buffs collides with the rest — and `Refresh` kept the *first* effect's numbers.
 Sanctuary cast over Fortitude was worth +150 rather than +220: the weaker buff won and then outlived
 itself. Worse, re-applying the weaker ability refreshed the clock while leaving the stronger numbers
-in place, so a Shade could hold Hemorrhage's 16-damage bleed open indefinitely with a cheap Ambush.
+in place, so a Temper could hold Hemorrhage's 16-damage bleed open indefinitely with a cheap Ambush.
 
 Strength is the **unlock level of the ability that applied it**, carried on the effect. Level rather
 than magnitude because these effects measure themselves in health, defence, mitigation, tick damage
@@ -666,7 +699,7 @@ equal, and keep the behaviour they always had.
 
 The two rules cover different ground and both are needed. The Warden's walls all have duration
 shorter than cooldown, so two are never active at once and only the timer bites. The Hallow's wards
-and the Shade's wounds overlap constantly and carry no timer, so only the magnitude rule does.
+and the Temper's wounds overlap constantly and carry no timer, so only the magnitude rule does.
 
 **Cooldowns are whole numbers of the 2-second combat beat** (§2.3), and their length follows how
 much an ability changes the fight — for anything with a duration, *duration ÷ target uptime*, so
@@ -799,24 +832,24 @@ cleared every target that pointed at it.
 
 **A second weapon is grown into, not granted whole.** An off hand deals a *share* of its damage,
 rising with level from the day the Path learns Dual Wield to level 40. Before this it arrived
-complete: a Shade at level 3 had an off hand hitting for everything the main hand did, and
+complete: a Temper at level 3 had an off hand hitting for everything the main hand did, and
 Ambidextrous later doubled the rate on top of it.
 
 | | Learns it | At the unlock | At 40+ |
 |---|---|---|---|
-| **Shade** | 3 | 50% | **100%** |
+| **Temper** | 3 | 50% | **100%** |
 | **Warden** | 5 | 40% | **80%** |
 
 - **Level, not Agility, and that was the second answer.** Agility was the obvious axis and does not
-  work: it caps at `AttributeSet.MaxValue`, which a Shade reaches at level **6** and a Warden at 11,
+  work: it caps at `AttributeSet.MaxValue`, which a Temper reaches at level **6** and a Warden at 11,
   so the ramp would have been over before the passive had been held for long. Level 40 is four to
   seven times further out. The endpoints are unchanged by the switch — 4%×20 and 5%×20 are the same
   80% and 100%.
 - **Half at the unlock**, so the passive is worth having on the day it is granted rather than being a
   promise about level 40. A straight line from there, so every level of the climb is worth the same.
-- **The endpoints are the Path's identity.** A Shade ends at all of it, because two blades is what
+- **The endpoints are the Path's identity.** A Temper ends at all of it, because two blades is what
   that Path is. A Warden at four fifths, because the hand is also holding a shield.
-- **The top is untouched.** A Shade at 40+ is exactly where it was, so the Ambidextrous doubling
+- **The top is untouched.** A Temper at 40+ is exactly where it was, so the Ambidextrous doubling
   stands. This ramps the early and middle game and nothing else — worth saying plainly, because it
   does *not* address endgame dual-wield output.
 - **The whole swing, dice and flat together.** `BaseDamage` is the Might modifier, added per swing,
@@ -847,13 +880,13 @@ that declares no damage does nothing"*, which was false, and was how all 35 were
 - **The 15 shop weapons are one rate per tier.** They are Path-open, so the same weapon may be picked
   by anyone and speed is all that separates them: bigger numbers less often, or smaller more often,
   for the same output. Every realm sells a 6, an 8 and a 10.
-- **The 20 epic weapons are ranked by Path** — Shade, Warden, Hallow, Adept, with the casters close
+- **The 20 epic weapons are ranked by Path** — Temper, Warden, Hallow, Adept, with the casters close
   together because melee is their backup and focus abilities are their output. Shares of the tier mean
   are 1.15 / 1.05 / 0.94 / 0.86, which average to 1.0, so **each tier's total is unchanged**: this
   redistributed power rather than inflating it. Whether the whole curve is right needs play.
 - **Tuned per weapon, not per hand.** Dual wielding is a passive both martial Paths get, so it drops
   out of the comparison and a weapon's printed numbers mean what they say whatever is in the other
-  hand. The Shade therefore leads on total output, being fastest *and* dual-wielding earliest — which
+  hand. The Temper therefore leads on total output, being fastest *and* dual-wielding earliest — which
   is the Path's stated identity, now visible instead of accidental.
 - **Epic tier 1 cannot express the ranking**, and it is excluded by name in the test. At an average of
   three damage the Hallow/Adept gap rounds away and both land on 2–4. Integer dice have a floor on how
@@ -1069,7 +1102,7 @@ and a second field for it would be a second source of truth to disagree with.
   an existing command can never be taken out from under someone, and abilities added later need
   no registration. Done as a fallback rather than as thirty-seven registered verbs because the
   table is global while abilities are per-Path: registering them would put an Adept's Amplify in
-  front of a Shade's Ambush for `am`, and the Shade would be told they do not know an ability
+  front of a Temper's Ambush for `am`, and the Temper would be told they do not know an ability
   they have.
 - **`cast` refuses a skill**, naming the verb form instead. The refusal is the teaching.
 - The cost is that an ability sharing a name with a command is unreachable as a verb, which is why
@@ -1313,7 +1346,7 @@ pays out at that tier without re-authoring numbers.
 **A quest can be for one Path.** `Quest.Paths` is empty for almost every quest and empty means
 anyone — the same shape and the same argument as `ItemTemplate.Paths`, so a quest is unrestricted
 until a builder opts in. It exists because the four epic chains have **one giver and Path-locked
-rewards**: Vesh handed every character all four, and a Shade who finished the Adept chain received a
+rewards**: Vesh handed every character all four, and a Temper who finished the Adept chain received a
 stormrod they could not wield and — being lore and no-drop — could not drop, sell or destroy either.
 
 It gates **being offered and being handed in**, not being held. A character already carrying a chain
@@ -1329,7 +1362,7 @@ systems — no separate quest-item pipeline. `questItem: true` means *cannot be 
 **Destruction asks the narrower question**, because the flag alone protected far more than a
 chain: it protected the ledger of a quest the character had never met, would never take, and —
 since the Path gate above — in the epic chains *could not* take. The worst of it was the
-rewards. An epic reward is a quest item **and** no-drop **and** Path-locked, so a Shade holding
+rewards. An epic reward is a quest item **and** no-drop **and** Path-locked, so a Temper holding
 an Adept stormrod could not wield it, drop it, sell it or destroy it: a pack slot with nothing
 that could ever be done about it.
 
@@ -1744,7 +1777,7 @@ Three parts, and each is load-bearing:
 - **A step that cannot be taken ends the follow, and says why.** The follower is asked the same
   questions the mover was, in the same order — combat, rest, root, the exit gate, a live
   destination. **Deliberately re-asked rather than inherited**: the gate that let a Warden with the
-  key through is exactly the gate that must stop the Shade without it (§4.15), and a follow that
+  key through is exactly the gate that must stop the Temper without it (§4.15), and a follow that
   skipped it would walk anybody past any lock. Retrying silently is how somebody ends up three
   rooms behind and unaware, which is the state the verb exists to prevent.
 - **Only followers standing in the room the leader left.** Following is an intent, not a leash;
@@ -1817,14 +1850,14 @@ makes an item a weapon. So the entire off-hand half of combat was unreachable co
 
 | Built | Reachable by |
 |---|---|
-| `DualWield`, granted at level 3 (Shade) and 5 (Warden) | nothing |
+| `DualWield`, granted at level 3 (Temper) and 5 (Warden) | nothing |
 | `Ambidextrous`, the off hand's own timer | nothing |
 | `OffHandDamageShare`, per Path per level | nothing |
 | `AttackSlot.OffHand` in `CombatSystem` | nothing |
 | `stats`' off-hand block: damage range, speed | only its "not a weapon" line |
 | `wield`'s "you've not the training to strike with it" | nothing — it has never fired |
 
-A Shade was told *"You can strike with a weapon in your off hand"* at level 3 and there was no such
+A Temper was told *"You can strike with a weapon in your off hand"* at level 3 and there was no such
 weapon in the world. §12's lesson in its rarer direction: usually a field is authored and read by
 nobody, and here an engine was built and authored for by nobody.
 
@@ -1861,7 +1894,7 @@ Armour is untouched — a worn item is not a held one.
 
 | Shape | Slots | Which |
 |---|---|---|
-| Blades, cleavers, a hand axe, a dredging hook, the Shade's quiet knife at every act | `[MainHand, OffHand]` | 12 |
+| Blades, cleavers, a hand axe, a dredging hook, the Temper's quiet knife at every act | `[MainHand, OffHand]` | 12 |
 | Mauls, staves, a long pick, a standing hammer — the shop line only | `[MainHand]` + two-handed | 5 |
 | Spears, spikes, rods, censers, and the other three Paths' epics | `[MainHand]` | 18 |
 | Shields and the torch | `[OffHand]` | 6 |
@@ -1874,15 +1907,15 @@ the shop line.
 
 **Two things this makes true that have never been played**, both recorded rather than resolved:
 
-- **Dual wielding is now reachable, and it is large.** At mastery a Shade's off hand deals 100% of
+- **Dual wielding is now reachable, and it is large.** At mastery a Temper's off hand deals 100% of
   its weapon's damage and a Warden's 80%, on its own timer once Ambidextrous lands. Two same-tier
-  blades is therefore close to *double* a single blade's damage for a Shade. That is what the
+  blades is therefore close to *double* a single blade's damage for a Temper. That is what the
   progression was designed to pay out and no character has ever collected it.
 - **The two-handed tier is, on today's numbers, strictly worse.** Within a shop tier the delay-6,
   delay-8 and delay-10 weapons all sit at the same dps — the ossara line is 1.67 / 1.50 / 1.60 —
   so the heavy weapon now costs a hand and buys nothing. Nobody would choose one. The honest fix is
   a damage premium on two-handed weapons, and the size of it is a play question, not an arithmetic
-  one: it depends on whether the off hand it displaces would have held a shield or a second blade.
+  one: it depends on whether the off hand it displaces would have held a shield or a second temper.
   Deliberately not guessed here, for the same reason the weapon ladder's overlap was left alone.
 
 **An instance is still in one slot.** `ItemInstance.EquippedSlot` is unchanged and singular —
@@ -2893,7 +2926,7 @@ keyword field. What follows is the reasoning that got there, kept because the *n
 raises is unmade.
 
 **Original status: agreed, not scheduled.** The Path gate (§4.9) closed the damage — Vesh no longer hands a
-Shade the Adept chain — but it closed it by narrowing *who is offered what*, not by giving the
+Temper the Adept chain — but it closed it by narrowing *who is offered what*, not by giving the
 player a say. Those are two different problems and only the first one is done.
 
 **What an accept step buys, now that it is not free.** §4.9 argued there was no accept step because

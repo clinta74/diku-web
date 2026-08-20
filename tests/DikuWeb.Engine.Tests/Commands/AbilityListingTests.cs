@@ -67,7 +67,7 @@ public sealed class AbilityListingTests
     /// </summary>
     [Theory]
     [InlineData(CharacterPath.Warden, "warden.kick")]
-    [InlineData(CharacterPath.Shade, "shade.strike")]
+    [InlineData(CharacterPath.Temper, "temper.strike")]
     [InlineData(CharacterPath.Adept, "adept.bolt")]
     [InlineData(CharacterPath.Hallow, "hallow.mend")]
     public void The_printed_line_is_the_one_the_describer_derives(CharacterPath path, string key)
@@ -116,7 +116,7 @@ public sealed class AbilityListingTests
     [Fact]
     public void Passives_keep_their_own_words()
     {
-        var (harness, actor) = WithAbilities(CharacterPath.Shade, level: 10, "shade.strike");
+        var (harness, actor) = WithAbilities(CharacterPath.Temper, level: 10, "temper.strike");
 
         var listing = Listing(harness, actor);
 

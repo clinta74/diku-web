@@ -90,7 +90,7 @@ public static class AbilityProgression
                 (5, PassiveKeys.DualWield),
                 (15, PassiveKeys.Ambidextrous),
             ],
-            CharacterPath.Shade => [
+            CharacterPath.Temper => [
                 (3, PassiveKeys.DualWield),
                 (8, PassiveKeys.Parry),
                 (10, PassiveKeys.Ambidextrous),
@@ -104,7 +104,7 @@ public static class AbilityProgression
     /// </summary>
     /// <remarks>
     /// The Warden parries more often and earlier: a shield and a braced stance are the whole of
-    /// what the Path is. A Shade parries by footwork, which is later and less reliable, and is
+    /// what the Path is. A Temper parries by footwork, which is later and less reliable, and is
     /// meant to be the lesser half of not being hit - evasion and simply not being there are the
     /// rest. An Adept or Hallow never parries at all.
     /// </remarks>
@@ -113,7 +113,7 @@ public static class AbilityProgression
             ? path switch
             {
                 CharacterPath.Warden => 0.20,
-                CharacterPath.Shade => 0.12,
+                CharacterPath.Temper => 0.12,
                 _ => 0.0,
             }
             : 0.0;
@@ -123,7 +123,7 @@ public static class AbilityProgression
     /// </summary>
     /// <remarks>
     /// Deliberately far out. The obvious axis for this was Agility, and it does not work: Agility
-    /// caps at <c>AttributeSet.MaxValue</c>, which a Shade reaches at level 6 and a Warden at 11, so
+    /// caps at <c>AttributeSet.MaxValue</c>, which a Temper reaches at level 6 and a Warden at 11, so
     /// the ramp would have been over before the passive had been held for long.
     /// </remarks>
     public const int OffHandMasteryLevel = 40;
@@ -134,16 +134,16 @@ public static class AbilityProgression
     /// <remarks>
     /// <para>
     /// <b>A second weapon arrives partly trained and grows into being a second weapon.</b> Before
-    /// this it arrived whole: the day a Shade learned Dual Wield their off hand hit for everything
+    /// this it arrived whole: the day a Temper learned Dual Wield their off hand hit for everything
     /// the main hand did, and Ambidextrous later doubled the rate as well. The doubling at the top
-    /// is intended and untouched - a Shade at <see cref="OffHandMasteryLevel"/> and beyond is
+    /// is intended and untouched - a Temper at <see cref="OffHandMasteryLevel"/> and beyond is
     /// exactly where it was. What changes is everything before it.
     /// </para>
     /// <para>
     /// Straight line from the level the Path learns <c>DualWield</c> to
     /// <see cref="OffHandMasteryLevel"/>, starting at half the eventual share so the passive is
     /// worth having on the day it is granted rather than being a promise about level 40. The
-    /// endpoints are the Path's identity: a Shade ends at <b>all</b> of it, because two blades is
+    /// endpoints are the Path's identity: a Temper ends at <b>all</b> of it, because two blades is
     /// what the Path is, and a Warden at <b>four fifths</b>, because the hand is also holding a
     /// shield most of the time.
     /// </para>
@@ -161,7 +161,7 @@ public static class AbilityProgression
 
         var full = path switch
         {
-            CharacterPath.Shade => 1.00m,
+            CharacterPath.Temper => 1.00m,
             CharacterPath.Warden => 0.80m,
             _ => 0m,
         };

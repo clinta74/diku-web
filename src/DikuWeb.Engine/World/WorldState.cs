@@ -687,7 +687,7 @@ public sealed class WorldState(IRandomSource random)
         else if (effect.SourceUnlockLevel < existing.SourceUnlockLevel)
         {
             // A weaker application does nothing at all - it does not stack, and it does not extend
-            // what is already running. Extending was the real cost of the old behaviour: a Shade
+            // what is already running. Extending was the real cost of the old behaviour: a Temper
             // could hold Hemorrhage's 16-damage bleed open indefinitely by re-applying a cheap
             // Ambush, which refreshed the clock and left the bigger tick in place.
         }

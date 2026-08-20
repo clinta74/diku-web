@@ -73,7 +73,7 @@ public static class ThreatCredit
     /// <see cref="Domain.Abilities.Effects.ActiveEffect.SourceEntityId"/> is the only record of
     /// who is responsible once the cast is over - the caster may have fled the room, and the
     /// bleed keeps working either way. Crediting the victim's own list to nobody would make a
-    /// Shade's Ambush, which is most of that Path's damage, worth no threat at all.
+    /// Temper's Ambush, which is most of that Path's damage, worth no threat at all.
     /// </remarks>
     public static void CreditTick(
         WorldState world,

@@ -111,36 +111,36 @@ public sealed class CacheLivenessTests
         var (applier, _, _, items, _) = NewApplier();
 
         applier.Apply(new UpsertItemTemplate(
-            "blade", "a blade", "", "/", [ItemSlot.MainHand], false, 10, 25, [], 8, "slash", false, false, false,
+            "temper", "a temper", "", "/", [ItemSlot.MainHand], false, 10, 25, [], 8, "slash", false, false, false,
             false, []));
 
-        Assert.Equal(25, items.Get("blade")?.BaseValue);
-        Assert.Equal(8, items.Get("blade")?.AttackDelayPulses);
-        Assert.Equal("slash", items.Get("blade")?.AttackVerb);
+        Assert.Equal(25, items.Get("temper")?.BaseValue);
+        Assert.Equal(8, items.Get("temper")?.AttackDelayPulses);
+        Assert.Equal("slash", items.Get("temper")?.AttackVerb);
 
         // The shop price is the reason this matters: it reads the cache, not the repository.
         // So does weapon speed - combat resolves the delay through this same cache every pulse.
         // The quest-item flag rides along: the spawner reads it from this cache too.
         applier.Apply(new UpsertItemTemplate(
-            "blade", "a blade", "", "/", [ItemSlot.MainHand], true, 10, 99, [], 4, "cleave", true, true, true,
+            "temper", "a temper", "", "/", [ItemSlot.MainHand], true, 10, 99, [], 4, "cleave", true, true, true,
             true, [CharacterPath.Warden]));
 
         // The three restrictions ride along too - they are read from this cache at pick-up,
         // at the shop counter and at the moment of equipping.
-        Assert.True(items.Get("blade")?.IsLore);
-        Assert.True(items.Get("blade")?.IsNoDrop);
-        Assert.Equal([CharacterPath.Warden], items.Get("blade")?.Paths);
+        Assert.True(items.Get("temper")?.IsLore);
+        Assert.True(items.Get("temper")?.IsNoDrop);
+        Assert.Equal([CharacterPath.Warden], items.Get("temper")?.Paths);
 
         // And so does the light, which is read from this cache every time a dark room is drawn.
-        Assert.True(items.Get("blade")?.IsLightSource);
+        Assert.True(items.Get("temper")?.IsLightSource);
 
-        Assert.Equal(99, items.Get("blade")?.BaseValue);
-        Assert.Equal(4, items.Get("blade")?.AttackDelayPulses);
-        Assert.Equal("cleave", items.Get("blade")?.AttackVerb);
-        Assert.True(items.Get("blade")?.IsQuestItem);
+        Assert.Equal(99, items.Get("temper")?.BaseValue);
+        Assert.Equal(4, items.Get("temper")?.AttackDelayPulses);
+        Assert.Equal("cleave", items.Get("temper")?.AttackVerb);
+        Assert.True(items.Get("temper")?.IsQuestItem);
 
-        applier.Apply(new DeleteItemTemplate("blade"));
-        Assert.Null(items.Get("blade"));
+        applier.Apply(new DeleteItemTemplate("temper"));
+        Assert.Null(items.Get("temper"));
     }
 
     [Fact]

@@ -13,7 +13,7 @@ interface Props {
   onCreated: (key: string) => void
 }
 
-const PATHS: CharacterPath[] = ['Warden', 'Adept', 'Shade', 'Hallow']
+const PATHS: CharacterPath[] = ['Warden', 'Adept', 'Temper', 'Hallow']
 
 /**
  * Creating an ability needs more than a key and a name, which is why it has its own dialog rather

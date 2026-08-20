@@ -48,7 +48,7 @@ public sealed class WeaponBalanceTests
     ];
 
     /// <summary>Highest damage first — the ranking the epic line is tuned to.</summary>
-    private static readonly string[] EpicOrder = ["shade", "warden", "hallow", "adept"];
+    private static readonly string[] EpicOrder = ["temper", "warden", "hallow", "adept"];
 
     private static WorldBundle World()
     {
@@ -221,7 +221,7 @@ public sealed class WeaponBalanceTests
     // -----------------------------------------------------------------------
 
     /// <summary>
-    /// Path-locked, so each says what melee means to that Path: Shade &gt; Warden &gt; Hallow &gt;
+    /// Path-locked, so each says what melee means to that Path: Temper &gt; Warden &gt; Hallow &gt;
     /// Adept, with the two casters close together because their output is focus abilities.
     /// </summary>
     /// <remarks>
@@ -235,7 +235,7 @@ public sealed class WeaponBalanceTests
     [InlineData(3)]
     [InlineData(4)]
     [InlineData(5)]
-    public void An_epic_tier_ranks_shade_then_warden_then_hallow_then_adept(int tier)
+    public void An_epic_tier_ranks_blade_then_warden_then_hallow_then_adept(int tier)
     {
         var weapons = Weapons();
 

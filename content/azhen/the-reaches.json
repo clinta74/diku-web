@@ -461,7 +461,7 @@
       ]
     },
     {
-      "key": "epic-shade-3",
+      "key": "epic-temper-3",
       "name": "a measured quiet knife",
       "description": "It does not catch the light. Somebody took a great deal of trouble over that. Trued against an Azhen rule. Every measurement on it is a measurement of something else.",
       "icon": "/",
@@ -484,7 +484,7 @@
       "isNoDrop": true,
       "isLightSource": false,
       "paths": [
-        "Shade"
+        "Temper"
       ]
     }
   ],
@@ -3351,23 +3351,23 @@
       ]
     },
     {
-      "key": "e3-shade",
+      "key": "e3-temper",
       "zoneKey": "azhen.thessivar",
       "name": "The Quiet Knife, measured",
       "summary": "Have Vesh reforge your quiet knife.",
       "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
       "giverMobKey": "epic-smith-vesh",
       "turninMobKey": "epic-smith-vesh",
-      "requiredItemKey": "epic-shade-2",
+      "requiredItemKey": "epic-temper-2",
       "requiredCount": 1,
       "rewardXp": 34000,
       "rewardGold": 0,
-      "rewardItemKey": "epic-shade-3",
+      "rewardItemKey": "epic-temper-3",
       "rewardItemCount": 1,
       "rewardFlagKey": null,
       "prerequisiteQuestKeys": [
         "a3-3-what-it-is-watching-for",
-        "e2-shade"
+        "e2-temper"
       ],
       "isRepeatable": false,
       "autoStart": false,
@@ -3379,7 +3379,7 @@
       },
       "sortOrder": 13,
       "paths": [
-        "Shade"
+        "Temper"
       ]
     }
   ],

@@ -134,7 +134,7 @@ public static class FollowSystem
     /// <remarks>
     /// The same questions <c>Move</c> asks of the person typing a direction, in the same order.
     /// Deliberately re-asked rather than assumed from the leader having passed: the gate that let a
-    /// Warden with the key through is exactly the gate that must stop the Shade without it (§4.15),
+    /// Warden with the key through is exactly the gate that must stop the Temper without it (§4.15),
     /// and a follow that skipped it would be a way to walk anybody past any lock.
     /// </remarks>
     private static string? Refuse(

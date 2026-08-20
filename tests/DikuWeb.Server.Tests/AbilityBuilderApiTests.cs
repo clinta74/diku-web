@@ -179,7 +179,7 @@ public sealed class AbilityBuilderApiTests(PostgresFixture postgres)
         await BuilderClient.RegisterBuilderAsync(factory, client);
 
         var response = await client.PostAsJsonAsync(
-            "/api/builder/abilities/shade.misfiled",
+            "/api/builder/abilities/temper.misfiled",
             ValidBody(path: "Warden"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);

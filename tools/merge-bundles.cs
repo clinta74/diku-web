@@ -141,6 +141,7 @@ Console.WriteLine($"  wrote  {output} (formatVersion {b.FormatVersion}, scope al
 Console.WriteLine(
     $"         {b.Worlds.Count} worlds, {b.Zones.Count} zones, {b.ItemTemplates.Count} itemTemplates, "
     + $"{b.MobTemplates.Count} mobTemplates, {b.Rooms.Count} rooms, {b.Spawners.Count} spawners, "
-    + $"{b.Quests.Count} quests, {b.Configurations.Count} configurations");
+    + $"{b.Quests.Count} quests, {b.Abilities.Count} abilities, "
+    + $"{b.Configurations.Count} configurations");
 Console.WriteLine("OK");
 return 0;

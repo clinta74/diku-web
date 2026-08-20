@@ -20,7 +20,7 @@ namespace DikuWeb.Engine.Tests.Systems;
 /// in from the combat loop.
 ///
 /// That inverted the design. <b>The Adept, the Path built to deal the largest damage in the game,
-/// was the only one that could never pull a mob off anybody</b>, and the Shade's Ambush — most of
+/// was the only one that could never pull a mob off anybody</b>, and the Temper's Ambush — most of
 /// that Path's damage — was worth nothing either. Every point of damage now counts once, so
 /// "whoever hurts it most gets hit" is a rule about the game rather than about melee.
 /// </remarks>
@@ -167,18 +167,18 @@ public sealed class ThreatTests
         // The caster may have fled the room; the bleed keeps working either way, and the threat
         // for it belongs to them rather than to nobody.
         var harness = Loaded();
-        var shade = Caster(harness, "shade.ambush", name: "Vess", path: CharacterPath.Shade, level: 10);
+        var temper = Caster(harness, "temper.body-blow", name: "Vess", path: CharacterPath.Temper, level: 10);
         var rat = harness.AddMob("rat", West, health: 5_000);
 
-        harness.Execute(shade, "kill rat");
-        harness.Execute(shade, "cast ambush");
+        harness.Execute(temper, "kill rat");
+        harness.Execute(temper, "cast body blow");
         harness.Pump(30);
 
-        var afterCast = HateFor(harness, rat, shade);
+        var afterCast = HateFor(harness, rat, temper);
         harness.Pump(20);
 
         // Threat kept climbing while nothing new was cast, which is the tick being counted.
-        Assert.True(HateFor(harness, rat, shade) > afterCast);
+        Assert.True(HateFor(harness, rat, temper) > afterCast);
     }
 
     [Fact]

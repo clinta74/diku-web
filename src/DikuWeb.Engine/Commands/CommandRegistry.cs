@@ -149,7 +149,7 @@ public sealed class CommandRegistry
     ///
     /// A fallback rather than thirty-seven registered verbs, for three reasons. The table is
     /// global while abilities are per-Path, so registering them would put an Adept's Amplify in
-    /// front of a Shade's Ambush for the prefix <c>am</c>, and the Shade would be told they do not
+    /// front of a Temper's Ambush for the prefix <c>am</c>, and the Temper would be told they do not
     /// know an ability they have. It covers abilities added later with no further work. And
     /// because it runs only once the table has missed, <b>it can never take a command out from
     /// under someone</b> — which is what makes it safe to add to a game already being played.
@@ -849,7 +849,7 @@ public sealed class CommandRegistry
     ///
     /// <b>Only a quest they are on.</b> The flag alone used to refuse, which protected the ledger
     /// of a quest the character had never met and, in the Path-gated chains, could not take - and
-    /// an epic reward is a quest item and no-drop and Path-locked at once, so a Shade holding an
+    /// an epic reward is a quest item and no-drop and Path-locked at once, so a Temper holding an
     /// Adept stormrod had a pack slot nothing could ever be done about. <c>QuestBinding</c> asks
     /// the narrower question.
     ///

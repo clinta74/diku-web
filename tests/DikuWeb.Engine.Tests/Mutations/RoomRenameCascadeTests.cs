@@ -156,14 +156,14 @@ public sealed class RoomRenameCascadeTests
     public void The_items_on_the_floor_come_with_it()
     {
         var harness = Loaded();
-        var template = harness.DefineItem("blade", "a blade", slot: null);
-        var blade = new ItemSpawner().Spawn(template, harness.Zone, harness.World_, Middle);
-        harness.World.AddItem(blade);
+        var template = harness.DefineItem("temper", "a temper", slot: null);
+        var temper = new ItemSpawner().Spawn(template, harness.Zone, harness.World_, Middle);
+        harness.World.AddItem(temper);
 
         harness.Mutate(new RenameRoom(Middle, Renamed));
 
-        Assert.Equal(Renamed.ToString(), blade.RoomKey);
-        Assert.Contains(blade, harness.World.ItemsIn(Renamed));
+        Assert.Equal(Renamed.ToString(), temper.RoomKey);
+        Assert.Contains(temper, harness.World.ItemsIn(Renamed));
         Assert.Empty(harness.World.ItemsIn(Middle));
     }
 
@@ -173,13 +173,13 @@ public sealed class RoomRenameCascadeTests
         // Ground items are persisted, so an in-memory move alone is undone by the next restart -
         // the row would still name the room that was renamed.
         var harness = Loaded();
-        var template = harness.DefineItem("blade", "a blade", slot: null);
-        var blade = new ItemSpawner().Spawn(template, harness.Zone, harness.World_, Middle);
-        harness.World.AddItem(blade);
+        var template = harness.DefineItem("temper", "a temper", slot: null);
+        var temper = new ItemSpawner().Spawn(template, harness.Zone, harness.World_, Middle);
+        harness.World.AddItem(temper);
 
         harness.Mutate(new RenameRoom(Middle, Renamed));
 
-        Assert.Contains(blade, harness.ItemSaves.Saved);
+        Assert.Contains(temper, harness.ItemSaves.Saved);
     }
 
     [Fact]

@@ -121,10 +121,10 @@ public sealed class AbilityCooldownsTests
     public void A_timer_belongs_to_one_path()
     {
         var warden = Ability("warden.one", 40, group: 1);
-        var shade = Ability("shade.one", 40, group: 1, path: CharacterPath.Shade);
+        var temper = Ability("temper.one", 40, group: 1, path: CharacterPath.Temper);
 
-        Assert.Empty(AbilityCooldowns.GroupMates(warden, [warden, shade]));
-        Assert.Empty(AbilityCooldowns.GroupMates(shade, [warden, shade]));
+        Assert.Empty(AbilityCooldowns.GroupMates(warden, [warden, temper]));
+        Assert.Empty(AbilityCooldowns.GroupMates(temper, [warden, temper]));
     }
 
     [Fact]
@@ -217,68 +217,20 @@ public sealed class AbilityCooldownsTests
         Assert.Equal("warden.a", blocked!.Value.Source.Key);
     }
 
-    /// <summary>A Shade's timer never reaches a Warden, whatever number either of them used.</summary>
+    /// <summary>A Temper's timer never reaches a Warden, whatever number either of them used.</summary>
     [Fact]
     public void A_timer_on_another_path_blocks_nothing()
     {
         var warden = Ability("warden.one", 400, group: 1);
-        var shade = Ability("shade.one", 1200, group: 1, path: CharacterPath.Shade);
+        var temper = Ability("temper.one", 1200, group: 1, path: CharacterPath.Temper);
 
         Assert.Null(AbilityCooldowns.Blocking(
-            warden, [warden, shade], Cast(("shade.one", 0)), currentPulse: 0));
+            warden, [warden, temper], Cast(("temper.one", 0)), currentPulse: 0));
     }
 
-    // -----------------------------------------------------------------------
-    // The shipped set
-    // -----------------------------------------------------------------------
-
-    /// <summary>
-    /// The four walls, which are the reason any of this exists — and nothing else, because a timer
-    /// is a strong statement and the catalogue should make it only where it is earned.
-    /// </summary>
-    [Fact]
-    public void The_wardens_four_walls_share_a_timer_and_nothing_else_does()
-    {
-        var grouped = AbilityCatalogue.AsAbilities
-            .Where(a => a.CooldownGroup is not null)
-            .Select(a => a.Key)
-            .OrderBy(k => k, StringComparer.Ordinal)
-            .ToList();
-
-        Assert.Equal(
-            [
-                "warden.ground-and-centre",
-                "warden.last-stand",
-                "warden.the-last-wall",
-                "warden.unbreakable",
-            ],
-            grouped);
-    }
-
-    /// <summary>Each of them names the other three, which is what the roster line will print.</summary>
-    [Fact]
-    public void Each_wall_knows_the_other_three()
-    {
-        var all = AbilityCatalogue.AsAbilities;
-
-        foreach (var wall in all.Where(a => a.CooldownGroup is not null))
-        {
-            Assert.Equal(3, AbilityCooldowns.GroupMates(wall, all).Count());
-        }
-    }
-
-    /// <summary>
-    /// Every one of them raises maximum health, which is the thing being rationed. A wall that did
-    /// something else would be sharing a timer for no reason a player could work out.
-    /// </summary>
-    [Fact]
-    public void Every_ability_on_the_timer_raises_maximum_health()
-    {
-        foreach (var wall in AbilityCatalogue.AsAbilities.Where(a => a.CooldownGroup is not null))
-        {
-            Assert.Contains(wall.Effects, e => e.Key == "buff.max-health");
-        }
-    }
+    // The four walls, and everything else about the timer the game actually ships, moved to
+    // AbilityContentTests when the ability set moved to content/abilities.json. What stays here is
+    // the timer's behaviour, which is Domain's and is asked of fixtures.
 
     // -----------------------------------------------------------------------
     // What the validator says about a timer
@@ -334,21 +286,13 @@ public sealed class AbilityCooldownsTests
     public void The_same_number_under_two_paths_leaves_both_sharing_nothing()
     {
         var warden = Ability("warden.a", 40, group: 1);
-        var shade = Ability("shade.a", 40, group: 1, path: CharacterPath.Shade);
+        var temper = Ability("temper.a", 40, group: 1, path: CharacterPath.Temper);
 
-        var problems = AbilityValidator.ValidateSet([warden, shade], new EffectRegistry())
+        var problems = AbilityValidator.ValidateSet([warden, temper], new EffectRegistry())
             .Where(p => p.Message.Contains("timer 1", StringComparison.Ordinal))
             .ToList();
 
         Assert.Equal(2, problems.Count);
     }
 
-    /// <summary>And the shipped set is clean, since the four walls are a real group.</summary>
-    [Fact]
-    public void The_shipped_catalogue_has_no_lonely_timer()
-    {
-        Assert.DoesNotContain(
-            AbilityValidator.ValidateSet(AbilityCatalogue.AsAbilities, new EffectRegistry()),
-            p => p.Message.Contains("shares with nothing", StringComparison.Ordinal));
-    }
 }

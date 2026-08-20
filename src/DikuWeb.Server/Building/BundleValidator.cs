@@ -1,3 +1,5 @@
+using DikuWeb.Domain.Abilities;
+using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
@@ -119,6 +121,7 @@ public static class BundleValidator
         CheckItems(bundle, Error);
         CheckMobs(bundle, items, Error, Warn);
         CheckQuests(bundle, mobs, items, Error, Warn);
+        CheckAbilities(bundle, Error, Warn);
         CheckTerrain(bundle, Error, Warn);
         CheckFlags(bundle, Error);
 
@@ -410,6 +413,72 @@ public static class BundleValidator
             }
         }
     }
+
+    /// <summary>
+    /// Abilities, through the same <see cref="AbilityValidator"/> the builder API saves against.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Abilities travelled in bundles for a while with nothing checking them.</b> The import
+    /// upserts whatever the file says, so a key naming the wrong Path, a cost of zero, an effect
+    /// key no executor implements — all of it landed in <c>abilities</c> and failed silently at
+    /// cast time, which is the furthest possible point from the person who wrote it. This is the
+    /// same arm as the dialogue-key and behavior-key checks, and it exists for the same reason.
+    /// </para>
+    /// <para>
+    /// <b>The set-level rules only run on a complete set.</b> <see cref="AbilityValidator"/> asks
+    /// things a single row cannot answer — whether a Path has anything at level 1, whether the
+    /// gaps between unlocks are playable — and those are properties of the whole table. A bundle
+    /// carrying one retuned ability on its own would fail every one of them while being perfectly
+    /// correct, so they are asked only when the bundle carries all four Paths, which is what a
+    /// bundle that means to *be* the ability set looks like.
+    /// </para>
+    /// <para>
+    /// Defaults are applied exactly as <c>WorldImporter.AbilityChangeFor</c> applies them, because
+    /// what this validates has to be what the import would store — a null <c>costType</c> becomes
+    /// Stamina in both places or the check is inspecting something that never existed.
+    /// </para>
+    /// </remarks>
+    private static void CheckAbilities(WorldBundle bundle, Action<string> error, Action<string> warn)
+    {
+        if (bundle.Abilities.Count == 0)
+        {
+            return;
+        }
+
+        var effects = new EffectRegistry();
+        var abilities = bundle.Abilities.Select(Materialise).ToList();
+
+        var complete = Enum.GetValues<CharacterPath>()
+            .All(path => abilities.Any(a => a.Path == path));
+
+        var problems = complete
+            ? AbilityValidator.ValidateSet(abilities, effects)
+            : [.. abilities.SelectMany(a => AbilityValidator.ValidateOne(a, effects))];
+
+        foreach (var problem in problems)
+        {
+            var say = problem.Severity == AbilityProblemSeverity.Error ? error : warn;
+            say($"ability {problem.Key}: {problem.Message}");
+        }
+    }
+
+    /// <summary>A bundle ability as the import would store it, defaults and all.</summary>
+    private static Ability Materialise(BundleAbility a) => new()
+    {
+        Key = a.Key,
+        Path = a.Path ?? CharacterPath.Warden,
+        UnlockLevel = a.UnlockLevel,
+        Name = a.Name,
+        Description = a.Description,
+        CostType = a.CostType ?? CostType.Stamina,
+        CostValue = a.CostValue,
+        CooldownPulses = a.CooldownPulses,
+        CooldownGroup = a.CooldownGroup,
+        CastTimePulses = a.CastTimePulses,
+        TargetingType = a.TargetingType ?? TargetingType.SingleTarget,
+        Effects = [.. a.Effects ?? []],
+    };
 
     private static void CheckQuests(
         WorldBundle bundle,

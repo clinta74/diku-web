@@ -6,7 +6,7 @@ import { toAbilitiesPath } from '../routes'
 import { AbilityEditor } from './AbilityEditor'
 import { AbilityCreateDialog } from './AbilityCreateDialog'
 
-const PATH_ORDER = ['Warden', 'Adept', 'Shade', 'Hallow'] as const
+const PATH_ORDER = ['Warden', 'Adept', 'Temper', 'Hallow'] as const
 
 /**
  * The Abilities tab: every ability grouped by Path, in unlock order, with an editor beside it.

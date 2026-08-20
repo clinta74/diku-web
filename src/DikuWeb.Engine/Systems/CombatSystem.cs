@@ -729,7 +729,7 @@ public sealed class CombatSystem(
 
                 ApplyDamage(world, combatantId, damage);
 
-                // Credited to whoever applied it, not to whoever is standing nearby. A Shade's
+                // Credited to whoever applied it, not to whoever is standing nearby. A Temper's
                 // Ambush is most of that Path's damage, and without this none of it was worth any
                 // threat - the bleed did the work and the melee got the blame.
                 ThreatCredit.CreditTick(

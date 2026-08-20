@@ -198,7 +198,7 @@ public sealed class RegenCalculatorTests
     [Fact]
     public void All_paths_regen_at_sleep()
     {
-        var paths = new[] { CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Shade, CharacterPath.Hallow };
+        var paths = new[] { CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Temper, CharacterPath.Hallow };
 
         foreach (var path in paths)
         {
@@ -265,13 +265,13 @@ public sealed class RegenCalculatorTests
         };
 
         var warden = RegenCalculator.Calculate(state, Pool(), vitalityModifier: 0, CharacterPath.Warden);
-        var shade = RegenCalculator.Calculate(state, Pool(), vitalityModifier: 0, CharacterPath.Shade);
+        var temper = RegenCalculator.Calculate(state, Pool(), vitalityModifier: 0, CharacterPath.Temper);
         var adept = RegenCalculator.Calculate(state, Pool(), vitalityModifier: 0, CharacterPath.Adept);
         var hallow = RegenCalculator.Calculate(state, Pool(), vitalityModifier: 0, CharacterPath.Hallow);
 
         Assert.Equal(warden.focus * 2, adept.focus);
         Assert.Equal(warden.focus * 2, hallow.focus);
-        Assert.Equal(warden.focus, shade.focus);
+        Assert.Equal(warden.focus, temper.focus);
 
         // Only focus. Health and stamina are the same for everyone, which is what keeps this from
         // being a blanket "casters recover faster" buff.

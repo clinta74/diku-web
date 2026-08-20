@@ -125,8 +125,8 @@ public sealed class CombatTimingTests
     [Fact]
     public void Ambidexterity_frees_the_off_hand_from_the_main_hand()
     {
-        // Shade 10. The same pair of weapons now beats independently.
-        var fight = Fight(mainHandDelay: 8, offHandDelay: 4, level: 10, path: CharacterPath.Shade);
+        // Temper 10. The same pair of weapons now beats independently.
+        var fight = Fight(mainHandDelay: 8, offHandDelay: 4, level: 10, path: CharacterPath.Temper);
 
         Assert.Equal([8, 16], fight.MainHandSwingPulses(through: 17));
         Assert.Equal([4, 8, 12, 16], fight.OffHandSwingPulses(through: 17));
@@ -136,7 +136,7 @@ public sealed class CombatTimingTests
     public void Ambidexterity_is_level_gated()
     {
         // One level short: trained to dual-wield, not yet to lead with the off hand.
-        var fight = Fight(mainHandDelay: 8, offHandDelay: 4, level: 9, path: CharacterPath.Shade);
+        var fight = Fight(mainHandDelay: 8, offHandDelay: 4, level: 9, path: CharacterPath.Temper);
 
         Assert.Equal([8, 16], fight.OffHandSwingPulses(through: 17));
     }
@@ -286,7 +286,7 @@ public sealed class CombatTimingTests
         fight.Pump(through: 6);
         Assert.Empty(fight.PlayerSwingPulses(through: 6));
 
-        // Drop the slow blade for a fast one. Speed is read fresh at every readiness check, so
+        // Drop the slow temper for a fast one. Speed is read fresh at every readiness check, so
         // there is no schedule to invalidate: the dirk's 4 pulses have already elapsed since
         // engagement and it swings on the very next check.
         fight.MainHand!.EquippedSlot = null;

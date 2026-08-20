@@ -434,9 +434,9 @@ public sealed class BundleValidatorTests
         var bundle = Valid();
 
         var warden = Marked("q1", "vesh") with { Paths = [CharacterPath.Warden] };
-        var shade = Marked("q2", "vesh") with { Paths = [CharacterPath.Shade] };
+        var temper = Marked("q2", "vesh") with { Paths = [CharacterPath.Temper] };
 
-        Assert.True(Check(bundle with { Quests = [warden, shade] }).Ok);
+        Assert.True(Check(bundle with { Quests = [warden, temper] }).Ok);
     }
 
     /// <summary>An empty Path list means anyone, so it overlaps everything.</summary>
@@ -446,9 +446,9 @@ public sealed class BundleValidatorTests
         var bundle = Valid();
 
         var anyone = Marked("q1", "vesh");
-        var shade = Marked("q2", "vesh") with { Paths = [CharacterPath.Shade] };
+        var temper = Marked("q2", "vesh") with { Paths = [CharacterPath.Temper] };
 
-        AssertError(bundle with { Quests = [anyone, shade] }, "both mark 'things'");
+        AssertError(bundle with { Quests = [anyone, temper] }, "both mark 'things'");
     }
 
     /// <summary>A quest marking the same words as itself is one quest, and fine.</summary>

@@ -10,8 +10,8 @@ namespace DikuWeb.Domain.Tests.Abilities;
 public sealed class PassiveProgressionTests
 {
     [Theory]
-    [InlineData(CharacterPath.Shade, 2, false)]
-    [InlineData(CharacterPath.Shade, 3, true)]
+    [InlineData(CharacterPath.Temper, 2, false)]
+    [InlineData(CharacterPath.Temper, 3, true)]
     [InlineData(CharacterPath.Warden, 4, false)]
     [InlineData(CharacterPath.Warden, 5, true)]
     [InlineData(CharacterPath.Adept, 50, false)]
@@ -20,8 +20,8 @@ public sealed class PassiveProgressionTests
         Assert.Equal(expected, AbilityProgression.KnowsPassive(path, level, PassiveKeys.DualWield));
 
     [Theory]
-    [InlineData(CharacterPath.Shade, 9, false)]
-    [InlineData(CharacterPath.Shade, 10, true)]
+    [InlineData(CharacterPath.Temper, 9, false)]
+    [InlineData(CharacterPath.Temper, 10, true)]
     [InlineData(CharacterPath.Warden, 14, false)]
     [InlineData(CharacterPath.Warden, 15, true)]
     [InlineData(CharacterPath.Adept, 50, false)]
@@ -30,7 +30,7 @@ public sealed class PassiveProgressionTests
         Assert.Equal(expected, AbilityProgression.KnowsPassive(path, level, PassiveKeys.Ambidextrous));
 
     [Theory]
-    [InlineData(CharacterPath.Shade)]
+    [InlineData(CharacterPath.Temper)]
     [InlineData(CharacterPath.Warden)]
     public void Ambidexterity_never_arrives_before_the_hand_that_uses_it(CharacterPath path)
     {
@@ -47,7 +47,7 @@ public sealed class PassiveProgressionTests
     /// </summary>
     [Theory]
     [InlineData(CharacterPath.Warden)]
-    [InlineData(CharacterPath.Shade)]
+    [InlineData(CharacterPath.Temper)]
     [InlineData(CharacterPath.Adept)]
     [InlineData(CharacterPath.Hallow)]
     public void Passives_are_not_castable_abilities(CharacterPath path)

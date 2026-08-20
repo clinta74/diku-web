@@ -73,7 +73,7 @@ export function AbilityEditor({ abilityKey, roster, onChanged, onDeleted }: Prop
 
   // The others on this timer. Matched on Path as well as on the number, because the number is only
   // half a timer's identity: a character only ever knows one Path's abilities, so Warden 1 and
-  // Shade 1 can never meet in play and are two timers rather than one.
+  // Temper 1 can never meet in play and are two timers rather than one.
   const onTimer =
     draft.cooldownGroup === null
       ? []

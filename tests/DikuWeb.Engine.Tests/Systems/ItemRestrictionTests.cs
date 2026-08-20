@@ -43,16 +43,16 @@ public sealed class ItemRestrictionTests
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var blade = harness.AddItemTemplate(Template("oath-blade", lore: true));
+        var temper = harness.AddItemTemplate(Template("oath-temper", lore: true));
 
         var player = harness.AddPlayer("Kael", West);
-        harness.GiveItem(player, blade);
-        harness.DropItemInRoom(blade, West);
+        harness.GiveItem(player, temper);
+        harness.DropItemInRoom(temper, West);
         harness.Drain(player);
 
         harness.Execute(player, "get oath");
 
-        Assert.Single(harness.World.InventoryOf(player.CharacterId), i => i.TemplateKey == "oath-blade");
+        Assert.Single(harness.World.InventoryOf(player.CharacterId), i => i.TemplateKey == "oath-temper");
         Assert.Contains("one is all", harness.DrainText(player), StringComparison.Ordinal);
     }
 
@@ -62,18 +62,18 @@ public sealed class ItemRestrictionTests
         // The loophole the flag exists to close: one in the pack and one in each hand is three.
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var blade = harness.AddItemTemplate(Template("oath-blade", lore: true));
+        var temper = harness.AddItemTemplate(Template("oath-temper", lore: true));
 
         var player = harness.AddPlayer("Kael", West);
-        var held = harness.GiveItem(player, blade);
+        var held = harness.GiveItem(player, temper);
         harness.World.EquipItem(held, ItemSlot.MainHand);
 
-        harness.DropItemInRoom(blade, West);
+        harness.DropItemInRoom(temper, West);
         harness.Drain(player);
 
         harness.Execute(player, "get oath");
 
-        Assert.Single(harness.World.InventoryOf(player.CharacterId), i => i.TemplateKey == "oath-blade");
+        Assert.Single(harness.World.InventoryOf(player.CharacterId), i => i.TemplateKey == "oath-temper");
     }
 
     [Fact]
@@ -83,18 +83,18 @@ public sealed class ItemRestrictionTests
         // and each ends the exchange holding a copy they could not have picked up.
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var blade = harness.AddItemTemplate(Template("oath-blade", lore: true));
+        var temper = harness.AddItemTemplate(Template("oath-temper", lore: true));
 
         var giver = harness.AddPlayer("Kael", West);
         var taker = harness.AddPlayer("Ilse", West);
 
-        harness.GiveItem(giver, blade);
-        harness.GiveItem(taker, blade);
+        harness.GiveItem(giver, temper);
+        harness.GiveItem(taker, temper);
         harness.Drain(giver);
 
         harness.Execute(giver, "give oath Ilse");
 
-        Assert.Single(harness.World.InventoryOf(taker.CharacterId), i => i.TemplateKey == "oath-blade");
+        Assert.Single(harness.World.InventoryOf(taker.CharacterId), i => i.TemplateKey == "oath-temper");
         Assert.Contains("already has one", harness.DrainText(giver), StringComparison.Ordinal);
     }
 
@@ -103,15 +103,15 @@ public sealed class ItemRestrictionTests
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var blade = harness.AddItemTemplate(Template("oath-blade", lore: true));
+        var temper = harness.AddItemTemplate(Template("oath-temper", lore: true));
 
         var giver = harness.AddPlayer("Kael", West);
         var taker = harness.AddPlayer("Ilse", West);
-        harness.GiveItem(giver, blade);
+        harness.GiveItem(giver, temper);
 
         harness.Execute(giver, "give oath Ilse");
 
-        Assert.Single(harness.World.InventoryOf(taker.CharacterId), i => i.TemplateKey == "oath-blade");
+        Assert.Single(harness.World.InventoryOf(taker.CharacterId), i => i.TemplateKey == "oath-temper");
     }
 
     // -----------------------------------------------------------------------
@@ -123,10 +123,10 @@ public sealed class ItemRestrictionTests
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var blade = harness.AddItemTemplate(Template("oath-blade", noDrop: true));
+        var temper = harness.AddItemTemplate(Template("oath-temper", noDrop: true));
 
         var player = harness.AddPlayer("Kael", West);
-        harness.GiveItem(player, blade);
+        harness.GiveItem(player, temper);
         harness.Drain(player);
 
         harness.Execute(player, "drop oath");
@@ -140,11 +140,11 @@ public sealed class ItemRestrictionTests
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var blade = harness.AddItemTemplate(Template("oath-blade", noDrop: true));
+        var temper = harness.AddItemTemplate(Template("oath-temper", noDrop: true));
 
         var giver = harness.AddPlayer("Kael", West);
         var taker = harness.AddPlayer("Ilse", West);
-        harness.GiveItem(giver, blade);
+        harness.GiveItem(giver, temper);
         harness.Drain(giver);
 
         harness.Execute(giver, "give oath Ilse");
@@ -160,10 +160,10 @@ public sealed class ItemRestrictionTests
         // about. Destroy is deliberately still allowed.
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var blade = harness.AddItemTemplate(Template("oath-blade", noDrop: true));
+        var temper = harness.AddItemTemplate(Template("oath-temper", noDrop: true));
 
         var player = harness.AddPlayer("Kael", West);
-        harness.GiveItem(player, blade);
+        harness.GiveItem(player, temper);
         harness.Drain(player);
 
         harness.Execute(player, "drop oath");
@@ -180,7 +180,7 @@ public sealed class ItemRestrictionTests
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var oath = harness.AddItemTemplate(Template("oath-blade", paths: CharacterPath.Warden));
+        var oath = harness.AddItemTemplate(Template("oath-temper", paths: CharacterPath.Warden));
 
         var adept = harness.AddPlayer("Ilse", West, path: CharacterPath.Adept);
         var worn = harness.GiveItem(adept, oath);
@@ -198,7 +198,7 @@ public sealed class ItemRestrictionTests
         var harness = new WorldHarness();
         harness.LoadTestWorld();
         var oath = harness.AddItemTemplate(
-            Template("oath-blade", false, false, ItemSlot.MainHand, CharacterPath.Warden, CharacterPath.Hallow));
+            Template("oath-temper", false, false, ItemSlot.MainHand, CharacterPath.Warden, CharacterPath.Hallow));
 
         var hallow = harness.AddPlayer("Bram", West, path: CharacterPath.Hallow);
         var worn = harness.GiveItem(hallow, oath);
@@ -215,7 +215,7 @@ public sealed class ItemRestrictionTests
         // authored item is unrestricted until a builder opts in.
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var plain = harness.AddItemTemplate(Template("plain-blade"));
+        var plain = harness.AddItemTemplate(Template("plain-temper"));
 
         var adept = harness.AddPlayer("Ilse", West, path: CharacterPath.Adept);
         var worn = harness.GiveItem(adept, plain);
@@ -228,20 +228,20 @@ public sealed class ItemRestrictionTests
     [Fact]
     public void A_path_locked_item_can_still_be_carried_and_handed_over()
     {
-        // Deliberate. A Shade should be able to pick a Warden's blade off the floor and take it to
+        // Deliberate. A Temper should be able to pick a Warden's temper off the floor and take it to
         // the Warden - the restriction is on equipping, not on touching.
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var oath = harness.AddItemTemplate(Template("oath-blade", paths: CharacterPath.Warden));
+        var oath = harness.AddItemTemplate(Template("oath-temper", paths: CharacterPath.Warden));
 
-        var shade = harness.AddPlayer("Ilse", West, path: CharacterPath.Shade);
+        var temper = harness.AddPlayer("Ilse", West, path: CharacterPath.Temper);
         var warden = harness.AddPlayer("Kael", West, path: CharacterPath.Warden);
 
         harness.DropItemInRoom(oath, West);
-        harness.Execute(shade, "get oath");
-        Assert.Single(harness.World.InventoryOf(shade.CharacterId));
+        harness.Execute(temper, "get oath");
+        Assert.Single(harness.World.InventoryOf(temper.CharacterId));
 
-        harness.Execute(shade, "give oath Kael");
+        harness.Execute(temper, "give oath Kael");
         Assert.Single(harness.World.InventoryOf(warden.CharacterId));
     }
 }

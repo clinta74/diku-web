@@ -106,9 +106,9 @@ public sealed class ParryCombatTests
     }
 
     [Fact]
-    public void A_shade_parries_once_it_has_learned_how()
+    public void A_blade_parries_once_it_has_learned_how()
     {
-        var (harness, player, _) = Fight(CharacterPath.Shade, 8, ScriptedChanceSource.Always);
+        var (harness, player, _) = Fight(CharacterPath.Temper, 8, ScriptedChanceSource.Always);
 
         Assert.Contains("parries", PumpAndRead(harness, player, 12), StringComparison.Ordinal);
     }

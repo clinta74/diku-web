@@ -34,7 +34,7 @@ public sealed class OffHandShareReportingTests
         return harness;
     }
 
-    /// <summary>A Shade wielding the same blade in both hands, at a level of the caller's choosing.</summary>
+    /// <summary>A Temper wielding the same temper in both hands, at a level of the caller's choosing.</summary>
     private static (WorldHarness Harness, PlayerActor Actor) DualWielder(
         CharacterPath path,
         int level)
@@ -44,12 +44,12 @@ public sealed class OffHandShareReportingTests
 
         // Ten to twenty in both hands, so the share is legible in the printed range rather than
         // being lost to rounding on a 1-2 weapon.
-        var blade = harness.DefineWeapon(
-            "blade", "a blade", ItemSlot.MainHand, delayPulses: 8, verb: "cut",
+        var temper = harness.DefineWeapon(
+            "temper", "a temper", ItemSlot.MainHand, delayPulses: 8, verb: "cut",
             damageMin: 10, damageMax: 20);
 
-        harness.Equip(actor, blade, ItemSlot.MainHand);
-        harness.Equip(actor, blade, ItemSlot.OffHand);
+        harness.Equip(actor, temper, ItemSlot.MainHand);
+        harness.Equip(actor, temper, ItemSlot.OffHand);
 
         return (harness, actor);
     }
@@ -62,16 +62,16 @@ public sealed class OffHandShareReportingTests
     }
 
     /// <summary>
-    /// The reported range is the share, not the weapon. A Shade at the unlock has half of it.
+    /// The reported range is the share, not the weapon. A Temper at the unlock has half of it.
     /// </summary>
     [Fact]
     public void The_sheet_reports_a_partly_trained_off_hand_at_its_share()
     {
-        var (harness, actor) = DualWielder(CharacterPath.Shade, level: 3);
+        var (harness, actor) = DualWielder(CharacterPath.Temper, level: 3);
 
         var sheet = Sheet(harness, actor);
 
-        // Half of 10-20, with the Might modifier of a level 3 Shade halved alongside it.
+        // Half of 10-20, with the Might modifier of a level 3 Temper halved alongside it.
         Assert.Contains("Off Hand:", sheet, StringComparison.Ordinal);
         Assert.Contains("Damage Range: 5-10", sheet, StringComparison.Ordinal);
 
@@ -80,13 +80,13 @@ public sealed class OffHandShareReportingTests
     }
 
     /// <summary>
-    /// And a Shade at mastery has all of it, which is where the Path was before the ramp existed.
+    /// And a Temper at mastery has all of it, which is where the Path was before the ramp existed.
     /// </summary>
     [Fact]
-    public void A_shade_at_mastery_swings_its_off_hand_whole()
+    public void A_blade_at_mastery_swings_its_off_hand_whole()
     {
         var (harness, actor) = DualWielder(
-            CharacterPath.Shade, AbilityProgression.OffHandMasteryLevel);
+            CharacterPath.Temper, AbilityProgression.OffHandMasteryLevel);
 
         var sheet = Sheet(harness, actor);
 
@@ -98,7 +98,7 @@ public sealed class OffHandShareReportingTests
     /// A Warden tops out at four fifths, because that hand is also holding a shield.
     /// </summary>
     [Fact]
-    public void A_warden_at_mastery_tops_out_below_a_shade()
+    public void A_warden_at_mastery_tops_out_below_a_blade()
     {
         var (harness, actor) = DualWielder(
             CharacterPath.Warden, AbilityProgression.OffHandMasteryLevel);
@@ -118,8 +118,8 @@ public sealed class OffHandShareReportingTests
     /// combat, which is the failure it exists to catch.
     /// </remarks>
     [Theory]
-    [InlineData(CharacterPath.Shade, 3)]
-    [InlineData(CharacterPath.Shade, 20)]
+    [InlineData(CharacterPath.Temper, 3)]
+    [InlineData(CharacterPath.Temper, 20)]
     [InlineData(CharacterPath.Warden, 5)]
     [InlineData(CharacterPath.Warden, 30)]
     public void The_printed_range_is_the_one_combat_resolves(CharacterPath path, int level)

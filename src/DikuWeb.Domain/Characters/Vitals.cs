@@ -19,7 +19,7 @@ public sealed class Vitals
     {
         CharacterPath.Warden => Full(health: 60, focus: 20, stamina: 100),
         CharacterPath.Adept => Full(health: 36, focus: 50, stamina: 80),
-        CharacterPath.Shade => Full(health: 44, focus: 30, stamina: 110),
+        CharacterPath.Temper => Full(health: 44, focus: 30, stamina: 110),
         CharacterPath.Hallow => Full(health: 40, focus: 45, stamina: 85),
         _ => Full(health: 40, focus: 30, stamina: 100),
     };

@@ -32,8 +32,8 @@ public static class PathGrowth
     /// <summary>Adept: focus-caster — favors Insight and Resolve (willpower).</summary>
     public static StatGrowth AdeptGrowth => new(Might: 0, Agility: 1, Vitality: 1, Insight: 2, Resolve: 2);
 
-    /// <summary>Shade: stealth and burst — favors Agility and Insight.</summary>
-    public static StatGrowth ShadeGrowth => new(Might: 1, Agility: 2, Vitality: 0, Insight: 2, Resolve: 1);
+    /// <summary>Temper: fast, single-target damage — favors Agility and Insight.</summary>
+    public static StatGrowth TemperGrowth => new(Might: 1, Agility: 2, Vitality: 0, Insight: 2, Resolve: 1);
 
     /// <summary>Hallow: support and control — balanced Insight/Resolve with Vitality.</summary>
     public static StatGrowth HallowGrowth => new(Might: 0, Agility: 1, Vitality: 1, Insight: 2, Resolve: 2);
@@ -42,7 +42,7 @@ public static class PathGrowth
     {
         CharacterPath.Warden => WardenGrowth,
         CharacterPath.Adept => AdeptGrowth,
-        CharacterPath.Shade => ShadeGrowth,
+        CharacterPath.Temper => TemperGrowth,
         CharacterPath.Hallow => HallowGrowth,
         _ => new(Might: 1, Agility: 1, Vitality: 1, Insight: 1, Resolve: 1),
     };

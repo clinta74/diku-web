@@ -128,10 +128,10 @@ public sealed class ChannelCommandTests
         var speaker = harness.AddPlayer("Bram", West);
         var far = harness.AddPlayer("Kael", East);
 
-        harness.Execute(speaker, "chat anyone selling a blade");
+        harness.Execute(speaker, "chat anyone selling a temper");
 
         Assert.Contains(
-            "Bram chats, 'anyone selling a blade'",
+            "Bram chats, 'anyone selling a temper'",
             harness.DrainText(far),
             StringComparison.Ordinal);
     }
@@ -146,9 +146,9 @@ public sealed class ChannelCommandTests
         harness.Execute(quiet, "chat off");
         harness.Drain(quiet);
 
-        harness.Execute(speaker, "chat anyone selling a blade");
+        harness.Execute(speaker, "chat anyone selling a temper");
 
-        Assert.DoesNotContain("blade", harness.DrainText(quiet), StringComparison.Ordinal);
+        Assert.DoesNotContain("temper", harness.DrainText(quiet), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -161,9 +161,9 @@ public sealed class ChannelCommandTests
         var listener = harness.AddPlayer("Kael", East);
 
         harness.Execute(quiet, "chat off");
-        harness.Execute(quiet, "chat anyone selling a blade");
+        harness.Execute(quiet, "chat anyone selling a temper");
 
-        Assert.DoesNotContain("blade", harness.DrainText(listener), StringComparison.Ordinal);
+        Assert.DoesNotContain("temper", harness.DrainText(listener), StringComparison.Ordinal);
         Assert.Contains("world channel is off", harness.DrainText(quiet), StringComparison.Ordinal);
     }
 
@@ -178,9 +178,9 @@ public sealed class ChannelCommandTests
         harness.Execute(quiet, "chat on");
         harness.Drain(quiet);
 
-        harness.Execute(speaker, "chat anyone selling a blade");
+        harness.Execute(speaker, "chat anyone selling a temper");
 
-        Assert.Contains("blade", harness.DrainText(quiet), StringComparison.Ordinal);
+        Assert.Contains("temper", harness.DrainText(quiet), StringComparison.Ordinal);
     }
 
     [Fact]

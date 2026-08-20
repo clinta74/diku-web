@@ -458,7 +458,7 @@
       ]
     },
     {
-      "key": "epic-shade-4",
+      "key": "epic-temper-4",
       "name": "a kept quiet knife",
       "description": "It does not catch the light. Somebody took a great deal of trouble over that. Carried through Nemhal and kept, which is the only word the cult there would use.",
       "icon": "/",
@@ -481,7 +481,7 @@
       "isNoDrop": true,
       "isLightSource": false,
       "paths": [
-        "Shade"
+        "Temper"
       ]
     }
   ],
@@ -3397,23 +3397,23 @@
       ]
     },
     {
-      "key": "e4-shade",
+      "key": "e4-temper",
       "zoneKey": "nemhal.keshvaun",
       "name": "The Quiet Knife, kept",
       "summary": "Have Vesh reforge your quiet knife.",
       "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
       "giverMobKey": "epic-smith-vesh",
       "turninMobKey": "epic-smith-vesh",
-      "requiredItemKey": "epic-shade-3",
+      "requiredItemKey": "epic-temper-3",
       "requiredCount": 1,
       "rewardXp": 96000,
       "rewardGold": 0,
-      "rewardItemKey": "epic-shade-4",
+      "rewardItemKey": "epic-temper-4",
       "rewardItemCount": 1,
       "rewardFlagKey": null,
       "prerequisiteQuestKeys": [
         "a4-3-she-stood-in-the-way",
-        "e3-shade"
+        "e3-temper"
       ],
       "isRepeatable": false,
       "autoStart": false,
@@ -3425,7 +3425,7 @@
       },
       "sortOrder": 14,
       "paths": [
-        "Shade"
+        "Temper"
       ]
     }
   ],

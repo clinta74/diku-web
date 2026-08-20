@@ -15,7 +15,7 @@ public sealed class ParryTests
 {
     [Theory]
     [InlineData(CharacterPath.Warden, 4)]
-    [InlineData(CharacterPath.Shade, 8)]
+    [InlineData(CharacterPath.Temper, 8)]
     public void The_martial_paths_learn_to_parry(CharacterPath path, int level)
     {
         Assert.True(AbilityProgression.KnowsPassive(path, level, PassiveKeys.Parry));
@@ -24,7 +24,7 @@ public sealed class ParryTests
 
     [Theory]
     [InlineData(CharacterPath.Warden, 3)]
-    [InlineData(CharacterPath.Shade, 7)]
+    [InlineData(CharacterPath.Temper, 7)]
     public void Nobody_parries_before_they_have_learned_how(CharacterPath path, int level)
     {
         Assert.False(AbilityProgression.KnowsPassive(path, level, PassiveKeys.Parry));
@@ -42,14 +42,14 @@ public sealed class ParryTests
     }
 
     [Fact]
-    public void A_warden_parries_more_reliably_than_a_shade()
+    public void A_warden_parries_more_reliably_than_a_blade()
     {
         // A shield and a braced stance against footwork. If these ever equalise, the Warden has
         // lost the thing that distinguishes it from the other martial Path.
         var warden = AbilityProgression.ParryChance(CharacterPath.Warden, 20);
-        var shade = AbilityProgression.ParryChance(CharacterPath.Shade, 20);
+        var temper = AbilityProgression.ParryChance(CharacterPath.Temper, 20);
 
-        Assert.True(warden > shade, $"Warden {warden} should exceed Shade {shade}.");
+        Assert.True(warden > temper, $"Warden {warden} should exceed Temper {temper}.");
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public sealed class ParryTests
         // A parry that always fires makes the Path unkillable by anything that swings.
         foreach (var path in new[]
         {
-            CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Shade, CharacterPath.Hallow,
+            CharacterPath.Warden, CharacterPath.Adept, CharacterPath.Temper, CharacterPath.Hallow,
         })
         {
             var chance = AbilityProgression.ParryChance(path, 20);

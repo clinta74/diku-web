@@ -71,7 +71,7 @@ it('shows what an imported item is already restricted to', async () => {
   expect((screen.getByLabelText(/^Lore/) as HTMLInputElement).checked).toBe(true)
   expect((screen.getByLabelText(/^No drop/) as HTMLInputElement).checked).toBe(true)
   expect((screen.getByLabelText('Warden') as HTMLInputElement).checked).toBe(true)
-  expect((screen.getByLabelText('Shade') as HTMLInputElement).checked).toBe(false)
+  expect((screen.getByLabelText('Temper') as HTMLInputElement).checked).toBe(false)
 })
 
 it('sends all three on save', async () => {

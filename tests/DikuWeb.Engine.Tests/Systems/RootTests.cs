@@ -175,19 +175,19 @@ public sealed class RootTests
     }
 
     [Fact]
-    public void Casting_hamstring_snares_the_target()
+    public void Casting_low_kick_snares_the_target()
     {
-        // End to end, so the catalogue's parameter names are exercised rather than the
+        // End to end, so the shipped ability's parameter names are exercised rather than the
         // hand-built effect the other tests use.
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        harness.DefineAbility("shade.hamstring");
+        harness.DefineAbility("temper.low-kick");
 
-        var shade = harness.AddPlayer("Vex", West, path: CharacterPath.Shade, level: 7);
-        shade.Character.Vitals.Stamina = 200;
+        var temper = harness.AddPlayer("Vex", West, path: CharacterPath.Temper, level: 7);
+        temper.Character.Vitals.Stamina = 200;
         var rat = harness.AddMob("rat", West, health: 500);
 
-        harness.Execute(shade, "hamstring rat");
+        harness.Execute(temper, "low kick rat");
         harness.Pump(2);
 
         Assert.True(harness.World.IsRooted(rat.Id, harness.Clock.CurrentPulse));

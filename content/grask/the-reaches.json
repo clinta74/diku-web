@@ -151,7 +151,7 @@
       ]
     },
     {
-      "key": "epic-shade-2",
+      "key": "epic-temper-2",
       "name": "a tempered quiet knife",
       "description": "It does not catch the light. Somebody took a great deal of trouble over that. Folded again with something out of Grask in it, and heavier for the knowing.",
       "icon": "/",
@@ -174,7 +174,7 @@
       "isNoDrop": true,
       "isLightSource": false,
       "paths": [
-        "Shade"
+        "Temper"
       ]
     },
     {
@@ -3317,23 +3317,23 @@
       ]
     },
     {
-      "key": "e2-shade",
+      "key": "e2-temper",
       "zoneKey": "grask.the-owing",
       "name": "The Quiet Knife, tempered",
       "summary": "Have Vesh reforge your quiet knife.",
       "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
       "giverMobKey": "epic-smith-vesh",
       "turninMobKey": "epic-smith-vesh",
-      "requiredItemKey": "epic-shade-1",
+      "requiredItemKey": "epic-temper-1",
       "requiredCount": 1,
       "rewardXp": 9000,
       "rewardGold": 0,
-      "rewardItemKey": "epic-shade-2",
+      "rewardItemKey": "epic-temper-2",
       "rewardItemCount": 1,
       "rewardFlagKey": null,
       "prerequisiteQuestKeys": [
         "a2-3-what-was-paid",
-        "e1-shade"
+        "e1-temper"
       ],
       "isRepeatable": false,
       "autoStart": false,
@@ -3345,7 +3345,7 @@
       },
       "sortOrder": 12,
       "paths": [
-        "Shade"
+        "Temper"
       ]
     }
   ],

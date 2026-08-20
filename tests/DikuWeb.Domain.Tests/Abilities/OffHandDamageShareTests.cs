@@ -10,14 +10,14 @@ namespace DikuWeb.Domain.Tests.Abilities;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Dual wielding used to arrive complete: the day a Shade learned the passive at level 3, their off
+/// Dual wielding used to arrive complete: the day a Temper learned the passive at level 3, their off
 /// hand hit for everything the main hand did, and Ambidextrous later doubled the rate on top. The
-/// doubling at the top is intended and is untouched — a Shade at 40 and beyond is exactly where it
+/// doubling at the top is intended and is untouched — a Temper at 40 and beyond is exactly where it
 /// was. What this ramps is everything before it.
 /// </para>
 /// <para>
 /// <b>Level rather than Agility, and that was the second answer.</b> Agility caps at
-/// <see cref="AttributeSet.MaxValue"/>, which a Shade reaches at level 6 and a Warden at 11 — so an
+/// <see cref="AttributeSet.MaxValue"/>, which a Temper reaches at level 6 and a Warden at 11 — so an
 /// Agility ramp would have finished before the passive had been held for long, which is the opposite
 /// of spreading it out.
 /// </para>
@@ -42,7 +42,7 @@ public sealed class OffHandDamageShareTests
 
     [Theory]
     [InlineData(CharacterPath.Warden, 4)]
-    [InlineData(CharacterPath.Shade, 2)]
+    [InlineData(CharacterPath.Temper, 2)]
     public void Below_the_unlock_there_is_no_share(CharacterPath path, int level)
     {
         Assert.Equal(0m, AbilityProgression.OffHandDamageShare(path, level));
@@ -58,19 +58,19 @@ public sealed class OffHandDamageShareTests
     /// </summary>
     [Theory]
     [InlineData(CharacterPath.Warden, 5, 0.40)]
-    [InlineData(CharacterPath.Shade, 3, 0.50)]
+    [InlineData(CharacterPath.Temper, 3, 0.50)]
     public void It_starts_at_half_on_the_level_it_unlocks(CharacterPath path, int level, double expected)
     {
         Assert.Equal((decimal)expected, AbilityProgression.OffHandDamageShare(path, level));
     }
 
     /// <summary>
-    /// The Path's identity, at the top: a Shade ends at all of it because two blades is what the
+    /// The Path's identity, at the top: a Temper ends at all of it because two blades is what the
     /// Path is, a Warden at four fifths because the hand is also holding a shield.
     /// </summary>
     [Theory]
     [InlineData(CharacterPath.Warden, 0.80)]
-    [InlineData(CharacterPath.Shade, 1.00)]
+    [InlineData(CharacterPath.Temper, 1.00)]
     public void It_reaches_the_paths_full_share_at_mastery_and_stays_there(CharacterPath path, double expected)
     {
         Assert.Equal((decimal)expected, AbilityProgression.OffHandDamageShare(path, Mastery));
@@ -83,7 +83,7 @@ public sealed class OffHandDamageShareTests
 
     [Theory]
     [InlineData(CharacterPath.Warden)]
-    [InlineData(CharacterPath.Shade)]
+    [InlineData(CharacterPath.Temper)]
     public void It_only_ever_grows(CharacterPath path)
     {
         var previous = -1m;
@@ -101,12 +101,12 @@ public sealed class OffHandDamageShareTests
     /// </summary>
     /// <remarks>
     /// Asserted as equal steps rather than as one sampled midpoint, because the spans are odd — 35
-    /// levels for a Warden, 37 for a Shade — so there is no level that sits exactly halfway and a
+    /// levels for a Warden, 37 for a Temper — so there is no level that sits exactly halfway and a
     /// midpoint assertion would be testing integer division rather than the ramp.
     /// </remarks>
     [Theory]
     [InlineData(CharacterPath.Warden, 5)]
-    [InlineData(CharacterPath.Shade, 3)]
+    [InlineData(CharacterPath.Temper, 3)]
     public void It_climbs_in_equal_steps(CharacterPath path, int unlock)
     {
         var first = AbilityProgression.OffHandDamageShare(path, unlock + 1)
@@ -126,7 +126,7 @@ public sealed class OffHandDamageShareTests
     /// <summary>Half the climb spends half the levels, which is what "straight line" buys a player.</summary>
     [Theory]
     [InlineData(CharacterPath.Warden, 5, 0.80)]
-    [InlineData(CharacterPath.Shade, 3, 1.00)]
+    [InlineData(CharacterPath.Temper, 3, 1.00)]
     public void Half_the_remaining_climb_is_done_halfway_through_it(CharacterPath path, int unlock, double full)
     {
         var span = Mastery - unlock;
@@ -140,18 +140,18 @@ public sealed class OffHandDamageShareTests
     }
 
     /// <summary>
-    /// The Shade is ahead of the Warden at every level where both have the passive, which is what
+    /// The Temper is ahead of the Warden at every level where both have the passive, which is what
     /// makes it the Path that fights with two weapons.
     /// </summary>
     [Fact]
-    public void A_shade_is_always_ahead_of_a_warden()
+    public void A_blade_is_always_ahead_of_a_warden()
     {
         for (var level = 5; level <= 50; level++)
         {
             Assert.True(
-                AbilityProgression.OffHandDamageShare(CharacterPath.Shade, level)
+                AbilityProgression.OffHandDamageShare(CharacterPath.Temper, level)
                     > AbilityProgression.OffHandDamageShare(CharacterPath.Warden, level),
-                $"at level {level} the Warden is not behind the Shade");
+                $"at level {level} the Warden is not behind the Temper");
         }
     }
 
@@ -161,7 +161,7 @@ public sealed class OffHandDamageShareTests
 
     private static ItemInstance Weapon(ItemSlot slot, int min, int max) => new()
     {
-        TemplateKey = "blade",
+        TemplateKey = "temper",
         EquippedSlot = slot,
         ResolvedStats = new Dictionary<string, object> { { "damageMin", min }, { "damageMax", max } },
     };

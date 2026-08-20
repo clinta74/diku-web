@@ -209,7 +209,7 @@
       ]
     },
     {
-      "key": "epic-shade-1",
+      "key": "epic-temper-1",
       "name": "an unproven quiet knife",
       "description": "It does not catch the light. Somebody took a great deal of trouble over that. Newly made and honest about it. Vesh will not pretend this is finished.",
       "icon": "/",
@@ -232,7 +232,7 @@
       "isNoDrop": true,
       "isLightSource": false,
       "paths": [
-        "Shade"
+        "Temper"
       ]
     },
     {
@@ -2365,7 +2365,7 @@
       ]
     },
     {
-      "key": "e1-shade",
+      "key": "e1-temper",
       "zoneKey": "ossara.the-rimwalk",
       "name": "The Quiet Knife, unproven",
       "summary": "Have Vesh reforge your quiet knife.",
@@ -2376,7 +2376,7 @@
       "requiredCount": 3,
       "rewardXp": 1800,
       "rewardGold": 0,
-      "rewardItemKey": "epic-shade-1",
+      "rewardItemKey": "epic-temper-1",
       "rewardItemCount": 1,
       "rewardFlagKey": null,
       "prerequisiteQuestKeys": [
@@ -2385,14 +2385,14 @@
       "isRepeatable": false,
       "autoStart": false,
       "dialogue": {
-        "giverOffer": "Vesh looks at you rather than at your hands. 'You are a Shade. I know what a Shade needs and I have known for a long time.' She sets down a bag. '<Three embers>. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
+        "giverOffer": "Vesh looks at your hands rather than at you. 'You go at things with these. I know what that needs, and I have known for a long time.' She sets down a bag. '<Three embers>. The big one at the rim has them - it has been carrying them longer than I have been walking.'",
         "giverInProgress": "'Three. They do not go out and they do not warm anything. Bring them.'",
         "giverComplete": "'When it has been through something. Not before.'",
         "turninReady": "She works without hurrying and hands it back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds."
       },
       "sortOrder": 11,
       "paths": [
-        "Shade"
+        "Temper"
       ]
     }
   ],

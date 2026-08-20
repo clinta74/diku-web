@@ -102,9 +102,9 @@ public sealed class PersistenceRoundTripTests(PostgresFixture postgres)
         {
             AccountId = account.Id,
             Name = $"Doomed{Guid.NewGuid():N}"[..20],
-            Path = CharacterPath.Shade,
+            Path = CharacterPath.Temper,
             Attributes = AttributeSet.Baseline,
-            Vitals = Vitals.StartingFor(CharacterPath.Shade),
+            Vitals = Vitals.StartingFor(CharacterPath.Temper),
             RoomKey = StartRoom,
             CreatedAt = DateTimeOffset.UtcNow,
         };

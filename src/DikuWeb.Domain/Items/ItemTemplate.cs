@@ -140,7 +140,7 @@ public sealed class ItemTemplate
     /// "the two martial Paths" as often as it is one.
     ///
     /// This restricts <em>equipping</em> only. Carrying, selling and handing over are deliberately
-    /// left alone: a Shade should be able to pick up a Warden's shield and take it to the Warden.
+    /// left alone: a Temper should be able to pick up a Warden's shield and take it to the Warden.
     /// </remarks>
     public List<CharacterPath> Paths { get; set; } = [];
 }

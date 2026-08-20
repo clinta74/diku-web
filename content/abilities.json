@@ -1,0 +1,1769 @@
+{
+  "formatVersion": 15,
+  "exportedAt": "2026-08-20T00:08:26.0971428+00:00",
+  "scope": {
+    "kind": "all",
+    "key": null
+  },
+  "worlds": [],
+  "zones": [],
+  "rooms": [],
+  "itemTemplates": [],
+  "mobTemplates": [],
+  "abilities": [
+    {
+      "key": "warden.kick",
+      "path": "Warden",
+      "unlockLevel": 1,
+      "name": "Kick",
+      "description": "A boot to the knee. Nothing elegant, and it does not care what you are holding.",
+      "costType": "Stamina",
+      "costValue": 10,
+      "cooldownPulses": 24,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "1.1",
+            "minDamage": "3"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.bash",
+      "path": "Warden",
+      "unlockLevel": 3,
+      "name": "Bash",
+      "description": "Put your shoulder behind it. Slower, and it lands heavier.",
+      "costType": "Stamina",
+      "costValue": 15,
+      "cooldownPulses": 32,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "1.4",
+            "minDamage": "5"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.battle-fury",
+      "path": "Warden",
+      "unlockLevel": 5,
+      "name": "Battle Fury",
+      "description": "Anger sharpens the next stretch of a fight.",
+      "costType": "Stamina",
+      "costValue": 18,
+      "cooldownPulses": 160,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "buff.damage-up",
+          "params": {
+            "outgoingMultiplier": "1.25",
+            "durationPulses": "80",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "battle fury"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.sunder",
+      "path": "Warden",
+      "unlockLevel": 7,
+      "name": "Sunder",
+      "description": "Batter the guard apart. What comes next lands on what is left of it.",
+      "costType": "Stamina",
+      "costValue": 16,
+      "cooldownPulses": 160,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "debuff.weaken",
+          "params": {
+            "incomingMultiplier": "1.3",
+            "durationPulses": "80",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "sundered"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.taunt",
+      "path": "Warden",
+      "unlockLevel": 8,
+      "name": "Taunt",
+      "description": "Say something unforgivable about its mother, at volume.",
+      "costType": "Stamina",
+      "costValue": 12,
+      "cooldownPulses": 32,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "control.taunt",
+          "params": {
+            "leadFraction": "0.30"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.shield-bash",
+      "path": "Warden",
+      "unlockLevel": 9,
+      "name": "Shield Bash",
+      "description": "The flat of the shield, hard, into whatever is nearest to a jaw.",
+      "costType": "Stamina",
+      "costValue": 20,
+      "cooldownPulses": 160,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "control.stun",
+          "params": {
+            "durationPulses": "16",
+            "name": "reeling"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.rally",
+      "path": "Warden",
+      "unlockLevel": 10,
+      "name": "Rally",
+      "description": "Find your feet again in the middle of it.",
+      "costType": "Stamina",
+      "costValue": 22,
+      "cooldownPulses": 96,
+      "cooldownGroup": null,
+      "castTimePulses": 4,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "40"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.shield-wall",
+      "path": "Warden",
+      "unlockLevel": 13,
+      "name": "Shield Wall",
+      "description": "Set yourself. Nothing moves you for a while.",
+      "costType": "Stamina",
+      "costValue": 25,
+      "cooldownPulses": 240,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "buff.defense",
+          "params": {
+            "defenseRating": "6",
+            "mitigation": "6",
+            "durationPulses": "100",
+            "name": "shield wall"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.crushing-blow",
+      "path": "Warden",
+      "unlockLevel": 16,
+      "name": "Crushing Blow",
+      "description": "One heavy swing, wound up and committed to.",
+      "costType": "Stamina",
+      "costValue": 30,
+      "cooldownPulses": 48,
+      "cooldownGroup": null,
+      "castTimePulses": 4,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "2.0",
+            "minDamage": "12"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.last-stand",
+      "path": "Warden",
+      "unlockLevel": 20,
+      "name": "Last Stand",
+      "description": "Refuse to fall. The refusal is most of it.",
+      "costType": "Stamina",
+      "costValue": 30,
+      "cooldownPulses": 2400,
+      "cooldownGroup": 1,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "buff.max-health",
+          "params": {
+            "maxHealth": "80",
+            "durationPulses": "480",
+            "name": "standing ground"
+          }
+        },
+        {
+          "key": "buff.defense",
+          "params": {
+            "defenseRating": "6",
+            "mitigation": "6",
+            "durationPulses": "480",
+            "name": "standing ground"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.thunderclap",
+      "path": "Warden",
+      "unlockLevel": 24,
+      "name": "Thunderclap",
+      "description": "Shield into the ground, once. Everything in the room decides you are the problem.",
+      "costType": "Stamina",
+      "costValue": 28,
+      "cooldownPulses": 96,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "control.taunt",
+          "params": {
+            "leadFraction": "0.35"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.bulwark",
+      "path": "Warden",
+      "unlockLevel": 28,
+      "name": "Bulwark",
+      "description": "Everything behind you is behind you.",
+      "costType": "Stamina",
+      "costValue": 32,
+      "cooldownPulses": 320,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "buff.defense",
+          "params": {
+            "defenseRating": "8",
+            "mitigation": "8",
+            "durationPulses": "240",
+            "name": "bulwark"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.ground-and-centre",
+      "path": "Warden",
+      "unlockLevel": 32,
+      "name": "Ground and Centre",
+      "description": "More of you to get through, and less give in any of it.",
+      "costType": "Stamina",
+      "costValue": 36,
+      "cooldownPulses": 400,
+      "cooldownGroup": 1,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "buff.max-health",
+          "params": {
+            "maxHealth": "120",
+            "durationPulses": "320",
+            "name": "grounded"
+          }
+        },
+        {
+          "key": "buff.defense",
+          "params": {
+            "defenseRating": "6",
+            "mitigation": "6",
+            "durationPulses": "320",
+            "name": "grounded"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.reprisal",
+      "path": "Warden",
+      "unlockLevel": 36,
+      "name": "Reprisal",
+      "description": "Answer it, and make sure it noticed who did.",
+      "costType": "Stamina",
+      "costValue": 30,
+      "cooldownPulses": 64,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "1.6",
+            "minDamage": "10"
+          }
+        },
+        {
+          "key": "control.taunt",
+          "params": {
+            "leadFraction": "0.25"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.unbreakable",
+      "path": "Warden",
+      "unlockLevel": 40,
+      "name": "Unbreakable",
+      "description": "Decide not to. The fight can disagree for a while.",
+      "costType": "Stamina",
+      "costValue": 45,
+      "cooldownPulses": 1200,
+      "cooldownGroup": 1,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "buff.max-health",
+          "params": {
+            "maxHealth": "200",
+            "durationPulses": "480",
+            "name": "unbreakable"
+          }
+        },
+        {
+          "key": "buff.defense",
+          "params": {
+            "defenseRating": "12",
+            "mitigation": "12",
+            "durationPulses": "480",
+            "name": "unbreakable"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.sundering-blow",
+      "path": "Warden",
+      "unlockLevel": 43,
+      "name": "Sundering Blow",
+      "description": "Take the guard apart so that everyone else's work lands on what is left.",
+      "costType": "Stamina",
+      "costValue": 34,
+      "cooldownPulses": 120,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "1.9",
+            "minDamage": "12"
+          }
+        },
+        {
+          "key": "debuff.expose",
+          "params": {
+            "defenseRating": "6",
+            "mitigation": "5",
+            "durationPulses": "96",
+            "name": "sundered open"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.mass-provocation",
+      "path": "Warden",
+      "unlockLevel": 46,
+      "name": "Mass Provocation",
+      "description": "Say the unforgivable thing to the whole room, and mean every word of it.",
+      "costType": "Stamina",
+      "costValue": 40,
+      "cooldownPulses": 320,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "control.taunt",
+          "params": {
+            "leadFraction": "0.5"
+          }
+        },
+        {
+          "key": "debuff.weaken",
+          "params": {
+            "outgoingMultiplier": "0.8",
+            "durationPulses": "240",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "cowed"
+          }
+        }
+      ]
+    },
+    {
+      "key": "warden.the-last-wall",
+      "path": "Warden",
+      "unlockLevel": 50,
+      "name": "The Last Wall",
+      "description": "There is a place past which things do not go. You are standing on it.",
+      "costType": "Stamina",
+      "costValue": 50,
+      "cooldownPulses": 2400,
+      "cooldownGroup": 1,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "buff.max-health",
+          "params": {
+            "maxHealth": "400",
+            "durationPulses": "600",
+            "name": "the last wall"
+          }
+        },
+        {
+          "key": "buff.defense",
+          "params": {
+            "defenseRating": "18",
+            "mitigation": "18",
+            "durationPulses": "600",
+            "name": "the last wall"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.bolt",
+      "path": "Adept",
+      "unlockLevel": 1,
+      "name": "Bolt",
+      "description": "A thrown splinter of raw force.",
+      "costType": "Focus",
+      "costValue": 15,
+      "cooldownPulses": 24,
+      "cooldownGroup": null,
+      "castTimePulses": 8,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "1.2",
+            "minDamage": "4"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.shield",
+      "path": "Adept",
+      "unlockLevel": 3,
+      "name": "Arcane Shield",
+      "description": "A shell of ordered air, briefly.",
+      "costType": "Focus",
+      "costValue": 12,
+      "cooldownPulses": 24,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "20"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.weaken",
+      "path": "Adept",
+      "unlockLevel": 5,
+      "name": "Weaken",
+      "description": "Unpick the strength out of something.",
+      "costType": "Focus",
+      "costValue": 16,
+      "cooldownPulses": 160,
+      "cooldownGroup": null,
+      "castTimePulses": 4,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "debuff.weaken",
+          "params": {
+            "outgoingMultiplier": "0.75",
+            "durationPulses": "80",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "weakened"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.amplify",
+      "path": "Adept",
+      "unlockLevel": 7,
+      "name": "Amplify",
+      "description": "Wind the next few strikes tighter.",
+      "costType": "Focus",
+      "costValue": 20,
+      "cooldownPulses": 200,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "buff.damage-up",
+          "params": {
+            "outgoingMultiplier": "1.35",
+            "durationPulses": "80",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "amplified"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.scorch",
+      "path": "Adept",
+      "unlockLevel": 10,
+      "name": "Scorch",
+      "description": "Heat with intent behind it, and nowhere for the heat to go.",
+      "costType": "Focus",
+      "costValue": 24,
+      "cooldownPulses": 72,
+      "cooldownGroup": null,
+      "castTimePulses": 8,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.overtime",
+          "params": {
+            "tickDamage": "9",
+            "tickIntervalPulses": "12",
+            "durationPulses": "72",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "burning"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.enfeeble",
+      "path": "Adept",
+      "unlockLevel": 13,
+      "name": "Enfeeble",
+      "description": "Take the fight out of it at the root.",
+      "costType": "Focus",
+      "costValue": 26,
+      "cooldownPulses": 240,
+      "cooldownGroup": null,
+      "castTimePulses": 4,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "debuff.weaken",
+          "params": {
+            "outgoingMultiplier": "0.6",
+            "durationPulses": "100",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "enfeebled"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.disjunction",
+      "path": "Adept",
+      "unlockLevel": 16,
+      "name": "Disjunction",
+      "description": "Pull something apart along the seams it did not know it had.",
+      "costType": "Focus",
+      "costValue": 34,
+      "cooldownPulses": 56,
+      "cooldownGroup": null,
+      "castTimePulses": 12,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "2.2",
+            "minDamage": "14"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.firestorm",
+      "path": "Adept",
+      "unlockLevel": 18,
+      "name": "Firestorm",
+      "description": "Fill the room with fire and let it decide what burns.",
+      "costType": "Focus",
+      "costValue": 60,
+      "cooldownPulses": 240,
+      "cooldownGroup": null,
+      "castTimePulses": 20,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "1.3",
+            "minDamage": "6"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.cataclysm",
+      "path": "Adept",
+      "unlockLevel": 20,
+      "name": "Cataclysm",
+      "description": "The long words. Slow to say, and worth saying.",
+      "costType": "Focus",
+      "costValue": 45,
+      "cooldownPulses": 192,
+      "cooldownGroup": null,
+      "castTimePulses": 16,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "3.0",
+            "minDamage": "25"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.conflagration",
+      "path": "Adept",
+      "unlockLevel": 24,
+      "name": "Conflagration",
+      "description": "Set the air going and let it keep going.",
+      "costType": "Focus",
+      "costValue": 50,
+      "cooldownPulses": 200,
+      "cooldownGroup": null,
+      "castTimePulses": 8,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "damage.overtime",
+          "params": {
+            "tickDamage": "14",
+            "tickIntervalPulses": "12",
+            "durationPulses": "96",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "conflagration"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.shatter",
+      "path": "Adept",
+      "unlockLevel": 28,
+      "name": "Shatter",
+      "description": "Find the fault, and put everything into it.",
+      "costType": "Focus",
+      "costValue": 34,
+      "cooldownPulses": 120,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "2.1",
+            "minDamage": "14"
+          }
+        },
+        {
+          "key": "debuff.expose",
+          "params": {
+            "defenseRating": "5",
+            "mitigation": "5",
+            "durationPulses": "96",
+            "name": "shattered"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.chain-lightning",
+      "path": "Adept",
+      "unlockLevel": 32,
+      "name": "Chain Lightning",
+      "description": "It picks its own way across the room and is not slow about it.",
+      "costType": "Focus",
+      "costValue": 48,
+      "cooldownPulses": 160,
+      "cooldownGroup": null,
+      "castTimePulses": 8,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "1.8",
+            "minDamage": "12"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.unmaking",
+      "path": "Adept",
+      "unlockLevel": 36,
+      "name": "Unmaking",
+      "description": "Take away some of what it is, and it hits like something less.",
+      "costType": "Focus",
+      "costValue": 40,
+      "cooldownPulses": 160,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "2.2",
+            "minDamage": "15"
+          }
+        },
+        {
+          "key": "debuff.weaken",
+          "params": {
+            "outgoingMultiplier": "0.7",
+            "durationPulses": "120",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "unmade"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.pyre",
+      "path": "Adept",
+      "unlockLevel": 40,
+      "name": "Pyre",
+      "description": "Everything in the room, twice - once now and once for a while afterwards.",
+      "costType": "Focus",
+      "costValue": 60,
+      "cooldownPulses": 240,
+      "cooldownGroup": null,
+      "castTimePulses": 12,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "2.0",
+            "minDamage": "14"
+          }
+        },
+        {
+          "key": "damage.overtime",
+          "params": {
+            "tickDamage": "18",
+            "tickIntervalPulses": "12",
+            "durationPulses": "120",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "pyre"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.arcane-surge",
+      "path": "Adept",
+      "unlockLevel": 43,
+      "name": "Arcane Surge",
+      "description": "The window you fire the long words through.",
+      "costType": "Focus",
+      "costValue": 38,
+      "cooldownPulses": 240,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "buff.damage-up",
+          "params": {
+            "outgoingMultiplier": "1.6",
+            "durationPulses": "160",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "surging"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.gravity-well",
+      "path": "Adept",
+      "unlockLevel": 46,
+      "name": "Gravity Well",
+      "description": "Nothing in the room is going anywhere, and standing there is costing it.",
+      "costType": "Focus",
+      "costValue": 55,
+      "cooldownPulses": 320,
+      "cooldownGroup": null,
+      "castTimePulses": 12,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "control.root",
+          "params": {
+            "durationPulses": "32",
+            "name": "held under"
+          }
+        },
+        {
+          "key": "damage.overtime",
+          "params": {
+            "tickDamage": "20",
+            "tickIntervalPulses": "16",
+            "durationPulses": "64",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "crushed"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.the-unwriting",
+      "path": "Adept",
+      "unlockLevel": 50,
+      "name": "The Unwriting",
+      "description": "Say what a thing is not, at sufficient volume.",
+      "costType": "Focus",
+      "costValue": 70,
+      "cooldownPulses": 600,
+      "cooldownGroup": null,
+      "castTimePulses": 16,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "3.0",
+            "minDamage": "20"
+          }
+        },
+        {
+          "key": "debuff.expose",
+          "params": {
+            "defenseRating": "8",
+            "mitigation": "8",
+            "durationPulses": "96",
+            "name": "unwritten"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.strike",
+      "path": "Temper",
+      "unlockLevel": 1,
+      "name": "Quick Strike",
+      "description": "In and out before it turns.",
+      "costType": "Stamina",
+      "costValue": 12,
+      "cooldownPulses": 24,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "1.25",
+            "minDamage": "4"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.evasion",
+      "path": "Temper",
+      "unlockLevel": 3,
+      "name": "Evasion",
+      "description": "Not being where the blow lands.",
+      "costType": "Stamina",
+      "costValue": 10,
+      "cooldownPulses": 16,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "15"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.fortify",
+      "path": "Temper",
+      "unlockLevel": 5,
+      "name": "Fortify",
+      "description": "Settle your grip and pick the angle.",
+      "costType": "Stamina",
+      "costValue": 14,
+      "cooldownPulses": 176,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "buff.damage-up",
+          "params": {
+            "outgoingMultiplier": "1.3",
+            "durationPulses": "72",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "fortified"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.low-kick",
+      "path": "Temper",
+      "unlockLevel": 7,
+      "name": "Low Kick",
+      "description": "Take the leg out from under it. Whatever it was going to do next, it is not going anywhere.",
+      "costType": "Stamina",
+      "costValue": 16,
+      "cooldownPulses": 128,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "control.root",
+          "params": {
+            "durationPulses": "32",
+            "name": "hamstrung"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.body-blow",
+      "path": "Temper",
+      "unlockLevel": 10,
+      "name": "Body Blow",
+      "description": "Ribs, and what is behind them. It will be feeling this for a while.",
+      "costType": "Stamina",
+      "costValue": 20,
+      "cooldownPulses": 16,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.overtime",
+          "params": {
+            "tickDamage": "5",
+            "tickIntervalPulses": "8",
+            "durationPulses": "48",
+            "maxStacks": "3",
+            "stackingRule": "Stack",
+            "name": "bleeding"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.provoke",
+      "path": "Temper",
+      "unlockLevel": 12,
+      "name": "Provoke",
+      "description": "A hit where it will be noticed, and a look daring it to do something about it.",
+      "costType": "Stamina",
+      "costValue": 18,
+      "cooldownPulses": 48,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "control.taunt",
+          "params": {
+            "leadFraction": "0.18"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.second-wind",
+      "path": "Temper",
+      "unlockLevel": 13,
+      "name": "Second Wind",
+      "description": "The fight has been going a while. You have more left in you than it has.",
+      "costType": "Stamina",
+      "costValue": 18,
+      "cooldownPulses": 72,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "45"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.heart-strike",
+      "path": "Temper",
+      "unlockLevel": 16,
+      "name": "Heart Strike",
+      "description": "One place, once, properly.",
+      "costType": "Stamina",
+      "costValue": 28,
+      "cooldownPulses": 64,
+      "cooldownGroup": null,
+      "castTimePulses": 4,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "2.4",
+            "minDamage": "16"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.pressure-point",
+      "path": "Temper",
+      "unlockLevel": 20,
+      "name": "Pressure Point",
+      "description": "Find the place that runs the rest of it, and close it.",
+      "costType": "Stamina",
+      "costValue": 35,
+      "cooldownPulses": 192,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "2.8",
+            "minDamage": "22"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.rupture",
+      "path": "Temper",
+      "unlockLevel": 24,
+      "name": "Rupture",
+      "description": "Something inside it is now outside the arrangement.",
+      "costType": "Stamina",
+      "costValue": 26,
+      "cooldownPulses": 64,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "1.5",
+            "minDamage": "8"
+          }
+        },
+        {
+          "key": "damage.overtime",
+          "params": {
+            "tickDamage": "10",
+            "tickIntervalPulses": "8",
+            "durationPulses": "64",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "ruptured"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.opening",
+      "path": "Temper",
+      "unlockLevel": 28,
+      "name": "Opening",
+      "description": "Cheap, fast, and it makes the next one worse for them.",
+      "costType": "Stamina",
+      "costValue": 22,
+      "cooldownPulses": 72,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "1.4",
+            "minDamage": "8"
+          }
+        },
+        {
+          "key": "debuff.expose",
+          "params": {
+            "defenseRating": "4",
+            "mitigation": "4",
+            "durationPulses": "64",
+            "name": "exploited"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.flurry",
+      "path": "Temper",
+      "unlockLevel": 32,
+      "name": "Flurry",
+      "description": "More than it can count, in less time than it has.",
+      "costType": "Stamina",
+      "costValue": 24,
+      "cooldownPulses": 48,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "1.7",
+            "minDamage": "10"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.hemorrhage",
+      "path": "Temper",
+      "unlockLevel": 36,
+      "name": "Hemorrhage",
+      "description": "Cheap to start and expensive to be on the wrong end of.",
+      "costType": "Stamina",
+      "costValue": 28,
+      "cooldownPulses": 96,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.overtime",
+          "params": {
+            "tickDamage": "16",
+            "tickIntervalPulses": "8",
+            "durationPulses": "96",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "hemorrhaging"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.execution",
+      "path": "Temper",
+      "unlockLevel": 40,
+      "name": "Execution",
+      "description": "The whole fight, arriving at once and slightly early.",
+      "costType": "Stamina",
+      "costValue": 45,
+      "cooldownPulses": 240,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "3.2",
+            "minDamage": "20"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.temple-strike",
+      "path": "Temper",
+      "unlockLevel": 43,
+      "name": "Temple Strike",
+      "description": "The heel of the hand, where the skull is thinnest. It forgets what it was doing.",
+      "costType": "Stamina",
+      "costValue": 32,
+      "cooldownPulses": 160,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "1.8",
+            "minDamage": "10"
+          }
+        },
+        {
+          "key": "control.stun",
+          "params": {
+            "durationPulses": "16",
+            "name": "reeling"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.hundred-hands",
+      "path": "Temper",
+      "unlockLevel": 46,
+      "name": "A Hundred Hands",
+      "description": "None of them would have done it. All of them will.",
+      "costType": "Stamina",
+      "costValue": 20,
+      "cooldownPulses": 32,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.overtime",
+          "params": {
+            "tickDamage": "12",
+            "tickIntervalPulses": "8",
+            "durationPulses": "72",
+            "maxStacks": "5",
+            "stackingRule": "Stack",
+            "name": "cut to pieces"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temper.collapse",
+      "path": "Temper",
+      "unlockLevel": 50,
+      "name": "Collapse",
+      "description": "Take the fight out of it and the rest follows on its own.",
+      "costType": "Stamina",
+      "costValue": 55,
+      "cooldownPulses": 480,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "scalingFactor": "3.5",
+            "minDamage": "22"
+          }
+        },
+        {
+          "key": "damage.overtime",
+          "params": {
+            "tickDamage": "22",
+            "tickIntervalPulses": "8",
+            "durationPulses": "120",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "severed"
+          }
+        },
+        {
+          "key": "debuff.weaken",
+          "params": {
+            "outgoingMultiplier": "0.75",
+            "durationPulses": "120",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "severed"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.mend",
+      "path": "Hallow",
+      "unlockLevel": 1,
+      "name": "Mend",
+      "description": "Close what is open, on yourself or on someone beside you.",
+      "costType": "Focus",
+      "costValue": 20,
+      "cooldownPulses": 24,
+      "cooldownGroup": null,
+      "castTimePulses": 4,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "25"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.guidance",
+      "path": "Hallow",
+      "unlockLevel": 3,
+      "name": "Guidance",
+      "description": "Steady a hand that is about to need steadying.",
+      "costType": "Focus",
+      "costValue": 15,
+      "cooldownPulses": 24,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "18"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.wither",
+      "path": "Hallow",
+      "unlockLevel": 5,
+      "name": "Wither",
+      "description": "Set something going that will not stop on its own.",
+      "costType": "Focus",
+      "costValue": 18,
+      "cooldownPulses": 96,
+      "cooldownGroup": null,
+      "castTimePulses": 4,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.overtime",
+          "params": {
+            "tickDamage": "6",
+            "tickIntervalPulses": "16",
+            "durationPulses": "96",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "withering"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.restore",
+      "path": "Hallow",
+      "unlockLevel": 7,
+      "name": "Restore",
+      "description": "Put back what the fight has taken so far.",
+      "costType": "Focus",
+      "costValue": 28,
+      "cooldownPulses": 40,
+      "cooldownGroup": null,
+      "castTimePulses": 8,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "50"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.blessing",
+      "path": "Hallow",
+      "unlockLevel": 10,
+      "name": "Blessing",
+      "description": "Lend the next while a better edge than it earned.",
+      "costType": "Focus",
+      "costValue": 24,
+      "cooldownPulses": 240,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "buff.damage-up",
+          "params": {
+            "outgoingMultiplier": "1.3",
+            "durationPulses": "96",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "blessed"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.renewal",
+      "path": "Hallow",
+      "unlockLevel": 13,
+      "name": "Renewal",
+      "description": "Begin again, without stopping.",
+      "costType": "Focus",
+      "costValue": 34,
+      "cooldownPulses": 64,
+      "cooldownGroup": null,
+      "castTimePulses": 8,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "70"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.sap",
+      "path": "Hallow",
+      "unlockLevel": 16,
+      "name": "Sap",
+      "description": "Take the strength and do not give it back.",
+      "costType": "Focus",
+      "costValue": 30,
+      "cooldownPulses": 240,
+      "cooldownGroup": null,
+      "castTimePulses": 4,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "debuff.weaken",
+          "params": {
+            "outgoingMultiplier": "0.55",
+            "durationPulses": "100",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "sapped"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.benediction",
+      "path": "Hallow",
+      "unlockLevel": 18,
+      "name": "Benediction",
+      "description": "Say it over everyone at once, and mean it.",
+      "costType": "Focus",
+      "costValue": 55,
+      "cooldownPulses": 200,
+      "cooldownGroup": null,
+      "castTimePulses": 16,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "55"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.intercession",
+      "path": "Hallow",
+      "unlockLevel": 20,
+      "name": "Intercession",
+      "description": "Stand between someone and what was coming for them.",
+      "costType": "Focus",
+      "costValue": 50,
+      "cooldownPulses": 176,
+      "cooldownGroup": null,
+      "castTimePulses": 12,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "120"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.communion",
+      "path": "Hallow",
+      "unlockLevel": 24,
+      "name": "Communion",
+      "description": "Say it once, for everyone standing with you.",
+      "costType": "Focus",
+      "costValue": 55,
+      "cooldownPulses": 64,
+      "cooldownGroup": null,
+      "castTimePulses": 8,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "70"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.fortitude",
+      "path": "Hallow",
+      "unlockLevel": 28,
+      "name": "Fortitude",
+      "description": "More of everyone to get through. Set it before you go in.",
+      "costType": "Focus",
+      "costValue": 55,
+      "cooldownPulses": 96,
+      "cooldownGroup": null,
+      "castTimePulses": 8,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "buff.max-health",
+          "params": {
+            "maxHealth": "150",
+            "durationPulses": "1200",
+            "name": "fortified"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.aegis",
+      "path": "Hallow",
+      "unlockLevel": 32,
+      "name": "Aegis",
+      "description": "Something between the group and the weather.",
+      "costType": "Focus",
+      "costValue": 55,
+      "cooldownPulses": 96,
+      "cooldownGroup": null,
+      "castTimePulses": 8,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "buff.defense",
+          "params": {
+            "defenseRating": "7",
+            "mitigation": "6",
+            "durationPulses": "1200",
+            "name": "warded"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.mending-tide",
+      "path": "Hallow",
+      "unlockLevel": 36,
+      "name": "Mending Tide",
+      "description": "The one that comes in over everyone at once, when Communion was not enough.",
+      "costType": "Focus",
+      "costValue": 60,
+      "cooldownPulses": 160,
+      "cooldownGroup": null,
+      "castTimePulses": 12,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "140"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.sanctuary",
+      "path": "Hallow",
+      "unlockLevel": 40,
+      "name": "Sanctuary",
+      "description": "Draw the line around all of them at once, and make it hold.",
+      "costType": "Focus",
+      "costValue": 70,
+      "cooldownPulses": 240,
+      "cooldownGroup": null,
+      "castTimePulses": 12,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "buff.max-health",
+          "params": {
+            "maxHealth": "220",
+            "durationPulses": "1200",
+            "name": "sanctified"
+          }
+        },
+        {
+          "key": "buff.defense",
+          "params": {
+            "defenseRating": "10",
+            "mitigation": "9",
+            "durationPulses": "1200",
+            "name": "sanctified"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.absolution",
+      "path": "Hallow",
+      "unlockLevel": 43,
+      "name": "Absolution",
+      "description": "Everything, off one person, now.",
+      "costType": "Focus",
+      "costValue": 55,
+      "cooldownPulses": 96,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "260"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.consecration",
+      "path": "Hallow",
+      "unlockLevel": 46,
+      "name": "Consecration",
+      "description": "Support that is not mending: the whole group hits like it means it.",
+      "costType": "Focus",
+      "costValue": 60,
+      "cooldownPulses": 160,
+      "cooldownGroup": null,
+      "castTimePulses": 8,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "buff.damage-up",
+          "params": {
+            "outgoingMultiplier": "1.35",
+            "durationPulses": "960",
+            "maxStacks": "1",
+            "stackingRule": "Refresh",
+            "name": "consecrated"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.the-long-vigil",
+      "path": "Hallow",
+      "unlockLevel": 50,
+      "name": "The Long Vigil",
+      "description": "Close what is open, raise what is left, and stand over all of it.",
+      "costType": "Focus",
+      "costValue": 80,
+      "cooldownPulses": 600,
+      "cooldownGroup": null,
+      "castTimePulses": 16,
+      "targetingType": "Aoe",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "baseHeal": "200"
+          }
+        },
+        {
+          "key": "buff.max-health",
+          "params": {
+            "maxHealth": "300",
+            "durationPulses": "1200",
+            "name": "the long vigil"
+          }
+        },
+        {
+          "key": "buff.defense",
+          "params": {
+            "defenseRating": "12",
+            "mitigation": "12",
+            "durationPulses": "1200",
+            "name": "the long vigil"
+          }
+        }
+      ]
+    }
+  ],
+  "spawners": [],
+  "quests": [],
+  "configurations": []
+}

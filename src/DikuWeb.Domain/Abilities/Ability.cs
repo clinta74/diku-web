@@ -56,7 +56,7 @@ public sealed class Ability
     /// </para>
     /// <para>
     /// <b>Scoped to the <see cref="Path"/>, so the identity is (Path, number) rather than the number
-    /// alone.</b> A character only ever knows one Path's abilities, so Warden 1 and Shade 1 can never
+    /// alone.</b> A character only ever knows one Path's abilities, so Warden 1 and Temper 1 can never
     /// meet in play — and scoping it lets each Path number from 1 independently, which is what an
     /// author will do anyway.
     /// </para>

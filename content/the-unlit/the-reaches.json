@@ -424,7 +424,7 @@
       ]
     },
     {
-      "key": "epic-shade-5",
+      "key": "epic-temper-5",
       "name": "an answered quiet knife",
       "description": "It does not catch the light. Somebody took a great deal of trouble over that. Finished. It has been all the way in and come back out, which almost nothing has.",
       "icon": "/",
@@ -447,7 +447,7 @@
       "isNoDrop": true,
       "isLightSource": false,
       "paths": [
-        "Shade"
+        "Temper"
       ]
     }
   ],
@@ -1630,23 +1630,23 @@
       ]
     },
     {
-      "key": "e5-shade",
+      "key": "e5-temper",
       "zoneKey": "the-unlit.the-regard",
       "name": "The Quiet Knife, answered",
       "summary": "Have Vesh reforge your quiet knife.",
       "description": "Vesh works for materials and not for coin, and she has decided what she is making for you before you asked.",
       "giverMobKey": "epic-smith-vesh",
       "turninMobKey": "epic-smith-vesh",
-      "requiredItemKey": "epic-shade-4",
+      "requiredItemKey": "epic-temper-4",
       "requiredCount": 1,
       "rewardXp": 260000,
       "rewardGold": 0,
-      "rewardItemKey": "epic-shade-5",
+      "rewardItemKey": "epic-temper-5",
       "rewardItemCount": 1,
       "rewardFlagKey": null,
       "prerequisiteQuestKeys": [
         "a5-3-what-is-owed",
-        "e4-shade"
+        "e4-temper"
       ],
       "isRepeatable": false,
       "autoStart": false,
@@ -1658,7 +1658,7 @@
       },
       "sortOrder": 15,
       "paths": [
-        "Shade"
+        "Temper"
       ]
     }
   ],

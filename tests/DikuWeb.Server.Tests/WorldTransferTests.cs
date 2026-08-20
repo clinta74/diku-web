@@ -516,8 +516,11 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
 
         var keys = KeysOf(bundle, "abilities");
 
+        // The seeded examples, one per Path. The game's set arrives by import like everything
+        // else, so what this asserts is that abilities travel at all - not that any particular
+        // one of them is in the database this test built.
         Assert.Contains("warden.kick", keys);
-        Assert.Contains("hallow.intercession", keys);
+        Assert.Contains("hallow.mend", keys);
     }
 
     [Fact]
@@ -602,10 +605,10 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
         var content = await AuthorZoneAsync(client);
         var json = await ExportZoneJsonAsync(client, content.ZoneKey);
 
-        var key = $"shade.local{Guid.NewGuid():N}"[..22];
+        var key = $"temper.local{Guid.NewGuid():N}"[..22];
         (await client.PostAsJsonAsync($"/api/builder/abilities/{key}", new
         {
-            path = "Shade",
+            path = "Temper",
             unlockLevel = 4,
             name = "Local Only",
             description = "Authored after the export.",

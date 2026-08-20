@@ -13,7 +13,7 @@ namespace DikuWeb.Engine.Tests.Commands;
 /// <para>
 /// Reported as "it's hard to get off-hand weapons"; the truth was that there were none. All 35
 /// authored weapons were <c>MainHand</c> and all six off-hand items were shields or a torch, every
-/// one of them with no attack speed - so <c>DualWield</c> (a Shade at level 3, a Warden at 5),
+/// one of them with no attack speed - so <c>DualWield</c> (a Temper at level 3, a Warden at 5),
 /// <c>Ambidextrous</c>, <c>OffHandDamageShare</c> and the whole second-strike path in
 /// <c>CombatSystem</c> had nothing in the world that could reach them. The level-up line
 /// <em>"You can strike with a weapon in your off hand"</em> named a thing a player could not do.
@@ -31,14 +31,14 @@ public sealed class MultiSlotEquipTests
         [ItemSlot.MainHand, ItemSlot.OffHand];
 
     private static (WorldHarness Harness, PlayerActor Actor) Armed(
-        CharacterPath path = CharacterPath.Shade)
+        CharacterPath path = CharacterPath.Temper)
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
         return (harness, harness.AddPlayer("Kaeda", Room, path: path, level: 20));
     }
 
-    private static ItemTemplate Blade(WorldHarness harness, string key = "short-blade") =>
+    private static ItemTemplate Temper(WorldHarness harness, string key = "short-temper") =>
         harness.DefineWeapon(key, "a " + key.Replace('-', ' '), EitherHand, delayPulses: 6, verb: "slash");
 
     private static ItemTemplate Maul(WorldHarness harness) =>
@@ -58,23 +58,23 @@ public sealed class MultiSlotEquipTests
     public void An_either_hand_weapon_reaches_for_the_main_hand()
     {
         var (harness, actor) = Armed();
-        var blade = harness.GiveItem(actor, Blade(harness));
+        var temper = harness.GiveItem(actor, Temper(harness));
 
-        harness.Execute(actor, "wield short-blade");
+        harness.Execute(actor, "wield short-temper");
 
-        Assert.Equal(ItemSlot.MainHand, blade.EquippedSlot);
+        Assert.Equal(ItemSlot.MainHand, temper.EquippedSlot);
     }
 
-    /// <summary><b>The point of the whole change.</b> A second blade lands in the off hand.</summary>
+    /// <summary><b>The point of the whole change.</b> A second temper lands in the off hand.</summary>
     [Fact]
     public void A_second_either_hand_weapon_goes_to_the_off_hand()
     {
         var (harness, actor) = Armed();
-        var first = harness.GiveItem(actor, Blade(harness, "short-blade"));
-        var second = harness.GiveItem(actor, Blade(harness, "keening-blade"));
+        var first = harness.GiveItem(actor, Temper(harness, "short-temper"));
+        var second = harness.GiveItem(actor, Temper(harness, "keening-temper"));
 
-        harness.Execute(actor, "wield short-blade");
-        harness.Execute(actor, "wield keening-blade");
+        harness.Execute(actor, "wield short-temper");
+        harness.Execute(actor, "wield keening-temper");
 
         Assert.Equal(ItemSlot.MainHand, first.EquippedSlot);
         Assert.Equal(ItemSlot.OffHand, second.EquippedSlot);
@@ -91,10 +91,10 @@ public sealed class MultiSlotEquipTests
         var spear = harness.DefineWeapon("vigil-spear", "a vigil spear", ItemSlot.MainHand, 8, "pierce");
         harness.Equip(actor, spear, ItemSlot.MainHand);
 
-        var blade = harness.GiveItem(actor, Blade(harness));
-        harness.Execute(actor, "wield short-blade");
+        var temper = harness.GiveItem(actor, Temper(harness));
+        harness.Execute(actor, "wield short-temper");
 
-        Assert.Equal(ItemSlot.OffHand, blade.EquippedSlot);
+        Assert.Equal(ItemSlot.OffHand, temper.EquippedSlot);
     }
 
     /// <summary>Both hands full names both, rather than only the first one tried.</summary>
@@ -106,13 +106,13 @@ public sealed class MultiSlotEquipTests
         harness.Equip(actor, spear, ItemSlot.MainHand);
         harness.Equip(actor, Shield(harness), ItemSlot.OffHand);
 
-        var blade = harness.GiveItem(actor, Blade(harness));
+        var temper = harness.GiveItem(actor, Temper(harness));
         harness.Drain(actor);
-        harness.Execute(actor, "wield short-blade");
+        harness.Execute(actor, "wield short-temper");
 
         var said = harness.DrainText(actor);
 
-        Assert.Null(blade.EquippedSlot);
+        Assert.Null(temper.EquippedSlot);
         Assert.Contains("main hand", said, StringComparison.Ordinal);
         Assert.Contains("off hand", said, StringComparison.Ordinal);
     }
@@ -122,12 +122,12 @@ public sealed class MultiSlotEquipTests
     public void An_either_hand_weapon_cannot_be_worn()
     {
         var (harness, actor) = Armed();
-        var blade = harness.GiveItem(actor, Blade(harness));
+        var temper = harness.GiveItem(actor, Temper(harness));
         harness.Drain(actor);
 
-        harness.Execute(actor, "wear short-blade");
+        harness.Execute(actor, "wear short-temper");
 
-        Assert.Null(blade.EquippedSlot);
+        Assert.Null(temper.EquippedSlot);
         Assert.Contains("wielding it instead", harness.DrainText(actor), StringComparison.Ordinal);
     }
 

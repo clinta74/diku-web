@@ -288,7 +288,7 @@ export type WanderMode = 'template' | 'always' | 'never'
  * a hand-written list beside the union is the pair that drifts. `CharacterPath` is derived from
  * this so the two cannot disagree.
  */
-export const CHARACTER_PATHS = ['Warden', 'Adept', 'Shade', 'Hallow'] as const
+export const CHARACTER_PATHS = ['Warden', 'Adept', 'Temper', 'Hallow'] as const
 
 export type CharacterPath = (typeof CHARACTER_PATHS)[number]
 export type CostType = 'Focus' | 'Stamina' | 'Health'
@@ -319,7 +319,7 @@ export interface Ability {
    * A timer this ability shares with others on the same Path, or null when it shares none.
    *
    * Using any ability on the timer puts the whole timer on cooldown, for that ability's own
-   * cooldown. Scoped to the Path, so Warden 1 and Shade 1 are different timers — a character only
+   * cooldown. Scoped to the Path, so Warden 1 and Temper 1 are different timers — a character only
    * ever knows one Path's abilities, so the two can never meet in play.
    */
   cooldownGroup: number | null

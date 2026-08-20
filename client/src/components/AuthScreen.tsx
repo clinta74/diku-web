@@ -3,12 +3,14 @@ import { Button } from '../ui/Button'
 import { api, type Account, type Character } from '../net/api'
 import { ChangePasswordPanel } from './ChangePasswordPanel'
 
-const PATHS = ['Warden', 'Adept', 'Shade', 'Hallow'] as const
+const PATHS = ['Warden', 'Adept', 'Temper', 'Hallow'] as const
 
 const PATH_BLURBS: Record<string, string> = {
   Warden: 'Armored frontline. High health, steady damage.',
   Adept: 'Focus-caster. Fragile, but hits from range.',
-  Shade: 'Stealth and burst. Fast, and hard to pin down.',
+  // Not "stealth and burst": there is no stealth in the game, and past level 20 this Path is
+  // bleeding rather than burst. What it has is speed and things that keep hurting afterwards.
+  Temper: 'Strikes fast, and what it breaks stays broken.',
   Hallow: 'Support and control. Shapes a fight rather than winning it alone.',
 }
 

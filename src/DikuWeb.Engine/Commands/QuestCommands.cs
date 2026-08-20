@@ -693,7 +693,7 @@ public static class QuestCommands
     /// authored before this field are unrestricted without being touched.
     ///
     /// The four epic chains are why this exists. All twenty are given by one smith, so Vesh handed
-    /// every character all four - and a Shade who finished the Adept chain received a stormrod they
+    /// every character all four - and a Temper who finished the Adept chain received a stormrod they
     /// could not wield and, being lore and no-drop, could not get rid of either.
     /// </remarks>
     private static bool IsForPath(Quest quest, Character character) =>

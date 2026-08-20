@@ -14,7 +14,7 @@ namespace DikuWeb.Engine.Tests.Commands;
 /// <remarks>
 /// <para>
 /// Reported from play. The four epic chains have one giver and Path-locked rewards, so
-/// <c>talk vesh</c> handed every character all four — and a Shade who finished the Adept chain
+/// <c>talk vesh</c> handed every character all four — and a Temper who finished the Adept chain
 /// received a stormrod they could not wield and, being lore and no-drop, could not drop, sell or
 /// destroy. The journal read:
 /// </para>
@@ -22,7 +22,7 @@ namespace DikuWeb.Engine.Tests.Commands;
 /// Active:
 ///   The Stormrod, unproven      (Adept)
 ///   The Hearthcenser, unproven  (Hallow)
-///   The Quiet Knife, unproven   (Shade)
+///   The Quiet Knife, unproven   (Temper)
 ///   The Oathmaul, unproven      (Warden)
 /// </code>
 /// <para>
@@ -97,7 +97,7 @@ public sealed class QuestPathGateTests
     }
 
     /// <summary>The four epic chains, as keys — what a character asks for and is judged on.</summary>
-    private static readonly string[] AllFour = ["e1-adept", "e1-hallow", "e1-shade", "e1-warden"];
+    private static readonly string[] AllFour = ["e1-adept", "e1-hallow", "e1-temper", "e1-warden"];
 
     private static IReadOnlyList<string> Journal(WorldHarness harness, PlayerActor actor) =>
         [.. harness.World.QuestsFor(actor.CharacterId).Select(q => q.QuestKey)];
@@ -111,21 +111,21 @@ public sealed class QuestPathGateTests
     public void One_giver_with_four_path_chains_hands_out_only_the_matching_one()
     {
         var (harness, actor) = AtTheSmith(
-            CharacterPath.Shade,
+            CharacterPath.Temper,
             Quest("e1-adept", "The Stormrod", [CharacterPath.Adept]),
             Quest("e1-hallow", "The Hearthcenser", [CharacterPath.Hallow]),
-            Quest("e1-shade", "The Quiet Knife", [CharacterPath.Shade]),
+            Quest("e1-temper", "The Quiet Knife", [CharacterPath.Temper]),
             Quest("e1-warden", "The Oathmaul", [CharacterPath.Warden]));
 
         Talk(harness, actor, AllFour);
 
-        Assert.Equal(["e1-shade"], Journal(harness, actor));
+        Assert.Equal(["e1-temper"], Journal(harness, actor));
     }
 
     [Theory]
     [InlineData(CharacterPath.Adept, "e1-adept")]
     [InlineData(CharacterPath.Hallow, "e1-hallow")]
-    [InlineData(CharacterPath.Shade, "e1-shade")]
+    [InlineData(CharacterPath.Temper, "e1-temper")]
     [InlineData(CharacterPath.Warden, "e1-warden")]
     public void Each_path_gets_its_own_chain_and_no_other(CharacterPath path, string expected)
     {
@@ -133,7 +133,7 @@ public sealed class QuestPathGateTests
             path,
             Quest("e1-adept", "The Stormrod", [CharacterPath.Adept]),
             Quest("e1-hallow", "The Hearthcenser", [CharacterPath.Hallow]),
-            Quest("e1-shade", "The Quiet Knife", [CharacterPath.Shade]),
+            Quest("e1-temper", "The Quiet Knife", [CharacterPath.Temper]),
             Quest("e1-warden", "The Oathmaul", [CharacterPath.Warden]));
 
         Talk(harness, actor, AllFour);
@@ -149,7 +149,7 @@ public sealed class QuestPathGateTests
     [Theory]
     [InlineData(CharacterPath.Adept)]
     [InlineData(CharacterPath.Hallow)]
-    [InlineData(CharacterPath.Shade)]
+    [InlineData(CharacterPath.Temper)]
     [InlineData(CharacterPath.Warden)]
     public void A_quest_with_no_paths_is_offered_to_anyone(CharacterPath path)
     {
@@ -164,13 +164,13 @@ public sealed class QuestPathGateTests
     [Fact]
     public void A_quest_may_name_more_than_one_path()
     {
-        var martial = new[] { CharacterPath.Warden, CharacterPath.Shade };
+        var martial = new[] { CharacterPath.Warden, CharacterPath.Temper };
 
-        var (forShade, shade) = AtTheSmith(CharacterPath.Shade, Quest("blades", "Blades", martial));
-        Talk(forShade, shade, "blades");
-        Assert.Equal(["blades"], Journal(forShade, shade));
+        var (forBlade, temper) = AtTheSmith(CharacterPath.Temper, Quest("blades", "Tempers", martial));
+        Talk(forBlade, temper, "blades");
+        Assert.Equal(["blades"], Journal(forBlade, temper));
 
-        var (forAdept, adept) = AtTheSmith(CharacterPath.Adept, Quest("blades", "Blades", martial));
+        var (forAdept, adept) = AtTheSmith(CharacterPath.Adept, Quest("blades", "Tempers", martial));
         Talk(forAdept, adept, "blades");
         Assert.Empty(Journal(forAdept, adept));
     }
@@ -183,7 +183,7 @@ public sealed class QuestPathGateTests
     public void A_giver_with_nothing_for_your_path_is_not_silent()
     {
         var (harness, actor) = AtTheSmith(
-            CharacterPath.Adept, Quest("e1-shade", "The Quiet Knife", [CharacterPath.Shade]));
+            CharacterPath.Adept, Quest("e1-temper", "The Quiet Knife", [CharacterPath.Temper]));
 
         Assert.False(string.IsNullOrWhiteSpace(Talk(harness, actor)));
     }
@@ -201,7 +201,7 @@ public sealed class QuestPathGateTests
     {
         // Offered while unrestricted, then restricted underneath them - which is exactly what an
         // import of the newly-tagged content does to every character mid-chain.
-        var (harness, actor) = AtTheSmith(CharacterPath.Shade, Quest("e1-adept", "The Stormrod"));
+        var (harness, actor) = AtTheSmith(CharacterPath.Temper, Quest("e1-adept", "The Stormrod"));
         Talk(harness, actor, "e1-adept");
         Assert.Equal(["e1-adept"], Journal(harness, actor));
 
@@ -223,7 +223,7 @@ public sealed class QuestPathGateTests
     public void A_quest_for_another_path_cannot_be_handed_in()
     {
         var (harness, actor) = AtTheSmith(
-            CharacterPath.Shade, Quest("e1-adept", "The Stormrod", requiredItem: "ember"));
+            CharacterPath.Temper, Quest("e1-adept", "The Stormrod", requiredItem: "ember"));
 
         var ember = new ItemTemplate
         {
@@ -258,7 +258,7 @@ public sealed class QuestPathGateTests
     [Fact]
     public void Abandon_clears_a_quest_the_gate_now_refuses()
     {
-        var (harness, actor) = AtTheSmith(CharacterPath.Shade, Quest("e1-adept", "The Stormrod"));
+        var (harness, actor) = AtTheSmith(CharacterPath.Temper, Quest("e1-adept", "The Stormrod"));
         Talk(harness, actor, "e1-adept");
 
         harness.Mutate(Quest("e1-adept", "The Stormrod", [CharacterPath.Adept]));

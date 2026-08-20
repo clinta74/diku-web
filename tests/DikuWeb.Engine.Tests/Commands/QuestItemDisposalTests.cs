@@ -18,7 +18,7 @@ namespace DikuWeb.Engine.Tests.Commands;
 /// </para>
 /// <para>
 /// <b>The case that forced it</b> is the one <c>QuestPathGateTests</c> described and could not fix:
-/// an epic reward is a quest item <em>and</em> no-drop <em>and</em> Path-locked, so a Shade holding
+/// an epic reward is a quest item <em>and</em> no-drop <em>and</em> Path-locked, so a Temper holding
 /// an Adept stormrod could not wield it, drop it, sell it or destroy it. A pack slot with nothing
 /// that could ever be done about it.
 /// </para>
@@ -46,7 +46,7 @@ public sealed class QuestItemDisposalTests
             SortOrder: 0);
 
     private static (WorldHarness Harness, PlayerActor Actor) AtTheSmith(
-        CharacterPath path = CharacterPath.Shade)
+        CharacterPath path = CharacterPath.Temper)
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
@@ -225,7 +225,7 @@ public sealed class QuestItemDisposalTests
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var actor = harness.AddPlayer("Kaeda", West, path: CharacterPath.Shade, level: 20);
+        var actor = harness.AddPlayer("Kaeda", West, path: CharacterPath.Temper, level: 20);
 
         // Authored the way the database delivers it: the bag goes through AsPersisted,
         // because a bool out of jsonb arrives as a JsonElement and a hand-built bag would

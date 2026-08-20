@@ -98,13 +98,13 @@ public sealed class AbilityCombatTests
         // be keyed on damage dealt, so the opener of the Path built around wounds engaged nothing,
         // and a wound outside a fight is a wound that never ticks.
         var harness = Loaded();
-        var shade = Fighter(harness, "shade.ambush", name: "Vess", path: CharacterPath.Shade);
+        var temper = Fighter(harness, "temper.body-blow", name: "Vess", path: CharacterPath.Temper);
         harness.AddMob("rat", West, health: 500);
 
-        harness.Execute(shade, "ambush rat");
+        harness.Execute(temper, "body blow rat");
         harness.Pump(60);
 
-        Assert.Contains("bleeding", harness.DrainText(shade), StringComparison.Ordinal);
+        Assert.Contains("bleeding", harness.DrainText(temper), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -238,15 +238,15 @@ public sealed class AbilityCombatTests
     {
         // The other half of the note: whatever finishes something, it should finish the same way.
         var harness = Loaded();
-        var shade = Fighter(harness, "shade.ambush", name: "Vess", path: CharacterPath.Shade);
+        var temper = Fighter(harness, "temper.body-blow", name: "Vess", path: CharacterPath.Temper);
         var rat = harness.AddMob("rat", West, health: 1);
         rat.ResolvedXp = 40;
 
-        harness.Execute(shade, "ambush rat");
+        harness.Execute(temper, "body blow rat");
         harness.Pump(60);
 
         Assert.Null(harness.World.GetMob(rat.Id));
         Assert.Null(harness.World.FindCombat(West));
-        Assert.Equal(CombatState.Idle, shade.Character.CombatState);
+        Assert.Equal(CombatState.Idle, temper.Character.CombatState);
     }
 }

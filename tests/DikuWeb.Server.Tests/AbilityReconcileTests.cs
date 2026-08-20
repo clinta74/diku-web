@@ -161,19 +161,27 @@ public sealed class AbilityReconcileTests(PostgresFixture postgres)
     [Fact]
     public async Task Path_and_unlock_level_are_seeded_rather_than_defaulted()
     {
-        // The two new columns carry who learns an ability and when. Left to default to zero they
-        // would make every ability a Warden one known from level 1 - which is exactly what the
+        // The two columns carry who learns an ability and when. Left to default to zero they would
+        // make every ability a Warden one known from level 1 - which is exactly what the
         // scaffolded migration would have produced for every existing deployment.
+        //
+        // Asserted over whatever the catalogue holds rather than over two named keys. It is four
+        // examples now and the game's set arrives by import, so naming `hallow.intercession` here
+        // was asserting about content this database has never seen.
         await using var db = postgres.CreateDbContext();
         await StarterWorldSeeder.ReconcileAbilitiesAsync(db);
 
-        var bolt = await db.Abilities.AsNoTracking().FirstAsync(a => a.Key == "adept.bolt");
-        var capstone = await db.Abilities.AsNoTracking()
-            .FirstAsync(a => a.Key == "hallow.intercession");
+        var stored = await db.Abilities.AsNoTracking().ToDictionaryAsync(a => a.Key);
 
-        Assert.Equal(CharacterPath.Adept, bolt.Path);
-        Assert.Equal(1, bolt.UnlockLevel);
-        Assert.Equal(CharacterPath.Hallow, capstone.Path);
-        Assert.Equal(20, capstone.UnlockLevel);
+        Assert.NotEmpty(AbilityCatalogue.All);
+
+        foreach (var entry in AbilityCatalogue.All)
+        {
+            var row = Assert.Contains(entry.Key, stored);
+
+            Assert.Equal(entry.Path, row.Path);
+            Assert.Equal(entry.UnlockLevel, row.UnlockLevel);
+            Assert.NotEqual(0, row.UnlockLevel);
+        }
     }
 }

@@ -79,19 +79,19 @@ public sealed class VitalCalculatorTests
     }
 
     [Fact]
-    public void StaminaMax_shade_level_1()
+    public void StaminaMax_blade_level_1()
     {
-        var stamina = VitalCalculator.StaminaMax(CharacterPath.Shade, level: 1, AttributeSet.Baseline);
-        // Shade starts with 110 stamina
+        var stamina = VitalCalculator.StaminaMax(CharacterPath.Temper, level: 1, AttributeSet.Baseline);
+        // Temper starts with 110 stamina
         Assert.Equal(110, stamina);
     }
 
     [Fact]
     public void StaminaMax_scales_with_agility_modifier()
     {
-        var baseline = VitalCalculator.StaminaMax(CharacterPath.Shade, level: 5, AttributeSet.Baseline);
+        var baseline = VitalCalculator.StaminaMax(CharacterPath.Temper, level: 5, AttributeSet.Baseline);
 
-        var highAgility = VitalCalculator.StaminaMax(CharacterPath.Shade, level: 5, new AttributeSet
+        var highAgility = VitalCalculator.StaminaMax(CharacterPath.Temper, level: 5, new AttributeSet
         {
             Might = 10,
             Agility = 20, // modifier +5
@@ -151,7 +151,7 @@ public sealed class VitalCalculatorTests
     [Theory]
     [InlineData(CharacterPath.Warden)]
     [InlineData(CharacterPath.Adept)]
-    [InlineData(CharacterPath.Shade)]
+    [InlineData(CharacterPath.Temper)]
     [InlineData(CharacterPath.Hallow)]
     public void All_paths_start_with_positive_vitals(CharacterPath path)
     {

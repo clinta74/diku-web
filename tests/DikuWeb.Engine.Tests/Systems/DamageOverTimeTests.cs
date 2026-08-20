@@ -19,15 +19,15 @@ public sealed class DamageOverTimeTests
 {
     private static readonly RoomKey West = RoomKey.Parse("test.zone.west");
 
-    /// <summary>A Shade mid-fight with a rat, ready to open a wound.</summary>
+    /// <summary>A Temper mid-fight with a rat, ready to open a wound.</summary>
     private static (WorldHarness Harness, Engine.World.PlayerActor Player, Domain.Inhabitants.Mob Rat) Fight(
         int ratHealth = 1000)
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        harness.DefineAbility("shade.ambush");
+        harness.DefineAbility("temper.body-blow");
 
-        var player = harness.AddPlayer("Vex", West, path: CharacterPath.Shade, level: 10);
+        var player = harness.AddPlayer("Vex", West, path: CharacterPath.Temper, level: 10);
         player.Character.Vitals.Stamina = 500;
 
         // At the player's level, so any test in here that checks a reward is measuring the wound
@@ -84,7 +84,7 @@ public sealed class DamageOverTimeTests
         // it, and reads to a player as the strike hitting twice.
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var player = harness.AddPlayer("Vex", West, path: CharacterPath.Shade, level: 10);
+        var player = harness.AddPlayer("Vex", West, path: CharacterPath.Temper, level: 10);
         var rat = harness.AddMob("rat", West, health: 1000);
         harness.Execute(player, "kill rat");
 
@@ -116,7 +116,7 @@ public sealed class DamageOverTimeTests
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var player = harness.AddPlayer("Vex", West, path: CharacterPath.Shade, level: 10);
+        var player = harness.AddPlayer("Vex", West, path: CharacterPath.Temper, level: 10);
         var rat = harness.AddMob("rat", West, health: 1000);
         harness.Execute(player, "kill rat");
 
@@ -183,7 +183,7 @@ public sealed class DamageOverTimeTests
     {
         var harness = new WorldHarness();
         harness.LoadTestWorld();
-        var player = harness.AddPlayer("Vex", West, path: CharacterPath.Shade, level: 10);
+        var player = harness.AddPlayer("Vex", West, path: CharacterPath.Temper, level: 10);
         var rat = harness.AddMob("rat", West, health: 1000);
         harness.Execute(player, "kill rat");
         harness.Drain(player);
@@ -211,7 +211,7 @@ public sealed class DamageOverTimeTests
         // rather than the hand-built effect the other tests use.
         var (harness, player, rat) = Fight();
 
-        harness.Execute(player, "ambush rat");
+        harness.Execute(player, "body blow rat");
         harness.Pump(2);
 
         var effects = harness.World.GetActiveEffects(rat.Id);

@@ -197,13 +197,18 @@ internal sealed class WorldHarness
     public AbilityCache AbilityCache { get; } = new();
 
     /// <summary>
-    /// Puts a real catalogue ability into the cache, so a test casts the same thing the game
-    /// does rather than a hand-built stand-in with convenient numbers.
+    /// Puts a real shipped ability into the cache, so a test casts the same thing the game does
+    /// rather than a hand-built stand-in with convenient numbers.
     /// </summary>
+    /// <remarks>
+    /// Read from <c>content/abilities.json</c>, which is where the set lives — it used to come
+    /// from <c>AbilityCatalogue</c>, which is four examples now. The intent is unchanged and is
+    /// the whole value of these tests: a cast in here spends the same cost, waits the same
+    /// cooldown, and applies the same effect parameters as a cast in the game.
+    /// </remarks>
     public Domain.Abilities.Ability DefineAbility(string key)
     {
-        var entry = Domain.Abilities.AbilityCatalogue.All.Single(e => e.Key == key);
-        var ability = Domain.Abilities.AbilityCatalogue.ToAbility(entry);
+        var ability = ShippedAbilities.Get(key);
         AbilityCache.Put(ability);
         return ability;
     }

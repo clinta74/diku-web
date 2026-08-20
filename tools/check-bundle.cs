@@ -67,7 +67,7 @@ foreach (var path in args)
         $"{Path.GetFileName(path)}: {bundle!.Rooms.Count} rooms, "
         + $"{bundle.Rooms.Sum(r => r.Exits.Count)} exits, {bundle.MobTemplates.Count} mobs, "
         + $"{bundle.ItemTemplates.Count} items, {bundle.Spawners.Count} spawners, "
-        + $"{bundle.Quests.Count} quests");
+        + $"{bundle.Quests.Count} quests, {bundle.Abilities.Count} abilities");
 
     foreach (var finding in check.Warnings)
     {

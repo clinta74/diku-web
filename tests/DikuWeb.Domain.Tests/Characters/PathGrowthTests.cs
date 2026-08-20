@@ -27,9 +27,9 @@ public sealed class PathGrowthTests
     }
 
     [Fact]
-    public void Shade_growth_favors_agility_and_insight()
+    public void Temper_growth_favors_agility_and_insight()
     {
-        var growth = PathGrowth.ShadeGrowth;
+        var growth = PathGrowth.TemperGrowth;
         Assert.Equal(2, growth.Agility);
         Assert.Equal(2, growth.Insight);
         Assert.Equal(1, growth.Might);
@@ -53,7 +53,7 @@ public sealed class PathGrowthTests
     {
         Assert.Equal(PathGrowth.WardenGrowth, PathGrowth.For(CharacterPath.Warden));
         Assert.Equal(PathGrowth.AdeptGrowth, PathGrowth.For(CharacterPath.Adept));
-        Assert.Equal(PathGrowth.ShadeGrowth, PathGrowth.For(CharacterPath.Shade));
+        Assert.Equal(PathGrowth.TemperGrowth, PathGrowth.For(CharacterPath.Temper));
         Assert.Equal(PathGrowth.HallowGrowth, PathGrowth.For(CharacterPath.Hallow));
     }
 
@@ -101,7 +101,7 @@ public sealed class PathGrowthTests
         {
             PathGrowth.WardenGrowth,
             PathGrowth.AdeptGrowth,
-            PathGrowth.ShadeGrowth,
+            PathGrowth.TemperGrowth,
             PathGrowth.HallowGrowth
         };
 

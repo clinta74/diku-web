@@ -77,7 +77,7 @@ public sealed class Quest
     /// </para>
     /// <para>
     /// It exists because the four epic chains have Path-locked rewards and one giver. Vesh handed
-    /// every character all four, so a Shade finished the Adept chain and received a stormrod they
+    /// every character all four, so a Temper finished the Adept chain and received a stormrod they
     /// could not wield - and, being lore and no-drop, could not get rid of either. A quest whose
     /// reward only one Path can use is a quest only that Path should be offered.
     /// </para>

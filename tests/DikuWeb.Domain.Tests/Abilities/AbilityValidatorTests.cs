@@ -54,35 +54,28 @@ public sealed class AbilityValidatorTests
             .Where(p => p.Severity == AbilityProblemSeverity.Error)];
 
     // -----------------------------------------------------------------------
-    // The shipped set
+    // The examples a fresh database is seeded with
     // -----------------------------------------------------------------------
 
+    /// <summary>
+    /// The four examples are each individually sound, which is all they claim to be.
+    /// </summary>
+    /// <remarks>
+    /// <b>Not <c>ValidateSet</c>.</b> The set-level rules ask whether a Path keeps unlocking to
+    /// level 20 and whether the gaps are playable, and four level-1 abilities fail all of them by
+    /// design — they are a floor for an empty database, not a progression. Those questions are
+    /// asked of the shipped set, in <c>AbilityContentTests</c>, which is where the set lives.
+    /// </remarks>
     [Fact]
-    public void The_catalogue_the_game_ships_has_no_errors()
+    public void The_examples_a_fresh_database_is_seeded_with_are_sound()
     {
-        var problems = AbilityValidator
-            .ValidateSet(AbilityCatalogue.AsAbilities, Effects)
-            .Where(p => p.Severity == AbilityProblemSeverity.Error)
+        var problems = AbilityCatalogue.AsAbilities
+            .SelectMany(a => AbilityValidator.ValidateOne(a, Effects))
             .ToList();
 
         Assert.True(
             problems.Count == 0,
-            "The starter set must validate:\n" + string.Join("\n", problems.Select(p => $"  {p.Key}: {p.Message}")));
-    }
-
-    [Fact]
-    public void The_catalogue_the_game_ships_has_no_warnings_either()
-    {
-        // Held to the higher bar deliberately. The warnings are about progression shape - a Path
-        // with nothing at level 1, a four-level gap - and the shipped set is the one thing that
-        // has been designed against those rules rather than merely permitted by them.
-        var problems = AbilityValidator
-            .ValidateSet(AbilityCatalogue.AsAbilities, Effects)
-            .ToList();
-
-        Assert.True(
-            problems.Count == 0,
-            "The starter set should be exemplary:\n" + string.Join("\n", problems.Select(p => $"  {p.Key}: {p.Message}")));
+            "The examples must validate:\n" + string.Join("\n", problems.Select(p => $"  {p.Key}: {p.Message}")));
     }
 
     // -----------------------------------------------------------------------
@@ -224,7 +217,7 @@ public sealed class AbilityValidatorTests
         // AbilityLookup resolves the full key, so this is a name that reaches another Path's
         // ability rather than merely an untidy string.
         Assert.Contains(
-            Errors(Valid(key: "shade.kick", path: CharacterPath.Warden)),
+            Errors(Valid(key: "temper.kick", path: CharacterPath.Warden)),
             p => p.Message.Contains("must start with 'warden.'", StringComparison.Ordinal));
 
     // -----------------------------------------------------------------------
