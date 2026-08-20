@@ -24,7 +24,9 @@ public sealed class RootTests
         harness.World.ApplyEffect(entityId, new ActiveEffect
         {
             EffectKey = "control.root",
-            Name = "hamstrung",
+            // What Low Kick applies. The mob attack in MobAttackEffectTests still hamstrings,
+            // and should: a mob with a blade can, and this Path no longer carries one.
+            Name = "hobbled",
             SourceEntityId = "c_test",
             PreventsEscape = true,
             ExpiresAtPulse = harness.Clock.CurrentPulse + duration,

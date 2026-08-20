@@ -1006,7 +1006,7 @@
           "key": "control.root",
           "params": {
             "durationPulses": "32",
-            "name": "hamstrung"
+            "name": "hobbled"
           }
         }
       ]
@@ -1182,7 +1182,7 @@
             "defenseRating": "4",
             "mitigation": "4",
             "durationPulses": "64",
-            "name": "exploited"
+            "name": "exposed"
           }
         }
       ]
@@ -1307,7 +1307,7 @@
             "durationPulses": "72",
             "maxStacks": "5",
             "stackingRule": "Stack",
-            "name": "cut to pieces"
+            "name": "battered"
           }
         }
       ]
@@ -1340,7 +1340,7 @@
             "durationPulses": "120",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "severed"
+            "name": "coming apart"
           }
         },
         {
@@ -1350,7 +1350,7 @@
             "durationPulses": "120",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "severed"
+            "name": "coming apart"
           }
         }
       ]
