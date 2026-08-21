@@ -783,9 +783,18 @@ export const builderApi = {
    * dated filename, so letting the browser follow it saves a file somebody keeps. Reading it into
    * a blob here would throw that name away and hand back an untitled download.
    */
-  exportUrl: (scope?: { world?: string; zone?: string }) => {
+  /**
+   * Where to download a bundle from.
+   *
+   * `only: 'abilities'` is the return leg of tuning an ability: they are content, they live in
+   * `content/abilities.json`, and a retune made in the editor has to be able to get back to the
+   * file. It wins over world and zone rather than narrowing them — an ability belongs to a Path
+   * and not to a place.
+   */
+  exportUrl: (scope?: { world?: string; zone?: string; only?: 'abilities' }) => {
     const query = new URLSearchParams()
-    if (scope?.zone) query.set('zone', scope.zone)
+    if (scope?.only) query.set('only', scope.only)
+    else if (scope?.zone) query.set('zone', scope.zone)
     else if (scope?.world) query.set('world', scope.world)
     const suffix = query.toString()
     return suffix ? `${base}/export?${suffix}` : `${base}/export`

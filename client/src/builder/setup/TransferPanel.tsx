@@ -225,7 +225,24 @@ export function TransferPanel({ onImported }: Props) {
         >
           Download bundle
         </a>
+
+        {/* Its own button rather than a third box, because it answers a different question. The
+            boxes narrow a bundle to a place; an ability has no place, so there is nothing above it
+            to name. */}
+        <a
+          className="setup-download"
+          href={builderApi.exportUrl({ only: 'abilities' })}
+        >
+          Download abilities only
+        </a>
       </div>
+
+      <p className="dim">
+        <strong>Abilities only</strong> ignores both boxes and is the file to save over{' '}
+        <code>content/abilities.json</code>. A retune made in the editor lives in this
+        server&rsquo;s database and nowhere else until it does — the next fresh install seeds from
+        the file, not from here.
+      </p>
 
       <div className="setup-head">
         <h3>Import</h3>

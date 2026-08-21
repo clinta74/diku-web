@@ -681,10 +681,28 @@ public static class BuilderEndpoints
     private static async Task<IResult> ExportAsync(
         string? world,
         string? zone,
+        string? only,
         WorldExporter exporter,
         HttpContext http,
         CancellationToken ct)
     {
+        // Abilities on their own, which is the return leg of tuning one: they are content, they
+        // live in content/abilities.json, and a retune made in the editor has to be able to get
+        // back to the file. Wins over world and zone rather than combining with them - an ability
+        // belongs to a Path and not to a place, so there is nothing for a zone to narrow.
+        if (string.Equals(only, WorldExporter.AbilitiesScope, StringComparison.OrdinalIgnoreCase))
+        {
+            return Download(http, await exporter.ExportAbilitiesAsync(ct), WorldExporter.AbilitiesScope);
+        }
+
+        if (!string.IsNullOrWhiteSpace(only))
+        {
+            return Results.BadRequest(new
+            {
+                error = $"'{only}' is not something this can export on its own. Try 'abilities'.",
+            });
+        }
+
         if (await exporter.ExportAsync(world, zone, ct) is not { } bundle)
         {
             return Results.NotFound(new
@@ -695,7 +713,14 @@ public static class BuilderEndpoints
             });
         }
 
-        var name = bundle.Scope.Key ?? "world";
+        return Download(http, bundle, bundle.Scope.Key ?? "world");
+    }
+
+    /// <summary>
+    /// A bundle as a named attachment, because the thing a builder does with one is save it.
+    /// </summary>
+    private static IResult Download(HttpContext http, WorldBundle bundle, string name)
+    {
         http.Response.Headers.ContentDisposition =
             $"attachment; filename=\"{name}-{bundle.ExportedAt:yyyy-MM-dd}.json\"";
 

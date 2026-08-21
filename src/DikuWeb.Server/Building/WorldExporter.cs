@@ -86,6 +86,53 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
             configurations);
     }
 
+    /// <summary>
+    /// The abilities and nothing else, as a bundle that imports and merges like any other.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The return leg of how an ability is tuned.</b> Abilities are content now: they live in
+    /// <c>content/abilities.json</c>, a builder retunes them in the editor against a running
+    /// database, and the change has to come back to the file or the next fresh install loses it.
+    /// Without this the only way back was to export the whole world and delete nine collections out
+    /// of the JSON by hand — which is a step nobody does twice, so the file drifts from the
+    /// database and neither is the source of truth any more.
+    /// </para>
+    /// <para>
+    /// Not a filter on <see cref="ExportAsync"/> but its own method, because the scoped export
+    /// closes over references and this closes over none: an ability names no room, no template and
+    /// no quest, so there is nothing to reach for. The two are different shapes of question.
+    /// </para>
+    /// <para>
+    /// Configurations are left out for the same reason worlds and zones are. A configuration is
+    /// about a server and this file is about a Path; carrying one would mean a builder merging
+    /// tuned abilities into content also moved a starting room they never looked at.
+    /// </para>
+    /// </remarks>
+    public async Task<WorldBundle> ExportAbilitiesAsync(CancellationToken cancellationToken) =>
+        new(WorldBundle.CurrentFormatVersion,
+            clock.GetUtcNow(),
+            new BundleScope(AbilitiesScope, null),
+            [],
+            [],
+            [],
+            [],
+            [],
+            await AbilitiesAsync(cancellationToken),
+            [],
+            [],
+            []);
+
+    /// <summary>
+    /// The scope an abilities-only bundle declares.
+    /// </summary>
+    /// <remarks>
+    /// Descriptive only. Nothing on the import path reads <c>scope</c> — an import is a merge of
+    /// whatever collections a file holds — so this is here to tell a human what they are looking at
+    /// in a file they saved six months ago, which is the whole job the field has ever done.
+    /// </remarks>
+    public const string AbilitiesScope = "abilities";
+
     private async Task<IReadOnlyList<BundleGameConfiguration>> ConfigurationsAsync(
         CancellationToken cancellationToken) =>
         await db.GameConfigurations.AsNoTracking()

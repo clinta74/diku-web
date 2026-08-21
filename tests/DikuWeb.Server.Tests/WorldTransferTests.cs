@@ -523,6 +523,133 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
         Assert.Contains("hallow.mend", keys);
     }
 
+    // -----------------------------------------------------------------------
+    // Abilities on their own
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// The abilities and nothing else, which is the return leg of tuning one.
+    /// </summary>
+    /// <remarks>
+    /// <b>Asked for while a retune sat in a database and nowhere else.</b> Abilities are content —
+    /// they live in <c>content/abilities.json</c> and a fresh install seeds from the file — so a
+    /// change made in the editor has to be able to get back to it. Every other export carries the
+    /// whole world, and hand-deleting nine collections out of the JSON is a step nobody does twice.
+    /// </remarks>
+    [Fact]
+    public async Task An_abilities_export_carries_abilities_and_nothing_else()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        // Authored first, so the emptiness below is a filter doing its job rather than a database
+        // that had nothing in it to leave out.
+        var content = await AuthorZoneAsync(client);
+
+        var bundle = await ExportAbilitiesAsync(client);
+
+        Assert.NotEmpty(KeysOf(bundle, "abilities"));
+        Assert.DoesNotContain(content.RoomKey, KeysOf(bundle, "rooms"));
+
+        foreach (var empty in new[]
+        {
+            "worlds", "zones", "rooms", "itemTemplates", "mobTemplates",
+            "spawners", "quests", "configurations",
+        })
+        {
+            Assert.True(
+                bundle.GetProperty(empty).GetArrayLength() == 0,
+                $"An abilities export should carry no {empty}.");
+        }
+
+        Assert.Equal("abilities", bundle.GetProperty("scope").GetProperty("kind").GetString());
+    }
+
+    /// <summary>And it is a bundle like any other, so it imports.</summary>
+    /// <remarks>
+    /// The property that makes the file useful rather than merely readable. A bundle whose other
+    /// nine collections are empty must merge as "change these abilities, leave everything else" —
+    /// an import is a merge and absence is not deletion (§6.1) — or saving one over
+    /// <c>content/abilities.json</c> would quietly empty a world on the next import.
+    /// </remarks>
+    [Fact]
+    public async Task An_abilities_export_imports_without_touching_anything_else()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var content = await AuthorZoneAsync(client);
+        var json = await ExportAbilitiesJsonAsync(client);
+
+        (await client.PatchAsJsonAsync(
+            $"/api/builder/rooms/{content.RoomKey}",
+            new { title = "Edited after the export" })).EnsureSuccessStatusCode();
+
+        var report = await ImportAsync(client, json);
+        Assert.True(report.GetProperty("failures").GetArrayLength() == 0, Raw(report));
+
+        var room = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/rooms/{content.RoomKey}", UriKind.Relative)));
+
+        // Untouched, because the file said nothing about it.
+        Assert.Equal("Edited after the export", room.GetProperty("title").GetString());
+    }
+
+    /// <summary>A retune goes out and comes back, which is the whole point of the file.</summary>
+    [Fact]
+    public async Task A_retune_survives_an_abilities_only_round_trip()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        (await client.PatchAsJsonAsync(
+            "/api/builder/abilities/warden.kick",
+            new { cooldownPulses = 88 })).EnsureSuccessStatusCode();
+
+        var json = await ExportAbilitiesJsonAsync(client);
+
+        // Put back to something else, so the import restores rather than agrees.
+        (await client.PatchAsJsonAsync(
+            "/api/builder/abilities/warden.kick",
+            new { cooldownPulses = 24 })).EnsureSuccessStatusCode();
+
+        var report = await ImportAsync(client, json);
+        Assert.True(report.GetProperty("failures").GetArrayLength() == 0, Raw(report));
+
+        var after = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri("/api/builder/abilities/warden.kick", UriKind.Relative)));
+
+        Assert.Equal(88, after.GetProperty("cooldownPulses").GetInt64());
+
+        // Left as it was found, since the suite shares one database.
+        (await client.PatchAsJsonAsync(
+            "/api/builder/abilities/warden.kick",
+            new { cooldownPulses = 24 })).EnsureSuccessStatusCode();
+    }
+
+    /// <summary>
+    /// A name this cannot export on its own is refused, rather than quietly exporting the world.
+    /// </summary>
+    /// <remarks>
+    /// The failure worth refusing: <c>?only=quests</c> returning a full world bundle would be
+    /// saved over a quest file and take five worlds with it.
+    /// </remarks>
+    [Fact]
+    public async Task An_unknown_only_is_refused_rather_than_ignored()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var response = await client.GetAsync(
+            new Uri("/api/builder/export?only=quests", UriKind.Relative));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Fact]
     public async Task An_import_restores_a_retuned_cooldown()
     {
@@ -784,6 +911,18 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
 
     private static async Task<JsonElement> ExportZoneAsync(HttpClient client, string zoneKey) =>
         JsonDocument.Parse(await ExportZoneJsonAsync(client, zoneKey)).RootElement;
+
+    private static async Task<string> ExportAbilitiesJsonAsync(HttpClient client)
+    {
+        var response = await client.GetAsync(
+            new Uri("/api/builder/export?only=abilities", UriKind.Relative));
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
+    }
+
+    private static async Task<JsonElement> ExportAbilitiesAsync(HttpClient client) =>
+        JsonDocument.Parse(await ExportAbilitiesJsonAsync(client)).RootElement;
 
     private static async Task<JsonElement> ImportAsync(
         HttpClient client,

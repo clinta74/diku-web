@@ -187,16 +187,44 @@ exception, and it inserts a baseline rather than skipping anything.
 
 ## 5. Applying an ability retune
 
-**Why this is not just a deploy.** `AbilityCatalogue` is the set a *fresh* database is seeded with,
-and the startup reconcile only plants rows that are **missing** — it never updates and never deletes.
-That is deliberate: it is what stops a restart from reverting a builder's work. The consequence is
-that editing the catalogue retunes new installs and reaches a running server not at all.
+**Why this is not just a deploy.** The startup reconcile only plants rows that are **missing** — it
+never updates and never deletes. That is deliberate: it is what stops a restart from reverting a
+builder's work. The consequence is that changing the shipped set retunes new installs and reaches a
+running server not at all.
 
-**Nor does a bundle import.** The files in `content/` carry no abilities, so importing them cannot
-change one — or clobber one. (A bundle *exported from a live server* does carry abilities. If you
-re-export, that bundle now becomes another way these rows can move, so know which you are holding.)
+**Where the set lives.** `content/abilities.json` — all 69 of them, a bundle like any other.
+`AbilityCatalogue` in C# is four examples, one per Path at level 1, and exists only so an empty
+database is not a game with no abilities at all. **Editing the catalogue is almost never what you
+want.**
 
-So an ability change reaches production by the builder UI, or by SQL.
+So a retune reaches a running server by import, by the builder UI, or by SQL.
+
+### Getting a retune out of a server and back into the file
+
+A change made in the builder lives in **that server's database and nowhere else**. It is not in
+`content/abilities.json`, so the next fresh install does not have it. Bring it back:
+
+1. **Builder → Setup → Import & export → "Download abilities only".** Ignores the World and Zone
+   boxes; the file it gives you carries the abilities and nine empty collections.
+   (`GET /api/builder/export?only=abilities`, if you would rather curl it.)
+2. **Save it over `content/abilities.json`.**
+3. **Re-merge**, so the single-file bundle agrees with the parts:
+
+   ```
+   dotnet run tools/merge-bundles.cs content -o build/the-reaches.json
+   dotnet run tools/check-bundle.cs build/the-reaches.json
+   ```
+
+4. **Commit it.** `dotnet test` validates the shipped set — a Path that stops unlocking, a timer
+   with one ability on it, two room-wide controls that can be fired together — so a retune that
+   breaks the set's shape fails there rather than in play.
+
+Going the other way — a file into a server — is an ordinary import, and an abilities-only bundle
+merges like any other: keys in the file are written and everything the file does not mention is
+left alone. Importing one cannot empty a world.
+
+> A **full** world bundle carries every ability too, whatever its scope, so it is another way these
+> rows move. Know which file you are holding before you import it.
 
 ### The procedure
 

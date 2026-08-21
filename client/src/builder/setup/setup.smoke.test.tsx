@@ -80,7 +80,8 @@ vi.mock('../../net/builderApi', async (importOriginal) => {
         calls.saved = key
         return Promise.resolve(reaches)
       },
-      exportUrl: () => '/api/builder/export',
+      exportUrl: (scope?: { world?: string; zone?: string; only?: string }) =>
+        scope?.only ? `/api/builder/export?only=${scope.only}` : '/api/builder/export',
       importBundle: (_bundle: unknown, dryRun: boolean) => {
         calls.imports.push(dryRun)
         // Only the apply fails, which is the case worth covering: the rehearsal came back clean,
@@ -290,6 +291,20 @@ it('refuses a file the server is too old for, without uploading it', async () =>
   // finding out before the upload rather than from a 400.
   expect((await screen.findByRole('button', { name: 'Dry run' })).hasAttribute('disabled')).toBe(true)
   expect(calls.imports).toHaveLength(0)
+})
+
+it('offers the abilities on their own, as well as the world', async () => {
+  // Asked for while a retune sat in a database and nowhere else. Abilities are content - they live
+  // in content/abilities.json and a fresh install seeds from the file - so a change made in the
+  // editor has to be able to get back to it. Every other export carries the whole world, and
+  // hand-deleting nine collections out of the JSON is a step nobody does twice.
+  renderSetup('/builder/setup/transfer')
+
+  const abilities = await screen.findByText('Download abilities only')
+  expect(abilities.getAttribute('href')).toBe('/api/builder/export?only=abilities')
+
+  // And the world export is still there, unchanged.
+  expect(screen.getByText('Download bundle').getAttribute('href')).toBe('/api/builder/export')
 })
 
 it('tells a builder to re-export a file older than the server', async () => {
