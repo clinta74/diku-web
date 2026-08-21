@@ -49,7 +49,10 @@ public sealed class StunEffect : IBuffEffect
         return Math.Clamp(duration, 1, MaxDurationPulses);
     }
 
-    public string Describe(Dictionary<string, string> parameters, TargetingType targeting) =>
+    public string Describe(
+        Dictionary<string, string> parameters,
+        TargetingType targeting,
+        int casterLevel) =>
         $"stops {AbilityAudience.Whom(targeting, IsHarmful)} acting " +
         $"for {AbilityAudience.Seconds(DurationOf(parameters))}";
 

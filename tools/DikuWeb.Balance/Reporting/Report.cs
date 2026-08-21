@@ -26,8 +26,10 @@ public sealed class Report(ContentSet content, Options options)
         int Level,
         Encounter Encounter,
         Loadout Loadout,
+        Loadout EpicLoadout,
         IReadOnlyList<FightResult> WithAbilities,
-        IReadOnlyList<FightResult> WithoutAbilities);
+        IReadOnlyList<FightResult> WithoutAbilities,
+        IReadOnlyList<FightResult> WithEpic);
 
     private sealed record Row(
         CharacterPath Path, int Level, string Encounter, int Seed, FightResult Result, bool Abilities);
@@ -165,6 +167,198 @@ public sealed class Report(ContentSet content, Options options)
     }
 
     /// <summary>
+    /// Where a correctly equipped solo player cannot get through, and what is stopping them.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This is the table the harness exists for.</b> Everything else describes how the numbers
+    /// are shaped; this one says whether the game is playable, in standard gear, at each rung.
+    /// </para>
+    /// <para>
+    /// <b>The diagnosis is a classification, not a judgement.</b> Three constraints can end a fight
+    /// and they want three different fixes, so guessing between them from a win rate alone is how a
+    /// resource problem gets "fixed" by raising damage. <c>resource</c> means the bar was empty
+    /// while something was off cooldown for a large share of the fight - the fix is the cost curve.
+    /// <c>damage</c> means the player was still standing and simply could not finish - the fix is
+    /// the damage curve. <c>outmatched</c> means neither: they were killed before either constraint
+    /// bound, and the fix is the mob.
+    /// </para>
+    /// </remarks>
+    public void WriteStuck()
+    {
+        Section("Can a correctly equipped solo player get through? (standard gear, no epic)");
+
+        Console.WriteLine(
+            $"{"Path",-7} {"Lvl",3}  {"target",-22} {"won",7} {"dealt",7} {"starved",7}  " +
+            $"{"diagnosis",-12} {"epic saves it?",-14}");
+        Console.WriteLine(new string('-', 92));
+
+        foreach (var path in options.Paths)
+        {
+            foreach (var level in options.Levels)
+            {
+                var cell = Measure(path, level);
+
+                if (cell is null)
+                {
+                    continue;
+                }
+
+                var runs = cell.WithAbilities;
+                var won = runs.Count(r => r.Outcome == FightOutcome.Won);
+                var rate = (double)won / runs.Count;
+
+                // How far through the target's health pool the median fight got. Over 1.0 only
+                // happens on a win, where the overkill is not interesting.
+                var dealt = Math.Min(1.0, Median(runs, r => r.TotalDamage) / cell.Encounter.Health);
+
+                var starvedShare = Median(runs, r =>
+                    r.Seconds <= 0 ? 0 : r.StarvedPulses / (r.Seconds * FightSimulator.PulsesPerSecond));
+
+                var epicWon = cell.WithEpic.Count(r => r.Outcome == FightOutcome.Won);
+                var epicRate = (double)epicWon / cell.WithEpic.Count;
+
+                Console.WriteLine(
+                    $"{path,-7} {level,3}  {Trim(cell.Encounter.Name, 22),-22} " +
+                    $"{rate,7:P0} {dealt,7:P0} {starvedShare,7:P0}  " +
+                    $"{Diagnose(rate, dealt, starvedShare),-12} " +
+                    $"{EpicVerdict(rate, epicRate),-14}");
+            }
+
+            Console.WriteLine();
+        }
+
+        Console.WriteLine("  dealt = share of the target's health the median fight got through.");
+        Console.WriteLine("  starved = share of the fight spent unable to afford anything off cooldown.");
+        Console.WriteLine("  Diagnoses: resource = the cost curve. damage = the damage curve.");
+        Console.WriteLine("             outmatched = killed before either bound; the fix is the mob.");
+        Console.WriteLine();
+    }
+
+    /// <summary>A cell is fine above this win rate. Below it, something is wrong.</summary>
+    /// <remarks>
+    /// Four fifths rather than everything, because a fight a player loses one time in ten is
+    /// tension and a fight they lose one time in three is a wall. The harness plays no better than
+    /// competently and never flees, so the real figure for a paying-attention player is higher.
+    /// </remarks>
+    private const double Playable = 0.8;
+
+    /// <summary>Where a fight spends this much of itself broke, the bar is the constraint.</summary>
+    private const double Starving = 0.25;
+
+    /// <summary>Getting this far through a target and losing is a damage problem, not a mismatch.</summary>
+    private const double NearlyThere = 0.6;
+
+    private static string Diagnose(double winRate, double dealt, double starvedShare) =>
+        winRate >= Playable
+            ? starvedShare >= Starving ? "ok (starves)" : "ok"
+            : starvedShare >= Starving
+                ? "RESOURCE"
+                : dealt >= NearlyThere
+                    ? "DAMAGE"
+                    : "OUTMATCHED";
+
+    /// <summary>
+    /// Whether the epic reward turns an unplayable cell into a playable one.
+    /// </summary>
+    /// <remarks>
+    /// A "yes" here is the finding, not the reassurance it looks like: an epic that rescues a fight
+    /// standard gear cannot win has stopped being a bonus and become a prerequisite for the content
+    /// it drops in.
+    /// </remarks>
+    private static string EpicVerdict(double standard, double epic) =>
+        standard >= Playable
+            ? epic >= standard - 0.05 ? "-" : "epic is worse"
+            : epic >= Playable
+                ? "YES - gates it"
+                : $"no ({epic:P0})";
+
+    /// <summary>
+    /// What a Path can afford, against what its abilities cost.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Three curves that were never compared to each other.</b> The resource pool comes from
+    /// <c>VitalCalculator</c> (<c>starting + 3·(level−1) + mod·2</c>), the costs are authored one
+    /// ability at a time in the content, and in-combat recovery is <c>RegenCalculator</c> at 2% of
+    /// maximum per <em>60-second</em> tick. Each is defensible alone. Together they are why every
+    /// failing cell in the table above is diagnosed <c>RESOURCE</c>.
+    /// </para>
+    /// <para>
+    /// <b>"Bar in casts" is the number to read.</b> It is the pool divided by the mean cost of the
+    /// Path's damage abilities at that level — how many things a character can do before the bar is
+    /// empty and the only remaining move is to swing. When it falls as the level rises, the kit is
+    /// getting smaller while it looks like it is getting bigger.
+    /// </para>
+    /// </remarks>
+    public void WriteResourceEconomy()
+    {
+        Section("What a Path can afford");
+
+        Console.WriteLine(
+            $"{"Path",-7} {"Lvl",3}  {"pool",6} {"regen/min",9} {"abilities",9} {"mean cost",9} " +
+            $"{"bar in casts",12}");
+        Console.WriteLine(new string('-', 70));
+
+        foreach (var path in options.Paths)
+        {
+            foreach (var level in options.Levels)
+            {
+                var character = FightSimulator.BuildCharacter(path, level);
+
+                var known = AbilityProgression
+                    .GetKnownAbilitiesForLevel(content.Abilities.Values, path, level)
+                    .Select(k => content.Abilities[k])
+                    .ToList();
+
+                if (known.Count == 0)
+                {
+                    continue;
+                }
+
+                // The bar a Path actually spends from: whichever its abilities are priced in.
+                var costType = known
+                    .GroupBy(a => a.CostType)
+                    .OrderByDescending(g => g.Count())
+                    .First().Key;
+
+                var pool = costType switch
+                {
+                    CostType.Focus => character.Vitals.FocusMax,
+                    CostType.Stamina => character.Vitals.StaminaMax,
+                    _ => character.Vitals.HealthMax,
+                };
+
+                var (health, focus, stamina) = RegenCalculator.Calculate(
+                    CharacterRestState.Stand,
+                    character.Vitals,
+                    character.Attributes.VitalityModifier,
+                    path);
+
+                var regen = costType switch
+                {
+                    CostType.Focus => focus,
+                    CostType.Stamina => stamina,
+                    _ => health,
+                };
+
+                var spenders = known.Where(a => a.CostType == costType).ToList();
+                var meanCost = spenders.Average(a => a.CostValue);
+
+                Console.WriteLine(
+                    $"{path,-7} {level,3}  {pool,6:N0} {regen,9:N0} {spenders.Count,9} " +
+                    $"{meanCost,9:0.0} {pool / meanCost,12:0.0}");
+            }
+
+            Console.WriteLine();
+        }
+
+        Console.WriteLine("  regen/min = RegenCalculator standing, one 60-second tick. Not per fight -");
+        Console.WriteLine("  per MINUTE, which is most of the problem.");
+        Console.WriteLine();
+    }
+
+    /// <summary>
     /// The encounters the report chose, and what they hit for.
     /// </summary>
     /// <remarks>
@@ -237,9 +431,9 @@ public sealed class Report(ContentSet content, Options options)
         Section("Every damage ability, as damage");
 
         Console.WriteLine(
-            $"{"Path",-7} {"Lvl",3} {"ability",-24} {"hit",5} {"wound",6} {"cost",5} " +
+            $"{"Path",-7} {"Lvl",3} {"ability",-24} {"hit",5} {"@cap",5} {"wound",6} {"cost",5} " +
             $"{"cd",6} {"per sec",7}  {"of target",9}");
-        Console.WriteLine(new string('-', 88));
+        Console.WriteLine(new string('-', 94));
 
         var registry = new EffectRegistry();
 
@@ -254,7 +448,13 @@ public sealed class Report(ContentSet content, Options options)
             {
                 var hit = ability.Effects
                     .Where(e => string.Equals(e.Key, "damage.physical", StringComparison.Ordinal))
-                    .Sum(e => DamageEffect.Middle(e.Params));
+                    .Sum(e => DamageEffect.Middle(e.Params, ability.UnlockLevel));
+
+                // The same ability in the hands of a level 50 character. Flat before the level
+                // term landed, which is what made this column worth printing.
+                var hitAtCap = ability.Effects
+                    .Where(e => string.Equals(e.Key, "damage.physical", StringComparison.Ordinal))
+                    .Sum(e => DamageEffect.Middle(e.Params, options.Levels[^1]));
 
                 var wound = ability.Effects
                     .Where(e => string.Equals(e.Key, "damage.overtime", StringComparison.Ordinal))
@@ -282,6 +482,7 @@ public sealed class Report(ContentSet content, Options options)
                 Console.WriteLine(
                     $"{path,-7} {ability.UnlockLevel,3} {Trim(ability.Name, 24),-24} " +
                     $"{(hit > 0 ? hit.ToString(CultureInfo.InvariantCulture) : "-"),5} " +
+                    $"{(hitAtCap > 0 ? hitAtCap.ToString(CultureInfo.InvariantCulture) : "-"),5} " +
                     $"{(wound > 0 ? wound.ToString(CultureInfo.InvariantCulture) : "-"),6} " +
                     $"{ability.CostValue,5} " +
                     $"{cooldownSeconds,5:0.#}s " +
@@ -291,6 +492,8 @@ public sealed class Report(ContentSet content, Options options)
             Console.WriteLine();
         }
 
+        Console.WriteLine("  @cap = the same ability cast by a character at the top level measured.");
+        Console.WriteLine("  Equal to `hit` means the ability is flat in the caster's level.");
         Console.WriteLine("  per sec = everything one cast deals, over its own cooldown. The sustained");
         Console.WriteLine("  contribution of pressing only this button, ignoring every other.");
         Console.WriteLine("  of target = that total against a typical mob of the unlock level.");
@@ -318,28 +521,34 @@ public sealed class Report(ContentSet content, Options options)
             return null;
         }
 
-        var loadout = Loadout.Best(content, path, encounter.WorldKey);
+        // Standard gear is the baseline the whole report is read in: the epic line is a reward
+        // for clearing a realm and cannot also be the kit assumed while clearing it.
+        var loadout = Loadout.For(content, path, encounter.WorldKey, GearTier.Standard);
+        var epicLoadout = Loadout.For(content, path, encounter.WorldKey, GearTier.Epic);
 
         var with = new List<FightResult>();
         var without = new List<FightResult>();
+        var epic = new List<FightResult>();
 
         for (var i = 0; i < options.Runs; i++)
         {
-            // The same seed for both configurations, so the pair differs only in the bar. A
-            // different roll on each side would put the whole comparison inside the noise.
+            // The same seed across all three configurations, so each pair differs in exactly one
+            // thing. Different rolls on each side would put the comparisons inside the noise.
             var seed = options.Seed + i;
 
-            var a = _simulator.Run(content, path, level, loadout, encounter, seed, options.Cap, true);
-            var b = _simulator.Run(content, path, level, loadout, encounter, seed, options.Cap, false);
+            var a = _simulator.Run(content, path, level, loadout, encounter, seed, options.Cap, true, options.RegenScale, options.RegenSeconds);
+            var b = _simulator.Run(content, path, level, loadout, encounter, seed, options.Cap, false, options.RegenScale, options.RegenSeconds);
+            var c = _simulator.Run(content, path, level, epicLoadout, encounter, seed, options.Cap, true, options.RegenScale, options.RegenSeconds);
 
             with.Add(a);
             without.Add(b);
+            epic.Add(c);
 
             _rows.Add(new Row(path, level, encounter.TemplateKey, seed, a, true));
             _rows.Add(new Row(path, level, encounter.TemplateKey, seed, b, false));
         }
 
-        var cell = new Cell(path, level, encounter, loadout, with, without);
+        var cell = new Cell(path, level, encounter, loadout, epicLoadout, with, without, epic);
         _cells[(path, level)] = cell;
 
         return cell;

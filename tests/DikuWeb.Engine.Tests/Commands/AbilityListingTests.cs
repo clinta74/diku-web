@@ -76,7 +76,7 @@ public sealed class AbilityListingTests
         var ability = harness.AbilityCache.Get(key)!;
 
         Assert.Contains(
-            AbilityDescriber.Describe(ability, Effects),
+            AbilityDescriber.Describe(ability, Effects, 1),
             Listing(harness, actor),
             StringComparison.Ordinal);
     }
@@ -96,13 +96,18 @@ public sealed class AbilityListingTests
             harness.DefineAbility(ability.Key);
         }
 
-        var actor = harness.AddPlayer("Kaeda", West, path: CharacterPath.Adept, level: 50);
+        const int Level = 50;
+
+        var actor = harness.AddPlayer("Kaeda", West, path: CharacterPath.Adept, level: Level);
         var listing = Listing(harness, actor);
 
         foreach (var ability in AbilityCatalogue.AsAbilities.Where(a => a.Path == CharacterPath.Adept))
         {
+            // Described at the reader's level, not at the ability's. Damage scales with the caster
+            // (DamageEffect.BaseAtLevel), so asserting the level 1 phrase here would be asserting
+            // that the listing lies to everyone who is not level 1.
             Assert.Contains(
-                AbilityDescriber.Describe(ability, Effects),
+                AbilityDescriber.Describe(ability, Effects, Level),
                 listing,
                 StringComparison.Ordinal);
         }

@@ -47,7 +47,10 @@ public sealed class RootEffect : IBuffEffect
         return Math.Clamp(duration, 1, MaxDurationPulses);
     }
 
-    public string Describe(Dictionary<string, string> parameters, TargetingType targeting) =>
+    public string Describe(
+        Dictionary<string, string> parameters,
+        TargetingType targeting,
+        int casterLevel) =>
         $"stops {AbilityAudience.Whom(targeting, IsHarmful)} fleeing " +
         $"for {AbilityAudience.Seconds(DurationOf(parameters))}";
 

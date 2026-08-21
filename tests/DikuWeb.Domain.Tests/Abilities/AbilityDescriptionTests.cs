@@ -65,7 +65,7 @@ public sealed class AbilityDescriptionTests
             // Empty parameters on purpose: an executor falls back to its own defaults, and a
             // description that only works for authored content is one that breaks on the case
             // where the numbers are hardest for a reader to guess.
-            var phrase = effect.Describe([], TargetingType.SingleTarget);
+            var phrase = effect.Describe([], TargetingType.SingleTarget, 1);
 
             Assert.False(string.IsNullOrWhiteSpace(phrase), $"{key} describes itself as nothing");
             Assert.DoesNotContain(".", phrase, StringComparison.Ordinal);
@@ -79,7 +79,7 @@ public sealed class AbilityDescriptionTests
     {
         foreach (var key in EffectKeys())
         {
-            var phrase = Effects.Get(key)!.Describe([], TargetingType.SingleTarget);
+            var phrase = Effects.Get(key)!.Describe([], TargetingType.SingleTarget, 1);
             Assert.False(char.IsUpper(phrase[0]), $"{key} starts with a capital: {phrase}");
         }
     }
@@ -101,7 +101,7 @@ public sealed class AbilityDescriptionTests
 
         Assert.Equal(
             "restores 18-22 health to your target",
-            AbilityDescriber.Describe(ability, Effects));
+            AbilityDescriber.Describe(ability, Effects, 1));
     }
 
     /// <summary>
@@ -114,7 +114,7 @@ public sealed class AbilityDescriptionTests
             TargetingType.Self,
             new AbilityEffectSpec("heal.restore", Params(("baseHeal", "5"))));
 
-        Assert.Equal("restores 5 health to you", AbilityDescriber.Describe(ability, Effects));
+        Assert.Equal("restores 5 health to you", AbilityDescriber.Describe(ability, Effects, 1));
     }
 
     /// <summary>
@@ -132,7 +132,7 @@ public sealed class AbilityDescriptionTests
     {
         var parameters = Params((dial, value), ("minDamage", "1"));
         var effect = Effects.Get(effectKey)!;
-        var (low, high) = RangeIn(effect.Describe(parameters, TargetingType.SingleTarget));
+        var (low, high) = RangeIn(effect.Describe(parameters, TargetingType.SingleTarget, 1));
 
         var random = new SeededRandomSource(7);
         var lowestSeen = int.MaxValue;
@@ -195,7 +195,7 @@ public sealed class AbilityDescriptionTests
 
         Assert.Equal(
             "stops your target acting for 6s",
-            Effects.Get("control.stun")!.Describe(parameters, TargetingType.SingleTarget));
+            Effects.Get("control.stun")!.Describe(parameters, TargetingType.SingleTarget, 1));
 
         Assert.Equal(StunEffect.MaxDurationPulses, StunEffect.DurationOf(parameters));
     }
@@ -207,7 +207,7 @@ public sealed class AbilityDescriptionTests
 
         Assert.Equal(
             "stops your target fleeing for 10s",
-            Effects.Get("control.root")!.Describe(parameters, TargetingType.SingleTarget));
+            Effects.Get("control.root")!.Describe(parameters, TargetingType.SingleTarget, 1));
 
         Assert.Equal(RootEffect.MaxDurationPulses, RootEffect.DurationOf(parameters));
     }
@@ -227,7 +227,7 @@ public sealed class AbilityDescriptionTests
 
         Assert.Contains(
             AbilityAudience.Seconds(built.ExpiresAtPulse),
-            effect.Describe(parameters, TargetingType.SingleTarget),
+            effect.Describe(parameters, TargetingType.SingleTarget, 1),
             StringComparison.Ordinal);
     }
 
@@ -245,7 +245,7 @@ public sealed class AbilityDescriptionTests
 
         var phrase = Effects.Get("damage.overtime")!.Describe(
             Params(("tickDamage", "9"), ("tickIntervalPulses", "12"), ("durationPulses", "72")),
-            TargetingType.SingleTarget);
+            TargetingType.SingleTarget, 1);
 
         Assert.Equal("deals 9 damage to your target every 3s for 18s (45 in all)", phrase);
     }
@@ -256,7 +256,7 @@ public sealed class AbilityDescriptionTests
     {
         var phrase = Effects.Get("damage.overtime")!.Describe(
             Params(("tickDamage", "9"), ("tickIntervalPulses", "40"), ("durationPulses", "20")),
-            TargetingType.SingleTarget);
+            TargetingType.SingleTarget, 1);
 
         Assert.Contains("expires before it ticks", phrase, StringComparison.Ordinal);
     }
@@ -277,13 +277,13 @@ public sealed class AbilityDescriptionTests
             "cuts your target's damage by 25% for 20s",
             Effects.Get("debuff.weaken")!.Describe(
                 Params(("outgoingMultiplier", "0.75"), ("durationPulses", "80")),
-                TargetingType.SingleTarget));
+                TargetingType.SingleTarget, 1));
 
         Assert.Equal(
             "raises the damage your target takes by 30% for 20s",
             Effects.Get("debuff.weaken")!.Describe(
                 Params(("incomingMultiplier", "1.3"), ("durationPulses", "80")),
-                TargetingType.SingleTarget));
+                TargetingType.SingleTarget, 1));
     }
 
     /// <summary>
@@ -297,7 +297,7 @@ public sealed class AbilityDescriptionTests
             "cuts the damage your target takes by 30% for 20s",
             Effects.Get("debuff.weaken")!.Describe(
                 Params(("incomingMultiplier", "0.7"), ("durationPulses", "80")),
-                TargetingType.SingleTarget));
+                TargetingType.SingleTarget, 1));
     }
 
     /// <summary>Both dials at once are both said, because they are two different things.</summary>
@@ -308,7 +308,7 @@ public sealed class AbilityDescriptionTests
             "cuts your target's damage by 20% and raises the damage your target takes by 20% for 10s",
             Effects.Get("debuff.weaken")!.Describe(
                 Params(("outgoingMultiplier", "0.8"), ("incomingMultiplier", "1.2"), ("durationPulses", "40")),
-                TargetingType.SingleTarget));
+                TargetingType.SingleTarget, 1));
     }
 
     /// <summary>A guard's two dials are separate clauses because they buy separate things.</summary>
@@ -319,13 +319,13 @@ public sealed class AbilityDescriptionTests
             "makes you 8 harder to hit and turns aside 8% of each blow for 20s",
             Effects.Get("buff.defense")!.Describe(
                 Params(("defenseRating", "8"), ("mitigation", "8"), ("durationPulses", "80")),
-                TargetingType.Self));
+                TargetingType.Self, 1));
 
         Assert.Equal(
             "makes your target 5 easier to hit and lets through 5% more of each blow for 6s",
             Effects.Get("debuff.expose")!.Describe(
                 Params(("defenseRating", "5"), ("mitigation", "5"), ("durationPulses", "24")),
-                TargetingType.SingleTarget));
+                TargetingType.SingleTarget, 1));
     }
 
     /// <summary>One dial set alone is one clause, not a clause about zero.</summary>
@@ -336,7 +336,7 @@ public sealed class AbilityDescriptionTests
             "makes you 6 harder to hit for 20s",
             Effects.Get("buff.defense")!.Describe(
                 Params(("defenseRating", "6"), ("durationPulses", "80")),
-                TargetingType.Self));
+                TargetingType.Self, 1));
     }
 
     /// <summary>
@@ -348,7 +348,7 @@ public sealed class AbilityDescriptionTests
     {
         Assert.Equal(
             "makes your target fight you, by a lead worth 25% of its health",
-            Effects.Get("control.taunt")!.Describe([], TargetingType.SingleTarget));
+            Effects.Get("control.taunt")!.Describe([], TargetingType.SingleTarget, 1));
     }
 
     // -----------------------------------------------------------------------
@@ -365,7 +365,7 @@ public sealed class AbilityDescriptionTests
             targeting,
             new AbilityEffectSpec("heal.restore", Params(("baseHeal", "20"))));
 
-        Assert.Equal(expected, AbilityDescriber.Describe(ability, Effects));
+        Assert.Equal(expected, AbilityDescriber.Describe(ability, Effects, 1));
     }
 
     /// <summary>
@@ -383,8 +383,8 @@ public sealed class AbilityDescriptionTests
             TargetingType.Aoe,
             new AbilityEffectSpec("heal.restore", Params(("baseHeal", "60"))));
 
-        Assert.Contains("every enemy here", AbilityDescriber.Describe(harmful, Effects), StringComparison.Ordinal);
-        Assert.Contains("everyone with you", AbilityDescriber.Describe(helpful, Effects), StringComparison.Ordinal);
+        Assert.Contains("every enemy here", AbilityDescriber.Describe(harmful, Effects, 1), StringComparison.Ordinal);
+        Assert.Contains("everyone with you", AbilityDescriber.Describe(helpful, Effects, 1), StringComparison.Ordinal);
     }
 
     // -----------------------------------------------------------------------
@@ -401,7 +401,7 @@ public sealed class AbilityDescriptionTests
 
         Assert.Equal(
             "deals 12-18 damage to your target, and stops your target acting for 4s",
-            AbilityDescriber.Describe(ability, Effects));
+            AbilityDescriber.Describe(ability, Effects, 1));
     }
 
     /// <summary>
@@ -418,7 +418,7 @@ public sealed class AbilityDescriptionTests
 
         Assert.Contains(
             "'damage.chaos' is not a known effect",
-            AbilityDescriber.Describe(ability, Effects),
+            AbilityDescriber.Describe(ability, Effects, 1),
             StringComparison.Ordinal);
     }
 
@@ -436,7 +436,7 @@ public sealed class AbilityDescriptionTests
     {
         foreach (var ability in AbilityCatalogue.AsAbilities)
         {
-            var phrase = AbilityDescriber.Describe(ability, Effects);
+            var phrase = AbilityDescriber.Describe(ability, Effects, 1);
 
             Assert.False(string.IsNullOrWhiteSpace(phrase), $"{ability.Key} says nothing");
 
@@ -464,7 +464,7 @@ public sealed class AbilityDescriptionTests
     {
         foreach (var ability in AbilityCatalogue.AsAbilities)
         {
-            Assert.Contains(AbilityDescriber.Describe(ability, Effects), char.IsDigit);
+            Assert.Contains(AbilityDescriber.Describe(ability, Effects, 1), char.IsDigit);
         }
     }
 }

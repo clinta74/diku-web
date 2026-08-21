@@ -40,7 +40,10 @@ public sealed class DamageOverTimeEffect : IBuffEffect
             ? 0
             : (durationPulses - 1) / tickIntervalPulses;
 
-    public string Describe(Dictionary<string, string> parameters, TargetingType targeting)
+    public string Describe(
+        Dictionary<string, string> parameters,
+        TargetingType targeting,
+        int casterLevel)
     {
         ArgumentNullException.ThrowIfNull(parameters);
 

@@ -28,7 +28,7 @@ public static class AbilityDescriber
     /// <returns>
     /// A lower-case phrase with no full stop, so it can follow an em dash on a list line.
     /// </returns>
-    public static string Describe(Ability ability, EffectRegistry effects)
+    public static string Describe(Ability ability, EffectRegistry effects, int casterLevel)
     {
         ArgumentNullException.ThrowIfNull(ability);
         ArgumentNullException.ThrowIfNull(effects);
@@ -41,7 +41,7 @@ public static class AbilityDescriber
         }
 
         var phrases = ability.Effects
-            .Select(spec => Describe(spec, ability.TargetingType, effects))
+            .Select(spec => Describe(spec, ability.TargetingType, effects, casterLevel))
             .ToList();
 
         // Joined with "and" rather than a comma throughout, because every effect lands: an ability
@@ -61,12 +61,13 @@ public static class AbilityDescriber
     private static string Describe(
         AbilityEffectSpec spec,
         TargetingType targeting,
-        EffectRegistry effects)
+        EffectRegistry effects,
+        int casterLevel)
     {
         var effect = effects.Get(spec.Key);
 
         return effect is null
             ? $"does nothing — '{spec.Key}' is not a known effect"
-            : effect.Describe(spec.Params, targeting);
+            : effect.Describe(spec.Params, targeting, casterLevel);
     }
 }

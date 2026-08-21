@@ -38,7 +38,10 @@ public sealed class BuffEffect : IBuffEffect
         return (outgoing, duration);
     }
 
-    public string Describe(Dictionary<string, string> parameters, TargetingType targeting)
+    public string Describe(
+        Dictionary<string, string> parameters,
+        TargetingType targeting,
+        int casterLevel)
     {
         ArgumentNullException.ThrowIfNull(parameters);
 

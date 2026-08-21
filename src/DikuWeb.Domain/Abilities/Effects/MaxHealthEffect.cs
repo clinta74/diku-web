@@ -49,7 +49,10 @@ public sealed class MaxHealthEffect : IBuffEffect
     /// Says the grant as well as the ceiling, because the grant is the half that keeps somebody
     /// alive and the half a player would otherwise have to infer.
     /// </summary>
-    public string Describe(Dictionary<string, string> parameters, TargetingType targeting)
+    public string Describe(
+        Dictionary<string, string> parameters,
+        TargetingType targeting,
+        int casterLevel)
     {
         ArgumentNullException.ThrowIfNull(parameters);
 

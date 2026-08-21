@@ -45,11 +45,13 @@ foreach (var line in content.Describe())
 Console.WriteLine(
     $"{content.Encounters.Count} placed encounters, {content.Abilities.Count} abilities, " +
     $"{content.Items.Count} item templates");
-Console.WriteLine($"{options.Runs} run(s) per cell, seed base {options.Seed}, cap {options.Cap}s");
+Console.WriteLine($"{options.Runs} run(s) per cell, seed base {options.Seed}, cap {options.Cap}s, regen x{options.RegenScale}");
 Console.WriteLine();
 
 var report = new Report(content, options);
 
+report.WriteStuck();
+report.WriteResourceEconomy();
 report.WriteEncounters();
 report.WriteDamageSplit();
 report.WriteAbilityWorth();

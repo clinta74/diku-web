@@ -83,7 +83,10 @@ public sealed class TauntEffect : IAbilityEffect, IThreatEffect
     /// Says what the lead is worth in the terms it is measured in - a share of the target's health
     /// bar, rather than a number of threat points nothing on screen ever shows.
     /// </summary>
-    public string Describe(Dictionary<string, string> parameters, TargetingType targeting)
+    public string Describe(
+        Dictionary<string, string> parameters,
+        TargetingType targeting,
+        int casterLevel)
     {
         var lead = LeadFraction(parameters);
 

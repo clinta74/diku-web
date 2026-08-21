@@ -25,40 +25,53 @@ namespace DikuWeb.Balance.Content;
 /// </remarks>
 public sealed record Loadout(
     string Realm,
+    GearTier Tier,
     IReadOnlyList<ItemInstance> Equipped)
 {
     /// <summary>Nothing equipped: bare fists and no armour.</summary>
-    public static Loadout Naked { get; } = new("(none)", []);
+    public static Loadout Naked { get; } = new("(none)", GearTier.Standard, []);
 
     /// <summary>
-    /// The best this realm offers a character of this Path, one item per slot.
+    /// What this realm offers a character of this Path, at the given tier, one item per slot.
     /// </summary>
-    public static Loadout Best(ContentSet content, CharacterPath path, string realm)
+    /// <remarks>
+    /// <para>
+    /// <b><see cref="GearTier.Standard"/> is the baseline, and the epic line is deliberately
+    /// excluded from it.</b> An epic is a reward for clearing the realm; it cannot also be the
+    /// equipment you are assumed to hold while clearing it, or the content is gated behind itself.
+    /// The question the harness exists to answer — can a correctly equipped solo player get through
+    /// a zone's ordinary mobs — is a question about shop and drop gear, so that is what
+    /// <see cref="GearTier.Standard"/> means.
+    /// </para>
+    /// <para>
+    /// <see cref="GearTier.Epic"/> then measures what the reward is worth, by changing exactly one
+    /// thing. Where the two disagree about whether a fight is winnable at all, the epic has stopped
+    /// being a bonus and become a requirement, and that is a finding rather than a tuning detail.
+    /// </para>
+    /// <para>
+    /// Armour is unchanged between the tiers. The epic line is weapons only, so folding armour into
+    /// the distinction would make the comparison measure two things at once.
+    /// </para>
+    /// </remarks>
+    public static Loadout For(ContentSet content, CharacterPath path, string realm, GearTier tier)
     {
         ArgumentNullException.ThrowIfNull(content);
 
         var candidates = content.Items
             .Where(i => RealmOf(content, i.Key) == realm)
             .Where(i => Allows(i, path))
+            .Where(i => tier == GearTier.Epic || !IsEpic(i))
             .ToList();
 
         var equipped = new List<ItemInstance>();
 
-        // The Path's epic for this tier, when the realm has one.
-        //
-        // Preferred over the best-damage-per-second pick, and for the same reason the encounter is
-        // chosen by the zone's authored band rather than by a derived level: `epic-adept-5` IS the
-        // author saying what a level 50 Adept should be holding, and a heuristic that overrules it
-        // is the harness substituting its own opinion for the content's.
-        //
-        // It matters in both directions. Ranking by damage alone gave a level 50 Adept
-        // `unlit-standing-hammer` - three percent better on paper, two-handed, and so paid for by
-        // giving up the shield that a Path with 291 health cannot spare. It also gave a level 1
-        // Adept `ossara-short-blade` over `epic-adept-1`, which is not a harness artefact at all:
-        // the shop blade really does out-damage the tier 1 epic reward.
+        // At the epic tier the Path's own epic is preferred outright rather than ranked, because it
+        // is the author saying what this Path should be holding here. Ranking by damage per second
+        // instead handed a level 50 Adept a two-handed hammer that beat `epic-adept-5` by three
+        // percent on paper and cost them the shield.
         var mainHand = candidates
             .Where(i => Fits(i, ItemSlot.MainHand) && i.AttackDelayPulses is not null)
-            .OrderByDescending(i => IsEpicFor(i, path) ? 1 : 0)
+            .OrderByDescending(i => tier == GearTier.Epic && IsEpicFor(i, path) ? 1 : 0)
             .ThenByDescending(WeaponScore)
             .FirstOrDefault();
 
@@ -95,8 +108,12 @@ public sealed record Loadout(
             }
         }
 
-        return new Loadout(realm, equipped);
+        return new Loadout(realm, tier, equipped);
     }
+
+    /// <summary>Whether this item is part of the epic reward line at all, for any Path.</summary>
+    private static bool IsEpic(BundleItemTemplate item) =>
+        item.Key.StartsWith("epic-", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Whether this is the epic reward line's entry for this Path.</summary>
     private static bool IsEpicFor(BundleItemTemplate item, CharacterPath path) =>
@@ -198,4 +215,17 @@ public sealed record Loadout(
             ? null
             : content.Items.FirstOrDefault(i => string.Equals(i.Key, equippedKey, StringComparison.Ordinal));
     }
+}
+
+/// <summary>Which grade of equipment a fight is measured in.</summary>
+public enum GearTier
+{
+    /// <summary>
+    /// The realm's shop and drop gear — what a player clearing the realm is assumed to hold.
+    /// Excludes the epic line entirely.
+    /// </summary>
+    Standard,
+
+    /// <summary>The same, with the Path's epic reward in hand.</summary>
+    Epic,
 }

@@ -415,9 +415,15 @@ public static class AbilityCommands
                 // What it costs, then what it does. The second half is derived from the ability's
                 // own parameters rather than from its authored flavour text, so a retune moves it
                 // and a builder cannot leave a sentence behind that the ability stopped matching.
+                //
+                // Described at *this character's* level, not at the ability's. Damage scales with
+                // the caster now (DamageEffect.BaseAtLevel), so a listing that quoted the authored
+                // baseline would tell a level 40 Warden that Kick hits for 11 when it hits for 38 -
+                // a screen disagreeing with the game, which is the failure mode this codebase keeps
+                // rediscovering and the reason Describe takes the level at all.
                 ctx.Reply(
                     $"  • {ability!.Name}  ({ability.CostValue} {ability.CostType.ToString().ToLowerInvariant()})" +
-                    $" — {AbilityDescriber.Describe(ability, effects)}");
+                    $" — {AbilityDescriber.Describe(ability, effects, character.Level)}");
 
                 // A shared timer is the one thing about an ability a player cannot discover by
                 // using it: the cooling bar lists what was used, so a group-mate held down by

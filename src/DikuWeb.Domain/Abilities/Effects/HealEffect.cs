@@ -34,7 +34,10 @@ public sealed class HealEffect : IAbilityEffect
     /// <summary>How far either side of <see cref="Middle"/> a heal can fall.</summary>
     public static int Variance(int middle) => (int)(middle * VarianceShare);
 
-    public string Describe(Dictionary<string, string> parameters, TargetingType targeting)
+    public string Describe(
+        Dictionary<string, string> parameters,
+        TargetingType targeting,
+        int casterLevel)
     {
         var middle = Middle(parameters);
         var spread = Variance(middle);

@@ -42,7 +42,10 @@ public sealed class FightSimulator
     public const int PulsesPerSecond = 4;
 
     /// <summary>The 60-second cadence the server regenerates vitals on.</summary>
-    private const int RegenIntervalPulses = 240;
+    private const int RegenIntervalSeconds = 60;
+
+    /// <inheritdoc cref="RegenIntervalSeconds"/>
+    private const int RegenIntervalPulses = RegenIntervalSeconds * PulsesPerSecond;
 
     /// <summary>
     /// Below this share of health, healing outranks damage in the rotation.
@@ -65,6 +68,22 @@ public sealed class FightSimulator
     /// </remarks>
     private const double RefreshBelow = 0.33;
 
+    /// <summary>
+    /// The least time between two casts.
+    /// </summary>
+    /// <remarks>
+    /// <b>There is no global cooldown in this game, and modelling one anyway is the honest
+    /// choice.</b> The loop would happily accept a cast every pulse, so an unthrottled rotation
+    /// opens a fight by dumping every ability that is off cooldown inside two seconds - which is
+    /// four commands a second, something no player types and only a scripted client could do. Left
+    /// in, it made a level 50 Temper kill in 1.3 seconds and reported abilities as 99% of their
+    /// damage.
+    ///
+    /// <see cref="AttackTiming.MinDelayPulses"/> rather than a number invented here: one second is
+    /// already the game's declared floor on how often a combatant may act, and a cast is an act.
+    /// </remarks>
+    private const int CastIntervalPulses = AttackTiming.MinDelayPulses;
+
     private readonly EffectRegistry _effects = new();
 
     /// <summary>
@@ -85,6 +104,15 @@ public sealed class FightSimulator
     /// only here, is the cleanest measure of what the bar is worth — better than the damage split,
     /// which cannot see that a slower kill also means more incoming damage.
     /// </param>
+    /// <param name="regenScale">
+    /// Multiplies what a regeneration tick returns.
+    ///
+    /// <b>An experiment knob, not a rule.</b> <c>RegenCalculator</c> returns 2% of a maximum per
+    /// <em>60-second</em> tick, which was set when a fight was six seconds long and is now the
+    /// binding constraint on fights that run past a minute. This exists so the size of a proposed
+    /// change can be measured before anybody makes one - the harness has no business quietly
+    /// running on a rate the game does not use, so it defaults to 1.0 and the report prints it.
+    /// </param>
     public FightResult Run(
         ContentSet content,
         CharacterPath path,
@@ -93,7 +121,9 @@ public sealed class FightSimulator
         Encounter encounter,
         int seed,
         int capSeconds = 600,
-        bool useAbilities = true)
+        bool useAbilities = true,
+        double regenScale = 1.0,
+        int regenSeconds = 60)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentNullException.ThrowIfNull(loadout);
@@ -200,7 +230,7 @@ public sealed class FightSimulator
                     }
 
                     casts++;
-                    busyUntil = pulse + Math.Max(1, ability.CastTimePulses ?? 0);
+                    busyUntil = pulse + Math.Max(CastIntervalPulses, ability.CastTimePulses ?? 0);
 
                     if (mob.Vitals.Health <= 0)
                     {
@@ -275,13 +305,28 @@ public sealed class FightSimulator
             }
 
             // --- the minute tick ---------------------------------------------------------------
-            if (pulse > 0 && pulse % RegenIntervalPulses == 0)
+            if (pulse > 0 && pulse % Math.Max(1, regenSeconds * PulsesPerSecond) == 0)
             {
-                RegenCalculator.ApplyRegen(
+                // Scaled to the interval, so shortening it redistributes the same recovery rather
+                // than multiplying it: ticking twice as often for the same amount each time would
+                // be testing two changes at once and reporting them as one.
+                var share = regenScale * regenSeconds / (double)RegenIntervalSeconds;
+
+                var (rHealth, rFocus, rStamina) = RegenCalculator.Calculate(
                     CharacterRestState.Stand,
                     character.Vitals,
                     character.Attributes.VitalityModifier,
                     path);
+
+                character.Vitals.Health = Math.Min(
+                    character.Vitals.HealthMax,
+                    character.Vitals.Health + (int)(rHealth * share));
+                character.Vitals.Focus = Math.Min(
+                    character.Vitals.FocusMax,
+                    character.Vitals.Focus + (int)(rFocus * share));
+                character.Vitals.Stamina = Math.Min(
+                    character.Vitals.StaminaMax,
+                    character.Vitals.Stamina + (int)(rStamina * share));
 
                 // Mobs regenerate too (PLAN.md §4.6), which is exactly what turns a fight the
                 // player cannot quite win into one that never ends.
@@ -623,6 +668,18 @@ public sealed class FightSimulator
             ready.Add(ability);
         }
 
+        // Starving means nothing off cooldown could be paid for - not that *something* could not.
+        //
+        // The looser reading is what this counted first, and it is close to useless: a level 50
+        // Path knows eighteen abilities, several are always off cooldown, and the most expensive of
+        // them is unaffordable on a nearly full bar - so it reported 40-70% of every high-level
+        // fight as starved regardless of what was actually happening. It survived because it moves
+        // in roughly the right direction; it just has no zero.
+        if (ready.Count > 0)
+        {
+            starved = false;
+        }
+
         if (ready.Count == 0)
         {
             return new Choice(null, starved);
@@ -656,7 +713,7 @@ public sealed class FightSimulator
 
         var best = ready
             .Where(a => !Redundant(a, pulse, targetEffects, selfEffects, selfSource))
-            .Select(a => (Ability: a, Value: ExpectedDamage(a)))
+            .Select(a => (Ability: a, Value: ExpectedDamage(a, character.Level)))
             .Where(x => x.Value > 0)
             .OrderByDescending(x => x.Value)
             .Select(x => x.Ability)
@@ -752,7 +809,7 @@ public sealed class FightSimulator
     /// the day <c>DamageEffect</c> stops multiplying a constant this follows without being touched -
     /// which is the change this harness exists to measure.
     /// </remarks>
-    private double ExpectedDamage(Ability ability)
+    private double ExpectedDamage(Ability ability, int casterLevel)
     {
         var total = 0.0;
 
@@ -761,7 +818,7 @@ public sealed class FightSimulator
             switch (spec.Key)
             {
                 case "damage.physical":
-                    total += DamageEffect.Middle(spec.Params);
+                    total += DamageEffect.Middle(spec.Params, casterLevel);
                     break;
 
                 case "damage.overtime":

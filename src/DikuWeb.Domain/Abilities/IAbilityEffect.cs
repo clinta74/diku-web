@@ -29,6 +29,15 @@ public interface IAbilityEffect
     /// </summary>
     /// <param name="parameters">The same dictionary <see cref="Apply"/> would be handed.</param>
     /// <param name="targeting">Who the ability aims at, for the words to use about them.</param>
+    /// <param name="casterLevel">
+    /// The level of whoever would be casting it.
+    ///
+    /// <b>Required rather than optional, and that is the point of the parameter.</b> Ability damage
+    /// now scales with the caster (<see cref="Effects.DamageEffect.BaseAtLevel"/>), so a description
+    /// written without a level would be a screen quoting a number the game will not deal - which is
+    /// the exact failure this method's own remarks below warn about, and the one this codebase keeps
+    /// rediscovering. Executors whose numbers do not depend on the caster ignore it, and should.
+    /// </param>
     /// <returns>
     /// A lower-case phrase with no full stop - "deals 10-14 damage to your target" - so several can
     /// be joined into one line for an ability that does several things.
@@ -48,7 +57,7 @@ public interface IAbilityEffect
     /// A new executor cannot be written without answering the question, which is the point of
     /// putting it here rather than in a lookup that would quietly have no entry.
     /// </remarks>
-    string Describe(Dictionary<string, string> parameters, TargetingType targeting);
+    string Describe(Dictionary<string, string> parameters, TargetingType targeting, int casterLevel);
 
     /// <summary>
     /// Apply this effect to a target.

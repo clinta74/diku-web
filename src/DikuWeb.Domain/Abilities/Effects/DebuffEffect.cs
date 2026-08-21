@@ -56,7 +56,10 @@ public sealed class DebuffEffect : IBuffEffect
     /// in the game. Naming the direction out loud in play is a second pair of eyes on it: a debuff
     /// that reads "raises your target's damage" is wrong in a way nobody has to read code to see.
     /// </remarks>
-    public string Describe(Dictionary<string, string> parameters, TargetingType targeting)
+    public string Describe(
+        Dictionary<string, string> parameters,
+        TargetingType targeting,
+        int casterLevel)
     {
         ArgumentNullException.ThrowIfNull(parameters);
 

@@ -12,6 +12,8 @@ public sealed record Options(
     int Seed,
     int Cap,
     string? CsvPath,
+    double RegenScale,
+    int RegenSeconds,
     bool ShowHelp)
 {
     /// <summary>
@@ -45,6 +47,8 @@ public sealed record Options(
         var seed = 20260821;
         var cap = 600;
         string? csv = null;
+        var regenScale = 1.0;
+        var regenSeconds = 60;
         var help = false;
 
         for (var i = 0; i < args.Length; i++)
@@ -84,6 +88,14 @@ public sealed record Options(
                     csv = Next();
                     break;
 
+                case "--regen":
+                    regenScale = double.Parse(Next(), CultureInfo.InvariantCulture);
+                    break;
+
+                case "--regen-seconds":
+                    regenSeconds = int.Parse(Next(), CultureInfo.InvariantCulture);
+                    break;
+
                 case "--help" or "-h":
                     help = true;
                     break;
@@ -108,6 +120,8 @@ public sealed record Options(
             seed,
             Math.Max(10, cap),
             csv,
+            regenScale,
+            Math.Max(1, regenSeconds),
             help);
     }
 
@@ -124,6 +138,10 @@ public sealed record Options(
           --seed        <int>    Base seed. Runs are seed+index, so a cell is reproducible
           --cap         <secs>   Give up on a fight after this. Default: 600
           --csv         <file>   Also write one row per fight
+          --regen       <x>      Multiply in-combat regeneration, to size a proposed change to
+                                 RegenCalculator without making one. Default: 1.0
+          --regen-seconds <n>    How often a regeneration tick lands. Default: 60, which is what
+                                 the server uses - and why a 30-second fight gets none at all
           --help,    -h
 
         content/ is an EXPORT of the database, not the database. To measure what is live:

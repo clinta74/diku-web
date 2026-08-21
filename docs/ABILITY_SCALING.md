@@ -8,12 +8,10 @@ Everything here comes from `content/` and `src/` on this branch, or from
 `tools/DikuWeb.Balance` run against them. Numbers marked **measured** come from 41 simulated fights
 per cell; everything else is derived from an authored number or a formula in the code.
 
-> **The content read here is `content/`, which is an *export* of the database.** Its newest stamp is
-> 2026-08-20. A rebalance applied in the builder since then — the epic weapons, for one — is not in
-> these numbers. Re-export and re-run before acting on any specific value:
-> `curl "http://localhost:5000/api/builder/export" -o build/live.json` then
-> `dotnet run --project tools/DikuWeb.Balance -- --content build/live.json`.
-> The *shapes* below survive a re-export; the *constants* may not.
+> **Measured against a fresh export of the live database** (`build/live.json`, 2026-08-21), not
+> against `content/`, which is an older export and was stale for the epic weapons. Pull your own with
+> `dotnet run tools/export-bundle.cs -- -o build/live.json` — it reads through `WorldExporter` with
+> no server running, so nothing migrates, seeds, or reconciles on the way past.
 
 ---
 
@@ -267,22 +265,63 @@ leaving them absolute preserves the best-tuned curve in the file. Separate chang
 
 ---
 
-## 7. Recommendation, in order
+## 7. What the level term fixed, and what it did not
 
-1. **Answer the solo question (§4d).** Whether a level 50 Path is meant to beat a median mob of its
-   own band alone is a design decision, not a measurement, and every constant below depends on it.
-2. **Land the level term** (§5.3) with a placeholder that reproduces today's numbers at each
-   ability's unlock level, so nothing changes until (1) says what to change it to. Fix `Describe` in
-   the same change — non-negotiable.
-3. **Fix the resource curve** (§4d). Larger than the ability problem: costs grew 5.5×, bars 2.6×, and
-   in-combat regeneration is a rounding error.
-4. **Re-tune the cooldowns** (§4a). The level term does not touch this and it is half of why the
+`DamageEffect.BaseAtLevel` now grows the base by 4/10 of a point per level: 10 at level 1, unchanged,
+and 30 at level 50. Every authored `scalingFactor` keeps its meaning, and no content was retuned.
+
+**Measured, against the live export, in standard gear:**
+
+| `PerLevelNumerator` | unplayable cells (of 44) | cells the epic rescues |
+|---|---|---|
+| 0 — the old flat base | **13** | 6 |
+| 2 | 9 | 4 |
+| 3 | 7 | 2 |
+| **4 — shipped** | **7** | 3 |
+| 5 | 5 | 3 |
+| 7 | 3 | 1 |
+
+**It was deliberately not sized to clear the board.** Seven tenths clears almost every cell, and it
+does it by ending fights before the resource bar can bind — abilities reach 92–98% of all damage
+dealt at level 50 and the weapon becomes ornamental. That is not a fix, it is a louder symptom. Four
+tenths does the job the term exists for: it puts the direct-damage line back in the same band as the
+wound line (Sundering Blow 3.8% → 14.7% of a level-appropriate target) and leaves the remaining
+problems visible, which is where they belong.
+
+### The three things still stopping a solo player
+
+**1. The Adept and the Hallow have half the Warden's bar, in casts.** Measured, from the resource
+table: a Warden holds 8–10 casts' worth at every level; an Adept holds 3.3–5.5 and a Hallow similar.
+The residual failures are all theirs, and they all look the same — the median fight gets through
+82–100% of the target's health and then runs dry.
+
+**Regeneration is *not* the lever, and I checked twice.** Multiplying in-combat recovery by eight
+moves 7 unplayable cells to 6. Ticking it more often at the same rate moves nothing. The bar's *size*
+against what a cast costs is the constraint, not how fast it refills — which points at
+`VitalCalculator.FocusMax`/`StaminaMax` (`starting + 3·(level−1)`) or at the authored `costValue`
+curve, not at `RegenCalculator`.
+
+**2. The epic line gates content it drops in.** Three cells are unwinnable in standard gear and
+winnable with the Path's epic. An epic that rescues a fight the realm's own shop gear cannot win has
+stopped being a bonus.
+
+**3. The Hallow has exactly one damage ability in the entire game.** `hallow.wither`, a wound,
+unlocked at level 5. Everything else the Path learns is a heal, a buff, or a debuff — so a solo
+Hallow is a weapon-swinger with a bleed, and the level term does nothing for it because it touches
+direct damage only. This is a content gap, not a curve.
+
+### In order
+
+1. **Size the Adept and Hallow resource pools against what their abilities cost.** Every remaining
+   stuck cell is here, and regeneration has been ruled out as the fix.
+2. **Give the Hallow a damage ability past level 5.** One wound for forty-five levels is why it is
+   the worst-off Path in every table.
+3. **Re-tune the cooldowns** (§4a). The level term does not touch this and it is half of why the
    lines are not lines.
-5. **Content pass**: the Warden needs damage abilities past level 16 larger than Crushing Blow, and
+4. **Content pass**: the Warden needs damage abilities past level 16 larger than Crushing Blow, and
    Adept and Warden both need late-game fillers.
-6. **Separately**, decide whether `baseHeal` and `tickDamage` become factors (§6).
-
----
+5. **Separately**, decide whether `baseHeal` and `tickDamage` become factors (§6). The wound line is
+   currently the best-tuned thing in the file and does not need rescuing — this is about drift.
 
 ## 8. The harness
 
