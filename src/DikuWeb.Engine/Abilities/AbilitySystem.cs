@@ -167,6 +167,8 @@ public sealed class AbilitySystem(
                 executor.Apply(caster, target, spec.Params, world.Random);
             }
 
+            ScaleWound(world, caster, target, before);
+
             // Said per target, with the number, immediately after it landed. This used to be one
             // line before the loop - "Your Kick takes effect!" - which named no target, no amount,
             // and no outcome. A player could not tell a hit from a miss, an area effect that
@@ -279,6 +281,76 @@ public sealed class AbilitySystem(
                     $"turns on {actor.Name}!",
                     "combat");
             }
+        }
+    }
+
+    /// <summary>
+    /// Applies the caster's and the target's damage multipliers to what an ability just did.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Seventeen abilities said this already happened.</b> The multipliers were read in exactly
+    /// one place — the weapon strike in <c>CombatSystem</c> — so a buff described as "raises your
+    /// damage by 60%" moved a player's swings and nothing they cast. For the Adept, whose damage is
+    /// very nearly all abilities, Arcane Surge improved the weakest part of the Path and left the
+    /// rest exactly where it was. Nothing threw and nothing looked wrong: the field was authored,
+    /// the description was generated from it, and it reached one of the two places it belonged.
+    /// </para>
+    /// <para>
+    /// <b>The wound is scaled, not the roll</b> — the same rule that already decides what gets
+    /// narrated and what earns threat, carried one step further. The executors return void and each
+    /// computes its own numbers, so the health delta is the only quantity every one of them has in
+    /// common. Scaling it here means <see cref="Narrate"/> and <c>CreditThreat</c> both follow
+    /// without being touched, since both derive from <paramref name="before"/>, and an ability
+    /// carrying several damage effects composes correctly rather than being scaled once per effect.
+    /// </para>
+    /// <para>
+    /// <b>Only when the delta is damage.</b> A heal moves health the other way, and a "damage up"
+    /// buff that inflated one — or a weaken that blunted one — would be the same silent-wrong-field
+    /// bug wearing the opposite face. A Hallow's healing is exactly what the executor rolled.
+    /// </para>
+    /// </remarks>
+    private static void ScaleWound(WorldState world, Character caster, object target, int before)
+    {
+        var raw = before - HealthOf(target);
+
+        if (raw <= 0)
+        {
+            return;
+        }
+
+        var scaled = DamageMultipliers.Apply(
+            raw,
+            DamageMultipliers.Between(
+                world.GetActiveEffects(caster.Id),
+                world.GetActiveEffects(EntityOf(target))));
+
+        if (scaled == raw)
+        {
+            return;
+        }
+
+        SetHealth(target, Math.Max(0, before - scaled));
+    }
+
+    private static Guid EntityOf(object target) => target switch
+    {
+        Character character => character.Id,
+        Mob mob => mob.Id,
+        _ => Guid.Empty,
+    };
+
+    private static void SetHealth(object target, int health)
+    {
+        switch (target)
+        {
+            case Character character:
+                character.Vitals.Health = health;
+                break;
+
+            case Mob mob:
+                mob.Vitals.Health = health;
+                break;
         }
     }
 

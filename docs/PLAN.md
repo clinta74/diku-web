@@ -746,6 +746,10 @@ building to save a player from a decision made on the character-creation screen.
 
 ### 4.6 Combat math
 
+**This is the *weapon* formula.** Said out loud because it was implied for a long time and stated
+nowhere, and what an ability's damage does and does not pass through is written at the end of this
+section rather than left to be discovered.
+
 Explicitly not THAC0. Each round, per attack:
 
 ```
@@ -798,6 +802,39 @@ retired vocabulary (`armorFlat`, `armorPercent`, `armorMultiplier`) is gone rath
 `armorMultiplier` in particular was accumulated across *every* equipped piece and applied to the
 set's total, so six pieces at 1.2 multiplied to 2.99 and a piece carrying only a multiplier granted
 nothing at all.
+
+#### What ability damage passes through
+
+An ability does not roll to hit and is not stopped by armour. It answers to exactly one thing the
+formula above also answers to: **the damage multipliers**.
+
+| | to-hit roll | armour | damage buffs and debuffs |
+|---|---|---|---|
+| Weapon swing | yes | yes | yes |
+| Ability damage | no | **no** | **yes** |
+| A wound that ticks | no | **no** | **yes** |
+
+**The multipliers were weapon-only, and that was a bug.** `OutgoingDamageMultiplier` and
+`IncomingDamageMultiplier` were read in one place — mid-swing, in `CombatSystem` — so seventeen
+abilities described a number that moved a player's auto-attacks and nothing they cast. The Adept
+was the worst of it: Arcane Surge says *"raises your damage by 60%"* and improved the weakest part
+of a Path whose damage is very nearly all abilities. Sunder's *"raises the damage your target takes
+by 30%"* did nothing for anyone casting at the sundered mob. The rule now lives in
+`DamageMultipliers`, in the Domain, and both callers use it. Nothing in the descriptions changed —
+they became true.
+
+Read at the moment damage lands, including for a wound: the tick is happening at *this* pulse, so
+it is this pulse's buffs that decide it. Freezing the caster's buff into the `ActiveEffect` would
+mean two identical bleeds ticking for different amounts for the next twenty seconds depending on
+what was up when each was opened, with nothing on screen to explain it.
+
+**Armour is deliberately not on that list, and it is not an oversight.** A blow is stopped by what
+a target is wearing; a curse is not, and bypassing armour is most of the point of one — it is what
+makes a bleed worth casting into a boss that shrugs off swings. If mitigation against abilities is
+ever wanted it gets its **own** stat, sitting beside `armor` the way `defense` already does, rather
+than a second meaning bolted onto the number that already decides what a landed blow costs. Making
+`ArmorCurve` do both jobs would repeat the `armorMultiplier` mistake one paragraph above: one
+authored number quietly deciding two unrelated things.
 
 **Guard effects carry percentage points, not ratings.** `buff.defense` and `debuff.expose` author
 `mitigation` in whole points, summed into the gear's fraction and clamped once with it. A rating

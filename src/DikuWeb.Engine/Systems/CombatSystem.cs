@@ -610,16 +610,14 @@ public sealed class CombatSystem(
         }
 
         // Buff and debuff multipliers apply after the roll, so a shout of fury and a curse of
-        // weakness compose rather than one overwriting the other.
-        var attackerEffects = world.GetActiveEffects(EntityId.ToGuid(strike.AttackerId));
-        var targetEffects = world.GetActiveEffects(EntityId.ToGuid(strike.TargetId));
-        var totalMultiplier =
-            CalculateMultiplier(attackerEffects, e => e.OutgoingDamageMultiplier) *
-            CalculateMultiplier(targetEffects, e => e.IncomingDamageMultiplier);
-
-        var damageDealt = Math.Max(
-            0,
-            (int)Math.Round(round.Damage.DamageDealt * totalMultiplier, MidpointRounding.AwayFromZero));
+        // weakness compose rather than one overwriting the other. The rule is DamageMultipliers,
+        // shared with AbilitySystem - it was private to this method for as long as a swing was the
+        // only thing in the game that honoured it.
+        var damageDealt = DamageMultipliers.Apply(
+            round.Damage.DamageDealt,
+            DamageMultipliers.Between(
+                world.GetActiveEffects(EntityId.ToGuid(strike.AttackerId)),
+                world.GetActiveEffects(EntityId.ToGuid(strike.TargetId))));
 
         ApplyDamage(world, strike.TargetId, damageDealt);
 
@@ -727,6 +725,23 @@ public sealed class CombatSystem(
                 // stacks of a bleed read as one worse bleed instead of five overlapping ones.
                 var damage = effect.TickDamage * Math.Max(1, effect.Stacks);
 
+                // The same buffs and debuffs a swing answers to. A wound is damage the caster is
+                // dealing, so a Temper under Fortify bleeds harder and a mob under Sunder bleeds
+                // worse - which is what those abilities have always said they do, and what a bleed
+                // was the last thing in the game not to honour.
+                //
+                // Read now rather than snapshotted when the wound was opened, for the same reason
+                // a swing reads it now: the damage is happening at this pulse, so it is this
+                // pulse's buffs that decide it. The alternative - freezing the caster's buff into
+                // the ActiveEffect - would mean a bleed applied one second before Arcane Surge and
+                // one applied one second after tick for different amounts for the next twenty
+                // seconds, with nothing on screen to explain the difference.
+                damage = DamageMultipliers.Apply(
+                    damage,
+                    DamageMultipliers.Between(
+                        EffectsOn(world, effect.SourceEntityId),
+                        EffectsOn(world, combatantId)));
+
                 ApplyDamage(world, combatantId, damage);
 
                 // Credited to whoever applied it, not to whoever is standing nearby. A Temper's
@@ -745,6 +760,22 @@ public sealed class CombatSystem(
             }
         }
     }
+
+    /// <summary>
+    /// The effects on whoever this id names, or none when it names nobody findable.
+    /// </summary>
+    /// <remarks>
+    /// <b><see cref="EntityId.ToGuid"/> throws, and this runs inside the tick.</b> A wound records
+    /// its caster as a string that outlives the cast and round-trips through jsonb, and
+    /// <c>EffectSource.Of</c> writes the literal <c>"unknown"</c> for a caster that is neither a
+    /// character nor a mob — so the id reaching here is not guaranteed to be one. A malformed id has
+    /// taken this loop down once already (HISTORY.md, 5.2f), and a dead loop is a dead world for
+    /// everyone connected, which is a great deal worse than a bleed that ticks unbuffed.
+    /// </remarks>
+    private static IReadOnlyList<ActiveEffect> EffectsOn(WorldState world, string? entityId) =>
+        EntityId.IsWellFormed(entityId)
+            ? world.GetActiveEffects(EntityId.ToGuid(entityId!))
+            : [];
 
     /// <summary>Tells the room that a wound is still working.</summary>
     private static void NarrateTick(
@@ -985,27 +1016,6 @@ public sealed class CombatSystem(
             : absorbed >= ArmorCurve.Cap
                 ? ArmorCurve.Midpoint * 100
                 : (int)Math.Round(ArmorCurve.Midpoint * absorbed / (1m - absorbed));
-
-    private static decimal CalculateMultiplier(
-        IReadOnlyList<DikuWeb.Domain.Abilities.Effects.ActiveEffect> effects,
-        Func<DikuWeb.Domain.Abilities.Effects.ActiveEffect, decimal> selector)
-    {
-        var multiplier = 1.0m;
-
-        foreach (var effect in effects)
-        {
-            var effectMultiplier = selector(effect);
-            if (effectMultiplier != 1.0m)
-            {
-                var stackMultiplier = effect.StackingRule == DikuWeb.Domain.Abilities.Effects.EffectStackingRule.Stack
-                    ? 1.0m + (effectMultiplier - 1.0m) * effect.Stacks
-                    : effectMultiplier;
-                multiplier *= stackMultiplier;
-            }
-        }
-
-        return multiplier;
-    }
 
     private void ApplyDamage(WorldState world, string targetId, int damage)
     {
