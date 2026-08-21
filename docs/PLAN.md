@@ -666,10 +666,22 @@ target takes by 30%* needs no code review to spot.
 **Abilities can share a timer, and using one uses all of them.** `cooldownGroup` is a number on the
 ability; using any ability on a timer puts the whole timer down for *that ability's own* cooldown.
 It exists for the case where several abilities do one job and holding all of them is worth more than
-the sum: the Warden's four maximum-health walls chain into 470 seconds of continuous cover, and
-Ground and Centre alone is nearly permanent at a 100s cooldown against an 80s duration. **They are
-the only shared timer the shipped set has** — a timer is for two variations of one thing, and a kick
-and a bash are different enough to keep apart.
+the sum. **The shipped set has two, both on the Warden**, and a timer is for two variations of one
+thing — a kick and a bash are different enough to keep apart.
+
+- **Timer 1, the four maximum-health walls.** They chain into 470 seconds of continuous cover, and
+  Ground and Centre alone is nearly permanent at a 100s cooldown against an 80s duration.
+- **Timer 2, the two room taunts.** Thunderclap and Mass Provocation both write threat for the whole
+  room, and a taunt does not overwrite the last one — `Combat.ForceTopHater` sets the caster to the
+  *highest* hate plus the lead, so the leads add. Fired together they bought a lead worth 85% of a
+  mob's health bar in a single beat, which is most of a fight's threat spent on a decision that is
+  not a decision. **Found in play, ungrouped since they were written.**
+
+`AbilityValidator` now warns when one Path carries the same room-wide `control.*` effect on two
+abilities that share no timer, which is what would have caught the second one at authoring time.
+Scoped to control and to the room on purpose: damage, heals and buffs are meant to layer — a Hallow
+stacking three room heals is the Path working — and a single target is one creature's worth of
+consequence either way.
 
 The identity is **(Path, number)**, not the number alone. A character only knows one Path's
 abilities, so Warden 1 and Temper 1 can never meet in play, and scoping it lets each Path number from
@@ -691,6 +703,11 @@ The cooling bar still lists **only what was used**, so a group-mate held down by
 appears on it. The refusal is what explains itself — *"it shares a timer with Unbreakable, which needs
 another 41s"* — and `abilities` names the others on a timer, which is where it is learnable out of
 combat.
+
+In the builder, the ability **list** marks each ability with the timer it is on and names its
+timer-mates, and the editor sets it. The editor alone was not enough: it holds one ability at a time,
+while a shared timer is a fact about a *pair*, so the only way to answer "what shares a timer" was to
+open all eighteen Warden abilities one by one — which was reported as the feature not existing.
 
 **A stronger application of an effect replaces a weaker one; a weaker one does nothing at all.**
 `WorldState.ApplyEffect` dedupes on `(EffectKey, SourceEntityId)`, so every one of a Path's

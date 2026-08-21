@@ -256,7 +256,7 @@
       "costType": "Stamina",
       "costValue": 28,
       "cooldownPulses": 96,
-      "cooldownGroup": null,
+      "cooldownGroup": 2,
       "castTimePulses": null,
       "targetingType": "Aoe",
       "effects": [
@@ -424,7 +424,7 @@
       "costType": "Stamina",
       "costValue": 40,
       "cooldownPulses": 320,
-      "cooldownGroup": null,
+      "cooldownGroup": 2,
       "castTimePulses": null,
       "targetingType": "Aoe",
       "effects": [

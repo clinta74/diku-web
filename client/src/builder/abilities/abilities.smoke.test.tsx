@@ -41,6 +41,27 @@ const stomp = vi.hoisted(
   }),
 )
 
+/** On a timer of its own, which shares with nothing - the case the list marks. */
+const bellow = vi.hoisted(
+  (): Ability => ({
+    key: 'warden.bellow',
+    path: 'Warden',
+    unlockLevel: 5,
+    name: 'Bellow',
+    description: 'Loud, and on a timer nothing else is on.',
+    costType: 'Stamina',
+    costValue: 14,
+    cooldownPulses: 32,
+    cooldownGroup: 3,
+    castTimePulses: null,
+    targetingType: 'Aoe',
+    effects: [{ key: 'control.taunt', params: { leadFraction: '0.3' } }],
+    problems: [
+      { severity: 'Warning', message: 'Warden timer 3 has only this ability on it.' },
+    ],
+  }),
+)
+
 const broken = vi.hoisted(
   (): Ability => ({
     key: 'adept.misfire',
@@ -72,7 +93,7 @@ vi.mock('../../net/builderApi', async (importOriginal) => {
         calls.list++
         return calls.fail
           ? Promise.reject(new Error('Request failed: 404'))
-          : Promise.resolve([kick, stomp, broken])
+          : Promise.resolve([kick, stomp, bellow, broken])
       },
       ability: (key: string) => Promise.resolve(key === kick.key ? kick : broken),
       updateAbility: (_key: string, body: unknown) => {
@@ -157,6 +178,39 @@ it('saves an edited cooldown, typed in seconds and stored in pulses', async () =
 
   await waitFor(() => expect(calls.updated).not.toBeNull())
   expect((calls.updated as { cooldownPulses: number }).cooldownPulses).toBe(48)
+})
+
+it('shows in the list which timer an ability is on', async () => {
+  // Reported as "there is no way to manage cooldown groups in the builder UI" - and the control had
+  // been in the editor for weeks. The list showed nothing, and the list is the only screen with
+  // more than one ability on it, so answering "what shares a timer" meant opening all eighteen
+  // Warden abilities one at a time. A feature you cannot see is a feature nobody has.
+  renderTab()
+
+  await screen.findByText('Kick')
+
+  // In unlock order down the Path, which is how the list is sorted.
+  const badges = [...document.querySelectorAll('.ability-timer')]
+  expect(badges.map((b) => b.textContent)).toEqual(['⧗1', '⧗1', '⧗3'])
+
+  // Named, because the number on its own says nothing about what carries it.
+  expect(badges[0].getAttribute('title')).toContain('Stomp')
+  expect(badges[1].getAttribute('title')).toContain('Kick')
+})
+
+it('marks a timer in the list that has nothing else on it', async () => {
+  // The same silent-does-nothing the editor warns about and the validator flags, visible without
+  // opening anything. Misfire is on no timer at all, so it gets no badge either way.
+  renderTab()
+
+  await screen.findByText('Bellow')
+
+  const lonely = [...document.querySelectorAll('.ability-timer.lonely')]
+  expect(lonely.length).toBe(1)
+  expect(lonely[0].getAttribute('title')).toContain('alone')
+
+  // And an ability on no timer gets no badge at all, so the mark means something.
+  expect(document.querySelectorAll('.ability-timer').length).toBe(3)
 })
 
 it('names the other abilities on a shared timer', async () => {

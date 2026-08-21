@@ -745,6 +745,26 @@
   flex: 1;
 }
 
+/*
+ * Which timer an ability is on, in the list rather than only in the editor. Quiet on purpose: it
+ * is a fact about the ability, not a problem with it, so it must not compete with the flags beside
+ * it - a timer badge that read as loudly as an error would train a builder to ignore both.
+ */
+.ability-timer {
+  padding: 0 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--dim);
+  font-size: 0.65rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A timer with one ability on it shares with nothing, which the validator also warns about. */
+.ability-timer.lonely {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .ability-flag {
   font-size: 0.75rem;
 }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Characters;
@@ -436,52 +437,99 @@ public sealed class AbilityContentTests
     // The shared timer
     // -----------------------------------------------------------------------
 
-    /// <summary>
-    /// The Warden's four walls, which are the reason the timer exists — and nothing else, because
-    /// sharing one is a strong statement and the set should make it only where it is earned.
-    /// </summary>
-    [Fact]
-    public void The_wardens_four_walls_share_a_timer_and_nothing_else_does()
+    /// <summary>Which abilities are on which timer, stated as content rather than as a shape.</summary>
+    /// <remarks>
+    /// <b>Listed rather than counted, because sharing a timer is a strong statement</b> and the set
+    /// should make it only where it is earned. Both timers exist for the same reason and neither is
+    /// about the effect being rare: the Warden's four walls all raise maximum health, and its two
+    /// room taunts both write threat for the whole room. In each case using two at once buys a
+    /// stretch of a fight in a single beat.
+    /// </remarks>
+    [Theory]
+    [InlineData(1, "warden.ground-and-centre", "warden.last-stand", "warden.the-last-wall", "warden.unbreakable")]
+    [InlineData(2, "warden.mass-provocation", "warden.thunderclap")]
+    public void A_timer_holds_exactly_these(int group, params string[] expected)
     {
-        var grouped = All
-            .Where(a => a.CooldownGroup is not null)
+        var onTimer = All
+            .Where(a => a.CooldownGroup == group)
             .Select(a => a.Key)
             .OrderBy(k => k, StringComparer.Ordinal)
             .ToList();
 
-        Assert.Equal(
-            [
-                "warden.ground-and-centre",
-                "warden.last-stand",
-                "warden.the-last-wall",
-                "warden.unbreakable",
-            ],
-            grouped);
+        Assert.Equal(expected, onTimer);
     }
 
-    /// <summary>Each of them names the other three, which is what the roster line prints.</summary>
+    /// <summary>And nothing else is on any timer at all.</summary>
     [Fact]
-    public void Each_wall_knows_the_other_three()
+    public void Nothing_else_shares_a_timer()
+    {
+        Assert.DoesNotContain(All, a => a.CooldownGroup is not null and not (1 or 2));
+    }
+
+    /// <summary>
+    /// Each ability names its timer-mates, which is what the roster line and a refusal print.
+    /// </summary>
+    [Fact]
+    public void Each_ability_on_a_timer_knows_the_others_on_it()
     {
         var all = All;
 
-        foreach (var wall in all.Where(a => a.CooldownGroup is not null))
+        foreach (var shared in all.Where(a => a.CooldownGroup is not null))
         {
-            Assert.Equal(3, AbilityCooldowns.GroupMates(wall, all).Count());
+            var mates = AbilityCooldowns.GroupMates(shared, all).ToList();
+
+            // A timer of one shares with nothing, which is the silent-does-nothing shape the
+            // validator has its own arm for. Here it would also mean the list above is stale.
+            Assert.NotEmpty(mates);
+            Assert.All(mates, m => Assert.Equal(shared.CooldownGroup, m.CooldownGroup));
         }
     }
 
     /// <summary>
-    /// Every one of them raises maximum health, which is the thing being rationed. A wall that did
-    /// something else would be sharing a timer for no reason a player could work out.
+    /// A timer rations one thing, and every ability on it does that thing.
     /// </summary>
-    [Fact]
-    public void Every_ability_on_the_timer_raises_maximum_health()
+    /// <remarks>
+    /// The rule behind both timers, and the reason a player can predict them: timer 1 is the
+    /// abilities that raise maximum health, timer 2 the ones that taunt the whole room. An ability
+    /// sharing a timer for some other reason would be a refusal nobody could work out from what
+    /// the two abilities do.
+    /// </remarks>
+    [Theory]
+    [InlineData(1, "buff.max-health")]
+    [InlineData(2, "control.taunt")]
+    public void Every_ability_on_a_timer_does_the_thing_that_timer_rations(int group, string effectKey)
     {
-        foreach (var wall in All.Where(a => a.CooldownGroup is not null))
-        {
-            Assert.Contains(wall.Effects, e => e.Key == "buff.max-health");
-        }
+        var onTimer = All.Where(a => a.CooldownGroup == group).ToList();
+
+        Assert.NotEmpty(onTimer);
+        Assert.All(onTimer, a => Assert.Contains(a.Effects, e => e.Key == effectKey));
+    }
+
+    /// <summary>
+    /// Two room taunts fired together would buy a lead of 85% of a health bar in one beat.
+    /// </summary>
+    /// <remarks>
+    /// <b>Found in play.</b> Thunderclap and Mass Provocation were both castable at once, and a
+    /// taunt does not overwrite the last one — <c>Combat.ForceTopHater</c> sets the caster to the
+    /// highest hate <em>plus</em> the lead, so 0.35 of the bar and then 0.5 on top of it. That is
+    /// most of a fight's worth of threat spent on a decision that is not a decision, and it is the
+    /// pair being on one timer that turns it back into one.
+    /// </remarks>
+    [Fact]
+    public void The_room_taunts_cannot_be_stacked_on_each_other()
+    {
+        var taunts = All.Where(a => a.CooldownGroup == 2).ToList();
+
+        Assert.All(taunts, a => Assert.Equal(TargetingType.Aoe, a.TargetingType));
+
+        var lead = taunts
+            .SelectMany(a => a.Effects.Where(e => e.Key == "control.taunt"))
+            .Sum(e => decimal.Parse(e.Params["leadFraction"], CultureInfo.InvariantCulture));
+
+        Assert.True(
+            lead > 0.75m,
+            $"These share a timer because together they are worth {lead:P0} of a health bar. " +
+            "If that is no longer true, the timer is worth re-deciding rather than assuming.");
     }
 
     /// <summary>No timer has exactly one ability on it, which would be a group of one.</summary>

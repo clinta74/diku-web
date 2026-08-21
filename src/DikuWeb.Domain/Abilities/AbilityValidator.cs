@@ -294,9 +294,83 @@ public static class AbilityValidator
                 problems.Add(new(timer.Single().Key, AbilityProblemSeverity.Warning,
                     $"{path} timer {timer.Key} has only this ability on it, so it shares with nothing."));
             }
+
+            problems.AddRange(UnsharedRoomControl(path, forPath));
         }
 
         return problems;
+    }
+
+    /// <summary>
+    /// Two abilities that take hold of the whole room the same way, and share no timer.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Reported from play: the Warden's two room taunts could both be fired at once.</b>
+    /// Thunderclap takes a lead worth 35% of a mob's health bar and Mass Provocation one worth 50%,
+    /// and they do not overwrite each other — <c>Combat.ForceTopHater</c> sets the caster to the
+    /// <em>highest</em> hate plus the lead, so the second one lands on top of the first. Cast back
+    /// to back they buy a lead of 85% of the bar in a single beat, which is most of a fight's worth
+    /// of threat spent in one decision that is not a decision.
+    /// </para>
+    /// <para>
+    /// <b>Scoped to control, and to the room, on purpose.</b> Damage, heals and buffs are meant to
+    /// layer — a Hallow stacking three room heals is the Path working — and a single target is one
+    /// creature's worth of consequence either way. A control effect over a whole room is the case
+    /// where two of them at once removes the thing the abilities exist to make interesting, so it
+    /// is the only case flagged. Grouping them is one edit in the builder; the alternative is
+    /// finding it in a fight, which is how this one was found.
+    /// </para>
+    /// <para>
+    /// A warning rather than an error, per §7.4: two separate timers may be exactly what an author
+    /// wants, and nothing here is broken. It is a judgement about content shape, so it is said and
+    /// not enforced.
+    /// </para>
+    /// </remarks>
+    private static IEnumerable<AbilityProblem> UnsharedRoomControl(
+        CharacterPath path,
+        IReadOnlyList<Ability> forPath)
+    {
+        var roomControl = forPath
+            .Where(a => a.TargetingType == TargetingType.Aoe)
+            .SelectMany(a => a.Effects.Select(e => (Ability: a, e.Key)))
+            .Where(pair => pair.Key.StartsWith("control.", StringComparison.Ordinal))
+            .GroupBy(pair => pair.Key, StringComparer.Ordinal)
+            .OrderBy(g => g.Key, StringComparer.Ordinal);
+
+        foreach (var kind in roomControl)
+        {
+            // Distinct, because one ability carrying the same control twice is a different fault
+            // and belongs to whichever check owns duplicate effects.
+            var casters = kind
+                .Select(pair => pair.Ability)
+                .DistinctBy(a => a.Key, StringComparer.Ordinal)
+                .ToList();
+
+            if (casters.Count < 2)
+            {
+                continue;
+            }
+
+            // Sharing *a* timer is enough. Which number it is says nothing, and an author who has
+            // put two of three on one timer has made a choice about the third worth leaving alone.
+            var ungrouped = casters.Where(a => a.CooldownGroup is null or <= 0).ToList();
+
+            if (ungrouped.Count == 0)
+            {
+                continue;
+            }
+
+            var others = string.Join(", ", casters.Select(a => a.Name));
+
+            foreach (var ability in ungrouped)
+            {
+                yield return new(ability.Key, AbilityProblemSeverity.Warning,
+                    $"{path} hits the whole room with {kind.Key} from more than one ability " +
+                    $"({others}), and this one is on no shared timer — so they can all be used at " +
+                    "once and their effects compound.");
+            }
+        }
     }
 
     /// <summary>

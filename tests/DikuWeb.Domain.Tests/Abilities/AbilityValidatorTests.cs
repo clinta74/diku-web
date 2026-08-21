@@ -332,4 +332,136 @@ public sealed class AbilityValidatorTests
             AbilityValidator.ValidateSet([Valid(effectKey: "damage.nonexistent")], Effects),
             p => p.Severity == AbilityProblemSeverity.Error);
     }
+
+    // -----------------------------------------------------------------------
+    // Two ways to take hold of a whole room
+    // -----------------------------------------------------------------------
+
+    /// <summary>A room-wide control ability, for the checks below.</summary>
+    private static Ability RoomControl(
+        string key,
+        string effectKey = "control.taunt",
+        int? group = null,
+        int unlockLevel = 5,
+        CharacterPath path = CharacterPath.Warden,
+        TargetingType targeting = TargetingType.Aoe) => new()
+    {
+        Key = key,
+        Path = path,
+        UnlockLevel = unlockLevel,
+        Name = key,
+        Description = "For testing.",
+        CostType = CostType.Stamina,
+        CostValue = 10,
+        CooldownPulses = 24,
+        CooldownGroup = group,
+        CastTimePulses = null,
+        TargetingType = targeting,
+        Effects = [new(effectKey, new Dictionary<string, string>(StringComparer.Ordinal))],
+    };
+
+    private static IReadOnlyList<AbilityProblem> Compounding(params Ability[] set) =>
+        [.. AbilityValidator.ValidateSet(set, Effects)
+            .Where(p => p.Message.Contains("compound", StringComparison.Ordinal))];
+
+    /// <summary>
+    /// The reported bug, stated: two room taunts with nothing stopping them being used together.
+    /// </summary>
+    /// <remarks>
+    /// <b>Found in play, not by the validator.</b> Thunderclap and Mass Provocation both taunt the
+    /// whole room and neither was on a timer, so both could be fired in the same beat. They do not
+    /// overwrite each other — <c>Combat.ForceTopHater</c> sets the caster to the highest hate
+    /// <em>plus</em> the lead — so the leads add: 35% of the health bar and then another 50% on top
+    /// of that.
+    /// </remarks>
+    [Fact]
+    public void Two_room_wide_controls_of_a_kind_on_no_shared_timer_are_reported()
+    {
+        var problems = Compounding(
+            RoomControl("warden.thunderclap"),
+            RoomControl("warden.mass-provocation"));
+
+        // Named on both, because either one is where a builder might go to fix it.
+        Assert.Equal(2, problems.Count);
+        Assert.Contains(problems, p => p.Key == "warden.thunderclap");
+        Assert.Contains(problems, p => p.Key == "warden.mass-provocation");
+        Assert.All(problems, p => Assert.Equal(AbilityProblemSeverity.Warning, p.Severity));
+    }
+
+    /// <summary>And putting them on one silences it, which is the fix the message asks for.</summary>
+    [Fact]
+    public void A_shared_timer_settles_it()
+    {
+        Assert.Empty(Compounding(
+            RoomControl("warden.thunderclap", group: 2),
+            RoomControl("warden.mass-provocation", group: 2)));
+    }
+
+    /// <summary>
+    /// Only the ones off a timer are named, so a deliberate third is not nagged about.
+    /// </summary>
+    [Fact]
+    public void An_ability_already_on_a_timer_is_left_alone()
+    {
+        var problems = Compounding(
+            RoomControl("warden.thunderclap", group: 2),
+            RoomControl("warden.mass-provocation", group: 2),
+            RoomControl("warden.bellow"));
+
+        Assert.Equal("warden.bellow", Assert.Single(problems).Key);
+    }
+
+    /// <summary>
+    /// Different kinds of control do not collide, because they do not do the same thing.
+    /// </summary>
+    [Fact]
+    public void A_room_taunt_and_a_room_root_are_two_different_questions()
+    {
+        Assert.Empty(Compounding(
+            RoomControl("adept.gravity-well", effectKey: "control.root"),
+            RoomControl("adept.the-word", effectKey: "control.stun")));
+    }
+
+    /// <summary>
+    /// Damage, heals and buffs are meant to layer, so the check stays out of their way.
+    /// </summary>
+    /// <remarks>
+    /// A Hallow with three room heals is the Path working as intended. Widening this rule past
+    /// control would turn it into noise on the one Path that has most to say.
+    /// </remarks>
+    [Fact]
+    public void Room_wide_healing_is_not_the_same_problem()
+    {
+        Assert.Empty(Compounding(
+            RoomControl("hallow.benediction", effectKey: "heal.restore", path: CharacterPath.Hallow),
+            RoomControl("hallow.communion", effectKey: "heal.restore", path: CharacterPath.Hallow),
+            RoomControl("hallow.mending-tide", effectKey: "heal.restore", path: CharacterPath.Hallow)));
+    }
+
+    /// <summary>
+    /// One creature's worth of consequence is not a room's, so single-target control is untouched.
+    /// </summary>
+    /// <remarks>
+    /// The Warden really does have two single-target taunts — Taunt and Reprisal — and they are
+    /// fine: Reprisal is a damage ability that also holds threat, which is a different tool from a
+    /// shout, and using both costs two beats on one mob.
+    /// </remarks>
+    [Fact]
+    public void Single_target_control_is_not_this_check()
+    {
+        Assert.Empty(Compounding(
+            RoomControl("warden.taunt", targeting: TargetingType.SingleTarget),
+            RoomControl("warden.reprisal", targeting: TargetingType.SingleTarget)));
+    }
+
+    /// <summary>
+    /// Two Paths are two spellbooks. A character only ever knows one, so they can never meet.
+    /// </summary>
+    [Fact]
+    public void Two_paths_with_a_room_control_each_are_not_compounding()
+    {
+        Assert.Empty(Compounding(
+            RoomControl("warden.thunderclap"),
+            RoomControl("adept.the-word", path: CharacterPath.Adept)));
+    }
 }

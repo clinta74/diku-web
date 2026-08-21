@@ -90,6 +90,19 @@ export function AbilitiesTab() {
                         <h4 className="ability-group-head">{path}</h4>
                         <ul className="ability-list">
                           {forPath.map((ability) => {
+                            // The others on this ability's timer. Shown in the list and not only in
+                            // the editor, because a shared timer is a fact about a *pair* and the
+                            // editor only ever has one ability open: with nothing here, the way to
+                            // answer "what shares a timer" was to open all eighteen Warden
+                            // abilities one at a time, which reads as the feature not existing.
+                            const mates =
+                              ability.cooldownGroup === null
+                                ? []
+                                : forPath.filter(
+                                    (a) =>
+                                      a.key !== ability.key &&
+                                      a.cooldownGroup === ability.cooldownGroup,
+                                  )
                             // An error means the ability does not work at all, so it outranks the level
                             // badge for attention. Warnings are quieter on purpose - they are usually
                             // about progression shape, which is a judgement rather than a fault.
@@ -105,6 +118,20 @@ export function AbilitiesTab() {
                                 >
                                   <span className="ability-level">{ability.unlockLevel}</span>
                                   <span className="ability-name">{ability.name}</span>
+                                  {ability.cooldownGroup !== null && (
+                                    <span
+                                      className={mates.length === 0 ? 'ability-timer lonely' : 'ability-timer'}
+                                      title={
+                                        mates.length === 0
+                                          ? `On ${path} timer ${ability.cooldownGroup}, alone — so it shares with nothing.`
+                                          : `Shares ${path} timer ${ability.cooldownGroup} with ${mates
+                                              .map((a) => a.name)
+                                              .join(', ')}.`
+                                      }
+                                    >
+                                      ⧗{ability.cooldownGroup}
+                                    </span>
+                                  )}
                                   {errors > 0 && (
                                     <span className="ability-flag bad" title="This ability will not work">
                                       ✕
