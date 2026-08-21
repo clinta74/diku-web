@@ -141,28 +141,37 @@ the flat base was hiding.
 
 ### 4d. Two more scaling failures the harness turned up
 
-Neither is about abilities, and both are larger.
+Neither is about abilities, and one of them was misdiagnosed twice before it held still.
 
-**Resource pools do not keep up with resource costs.** Costs grow 10 → 55 (5.5×); the bar grows
-100 → 257 (2.6×); in-combat regeneration is 2% of maximum per *minute*, which is ~18 stamina against
-a fight needing ~390. **Measured:** a level 50 Warden spends 276 of its 368 fight-pulses with
-something off cooldown and unaffordable. Their whole bar is about six casts.
+**The resource bar is a flat ~9 casts at every level, while fights grew fifteen-fold.** Pool and cost
+actually track each other reasonably — a Warden holds 10 casts' worth at level 1 and 9.4 at level 50,
+because `VitalCalculator` (`starting + 3·(level-1)`) and the authored `costValue` curve happen to
+grow together. What did not grow is the fight. A level 1 kill takes six seconds and a level 50 kill
+takes ninety, so a bar sized for a whole fight at the bottom covers a third of one at the top.
 
-**Solo endgame does not work for three of four Paths.** Against the *median* combat mob of a
-level-appropriate zone, with that realm's best gear — **measured** win rates:
+**In-combat regeneration is not the fix, and this is the part I got wrong first.** `RegenCalculator`
+returns 2% of a maximum per 60-second tick, which reads like the obvious culprit. It is not:
+multiplying it by **eight** moves the count of unwinnable cells from 7 to 6, and ticking it more
+often at the same rate moves nothing at all. The constraint is the bar's *size* against a cast's
+cost, not the rate it refills - so the lever is `FocusMax`/`StaminaMax` or the authored costs, and
+not `RegenCalculator`.
+
+**The Adept and the Hallow hold half the Warden's bar.** This is where the real asymmetry is: 8-10
+casts for a Warden at every level, 3.3-5.5 for an Adept.
+
+**Solo endgame is a level 50 problem, not a level 40 one.** Win rates against the median combat mob
+of a level-appropriate zone, in standard gear, with the level term in place - **measured**:
 
 | Path | L40 | L45 | L50 |
 |---|---|---|---|
-| Warden | 41/41 | 31/41 | **1/41** |
-| Temper | 41/41 | 41/41 | 41/41 |
-| Adept | 40/41 | 35/41 | **0/41** |
-| Hallow | 40/41 | 9/41 | **6/41** |
+| Warden | 100% | 100% | **39%** |
+| Temper | 100% | 100% | 100% |
+| Adept | 100% | 100% | **32%** |
+| Hallow | 100% | 100% | **35%** |
 
-The Warden dies having dealt 584 of the 747 it needed — consistently close, consistently short.
-
-**This may be intended.** The harness models solo play with no consumables, no fleeing, and no group,
-and a MUD may reasonably expect a party at the top. But it is currently unstated, and it is the
-question that has to be answered before any of the constants below can be picked.
+**Whether solo is meant to work at all is a design decision, not a measurement.** The harness plays
+one character with no consumables, no fleeing and no group, and a MUD may reasonably expect a party
+at the top. Every constant in §7 depends on which way that goes.
 
 ---
 
