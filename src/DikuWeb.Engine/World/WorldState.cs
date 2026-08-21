@@ -402,6 +402,11 @@ public sealed class WorldState(IRandomSource random)
         _mobs.Remove(mob.Id);
         MobListFor(roomKey).Remove(mob);
 
+        // Whatever was on it dies with it. Left behind, a corpse's wounds and debuffs sat in the
+        // table until the next expiry sweep noticed them - state belonging to something that no
+        // longer exists, and one more thing for a sweep to walk.
+        _activeEffects.Remove(mob.Id);
+
         if (mob.SpawnerId is { } spawnerId && _mobsBySpawner.TryGetValue(spawnerId, out var spawned))
         {
             spawned.Remove(mob.Id);
@@ -753,9 +758,20 @@ public sealed class WorldState(IRandomSource random)
     private Domain.Characters.Vitals? VitalsOf(Guid entityId) =>
         GetCharacter(entityId)?.Vitals ?? FindMob(entityId)?.Vitals;
 
-    public IReadOnlyList<ActiveEffect> ExpireEffects(long currentPulse)
+    /// <summary>
+    /// Removes every effect whose time is up, and returns each one <b>with whoever was carrying
+    /// it</b>.
+    /// </summary>
+    /// <remarks>
+    /// The bearer is the whole point of the pairing. This used to return bare effects, and the
+    /// only entity id left on one is <see cref="ActiveEffect.SourceEntityId"/> — the caster. So
+    /// the expiry system narrated to the caster, and every debuff a player landed on a mob ended
+    /// with the player being told <em>their</em> effect had faded. A Warden's Sunder expiring on a
+    /// corpse announced itself to the Warden.
+    /// </remarks>
+    public IReadOnlyList<(Guid EntityId, ActiveEffect Effect)> ExpireEffects(long currentPulse)
     {
-        var expired = new List<ActiveEffect>();
+        var expired = new List<(Guid, ActiveEffect)>();
 
         foreach (var entityId in _activeEffects.Keys.ToList())
         {
@@ -765,7 +781,7 @@ public sealed class WorldState(IRandomSource random)
             foreach (var effect in toRemove)
             {
                 effects.Remove(effect);
-                expired.Add(effect);
+                expired.Add((entityId, effect));
 
                 // The ceiling comes down with the effect, and health clamps under it: 150/150
                 // becomes 100/100, not 150/100. Done here rather than by the expiry system so a

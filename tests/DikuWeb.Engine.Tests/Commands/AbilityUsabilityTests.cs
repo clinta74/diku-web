@@ -132,7 +132,11 @@ public sealed class AbilityUsabilityTests
         var rat = harness.AddMob("rat", West, health: 200, name: "a rat");
 
         harness.Execute(warden, "shield bash rat");
-        harness.Pump(20);
+
+        // Four pulses, not twenty. Shield Bash stuns for sixteen, and the harness expires effects
+        // now that GameLoop does it every pulse - so pumping past the duration and then looking
+        // for the stun asked whether it had ever landed by checking after it was over.
+        harness.Pump(4);
 
         // Shield Bash is a stun, not damage, so the effect on the rat is what landing looks like.
         Assert.NotEmpty(harness.World.GetActiveEffects(rat.Id));

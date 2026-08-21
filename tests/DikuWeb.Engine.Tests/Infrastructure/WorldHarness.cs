@@ -224,6 +224,12 @@ internal sealed class WorldHarness
         {
             Abilities.Tick(World);
             Combat.Tick(World, Clock.CurrentPulse);
+
+            // After combat and every pulse, exactly as GameLoop runs it. Left out, the harness was
+            // a world where effects never ended - so no test could see who an expiry was narrated
+            // to, which is how a Warden came to be told about a debuff on somebody else's corpse.
+            EffectExpirySystem.Tick(World, Clock.CurrentPulse);
+
             // Last in the pulse, matching GameLoop: the countdown announces into a world that has
             // finished being updated.
             Shutdown.Tick(World);

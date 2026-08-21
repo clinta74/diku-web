@@ -191,10 +191,14 @@ public sealed class GameLoop(
         // spell that lands this pulse frees the caster's swings on the same one.
         combatSystem?.Tick(world, pulse);
 
+        // Every pulse, because an effect ending is something a player watches for. On the regen
+        // tick it was announced up to a minute late, by which time the fight it belonged to was
+        // over. The sweep is over a table that is empty whenever nothing is buffed or bleeding.
+        EffectExpirySystem.Tick(world, pulse);
+
         if (GameTiming.RunsOn(pulse, GameTiming.RegenPulses))
         {
             RegenSystem.Tick(world);
-            EffectExpirySystem.Tick(world, pulse);
 
             // On the regen tick rather than every pulse: a dream is due once every five minutes,
             // so checking sixty times as often would be sixty times the work to find the same

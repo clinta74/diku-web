@@ -365,7 +365,10 @@ public sealed class BuffDebuffIntegrationTests
 
         var expired = harness.World.World.ExpireEffects(currentPulse + 50);
         Assert.Single(expired);
-        Assert.Equal("buff.damage-up", expired[0].EffectKey);
+        Assert.Equal("buff.damage-up", expired[0].Effect.EffectKey);
+
+        // The bearer travels with it, which is what lets the expiry system tell the right person.
+        Assert.Equal(character.Id, expired[0].EntityId);
 
         var remaining = harness.World.World.GetActiveEffects(character.Id);
         Assert.Single(remaining);
