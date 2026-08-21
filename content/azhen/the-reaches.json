@@ -420,7 +420,7 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMin": 5,
+        "damageMin": 6,
         "damageMax": 9,
         "bonus": 4
       },
@@ -446,7 +446,7 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMin": 4,
+        "damageMin": 5,
         "damageMax": 9,
         "bonus": 3
       },

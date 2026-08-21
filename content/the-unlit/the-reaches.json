@@ -230,7 +230,7 @@
       ],
       "isTwoHanded": false,
       "weight": 2400,
-      "baseValue": 0,
+      "baseValue": 1450,
       "baseStats": {
         "damageMin": 5,
         "damageMax": 11,
@@ -254,7 +254,7 @@
       ],
       "isTwoHanded": false,
       "weight": 3000,
-      "baseValue": 0,
+      "baseValue": 1400,
       "baseStats": {
         "damageMin": 7,
         "damageMax": 14,
@@ -278,7 +278,7 @@
       ],
       "isTwoHanded": true,
       "weight": 6400,
-      "baseValue": 0,
+      "baseValue": 1500,
       "baseStats": {
         "damageMin": 9,
         "damageMax": 18
@@ -384,7 +384,7 @@
       "baseValue": 0,
       "baseStats": {
         "damageMin": 8,
-        "damageMax": 16,
+        "damageMax": 17,
         "bonus": 7
       },
       "attackDelayPulses": 8,
@@ -409,8 +409,8 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMin": 7,
-        "damageMax": 14,
+        "damageMin": 9,
+        "damageMax": 15,
         "bonus": 6
       },
       "attackDelayPulses": 8,
@@ -468,7 +468,12 @@
       "baseXp": 140,
       "baseGold": 21,
       "behavior": {},
-      "loot": [],
+      "loot": [
+        {
+          "itemTemplateKey": "unlit-standing-hammer",
+          "chance": 0.12
+        }
+      ],
       "attacks": []
     },
     {
@@ -491,6 +496,10 @@
         {
           "itemTemplateKey": "unlit-carried-thing",
           "chance": 0.55
+        },
+        {
+          "itemTemplateKey": "unlit-binding-spike",
+          "chance": 0.12
         }
       ],
       "attacks": [
@@ -532,6 +541,10 @@
         {
           "itemTemplateKey": "unlit-carried-thing",
           "chance": 0.35
+        },
+        {
+          "itemTemplateKey": "unlit-long-blade",
+          "chance": 0.12
         }
       ],
       "attacks": [

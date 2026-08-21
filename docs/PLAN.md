@@ -943,17 +943,26 @@ that declares no damage does nothing"*, which was false, and was how all 35 were
   by anyone and speed is all that separates them: bigger numbers less often, or smaller more often,
   for the same output. Every realm sells a 6, an 8 and a 10.
 - **The 20 epic weapons are ranked by Path** — Temper, Warden, Hallow, Adept, with the casters close
-  together because melee is their backup and focus abilities are their output. Shares of the tier mean
-  are 1.15 / 1.05 / 0.94 / 0.86, which average to 1.0, so **each tier's total is unchanged**: this
-  redistributed power rather than inflating it. Whether the whole curve is right needs play.
+  together because melee is their backup and focus abilities are their output. The first pass held
+  each tier's total unchanged and only redistributed it, which is what left the bottom of the ranking
+  below the open market.
+- **An epic reward beats anything obtainable when it lands, by 10%.** Play answered the question the
+  redistribution left open. `epic-hallow-1` and `epic-adept-1` sat at 1.50 dps against a level-1 shop
+  blade's 1.67, so a five-quest chain finishing at level 8 was a downgrade from Gatetown; `epic-adept-2`
+  tied the grask line exactly. The bar is **derived from content, not tabulated** — reachable through a
+  shopkeeper's `sells`, a mob's loot, or an item spawner, at the `minLevel` of the shallowest zone its
+  source stands in — so moving a shopkeeper moves the bar. The Adept line is the floor the ranking
+  pushes up from, and it now runs 2.00 / 2.50 / 3.50 / 4.50 / 6.00, clearing its bar by 11–20%.
+  **This one does inflate**, deliberately: eleven weapons went up and none came down.
 - **Tuned per weapon, not per hand.** Dual wielding is a passive both martial Paths get, so it drops
   out of the comparison and a weapon's printed numbers mean what they say whatever is in the other
   hand. The Temper therefore leads on total output, being fastest *and* dual-wielding earliest — which
   is the Path's stated identity, now visible instead of accidental.
-- **Epic tier 1 cannot express the ranking**, and it is excluded by name in the test. At an average of
-  three damage the Hallow/Adept gap rounds away and both land on 2–4. Integer dice have a floor on how
-  fine a distinction they can carry — the same limit that made the multiplier lumpy, but now at least
-  legible in the authored numbers.
+- **Epic tier 1 expresses the ranking now, and it did not before.** At an average of three damage the
+  Hallow/Adept gap rounded away and both landed on 2–4, so the tier was excluded from the ranking test
+  by name. Lifting the tier to clear the shop bar moved every weapon in it far enough apart for integer
+  dice to hold the order — 2.67 / 2.40 / 2.25 / 2.00 — and the exclusion is gone. The floor on how fine
+  a distinction dice can carry is still real; the tier is simply no longer under it.
 - `EquipmentResolver.KnownStatKeys` names the six keys the engine reads, and `BundleValidator` errors
   on any `baseStats` key outside it. That is the third arm of the content-key guard and the reason the
   multiplier cannot drift back in.

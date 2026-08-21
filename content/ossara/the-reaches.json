@@ -142,8 +142,8 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMin": 3,
-        "damageMax": 6,
+        "damageMin": 4,
+        "damageMax": 8,
         "bonus": 2
       },
       "attackDelayPulses": 10,
@@ -168,8 +168,8 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMin": 2,
-        "damageMax": 4,
+        "damageMin": 4,
+        "damageMax": 5,
         "bonus": 2
       },
       "attackDelayPulses": 8,
@@ -195,7 +195,7 @@
       "baseValue": 0,
       "baseStats": {
         "damageMin": 2,
-        "damageMax": 4,
+        "damageMax": 6,
         "bonus": 1
       },
       "attackDelayPulses": 8,
@@ -221,8 +221,8 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMin": 2,
-        "damageMax": 4,
+        "damageMin": 3,
+        "damageMax": 5,
         "bonus": 1
       },
       "attackDelayPulses": 6,
