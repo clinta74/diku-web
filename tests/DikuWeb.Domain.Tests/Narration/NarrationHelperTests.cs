@@ -166,4 +166,117 @@ public sealed class NarrationHelperTests
         Assert.Equal("a rat", NarrationHelper.WithArticle("rat"));
         Assert.Equal("the rat", NarrationHelper.WithDefiniteArticle("rat"));
     }
+
+    // -----------------------------------------------------------------------
+    // Names that are already whole
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// A name that heads itself takes no article.
+    /// </summary>
+    /// <remarks>
+    /// <b>Reported from a combat log, where it appeared about forty times in one fight.</b> The
+    /// Reaches names its unquiet dead "one of the owed", "one of the long held", "someone who has
+    /// been waiting" — noun phrases with a pronoun at the head. Prefixing an article gave
+    /// <em>"an one of the owed"</em>: once per swing, once per miss, and again when it fell.
+    /// </remarks>
+    [Theory]
+    [InlineData("one of the owed")]
+    [InlineData("one of the left behind")]
+    [InlineData("one of the long held")]
+    [InlineData("one of the recognised")]
+    [InlineData("one of the untold")]
+    [InlineData("someone who has been waiting")]
+    [InlineData("somebody's keepsake")]
+    [InlineData("something carried in")]
+    public void A_name_that_heads_itself_takes_no_article(string name)
+    {
+        Assert.Equal(name, NarrationHelper.WithArticle(name));
+    }
+
+    /// <summary>
+    /// And the definite form keeps every word, rather than swapping the first one out.
+    /// </summary>
+    /// <remarks>
+    /// This is why the two predicates are separate. An article can be replaced — "a rat" drops its
+    /// first word to become "the rat" — and a pronoun cannot: the same move on "one of the owed"
+    /// leaves "the of the owed".
+    /// </remarks>
+    [Fact]
+    public void A_pronoun_led_name_keeps_all_of_its_words()
+    {
+        Assert.Equal("one of the owed", NarrationHelper.WithDefiniteArticle("one of the owed"));
+        Assert.Equal("One of the owed", NarrationHelper.WithDefiniteArticle("one of the owed", capitalize: true));
+    }
+
+    /// <summary>Capitalised for the start of a sentence, which is where it is usually read.</summary>
+    [Fact]
+    public void A_whole_name_still_capitalizes_when_it_opens_a_sentence()
+    {
+        Assert.Equal("One of the owed", NarrationHelper.WithArticle("one of the owed", capitalize: true));
+        Assert.Equal(
+            "One of the owed falls.",
+            NarrationHelper.BuildSentence("one of the owed", "falls"));
+    }
+
+    /// <summary>
+    /// The pronouns are matched as whole words, so a name that merely begins with those letters
+    /// is still an ordinary noun.
+    /// </summary>
+    [Theory]
+    [InlineData("oneiric mask", "an oneiric mask")]
+    [InlineData("somatic charm", "a somatic charm")]
+    public void A_word_that_only_starts_like_a_pronoun_is_not_one(string name, string expected)
+    {
+        Assert.Equal(expected, NarrationHelper.WithArticle(name));
+    }
+
+    /// <summary>
+    /// The article follows the sound, not the spelling.
+    /// </summary>
+    /// <remarks>
+    /// English keeps these in a short list and both directions occur: a leading "u" that says
+    /// "you" takes "a", and a silent "h" takes "an". The one that turned up in play was "one" —
+    /// a vowel on the page and a consonant in the mouth — which is how a bare "one" would have
+    /// gone on reading "an one" even after pronoun-led phrases stopped taking an article at all.
+    /// </remarks>
+    [Theory]
+    [InlineData("one", "a one")]
+    [InlineData("one-eyed dog", "a one-eyed dog")]
+    [InlineData("unicorn horn", "a unicorn horn")]
+    [InlineData("used blade", "a used blade")]
+    [InlineData("hour candle", "an hour candle")]
+    [InlineData("honest mistake", "an honest mistake")]
+    [InlineData("orc", "an orc")]
+    [InlineData("hammer", "a hammer")]
+    // "oneiric" opens with the same three letters as "one" and is said "oh-", which is why the
+    // consonant-sounding list holds whole words where it can and stems only where every word
+    // built on them sounds alike.
+    [InlineData("oneiric mask", "an oneiric mask")]
+    [InlineData("unclaimed thing", "an unclaimed thing")]
+    public void The_article_follows_the_sound(string name, string expected)
+    {
+        Assert.Equal(expected, NarrationHelper.WithArticle(name));
+    }
+
+    /// <summary>
+    /// A plural is authored with a phrase that carries its own article, rather than detected.
+    /// </summary>
+    /// <remarks>
+    /// No string can tell a plural from "harness" or "grass", so the epic wraps are named "a pair
+    /// of quiet wraps" — which the article check already handles, and which is what somebody would
+    /// say out loud anyway. They were "unproven quiet wraps" for exactly one commit, and read as
+    /// "an unproven quiet wraps".
+    /// </remarks>
+    [Fact]
+    public void A_plural_named_as_a_pair_reads_correctly()
+    {
+        Assert.Equal(
+            "a pair of unproven quiet wraps",
+            NarrationHelper.WithArticle("a pair of unproven quiet wraps"));
+
+        Assert.Equal(
+            "the pair of unproven quiet wraps",
+            NarrationHelper.WithDefiniteArticle("a pair of unproven quiet wraps"));
+    }
 }
