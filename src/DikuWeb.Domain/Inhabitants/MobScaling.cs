@@ -78,10 +78,23 @@ public sealed record MobScaling(decimal Health, decimal Damage, int Level)
     /// twice. <c>damageMultiplier</c> in particular is applied again by <see cref="DamageCalculator"/>
     /// after this, to whichever dice are in play.
     ///
-    /// Defence scales on the health side and to-hit on the damage side, because that is what those
-    /// numbers are for — a higher-level mob is harder to hit as well as tougher, which is exactly
-    /// what the level-derived fallbacks (<c>level/2</c>, <c>level/3</c>, <c>level/4</c>) already
-    /// say.
+    /// <b>Defence is not scaled, and armour is.</b> They look like the same kind of number and are
+    /// not. Armour feeds <see cref="Combat.ArmorCurve"/>, a fraction with a cap — a rating four
+    /// times larger absorbs more and can never absorb everything, so scaling it is safe at any
+    /// dial. Defence feeds a d20 comparison, and twenty faces is the entire budget: multiply an
+    /// authored defence by a world dial and the gap between it and a player's attack rating leaves
+    /// the range the die can express.
+    ///
+    /// <b>This scaled once, and the Unlit is what it did.</b> That world sits at
+    /// <c>strength 4.7</c>, which turned four mobs authored 2 / 3 / 4 / 6 apart into 10 / 14 / 20 /
+    /// 30 apart — a four-point spread stretched across the whole die. At the top of it a fully
+    /// equipped level 48 needed a natural 20 to land a blow, in the zone written for level 48.
+    /// Toughness still scales; being <em>unhittable</em> is not toughness.
+    ///
+    /// What is left is what <see cref="Combat.DamageCalculator"/> says should decide: both sides
+    /// carry <c>level/2</c> so it cancels, and gear, attributes and the level difference settle it
+    /// — all small enough for twenty faces to express. A zone wanting evasive mobs authors a
+    /// higher defence, which now moves the needed roll one face per point.
     /// </remarks>
     public Dictionary<string, object> ResolveStats(IReadOnlyDictionary<string, object>? baseStats)
     {
@@ -111,9 +124,10 @@ public sealed record MobScaling(decimal Health, decimal Damage, int Level)
 
     /// <summary>
     /// How tough it is. <c>armor</c> is a rating rather than a ratio, so it scales; the fraction it
-    /// becomes is <see cref="Combat.ArmorCurve"/>'s business and is never stored.
+    /// becomes is <see cref="Combat.ArmorCurve"/>'s business and is never stored. <c>defense</c>
+    /// used to be here and is not — see the remarks on <see cref="ResolveStats"/>.
     /// </summary>
-    private static readonly string[] HealthScaled = ["health", "defense", "armor"];
+    private static readonly string[] HealthScaled = ["health", "armor"];
 
     /// <summary>How hard it hits. <c>damageMultiplier</c> is deliberately absent — it is a ratio.</summary>
     private static readonly string[] DamageScaled = ["attackRating", "baseDamage", "damageMin", "damageMax"];

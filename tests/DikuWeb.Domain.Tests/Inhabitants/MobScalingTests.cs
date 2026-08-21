@@ -97,18 +97,58 @@ public sealed class MobScalingTests
         var resolved = Zone(health: 3m).ResolveStats(new Dictionary<string, object>
         {
             ["health"] = 40,
-            ["defense"] = 6,
             ["armor"] = 2,
             ["damageMin"] = 5,
             ["attackRating"] = 8,
         });
 
         Assert.Equal(120, Read(resolved, "health"));
-        Assert.Equal(18, Read(resolved, "defense"));
         Assert.Equal(6, Read(resolved, "armor"));
 
         Assert.Equal(5, Read(resolved, "damageMin"));
         Assert.Equal(8, Read(resolved, "attackRating"));
+    }
+
+    /// <summary>
+    /// <b>Defence is never scaled, by any dial.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Armour and defence look like the same kind of number and are not. Armour feeds a curve with
+    /// a cap, so a rating four times larger absorbs more and never absorbs everything. Defence
+    /// feeds a d20 comparison, where twenty faces is the whole budget — so a dial applied to it
+    /// pushes the gap between mob defence and player attack rating outside what the die can say,
+    /// and the roll stops being consulted.
+    /// </para>
+    /// <para>
+    /// It did scale, and the Unlit is what that produced: <c>strength 4.7</c> turned four mobs
+    /// authored 2 / 3 / 4 / 6 apart into 10 / 14 / 20 / 30 apart, and a fully equipped level 48
+    /// needed a natural 20 to land a blow in the zone written for level 48.
+    /// </para>
+    /// </remarks>
+    [Theory]
+    [InlineData(4.7)]
+    [InlineData(3.0)]
+    [InlineData(0.5)]
+    public void Defence_is_never_scaled(double dial)
+    {
+        var factor = (decimal)dial;
+
+        foreach (var scaling in new[]
+        {
+            Zone(strength: factor),
+            Zone(health: factor),
+            Zone(damage: factor),
+        })
+        {
+            var resolved = scaling.ResolveStats(new Dictionary<string, object>
+            {
+                ["health"] = 40,
+                ["defense"] = 6,
+            });
+
+            Assert.Equal(6, Read(resolved, "defense"));
+        }
     }
 
     [Fact]
@@ -141,10 +181,16 @@ public sealed class MobScalingTests
         {
             ["health"] = 40,
             ["damageMin"] = 5,
+            ["armor"] = 10,
+            ["defense"] = 6,
         });
 
         Assert.Equal(80, Read(resolved, "health"));
         Assert.Equal(10, Read(resolved, "damageMin"));
+
+        // Tougher and harder-hitting, and no harder to hit.
+        Assert.Equal(20, Read(resolved, "armor"));
+        Assert.Equal(6, Read(resolved, "defense"));
     }
 
     [Fact]
