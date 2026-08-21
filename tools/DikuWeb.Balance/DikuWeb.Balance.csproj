@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>DikuWeb.Balance</RootNamespace>
+    <!--
+      The bundle reader round-trips a Dictionary<string, object> stat bag, which the source
+      generator cannot describe. Every other tool that reads a bundle sets this for the same
+      reason - see tools/check-bundle.cs.
+    -->
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+  </PropertyGroup>
+
+  <!--
+    Server, for the bundle reader alone.
+
+    The alternative was parsing content/*.json here, and that is the drift this repo has already
+    paid for twice: a second reader is a second opinion about what an authored file means, and the
+    one that is wrong is always the one nobody runs. BundleFormat carries the Persistence
+    converters, so a bag of stats deserialises here exactly as it does on its way into the
+    database - which is the whole point of measuring against authored content rather than against
+    numbers retyped into a spreadsheet.
+
+    Everything else - the combat maths, the vital curves, the ability executors - comes from
+    Domain, and is the *same code the server runs*. A harness that reimplemented the damage formula
+    would be measuring the harness.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DikuWeb.Server\DikuWeb.Server.csproj" />
+  </ItemGroup>
+
+</Project>

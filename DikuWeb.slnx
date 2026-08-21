@@ -12,6 +12,7 @@
     <Project Path="tests/DikuWeb.Server.Tests/DikuWeb.Server.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/DikuWeb.Balance/DikuWeb.Balance.csproj" />
     <Project Path="tools/DikuWeb.Playtest/DikuWeb.Playtest.csproj" />
     <Project Path="tools/DikuWeb.Playtest.Tests/DikuWeb.Playtest.Tests.csproj" />
   </Folder>
