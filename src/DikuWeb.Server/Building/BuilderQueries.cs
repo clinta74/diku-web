@@ -3,6 +3,7 @@ using DikuWeb.Domain.Abilities.Effects;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
+using DikuWeb.Domain.Spawning;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Engine;
 using DikuWeb.Persistence;
@@ -422,6 +423,148 @@ public sealed class BuilderQueries(DikuWebDbContext db)
         }
 
         return levels;
+    }
+
+    /// <summary>
+    /// Everywhere one template shows up in the authored world (PLAN.md §7.9): the spawners that
+    /// place it and the rooms they place it into, and — for an item — the mobs that drop it, the
+    /// shopkeepers that sell it, and the quests that hand it over or ask for it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>A read rather than a new relationship.</b> Nothing here is stored: a spawner names a
+    /// template, a loot row names an item, a quest names a reward. Each of those is visible from
+    /// the side that does the naming and invisible from the side being named, which is the whole
+    /// reason a template's own editor cannot answer "where does this exist" and this can.
+    /// </para>
+    /// <para>
+    /// Batched into a fixed number of round trips rather than one per spawner or per mob. The two
+    /// full-table reads — mob templates for their loot and stock — are the price of those living
+    /// in jsonb, which is not a shape a <c>WHERE</c> can ask about, and it is the same read
+    /// <c>/reachability</c> already makes for the same reason.
+    /// </para>
+    /// </remarks>
+    /// <returns>Null when no template of that kind has this key, which the endpoint reports as 404.</returns>
+    public async Task<TemplatePlacement?> PlacementAsync(
+        TemplateKind kind,
+        string templateKey,
+        CancellationToken cancellationToken)
+    {
+        var exists = kind == TemplateKind.Mob
+            ? await db.MobTemplates.AsNoTracking()
+                .AnyAsync(t => t.Key == templateKey, cancellationToken)
+            : await db.ItemTemplates.AsNoTracking()
+                .AnyAsync(t => t.Key == templateKey, cancellationToken);
+
+        if (!exists)
+        {
+            return null;
+        }
+
+        var spawners = await db.Spawners.AsNoTracking()
+            .Where(s => s.TemplateKind == kind && s.TemplateKey == templateKey)
+            .OrderBy(s => s.ZoneKey).ThenBy(s => s.Id)
+            .ToListAsync(cancellationToken);
+
+        var placed = new List<PlacementSpawner>(spawners.Count);
+
+        if (spawners.Count > 0)
+        {
+            var zoneKeys = spawners.Select(s => s.ZoneKey).Distinct().ToList();
+            var zoneNames = await db.Zones.AsNoTracking()
+                .Where(z => zoneKeys.Contains(z.Key))
+                .ToDictionaryAsync(z => z.Key, z => z.Name, cancellationToken);
+
+            // A spawner stores its rooms as strings, so a key that no longer parses - or no longer
+            // resolves - has to survive as far as the response rather than being filtered out here.
+            // "Placed in a room that is gone" is the finding, and dropping the row hides it.
+            var parsed = new Dictionary<string, RoomKey>(StringComparer.Ordinal);
+            foreach (var raw in spawners.SelectMany(s => s.RoomKeys).Distinct(StringComparer.Ordinal))
+            {
+                if (RoomKey.TryParse(raw, out var key))
+                {
+                    parsed[raw] = key;
+                }
+            }
+
+            var candidates = parsed.Values.ToList();
+            var titles = candidates.Count == 0
+                ? []
+                : await db.Rooms.AsNoTracking()
+                    .Where(r => candidates.Contains(r.Key))
+                    .ToDictionaryAsync(r => r.Key, r => r.Title, cancellationToken);
+
+            var levels = await FightingLevelsAsync(spawners, cancellationToken);
+
+            placed.AddRange(spawners.Select(s => new PlacementSpawner(
+                s.Id,
+                s.ZoneKey,
+                zoneNames.GetValueOrDefault(s.ZoneKey, string.Empty),
+                s.TargetCount,
+                s.RespawnSeconds,
+                levels.GetValueOrDefault(s.Id),
+                [.. s.RoomKeys.Select(raw => new PlacementRoom(
+                    raw,
+                    parsed.TryGetValue(raw, out var key) && titles.TryGetValue(key, out var title)
+                        ? title
+                        : null))])));
+        }
+
+        if (kind == TemplateKind.Mob)
+        {
+            return new TemplatePlacement(templateKey, "mob", placed, [], [], []);
+        }
+
+        var mobs = await db.MobTemplates.AsNoTracking().ToListAsync(cancellationToken);
+
+        var spawnedMobs = (await db.Spawners.AsNoTracking()
+                .Where(s => s.TemplateKind == TemplateKind.Mob)
+                .Select(s => s.TemplateKey)
+                .Distinct()
+                .ToListAsync(cancellationToken))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var droppedBy = mobs
+            .Select(m => (Mob: m, Chance: LootTable.DropChance(m.Loot, templateKey)))
+            .Where(x => x.Chance is not null)
+            .OrderByDescending(x => x.Chance)
+            .ThenBy(x => x.Mob.Key, StringComparer.Ordinal)
+            .Select(x => new PlacementMob(
+                x.Mob.Key, x.Mob.Name, spawnedMobs.Contains(x.Mob.Key), x.Chance))
+            .ToList();
+
+        // Through the engine's own reader, not a second one: `sells` is a jsonb list, and the
+        // shop command resolves it through JsonBag for the same round-trip reasons LootTable
+        // exists for.
+        var soldBy = mobs
+            .Where(m => DikuWeb.Engine.Inhabitants.MobBehavior.SellsOf(m.Behavior)
+                .Any(sold => string.Equals(sold, templateKey, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(m => m.Key, StringComparer.Ordinal)
+            .Select(m => new PlacementMob(m.Key, m.Name, spawnedMobs.Contains(m.Key)))
+            .ToList();
+
+        var quests = await db.Quests.AsNoTracking()
+            .Where(q => q.RewardItemKey == templateKey || q.RequiredItemKey == templateKey)
+            .OrderBy(q => q.SortOrder).ThenBy(q => q.Key)
+            .ToListAsync(cancellationToken);
+
+        // A quest can both ask for a thing and hand it back, so this is two rows rather than one
+        // with a compound role - "required" and "reward" are different facts about the same key.
+        var questRows = new List<PlacementQuest>();
+        foreach (var quest in quests)
+        {
+            if (string.Equals(quest.RewardItemKey, templateKey, StringComparison.OrdinalIgnoreCase))
+            {
+                questRows.Add(new PlacementQuest(quest.Key, quest.Name, quest.ZoneKey, "reward"));
+            }
+
+            if (string.Equals(quest.RequiredItemKey, templateKey, StringComparison.OrdinalIgnoreCase))
+            {
+                questRows.Add(new PlacementQuest(quest.Key, quest.Name, quest.ZoneKey, "required"));
+            }
+        }
+
+        return new TemplatePlacement(templateKey, "item", placed, droppedBy, soldBy, questRows);
     }
 
     public async Task<IReadOnlyList<QuestResponse>> QuestsAsync(CancellationToken cancellationToken)

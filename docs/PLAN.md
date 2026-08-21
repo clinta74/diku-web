@@ -2301,6 +2301,7 @@ API client, and types with the game.
 | **Spawners** | Template, target rooms, count, respawn seconds. |
 | **Quests** | Giver mob, turn-in mob, required item and count, rewards, prerequisites, and the four dialogue strings (§4.9). Reachability warnings shown inline. |
 | **Storyline graph** | The chain as an indented list — depth is what a builder needs to see, and indentation *is* "how far in is this". Flags cycles, unreachable quests, and prerequisites naming a quest that does not exist. |
+| **Placement rail** | Beside a mob or item: the spawners that place it and the rooms they fill, and for an item the mobs that drop it, the shopkeepers that stock it, and the quests that hand it over (§7.9). Read-only, and the rooms are links. |
 
 Placing a one-off object in a room is just a spawner with `target_count: 1` — the builder offers
 it as *Place item here* rather than making you think about spawners.
@@ -2345,6 +2346,12 @@ GET  /api/builder/room-flags                 -- the flag registry: key, default,
 
 GET  /api/builder/quests/{key}/reachability  -- can the required item actually be obtained?
 GET  /api/builder/storyline?zone={key}       -- quest graph: chain order, cycles, dead ends
+
+GET  /api/builder/mob-templates/{key}/placement   -- the spawners that place it, and their rooms
+GET  /api/builder/item-templates/{key}/placement  -- the same, plus what drops, sells, and
+                                                  -- rewards it (§7.9). Two routes rather than
+                                                  -- one with a kind: mob and item keys are
+                                                  -- different namespaces and do collide
 
 POST /api/builder/rooms/{key}/dig         -- create + link a neighbouring room (§7.6)
      { direction, reciprocal: true, zoneKey?: string, newRoomKey?: string }
@@ -2586,6 +2593,56 @@ the two cannot disagree — and the live effects each action pushes into the loo
 (`AdminLiveEffects`) for the same reason. Its tab is hidden from non-admins, its route redirects
 them, and the API refuses them: the first two are presentation, and only the third is the
 boundary.
+
+### 7.9 Where a template lives
+
+A template is authored in isolation and never *exists* in isolation, and **every relationship
+that places one is stored on the other side of itself**. A spawner names its template; a loot row
+names its item; a quest names its reward; a shopkeeper's `sells` names its stock. All four are
+plain to read from the thing doing the naming and structurally invisible from the thing being
+named — so the question a builder actually has about the mob in front of them, *where is this and
+will anyone ever meet it*, was the one question its own editor could not answer. Before this the
+way to find out was to open the World tab and check rooms one at a time.
+
+So the Mobs and Items tabs get a third column, the way the Quests tab has one for the chain
+(§7.1) — same reasoning, same shape, same rail:
+
+```
+Where it lives                    Where it comes from
+                                    Dropped by
+  Spawners                            a brute · 25%
+    Millbrook · 2× · respawn 60s      a ghost · always · no spawner places it
+      The Rat Burrow                Sold by
+      A Wet Ditch                     a trader
+    The Deep Warren · 1× · ...      Quests
+      aldenmoor.warren.pit            The Lost Ledger · reward
+        · no such room
+```
+
+**The rooms are links.** What a builder does after finding out where a mob spawns is go and look
+at it, and a rail that names a room without offering to open it makes them retype the key.
+
+**Two routes, not one with a kind.** `GET /api/builder/mob-templates/{key}/placement` and
+`GET /api/builder/item-templates/{key}/placement`. Mob and item keys are different namespaces that
+routinely collide — `torch` is a plausible member of both — and the path already says which one is
+being asked about.
+
+**An item reports four sources, a mob reports one**, and that asymmetry is the feature rather than
+an inconsistency to tidy away. An item's own ground spawner is the *rarest* of the ways one reaches
+a player: most drop, some are sold, some are only ever handed over at a turn-in. An item panel that
+listed spawners alone would answer "nowhere" for nearly everything in the game and be wrong every
+time.
+
+**Three states, told apart.** Placed; placed somewhere that no longer exists (§7.4 allows a spawner
+to point at a deleted room, and it is a finding rather than a row to hide); and placed nowhere at
+all, which is a mob nobody will ever meet and looks identical to a finished one from inside the
+editor. The same reading covers loot: a drop from a mob no spawner places is loot nobody can reach,
+which is the finding `/reachability` already reports for a quest item, said here for every item.
+
+The loot bag is read through one reader (`LootTable`) shared with `/reachability`, for the reason
+§12's first lesson gives — the table round-trips through jsonb, so a chance arrives as a number, a
+string, or a `JsonElement`, and two readers of one shape is how they come to disagree about whether
+something drops.
 
 ---
 

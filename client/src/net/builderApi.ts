@@ -108,6 +108,60 @@ export interface ZoneRespawn {
   spawned: number
 }
 
+/**
+ * One room a spawner fills. A null `title` means the key names no room — allowed (PLAN.md §7.4)
+ * and worth seeing, since it is the difference between "placed here" and "placed nowhere".
+ */
+export interface PlacementRoom {
+  key: string
+  title: string | null
+}
+
+export interface PlacementSpawner {
+  id: string
+  zoneKey: string
+  zoneName: string
+  targetCount: number
+  respawnSeconds: number
+  /** What mobs from this spawner actually fight at (§4.7); 0 for an item spawner. */
+  fightsAtLevel: number
+  rooms: PlacementRoom[]
+}
+
+/** A mob an item comes from: its loot table, or its shop stock. */
+export interface PlacementMob {
+  key: string
+  name: string
+  /** Whether any spawner places this mob. Loot on a mob nobody places is loot nobody can reach. */
+  placed: boolean
+  /** The loot roll, or null when this is a shop line rather than a drop. */
+  chance: number | null
+}
+
+/** A quest that hands out this item, or asks for it. */
+export interface PlacementQuest {
+  key: string
+  name: string
+  zoneKey: string
+  role: 'reward' | 'required'
+}
+
+/**
+ * Everywhere one template shows up in the authored world (PLAN.md §7.9).
+ *
+ * The three item-only lists come back empty for a mob. They exist because most items have no
+ * ground spawner of their own — they drop, they are sold, or they are handed over at a turn-in —
+ * so an item answered by spawners alone would read "nowhere" nearly always.
+ */
+export interface TemplatePlacement {
+  templateKey: string
+  kind: 'mob' | 'item'
+  spawners: PlacementSpawner[]
+  droppedBy: PlacementMob[]
+  soldBy: PlacementMob[]
+  quests: PlacementQuest[]
+}
+
 export interface RoomExit {
   direction: string
   to: string
@@ -722,6 +776,16 @@ export const builderApi = {
   deleteMobTemplate: (key: string) =>
     request<void>(`${base}/mob-templates/${key}`, { method: 'DELETE' }),
 
+  /**
+   * Where this mob actually stands in the world (PLAN.md §7.9): the spawners that place it and
+   * the rooms they place it into.
+   *
+   * A spawner names its template and never the other way round, so this is the one direction the
+   * relationship cannot be read from the template's own record.
+   */
+  mobPlacement: (key: string) =>
+    request<TemplatePlacement>(`${base}/mob-templates/${key}/placement`),
+
   itemTemplates: () => request<ItemTemplate[]>(`${base}/item-templates`),
 
   itemTemplate: (key: string) => request<ItemTemplate>(`${base}/item-templates/${key}`),
@@ -740,6 +804,16 @@ export const builderApi = {
 
   deleteItemTemplate: (key: string) =>
     request<void>(`${base}/item-templates/${key}`, { method: 'DELETE' }),
+
+  /**
+   * Where this item comes from (PLAN.md §7.9): its own spawners and their rooms, the mobs whose
+   * loot drops it, the shopkeepers who stock it, and the quests that hand it over or ask for it.
+   *
+   * @see mobPlacement — same shape, and the three extra lists are why an item needs its own
+   * route rather than sharing one: most items have no ground spawner at all.
+   */
+  itemPlacement: (key: string) =>
+    request<TemplatePlacement>(`${base}/item-templates/${key}/placement`),
 
   spawners: (zoneKey?: string) =>
     request<Spawner[]>(zoneKey ? `${base}/spawners?zone=${zoneKey}` : `${base}/spawners`),

@@ -106,6 +106,25 @@ export function toWorldPath(
   return parts.join('/')
 }
 
+/**
+ * The path for one room, addressed by its composite key alone.
+ *
+ * <b>Because most callers hold a room and nothing else.</b> `toWorldPath` wants all three keys,
+ * which is right when the caller is a tree that already knows where it is and wrong everywhere
+ * else — a spawner, a quest, a placement row all name a room and nothing above it. Splitting the
+ * key at each call site is the duplication this avoids, and the split is not quite obvious: a
+ * room key is `world.zone.room`, so the zone is the first *two* segments and not the second.
+ */
+export function toRoomPath(roomKey: string, section: Section = DEFAULT_SECTION): string {
+  const parts = roomKey.split('.')
+
+  if (parts.length < 3) {
+    return toWorldPath(parts[0] ?? null, parts.length > 1 ? roomKey : null)
+  }
+
+  return toWorldPath(parts[0], `${parts[0]}.${parts[1]}`, roomKey, section)
+}
+
 export function toMobsPath(templateKey?: string | null): string {
   return templateKey ? `/builder/mobs/${templateKey}` : '/builder/mobs'
 }

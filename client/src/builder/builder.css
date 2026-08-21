@@ -631,6 +631,59 @@
   gap: var(--space-2);
 }
 
+/* --- Placement rail (PLAN.md §7.9) --------------------------------- */
+
+/* Deliberately the quest chain's typography rather than the spawner list's boxes. Both rails
+   answer "what is this connected to" and sit in the same column, so a second visual language
+   for the same job would read as a different kind of thing. */
+.placement {
+  font-size: 0.85em;
+}
+
+.placement section + section {
+  margin-top: var(--space-3);
+}
+
+.placement h4 {
+  margin: 0 0 var(--space-1);
+}
+
+.placement-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.placement-list > li {
+  padding: var(--space-1) 0;
+}
+
+.placement-head {
+  font-weight: 600;
+}
+
+/* The rooms hang under the spawner that fills them - the indent is the containment, the same
+   way it is in the chain list. */
+.placement-rooms {
+  list-style: none;
+  margin: var(--space-1) 0 0;
+  padding: 0 0 0 var(--space-3);
+  border-left: 1px solid var(--border);
+  font-weight: 400;
+}
+
+.placement-rooms li {
+  padding: 1px 0;
+}
+
+/* Inline, so the badges that follow a name sit on its line rather than under it. */
+.placement button.link {
+  display: inline;
+  width: auto;
+  text-align: left;
+  padding: 0;
+}
+
 /* --- Quest chain -------------------------------------------------- */
 
 /* Indentation is the graph. Prerequisites are the only storyline mechanism there is (§4.9), so

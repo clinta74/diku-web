@@ -5,6 +5,7 @@ import {
   toItemsPath,
   toMobsPath,
   toQuestsPath,
+  toRoomPath,
   toWorldPath,
   type Section,
   type WorldRouteParams,
@@ -121,6 +122,34 @@ describe('template tab paths', () => {
     // it with IsKeySegment, so `zone.quest` would be refused on create.
     expect(toQuestsPath()).toBe('/builder/quests')
     expect(toQuestsPath('errand-for-mira')).toBe('/builder/quests/errand-for-mira')
+  })
+})
+
+/**
+ * The one-argument form, for callers that hold a room key and nothing above it — a spawner, a
+ * placement row (§7.9). The split is the part worth pinning: a room key is `world.zone.room`, so
+ * the zone is the first *two* segments and a caller doing this by hand tends to take the second.
+ */
+describe('toRoomPath', () => {
+  it('recomposes the world and zone from the room key', () => {
+    expect(toRoomPath('aldenmoor.millbrook.north-gate')).toBe(
+      '/builder/world/aldenmoor/millbrook/north-gate/details',
+    )
+  })
+
+  it('agrees with the three-argument form it delegates to', () => {
+    expect(toRoomPath('aldenmoor.millbrook.north-gate', 'spawners')).toBe(
+      toWorldPath('aldenmoor', 'aldenmoor.millbrook', 'aldenmoor.millbrook.north-gate', 'spawners'),
+    )
+  })
+
+  it('degrades to the deepest thing a short key can address', () => {
+    // Content is routinely wired before the thing it points at exists (§7.4), and a spawner's
+    // room keys are stored as free strings - so a malformed one must route somewhere calm rather
+    // than build a path with an undefined segment in it.
+    expect(toRoomPath('aldenmoor.millbrook')).toBe('/builder/world/aldenmoor/millbrook')
+    expect(toRoomPath('aldenmoor')).toBe('/builder/world/aldenmoor')
+    expect(toRoomPath('')).toBe('/builder/world')
   })
 })
 
