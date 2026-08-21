@@ -91,6 +91,13 @@ public sealed record RoomFlagResponse(string Key, bool Default, string Summary, 
 /// </remarks>
 public sealed record BundleFormatResponse(int FormatVersion);
 
+/// <summary>
+/// What a zone respawn moved (PLAN.md §7.5). Two counts rather than one: a zone that was below
+/// its population target comes back above where it was, and saying so is the difference between
+/// a button that reports what it did and one that reports what it was asked to do.
+/// </summary>
+public sealed record RespawnZoneResponse(string ZoneKey, int Despawned, int Spawned);
+
 /// <summary>An advisory warning. Never blocks a save (PLAN.md §7.4).</summary>
 public sealed record ValidationWarning(string Kind, string EntityKey, string Message);
 

@@ -2349,8 +2349,10 @@ GET  /api/builder/storyline?zone={key}       -- quest graph: chain order, cycles
 POST /api/builder/rooms/{key}/dig         -- create + link a neighbouring room (§7.6)
      { direction, reciprocal: true, zoneKey?: string, newRoomKey?: string }
 
-POST /api/builder/zones/{key}/respawn     -- despawn + respawn, to see multiplier changes now
-                                          -- NOT MAPPED. Designed, never built (§8)
+POST /api/builder/zones/{key}/respawn     -- despawn + refill this zone's mob spawners, to see
+                                          -- multiplier changes now. Persists nothing: mobs live
+                                          -- in memory, so it answers with the two counts it moved
+                                          -- { zoneKey, despawned, spawned }
 GET  /api/builder/zones/{key}/preview     -- resolved stats for every template in this zone
 GET  /api/builder/zones/{key}/validate    -- advisory warnings, never blocking
 GET  /api/builder/zones/{key}/unfinished  -- rooms still flagged unfinished, the build to-do list
@@ -2613,15 +2615,19 @@ nothing — the pattern §12's two rules exist for.
 | **4 — Combat and progression** | You can kill something, loot it, and level up — and the multipliers visibly matter | The combat state machine on per-combatant attack clocks (§2.3), `kill` / `flee` / `consider`, the §4.6 damage model, the §4.11 target gate, death and the XP penalty (§4.12), `bind` and respawn fall-through, XP and levelling, regen and rest, aggression and assist, `EquipmentResolver` in the damage roll |
 | **5 — Depth** | Abilities, quests, shops, parties, travel | Eight abilities per Path to level 20 from one `AbilityCatalogue`, seven effect executors and all three targeting modes, threat accounting behind one `HostileActionGate`, the quest engine with chains, repeats, `abandon` and dormancy, the Quests tab and storyline graph, shops and currency with a per-shopkeeper markup (§4.13), session-scoped parties with an XP split, `tell` / `reply` / channels, `recall` and the `noRecall` reader, and the pack listing (§4.14) |
 
-Three lines from those phases are open rather than closed, and stay here rather than in the
-history:
+Three lines from those phases stayed here rather than going into the history. One of them is now
+closed and is kept in place, because what it says about itself is the point:
 
-- [ ] **Builder: *Respawn zone*** to apply live multiplier edits to mobs already standing. Neither
-      half is built: `POST /api/builder/zones/{key}/respawn` is listed in §7.3 and is not mapped in
-      `BuilderEndpoints`, and no client calls it. Deferred nice-to-have from Phase 3, and the last
-      thing §4.4's *"editing a multiplier affects future spawns only"* leaves a builder unable to
-      see. §12 has listed `/respawn` among the endpoints written and never wired since Phase 3 —
-      it was never written.
+- [x] **Builder: *Respawn zone*** — the last thing §4.4's *"editing a multiplier affects future
+      spawns only"* left a builder unable to see, and open from Phase 3 until it was built. Both
+      halves exist now: `RespawnZone` on the mutation path, `POST /api/builder/zones/{key}/respawn`
+      mapped in `BuilderEndpoints`, and the button on the zone editor's Difficulty section. It
+      takes down what this zone's **mob** spawners placed — wherever those mobs have wandered to,
+      since ownership is the spawner and not the room — and refills every one to its target at
+      once, deliberately bypassing `SpawnerSchedule`: waiting out an hour-long `respawnSeconds`
+      would be the sweep doing its job and the button doing nothing. Hand-placed mobs and item
+      spawners are left alone. It is the only builder write that persists nothing, so it answers
+      with counts rather than a row.
 - [→] **Teleport as a spell** — not built, and not a gap. A destination is a `world.zone.room` like
       any other, so a teleport effect is a parameter rather than a new kind of link: an executor
       reading a room key and calling `Travel`. That seam exists now (§5.3, `recall`) rather than
@@ -2926,7 +2932,8 @@ since, and the UX evaluation, whose eight findings are all marked FIXED in [UX.m
 - **An endpoint with no caller is not a feature, and a checkbox is not evidence.** Reachability,
   the multiplier preview, and world delete were all written, checked off, and never wired to
   anything. `/respawn` is the sharper version and was misfiled here for months as one of them:
-  it was never written at all, and both this list and §7.3 said otherwise. Before checking a box,
+  it was never written at all, and both this list and §7.3 said otherwise — it is built now, and
+  the lesson is what it cost to find that out. Before checking a box,
   name the test or the call site — and grep for the route. The quest editor was
   the same lesson caught a second time and the worst version of it: a `QuestEditor.tsx` checked
   off that was never written, so the plan claimed a whole authoring surface that did not exist for

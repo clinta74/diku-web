@@ -94,6 +94,20 @@ export interface MultiplierPreview {
   templates: MultiplierPreviewRow[]
 }
 
+/**
+ * What a zone respawn moved (PLAN.md §7.5).
+ *
+ * Two counts rather than one: a zone that was below its population target — a spawner still
+ * waiting out its `respawnSeconds` — comes back above where it was, and saying so is the
+ * difference between a button that reports what it did and one that reports what it was asked to
+ * do.
+ */
+export interface ZoneRespawn {
+  zoneKey: string
+  despawned: number
+  spawned: number
+}
+
 export interface RoomExit {
   direction: string
   to: string
@@ -579,6 +593,17 @@ export const builderApi = {
    */
   zonePreview: (zoneKey: string) =>
     request<MultiplierPreview>(`${base}/zones/${zoneKey}/preview`),
+
+  /**
+   * Clears out this zone's mob spawners and fills them again, so a multiplier edit is visible in
+   * the world now rather than at the next respawn (PLAN.md §7.5).
+   *
+   * Multipliers resolve once, at spawn time (§4.4): a saved edit reaches the next spawn and never
+   * the mob already standing in the room. This is the only thing that closes that gap short of a
+   * restart.
+   */
+  respawnZone: (zoneKey: string) =>
+    request<ZoneRespawn>(`${base}/zones/${zoneKey}/respawn`, { method: 'POST' }),
 
   rooms: (zoneKey: string) => request<RoomDetail[]>(`${base}/zones/${zoneKey}/rooms`),
 

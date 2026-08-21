@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Entities;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Quests;
@@ -40,7 +41,8 @@ public sealed class WorldMutationApplier(
     ItemTemplateCache? itemTemplateCache = null,
     SpawnerCache? spawnerCache = null,
     IItemSaveQueue? itemSaveQueue = null,
-    AbilityCache? abilityCache = null)
+    AbilityCache? abilityCache = null,
+    MobSpawner? mobSpawner = null)
 {
     private const string UnfinishedTitle = "An Unfinished Room";
 
@@ -68,6 +70,7 @@ public sealed class WorldMutationApplier(
             SetRoomFlag change => ApplySetFlag(change),
             SetZoneFlag change => ApplySetZoneFlag(change),
             SetWorldFlag change => ApplySetWorldFlag(change),
+            RespawnZone change => ApplyRespawnZone(change),
             UpsertMobTemplate change => ApplyUpsertMobTemplate(change),
             DeleteMobTemplate change => ApplyDeleteMobTemplate(change),
             UpsertItemTemplate change => ApplyUpsertItemTemplate(change),
@@ -286,6 +289,127 @@ public sealed class WorldMutationApplier(
         RefreshZone(change.Key);
 
         return MutationResult.Ok([ToUpsert(zone)]);
+    }
+
+    /// <summary>
+    /// Clears out everything this zone's spawners placed and fills them again, so a multiplier
+    /// edit is visible now rather than at the next respawn (PLAN.md §7.5).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Ownership is the spawner, not the room.</b> A mob is despawned because a spawner in this
+    /// zone is responsible for it, wherever it has wandered to - the same question
+    /// <c>WorldState.MobsFromSpawner</c> asks, and for the same reason: counting by room let a
+    /// wanderer stop counting and get replaced. The corollary is that a neighbour's mob standing
+    /// in this zone is left alone, because it carries a neighbour's dials and this button is about
+    /// these ones.
+    /// </para>
+    /// <para>
+    /// <b>Refilled to target immediately</b>, deliberately bypassing <c>SpawnerSchedule</c>. The
+    /// whole point is to see the numbers now; waiting out an hour-long <c>respawnSeconds</c> would
+    /// be the sweep doing its job and the button doing nothing. The sweep is left consistent by
+    /// arithmetic rather than by being told - it counts heads, finds no deficit, and clears the
+    /// timer on its next pass.
+    /// </para>
+    /// <para>
+    /// Item spawners are not touched. §7.5 says this applies to living mobs, and an item on the
+    /// floor may be one somebody is about to pick up.
+    /// </para>
+    /// </remarks>
+    private MutationResult ApplyRespawnZone(RespawnZone change)
+    {
+        var zone = world.FindZone(change.Key);
+        if (zone is null)
+        {
+            return MutationResult.Fail(MutationError.NotFound, $"No zone '{change.Key}'.");
+        }
+
+        var owningWorld = world.FindWorld(zone.WorldKey);
+        if (owningWorld is null)
+        {
+            return MutationResult.Fail(
+                MutationError.NotFound, $"Zone '{change.Key}' has no world '{zone.WorldKey}'.");
+        }
+
+        // Refused rather than half-done. Everything else in this class degrades when a cache is
+        // absent, because the edit itself still lands; here the caches *are* the operation, and a
+        // respawn that despawned a zone and then found it had nothing to refill from would be the
+        // most expensive possible way to fail quietly.
+        if (mobSpawner is null || spawnerCache is not { IsLoaded: true }
+            || mobTemplateCache is not { IsLoaded: true })
+        {
+            return MutationResult.Fail(
+                MutationError.Invalid,
+                "Respawning needs the spawner and mob template caches, which this server has not loaded.");
+        }
+
+        var owned = spawnerCache.All
+            .Where(s => s.TemplateKind == TemplateKind.Mob
+                && string.Equals(s.ZoneKey, change.Key, StringComparison.Ordinal))
+            .ToList();
+
+        var ids = owned.Select(s => s.Id).ToHashSet();
+        var touched = new HashSet<RoomKey>();
+        var despawned = 0;
+
+        foreach (var mob in world.AllMobs.Where(m => m.SpawnerId is { } id && ids.Contains(id)).ToList())
+        {
+            var standing = RoomKey.Parse(mob.RoomKey);
+
+            // Out of the fight before out of the world, exactly as the `despawn` verb does: a
+            // combatant that vanishes from one and not the other leaves whoever was swinging at
+            // it stuck in a fight with nothing to hit.
+            world.FindCombat(standing)?.RemoveCombatant(EntityId.ForMob(mob.Id));
+            world.RemoveMob(mob);
+
+            touched.Add(standing);
+            despawned++;
+        }
+
+        var spawned = 0;
+
+        foreach (var spawner in owned)
+        {
+            // A spawner pointing at a template a builder deleted is skipped, not refused - the
+            // same judgement the sweep makes, and the rest of the zone should still come back.
+            if (mobTemplateCache.Get(spawner.TemplateKey) is not { } template)
+            {
+                continue;
+            }
+
+            var rooms = spawner.RoomKeys.Select(RoomKey.Parse).ToList();
+            if (rooms.Count == 0)
+            {
+                continue;
+            }
+
+            var wanders = spawner.Wanders ?? MobBehavior.Wanders(template.Behavior);
+
+            for (var i = 0; i < spawner.TargetCount; i++)
+            {
+                var room = rooms[Random.Shared.Next(rooms.Count)];
+                world.AddMob(mobSpawner.Spawn(
+                    template, zone, owningWorld, room, wanders, spawner.Id, spawner.FightsAtLevel));
+
+                touched.Add(room);
+                spawned++;
+            }
+        }
+
+        // One line and one redraw per room, however many mobs moved through it. The per-mob
+        // "appears." the sweep sends is right for a rat arriving; a zone coming back at once
+        // would be a wall of it.
+        foreach (var room in touched)
+        {
+            foreach (var occupant in world.OccupantsOf(room))
+            {
+                occupant.SendText("The air ripples, and the world here is made anew.", "arrival");
+            }
+
+            view.RefreshRoom(world, room);
+        }
+
+        return MutationResult.Ok(new RespawnTally(despawned, spawned));
     }
 
     // -----------------------------------------------------------------------

@@ -131,7 +131,10 @@ internal sealed class WorldHarness
         // repointed exits and silently skipped everything else the loop's applier would have
         // touched, and no test could tell the difference.
         Applier = new WorldMutationApplier(
-            World, View, Options, Quests, MobTemplates, ItemTemplates, Spawners, ItemSaves);
+            World, View, Options, Quests, MobTemplates, ItemTemplates, Spawners, ItemSaves,
+            // The real one, because "Respawn zone" places mobs through it (§7.5) and an applier
+            // built without it can only refuse - which is a test asserting the refusal path.
+            mobSpawner: MobSpawner);
         Writes = new RecordingWriteQueue();
         Editor = new LoopWorldEditor(Applier, Writes);
         Admin = new RecordingAdminQueue();
@@ -242,6 +245,9 @@ internal sealed class WorldHarness
 
     /// <summary>The spawner rules a builder edit has to keep current.</summary>
     public SpawnerCache Spawners { get; } = new();
+
+    /// <summary>Places mobs from templates, the way the sweep and a zone respawn both do.</summary>
+    public MobSpawner MobSpawner { get; } = new();
 
     /// <summary>
     /// Quests the command layer reads. Populated by <see cref="DefineQuest"/>.

@@ -71,6 +71,7 @@ public static class BuilderEndpoints
         group.MapGet("/zones/{key}/validate", ValidateZoneAsync);
         group.MapGet("/zones/{key}/unfinished", UnfinishedAsync);
         group.MapGet("/zones/{key}/preview", PreviewAsync);
+        group.MapPost("/zones/{key}/respawn", RespawnZoneAsync);
 
         group.MapGet("/audit", AuditAsync);
 
@@ -658,6 +659,38 @@ public static class BuilderEndpoints
         await queries.PreviewAsync(key, ct) is { } preview
             ? Results.Ok(preview)
             : Results.NotFound();
+
+    /// <summary>
+    /// Despawns and refills this zone's mob spawners, so a multiplier edit is visible in the
+    /// world at once rather than at the next respawn (PLAN.md §7.5).
+    /// </summary>
+    /// <remarks>
+    /// Not routed through <see cref="SaveAsync{T}"/>, which every other write here uses, because
+    /// there is nothing to save: no primitive comes back, so no row is written, no audit entry is
+    /// made, and there is nothing to reload and hand to the caller. What did happen is a pair of
+    /// counts, and they come off the mutation result rather than out of a second read - only the
+    /// loop can see live mobs, and asking it twice would be asking about a world that had moved on.
+    /// </remarks>
+    private static async Task<IResult> RespawnZoneAsync(
+        string key,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(http);
+
+        http.TryGetAccountId(out var accountId);
+
+        var outcome = await editor.ApplyAsync(new RespawnZone(key), accountId, ct);
+
+        if (outcome.Status != EditStatus.Saved)
+        {
+            return Refused(outcome.Result);
+        }
+
+        var tally = outcome.Result.Respawned ?? new RespawnTally(0, 0);
+        return Results.Ok(new RespawnZoneResponse(key, tally.Despawned, tally.Spawned));
+    }
 
     private static async Task<IResult> AuditAsync(
         string? kind,

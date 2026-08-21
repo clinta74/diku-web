@@ -27,6 +27,16 @@ public enum MutationError
 }
 
 /// <summary>
+/// What a <see cref="RespawnZone"/> moved: mobs taken out, mobs put back (PLAN.md §7.5).
+/// </summary>
+/// <remarks>
+/// The two numbers differ whenever the zone was not at its population target - a spawner still
+/// waiting out its <c>respawnSeconds</c> refills the whole way here, so "3 removed, 5 placed" is
+/// the honest report and a single count would be a lie in one direction or the other.
+/// </remarks>
+public sealed record RespawnTally(int Despawned, int Spawned);
+
+/// <summary>
 /// What the loop did. <see cref="Applied"/> is the ordered list of primitives that persistence
 /// must replay; it is empty on failure, so a refused mutation can never reach the database.
 /// </summary>
@@ -35,10 +45,18 @@ public sealed record MutationResult(
     MutationError Error,
     string? Message,
     IReadOnlyList<WorldChange> Applied,
-    RoomKey? AffectedRoom = null)
+    RoomKey? AffectedRoom = null,
+    RespawnTally? Respawned = null)
 {
     public static MutationResult Ok(IReadOnlyList<WorldChange> applied, RoomKey? room = null) =>
         new(true, MutationError.None, null, applied, room);
+
+    /// <summary>
+    /// A mutation that succeeded and authored nothing, so there is no primitive to replay - the
+    /// count is the whole of what happened. See <see cref="RespawnZone"/>.
+    /// </summary>
+    public static MutationResult Ok(RespawnTally tally) =>
+        new(true, MutationError.None, null, [], null, tally);
 
     public static MutationResult Fail(MutationError error, string message) =>
         new(false, error, message, []);

@@ -254,7 +254,10 @@ One deferred nice-to-have remains below, and it is not what the phase goal asks 
       `DbSet<Mob>` both exist, so the day mob persistence lands the sentinel flag and the emote
       timers would have gone quiet with no error — the same trap that had already cost three
       features. Disarmed before it fires rather than after.
-- [ ] Builder: *Respawn zone* button to apply live multiplier edits to existing mobs (deferred nice-to-have)
+- [x] Builder: *Respawn zone* button to apply live multiplier edits to existing mobs — deferred
+      from this phase and built later. Takes down what a zone's mob spawners placed and refills
+      every one to its target at once, bypassing `SpawnerSchedule` because the whole point is to
+      see the numbers now. Hand-placed mobs and item spawners are left where they are.
 
 ## Phase 4 — Combat and progression ✅ **complete**
 *Done when: you can kill something, loot its corpse, and level up — and the multipliers visibly matter.*
