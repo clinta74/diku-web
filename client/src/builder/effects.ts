@@ -157,6 +157,35 @@ const EFFECTS: EffectOption[] = [
     ],
   },
   {
+    key: 'resource.restore',
+    label: 'Restore resource',
+    summary:
+      'Puts focus, stamina or health back. Pair it with a cost in the OTHER resource and the ' +
+      'ability is a conversion - the exchange rate is the cost and this amount, side by side.',
+    params: [
+      {
+        key: 'resource',
+        label: 'Which bar',
+        hint: 'Focus, Stamina or Health.',
+        fallback: 'Focus',
+      },
+      {
+        key: 'percent',
+        label: 'Restores (% of max)',
+        hint: 'A share of that bar, in whole points. Wins over the flat amount.',
+        fallback: '25',
+        integer: true,
+      },
+      {
+        key: 'amount',
+        label: 'Or restores (flat)',
+        hint: 'A flat amount. Ignored when a percentage is set.',
+        fallback: '',
+        integer: true,
+      },
+    ],
+  },
+  {
     key: 'buff.damage-up',
     label: 'Damage buff',
     summary: 'The target deals more damage for a while.',

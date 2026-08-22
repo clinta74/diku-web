@@ -22,6 +22,7 @@ public sealed class EffectRegistry
         Register(new DefenseEffect());
         Register(new ExposeEffect());
         Register(new MaxHealthEffect());
+        Register(new ResourceEffect());
     }
 
     public void Register(IAbilityEffect effect)

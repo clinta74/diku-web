@@ -428,6 +428,125 @@ public sealed class Report(ContentSet content, Options options)
     }
 
     /// <summary>
+    /// What a bar buys, in damage — and in level-appropriate corpses.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>"Is focus-to-damage high enough" is two questions and they have different answers.</b>
+    /// Damage per point is efficiency, and by that measure an Adept is fine — it converts focus to
+    /// damage at very nearly the rate a Warden converts stamina. What it does not have is
+    /// <em>capacity</em>: a smaller pool spent at a higher cost per cast, so the same efficiency
+    /// buys fewer casts and a smaller total.
+    /// </para>
+    /// <para>
+    /// The last column is the one to read. A full bar that buys less than one target is a Path that
+    /// cannot finish a fight on its own resources however efficient each point is, and no per-point
+    /// tuning fixes it — that is a pool, a cost, or a second bar.
+    /// </para>
+    /// </remarks>
+    public void WriteDamagePerPoint()
+    {
+        Section("What a full bar buys");
+
+        Console.WriteLine(
+            $"{"Path",-7} {"Lvl",3}  {"bar",-8} {"pool",6} {"dmg/point",9} {"bar buys",9} " +
+            $"{"target",7} {"targets",8}");
+        Console.WriteLine(new string('-', 68));
+
+        foreach (var path in options.Paths)
+        {
+            foreach (var level in options.Levels)
+            {
+                var character = FightSimulator.BuildCharacter(path, level);
+                var target = PickEncounter(level);
+
+                if (target is null)
+                {
+                    continue;
+                }
+
+                var known = AbilityProgression
+                    .GetKnownAbilitiesForLevel(content.Abilities.Values, path, level)
+                    .Select(k => content.Abilities[k])
+                    .Where(a => Payload(a, level) > 0)
+                    .ToList();
+
+                if (known.Count == 0)
+                {
+                    continue;
+                }
+
+                foreach (var group in known.GroupBy(a => a.CostType).OrderByDescending(g => g.Count()))
+                {
+                    var pool = group.Key switch
+                    {
+                        CostType.Focus => character.Vitals.FocusMax,
+                        CostType.Stamina => character.Vitals.StaminaMax,
+                        _ => character.Vitals.HealthMax,
+                    };
+
+                    // Single-target abilities only.
+                    //
+                    // <b>An area ability is priced for the room and measured here against one
+                    // mob.</b> Including them said an Adept converts focus to damage at 1.74 a
+                    // point against a Warden's 2.17, and nearly all of that gap was Firestorm,
+                    // Chain Lightning and Pyre being charged for four targets and credited with
+                    // one. On single-target pricing the two Paths are within eight percent of each
+                    // other, which is a different finding and points at a different fix.
+                    //
+                    // Excluded rather than multiplied by an assumed pack size: how many things an
+                    // area ability catches is a property of the room, and inventing a number for
+                    // it would bury an assumption in a column that reads like a measurement.
+                    var perPoint = group
+                        .Where(a => a.CostValue > 0 && a.TargetingType != TargetingType.Aoe)
+                        .Select(a => Payload(a, level) / (double)a.CostValue)
+                        .DefaultIfEmpty(0)
+                        .Average();
+
+                    var buys = pool * perPoint;
+
+                    Console.WriteLine(
+                        $"{path,-7} {level,3}  {group.Key,-8} {pool,6:N0} {perPoint,9:0.00} " +
+                        $"{buys,9:N0} {target.Health,7:N0} {buys / target.Health,8:0.00}");
+                }
+            }
+
+            Console.WriteLine();
+        }
+
+        Console.WriteLine("  dmg/point = damage one cast deals over what it costs, averaged over the");
+        Console.WriteLine("  Path's SINGLE-TARGET damage abilities - an area ability is priced for a");
+        Console.WriteLine("  room and this harness fights one mob. bar buys = that times the pool.");
+        Console.WriteLine("  targets = how many level-appropriate mobs a full bar is worth.");
+        Console.WriteLine();
+    }
+
+    /// <summary>Everything one cast of this deals, counting a wound's whole run.</summary>
+    private static double Payload(Ability ability, int casterLevel)
+    {
+        var total = 0.0;
+
+        foreach (var spec in ability.Effects)
+        {
+            switch (spec.Key)
+            {
+                case "damage.physical":
+                    total += DamageEffect.Middle(spec.Params, casterLevel);
+                    break;
+
+                case "damage.overtime":
+                    var tick = Read(spec.Params, "tickDamage", 4);
+                    var interval = Read(spec.Params, "tickIntervalPulses", 8);
+                    var duration = Read(spec.Params, "durationPulses", 48);
+                    total += tick * DamageOverTimeEffect.TickCount(duration, interval);
+                    break;
+            }
+        }
+
+        return total;
+    }
+
+    /// <summary>
     /// The encounters the report chose, and what they hit for.
     /// </summary>
     /// <remarks>

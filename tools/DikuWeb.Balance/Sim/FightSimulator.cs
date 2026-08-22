@@ -69,6 +69,18 @@ public sealed class FightSimulator
     private const double RefreshBelow = 0.33;
 
     /// <summary>
+    /// Below this share of a bar, a restore of that bar is worth the cast.
+    /// </summary>
+    /// <remarks>
+    /// Not lower, because the ability has a cast time and a five-minute cooldown - waiting until
+    /// the bar is empty wastes the seconds spent casting while unable to spend anything. Not
+    /// higher, because a restore worth half a bar poured into a bar that is two thirds full is
+    /// half of it thrown away. Just under half leaves room for the largest restore in the game to
+    /// land whole.
+    /// </remarks>
+    private const double RestoreBelow = 0.45;
+
+    /// <summary>
     /// The least time between two casts.
     /// </summary>
     /// <remarks>
@@ -700,6 +712,19 @@ public sealed class FightSimulator
             return new Choice(null, starved);
         }
 
+        // Out of the resource the kit runs on, with something in the bar that refills it. Ranked
+        // ahead of the heal because it is upstream of everything: a caster with no focus cannot
+        // heal either, and the ability that fixes that is on a five-minute timer.
+        var restore = ready
+            .Where(a => RestoreTarget(a) is { } bar && ShareOf(character, bar) < RestoreBelow)
+            .OrderByDescending(a => RestoreValue(a, character))
+            .FirstOrDefault();
+
+        if (restore is not null)
+        {
+            return new Choice(restore, starved);
+        }
+
         // Hurt enough to want the heal that exists.
         if ((double)character.Vitals.Health / Math.Max(1, character.Vitals.HealthMax) < HealBelow)
         {
@@ -795,6 +820,49 @@ public sealed class FightSimulator
 
     private bool HasInstantDamage(Ability ability) =>
         ability.Effects.Any(e => _effects.Get(e.Key) is { } x and not IBuffEffect && x.IsHarmful);
+
+    /// <summary>Which bar this ability refills, or null when it refills none.</summary>
+    private static CostType? RestoreTarget(Ability ability)
+    {
+        foreach (var spec in ability.Effects)
+        {
+            if (string.Equals(spec.Key, "resource.restore", StringComparison.Ordinal))
+            {
+                return ResourceEffect.ResourceOf(spec.Params);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>How full one of a character's bars is, 0-1.</summary>
+    private static double ShareOf(Character character, CostType bar) => bar switch
+    {
+        CostType.Focus => character.Vitals.FocusMax == 0
+            ? 1
+            : (double)character.Vitals.Focus / character.Vitals.FocusMax,
+        CostType.Stamina => character.Vitals.StaminaMax == 0
+            ? 1
+            : (double)character.Vitals.Stamina / character.Vitals.StaminaMax,
+        _ => character.Vitals.HealthMax == 0
+            ? 1
+            : (double)character.Vitals.Health / character.Vitals.HealthMax,
+    };
+
+    /// <summary>How much a restore would actually put back, for this character.</summary>
+    private static double RestoreValue(Ability ability, Character character) =>
+        ability.Effects
+            .Where(e => string.Equals(e.Key, "resource.restore", StringComparison.Ordinal))
+            .Select(e => (double)ResourceEffect.Amount(e.Params, MaximumOf(character, ResourceEffect.ResourceOf(e.Params))))
+            .DefaultIfEmpty(0)
+            .Max();
+
+    private static int MaximumOf(Character character, CostType bar) => bar switch
+    {
+        CostType.Focus => character.Vitals.FocusMax,
+        CostType.Stamina => character.Vitals.StaminaMax,
+        _ => character.Vitals.HealthMax,
+    };
 
     private static bool RaisesDamage(Ability ability) =>
         ability.Effects.Any(e =>

@@ -53,6 +53,7 @@ var report = new Report(content, options);
 report.WriteStuck();
 report.WriteResourceEconomy();
 report.WriteBarUse();
+report.WriteDamagePerPoint();
 report.WriteEncounters();
 report.WriteDamageSplit();
 report.WriteAbilityWorth();

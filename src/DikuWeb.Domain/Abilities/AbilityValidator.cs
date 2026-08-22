@@ -91,6 +91,7 @@ public static class AbilityValidator
     private static readonly (string EffectKey, string[] Parameters)[] RequiredOneOf =
     [
         ("heal.restore", ["baseHeal", "healPercent"]),
+        ("resource.restore", ["percent", "amount"]),
     ];
 
     /// <summary>
