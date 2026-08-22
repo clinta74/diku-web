@@ -372,8 +372,8 @@ disagrees.
 | `adept.transmutation` added — L18, 40 stamina → 50% focus, 2s cast, 5min | The Adept spent 100% of its focus and 0% of 237 stamina; this is the bridge | `delete from abilities where key='adept.transmutation'` |
 | Every Adept damage number × 1.15 | Focus-to-damage 1.88 → 2.17, which is the Warden's stamina-to-damage rate exactly | divide the same values by 1.15 |
 | `warden.rally` → focus | The Warden carried 167 unused focus; its one non-swing belongs on the other bar | `cost_type=1` |
-| `hallow.staunch` added — L22, 20 stamina, 25% heal, cooldown group 1 | A second stamina ability, sharing Smite's timer | `delete from abilities where key='hallow.staunch'` |
-| `hallow.smite` → cooldown group 1 | Joins that timer | `cooldown_group=null` |
+| `hallow.staunch` added — L32, 26 stamina, 40% heal, cooldown group 1 | A second stamina ability, sharing Smite's timer | `delete from abilities where key='hallow.staunch'` |
+| `hallow.smite` → cooldown group 1, L12 | Joins that timer, and moved early enough to reach the level 20 wall | `cooldown_group=null, unlock_level=22` |
 
 ### What each was worth, measured
 
@@ -399,3 +399,28 @@ The shared timer halves what the Hallow can draw from its second bar. That may s
 call — a Path that must choose between striking and holding somebody together is a more interesting
 one than a Path that does both — but it is a choice with a number on it now, and neither arrangement
 gets the Hallow through level 50.
+
+### On a shared timer, only a bigger ability is worth more
+
+A shared timer caps how *often* a Path may act on that bar, not how *hard*. So the one shape that
+gets more out of it is a heavier ability at the same cadence — which is the ability line argued for
+in §5.4, arriving on its own.
+
+Measured at level 50, varying only what sits in the level 32 slot:
+
+| The level 32 stamina ability | stamina used | target's health dealt | won |
+|---|---|---|---|
+| Staunch, heals 25% | 22% | 61% | 0% |
+| Staunch, heals 55% | 22% | 64% | 0% |
+| a strike at factor 3.0 | 37% | 78% | 5% |
+| a strike at factor 4.0 | 37% | 94% | 32% |
+
+**Bumping the heal is close to inert; replacing it with a strike is worth thirty points of the
+target's health.** Both cost a cast on the same timer, and the Hallow's shortfall at 50 is damage —
+it dies having dealt 62% — so a cast spent healing is a cast not spent closing that gap. The heal is
+the right ability for a Hallow keeping somebody else alive; it is not the ability that gets a Hallow
+through a fight on its own.
+
+Moving Smite to 12 is the other half of the same lesson, and it is the Transmutation lesson again:
+level 20 went from 0% to 41%, and from dealing 60% of the target's health to 97%. An ability that
+unlocks after the wall does nothing for the wall.
