@@ -356,3 +356,46 @@ for their Path, preferring the authored epic; the target is the median-health co
 whose authored band contains the level; the rotation heals below 40%, keeps a damage buff up, and
 otherwise presses the largest non-redundant thing it can afford. It models solo play with no
 consumables, no fleeing, and no group.
+
+---
+
+## 9. Content changes applied to the database
+
+Content lives in Postgres, not in git (PLAN.md §6), so the edits behind the measurements above have
+no commit of their own. They are recorded here because a balance note whose numbers cannot be
+reproduced is a note nobody can check, and because each of them should be revertible by whoever
+disagrees.
+
+| Change | Why | Revert |
+|---|---|---|
+| `temper.second-wind` → focus, `healPercent: 50`, 240 pulses | Flat 45 was 6% of an endgame Temper's bar; "a second wind" is proportional or it is nothing | `cost_type=1, cooldown_pulses=72, effects='[{"Key":"heal.restore","Params":{"baseHeal":"45"}}]'` |
+| `adept.transmutation` added — L18, 40 stamina → 50% focus, 2s cast, 5min | The Adept spent 100% of its focus and 0% of 237 stamina; this is the bridge | `delete from abilities where key='adept.transmutation'` |
+| Every Adept damage number × 1.15 | Focus-to-damage 1.88 → 2.17, which is the Warden's stamina-to-damage rate exactly | divide the same values by 1.15 |
+| `warden.rally` → focus | The Warden carried 167 unused focus; its one non-swing belongs on the other bar | `cost_type=1` |
+| `hallow.staunch` added — L22, 20 stamina, 25% heal, cooldown group 1 | A second stamina ability, sharing Smite's timer | `delete from abilities where key='hallow.staunch'` |
+| `hallow.smite` → cooldown group 1 | Joins that timer | `cooldown_group=null` |
+
+### What each was worth, measured
+
+| Change | Effect |
+|---|---|
+| Transmutation at 22 | Adept 30 and 50 went from failing to 100% |
+| Transmutation moved 22 → 18 | Adept 20 went from 22% to 98%; the Path cleared |
+| Adept damage × 1.15 | Focus-to-damage to parity; did **not** on its own fix level 20 |
+| `warden.rally` → focus | Warden 50 from 29% to 56%; focus use from 0% to 13% |
+| `hallow.staunch` on a shared timer | **Nothing measurable.** See below |
+
+### The shared timer is a real cost, now priced
+
+Using any ability on a shared timer puts the whole timer down for that ability's own cooldown, so a
+second ability on it is an **alternative, not additional throughput**. Measured at level 50:
+
+| | stamina used | target's health dealt | won |
+|---|---|---|---|
+| Smite and Staunch sharing a timer | 22% of 242 | 61% | 0% |
+| The same two on separate timers | **46% of 242** | **76%** | 5% |
+
+The shared timer halves what the Hallow can draw from its second bar. That may still be the right
+call — a Path that must choose between striking and holding somebody together is a more interesting
+one than a Path that does both — but it is a choice with a number on it now, and neither arrangement
+gets the Hallow through level 50.
