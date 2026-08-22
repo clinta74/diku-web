@@ -29,6 +29,9 @@ internal static class ShippedAbilities
 {
     private static readonly Lazy<IReadOnlyDictionary<string, Ability>> Loaded = new(Load);
 
+    /// <summary>Every shipped ability, for tests that ask a question of the whole set.</summary>
+    internal static IReadOnlyCollection<Ability> All => Loaded.Value.Values.ToList();
+
     /// <summary>The shipped ability with this key. Throws, loudly, when there is none.</summary>
     internal static Ability Get(string key) =>
         Loaded.Value.TryGetValue(key, out var ability)

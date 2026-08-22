@@ -23,6 +23,25 @@ namespace DikuWeb.Engine.Abilities;
 /// </remarks>
 public static class AbilityLookup
 {
+    /// <summary>
+    /// The shortest abbreviation that may reach an ability by prefix.
+    /// </summary>
+    /// <remarks>
+    /// <b>A single letter must not fire an ability.</b> A bare verb the command table misses is
+    /// tried as an ability (<c>CommandRegistry.FindAbilityVerb</c>), and the fallback below ranks
+    /// prefixes - so <c>m</c>, typed alone or as the tail of a fumbled command, reached Mass
+    /// Provocation and spent the cooldown. Every verb in the table already carries a
+    /// <c>MinLength</c> for exactly this reason; abilities arrive through a different door and had
+    /// none.
+    /// <para>
+    /// Three, because the shortest ability in the catalogue is Sap and a rule that cannot spell the
+    /// shortest name it governs is the wrong rule. It binds the <em>fuzzy</em> pass only: a name,
+    /// key, or slug typed in full still resolves at any length, so a future two-letter ability is
+    /// reachable by typing it.
+    /// </para>
+    /// </remarks>
+    public const int MinimumAbbreviation = 3;
+
     /// <summary>What the player meant, or nulls when nothing they know answers to it.</summary>
     public readonly record struct Match(Ability? Ability, string? Target)
     {
@@ -85,10 +104,16 @@ public static class AbilityLookup
 
         // Nothing matched in full. Fall back to the first word, matched the way every other
         // targeting command matches - so "cast fire rat" still reaches Firestorm, and a partial
-        // name behaves the way a partial item or mob name does.
+        // name behaves the way a partial item or mob name does. Held to MinimumAbbreviation,
+        // because a partial item name costs a look and a partial ability name costs a cooldown.
         var space = text.IndexOf(' ', StringComparison.Ordinal);
         var head = space < 0 ? text : text[..space];
         var tail = space < 0 ? null : text[(space + 1)..].Trim();
+
+        if (head.Length < MinimumAbbreviation)
+        {
+            return default;
+        }
 
         var fuzzy = NameMatch.Best(known, head, a => a.Name, a => a.Key);
 

@@ -1,6 +1,7 @@
 using DikuWeb.Domain.Abilities;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Worlds;
+using DikuWeb.Engine.Abilities;
 using DikuWeb.Engine.Tests.Infrastructure;
 using DikuWeb.Engine.World;
 
@@ -376,5 +377,84 @@ public sealed class AbilityUsabilityTests
         harness.Execute(warden, "rest");
 
         Assert.Equal(CharacterRestState.Rest, warden.Character.RestState);
+    }
+
+    /// <summary>
+    /// A single letter is not an ability.
+    /// </summary>
+    /// <remarks>
+    /// From playtesting: <em>"mass provocation triggers on just an m."</em> A verb the table misses
+    /// is tried as an ability, and the resolver's fuzzy pass ranked prefixes with no floor under
+    /// them — so one stray keystroke fired a level 46 ability and spent its cooldown. Every verb in
+    /// the table carries a <c>MinLength</c> against precisely this; abilities came in through
+    /// another door and had none.
+    /// </remarks>
+    [Theory]
+    [InlineData("m")]
+    [InlineData("ma")]
+    public void A_letter_or_two_does_not_reach_an_ability(string typed)
+    {
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 50);
+        harness.DefineAbility("warden.mass-provocation");
+
+        Assert.Null(harness.Commands.FindAbilityVerb(warden.Character, typed, "rat"));
+    }
+
+    /// <summary>And three letters still does, so the floor is a floor and not a wall.</summary>
+    [Fact]
+    public void Three_letters_still_reaches_it()
+    {
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var warden = harness.AddPlayer("Bram", West, path: CharacterPath.Warden, level: 50);
+        harness.DefineAbility("warden.mass-provocation");
+
+        Assert.NotNull(harness.Commands.FindAbilityVerb(warden.Character, "mas", "rat"));
+    }
+
+    /// <summary>
+    /// The shortest name in the catalogue is still typeable in full.
+    /// </summary>
+    /// <remarks>
+    /// Sap is three letters, which is why the floor is three. Asserted against the shipped ability
+    /// rather than a stand-in, so shipping a shorter name than the rule can spell fails here.
+    /// </remarks>
+    [Fact]
+    public void The_shortest_ability_is_still_reachable_by_name()
+    {
+        var harness = new WorldHarness();
+        harness.LoadTestWorld();
+
+        var hallow = harness.AddPlayer("Ivy", West, path: CharacterPath.Hallow, level: 20);
+        var sap = harness.DefineAbility("hallow.sap");
+
+        Assert.True(
+            sap.Name.Length >= AbilityLookup.MinimumAbbreviation,
+            $"'{sap.Name}' is shorter than the abbreviation floor and could not be typed in full.");
+
+        Assert.NotNull(harness.Commands.FindAbilityVerb(hallow.Character, sap.Name.ToLowerInvariant(), "rat"));
+    }
+
+    /// <summary>
+    /// No shipped ability is shorter than the floor.
+    /// </summary>
+    /// <remarks>
+    /// The rule the previous test states about Sap, asserted over the whole catalogue — because the
+    /// ability that breaks it is the one somebody adds later, and the floor silently making it
+    /// untypeable is the failure this file exists to catch.
+    /// </remarks>
+    [Fact]
+    public void Every_ability_can_be_typed_in_full()
+    {
+        var tooShort = ShippedAbilities.All
+            .Where(a => a.Name.Trim().Length < AbilityLookup.MinimumAbbreviation)
+            .Select(a => $"{a.Key} is named '{a.Name}'")
+            .ToList();
+
+        Assert.Empty(tooShort);
     }
 }
