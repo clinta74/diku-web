@@ -1,3 +1,4 @@
+using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Domain.Abilities;
 using System.Text.Json;
 using DikuWeb.Domain.Inhabitants;
@@ -132,6 +133,122 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
     /// in a file they saved six months ago, which is the whole job the field has ever done.
     /// </remarks>
     public const string AbilitiesScope = "abilities";
+
+    /// <summary>
+    /// One item template as a bundle carries it.
+    /// </summary>
+    /// <remarks>
+    /// Shared by the scoped export and the unplaced one rather than written twice. Two copies of an
+    /// eighteen-argument constructor is two places a new column has to be remembered, and the
+    /// column that gets forgotten is the one nobody notices until an import drops it.
+    /// </remarks>
+    private static void Add(HashSet<string> set, string? key)
+    {
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            set.Add(key);
+        }
+    }
+
+    private static BundleItemTemplate ItemFor(Domain.Items.ItemTemplate i) => new(
+        i.Key, i.Name, i.Description, i.Icon, i.Slots, i.IsTwoHanded, i.Weight, i.BaseValue,
+        new Dictionary<string, object>(i.BaseStats),
+        i.AttackDelayPulses, i.AttackVerb, i.IsQuestItem,
+        i.IsLore, i.IsNoDrop, i.IsLightSource, i.FoodValue, i.DrinkValue, i.Paths);
+
+    /// <inheritdoc cref="ItemFor"/>
+    private static BundleMobTemplate MobFor(MobTemplate m) => new(
+        m.Key, m.Name, m.Description, m.Icon, m.Level, m.WanderIntervalPulses,
+        new Dictionary<string, object>(m.BaseStats),
+        m.BaseXp, m.BaseGold,
+        new Dictionary<string, object>(m.Behavior),
+        [.. m.Loot],
+        [.. m.Attacks]);
+
+    /// <summary>The scope word for an export of the templates nothing places.</summary>
+    public const string UnplacedScope = "unplaced";
+
+    /// <summary>
+    /// The item and mob templates no scoped export can reach.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The gap between "a bundle that stands up on its own" and "a snapshot of the world".</b> A
+    /// scoped export closes over references, which is right — a zone bundle should carry what its
+    /// zone needs and nothing else. But a template that nothing references yet is still real
+    /// content: <c>spawn &lt;item|mob&gt; &lt;key&gt;</c> is a builder command, so an unplaced mob is
+    /// one somebody can put down deliberately — a test fixture, or something held back for later.
+    /// </para>
+    /// <para>
+    /// Those reach no scope at all, so a world rebuilt from scoped files alone loses them silently:
+    /// the row goes and <c>spawn</c> starts refusing a key that worked yesterday. This is where they
+    /// live instead. Merged with the scoped files it costs nothing — the union is what gets imported
+    /// and an upsert of the same key twice is the same key — and alone it is the only way the
+    /// snapshot is complete.
+    /// </para>
+    /// <para>
+    /// Reachability is the same walk <see cref="TemplatesAsync"/> makes: spawners, quest
+    /// giver/turn-in/required/reward, mob loot, and shopkeeper stock. It has to stay the same walk,
+    /// or "unplaced" here means something different from "not carried" there.
+    /// </para>
+    /// </remarks>
+    public async Task<WorldBundle> ExportUnplacedAsync(CancellationToken cancellationToken)
+    {
+        var spawners = await db.Spawners.AsNoTracking()
+            .Select(s => new { s.TemplateKind, s.TemplateKey })
+            .ToListAsync(cancellationToken);
+
+        var quests = await db.Quests.AsNoTracking().ToListAsync(cancellationToken);
+        var allMobs = await db.MobTemplates.AsNoTracking().OrderBy(m => m.Key).ToListAsync(cancellationToken);
+        var allItems = await db.ItemTemplates.AsNoTracking().OrderBy(i => i.Key).ToListAsync(cancellationToken);
+
+        var reachedMobs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var reachedItems = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var spawner in spawners)
+        {
+            (spawner.TemplateKind == TemplateKind.Mob ? reachedMobs : reachedItems)
+                .Add(spawner.TemplateKey);
+        }
+
+        foreach (var quest in quests)
+        {
+            Add(reachedMobs, quest.GiverMobKey);
+            Add(reachedMobs, quest.TurninMobKey);
+            Add(reachedItems, quest.RequiredItemKey);
+            Add(reachedItems, quest.RewardItemKey);
+        }
+
+        foreach (var mob in allMobs)
+        {
+            foreach (var entry in mob.Loot)
+            {
+                if (entry.TryGetValue("itemTemplateKey", out var value))
+                {
+                    Add(reachedItems, value?.ToString());
+                }
+            }
+
+            foreach (var sold in Engine.Inhabitants.MobBehavior.SellsOf(mob.Behavior))
+            {
+                Add(reachedItems, sold);
+            }
+        }
+
+        return new WorldBundle(
+            WorldBundle.CurrentFormatVersion,
+            clock.GetUtcNow(),
+            new BundleScope(UnplacedScope, null),
+            [],
+            [],
+            [],
+            [.. allItems.Where(i => !reachedItems.Contains(i.Key)).Select(ItemFor)],
+            [.. allMobs.Where(m => !reachedMobs.Contains(m.Key)).Select(MobFor)],
+            [],
+            [],
+            [],
+            []);
+    }
 
     private async Task<IReadOnlyList<BundleGameConfiguration>> ConfigurationsAsync(
         CancellationToken cancellationToken) =>
@@ -379,9 +496,19 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
 
         var mobs = await mobQuery.OrderBy(m => m.Key).ToListAsync(cancellationToken);
 
-        // Loot is read after the mobs are known, because a required quest item usually arrives
-        // through a drop rather than through a spawner - a zone bundle without it imports a quest
-        // nothing can finish, which is exactly the silent failure §10 names.
+        // Loot and shop stock are read after the mobs are known, because most of what a zone's items
+        // are reached through is a mob rather than a spawner.
+        //
+        // Loot: a required quest item usually arrives through a drop rather than through a spawner -
+        // a zone bundle without it imports a quest nothing can finish, which is exactly the silent
+        // failure §10 names.
+        //
+        // Stock: a shopkeeper's `sells` list names item keys and nothing else references them, so a
+        // zone bundle without them imports shopkeepers whose entire inventory does not exist.
+        // Gatetown is the case that showed it - sixteen item templates, no item spawner among them,
+        // every one of them reached only by a `sells` list - and this hop was missing, so a fresh
+        // export of that zone carried zero items and the file in content/ (written before the
+        // closure was) still carried all sixteen. The two disagreed and neither was obviously wrong.
         if (!IsEverything(kind))
         {
             foreach (var mob in mobs)
@@ -392,6 +519,11 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
                     {
                         Add(itemKeys, value?.ToString());
                     }
+                }
+
+                foreach (var sold in MobBehavior.SellsOf(mob.Behavior))
+                {
+                    Add(itemKeys, sold);
                 }
             }
         }
@@ -404,23 +536,7 @@ public sealed class WorldExporter(DikuWebDbContext db, TimeProvider clock)
 
         var items = await itemQuery.OrderBy(i => i.Key).ToListAsync(cancellationToken);
 
-        return (
-            [
-                .. items.Select(i => new BundleItemTemplate(
-                    i.Key, i.Name, i.Description, i.Icon, i.Slots, i.IsTwoHanded, i.Weight, i.BaseValue,
-                    new Dictionary<string, object>(i.BaseStats),
-                    i.AttackDelayPulses, i.AttackVerb, i.IsQuestItem,
-                    i.IsLore, i.IsNoDrop, i.IsLightSource, i.FoodValue, i.DrinkValue, i.Paths)),
-            ],
-            [
-                .. mobs.Select(m => new BundleMobTemplate(
-                    m.Key, m.Name, m.Description, m.Icon, m.Level, m.WanderIntervalPulses,
-                    new Dictionary<string, object>(m.BaseStats),
-                    m.BaseXp, m.BaseGold,
-                    new Dictionary<string, object>(m.Behavior),
-                    [.. m.Loot],
-                    [.. m.Attacks])),
-            ]);
+        return ([.. items.Select(ItemFor)], [.. mobs.Select(MobFor)]);
 
         static void Add(HashSet<string> set, string? key)
         {

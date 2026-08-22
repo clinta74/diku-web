@@ -18,6 +18,8 @@
 //
 // This opens a connection, reads, and closes it. Nothing here writes.
 
+using DikuWeb.Domain.Spawning;
+using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Persistence;
 using DikuWeb.Server.Building;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +30,7 @@ string? connection = null;
 string? worldKey = null;
 string? zoneKey = null;
 var abilitiesOnly = false;
+var unplacedOnly = false;
 
 for (var i = 0; i < args.Length; i++)
 {
@@ -48,6 +51,9 @@ for (var i = 0; i < args.Length; i++)
         case "--abilities":
             abilitiesOnly = true;
             break;
+        case "--unplaced":
+            unplacedOnly = true;
+            break;
         case "-h" or "--help":
             Console.WriteLine("""
                 Writes the live world out as a WorldBundle, without starting the server.
@@ -58,6 +64,8 @@ for (var i = 0; i < args.Length; i++)
                   --world <key>          Export one world instead of everything
                   --zone <key>           Export one zone instead of everything
                   --abilities            Export only the abilities, as content/abilities.json is
+                  --unplaced             Export only the templates nothing places. A scoped export
+                                         cannot reach those, so this is what keeps content/ complete
                 """);
             return 0;
     }
@@ -88,7 +96,9 @@ var exporter = new WorldExporter(db, TimeProvider.System);
 // scope rather than being a filter over the world export - see WorldExporter.ExportAbilitiesAsync.
 var bundle = abilitiesOnly
     ? await exporter.ExportAbilitiesAsync(CancellationToken.None)
-    : await exporter.ExportAsync(worldKey, zoneKey, CancellationToken.None);
+    : unplacedOnly
+        ? await exporter.ExportUnplacedAsync(CancellationToken.None)
+        : await exporter.ExportAsync(worldKey, zoneKey, CancellationToken.None);
 
 if (bundle is null)
 {
@@ -114,5 +124,99 @@ Console.WriteLine(
     $"{bundle.Worlds.Count} world(s), {bundle.Zones.Count} zone(s), " +
     $"{bundle.ItemTemplates.Count} item(s), {bundle.MobTemplates.Count} mob(s), " +
     $"{bundle.Abilities.Count} abilit(ies), {bundle.Spawners.Count} spawner(s)");
+
+// Templates no scoped export anywhere would carry, said out loud.
+//
+// A scoped bundle closes over references - the templates its spawners place, its quests name, and
+// its mobs drop - because a mob template has no zone and a zone bundle has to stand up on its own
+// (see WorldExporter's remarks). That is right for the bundle and wrong for a *snapshot*: a
+// template nothing references yet is still real content. `spawn <item|mob> <key>` is a builder
+// command, so an unplaced mob is one somebody can put down on purpose - a test fixture, or
+// something held back for later.
+//
+// The interesting set is not "what this scope missed" - that is nearly everything, and nearly all
+// of it is carried by another zone's file. It is what NO scope reaches: referenced by no spawner,
+// named by no quest, dropped by no mob. Those are the ones a world rebuilt from scoped files loses
+// silently, and the symptom is `spawn` refusing a key that worked yesterday.
+//
+// Printed rather than fixed, because the fix is a judgement - place it, drop it, or keep a full
+// export beside the scoped ones - and only the author knows which.
+if (!abilitiesOnly && !unplacedOnly)
+{
+    var placedMobs = await db.Spawners.AsNoTracking()
+        .Where(s => s.TemplateKind == TemplateKind.Mob)
+        .Select(s => s.TemplateKey)
+        .ToListAsync();
+
+    var placedItems = await db.Spawners.AsNoTracking()
+        .Where(s => s.TemplateKind == TemplateKind.Item)
+        .Select(s => s.TemplateKey)
+        .ToListAsync();
+
+    var quests = await db.Quests.AsNoTracking().ToListAsync();
+    var allMobs = await db.MobTemplates.AsNoTracking().ToListAsync();
+
+    var reachedMobs = new HashSet<string>(placedMobs, StringComparer.OrdinalIgnoreCase);
+    var reachedItems = new HashSet<string>(placedItems, StringComparer.OrdinalIgnoreCase);
+
+    foreach (var quest in quests)
+    {
+        Reach(reachedMobs, quest.GiverMobKey);
+        Reach(reachedMobs, quest.TurninMobKey);
+        Reach(reachedItems, quest.RequiredItemKey);
+        Reach(reachedItems, quest.RewardItemKey);
+    }
+
+    // Loot, the same hop the exporter makes: a quest item usually arrives through a drop.
+    foreach (var mob in allMobs)
+    {
+        foreach (var entry in mob.Loot)
+        {
+            if (entry.TryGetValue("itemTemplateKey", out var value))
+            {
+                Reach(reachedItems, value?.ToString());
+            }
+        }
+
+        // The same hop the exporter makes, and it has to stay the same: this warning is only
+        // useful if "unreachable here" means "unreachable there".
+        foreach (var sold in MobBehavior.SellsOf(mob.Behavior))
+        {
+            Reach(reachedItems, sold);
+        }
+    }
+
+    var looseMobs = allMobs.Select(m => m.Key)
+        .Where(k => !reachedMobs.Contains(k)).Order(StringComparer.Ordinal).ToList();
+
+    var looseItems = (await db.ItemTemplates.AsNoTracking().Select(i => i.Key).ToListAsync())
+        .Where(k => !reachedItems.Contains(k)).Order(StringComparer.Ordinal).ToList();
+
+    Report("mob", looseMobs);
+    Report("item", looseItems);
+
+    static void Reach(HashSet<string> into, string? key)
+    {
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            into.Add(key);
+        }
+    }
+
+    static void Report(string kind, List<string> keys)
+    {
+        if (keys.Count == 0)
+        {
+            return;
+        }
+
+        Console.WriteLine(
+            $"  note: {keys.Count} {kind} template(s) are reached by no spawner, quest or loot "
+            + "table, so no scoped export carries them: " + string.Join(", ", keys));
+        Console.WriteLine(
+            "        Run again with --unplaced to write them out; without that a world rebuilt from "
+            + "content/ loses them and `spawn` starts refusing those keys.");
+    }
+}
 
 return 0;

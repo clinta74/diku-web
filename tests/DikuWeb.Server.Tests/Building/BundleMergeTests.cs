@@ -166,7 +166,11 @@ public sealed class BundleMergeTests
         Assert.Equal(5, bundle.Worlds.Count);
         Assert.Equal(18, bundle.Zones.Count);
         Assert.Equal(224, bundle.Rooms.Count);
-        Assert.Equal(68, bundle.MobTemplates.Count);
+        // 69 rather than 68 since content/unplaced.json joined the set. A scoped export closes over
+        // references and so cannot reach a template nothing places - and `spawn <item|mob> <key>`
+        // means an unplaced template is still content somebody can put down. That file is where
+        // they live, and the union is what makes content/ a snapshot rather than a subset.
+        Assert.Equal(69, bundle.MobTemplates.Count);
         Assert.Equal(93, bundle.ItemTemplates.Count);
         Assert.Equal(100, bundle.Spawners.Count);
         Assert.Equal(35, bundle.Quests.Count);

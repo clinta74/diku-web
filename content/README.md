@@ -20,9 +20,19 @@ next one and each file's exits are applied before the next file's rooms exist.
 | `nemhal/the-reaches.json` | the Hold, Vurrach, Olmenneth, Keshvaun |
 | `the-unlit/the-reaches.json` | the Crossing, the Regard |
 | `abilities.json` | every ability all four Paths learn — no rooms, no world, just the set |
+| `unplaced.json` | templates nothing places yet — no rooms, no world, just the templates |
 
 A bundle carries the world row above its zones, so any one file is enough to stand its realm up in
 an empty database.
+
+**`unplaced.json` is the file that makes the set a snapshot rather than a subset.** A scoped export
+closes over references — the templates its spawners place, its quests name, its mobs drop, and its
+shopkeepers stock — because a template has no zone of its own. A template nothing references yet is
+therefore in no realm's file, and would be lost by anyone rebuilding from these. It is still content:
+`spawn <item|mob> <key>` is a builder command, so an unplaced mob is one somebody can put down on
+purpose — a test fixture, or something held back for later. Regenerate it with
+`dotnet run tools/export-bundle.cs -- --unplaced -o content/unplaced.json`; a scoped export names
+what it could not carry so you know when to.
 
 **Progression is four conditional exits and nothing else.** Each realm's story chain ends in a
 quest whose reward is a character flag, and the gate onward requires it (`PLAN.md` §4.15):
