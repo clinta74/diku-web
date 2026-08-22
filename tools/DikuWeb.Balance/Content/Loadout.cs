@@ -73,6 +73,14 @@ public sealed record Loadout(
             .Where(i => Fits(i, ItemSlot.MainHand) && i.AttackDelayPulses is not null)
             .OrderByDescending(i => tier == GearTier.Epic && IsEpicFor(i, path) ? 1 : 0)
             .ThenByDescending(WeaponScore)
+
+            // A tie goes to the one-hander, because the score cannot see what the other hand is
+            // worth. Azhen's three weapons are dead level at 3.00 damage a second - 5-10/10,
+            // 4-8/8 and 3-6/6 - so the winner was whichever sorted first, and it was the
+            // two-handed maul. That silently cost a shield: armour, defence, and enough of both
+            // that a Hallow at 30 lost a fight it wins holding any of the other two. It read as
+            // the epic gating the tier, which was the harness deciding it, not the content.
+            .ThenBy(i => i.IsTwoHanded)
             .FirstOrDefault();
 
         if (mainHand is not null)
