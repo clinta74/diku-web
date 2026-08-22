@@ -36,6 +36,7 @@ describe('the offered effects', () => {
       'buff.defense',
       'debuff.expose',
       'buff.max-health',
+      'resource.restore',
     ]
 
     // Both lists, not just the attack subset. An ability effect with no executor behind it is the
@@ -65,6 +66,7 @@ describe('the offered effects', () => {
       'buff.defense',
       'debuff.expose',
       'buff.max-health',
+      'resource.restore',
     ]
 
     expect(ABILITY_EFFECTS.map((e) => e.key).sort()).toEqual([...known].sort())
