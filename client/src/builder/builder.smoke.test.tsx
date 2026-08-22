@@ -59,6 +59,11 @@ vi.mock('../net/builderApi', () => ({
     mobTemplates: () => Promise.resolve([]),
     itemTemplates: () => Promise.resolve([]),
     spawners: () => Promise.resolve([]),
+    // The placement rail (§7.9) only fetches once a template is selected, and nothing here
+    // selects one - but see the note under `quests` below: a missing function throws past the
+    // `.catch` the day some test does, and takes the file down with it rather than the case.
+    mobPlacement: () => Promise.resolve({ templateKey: '', kind: 'mob', spawners: [], droppedBy: [], soldBy: [], quests: [] }),
+    itemPlacement: () => Promise.resolve({ templateKey: '', kind: 'item', spawners: [], droppedBy: [], soldBy: [], quests: [] }),
     // BuilderData loads these on mount alongside the templates. Omitting one is not a quiet
     // gap: the provider calls it unconditionally, so a missing function throws before the
     // `.catch` can see it and surfaces as an unhandled rejection across every test in the file.

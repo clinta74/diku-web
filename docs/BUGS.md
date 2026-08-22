@@ -571,30 +571,36 @@ needs a decision before it needs code. **Quest accept/decline has since been dec
 written up in `PLAN.md` §13, together with the verb-namespace question it raises — it is scheduled
 work now rather than an open question.
 
-**The weapon ladder overlaps by level**, found while retuning weapon damage and left alone because
-fixing it changes absolute difficulty, which needs play rather than arithmetic. Every tier's floor sits
-at or below the previous tier's ceiling:
+**The weapon ladder overlapped by level** — recorded here as a play question, and answered from
+play. The rule taken: *an epic reward is a small amount better than anything the player could have
+bought or looted by the time it is awarded.* Ten percent, in `WeaponBalanceTests.EpicMargin`.
 
-| Tier | Level | dps range |
-|---|---|---|
-| ossara shop | 1 | 1.50 – 1.67 |
-| epic 1 | 8 | 1.50 – 2.00 |
-| grask shop | 12 | 2.00 – 2.25 |
-| epic 2 | 20 | 2.25 – 3.00 |
-| azhen shop | 24 | 3.00 – 3.00 |
-| epic 3 | 30 | 3.25 – 4.33 |
-| nemhal shop | 34 | 4.00 – 4.00 |
-| epic 4 | 42 | 4.25 – 5.67 |
-| unlit shop | 46 | 5.25 – 5.40 |
-| epic 5 | 48 | 5.25 – 7.00 |
+Three rewards were failing it outright rather than merely overlapping. **`epic-hallow-1` and
+`epic-adept-1` both sat at 1.50 dps against the 1.67 of `ossara-short-blade`** — which is on a shelf
+in Gatetown at level 1, so a five-quest chain finishing at level 8 handed you a downgrade from the
+starter shop. `epic-adept-2` tied the grask line exactly.
 
-So the weakest weapon of a tier is no better than the strongest of the tier before it, and at one point
-they were *identical*: `epic-adept-2` had the same dice, delay and attack rating as
-`grask-dredge-hook`, a shop weapon eight levels earlier — an Act II reward you could have bought at 12.
-That one is fixed (the epic carries higher accuracy), and `WeaponBalanceTests.No_two_weapons_share_a_stat_line`
-stops it recurring. The overlap itself is untouched: the retune held each tier at its existing mean
-deliberately, so this is inherited rather than introduced. The honest fix is deciding what an epic
-reward should be worth relative to the shop line below it, and that is a play question.
+It survived because every guard compared **epics to epics and shop lines to shop lines**. Both
+ladders climbed correctly and nothing measured the distance between them.
+`An_epic_beats_anything_buyable_or_lootable_when_it_is_awarded` is that measure. It derives the bar
+from content rather than a table — a weapon is reachable through a shopkeeper's `sells`, a mob's
+loot, or an item spawner, at the `minLevel` of the shallowest zone its source stands in — so moving
+a shopkeeper moves the bar with it.
+
+Eleven weapons retuned, all dice, no delays and no accuracy. The whole of tier 1 lifted, because the
+Path ranking pushes upward from whichever line is lowest and the Adept's is always the floor. The
+Adept line is now 2.00 / 2.50 / 3.50 / 4.50 / 6.00 and clears its bar by 11–20% at every tier.
+
+**And the top shop line was unobtainable.** `unlit-long-blade`, `unlit-binding-spike` and
+`unlit-standing-hammer` were authored, dropped by nothing, sold by nobody — there is no Unlit
+shopkeeper — and priced at `baseValue: 0`, which is the tell: nothing had ever been meant to sell
+them. They are drops in the Unlit now, at 0.12 off the three common dead, and priced on the
+35 → 130 → 480 → 820 curve the other lines follow. That raised the tier-5 bar to 5.94 and moved
+`epic-adept-5` and `epic-hallow-5` with it.
+
+The one earlier case is still fixed and still guarded: `epic-adept-2` once had the same dice, delay
+and attack rating as `grask-dredge-hook`, and `No_two_weapons_share_a_stat_line` stops it recurring
+— it caught this retune making `epic-hallow-1` an exact copy of the same weapon.
 
 Two have since been decided and built, and are recorded in `PLAN.md` §4.6 rather than here: the
 **aggression target rule** (#20 — the room's threat leader, otherwise at random, link-dead characters

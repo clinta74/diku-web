@@ -111,7 +111,7 @@
       "baseValue": 0,
       "baseStats": {
         "damageMin": 3,
-        "damageMax": 6,
+        "damageMax": 7,
         "bonus": 3
       },
       "attackDelayPulses": 8,
@@ -136,7 +136,7 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMin": 3,
+        "damageMin": 4,
         "damageMax": 7,
         "bonus": 3
       },

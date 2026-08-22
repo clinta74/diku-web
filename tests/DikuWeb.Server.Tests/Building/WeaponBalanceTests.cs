@@ -1,4 +1,6 @@
 using DikuWeb.Domain.Combat;
+using DikuWeb.Engine;
+using DikuWeb.Engine.Inhabitants;
 using DikuWeb.Server.Building;
 
 namespace DikuWeb.Server.Tests.Building;
@@ -225,12 +227,14 @@ public sealed class WeaponBalanceTests
     /// Adept, with the two casters close together because their output is focus abilities.
     /// </summary>
     /// <remarks>
-    /// <b>Tier 1 is excluded, and that is a decision rather than a gap.</b> At an average of three
-    /// damage the Hallow/Adept gap rounds away and both land on 2–4; integer dice have a floor on how
-    /// fine a distinction they can carry. The order holds from tier 2 up, where the dice are large
-    /// enough to express it.
+    /// <b>Tier 1 used to be excluded and is not any more.</b> At an average of three damage the
+    /// Hallow/Adept gap rounded away and both landed on 2–4 — integer dice have a floor on how fine a
+    /// distinction they can carry. Lifting the tier to clear the shop bar
+    /// (<see cref="An_epic_beats_anything_buyable_or_lootable_when_it_is_awarded"/>) moved its weapons
+    /// far enough apart to hold the order, so the exclusion went with it.
     /// </remarks>
     [Theory]
+    [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
     [InlineData(4)]
@@ -304,5 +308,169 @@ public sealed class WeaponBalanceTests
                     $"epic-{path}-{tier} ({here:F2} dps) is not above epic-{path}-{tier - 1} ({below:F2})");
             }
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // An epic against what you could simply go and get
+    // -----------------------------------------------------------------------
+
+    /// <summary>How much better than the ordinary line an epic reward has to be.</summary>
+    /// <remarks>
+    /// <b>Small on purpose.</b> The rule is that finishing a Path's chain leaves you visibly better
+    /// armed than a player who walked into a shop, not that it hands you the next tier early — the
+    /// tiers themselves are what carry progression, and this only stops a reward being a sidegrade.
+    /// </remarks>
+    private const double EpicMargin = 1.10;
+
+    /// <summary>
+    /// The lowest level at which each ordinary weapon can be got, by any route.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Derived rather than tabulated, so that moving a shopkeeper or a drop moves the bar with it.
+    /// A weapon is reachable through a shopkeeper's <c>sells</c>, a mob's loot table, or an item
+    /// spawner; in each case the level is the <c>minLevel</c> of the shallowest zone the source
+    /// stands in.
+    /// </para>
+    /// <para>
+    /// <b>Quest items are excluded, which is what makes this a bar rather than a circle.</b> The
+    /// question is what a player who has not done the chain could be carrying — comparing an epic
+    /// against other epics is <see cref="Every_epic_tier_is_stronger_than_the_one_below_it"/>'s job.
+    /// </para>
+    /// </remarks>
+    private static Dictionary<string, int> ObtainableFrom(WorldBundle world)
+    {
+        var zoneLevel = world.Zones.ToDictionary(z => z.Key, z => z.MinLevel, StringComparer.Ordinal);
+
+        var mobZones = new Dictionary<string, List<int>>(StringComparer.Ordinal);
+        var itemZones = new Dictionary<string, List<int>>(StringComparer.Ordinal);
+
+        foreach (var spawner in world.Spawners)
+        {
+            if (!zoneLevel.TryGetValue(spawner.ZoneKey, out var level))
+            {
+                continue;
+            }
+
+            var into = spawner.TemplateKind == Domain.Spawning.TemplateKind.Item ? itemZones : mobZones;
+
+            if (!into.TryGetValue(spawner.TemplateKey, out var levels))
+            {
+                into[spawner.TemplateKey] = levels = [];
+            }
+
+            levels.Add(level);
+        }
+
+        var obtainable = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        void Reach(string itemKey, int level)
+        {
+            if (!obtainable.TryGetValue(itemKey, out var existing) || level < existing)
+            {
+                obtainable[itemKey] = level;
+            }
+        }
+
+        foreach (var (key, levels) in itemZones)
+        {
+            Reach(key, levels.Min());
+        }
+
+        foreach (var mob in world.MobTemplates)
+        {
+            if (!mobZones.TryGetValue(mob.Key, out var levels))
+            {
+                // A template nothing places cannot hand anything over.
+                continue;
+            }
+
+            var level = levels.Min();
+
+            foreach (var drop in mob.Loot ?? [])
+            {
+                // The same key the importer reads. A loot entry is a bag, so this is a string
+                // lookup either way; taking it from the engine's own reader is what stops a
+                // renamed key passing here and failing in play.
+                if (JsonBag.Text(drop, "itemTemplateKey") is { Length: > 0 } itemKey)
+                {
+                    Reach(itemKey, level);
+                }
+            }
+
+            // Through the engine's reader rather than a second one, for the reason above.
+            foreach (var sold in MobBehavior.SellsOf(mob.Behavior))
+            {
+                Reach(sold, level);
+            }
+        }
+
+        return obtainable;
+    }
+
+    /// <summary>
+    /// A Path's reward beats anything that Path could have bought or looted by the time it lands.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Asked for from play, while walking the epic chains.</b> Three rewards were worse than or
+    /// equal to a weapon on open sale: <c>epic-hallow-1</c> and <c>epic-adept-1</c> both landed at
+    /// 1.50 dps against the 1.67 of <c>ossara-short-blade</c>, which is on a shelf in Gatetown at
+    /// level 1 — so the reward for a five-quest chain at level 8 was a downgrade from the starter
+    /// shop. <c>epic-adept-2</c> exactly tied the grask line.
+    /// </para>
+    /// <para>
+    /// It survived because every guard here compared epics to epics and shop lines to shop lines.
+    /// The two ladders each climbed correctly and nothing measured the distance between them.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void An_epic_beats_anything_buyable_or_lootable_when_it_is_awarded()
+    {
+        var world = World();
+        var weapons = Weapons();
+        var obtainable = ObtainableFrom(world);
+        var zoneLevel = world.Zones.ToDictionary(z => z.Key, z => z.MinLevel, StringComparer.Ordinal);
+
+        var ordinary = weapons.Values
+            .Where(w => !w.IsQuestItem && obtainable.ContainsKey(w.Key))
+            .Select(w => (w.Key, Level: obtainable[w.Key], Dps: Dps(w)))
+            .ToList();
+
+        Assert.NotEmpty(ordinary);
+
+        var failures = new List<string>();
+        var awarded = 0;
+
+        foreach (var quest in world.Quests)
+        {
+            if (quest.RewardItemKey is not { } reward || !weapons.TryGetValue(reward, out var epic))
+            {
+                continue;
+            }
+
+            awarded++;
+
+            var at = zoneLevel[quest.ZoneKey];
+
+            // The best thing on offer to somebody who has got this far without the chain.
+            var rival = ordinary
+                .Where(o => o.Level <= at)
+                .OrderByDescending(o => o.Dps)
+                .First();
+
+            var bar = rival.Dps * EpicMargin;
+
+            if (Dps(epic) < bar)
+            {
+                failures.Add(
+                    $"{reward} ({Dps(epic):F2} dps, awarded at {at}) needs {bar:F2} to beat "
+                    + $"{rival.Key} ({rival.Dps:F2}) by {(EpicMargin - 1) * 100:F0}%");
+            }
+        }
+
+        // The count is asserted so that a quest losing its reward key silently empties this test.
+        Assert.Equal(20, awarded);
+        Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));
     }
 }

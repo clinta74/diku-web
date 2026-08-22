@@ -943,17 +943,26 @@ that declares no damage does nothing"*, which was false, and was how all 35 were
   by anyone and speed is all that separates them: bigger numbers less often, or smaller more often,
   for the same output. Every realm sells a 6, an 8 and a 10.
 - **The 20 epic weapons are ranked by Path** — Temper, Warden, Hallow, Adept, with the casters close
-  together because melee is their backup and focus abilities are their output. Shares of the tier mean
-  are 1.15 / 1.05 / 0.94 / 0.86, which average to 1.0, so **each tier's total is unchanged**: this
-  redistributed power rather than inflating it. Whether the whole curve is right needs play.
+  together because melee is their backup and focus abilities are their output. The first pass held
+  each tier's total unchanged and only redistributed it, which is what left the bottom of the ranking
+  below the open market.
+- **An epic reward beats anything obtainable when it lands, by 10%.** Play answered the question the
+  redistribution left open. `epic-hallow-1` and `epic-adept-1` sat at 1.50 dps against a level-1 shop
+  blade's 1.67, so a five-quest chain finishing at level 8 was a downgrade from Gatetown; `epic-adept-2`
+  tied the grask line exactly. The bar is **derived from content, not tabulated** — reachable through a
+  shopkeeper's `sells`, a mob's loot, or an item spawner, at the `minLevel` of the shallowest zone its
+  source stands in — so moving a shopkeeper moves the bar. The Adept line is the floor the ranking
+  pushes up from, and it now runs 2.00 / 2.50 / 3.50 / 4.50 / 6.00, clearing its bar by 11–20%.
+  **This one does inflate**, deliberately: eleven weapons went up and none came down.
 - **Tuned per weapon, not per hand.** Dual wielding is a passive both martial Paths get, so it drops
   out of the comparison and a weapon's printed numbers mean what they say whatever is in the other
   hand. The Temper therefore leads on total output, being fastest *and* dual-wielding earliest — which
   is the Path's stated identity, now visible instead of accidental.
-- **Epic tier 1 cannot express the ranking**, and it is excluded by name in the test. At an average of
-  three damage the Hallow/Adept gap rounds away and both land on 2–4. Integer dice have a floor on how
-  fine a distinction they can carry — the same limit that made the multiplier lumpy, but now at least
-  legible in the authored numbers.
+- **Epic tier 1 expresses the ranking now, and it did not before.** At an average of three damage the
+  Hallow/Adept gap rounded away and both landed on 2–4, so the tier was excluded from the ranking test
+  by name. Lifting the tier to clear the shop bar moved every weapon in it far enough apart for integer
+  dice to hold the order — 2.67 / 2.40 / 2.25 / 2.00 — and the exclusion is gone. The floor on how fine
+  a distinction dice can carry is still real; the tier is simply no longer under it.
 - `EquipmentResolver.KnownStatKeys` names the six keys the engine reads, and `BundleValidator` errors
   on any `baseStats` key outside it. That is the third arm of the content-key guard and the reason the
   multiplier cannot drift back in.
@@ -2292,6 +2301,7 @@ API client, and types with the game.
 | **Spawners** | Template, target rooms, count, respawn seconds. |
 | **Quests** | Giver mob, turn-in mob, required item and count, rewards, prerequisites, and the four dialogue strings (§4.9). Reachability warnings shown inline. |
 | **Storyline graph** | The chain as an indented list — depth is what a builder needs to see, and indentation *is* "how far in is this". Flags cycles, unreachable quests, and prerequisites naming a quest that does not exist. |
+| **Placement rail** | Beside a mob or item: the spawners that place it and the rooms they fill, and for an item the mobs that drop it, the shopkeepers that stock it, and the quests that hand it over (§7.9). Read-only, and the rooms are links. |
 
 Placing a one-off object in a room is just a spawner with `target_count: 1` — the builder offers
 it as *Place item here* rather than making you think about spawners.
@@ -2337,11 +2347,19 @@ GET  /api/builder/room-flags                 -- the flag registry: key, default,
 GET  /api/builder/quests/{key}/reachability  -- can the required item actually be obtained?
 GET  /api/builder/storyline?zone={key}       -- quest graph: chain order, cycles, dead ends
 
+GET  /api/builder/mob-templates/{key}/placement   -- the spawners that place it, and their rooms
+GET  /api/builder/item-templates/{key}/placement  -- the same, plus what drops, sells, and
+                                                  -- rewards it (§7.9). Two routes rather than
+                                                  -- one with a kind: mob and item keys are
+                                                  -- different namespaces and do collide
+
 POST /api/builder/rooms/{key}/dig         -- create + link a neighbouring room (§7.6)
      { direction, reciprocal: true, zoneKey?: string, newRoomKey?: string }
 
-POST /api/builder/zones/{key}/respawn     -- despawn + respawn, to see multiplier changes now
-                                          -- NOT MAPPED. Designed, never built (§8)
+POST /api/builder/zones/{key}/respawn     -- despawn + refill this zone's mob spawners, to see
+                                          -- multiplier changes now. Persists nothing: mobs live
+                                          -- in memory, so it answers with the two counts it moved
+                                          -- { zoneKey, despawned, spawned }
 GET  /api/builder/zones/{key}/preview     -- resolved stats for every template in this zone
 GET  /api/builder/zones/{key}/validate    -- advisory warnings, never blocking
 GET  /api/builder/zones/{key}/unfinished  -- rooms still flagged unfinished, the build to-do list
@@ -2576,6 +2594,56 @@ the two cannot disagree — and the live effects each action pushes into the loo
 them, and the API refuses them: the first two are presentation, and only the third is the
 boundary.
 
+### 7.9 Where a template lives
+
+A template is authored in isolation and never *exists* in isolation, and **every relationship
+that places one is stored on the other side of itself**. A spawner names its template; a loot row
+names its item; a quest names its reward; a shopkeeper's `sells` names its stock. All four are
+plain to read from the thing doing the naming and structurally invisible from the thing being
+named — so the question a builder actually has about the mob in front of them, *where is this and
+will anyone ever meet it*, was the one question its own editor could not answer. Before this the
+way to find out was to open the World tab and check rooms one at a time.
+
+So the Mobs and Items tabs get a third column, the way the Quests tab has one for the chain
+(§7.1) — same reasoning, same shape, same rail:
+
+```
+Where it lives                    Where it comes from
+                                    Dropped by
+  Spawners                            a brute · 25%
+    Millbrook · 2× · respawn 60s      a ghost · always · no spawner places it
+      The Rat Burrow                Sold by
+      A Wet Ditch                     a trader
+    The Deep Warren · 1× · ...      Quests
+      aldenmoor.warren.pit            The Lost Ledger · reward
+        · no such room
+```
+
+**The rooms are links.** What a builder does after finding out where a mob spawns is go and look
+at it, and a rail that names a room without offering to open it makes them retype the key.
+
+**Two routes, not one with a kind.** `GET /api/builder/mob-templates/{key}/placement` and
+`GET /api/builder/item-templates/{key}/placement`. Mob and item keys are different namespaces that
+routinely collide — `torch` is a plausible member of both — and the path already says which one is
+being asked about.
+
+**An item reports four sources, a mob reports one**, and that asymmetry is the feature rather than
+an inconsistency to tidy away. An item's own ground spawner is the *rarest* of the ways one reaches
+a player: most drop, some are sold, some are only ever handed over at a turn-in. An item panel that
+listed spawners alone would answer "nowhere" for nearly everything in the game and be wrong every
+time.
+
+**Three states, told apart.** Placed; placed somewhere that no longer exists (§7.4 allows a spawner
+to point at a deleted room, and it is a finding rather than a row to hide); and placed nowhere at
+all, which is a mob nobody will ever meet and looks identical to a finished one from inside the
+editor. The same reading covers loot: a drop from a mob no spawner places is loot nobody can reach,
+which is the finding `/reachability` already reports for a quest item, said here for every item.
+
+The loot bag is read through one reader (`LootTable`) shared with `/reachability`, for the reason
+§12's first lesson gives — the table round-trips through jsonb, so a chance arrives as a number, a
+string, or a `JsonElement`, and two readers of one shape is how they come to disagree about whether
+something drops.
+
 ---
 
 ## 8. Phases
@@ -2604,15 +2672,19 @@ nothing — the pattern §12's two rules exist for.
 | **4 — Combat and progression** | You can kill something, loot it, and level up — and the multipliers visibly matter | The combat state machine on per-combatant attack clocks (§2.3), `kill` / `flee` / `consider`, the §4.6 damage model, the §4.11 target gate, death and the XP penalty (§4.12), `bind` and respawn fall-through, XP and levelling, regen and rest, aggression and assist, `EquipmentResolver` in the damage roll |
 | **5 — Depth** | Abilities, quests, shops, parties, travel | Eight abilities per Path to level 20 from one `AbilityCatalogue`, seven effect executors and all three targeting modes, threat accounting behind one `HostileActionGate`, the quest engine with chains, repeats, `abandon` and dormancy, the Quests tab and storyline graph, shops and currency with a per-shopkeeper markup (§4.13), session-scoped parties with an XP split, `tell` / `reply` / channels, `recall` and the `noRecall` reader, and the pack listing (§4.14) |
 
-Three lines from those phases are open rather than closed, and stay here rather than in the
-history:
+Three lines from those phases stayed here rather than going into the history. One of them is now
+closed and is kept in place, because what it says about itself is the point:
 
-- [ ] **Builder: *Respawn zone*** to apply live multiplier edits to mobs already standing. Neither
-      half is built: `POST /api/builder/zones/{key}/respawn` is listed in §7.3 and is not mapped in
-      `BuilderEndpoints`, and no client calls it. Deferred nice-to-have from Phase 3, and the last
-      thing §4.4's *"editing a multiplier affects future spawns only"* leaves a builder unable to
-      see. §12 has listed `/respawn` among the endpoints written and never wired since Phase 3 —
-      it was never written.
+- [x] **Builder: *Respawn zone*** — the last thing §4.4's *"editing a multiplier affects future
+      spawns only"* left a builder unable to see, and open from Phase 3 until it was built. Both
+      halves exist now: `RespawnZone` on the mutation path, `POST /api/builder/zones/{key}/respawn`
+      mapped in `BuilderEndpoints`, and the button on the zone editor's Difficulty section. It
+      takes down what this zone's **mob** spawners placed — wherever those mobs have wandered to,
+      since ownership is the spawner and not the room — and refills every one to its target at
+      once, deliberately bypassing `SpawnerSchedule`: waiting out an hour-long `respawnSeconds`
+      would be the sweep doing its job and the button doing nothing. Hand-placed mobs and item
+      spawners are left alone. It is the only builder write that persists nothing, so it answers
+      with counts rather than a row.
 - [→] **Teleport as a spell** — not built, and not a gap. A destination is a `world.zone.room` like
       any other, so a teleport effect is a parameter rather than a new kind of link: an executor
       reading a room key and calling `Travel`. That seam exists now (§5.3, `recall`) rather than
@@ -2917,7 +2989,8 @@ since, and the UX evaluation, whose eight findings are all marked FIXED in [UX.m
 - **An endpoint with no caller is not a feature, and a checkbox is not evidence.** Reachability,
   the multiplier preview, and world delete were all written, checked off, and never wired to
   anything. `/respawn` is the sharper version and was misfiled here for months as one of them:
-  it was never written at all, and both this list and §7.3 said otherwise. Before checking a box,
+  it was never written at all, and both this list and §7.3 said otherwise — it is built now, and
+  the lesson is what it cost to find that out. Before checking a box,
   name the test or the call site — and grep for the route. The quest editor was
   the same lesson caught a second time and the worst version of it: a `QuestEditor.tsx` checked
   off that was never written, so the plan claimed a whole authoring surface that did not exist for

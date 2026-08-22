@@ -71,6 +71,7 @@ public static class BuilderEndpoints
         group.MapGet("/zones/{key}/validate", ValidateZoneAsync);
         group.MapGet("/zones/{key}/unfinished", UnfinishedAsync);
         group.MapGet("/zones/{key}/preview", PreviewAsync);
+        group.MapPost("/zones/{key}/respawn", RespawnZoneAsync);
 
         group.MapGet("/audit", AuditAsync);
 
@@ -82,6 +83,7 @@ public static class BuilderEndpoints
 
         group.MapGet("/mob-templates", ListMobTemplatesAsync);
         group.MapGet("/mob-templates/{key}", GetMobTemplateAsync);
+        group.MapGet("/mob-templates/{key}/placement", MobPlacementAsync);
         group.MapPost("/mob-templates/{key}", CreateMobTemplateAsync);
         group.MapPatch("/mob-templates/{key}", UpdateMobTemplateAsync);
         group.MapDelete("/mob-templates/{key}", DeleteMobTemplateAsync);
@@ -94,6 +96,7 @@ public static class BuilderEndpoints
 
         group.MapGet("/item-templates", ListItemTemplatesAsync);
         group.MapGet("/item-templates/{key}", GetItemTemplateAsync);
+        group.MapGet("/item-templates/{key}/placement", ItemPlacementAsync);
         group.MapPost("/item-templates/{key}", CreateItemTemplateAsync);
         group.MapPatch("/item-templates/{key}", UpdateItemTemplateAsync);
         group.MapDelete("/item-templates/{key}", DeleteItemTemplateAsync);
@@ -659,6 +662,38 @@ public static class BuilderEndpoints
             ? Results.Ok(preview)
             : Results.NotFound();
 
+    /// <summary>
+    /// Despawns and refills this zone's mob spawners, so a multiplier edit is visible in the
+    /// world at once rather than at the next respawn (PLAN.md §7.5).
+    /// </summary>
+    /// <remarks>
+    /// Not routed through <see cref="SaveAsync{T}"/>, which every other write here uses, because
+    /// there is nothing to save: no primitive comes back, so no row is written, no audit entry is
+    /// made, and there is nothing to reload and hand to the caller. What did happen is a pair of
+    /// counts, and they come off the mutation result rather than out of a second read - only the
+    /// loop can see live mobs, and asking it twice would be asking about a world that had moved on.
+    /// </remarks>
+    private static async Task<IResult> RespawnZoneAsync(
+        string key,
+        WorldEditor editor,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(http);
+
+        http.TryGetAccountId(out var accountId);
+
+        var outcome = await editor.ApplyAsync(new RespawnZone(key), accountId, ct);
+
+        if (outcome.Status != EditStatus.Saved)
+        {
+            return Refused(outcome.Result);
+        }
+
+        var tally = outcome.Result.Respawned ?? new RespawnTally(0, 0);
+        return Results.Ok(new RespawnZoneResponse(key, tally.Despawned, tally.Spawned));
+    }
+
     private static async Task<IResult> AuditAsync(
         string? kind,
         string? key,
@@ -782,6 +817,31 @@ public static class BuilderEndpoints
         BuilderQueries queries,
         CancellationToken ct) =>
         await queries.MobTemplateAsync(key, ct) is { } template ? Results.Ok(template) : Results.NotFound();
+
+    /// <summary>
+    /// Where this template actually exists in the world (PLAN.md §7.9).
+    /// </summary>
+    /// <remarks>
+    /// Two routes rather than one with a kind parameter, because a mob key and an item key are
+    /// different namespaces that routinely collide - <c>torch</c> is a plausible member of both -
+    /// and a single route would need the caller to say which, which is what the path already says.
+    /// </remarks>
+    private static async Task<IResult> MobPlacementAsync(
+        string key,
+        BuilderQueries queries,
+        CancellationToken ct) =>
+        await queries.PlacementAsync(TemplateKind.Mob, key, ct) is { } placement
+            ? Results.Ok(placement)
+            : Results.NotFound();
+
+    /// <inheritdoc cref="MobPlacementAsync"/>
+    private static async Task<IResult> ItemPlacementAsync(
+        string key,
+        BuilderQueries queries,
+        CancellationToken ct) =>
+        await queries.PlacementAsync(TemplateKind.Item, key, ct) is { } placement
+            ? Results.Ok(placement)
+            : Results.NotFound();
 
     private static async Task<IResult> CreateMobTemplateAsync(
         string key,
@@ -1549,35 +1609,14 @@ public static class BuilderEndpoints
     /// Whether a mob's loot table lists an item with a non-zero chance. Mirrors how CombatSystem
     /// reads the same jsonb: an "itemTemplateKey" and a "chance" per entry.
     /// </summary>
-    private static bool DropsItem(MobTemplateResponse mob, string itemKey)
-    {
-        foreach (var entry in mob.Loot)
-        {
-            if (!entry.TryGetValue("itemTemplateKey", out var keyValue))
-            {
-                continue;
-            }
-
-            if (!string.Equals(keyValue?.ToString(), itemKey, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            // A zero chance is a table entry that can never fire, so it is not a source.
-            if (!entry.TryGetValue("chance", out var chanceValue))
-            {
-                return true;
-            }
-
-            return !double.TryParse(
-                chanceValue?.ToString(),
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out var chance) || chance > 0;
-        }
-
-        return false;
-    }
+    /// <summary>
+    /// Whether this mob's table is a source for the item, including the rule that a zero chance is
+    /// an entry which can never fire. <see cref="LootTable"/> holds the reading, because the
+    /// placement panel asks the same question of the same bag and two readers of one jsonb shape
+    /// is how they come to disagree.
+    /// </summary>
+    private static bool DropsItem(MobTemplateResponse mob, string itemKey) =>
+        LootTable.Drops(mob.Loot, itemKey);
 
     /// <summary>
     /// The quest graph for a zone: nodes are quests, edges are prerequisites, plus the two ways

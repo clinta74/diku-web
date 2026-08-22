@@ -38,6 +38,7 @@ export function ZonePanel({ zoneKey }: ZonePanelProps) {
   const [multipliers, setMultipliers] = useState<Multipliers>(() => readMultipliers(undefined))
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [respawning, setRespawning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [savedAt, setSavedAt] = useState(0)
 
@@ -79,6 +80,29 @@ export function ZonePanel({ zoneKey }: ZonePanelProps) {
       setError(e instanceof Error ? e.message : 'Save failed.')
     } finally {
       setBusy(false)
+    }
+  }
+
+  /**
+   * PLAN.md §7.5. The counts are reported rather than swallowed: a respawn that placed nothing
+   * means the zone has no mob spawners, and "Respawned" alone would leave a builder waiting for a
+   * change that was never going to come.
+   */
+  async function respawn() {
+    if (!zone) return
+    setRespawning(true)
+    setError(null)
+    try {
+      const moved = await builderApi.respawnZone(zone.key)
+      toast.notify(
+        moved.spawned === 0 && moved.despawned === 0
+          ? 'Nothing to respawn — this zone has no mob spawners.'
+          : `Respawned ${moved.spawned} (${moved.despawned} removed)`,
+      )
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Respawn failed.')
+    } finally {
+      setRespawning(false)
     }
   }
 
@@ -151,6 +175,23 @@ export function ZonePanel({ zoneKey }: ZonePanelProps) {
             refresh.
           </p>
           <MultiplierPreviewPanel zoneKey={zone.key} refreshToken={savedAt} />
+
+          <h4>Living mobs</h4>
+          <p className="dim detail">
+            Multipliers resolve when a mob spawns, so everything already standing in the zone keeps
+            the numbers it was born with. Respawning clears out what this zone&rsquo;s mob spawners
+            placed and fills every one of them again at once — hand-placed mobs and anything on the
+            floor are left alone.
+          </p>
+          <div className="row">
+            <Button
+              disabled={busy || respawning || dirty}
+              title={dirty ? 'Save first — a respawn applies the numbers on the server.' : undefined}
+              onClick={() => void respawn()}
+            >
+              {respawning ? 'Respawning…' : 'Respawn zone'}
+            </Button>
+          </div>
         </div>
       )}
 

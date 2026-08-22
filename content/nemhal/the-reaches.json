@@ -443,7 +443,7 @@
       "weight": 2600,
       "baseValue": 0,
       "baseStats": {
-        "damageMin": 6,
+        "damageMin": 7,
         "damageMax": 11,
         "bonus": 4
       },

@@ -248,6 +248,35 @@ public sealed record SetWorldFlag(string Key, string Flag, bool? Value) : WorldC
     public override string EntityKey => Key;
 }
 
+/// <summary>
+/// Takes down everything this zone's spawners put in the world and fills them again at once
+/// (PLAN.md §7.5).
+/// </summary>
+/// <remarks>
+/// <para>
+/// The one change here that edits nothing. Multipliers resolve once, at spawn time (§4.4), so a
+/// difficulty edit reaches the next spawn and never the mob already standing in the room — and
+/// without this the only ways to see the numbers just typed are to clear the zone by hand or to
+/// restart the server.
+/// </para>
+/// <para>
+/// <b>Nothing is persisted</b>, because nothing authored has changed: mobs live in memory alone,
+/// so the applied list comes back empty and the writer is never called. It travels as a
+/// <see cref="WorldChange"/> anyway because it mutates the world, and the loop is the only thread
+/// allowed to do that (§2.1).
+/// </para>
+/// <para>
+/// <b>Hand-placed mobs are left standing.</b> A mob with no spawner behind it has nothing to put
+/// it back, so despawning one would be a delete wearing a refresh's name.
+/// </para>
+/// </remarks>
+public sealed record RespawnZone(string Key) : WorldChange
+{
+    public override string EntityKind => "zone";
+
+    public override string EntityKey => Key;
+}
+
 // ---------------------------------------------------------------------------
 // Templates and Spawners
 // ---------------------------------------------------------------------------

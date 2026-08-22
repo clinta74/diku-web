@@ -91,6 +91,13 @@ public sealed record RoomFlagResponse(string Key, bool Default, string Summary, 
 /// </remarks>
 public sealed record BundleFormatResponse(int FormatVersion);
 
+/// <summary>
+/// What a zone respawn moved (PLAN.md §7.5). Two counts rather than one: a zone that was below
+/// its population target comes back above where it was, and saying so is the difference between
+/// a button that reports what it did and one that reports what it was asked to do.
+/// </summary>
+public sealed record RespawnZoneResponse(string ZoneKey, int Despawned, int Spawned);
+
 /// <summary>An advisory warning. Never blocks a save (PLAN.md §7.4).</summary>
 public sealed record ValidationWarning(string Kind, string EntityKey, string Message);
 
@@ -512,6 +519,58 @@ public sealed record QuestResponse(
 /// </summary>
 /// <param name="Kind">Machine-readable discriminator, e.g. "unreachable-required-item".</param>
 /// <param name="Message">A sentence a builder can act on.</param>
+/// <summary>
+/// One room a spawner fills. <paramref name="Title"/> is null when the key names no room — a
+/// spawner pointing at a deleted room is allowed (§7.4) and worth seeing, since it is the
+/// difference between "placed here" and "placed nowhere".
+/// </summary>
+public sealed record PlacementRoom(string Key, string? Title);
+
+/// <summary>One spawner that places a template, and the rooms it places it into.</summary>
+/// <param name="ZoneName">The zone's name, since a key is not what a builder reads.</param>
+/// <param name="FightsAtLevel">
+/// What mobs from this spawner actually fight at (§4.7). Zero for an item spawner, or for a mob
+/// spawner whose zone has since been deleted.
+/// </param>
+public sealed record PlacementSpawner(
+    Guid Id,
+    string ZoneKey,
+    string ZoneName,
+    int TargetCount,
+    int RespawnSeconds,
+    int FightsAtLevel,
+    IReadOnlyList<PlacementRoom> Rooms);
+
+/// <summary>
+/// A mob an item comes from: its loot table, or its shop stock.
+/// </summary>
+/// <param name="Chance">The loot roll, or null when this is a shop line rather than a drop.</param>
+/// <param name="Placed">
+/// Whether any spawner places this mob. Loot on a mob nobody places is loot nobody can reach, and
+/// it is the half of the answer that is invisible from either template's own editor.
+/// </param>
+public sealed record PlacementMob(string Key, string Name, bool Placed, double? Chance = null);
+
+/// <summary>A quest that hands out this item, or asks for it.</summary>
+/// <param name="Role">"reward" or "required".</param>
+public sealed record PlacementQuest(string Key, string Name, string ZoneKey, string Role);
+
+/// <summary>
+/// Everywhere one template shows up in the authored world (PLAN.md §7.9).
+/// </summary>
+/// <remarks>
+/// The three item-only lists are empty for a mob. An item without them would be answered "nowhere"
+/// nearly always, because most items have no ground spawner of their own — they drop, they are
+/// sold, or they are handed over at a turn-in.
+/// </remarks>
+public sealed record TemplatePlacement(
+    string TemplateKey,
+    string Kind,
+    IReadOnlyList<PlacementSpawner> Spawners,
+    IReadOnlyList<PlacementMob> DroppedBy,
+    IReadOnlyList<PlacementMob> SoldBy,
+    IReadOnlyList<PlacementQuest> Quests);
+
 public sealed record ReachabilityWarning(
     string Kind,
     string Message,
