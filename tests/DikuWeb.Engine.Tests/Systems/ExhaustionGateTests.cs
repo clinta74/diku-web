@@ -123,3 +123,62 @@ public sealed class ExhaustionGateTests
         Assert.Equal(0, carried);
     }
 }
+
+/// <summary>
+/// Hunger and thirst arrive over exactly the span they are authored for.
+/// </summary>
+/// <remarks>
+/// Worth asserting because the obvious implementation cannot do it. Eight hours over a hundred
+/// points is 9.6 ticks a point, and a modulus has to round — which is twenty minutes of drift on
+/// hunger and ten on thirst, in a number chosen to be a round figure.
+/// </remarks>
+public sealed class NeedsSystemTimingTests
+{
+    private static int PointsAfter(long ticks, long ticksToEmpty)
+    {
+        var points = 0;
+
+        for (var tick = 1; tick <= ticks; tick++)
+        {
+            if (tick * Needs.Worst / ticksToEmpty > (tick - 1) * Needs.Worst / ticksToEmpty)
+            {
+                points++;
+            }
+        }
+
+        return points;
+    }
+
+    [Fact]
+    public void Hunger_reaches_starving_at_exactly_eight_hours()
+    {
+        Assert.Equal(Needs.Worst, PointsAfter(NeedsSystem.TicksToStarving, NeedsSystem.TicksToStarving));
+
+        // And not a tick early. Reaching the worst before the span is up would mean the span is
+        // shorter than it says, which is the drift this arithmetic exists to avoid.
+        Assert.True(
+            PointsAfter(NeedsSystem.TicksToStarving - 1, NeedsSystem.TicksToStarving) < Needs.Worst);
+    }
+
+    [Fact]
+    public void Thirst_reaches_parched_at_exactly_six_hours()
+    {
+        Assert.Equal(Needs.Worst, PointsAfter(NeedsSystem.TicksToParched, NeedsSystem.TicksToParched));
+    }
+
+    /// <summary>Thirst arrives first, which is what gives a waterskin its own job.</summary>
+    [Fact]
+    public void Thirst_arrives_before_hunger()
+    {
+        Assert.True(NeedsSystem.TicksToParched < NeedsSystem.TicksToStarving);
+    }
+
+    /// <summary>Halfway through the span is halfway to the worst of it, not a burst at the end.</summary>
+    [Fact]
+    public void The_climb_is_even()
+    {
+        var half = PointsAfter(NeedsSystem.TicksToStarving / 2, NeedsSystem.TicksToStarving);
+
+        Assert.InRange(half, (Needs.Worst / 2) - 1, (Needs.Worst / 2) + 1);
+    }
+}

@@ -22,20 +22,20 @@ public static class Needs
     /// <summary>Fully starving or fully parched. The scale runs <c>0</c> to here.</summary>
     public static readonly int Worst = 100;
 
-    /// <summary>Minutes of play before hunger climbs by one.</summary>
+    /// <summary>Hours of play from a full belly to starving.</summary>
     /// <remarks>
-    /// Two minutes puts a full belly a little over three hours from empty, which is longer than most
-    /// sessions — so an attentive player meets hunger occasionally rather than constantly.
+    /// <b>Longer than a session, deliberately.</b> Eight hours means an ordinary evening never
+    /// meets hunger at all, and only a long day or a character left standing in town does. The
+    /// upkeep is meant to be a reason to keep bread in the pack, not a clock to play against.
     /// </remarks>
-    public const int MinutesPerHunger = 2;
+    public const int HoursToStarving = 8;
 
-    /// <summary>Minutes of play before thirst climbs by one.</summary>
+    /// <summary>Hours of play from watered to parched.</summary>
     /// <remarks>
-    /// Faster than hunger, at about two and a half hours from full. Thirst arriving first is what
-    /// gives a waterskin a job distinct from a loaf, rather than the two being one need with two
-    /// item types.
+    /// Sooner than hunger, which is what gives a waterskin a job distinct from a loaf — otherwise
+    /// the two are one need with two item types.
     /// </remarks>
-    public const double MinutesPerThirst = 1.5;
+    public const int HoursToParched = 6;
 
     /// <summary>The least of its normal rate recovery can fall to, when a need is at its worst.</summary>
     /// <remarks>

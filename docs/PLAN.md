@@ -1888,6 +1888,12 @@ is always "deal with whichever is worse" and letting both slide is not punished 
 damage and no block. `RegenSystem` already skips anyone in combat, so the whole cost lands on
 downtime: it makes food worth carrying without making a fight harder.
 
+**Eight hours to starving, six to parched.** Longer than a session on purpose: an ordinary evening
+never meets hunger, and only a long day or a character left standing in town does. Both are exact
+rather than approximate — eight hours over a hundred points is 9.6 ticks a point, which a modulus has
+to round to twenty minutes of drift, so `NeedsSystem.Due` compares how many points *should* have
+arrived by this tick against the previous one and lands on the span asked for.
+
 **They only tick for characters who are logged in.** `NeedsSystem` walks `world.AllPlayers`, which is
 the connected set, so a character left alone for a week comes back as fed as they left. And crossing
 a threshold is announced — an upkeep the player cannot see is indistinguishable from the game having

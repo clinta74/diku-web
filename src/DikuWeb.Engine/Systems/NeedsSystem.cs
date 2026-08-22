@@ -34,8 +34,14 @@ public static class NeedsSystem
     /// </remarks>
     public const long IntervalPulses = 120;
 
-    /// <summary>How many of these ticks make a minute.</summary>
-    private const double TicksPerMinute = 240.0 / IntervalPulses;
+    /// <summary>How many of these ticks make an hour.</summary>
+    private const long TicksPerHour = 240L * 60 / IntervalPulses;
+
+    /// <summary>Ticks from a full belly to starving.</summary>
+    public const long TicksToStarving = Needs.HoursToStarving * TicksPerHour;
+
+    /// <summary>Ticks from watered to parched.</summary>
+    public const long TicksToParched = Needs.HoursToParched * TicksPerHour;
 
     /// <summary>
     /// Advances hunger and thirst for everyone connected, and tells them when it starts to show.
@@ -57,12 +63,12 @@ public static class NeedsSystem
             var hungerBefore = Needs.DescribeHunger(vitals.Hunger);
             var thirstBefore = Needs.DescribeThirst(vitals.Thirst);
 
-            if (Due(tick, Needs.MinutesPerHunger))
+            if (Due(tick, TicksToStarving))
             {
                 vitals.Hunger = Needs.Increased(vitals.Hunger, 1);
             }
 
-            if (Due(tick, Needs.MinutesPerThirst))
+            if (Due(tick, TicksToParched))
             {
                 vitals.Thirst = Needs.Increased(vitals.Thirst, 1);
             }
@@ -82,16 +88,24 @@ public static class NeedsSystem
         }
     }
 
-    /// <summary>Whether a need on this many minutes should advance on this tick.</summary>
+    /// <summary>
+    /// Whether a need that empties over <paramref name="ticksToEmpty"/> should advance on this tick.
+    /// </summary>
     /// <remarks>
-    /// Integer division on the accumulated tick count rather than a modulus on the pulse, so a rate
-    /// that is not a whole number of minutes — thirst is one and a half — still lands evenly instead
-    /// of never matching.
+    /// <b>Exact over the whole span rather than a period rounded to a tick.</b> Eight hours over a
+    /// hundred points is 9.6 ticks a point, and a modulus has to round that — to 10, which is eight
+    /// hours and twenty minutes, and to 7 for thirst, which is five hours fifty. Comparing how many
+    /// points <em>should</em> have arrived by this tick against the previous one advances exactly
+    /// <see cref="Needs.Worst"/> times across exactly the span asked for, with the unevenness spread
+    /// through it instead of accumulating at the end.
     /// </remarks>
-    private static bool Due(long tick, double minutes)
+    private static bool Due(long tick, long ticksToEmpty)
     {
-        var every = Math.Max(1, (long)Math.Round(minutes * TicksPerMinute));
+        if (tick <= 0 || ticksToEmpty <= 0)
+        {
+            return false;
+        }
 
-        return tick > 0 && tick % every == 0;
+        return tick * Needs.Worst / ticksToEmpty > (tick - 1) * Needs.Worst / ticksToEmpty;
     }
 }
