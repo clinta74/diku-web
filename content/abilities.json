@@ -1,8 +1,8 @@
 {
   "formatVersion": 15,
-  "exportedAt": "2026-08-20T00:08:26.0971428+00:00",
+  "exportedAt": "2026-08-22T02:56:56.3400339+00:00",
   "scope": {
-    "kind": "all",
+    "kind": "abilities",
     "key": null
   },
   "worlds": [],
@@ -27,8 +27,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "1.1",
-            "minDamage": "3"
+            "minDamage": "3",
+            "scalingFactor": "1.1"
           }
         }
       ]
@@ -49,8 +49,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "1.4",
-            "minDamage": "5"
+            "minDamage": "5",
+            "scalingFactor": "1.4"
           }
         }
       ]
@@ -71,11 +71,11 @@
         {
           "key": "buff.damage-up",
           "params": {
-            "outgoingMultiplier": "1.25",
-            "durationPulses": "80",
+            "name": "battle fury",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "battle fury"
+            "durationPulses": "80",
+            "outgoingMultiplier": "1.25"
           }
         }
       ]
@@ -96,11 +96,11 @@
         {
           "key": "debuff.weaken",
           "params": {
-            "incomingMultiplier": "1.3",
-            "durationPulses": "80",
+            "name": "sundered",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "sundered"
+            "durationPulses": "80",
+            "incomingMultiplier": "1.3"
           }
         }
       ]
@@ -142,8 +142,8 @@
         {
           "key": "control.stun",
           "params": {
-            "durationPulses": "16",
-            "name": "reeling"
+            "name": "reeling",
+            "durationPulses": "16"
           }
         }
       ]
@@ -154,7 +154,7 @@
       "unlockLevel": 10,
       "name": "Rally",
       "description": "Find your feet again in the middle of it.",
-      "costType": "Stamina",
+      "costType": "Focus",
       "costValue": 22,
       "cooldownPulses": 96,
       "cooldownGroup": null,
@@ -185,10 +185,10 @@
         {
           "key": "buff.defense",
           "params": {
-            "defenseRating": "6",
+            "name": "shield wall",
             "mitigation": "6",
-            "durationPulses": "100",
-            "name": "shield wall"
+            "defenseRating": "6",
+            "durationPulses": "100"
           }
         }
       ]
@@ -209,8 +209,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "2.0",
-            "minDamage": "12"
+            "minDamage": "12",
+            "scalingFactor": "2.0"
           }
         }
       ]
@@ -231,18 +231,18 @@
         {
           "key": "buff.max-health",
           "params": {
+            "name": "standing ground",
             "maxHealth": "80",
-            "durationPulses": "480",
-            "name": "standing ground"
+            "durationPulses": "480"
           }
         },
         {
           "key": "buff.defense",
           "params": {
-            "defenseRating": "6",
+            "name": "standing ground",
             "mitigation": "6",
-            "durationPulses": "480",
-            "name": "standing ground"
+            "defenseRating": "6",
+            "durationPulses": "480"
           }
         }
       ]
@@ -284,10 +284,10 @@
         {
           "key": "buff.defense",
           "params": {
-            "defenseRating": "8",
+            "name": "bulwark",
             "mitigation": "8",
-            "durationPulses": "240",
-            "name": "bulwark"
+            "defenseRating": "8",
+            "durationPulses": "240"
           }
         }
       ]
@@ -308,18 +308,18 @@
         {
           "key": "buff.max-health",
           "params": {
+            "name": "grounded",
             "maxHealth": "120",
-            "durationPulses": "320",
-            "name": "grounded"
+            "durationPulses": "320"
           }
         },
         {
           "key": "buff.defense",
           "params": {
-            "defenseRating": "6",
+            "name": "grounded",
             "mitigation": "6",
-            "durationPulses": "320",
-            "name": "grounded"
+            "defenseRating": "6",
+            "durationPulses": "320"
           }
         }
       ]
@@ -340,8 +340,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "1.6",
-            "minDamage": "10"
+            "minDamage": "10",
+            "scalingFactor": "1.6"
           }
         },
         {
@@ -368,18 +368,18 @@
         {
           "key": "buff.max-health",
           "params": {
+            "name": "unbreakable",
             "maxHealth": "200",
-            "durationPulses": "480",
-            "name": "unbreakable"
+            "durationPulses": "480"
           }
         },
         {
           "key": "buff.defense",
           "params": {
-            "defenseRating": "12",
+            "name": "unbreakable",
             "mitigation": "12",
-            "durationPulses": "480",
-            "name": "unbreakable"
+            "defenseRating": "12",
+            "durationPulses": "480"
           }
         }
       ]
@@ -389,7 +389,7 @@
       "path": "Warden",
       "unlockLevel": 43,
       "name": "Sundering Blow",
-      "description": "Take the guard apart so that everyone else's work lands on what is left.",
+      "description": "Take the guard apart so that everyone else\u0027s work lands on what is left.",
       "costType": "Stamina",
       "costValue": 34,
       "cooldownPulses": 120,
@@ -400,17 +400,17 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "1.9",
-            "minDamage": "12"
+            "minDamage": "12",
+            "scalingFactor": "1.9"
           }
         },
         {
           "key": "debuff.expose",
           "params": {
-            "defenseRating": "6",
+            "name": "sundered open",
             "mitigation": "5",
-            "durationPulses": "96",
-            "name": "sundered open"
+            "defenseRating": "6",
+            "durationPulses": "96"
           }
         }
       ]
@@ -437,11 +437,11 @@
         {
           "key": "debuff.weaken",
           "params": {
-            "outgoingMultiplier": "0.8",
-            "durationPulses": "240",
+            "name": "cowed",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "cowed"
+            "durationPulses": "240",
+            "outgoingMultiplier": "0.8"
           }
         }
       ]
@@ -462,18 +462,18 @@
         {
           "key": "buff.max-health",
           "params": {
+            "name": "the last wall",
             "maxHealth": "400",
-            "durationPulses": "600",
-            "name": "the last wall"
+            "durationPulses": "600"
           }
         },
         {
           "key": "buff.defense",
           "params": {
-            "defenseRating": "18",
+            "name": "the last wall",
             "mitigation": "18",
-            "durationPulses": "600",
-            "name": "the last wall"
+            "defenseRating": "18",
+            "durationPulses": "600"
           }
         }
       ]
@@ -494,8 +494,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "1.2",
-            "minDamage": "4"
+            "minDamage": "4",
+            "scalingFactor": "1.38"
           }
         }
       ]
@@ -537,11 +537,11 @@
         {
           "key": "debuff.weaken",
           "params": {
-            "outgoingMultiplier": "0.75",
-            "durationPulses": "80",
+            "name": "weakened",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "weakened"
+            "durationPulses": "80",
+            "outgoingMultiplier": "0.75"
           }
         }
       ]
@@ -562,11 +562,11 @@
         {
           "key": "buff.damage-up",
           "params": {
-            "outgoingMultiplier": "1.35",
-            "durationPulses": "80",
+            "name": "amplified",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "amplified"
+            "durationPulses": "80",
+            "outgoingMultiplier": "1.35"
           }
         }
       ]
@@ -587,12 +587,12 @@
         {
           "key": "damage.overtime",
           "params": {
-            "tickDamage": "9",
-            "tickIntervalPulses": "12",
-            "durationPulses": "72",
+            "name": "burning",
             "maxStacks": "1",
+            "tickDamage": "10",
             "stackingRule": "Refresh",
-            "name": "burning"
+            "durationPulses": "72",
+            "tickIntervalPulses": "12"
           }
         }
       ]
@@ -613,11 +613,11 @@
         {
           "key": "debuff.weaken",
           "params": {
-            "outgoingMultiplier": "0.6",
-            "durationPulses": "100",
+            "name": "enfeebled",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "enfeebled"
+            "durationPulses": "100",
+            "outgoingMultiplier": "0.6"
           }
         }
       ]
@@ -638,8 +638,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "2.2",
-            "minDamage": "14"
+            "minDamage": "14",
+            "scalingFactor": "2.53"
           }
         }
       ]
@@ -660,8 +660,30 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "1.3",
-            "minDamage": "6"
+            "minDamage": "6",
+            "scalingFactor": "1.495"
+          }
+        }
+      ]
+    },
+    {
+      "key": "adept.transmutation",
+      "path": "Adept",
+      "unlockLevel": 18,
+      "name": "Transmutation",
+      "description": "Spend the body to feed the mind. It takes a moment, and it is not a trick you have twice.",
+      "costType": "Stamina",
+      "costValue": 40,
+      "cooldownPulses": 1200,
+      "cooldownGroup": null,
+      "castTimePulses": 8,
+      "targetingType": "Self",
+      "effects": [
+        {
+          "key": "resource.restore",
+          "params": {
+            "percent": "50",
+            "resource": "Focus"
           }
         }
       ]
@@ -682,8 +704,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "3.0",
-            "minDamage": "25"
+            "minDamage": "25",
+            "scalingFactor": "3.45"
           }
         }
       ]
@@ -704,12 +726,12 @@
         {
           "key": "damage.overtime",
           "params": {
-            "tickDamage": "14",
-            "tickIntervalPulses": "12",
-            "durationPulses": "96",
+            "name": "conflagration",
             "maxStacks": "1",
+            "tickDamage": "16",
             "stackingRule": "Refresh",
-            "name": "conflagration"
+            "durationPulses": "96",
+            "tickIntervalPulses": "12"
           }
         }
       ]
@@ -730,17 +752,17 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "2.1",
-            "minDamage": "14"
+            "minDamage": "14",
+            "scalingFactor": "2.415"
           }
         },
         {
           "key": "debuff.expose",
           "params": {
-            "defenseRating": "5",
+            "name": "shattered",
             "mitigation": "5",
-            "durationPulses": "96",
-            "name": "shattered"
+            "defenseRating": "5",
+            "durationPulses": "96"
           }
         }
       ]
@@ -761,8 +783,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "1.8",
-            "minDamage": "12"
+            "minDamage": "12",
+            "scalingFactor": "2.07"
           }
         }
       ]
@@ -783,18 +805,18 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "2.2",
-            "minDamage": "15"
+            "minDamage": "15",
+            "scalingFactor": "2.53"
           }
         },
         {
           "key": "debuff.weaken",
           "params": {
-            "outgoingMultiplier": "0.7",
-            "durationPulses": "120",
+            "name": "unmade",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "unmade"
+            "durationPulses": "120",
+            "outgoingMultiplier": "0.7"
           }
         }
       ]
@@ -815,19 +837,19 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "2.0",
-            "minDamage": "14"
+            "minDamage": "14",
+            "scalingFactor": "2.3"
           }
         },
         {
           "key": "damage.overtime",
           "params": {
-            "tickDamage": "18",
-            "tickIntervalPulses": "12",
-            "durationPulses": "120",
+            "name": "pyre",
             "maxStacks": "1",
+            "tickDamage": "21",
             "stackingRule": "Refresh",
-            "name": "pyre"
+            "durationPulses": "120",
+            "tickIntervalPulses": "12"
           }
         }
       ]
@@ -848,11 +870,11 @@
         {
           "key": "buff.damage-up",
           "params": {
-            "outgoingMultiplier": "1.6",
-            "durationPulses": "160",
+            "name": "surging",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "surging"
+            "durationPulses": "160",
+            "outgoingMultiplier": "1.6"
           }
         }
       ]
@@ -873,19 +895,19 @@
         {
           "key": "control.root",
           "params": {
-            "durationPulses": "32",
-            "name": "held under"
+            "name": "held under",
+            "durationPulses": "32"
           }
         },
         {
           "key": "damage.overtime",
           "params": {
-            "tickDamage": "20",
-            "tickIntervalPulses": "16",
-            "durationPulses": "64",
+            "name": "crushed",
             "maxStacks": "1",
+            "tickDamage": "23",
             "stackingRule": "Refresh",
-            "name": "crushed"
+            "durationPulses": "64",
+            "tickIntervalPulses": "16"
           }
         }
       ]
@@ -906,17 +928,17 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "3.0",
-            "minDamage": "20"
+            "minDamage": "20",
+            "scalingFactor": "3.45"
           }
         },
         {
           "key": "debuff.expose",
           "params": {
-            "defenseRating": "8",
+            "name": "unwritten",
             "mitigation": "8",
-            "durationPulses": "96",
-            "name": "unwritten"
+            "defenseRating": "8",
+            "durationPulses": "96"
           }
         }
       ]
@@ -937,8 +959,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "1.25",
-            "minDamage": "4"
+            "minDamage": "4",
+            "scalingFactor": "1.25"
           }
         }
       ]
@@ -980,11 +1002,11 @@
         {
           "key": "buff.damage-up",
           "params": {
-            "outgoingMultiplier": "1.3",
-            "durationPulses": "72",
+            "name": "fortified",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "fortified"
+            "durationPulses": "72",
+            "outgoingMultiplier": "1.3"
           }
         }
       ]
@@ -1005,8 +1027,8 @@
         {
           "key": "control.root",
           "params": {
-            "durationPulses": "32",
-            "name": "hobbled"
+            "name": "hobbled",
+            "durationPulses": "32"
           }
         }
       ]
@@ -1027,12 +1049,12 @@
         {
           "key": "damage.overtime",
           "params": {
-            "tickDamage": "5",
-            "tickIntervalPulses": "8",
-            "durationPulses": "48",
+            "name": "bleeding",
             "maxStacks": "3",
+            "tickDamage": "5",
             "stackingRule": "Stack",
-            "name": "bleeding"
+            "durationPulses": "48",
+            "tickIntervalPulses": "8"
           }
         }
       ]
@@ -1064,9 +1086,9 @@
       "unlockLevel": 13,
       "name": "Second Wind",
       "description": "The fight has been going a while. You have more left in you than it has.",
-      "costType": "Stamina",
+      "costType": "Focus",
       "costValue": 18,
-      "cooldownPulses": 72,
+      "cooldownPulses": 240,
       "cooldownGroup": null,
       "castTimePulses": null,
       "targetingType": "Self",
@@ -1074,7 +1096,7 @@
         {
           "key": "heal.restore",
           "params": {
-            "baseHeal": "45"
+            "healPercent": "50"
           }
         }
       ]
@@ -1095,8 +1117,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "2.4",
-            "minDamage": "16"
+            "minDamage": "16",
+            "scalingFactor": "2.4"
           }
         }
       ]
@@ -1117,8 +1139,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "2.8",
-            "minDamage": "22"
+            "minDamage": "22",
+            "scalingFactor": "2.8"
           }
         }
       ]
@@ -1139,19 +1161,19 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "1.5",
-            "minDamage": "8"
+            "minDamage": "8",
+            "scalingFactor": "1.5"
           }
         },
         {
           "key": "damage.overtime",
           "params": {
-            "tickDamage": "10",
-            "tickIntervalPulses": "8",
-            "durationPulses": "64",
+            "name": "ruptured",
             "maxStacks": "1",
+            "tickDamage": "10",
             "stackingRule": "Refresh",
-            "name": "ruptured"
+            "durationPulses": "64",
+            "tickIntervalPulses": "8"
           }
         }
       ]
@@ -1172,17 +1194,17 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "1.4",
-            "minDamage": "8"
+            "minDamage": "8",
+            "scalingFactor": "1.4"
           }
         },
         {
           "key": "debuff.expose",
           "params": {
-            "defenseRating": "4",
+            "name": "exposed",
             "mitigation": "4",
-            "durationPulses": "64",
-            "name": "exposed"
+            "defenseRating": "4",
+            "durationPulses": "64"
           }
         }
       ]
@@ -1203,8 +1225,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "1.7",
-            "minDamage": "10"
+            "minDamage": "10",
+            "scalingFactor": "1.7"
           }
         }
       ]
@@ -1225,12 +1247,12 @@
         {
           "key": "damage.overtime",
           "params": {
-            "tickDamage": "16",
-            "tickIntervalPulses": "8",
-            "durationPulses": "96",
+            "name": "hemorrhaging",
             "maxStacks": "1",
+            "tickDamage": "16",
             "stackingRule": "Refresh",
-            "name": "hemorrhaging"
+            "durationPulses": "96",
+            "tickIntervalPulses": "8"
           }
         }
       ]
@@ -1251,8 +1273,8 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "3.2",
-            "minDamage": "20"
+            "minDamage": "20",
+            "scalingFactor": "3.2"
           }
         }
       ]
@@ -1273,15 +1295,15 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "1.8",
-            "minDamage": "10"
+            "minDamage": "10",
+            "scalingFactor": "1.8"
           }
         },
         {
           "key": "control.stun",
           "params": {
-            "durationPulses": "16",
-            "name": "reeling"
+            "name": "reeling",
+            "durationPulses": "16"
           }
         }
       ]
@@ -1302,12 +1324,12 @@
         {
           "key": "damage.overtime",
           "params": {
-            "tickDamage": "12",
-            "tickIntervalPulses": "8",
-            "durationPulses": "72",
+            "name": "battered",
             "maxStacks": "5",
+            "tickDamage": "12",
             "stackingRule": "Stack",
-            "name": "battered"
+            "durationPulses": "72",
+            "tickIntervalPulses": "8"
           }
         }
       ]
@@ -1328,29 +1350,29 @@
         {
           "key": "damage.physical",
           "params": {
-            "scalingFactor": "3.5",
-            "minDamage": "22"
+            "minDamage": "22",
+            "scalingFactor": "3.5"
           }
         },
         {
           "key": "damage.overtime",
           "params": {
-            "tickDamage": "22",
-            "tickIntervalPulses": "8",
-            "durationPulses": "120",
+            "name": "coming apart",
             "maxStacks": "1",
+            "tickDamage": "22",
             "stackingRule": "Refresh",
-            "name": "coming apart"
+            "durationPulses": "120",
+            "tickIntervalPulses": "8"
           }
         },
         {
           "key": "debuff.weaken",
           "params": {
-            "outgoingMultiplier": "0.75",
-            "durationPulses": "120",
+            "name": "coming apart",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "coming apart"
+            "durationPulses": "120",
+            "outgoingMultiplier": "0.75"
           }
         }
       ]
@@ -1411,14 +1433,21 @@
       "targetingType": "SingleTarget",
       "effects": [
         {
+          "key": "damage.physical",
+          "params": {
+            "minDamage": "4",
+            "scalingFactor": "1.2"
+          }
+        },
+        {
           "key": "damage.overtime",
           "params": {
-            "tickDamage": "6",
-            "tickIntervalPulses": "16",
-            "durationPulses": "96",
+            "name": "withering",
             "maxStacks": "1",
+            "tickDamage": "8",
             "stackingRule": "Refresh",
-            "name": "withering"
+            "durationPulses": "96",
+            "tickIntervalPulses": "16"
           }
         }
       ]
@@ -1460,11 +1489,33 @@
         {
           "key": "buff.damage-up",
           "params": {
-            "outgoingMultiplier": "1.3",
-            "durationPulses": "96",
+            "name": "blessed",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "blessed"
+            "durationPulses": "96",
+            "outgoingMultiplier": "1.3"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.smite",
+      "path": "Hallow",
+      "unlockLevel": 12,
+      "name": "Smite",
+      "description": "",
+      "costType": "Stamina",
+      "costValue": 18,
+      "cooldownPulses": 120,
+      "cooldownGroup": 1,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "minDamage": "10",
+            "scalingFactor": "2.0"
           }
         }
       ]
@@ -1506,11 +1557,11 @@
         {
           "key": "debuff.weaken",
           "params": {
-            "outgoingMultiplier": "0.55",
-            "durationPulses": "100",
+            "name": "sapped",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "sapped"
+            "durationPulses": "100",
+            "outgoingMultiplier": "0.55"
           }
         }
       ]
@@ -1579,6 +1630,39 @@
       ]
     },
     {
+      "key": "hallow.reproach",
+      "path": "Hallow",
+      "unlockLevel": 26,
+      "name": "Reproach",
+      "description": "A judgement that settles in and stays. It is not shouted; it is simply true.",
+      "costType": "Focus",
+      "costValue": 30,
+      "cooldownPulses": 96,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "minDamage": "10",
+            "scalingFactor": "1.9"
+          }
+        },
+        {
+          "key": "damage.overtime",
+          "params": {
+            "name": "reproached",
+            "maxStacks": "1",
+            "tickDamage": "15",
+            "stackingRule": "Refresh",
+            "durationPulses": "96",
+            "tickIntervalPulses": "12"
+          }
+        }
+      ]
+    },
+    {
       "key": "hallow.fortitude",
       "path": "Hallow",
       "unlockLevel": 28,
@@ -1594,9 +1678,9 @@
         {
           "key": "buff.max-health",
           "params": {
+            "name": "fortified",
             "maxHealth": "150",
-            "durationPulses": "1200",
-            "name": "fortified"
+            "durationPulses": "1200"
           }
         }
       ]
@@ -1617,10 +1701,31 @@
         {
           "key": "buff.defense",
           "params": {
-            "defenseRating": "7",
+            "name": "warded",
             "mitigation": "6",
-            "durationPulses": "1200",
-            "name": "warded"
+            "defenseRating": "7",
+            "durationPulses": "1200"
+          }
+        }
+      ]
+    },
+    {
+      "key": "hallow.staunch",
+      "path": "Hallow",
+      "unlockLevel": 32,
+      "name": "Staunch",
+      "description": "Pressure and a steady hand. No light, no words - just the bleeding stopped.",
+      "costType": "Stamina",
+      "costValue": 26,
+      "cooldownPulses": 120,
+      "cooldownGroup": 1,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "healPercent": "40"
           }
         }
       ]
@@ -1647,6 +1752,39 @@
       ]
     },
     {
+      "key": "hallow.the-account",
+      "path": "Hallow",
+      "unlockLevel": 38,
+      "name": "The Account",
+      "description": "Everything owed, called in at once. You have been keeping it whether you meant to or not.",
+      "costType": "Focus",
+      "costValue": 42,
+      "cooldownPulses": 160,
+      "cooldownGroup": null,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "damage.physical",
+          "params": {
+            "minDamage": "16",
+            "scalingFactor": "2.4"
+          }
+        },
+        {
+          "key": "damage.overtime",
+          "params": {
+            "name": "reckoned",
+            "maxStacks": "1",
+            "tickDamage": "24",
+            "stackingRule": "Refresh",
+            "durationPulses": "120",
+            "tickIntervalPulses": "12"
+          }
+        }
+      ]
+    },
+    {
       "key": "hallow.sanctuary",
       "path": "Hallow",
       "unlockLevel": 40,
@@ -1662,18 +1800,18 @@
         {
           "key": "buff.max-health",
           "params": {
+            "name": "sanctified",
             "maxHealth": "220",
-            "durationPulses": "1200",
-            "name": "sanctified"
+            "durationPulses": "1200"
           }
         },
         {
           "key": "buff.defense",
           "params": {
-            "defenseRating": "10",
+            "name": "sanctified",
             "mitigation": "9",
-            "durationPulses": "1200",
-            "name": "sanctified"
+            "defenseRating": "10",
+            "durationPulses": "1200"
           }
         }
       ]
@@ -1715,11 +1853,11 @@
         {
           "key": "buff.damage-up",
           "params": {
-            "outgoingMultiplier": "1.35",
-            "durationPulses": "960",
+            "name": "consecrated",
             "maxStacks": "1",
             "stackingRule": "Refresh",
-            "name": "consecrated"
+            "durationPulses": "960",
+            "outgoingMultiplier": "1.35"
           }
         }
       ]
@@ -1746,18 +1884,18 @@
         {
           "key": "buff.max-health",
           "params": {
+            "name": "the long vigil",
             "maxHealth": "300",
-            "durationPulses": "1200",
-            "name": "the long vigil"
+            "durationPulses": "1200"
           }
         },
         {
           "key": "buff.defense",
           "params": {
-            "defenseRating": "12",
+            "name": "the long vigil",
             "mitigation": "12",
-            "durationPulses": "1200",
-            "name": "the long vigil"
+            "defenseRating": "12",
+            "durationPulses": "1200"
           }
         }
       ]

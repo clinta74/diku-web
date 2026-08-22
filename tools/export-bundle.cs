@@ -27,6 +27,7 @@ var outPath = "build/live.json";
 string? connection = null;
 string? worldKey = null;
 string? zoneKey = null;
+var abilitiesOnly = false;
 
 for (var i = 0; i < args.Length; i++)
 {
@@ -44,6 +45,9 @@ for (var i = 0; i < args.Length; i++)
         case "--zone":
             zoneKey = args[++i];
             break;
+        case "--abilities":
+            abilitiesOnly = true;
+            break;
         case "-h" or "--help":
             Console.WriteLine("""
                 Writes the live world out as a WorldBundle, without starting the server.
@@ -53,6 +57,7 @@ for (var i = 0; i < args.Length; i++)
                                          DIKUWEB_CONNECTION, then to the compose defaults.
                   --world <key>          Export one world instead of everything
                   --zone <key>           Export one zone instead of everything
+                  --abilities            Export only the abilities, as content/abilities.json is
                 """);
             return 0;
     }
@@ -78,7 +83,12 @@ var options = new DbContextOptionsBuilder<DikuWebDbContext>()
 await using var db = new DikuWebDbContext(options);
 
 var exporter = new WorldExporter(db, TimeProvider.System);
-var bundle = await exporter.ExportAsync(worldKey, zoneKey, CancellationToken.None);
+
+// Abilities carry no zone and belong to a Path rather than to a place, so they have their own
+// scope rather than being a filter over the world export - see WorldExporter.ExportAbilitiesAsync.
+var bundle = abilitiesOnly
+    ? await exporter.ExportAbilitiesAsync(CancellationToken.None)
+    : await exporter.ExportAsync(worldKey, zoneKey, CancellationToken.None);
 
 if (bundle is null)
 {
