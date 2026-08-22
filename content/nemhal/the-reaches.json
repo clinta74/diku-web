@@ -1,5 +1,5 @@
 {
-  "formatVersion": 15,
+  "formatVersion": 16,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -118,7 +118,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "nemhal-relic-harness",
@@ -140,7 +142,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "nemhal-bearers-gauntlets",
@@ -162,7 +166,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "nemhal-kneeling-greaves",
@@ -184,7 +190,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "nemhal-processional-boots",
@@ -206,7 +214,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "nemhal-bier-shield",
@@ -229,7 +239,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "nemhal-unlit-lamp",
@@ -251,7 +263,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "nemhal-vigil-spear",
@@ -275,7 +289,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "nemhal-keening-blade",
@@ -300,7 +316,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "nemhal-standing-maul",
@@ -323,7 +341,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "nemhal-vigil-token",
@@ -341,7 +361,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "nemhal-office-page",
@@ -359,7 +381,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "nemhal-god-shroud",
@@ -377,7 +401,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-warden-4",
@@ -403,7 +429,9 @@
       "isLightSource": false,
       "paths": [
         "Warden"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-hallow-4",
@@ -429,7 +457,9 @@
       "isLightSource": false,
       "paths": [
         "Hallow"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-adept-4",
@@ -455,7 +485,9 @@
       "isLightSource": false,
       "paths": [
         "Adept"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-temper-4",
@@ -482,7 +514,9 @@
       "isLightSource": false,
       "paths": [
         "Temper"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     }
   ],
   "mobTemplates": [

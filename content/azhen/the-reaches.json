@@ -1,5 +1,5 @@
 {
-  "formatVersion": 15,
+  "formatVersion": 16,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -121,7 +121,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "azhen-scaled-mantle",
@@ -143,7 +145,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "azhen-calipers-gloves",
@@ -165,7 +169,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "azhen-plated-skirt",
@@ -187,7 +193,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "azhen-soled-sandals",
@@ -209,7 +217,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "azhen-orrery-guard",
@@ -232,7 +242,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "azhen-reading-stone",
@@ -254,7 +266,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "azhen-measuring-rod",
@@ -278,7 +292,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "azhen-gate-stylus",
@@ -303,7 +319,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "azhen-counterweight-maul",
@@ -326,7 +344,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "azhen-lens-blank",
@@ -344,7 +364,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "azhen-drive-cog",
@@ -362,7 +384,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "azhen-silent-plate",
@@ -380,7 +404,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-warden-3",
@@ -406,7 +432,9 @@
       "isLightSource": false,
       "paths": [
         "Warden"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-hallow-3",
@@ -432,7 +460,9 @@
       "isLightSource": false,
       "paths": [
         "Hallow"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-adept-3",
@@ -458,7 +488,9 @@
       "isLightSource": false,
       "paths": [
         "Adept"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-temper-3",
@@ -485,7 +517,9 @@
       "isLightSource": false,
       "paths": [
         "Temper"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     }
   ],
   "mobTemplates": [

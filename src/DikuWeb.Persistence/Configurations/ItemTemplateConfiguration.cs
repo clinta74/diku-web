@@ -26,6 +26,8 @@ internal sealed class ItemTemplateConfiguration : IEntityTypeConfiguration<ItemT
         builder.Property(e => e.IsLore).HasColumnName("is_lore");
         builder.Property(e => e.IsNoDrop).HasColumnName("is_no_drop");
         builder.Property(e => e.IsLightSource).HasColumnName("is_light_source");
+        builder.Property(e => e.FoodValue).HasColumnName("food_value");
+        builder.Property(e => e.DrinkValue).HasColumnName("drink_value");
 
         // The slots it may fill, as a jsonb array of names - same shape and same argument as
         // Paths below, and stored as names rather than the enum's numbers so a slot inserted into

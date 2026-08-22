@@ -71,6 +71,14 @@ public static class AbilityCommands
             return;
         }
 
+        // Spent, on the same footing. Never in a fight - see ExhaustionGate: an exhausted character
+        // beside something aggressive must always have a move left.
+        if (ExhaustionGate.Refuse(character, ctx.World, ctx.ItemTemplates) is { } spent)
+        {
+            ctx.Reply(spent, "bad");
+            return;
+        }
+
         // One action in flight at a time.
         //
         // <b>Load-bearing for shared timers, not a nicety.</b> A cast is only recorded as used when

@@ -133,8 +133,8 @@ select '-- item_templates';
 select format(
     'INSERT INTO item_templates (key, name, description, icon, slots, is_two_handed, weight, '
     || 'base_value, base_stats, attack_delay_pulses, attack_verb, is_quest_item, is_lore, '
-    || 'is_no_drop, is_light_source, paths) '
-    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L) '
+    || 'is_no_drop, is_light_source, food_value, drink_value, paths) '
+    || 'VALUES (%L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L) '
     || 'ON CONFLICT (key) DO UPDATE SET '
     || 'name = EXCLUDED.name, description = EXCLUDED.description, icon = EXCLUDED.icon, '
     || 'slots = EXCLUDED.slots, is_two_handed = EXCLUDED.is_two_handed, weight = EXCLUDED.weight, '
@@ -142,10 +142,11 @@ select format(
     || 'attack_delay_pulses = EXCLUDED.attack_delay_pulses, attack_verb = EXCLUDED.attack_verb, '
     || 'is_quest_item = EXCLUDED.is_quest_item, is_lore = EXCLUDED.is_lore, '
     || 'is_no_drop = EXCLUDED.is_no_drop, is_light_source = EXCLUDED.is_light_source, '
+    || 'food_value = EXCLUDED.food_value, drink_value = EXCLUDED.drink_value, '
     || 'paths = EXCLUDED.paths;',
     key, name, description, icon, slots, is_two_handed, weight,
     base_value, base_stats, attack_delay_pulses, attack_verb, is_quest_item, is_lore,
-    is_no_drop, is_light_source, paths)
+    is_no_drop, is_light_source, food_value, drink_value, paths)
 from item_templates order by key;
 
 select '';

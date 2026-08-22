@@ -15,6 +15,7 @@ public static class GameTiming
     public const int MobAiPulses = 16;           // 4 s
     public const int SpawnSweepPulses = 60;      // 15 s
     public const int RegenPulses = 240;          // 60 s
+    public const int NeedsPulses = 120;          // 30 s
     public const int AutosavePulses = 1200;      // 5 min
 
     /// <summary>True when a system with the given cadence should run on this pulse.</summary>

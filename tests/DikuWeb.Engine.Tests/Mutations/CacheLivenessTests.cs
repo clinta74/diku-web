@@ -112,7 +112,7 @@ public sealed class CacheLivenessTests
 
         applier.Apply(new UpsertItemTemplate(
             "temper", "a temper", "", "/", [ItemSlot.MainHand], false, 10, 25, [], 8, "slash", false, false, false,
-            false, []));
+            false, null, null, []));
 
         Assert.Equal(25, items.Get("temper")?.BaseValue);
         Assert.Equal(8, items.Get("temper")?.AttackDelayPulses);
@@ -123,7 +123,7 @@ public sealed class CacheLivenessTests
         // The quest-item flag rides along: the spawner reads it from this cache too.
         applier.Apply(new UpsertItemTemplate(
             "temper", "a temper", "", "/", [ItemSlot.MainHand], true, 10, 99, [], 4, "cleave", true, true, true,
-            true, [CharacterPath.Warden]));
+            true, 30, null, [CharacterPath.Warden]));
 
         // The three restrictions ride along too - they are read from this cache at pick-up,
         // at the shop counter and at the moment of equipping.
@@ -133,6 +133,11 @@ public sealed class CacheLivenessTests
 
         // And so does the light, which is read from this cache every time a dark room is drawn.
         Assert.True(items.Get("temper")?.IsLightSource);
+
+        // Nourishment as well - `eat` reads the template through this cache, so a loaf made more
+        // filling in the builder has to be more filling for the loaves already baked.
+        Assert.Equal(30, items.Get("temper")?.FoodValue);
+        Assert.Null(items.Get("temper")?.DrinkValue);
 
         Assert.Equal(99, items.Get("temper")?.BaseValue);
         Assert.Equal(4, items.Get("temper")?.AttackDelayPulses);

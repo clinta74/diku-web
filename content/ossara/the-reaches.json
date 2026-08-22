@@ -1,5 +1,5 @@
 {
-  "formatVersion": 15,
+  "formatVersion": 16,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -92,7 +92,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "ossara-keepsake",
@@ -110,7 +112,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "ossara-gate-shard",
@@ -128,7 +132,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-warden-1",
@@ -154,7 +160,9 @@
       "isLightSource": false,
       "paths": [
         "Warden"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-hallow-1",
@@ -180,7 +188,9 @@
       "isLightSource": false,
       "paths": [
         "Hallow"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-adept-1",
@@ -206,7 +216,9 @@
       "isLightSource": false,
       "paths": [
         "Adept"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-temper-1",
@@ -233,7 +245,9 @@
       "isLightSource": false,
       "paths": [
         "Temper"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-ember",
@@ -251,7 +265,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     }
   ],
   "mobTemplates": [

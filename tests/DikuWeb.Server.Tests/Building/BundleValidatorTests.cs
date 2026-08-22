@@ -290,7 +290,7 @@ public sealed class BundleValidatorTests
 
     private static BundleItemTemplate Item(string key) =>
         new(key, "a torch", "", "t", null, false, 1, 1, new Dictionary<string, object>(),
-            null, null, false, false, false, false, null);
+            null, null, false, false, false, false, null, null, null);
 
     /// <summary>
     /// The pass the Python had silently stopped making. Stricter than it, too: its regex swept

@@ -329,6 +329,13 @@ export interface ItemTemplate {
   /** Lights the room while worn or wielded. Any slot; carrying it in the pack is not enough. */
   isLightSource: boolean
   /**
+   * How much hunger `eat` answers, or null when it is not food. Null and 0 say different things:
+   * null is inedible, 0 would be food worth nothing.
+   */
+  foodValue: number | null
+  /** How much thirst `drink` answers, or null when it is not drink. */
+  drinkValue: number | null
+  /**
    * The Paths that may wear or wield this. **Empty means anyone**, which is why it is a list of
    * what is allowed rather than of what is forbidden — an item is unrestricted until a builder
    * opts in.

@@ -400,6 +400,8 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                         IsLore = c.IsLore,
                         IsNoDrop = c.IsNoDrop,
                         IsLightSource = c.IsLightSource,
+                        FoodValue = c.FoodValue,
+                        DrinkValue = c.DrinkValue,
                         Paths = [.. c.Paths],
                     });
 
@@ -427,6 +429,8 @@ public sealed class WorldWriter(DikuWebDbContext db, TimeProvider clock)
                 entity.IsLore = c.IsLore;
                 entity.IsNoDrop = c.IsNoDrop;
                 entity.IsLightSource = c.IsLightSource;
+                entity.FoodValue = c.FoodValue;
+                entity.DrinkValue = c.DrinkValue;
                 entity.Paths = [.. c.Paths];
 
                 return ContentAction.Update;

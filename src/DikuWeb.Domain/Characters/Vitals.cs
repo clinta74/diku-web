@@ -13,6 +13,27 @@ public sealed class Vitals
     public int Stamina { get; set; }
     public int StaminaMax { get; set; }
 
+    /// <summary>
+    /// How empty the belly is, from <c>0</c> (fed) to <see cref="Needs.Worst"/> (starving).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Emptiness rather than fullness, and the direction is load-bearing.</b> This class is
+    /// persisted as a single jsonb column (<c>CharacterConfiguration</c>), so a new field costs no
+    /// schema change — but every row written before today has no key for it and deserialises to
+    /// <c>0</c>. Counting <em>emptiness</em> makes that silence mean "well fed"; counting fullness
+    /// would have logged every existing character in starving and required a backfill to say
+    /// something the default could have said for free.
+    /// </para>
+    /// <para>
+    /// Nothing reads a mob's. Mobs get a <see cref="Vitals"/> from <c>MobSpawner</c> and never eat.
+    /// </para>
+    /// </remarks>
+    public int Hunger { get; set; }
+
+    /// <inheritdoc cref="Hunger"/>
+    public int Thirst { get; set; }
+
     public bool IsDead => Health <= 0;
 
     public static Vitals StartingFor(CharacterPath path) => path switch

@@ -1870,6 +1870,49 @@ support without typing during a fight.
 `content/` were authored dark — the Owing, Thessivar, Keshvaun, and the Regard — and rendered
 exactly like anywhere else.
 
+### 4.16 Hunger, thirst, and carried weight
+
+Three things existed and did nothing: `Weight`, which had a column and one reader that printed it;
+`bread` and `waterskin`, sold in two towns with no verb that could consume them; and no upkeep of
+any kind, so no reason to buy either.
+
+**Hunger and thirst are counted as emptiness.** `Vitals.Hunger` and `Vitals.Thirst` run 0 (fed) to
+100 (starving). The direction is load-bearing rather than cosmetic: vitals are one jsonb column, so a
+new field costs no migration but deserialises to `0` in every row written before it existed.
+Counting emptiness makes that silence mean "well fed" instead of logging the whole playerbase in
+starving.
+
+**They slow recovery and do nothing else.** `Needs.RegenShare` multiplies the regeneration rate down
+to a floor of 40% at worst, and the *worse* of the two decides it rather than the sum — so the answer
+is always "deal with whichever is worse" and letting both slide is not punished twice. There is no
+damage and no block. `RegenSystem` already skips anyone in combat, so the whole cost lands on
+downtime: it makes food worth carrying without making a fight harder.
+
+**They only tick for characters who are logged in.** `NeedsSystem` walks `world.AllPlayers`, which is
+the connected set, so a character left alone for a week comes back as fed as they left. And crossing
+a threshold is announced — an upkeep the player cannot see is indistinguishable from the game having
+got slower for no reason.
+
+**`eat` and `drink` are the first verbs that consume an item.** `RoomExit.RequiredItemKey` says out
+loud that a keyed exit never takes anything, and that was true of the whole game until now. Both
+verbs need a minimum abbreviation of three: `e`/`ea` already reach `east` and `d`/`dr` reach
+`down`/`drop`. Nourishment is two nullable columns, `foodValue` and `drinkValue` — separate so a loaf
+can be food, a skin can be drink, and a stew can be both — and null rather than zero, because "not
+edible" and "edible and worthless" are different claims.
+
+**Exhaustion is what makes `Weight` mean something.** At zero stamina a character owes between 1 and
+10 stamina before they may move or cast again, scaled by what they are carrying at 5 kg a point —
+a divisor taken from the content, where equippable items run to a median of 2.6 kg and a heavy
+eight-slot kit reaches ~49 kg. Two rules keep it honest:
+
+- **It refuses; it does not sit you down.** `RestGate` makes that argument already, and there is a
+  second reason here: `RestState` is not carried by `CharacterSnapshot`, so a forced posture would
+  quietly fail to survive a restart. Deriving the refusal from stamina, which *is* persisted, leaves
+  no new state to keep in step.
+- **It never applies in combat.** An exhausted character can always swing and always run. The
+  alternative is hitting zero beside something aggressive and being held still until it kills you,
+  which is not a cost — it is an execution.
+
 **A light source is a column on the item template, not a slot and not a base stat.** `isLightSource`
 sits beside `isLore` and `isNoDrop` for the reason `attackDelayPulses` does: the builder coerces
 every base stat to a number, and this is a rule rather than a quantity. Any equipment slot counts,

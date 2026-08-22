@@ -206,6 +206,14 @@ public sealed class GameLoop(
             DreamSystem.Tick(world, pulse);
         }
 
+        // Twice a minute, on its own cadence rather than the regen one. Hunger and thirst grow at
+        // different rates and neither is a whole number of regen ticks, so they carry their own
+        // accumulator and this only has to be finer than both.
+        if (GameTiming.RunsOn(pulse, GameTiming.NeedsPulses))
+        {
+            NeedsSystem.Tick(world, pulse / GameTiming.NeedsPulses);
+        }
+
         // One comparison per player per pulse, and a frame only when something actually moved.
         // Pushing unconditionally after combat would mean four frames a second per fighter.
         foreach (var actor in world.AllPlayers)

@@ -275,7 +275,7 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
         new UpsertItemTemplate(i.Key, i.Name, i.Description, i.Icon, [.. SlotRules.Normalize(i.Slots)],
             i.IsTwoHanded, i.Weight, i.BaseValue,
             i.BaseStats ?? [], i.AttackDelayPulses, i.AttackVerb, i.IsQuestItem,
-            i.IsLore, i.IsNoDrop, i.IsLightSource, i.Paths ?? []);
+            i.IsLore, i.IsNoDrop, i.IsLightSource, i.FoodValue, i.DrinkValue, i.Paths ?? []);
 
     private static WorldChange MobChangeFor(BundleMobTemplate m) =>
         new UpsertMobTemplate(m.Key, m.Name, m.Description, m.Icon, m.Level, m.WanderIntervalPulses,

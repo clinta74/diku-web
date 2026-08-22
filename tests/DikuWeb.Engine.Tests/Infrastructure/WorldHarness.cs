@@ -535,7 +535,10 @@ internal sealed class WorldHarness
         string name,
         ItemSlot? slot,
         string description = "",
-        int value = 0)
+        int value = 0,
+        int weight = 0,
+        int? foodValue = null,
+        int? drinkValue = null)
     {
         var template = new ItemTemplate
         {
@@ -545,6 +548,9 @@ internal sealed class WorldHarness
             Slots = slot is null ? [] : [slot.Value],
             Description = description,
             BaseValue = value,
+            Weight = weight,
+            FoodValue = foodValue,
+            DrinkValue = drinkValue,
         };
 
         _itemTemplateRepo.Add(template);

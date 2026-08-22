@@ -1328,6 +1328,8 @@ public sealed class WorldMutationApplier(
             IsLore = change.IsLore,
             IsNoDrop = change.IsNoDrop,
             IsLightSource = change.IsLightSource,
+            FoodValue = change.FoodValue,
+            DrinkValue = change.DrinkValue,
             Paths = [.. change.Paths],
         });
 

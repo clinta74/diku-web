@@ -91,7 +91,20 @@ public sealed class AbilityListingTests
         var harness = new WorldHarness();
         harness.LoadTestWorld();
 
-        foreach (var ability in AbilityCatalogue.AsAbilities.Where(a => a.Path == CharacterPath.Adept))
+        // Both halves from the shipped file, which is what DefineAbility loads.
+        //
+        // The expected side used to come from AbilityCatalogue, and that quietly asserted the code
+        // seed and content/abilities.json still agree about every number. They are not meant to:
+        // Ability's own doc says the catalogue is the set a fresh database is seeded from and
+        // "stops being consulted the moment a row exists". The day the shipped abilities were
+        // retuned, this test started comparing a listing built from one source against phrases
+        // built from the other, and reported it as a description bug.
+        var shipped = AbilityCatalogue.AsAbilities
+            .Where(a => a.Path == CharacterPath.Adept)
+            .Select(a => ShippedAbilities.Get(a.Key))
+            .ToList();
+
+        foreach (var ability in shipped)
         {
             harness.DefineAbility(ability.Key);
         }
@@ -101,7 +114,7 @@ public sealed class AbilityListingTests
         var actor = harness.AddPlayer("Kaeda", West, path: CharacterPath.Adept, level: Level);
         var listing = Listing(harness, actor);
 
-        foreach (var ability in AbilityCatalogue.AsAbilities.Where(a => a.Path == CharacterPath.Adept))
+        foreach (var ability in shipped)
         {
             // Described at the reader's level, not at the ability's. Damage scales with the caster
             // (DamageEffect.BaseAtLevel), so asserting the level 1 phrase here would be asserting

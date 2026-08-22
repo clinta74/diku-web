@@ -55,13 +55,24 @@ public static class RegenCalculator
     {
         ArgumentNullException.ThrowIfNull(vitals);
 
-        return Math.Max(1, (int)Math.Floor(vitals.HealthMax * EffectivePercent(state, vitalityModifier)));
+        return Math.Max(1, (int)Math.Floor(vitals.HealthMax * EffectivePercent(state, vitalityModifier, vitals)));
     }
 
     /// <summary>The share of a maximum that comes back this tick, before any per-vital rate.</summary>
-    private static double EffectivePercent(CharacterRestState state, int vitalityModifier) =>
+    /// <remarks>
+    /// <b>Hunger and thirst are a multiplier on the whole rate, applied last.</b> Multiplied rather
+    /// than subtracted so that neglecting food costs a resting character the same *share* it costs a
+    /// standing one — a flat deduction would be a rounding error while asleep and the entire rate
+    /// while standing, which is backwards: sleeping through a famine should not be the cure.
+    ///
+    /// <see cref="Needs.RegenShare"/> never returns zero, so this can slow recovery and never stop
+    /// it. <c>RegenSystem</c> already skips anyone in combat, so the penalty only ever lengthens
+    /// downtime; it makes food worth carrying without making a fight harder.
+    /// </remarks>
+    private static double EffectivePercent(CharacterRestState state, int vitalityModifier, Vitals? vitals = null) =>
         // Each modifier point adds one percentage point.
-        BaseRegenPercent[state] + (vitalityModifier * 0.01);
+        (BaseRegenPercent[state] + (vitalityModifier * 0.01))
+        * (vitals is null ? 1.0 : Needs.RegenShare(vitals.Hunger, vitals.Thirst));
 
     /// <summary>
     /// Calculate how much of each vital regenerates in a single 60-second tick.
@@ -82,7 +93,9 @@ public static class RegenCalculator
         int vitalityModifier,
         CharacterPath path)
     {
-        var effectivePercent = EffectivePercent(state, vitalityModifier);
+        ArgumentNullException.ThrowIfNull(vitals);
+
+        var effectivePercent = EffectivePercent(state, vitalityModifier, vitals);
 
         var health = HealthFor(state, vitals, vitalityModifier);
         var focus = Math.Max(1, (int)Math.Floor(vitals.FocusMax * effectivePercent * FocusRateFor(path)));

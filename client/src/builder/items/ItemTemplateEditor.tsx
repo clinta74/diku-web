@@ -47,6 +47,8 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
   const [isLore, setIsLore] = useState(false)
   const [isNoDrop, setIsNoDrop] = useState(false)
   const [isLightSource, setIsLightSource] = useState(false)
+  const [foodValue, setFoodValue] = useState('')
+  const [drinkValue, setDrinkValue] = useState('')
   const [paths, setPaths] = useState<CharacterPath[]>([])
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -81,6 +83,8 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         setIsLore(loaded.isLore)
         setIsNoDrop(loaded.isNoDrop)
         setIsLightSource(loaded.isLightSource)
+        setFoodValue(loaded.foodValue?.toString() ?? '')
+        setDrinkValue(loaded.drinkValue?.toString() ?? '')
         // Ordered to CHARACTER_PATHS rather than to whatever came back, so the checkboxes and the
         // saved list agree and a save with nothing changed is not a change.
         setPaths(CHARACTER_PATHS.filter((p) => (loaded.paths ?? []).includes(p)))
@@ -113,6 +117,10 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
         isLore,
         isNoDrop,
         isLightSource,
+        // Blank means "not food", which is null rather than 0 - the server tells the two
+        // apart and `eat` refuses anything without a value.
+        foodValue: foodValue.trim() === '' ? null : Number(foodValue),
+        drinkValue: drinkValue.trim() === '' ? null : Number(drinkValue),
         paths,
       })
       setTemplate(updated)
@@ -391,6 +399,43 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
             Any slot counts, so a helm or a pendant works as well as a lantern in a hand. Carrying
             it in the pack does not: a light you have not taken out is not lit. One lit item lights
             the room for everyone standing in it.
+          </p>
+        )}
+
+        <Field
+          label="Food value"
+          hint="How much hunger eating this answers. Leave blank if it is not food."
+        >
+          <input
+            type="number"
+            min="1"
+            value={foodValue}
+            onChange={(e) => {
+              setFoodValue(e.target.value)
+              touch()
+            }}
+          />
+        </Field>
+
+        <Field
+          label="Drink value"
+          hint="How much thirst drinking this answers. Leave blank if it is not a drink."
+        >
+          <input
+            type="number"
+            min="1"
+            value={drinkValue}
+            onChange={(e) => {
+              setDrinkValue(e.target.value)
+              touch()
+            }}
+          />
+        </Field>
+
+        {(foodValue.trim() !== '' || drinkValue.trim() !== '') && (
+          <p className="dim detail">
+            Eating or drinking consumes the item. Hunger and thirst run 0 to 100, so a value of 30
+            is about a third of a full belly. A thing can be both — a stew, an ale.
           </p>
         )}
 

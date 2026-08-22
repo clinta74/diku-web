@@ -132,6 +132,32 @@ public sealed class ItemTemplate
     public bool IsLightSource { get; set; }
 
     /// <summary>
+    /// How much hunger eating this answers, or null when it is not food.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Null rather than zero, because they say different things.</b> Null means "not edible" and
+    /// is what nearly every item in the game is; zero would mean "edible, and worth nothing", which
+    /// is an item worth authoring only as a joke. <c>eat</c> refuses anything with no value here.
+    /// </para>
+    /// <para>
+    /// A column rather than a <see cref="BaseStats"/> key, and this one is not a close call: the bag
+    /// is closed against <c>EquipmentResolver.KnownStatKeys</c> by <c>BundleValidator</c>, which is a
+    /// combat vocabulary — a bundle carrying <c>foodValue</c> in the bag is refused on import.
+    /// </para>
+    /// <para>
+    /// Separate from <see cref="DrinkValue"/> so a loaf can be food, a skin can be drink, and a stew
+    /// or an ale can be both. One field with a kind beside it would have made the third case need a
+    /// second item.
+    /// </para>
+    /// </remarks>
+    public int? FoodValue { get; set; }
+
+    /// <summary>How much thirst drinking this answers, or null when it is not drink.</summary>
+    /// <inheritdoc cref="FoodValue" path="/remarks"/>
+    public int? DrinkValue { get; set; }
+
+    /// <summary>
     /// The Paths that may wear or wield this. Empty means anyone.
     /// </summary>
     /// <remarks>

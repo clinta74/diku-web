@@ -107,6 +107,11 @@ public sealed record WorldBundle(
     /// same world with different fields, and a version number is what stops somebody diffing the
     /// two and concluding content was lost (BUGS.md #17).
     ///
+    /// <b>16 because an item can be eaten.</b> A v15 bundle has no <c>foodValue</c> or
+    /// <c>drinkValue</c>, so read as v16 every item in it arrives inedible. That is the weak
+    /// direction and the right one - an item that silently stopped being food is a shop full of
+    /// bread nobody can eat, which reads as a broken verb rather than as a dropped field.
+    ///
     /// <b>9 because an item can be a lamp.</b> A v8 bundle has no <c>isLightSource</c>, so read
     /// as v9 every item in it arrives unlit. That is the weak direction and it is the one that
     /// matters: a dark room is unreadable without a light, so a bundle carrying the lantern that
@@ -160,7 +165,7 @@ public sealed record WorldBundle(
     /// spawner in it would quietly change behaviour - which is the silent partial apply this
     /// number exists to refuse, arriving through a rename rather than through a new field.
     /// </remarks>
-    public const int CurrentFormatVersion = 15;
+    public const int CurrentFormatVersion = 16;
 }
 
 /// <summary>
@@ -249,6 +254,8 @@ public sealed record BundleItemTemplate(
     bool IsLore,
     bool IsNoDrop,
     bool IsLightSource,
+    int? FoodValue,
+    int? DrinkValue,
     List<CharacterPath>? Paths);
 
 /// <summary>

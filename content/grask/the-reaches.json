@@ -1,5 +1,5 @@
 {
-  "formatVersion": 15,
+  "formatVersion": 16,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -122,7 +122,9 @@
       "isLightSource": false,
       "paths": [
         "Adept"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-hallow-2",
@@ -148,7 +150,9 @@
       "isLightSource": false,
       "paths": [
         "Hallow"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-temper-2",
@@ -175,7 +179,9 @@
       "isLightSource": false,
       "paths": [
         "Temper"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-warden-2",
@@ -201,7 +207,9 @@
       "isLightSource": false,
       "paths": [
         "Warden"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-claim-cleaver",
@@ -226,7 +234,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-claim-shield",
@@ -249,7 +259,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-crew-tag",
@@ -267,7 +279,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-dredge-hook",
@@ -292,7 +306,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-first-mark",
@@ -310,7 +326,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-ledger-leaf",
@@ -328,7 +346,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-long-pick",
@@ -351,7 +371,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-marsh-boots",
@@ -373,7 +395,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-owing-token",
@@ -395,7 +419,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-pit-lamp",
@@ -417,7 +443,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": true,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-plated-coat",
@@ -439,7 +467,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-riggers-gloves",
@@ -461,7 +491,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-studded-breeches",
@@ -483,7 +515,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "grask-tallow-cap",
@@ -505,7 +539,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     }
   ],
   "mobTemplates": [

@@ -49,3 +49,6 @@ TestResults/
 *.trx
 
 __pycache__/
+
+# Worktrees created by the agent harness. Each is a checkout of this repo.
+.claude/worktrees/

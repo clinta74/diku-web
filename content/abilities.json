@@ -1,6 +1,6 @@
 {
-  "formatVersion": 15,
-  "exportedAt": "2026-08-22T02:56:56.3400339+00:00",
+  "formatVersion": 16,
+  "exportedAt": "2026-08-22T19:47:29.1267671+00:00",
   "scope": {
     "kind": "abilities",
     "key": null
@@ -669,7 +669,7 @@
     {
       "key": "adept.transmutation",
       "path": "Adept",
-      "unlockLevel": 18,
+      "unlockLevel": 19,
       "name": "Transmutation",
       "description": "Spend the body to feed the mind. It takes a moment, and it is not a trick you have twice.",
       "costType": "Stamina",
@@ -1686,6 +1686,27 @@
       ]
     },
     {
+      "key": "hallow.staunch",
+      "path": "Hallow",
+      "unlockLevel": 30,
+      "name": "Staunch",
+      "description": "Pressure and a steady hand. No light, no words - just the bleeding stopped.",
+      "costType": "Stamina",
+      "costValue": 26,
+      "cooldownPulses": 120,
+      "cooldownGroup": 1,
+      "castTimePulses": null,
+      "targetingType": "SingleTarget",
+      "effects": [
+        {
+          "key": "heal.restore",
+          "params": {
+            "healPercent": "40"
+          }
+        }
+      ]
+    },
+    {
       "key": "hallow.aegis",
       "path": "Hallow",
       "unlockLevel": 32,
@@ -1705,27 +1726,6 @@
             "mitigation": "6",
             "defenseRating": "7",
             "durationPulses": "1200"
-          }
-        }
-      ]
-    },
-    {
-      "key": "hallow.staunch",
-      "path": "Hallow",
-      "unlockLevel": 32,
-      "name": "Staunch",
-      "description": "Pressure and a steady hand. No light, no words - just the bleeding stopped.",
-      "costType": "Stamina",
-      "costValue": 26,
-      "cooldownPulses": 120,
-      "cooldownGroup": 1,
-      "castTimePulses": null,
-      "targetingType": "SingleTarget",
-      "effects": [
-        {
-          "key": "heal.restore",
-          "params": {
-            "healPercent": "40"
           }
         }
       ]

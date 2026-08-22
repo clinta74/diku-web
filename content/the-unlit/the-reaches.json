@@ -1,5 +1,5 @@
 {
-  "formatVersion": 15,
+  "formatVersion": 16,
   "exportedAt": "2026-08-15T00:00:00+00:00",
   "scope": {
     "kind": "world",
@@ -84,7 +84,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "unlit-held-coat",
@@ -106,7 +108,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "unlit-keeping-gloves",
@@ -128,7 +132,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "unlit-standing-greaves",
@@ -150,7 +156,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "unlit-walking-boots",
@@ -172,7 +180,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "unlit-turned-shield",
@@ -195,7 +205,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "unlit-kept-thing",
@@ -217,7 +229,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "unlit-long-blade",
@@ -242,7 +256,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "unlit-binding-spike",
@@ -266,7 +282,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "unlit-standing-hammer",
@@ -289,7 +307,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "unlit-carried-thing",
@@ -307,7 +327,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "unlit-worn-marker",
@@ -325,7 +347,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "unlit-answer",
@@ -343,7 +367,9 @@
       "isLore": false,
       "isNoDrop": false,
       "isLightSource": false,
-      "paths": []
+      "paths": [],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-warden-5",
@@ -369,7 +395,9 @@
       "isLightSource": false,
       "paths": [
         "Warden"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-hallow-5",
@@ -395,7 +423,9 @@
       "isLightSource": false,
       "paths": [
         "Hallow"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-adept-5",
@@ -421,7 +451,9 @@
       "isLightSource": false,
       "paths": [
         "Adept"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     },
     {
       "key": "epic-temper-5",
@@ -448,7 +480,9 @@
       "isLightSource": false,
       "paths": [
         "Temper"
-      ]
+      ],
+      "foodValue": null,
+      "drinkValue": null
     }
   ],
   "mobTemplates": [

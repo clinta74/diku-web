@@ -199,7 +199,6 @@ public sealed class AbilityContentTests
     /// </summary>
     [Theory]
     [InlineData("damage.physical", "scalingFactor")]
-    [InlineData("heal.restore", "baseHeal")]
     [InlineData("buff.damage-up", "outgoingMultiplier")]
     [InlineData("damage.overtime", "tickDamage")]
     [InlineData("damage.overtime", "tickIntervalPulses")]
@@ -207,6 +206,31 @@ public sealed class AbilityContentTests
     {
         var missing = AllEffects
             .Where(x => x.Effect.Key == effectKey && !x.Effect.Params.ContainsKey(parameter))
+            .Select(x => x.Entry.Key)
+            .ToList();
+
+        Assert.Empty(missing);
+    }
+
+    /// <summary>
+    /// Some effects read one of several parameters, and are only broken when they have none.
+    /// </summary>
+    /// <remarks>
+    /// <c>heal.restore</c> takes a flat <c>baseHeal</c> or a proportional <c>healPercent</c>, and
+    /// either alone is a working heal. It used to be in the table above, which was right while
+    /// there was one way to author a heal and became a test that failed every proportional one the
+    /// day there were two. Mirrors <c>AbilityValidator.RequiredOneOf</c>, which is what the builder
+    /// enforces on save.
+    /// </remarks>
+    [Theory]
+    [InlineData("heal.restore", new[] { "baseHeal", "healPercent" })]
+    [InlineData("resource.restore", new[] { "percent", "amount" })]
+    public void Every_ability_carries_one_of_the_parameters_its_effect_reads(
+        string effectKey,
+        string[] parameters)
+    {
+        var missing = AllEffects
+            .Where(x => x.Effect.Key == effectKey && !parameters.Any(x.Effect.Params.ContainsKey))
             .Select(x => x.Entry.Key)
             .ToList();
 
@@ -446,12 +470,17 @@ public sealed class AbilityContentTests
     /// stretch of a fight in a single beat.
     /// </remarks>
     [Theory]
-    [InlineData(1, "warden.ground-and-centre", "warden.last-stand", "warden.the-last-wall", "warden.unbreakable")]
-    [InlineData(2, "warden.mass-provocation", "warden.thunderclap")]
-    public void A_timer_holds_exactly_these(int group, params string[] expected)
+    [InlineData(CharacterPath.Warden, 1, "warden.ground-and-centre", "warden.last-stand", "warden.the-last-wall", "warden.unbreakable")]
+    [InlineData(CharacterPath.Warden, 2, "warden.mass-provocation", "warden.thunderclap")]
+    [InlineData(CharacterPath.Hallow, 1, "hallow.smite", "hallow.staunch")]
+    public void A_timer_holds_exactly_these(CharacterPath path, int group, params string[] expected)
     {
+        // Keyed by (Path, number), which is what Ability.CooldownGroup says the identity is: a
+        // character only ever knows one Path's abilities, so each Path numbers from 1 on its own.
+        // This asserted on the number alone, which was indistinguishable while only the Warden had
+        // timers and became wrong the moment a second Path numbered its first one.
         var onTimer = All
-            .Where(a => a.CooldownGroup == group)
+            .Where(a => a.Path == path && a.CooldownGroup == group)
             .Select(a => a.Key)
             .OrderBy(k => k, StringComparer.Ordinal)
             .ToList();
@@ -489,20 +518,63 @@ public sealed class AbilityContentTests
     /// A timer rations one thing, and every ability on it does that thing.
     /// </summary>
     /// <remarks>
-    /// The rule behind both timers, and the reason a player can predict them: timer 1 is the
-    /// abilities that raise maximum health, timer 2 the ones that taunt the whole room. An ability
-    /// sharing a timer for some other reason would be a refusal nobody could work out from what
-    /// the two abilities do.
+    /// <para>
+    /// The rule behind the Warden's timers, and the reason a player can predict them: its timer 1
+    /// is the abilities that raise maximum health, timer 2 the ones that taunt the whole room. An
+    /// ability sharing a timer for some other reason would be a refusal nobody could work out from
+    /// what the two abilities do.
+    /// </para>
+    /// <para>
+    /// <b>The Hallow's timer rations a resource rather than an effect, and is exempt.</b> Smite and
+    /// Staunch are a strike and a heal — nothing about their effects is shared. What they have in
+    /// common is the bar: they are the only two things a Hallow spends stamina on, and the timer is
+    /// there to make the second bar a decision between them rather than a second rotation. That is
+    /// still predictable, which is what this rule is protecting — a player can see that their two
+    /// stamina moves share a clock — but it is predictable from the cost rather than from the
+    /// effect, so it cannot be asserted here.
+    /// </para>
     /// </remarks>
     [Theory]
-    [InlineData(1, "buff.max-health")]
-    [InlineData(2, "control.taunt")]
-    public void Every_ability_on_a_timer_does_the_thing_that_timer_rations(int group, string effectKey)
+    [InlineData(CharacterPath.Warden, 1, "buff.max-health")]
+    [InlineData(CharacterPath.Warden, 2, "control.taunt")]
+    public void Every_ability_on_a_timer_does_the_thing_that_timer_rations(
+        CharacterPath path,
+        int group,
+        string effectKey)
     {
-        var onTimer = All.Where(a => a.CooldownGroup == group).ToList();
+        var onTimer = All.Where(a => a.Path == path && a.CooldownGroup == group).ToList();
 
         Assert.NotEmpty(onTimer);
         Assert.All(onTimer, a => Assert.Contains(a.Effects, e => e.Key == effectKey));
+    }
+
+    /// <summary>
+    /// A timer that rations a resource holds abilities that all spend that resource.
+    /// </summary>
+    /// <remarks>
+    /// The Hallow's half of the rule above. The effects differ on purpose; the cost is the thing
+    /// that has to agree, or the timer is arbitrary again.
+    /// </remarks>
+    [Fact]
+    public void The_hallows_timer_rations_its_stamina()
+    {
+        var onTimer = All
+            .Where(a => a.Path == CharacterPath.Hallow && a.CooldownGroup == 1)
+            .ToList();
+
+        Assert.NotEmpty(onTimer);
+        Assert.All(onTimer, a => Assert.Equal(CostType.Stamina, a.CostType));
+
+        // And they are the whole of what the Path spends stamina on. A third stamina ability off
+        // the timer would make the pairing look like a rule when it had become an exception.
+        var allStamina = All
+            .Where(a => a.Path == CharacterPath.Hallow && a.CostType == CostType.Stamina)
+            .Select(a => a.Key)
+            .OrderBy(k => k, StringComparer.Ordinal);
+
+        Assert.Equal(
+            onTimer.Select(a => a.Key).OrderBy(k => k, StringComparer.Ordinal),
+            allStamina);
     }
 
     /// <summary>

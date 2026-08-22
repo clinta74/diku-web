@@ -111,6 +111,7 @@ public sealed class CommandRegistry
 
         CombatCommands.Register(_commands);
         RestCommands.Register(_commands);
+        NutritionCommands.Register(_commands);
         AbilityCommands.Register(_commands, abilityCache, clock, effects);
         QuestCommands.Register(_commands);
 
@@ -244,6 +245,14 @@ public sealed class CommandRegistry
         if (RestGate.Refuse(character) is { } resting)
         {
             ctx.Reply(resting, "bad");
+            return;
+        }
+
+        // Nor while spent. What you are carrying decides how much you owe before you can walk
+        // again - the one rule in the game that reads item weight.
+        if (ExhaustionGate.Refuse(character, ctx.World, ctx.ItemTemplates) is { } spent)
+        {
+            ctx.Reply(spent, "bad");
             return;
         }
 

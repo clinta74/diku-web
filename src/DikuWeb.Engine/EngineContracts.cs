@@ -226,6 +226,12 @@ public sealed record CharacterSnapshot(
                 FocusMax = character.Vitals.FocusMax,
                 Stamina = character.Vitals.Stamina,
                 StaminaMax = character.Vitals.StaminaMax,
+
+                // Copied here or never saved at all. This method is the whole of what reaches the
+                // database, and three fields have already been dropped by being added to Vitals and
+                // not to this list - see the comments in CharacterSaveQueue.
+                Hunger = character.Vitals.Hunger,
+                Thirst = character.Vitals.Thirst,
             },
             character.RespawnRoomKey,
             character.Gold,

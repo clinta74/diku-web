@@ -1149,6 +1149,8 @@ public static class BuilderEndpoints
             request.IsLore ?? false,
             request.IsNoDrop ?? false,
             request.IsLightSource ?? false,
+            request.FoodValue,
+            request.DrinkValue,
             request.Paths ?? []);
 
         return await SaveAsync(editor, change, http, ct, () => queries.ItemTemplateAsync(key, ct));
@@ -1197,6 +1199,8 @@ public static class BuilderEndpoints
             request.IsLore ?? existing.IsLore,
             request.IsNoDrop ?? existing.IsNoDrop,
             request.IsLightSource ?? existing.IsLightSource,
+            request.FoodValue ?? existing.FoodValue,
+            request.DrinkValue ?? existing.DrinkValue,
             request.Paths ?? [.. existing.Paths]);
 
         return await SaveAsync(editor, change, http, ct, () => queries.ItemTemplateAsync(key, ct));

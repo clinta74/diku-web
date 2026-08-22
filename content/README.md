@@ -79,7 +79,7 @@ not come back should say so in its own prose; that part is authoring, not toolin
 ## Three properties of the import path that shape how these are written
 
 - **`formatVersion` must match the server exactly.** It is the one hard refusal in the whole path.
-  Author against `WorldBundle.CurrentFormatVersion` — these files are at **15** — not against this
+  Author against `WorldBundle.CurrentFormatVersion` — these files are at **16** — not against this
   sentence, which has now been wrong twice — and is now the last hand-kept copy, because a test
   fails if it disagrees with `BundleFormat.CurrentVersion` or if any tool starts carrying its own.
   The shims reference the constant and cannot drift; the merge refuses files that disagree.
