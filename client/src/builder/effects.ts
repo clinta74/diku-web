@@ -140,8 +140,18 @@ const EFFECTS: EffectOption[] = [
       {
         key: 'baseHeal',
         label: 'Heals',
-        hint: 'A flat amount of health.',
+        hint: 'A flat amount of health. Ignored when a percentage is set.',
         fallback: '20',
+        integer: true,
+      },
+      {
+        key: 'healPercent',
+        label: 'Or heals (% of max)',
+        hint:
+          "A share of the TARGET's maximum health, in whole points. Wins over the flat amount. " +
+          'For a heal whose idea is proportional - a second wind is worth getting back on your ' +
+          'feet, which is a different number at level 13 and at level 50.',
+        fallback: '',
         integer: true,
       },
     ],

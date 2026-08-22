@@ -69,7 +69,6 @@ public static class AbilityValidator
     private static readonly (string EffectKey, string Parameter)[] RequiredParams =
     [
         ("damage.physical", "scalingFactor"),
-        ("heal.restore", "baseHeal"),
         ("buff.damage-up", "outgoingMultiplier"),
         ("debuff.weaken", "durationPulses"),
         ("damage.overtime", "tickDamage"),
@@ -78,6 +77,20 @@ public static class AbilityValidator
         ("control.stun", "durationPulses"),
         ("control.root", "durationPulses"),
         ("control.taunt", "leadFraction"),
+    ];
+
+    /// <summary>
+    /// Effects that read one of several parameters, and are only broken when they have none of them.
+    /// </summary>
+    /// <remarks>
+    /// <c>heal.restore</c> takes a flat <c>baseHeal</c> or a proportional <c>healPercent</c>, and
+    /// either alone is a working heal. Listing both in <see cref="RequiredParams"/> would refuse
+    /// every heal in the game for not setting the one it deliberately does not use, which is the
+    /// opposite of what that table is for.
+    /// </remarks>
+    private static readonly (string EffectKey, string[] Parameters)[] RequiredOneOf =
+    [
+        ("heal.restore", ["baseHeal", "healPercent"]),
     ];
 
     /// <summary>
@@ -176,6 +189,16 @@ public static class AbilityValidator
                 if (effect.Key == effectKey && !effect.Params.ContainsKey(parameter))
                 {
                     Error($"'{effectKey}' reads '{parameter}', and this ability does not set it.");
+                }
+            }
+
+            foreach (var (effectKey, parameters) in RequiredOneOf)
+            {
+                if (effect.Key == effectKey && !parameters.Any(effect.Params.ContainsKey))
+                {
+                    Error(
+                        $"'{effectKey}' reads one of {string.Join(" or ", parameters.Select(p => $"'{p}'"))}, " +
+                        "and this ability sets none of them.");
                 }
             }
 

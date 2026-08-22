@@ -10,6 +10,10 @@ namespace DikuWeb.Balance.Sim;
 /// <param name="HealthRemaining">The player's health at the end, out of <paramref name="HealthMax"/>.</param>
 /// <param name="Swings">Weapon attacks attempted, hit or miss.</param>
 /// <param name="Casts">Abilities successfully cast.</param>
+/// <param name="FocusSpent">Focus actually paid out over the fight, against <paramref name="FocusMax"/>.</param>
+/// <param name="FocusMax">The focus bar this character carries.</param>
+/// <param name="StaminaSpent">Stamina actually paid out, against <paramref name="StaminaMax"/>.</param>
+/// <param name="StaminaMax">The stamina bar this character carries.</param>
 /// <param name="StarvedPulses">
 /// Pulses on which an ability was ready and unaffordable. The measure of whether a Path is
 /// limited by its resource bar or by its cooldowns, which are different balance problems with
@@ -26,7 +30,11 @@ public sealed record FightResult(
     int HealthMax,
     int Swings,
     int Casts,
-    int StarvedPulses)
+    int StarvedPulses,
+    int FocusSpent,
+    int FocusMax,
+    int StaminaSpent,
+    int StaminaMax)
 {
     /// <summary>Everything the player dealt.</summary>
     public int TotalDamage => WeaponDamage + AbilityDamage + WoundDamage;
@@ -41,6 +49,12 @@ public sealed record FightResult(
     public double HealthShare => HealthMax == 0 ? 0 : (double)HealthRemaining / HealthMax;
 
     public double DamagePerSecond => Seconds <= 0 ? 0 : TotalDamage / Seconds;
+
+    /// <summary>The share of the focus bar this fight actually drew on, 0-1.</summary>
+    public double FocusUsed => FocusMax == 0 ? 0 : Math.Min(1.0, (double)FocusSpent / FocusMax);
+
+    /// <summary>The share of the stamina bar this fight actually drew on, 0-1.</summary>
+    public double StaminaUsed => StaminaMax == 0 ? 0 : Math.Min(1.0, (double)StaminaSpent / StaminaMax);
 }
 
 public enum FightOutcome

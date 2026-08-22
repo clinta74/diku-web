@@ -165,6 +165,7 @@ public sealed class FightSimulator
 
         int weaponDamage = 0, abilityDamage = 0, woundDamage = 0, taken = 0;
         int swings = 0, casts = 0, starved = 0;
+        int focusSpent = 0, staminaSpent = 0;
 
         var capPulses = (long)capSeconds * PulsesPerSecond;
         long pulse = 0;
@@ -203,6 +204,16 @@ public sealed class FightSimulator
                 {
                     var before = mob.Vitals.Health;
                     var healthBefore = character.Vitals.Health;
+
+                    switch (ability.CostType)
+                    {
+                        case CostType.Focus:
+                            focusSpent += Math.Min(character.Vitals.Focus, ability.CostValue);
+                            break;
+                        case CostType.Stamina:
+                            staminaSpent += Math.Min(character.Vitals.Stamina, ability.CostValue);
+                            break;
+                    }
 
                     Cast(ability, character, mob, random, pulse,
                         playerEffects, mobEffects, playerSource, lastCast);
@@ -354,7 +365,11 @@ public sealed class FightSimulator
             HealthMax: character.Vitals.HealthMax,
             Swings: swings,
             Casts: casts,
-            StarvedPulses: starved);
+            StarvedPulses: starved,
+            FocusSpent: focusSpent,
+            FocusMax: character.Vitals.FocusMax,
+            StaminaSpent: staminaSpent,
+            StaminaMax: character.Vitals.StaminaMax);
     }
 
     // ---------------------------------------------------------------------------------------
@@ -690,7 +705,7 @@ public sealed class FightSimulator
         {
             var heal = ready
                 .Where(a => a.Effects.Any(e => string.Equals(e.Key, "heal.restore", StringComparison.Ordinal)))
-                .OrderByDescending(HealValue)
+                .OrderByDescending(a => HealValue(a, character))
                 .FirstOrDefault();
 
             if (heal is not null)
@@ -794,10 +809,18 @@ public sealed class FightSimulator
                 : 1.0)
             .Max();
 
-    private static double HealValue(Ability ability) =>
+    /// <summary>
+    /// What the biggest heal on this ability is worth to <em>this</em> character.
+    /// </summary>
+    /// <remarks>
+    /// The maximum is passed because a proportional heal has no answer without one - asking
+    /// <c>Middle</c> with no target falls back to the flat default, which would rank a heal worth
+    /// half a health bar below one worth twenty points.
+    /// </remarks>
+    private static double HealValue(Ability ability, Character character) =>
         ability.Effects
             .Where(e => string.Equals(e.Key, "heal.restore", StringComparison.Ordinal))
-            .Select(e => (double)HealEffect.Middle(e.Params))
+            .Select(e => (double)HealEffect.Middle(e.Params, character.Vitals.HealthMax))
             .DefaultIfEmpty(0)
             .Max();
 

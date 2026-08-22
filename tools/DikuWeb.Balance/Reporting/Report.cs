@@ -296,9 +296,9 @@ public sealed class Report(ContentSet content, Options options)
         Section("What a Path can afford");
 
         Console.WriteLine(
-            $"{"Path",-7} {"Lvl",3}  {"pool",6} {"regen/min",9} {"abilities",9} {"mean cost",9} " +
-            $"{"bar in casts",12}");
-        Console.WriteLine(new string('-', 70));
+            $"{"Path",-7} {"Lvl",3}  {"bar",-8} {"pool",6} {"regen/min",9} {"spends",6} " +
+            $"{"mean cost",9} {"bar in casts",12}");
+        Console.WriteLine(new string('-', 74));
 
         foreach (var path in options.Paths)
         {
@@ -316,45 +316,114 @@ public sealed class Report(ContentSet content, Options options)
                     continue;
                 }
 
-                // The bar a Path actually spends from: whichever its abilities are priced in.
-                var costType = known
-                    .GroupBy(a => a.CostType)
-                    .OrderByDescending(g => g.Count())
-                    .First().Key;
-
-                var pool = costType switch
-                {
-                    CostType.Focus => character.Vitals.FocusMax,
-                    CostType.Stamina => character.Vitals.StaminaMax,
-                    _ => character.Vitals.HealthMax,
-                };
-
-                var (health, focus, stamina) = RegenCalculator.Calculate(
+                var (_, focus, stamina) = RegenCalculator.Calculate(
                     CharacterRestState.Stand,
                     character.Vitals,
                     character.Attributes.VitalityModifier,
                     path);
 
-                var regen = costType switch
+                // A row per bar the Path actually spends from, rather than one row for whichever
+                // it spends from most.
+                //
+                // A Path with abilities on two bars has two budgets, and collapsing them to the
+                // majority one hides exactly the design this is meant to measure: a Hallow whose
+                // Smite is priced in stamina is not competing with its own heals for focus, so its
+                // real capacity is larger than either row alone.
+                foreach (var group in known
+                    .GroupBy(a => a.CostType)
+                    .OrderByDescending(g => g.Count()))
                 {
-                    CostType.Focus => focus,
-                    CostType.Stamina => stamina,
-                    _ => health,
-                };
+                    var pool = group.Key switch
+                    {
+                        CostType.Focus => character.Vitals.FocusMax,
+                        CostType.Stamina => character.Vitals.StaminaMax,
+                        _ => character.Vitals.HealthMax,
+                    };
 
-                var spenders = known.Where(a => a.CostType == costType).ToList();
-                var meanCost = spenders.Average(a => a.CostValue);
+                    var regen = group.Key switch
+                    {
+                        CostType.Focus => focus,
+                        CostType.Stamina => stamina,
+                        _ => 0,
+                    };
 
-                Console.WriteLine(
-                    $"{path,-7} {level,3}  {pool,6:N0} {regen,9:N0} {spenders.Count,9} " +
-                    $"{meanCost,9:0.0} {pool / meanCost,12:0.0}");
+                    var meanCost = group.Average(a => a.CostValue);
+
+                    Console.WriteLine(
+                        $"{path,-7} {level,3}  {group.Key,-8} {pool,6:N0} {regen,9:N0} " +
+                        $"{group.Count(),6} {meanCost,9:0.0} {pool / meanCost,12:0.0}");
+                }
             }
 
             Console.WriteLine();
         }
 
-        Console.WriteLine("  regen/min = RegenCalculator standing, one 60-second tick. Not per fight -");
-        Console.WriteLine("  per MINUTE, which is most of the problem.");
+        Console.WriteLine("  regen/min = RegenCalculator standing, one 60-second tick. Per MINUTE,");
+        Console.WriteLine("  which is why a 30-second fight sees none of it.");
+        Console.WriteLine("  Two rows for one level means the Path spends from two bars.");
+        Console.WriteLine();
+    }
+
+    /// <summary>
+    /// How much of each bar a real fight actually draws on.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Capacity a Path cannot reach is not capacity.</b> The table above prices the bars; this
+    /// one says which of them the game ever touches. A Path whose whole kit is priced in one
+    /// resource carries a second full bar into every fight and spends nothing from it - so its real
+    /// budget is half what its two pools suggest, and the half it has is the one under pressure.
+    /// </para>
+    /// <para>
+    /// This is the measurement behind pricing an ability in the other bar. A Hallow's Smite is
+    /// stamina precisely so that swinging it does not compete with keeping somebody alive, and this
+    /// is where that either shows up or does not.
+    /// </para>
+    /// </remarks>
+    public void WriteBarUse()
+    {
+        Section("How much of each bar a fight actually spends");
+
+        Console.WriteLine($"{"Path",-7} {"Lvl",3}  {"focus",14} {"stamina",14}   idle bar");
+        Console.WriteLine(new string('-', 64));
+
+        foreach (var path in options.Paths)
+        {
+            foreach (var level in options.Levels)
+            {
+                var cell = Measure(path, level);
+
+                if (cell is null)
+                {
+                    continue;
+                }
+
+                var runs = cell.WithAbilities;
+                var focus = Median(runs, r => r.FocusUsed);
+                var stamina = Median(runs, r => r.StaminaUsed);
+
+                var focusMax = runs[0].FocusMax;
+                var staminaMax = runs[0].StaminaMax;
+
+                // Named rather than left to the reader: a bar a fight never touches is a design
+                // decision nobody made, and it is the same one in nearly every row.
+                var idle = focus < 0.02 && stamina < 0.02
+                    ? "both"
+                    : focus < 0.02
+                        ? $"focus ({focusMax:N0} unused)"
+                        : stamina < 0.02
+                            ? $"stamina ({staminaMax:N0} unused)"
+                            : "-";
+
+                Console.WriteLine(
+                    $"{path,-7} {level,3}  {$"{focus:P0} of {focusMax:N0}",14} " +
+                    $"{$"{stamina:P0} of {staminaMax:N0}",14}   {idle}");
+            }
+
+            Console.WriteLine();
+        }
+
+        Console.WriteLine("  Medians over the same fights as every other table.");
         Console.WriteLine();
     }
 
