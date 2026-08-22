@@ -374,6 +374,8 @@ disagrees.
 | `warden.rally` → focus | The Warden carried 167 unused focus; its one non-swing belongs on the other bar | `cost_type=1` |
 | `hallow.staunch` added — L32, 26 stamina, 40% heal, cooldown group 1 | A second stamina ability, sharing Smite's timer | `delete from abilities where key='hallow.staunch'` |
 | `hallow.smite` → cooldown group 1, L12 | Joins that timer, and moved early enough to reach the level 20 wall | `cooldown_group=null, unlock_level=22` |
+| `hallow.wither` → spike + wound | A flat `tickDamage` authored at level 5 was still 30 damage at level 50; the spike beside it scales | `effects='[{"Key":"damage.overtime","Params":{"name":"withering","tickDamage":"6","durationPulses":"96","tickIntervalPulses":"16","maxStacks":"1","stackingRule":"Refresh"}}]'` |
+| `hallow.reproach` (L26) and `hallow.the-account` (L38) added | The Path learned one damage ability in fifty levels | `delete from abilities where key in ('hallow.reproach','hallow.the-account')` |
 
 ### What each was worth, measured
 
@@ -424,3 +426,23 @@ through a fight on its own.
 Moving Smite to 12 is the other half of the same lesson, and it is the Transmutation lesson again:
 level 20 went from 0% to 41%, and from dealing 60% of the target's health to 97%. An ability that
 unlocks after the wall does nothing for the wall.
+
+### A wound does not keep pace; a spike beside it does
+
+`DamageEffect.BaseAtLevel` reads the caster. `tickDamage` does not — it is an absolute number frozen
+the day it is authored. Temper and Adept hid that by writing bigger ticks at each tier (5 → 22
+across the game); the Hallow had one wound, authored at level 5, and it dealt 30 damage for the
+next forty-five levels. Against a level 50 target that is 4%.
+
+Pairing a spike with the wound on one cast fixes it without a mechanic change, because the spike is
+the half that scales. Measured on the Hallow, changing only this:
+
+| | focus damage per point @50 | L20 won | L50 dealt |
+|---|---|---|---|
+| Wither as a bare wound | 1.67 | 41% | 62% |
+| Wither as spike + wound | **4.11** | **100%** | 85% |
+| …plus damage abilities at 26 and 38 | **5.41** | 100% | **100%** |
+
+That is the §6 open question answering itself in practice: `tickDamage` could be given a level term,
+and until it is, **every wound in the game should be authored beside a spike or re-authored at each
+tier** — a bare wound is an ability that quietly stops mattering.
