@@ -28,12 +28,22 @@ namespace DikuWeb.Server.Building;
 /// </para>
 /// <para>
 /// <b>Generated rather than written down.</b> A hand-authored copy of the room shape is a second
-/// source of truth that drifts the moment somebody adds a flag - the failure
+/// source of truth that drifts the moment somebody changes the first - the failure
 /// <c>ChangeRecordCompletenessTests</c> and <c>ExportScriptCompletenessTests</c> already exist to
 /// prevent in the two other places this shape is spelled out. Reading
-/// <see cref="RoomFlags.All"/> and <see cref="Direction"/> means a new flag reaches the model with
-/// its own summary attached as documentation, on the commit that registers it and with no second
-/// edit.
+/// <see cref="Direction"/> means the vocabulary is the engine's by construction, and
+/// <see cref="NotGenerated"/> plus its test means a field added to <see cref="BundleRoom"/> has to
+/// be decided about rather than forgotten.
+/// </para>
+/// <para>
+/// <b>What it is <em>for</em> is narrower than what it could carry, and that was learned rather
+/// than designed.</b> Room flags were generated here first - eight booleans straight off the
+/// registry, each documented by the summary the builder UI already shows a person, which read as
+/// the best argument in the file. The first real generation set <c>respawn: true</c>, making the
+/// room a bind point, against a world rule (WORLD.md 4.1) that no validator enforces and that
+/// another rule leans on for safety. The model was not malfunctioning; it was filling in a field
+/// it had been handed. The lesson is in <see cref="NotGenerated"/>: ask it for prose, and do not
+/// hand it the mechanical fields just because they are easy to describe.
 /// </para>
 /// <para>
 /// <b>Constraints are expressed as <c>enum</c>, never as <c>pattern</c>.</b> The schema-to-grammar
@@ -75,6 +85,13 @@ public static class AssistSchema
                 "Where the room sits on the builder's canvas, which is not a property of the room.",
             ["EditorY"] =
                 "As EditorX.",
+            ["Flags"] =
+                "Withdrawn after the first real generation set respawn:true on a room. WORLD.md "
+                + "4.1 is emphatic - respawn is five zones, the hubs, and nowhere else - and it "
+                + "resolves at zone level, so a room setting it is wrong twice over. Nothing "
+                + "catches it: BundleValidator has no rule about bind points, and 4.1 leans on "
+                + "that policy to make the conditional-exit exploit impossible by construction. "
+                + "Flags are mechanical and canon-governed; prose is what the model is for.",
         };
 
     /// <summary>
@@ -107,7 +124,6 @@ public static class AssistSchema
                 ["description"] = "What a character sees standing here. Present tense, second "
                     + "person implied, no mention of exits - the engine lists those itself.",
             },
-            ["flags"] = FlagsSchema(),
         };
 
         // Built through JsonValue.Create rather than the collection initialiser, and the same
@@ -117,7 +133,7 @@ public static class AssistSchema
         // file-based app. The server itself has reflection on and was never affected; the typed
         // overloads cost nothing and mean this cannot become a startup crash if that ever changes.
         var required = new JsonArray(
-            JsonValue.Create("title"), JsonValue.Create("description"), JsonValue.Create("flags"));
+            JsonValue.Create("title"), JsonValue.Create("description"));
 
         if (exitDestinations.Count > 0)
         {
@@ -137,42 +153,6 @@ public static class AssistSchema
         };
     }
 
-    /// <summary>
-    /// Every flag in the registry, as an optional boolean carrying its own summary.
-    /// </summary>
-    /// <remarks>
-    /// The summaries are not decoration. They are the only thing telling the model what
-    /// <c>noRecall</c> means, and they are already written, already reviewed, and already what the
-    /// builder UI shows a human - so the model and the person read the same sentence.
-    /// <para>
-    /// Deliberately not <c>required</c>: a flag absent from a room means "inherit", which is a
-    /// different thing from false (PLAN.md §4.10, and <see cref="RoomFlags.Resolve"/>). Forcing
-    /// all eight would make the model assert a decision about every flag on every room, and the
-    /// assertion would usually be wrong.
-    /// </para>
-    /// </remarks>
-    private static JsonObject FlagsSchema()
-    {
-        var flags = new JsonObject();
-
-        foreach (var flag in RoomFlags.All)
-        {
-            flags[flag.Key] = new JsonObject
-            {
-                ["type"] = "boolean",
-                ["description"] = flag.Summary,
-            };
-        }
-
-        return new JsonObject
-        {
-            ["type"] = "object",
-            ["properties"] = flags,
-            ["additionalProperties"] = false,
-            ["description"] = "Only flags this room actually decides. Omit a flag to inherit it "
-                + "from the zone.",
-        };
-    }
 
     private static JsonObject ExitsSchema(IReadOnlyCollection<string> destinations)
     {

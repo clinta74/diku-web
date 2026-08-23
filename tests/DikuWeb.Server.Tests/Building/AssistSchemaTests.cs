@@ -67,38 +67,40 @@ public sealed class AssistSchemaTests
     }
 
     /// <summary>
-    /// The flag vocabulary is the registry's, exactly.
+    /// The model is not offered the flags, and the reason is on file.
     /// </summary>
     /// <remarks>
-    /// This is the drift that would otherwise be invisible: registering a flag and not telling the
-    /// model about it costs nothing at compile time and means the assist can never set it.
+    /// This test replaced two that asserted the opposite. Flags were generated from the registry,
+    /// documented by their own summaries, and the first real generation used that to set
+    /// <c>respawn: true</c> - a bind point, against WORLD.md 4.1's "five zones and nowhere else",
+    /// which nothing validates and which 4.1 relies on to close the conditional-exit exploit by
+    /// construction. Asserted rather than merely deleted so that re-adding flags has to argue with
+    /// this comment first.
     /// </remarks>
     [Fact]
-    public void The_flags_are_the_registry()
+    public void The_model_is_not_asked_to_set_flags()
     {
-        var flags = Properties(AssistSchema.ForRoom(Destinations))["flags"]!
-            .AsObject()["properties"]!
-            .AsObject();
-
-        Assert.Equal(
-            RoomFlags.All.Select(f => f.Key).OrderBy(k => k, StringComparer.Ordinal),
-            flags.Select(p => p.Key).OrderBy(k => k, StringComparer.Ordinal));
+        Assert.False(Properties(AssistSchema.ForRoom(Destinations)).ContainsKey("flags"));
+        Assert.Contains("Flags", AssistSchema.NotGenerated.Keys);
     }
 
-    /// <summary>Each flag carries the summary the builder UI shows a person.</summary>
+    /// <summary>
+    /// A refinement worth remembering: not every flag is policy.
+    /// </summary>
+    /// <remarks>
+    /// <c>dark</c> and <c>indoors</c> are observations about a room and would be safe to generate;
+    /// <c>respawn</c>, <c>pvp</c>, <c>peaceful</c> and <c>noRecall</c> are policy with mechanical
+    /// consequences. Splitting them is the better design and is deliberately not built, because
+    /// <see cref="RoomFlag"/> carries no such classification and inventing one here would put it in
+    /// the wrong place. This test only pins that the registry has not quietly grown one.
+    /// </remarks>
     [Fact]
-    public void Each_flag_explains_itself()
+    public void The_registry_still_has_no_notion_of_a_safe_flag()
     {
-        var flags = Properties(AssistSchema.ForRoom(Destinations))["flags"]!
-            .AsObject()["properties"]!
-            .AsObject();
-
-        foreach (var flag in RoomFlags.All)
-        {
-            Assert.Equal(
-                flag.Summary,
-                flags[flag.Key]!.AsObject()["description"]!.GetValue<string>());
-        }
+        Assert.DoesNotContain(
+            typeof(RoomFlag).GetProperties(),
+            p => p.Name.Contains("Safe", StringComparison.Ordinal)
+                || p.Name.Contains("Policy", StringComparison.Ordinal));
     }
 
     /// <summary>The directions are the engine's six, lowercased the way the bundle spells them.</summary>
@@ -173,7 +175,7 @@ public sealed class AssistSchemaTests
 
         Assert.False(schema["additionalProperties"]!.GetValue<bool>());
         Assert.Equal(
-            ["title", "description", "flags", "exits"],
+            ["title", "description", "exits"],
             schema["required"]!.AsArray().Select(v => v!.GetValue<string>()));
 
         var item = Properties(schema)["exits"]!.AsObject()["items"]!.AsObject();
@@ -182,13 +184,6 @@ public sealed class AssistSchemaTests
         Assert.Equal(
             ["direction", "to"],
             item["required"]!.AsArray().Select(v => v!.GetValue<string>()));
-
-        // Flags are closed but required of nothing: an absent flag means "inherit from the zone",
-        // which is a real third state and not a false.
-        var flags = Properties(schema)["flags"]!.AsObject();
-
-        Assert.False(flags["additionalProperties"]!.GetValue<bool>());
-        Assert.Null(flags["required"]);
     }
 
     /// <summary>
