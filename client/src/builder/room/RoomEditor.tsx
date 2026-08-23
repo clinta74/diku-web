@@ -185,6 +185,8 @@ export function RoomEditor({
       <div className="room-section">
         {section === 'details' && (
           <RoomDetailsTab
+            roomKey={room.key}
+            zoneKey={room.zoneKey}
             title={title}
             description={description}
             dirty={dirty}

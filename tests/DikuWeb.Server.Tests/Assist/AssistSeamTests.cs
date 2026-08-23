@@ -330,6 +330,69 @@ public sealed class OllamaContentAssistantTests
         Assert.EndsWith("make it colder\n", prompt, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Existing prose is sent to the model, and it changes the job.
+    /// </summary>
+    /// <remarks>
+    /// The common case is not a blank field. Somebody reaches for help when they have half a
+    /// paragraph they are unhappy with, so the draft has to be seeded by it rather than ignoring
+    /// it and returning something unrelated to what they were writing.
+    /// </remarks>
+    [Fact]
+    public async Task Existing_prose_seeds_the_draft_and_makes_it_a_rewrite()
+    {
+        var (assistant, handler) = Build(Good);
+
+        await assistant.DraftRoomAsync(
+            Request() with { Title = "The Tollhouse Steps", Description = "Half a paragraph." },
+            Context,
+            CancellationToken.None);
+
+        var prompt = handler.Sent!["prompt"]!.GetValue<string>();
+
+        Assert.Contains("The Tollhouse Steps", prompt, StringComparison.Ordinal);
+        Assert.Contains("Half a paragraph.", prompt, StringComparison.Ordinal);
+        Assert.Contains("Rewrite the room", prompt, StringComparison.Ordinal);
+        Assert.DoesNotContain("Write the room", prompt, StringComparison.Ordinal);
+    }
+
+    /// <summary>And a blank room is still asked for from nothing.</summary>
+    [Fact]
+    public async Task An_empty_room_is_written_rather_than_rewritten()
+    {
+        var (assistant, handler) = Build(Good);
+
+        await assistant.DraftRoomAsync(Request(), Context, CancellationToken.None);
+
+        var prompt = handler.Sent!["prompt"]!.GetValue<string>();
+
+        Assert.Contains("Write the room", prompt, StringComparison.Ordinal);
+        Assert.DoesNotContain("already started this room", prompt, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Existing text still lands after the canon, like everything else that varies.
+    /// </summary>
+    /// <remarks>
+    /// It is the largest variable thing in the request now, so it is the one most able to wreck the
+    /// prefix cache if it ever drifted forward of the canon.
+    /// </remarks>
+    [Fact]
+    public async Task Existing_prose_does_not_move_the_cached_prefix()
+    {
+        var (assistant, handler) = Build(Good);
+
+        await assistant.DraftRoomAsync(
+            Request("make it colder") with { Description = "Half a paragraph." },
+            Context,
+            CancellationToken.None);
+
+        var prompt = handler.Sent!["prompt"]!.GetValue<string>();
+
+        Assert.StartsWith(Canon.Prefix, prompt, StringComparison.Ordinal);
+        Assert.EndsWith("make it colder\n", prompt, StringComparison.Ordinal);
+    }
+
     /// <summary>The derived model, never the base — the base answers at 4096.</summary>
     [Fact]
     public async Task It_asks_for_the_configured_model()

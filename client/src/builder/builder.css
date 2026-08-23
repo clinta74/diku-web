@@ -846,3 +846,36 @@
 .ability-problems .warn {
   color: var(--accent);
 }
+
+/*
+ * The builder assist's draft panel.
+ *
+ * Set apart from the fields above it rather than styled to match them, because the distinction
+ * that matters is that this is a *suggestion*: it must not read as another editable field, or the
+ * difference between "what I wrote" and "what the model wrote" stops being visible at a glance.
+ */
+.draft-panel {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--panel) 60%, transparent);
+}
+
+.draft-panel > p:first-child {
+  margin-top: 0;
+}
+
+.draft-field {
+  margin: 0.5rem 0;
+}
+
+.draft-field p {
+  margin: 0.15rem 0 0;
+  white-space: pre-wrap;
+}
+
+.draft-warnings ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.1rem;
+}

@@ -1,8 +1,13 @@
+import { useEffect, useState } from 'react'
 import { Button } from '../../ui/Button'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
+import { DraftPanel } from '../assist/DraftPanel'
+import { assistAvailable, useRoomDraft } from '../assist/useRoomDraft'
 
 interface Props {
+  roomKey: string
+  zoneKey: string
   title: string
   description: string
   dirty: boolean
@@ -19,6 +24,8 @@ interface Props {
  * a hop to another sub-tab and can be guarded against loss on navigation.
  */
 export function RoomDetailsTab({
+  roomKey,
+  zoneKey,
   title,
   description,
   dirty,
@@ -28,6 +35,29 @@ export function RoomDetailsTab({
   onDescription,
   onSave,
 }: Props) {
+  const draft = useRoomDraft()
+
+  // Asked once per page load and cached in the module, so navigating between rooms does not
+  // re-ask. A server with no model configured answers 404 and the button simply is not there —
+  // which is the same thing PLAN.md §13 asks of every part of this: the builder works without it.
+  const [canAssist, setCanAssist] = useState(false)
+
+  useEffect(() => {
+    let live = true
+    void assistAvailable().then((yes) => {
+      if (live) setCanAssist(yes)
+    })
+    return () => {
+      live = false
+    }
+  }, [])
+
+  const apply = (next: { title?: string; description?: string }) => {
+    if (next.title !== undefined) onTitle(next.title)
+    if (next.description !== undefined) onDescription(next.description)
+    draft.discard()
+  }
+
   return (
     <div className="section-body">
       {error && <p className="bad">{error}</p>}
@@ -44,10 +74,41 @@ export function RoomDetailsTab({
         <Button variant="primary" disabled={busy || !dirty} onClick={onSave}>
           {busy ? 'Saving…' : dirty ? 'Save' : 'Saved'}
         </Button>
+        {canAssist && (
+          <Button
+            disabled={draft.status === 'working'}
+            onClick={() =>
+              void draft.request({
+                zoneKey,
+                roomKey,
+                // The buffer, not the saved row. What is in front of the builder is what they
+                // want help with, and it may never have been saved.
+                title,
+                description,
+              })
+            }
+          >
+            {draft.status === 'working' ? 'Drafting…' : 'Suggest'}
+          </Button>
+        )}
         <span className="dim detail">
           Saves reach anyone standing here immediately — there is no publish step.
         </span>
       </div>
+
+      <DraftPanel
+        status={draft.status}
+        elapsed={draft.elapsed}
+        draft={draft.draft}
+        warnings={draft.warnings}
+        error={draft.error}
+        onUseBoth={() =>
+          apply({ title: draft.draft?.title, description: draft.draft?.description })
+        }
+        onUseTitle={() => apply({ title: draft.draft?.title })}
+        onUseDescription={() => apply({ description: draft.draft?.description })}
+        onDiscard={draft.discard}
+      />
     </div>
   )
 }

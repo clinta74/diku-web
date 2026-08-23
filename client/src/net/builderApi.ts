@@ -587,6 +587,40 @@ export interface ImportReport {
   ok: boolean
 }
 
+/**
+ * A queued draft from the builder assist.
+ *
+ * A job rather than a response because generation is slow enough to matter: measured at 1.3-1.8
+ * tokens a second, one room description is about three minutes. The server accepts the request,
+ * returns an id, and the client asks again until it is done.
+ */
+export interface AssistJob {
+  id: string
+  state: 'Queued' | 'Running' | 'Succeeded' | 'Failed'
+  queuedAt: string
+  startedAt: string | null
+  finishedAt: string | null
+  draft: RoomDraft | null
+  error: string | null
+  /** Things wrong with the draft that the output grammar could not prevent. Never fatal. */
+  warnings: string[]
+}
+
+export interface RoomDraft {
+  title: string
+  description: string
+  exits: Array<{ direction: string; to: string }>
+}
+
+/** What the assist is told. The current editor buffer, not the saved row — see the server side. */
+export interface RoomDraftRequest {
+  zoneKey: string
+  roomKey: string
+  instruction?: string
+  title?: string
+  description?: string
+}
+
 export const builderApi = {
   roomFlags: () => request<RoomFlagDefinition[]>(`${base}/room-flags`),
 
@@ -683,6 +717,24 @@ export const builderApi = {
     }),
 
   deleteRoom: (key: string) => request<void>(`${base}/rooms/${key}`, { method: 'DELETE' }),
+
+  /**
+   * Queues a room draft. 429 means the queue is full — one model, one worker, and minutes a job,
+   * so "not now" is the honest answer rather than a promise nobody would wait for.
+   *
+   * 404 means the server was built without an assistant configured, which is a supported state:
+   * the builder is expected to work unchanged without one.
+   */
+  draftRoom: (body: RoomDraftRequest) =>
+    request<{ id: string }>(`${base}/assist/rooms`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  assistJob: (id: string) => request<AssistJob>(`${base}/assist/rooms/${id}`),
+
+  /** 404 when this server has no assistant configured, which is a supported deployment. */
+  assistAvailable: () => request<{ enabled: boolean }>(`${base}/assist`),
 
   renameRoom: (key: string, newKey: string) =>
     request<RoomDetail>(`${base}/rooms/${key}/rename`, {

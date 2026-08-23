@@ -138,7 +138,34 @@ public sealed class OllamaContentAssistant : IContentAssistant
             }
         }
 
-        prompt.Append("Write the room `").Append(request.RoomKey).Append("`.\n")
+        // What the builder already has, when there is anything. This changes the job from "write a
+        // room" to "improve this room", which is a different task and the more common one - the
+        // moment somebody reaches for help is usually the moment they have half a paragraph they
+        // are not happy with, not a blank field.
+        var hasTitle = !string.IsNullOrWhiteSpace(request.Title);
+        var hasProse = !string.IsNullOrWhiteSpace(request.Description);
+
+        if (hasTitle || hasProse)
+        {
+            prompt.Append("The builder has already started this room. Keep what works, keep the ")
+                .Append("same place, and improve it rather than replacing it with something else.")
+                .Append("\n\n");
+
+            if (hasTitle)
+            {
+                prompt.Append("Current title: ").Append(request.Title!.Trim()).Append('\n');
+            }
+
+            if (hasProse)
+            {
+                prompt.Append("Current description:\n").Append(request.Description!.Trim()).Append('\n');
+            }
+
+            prompt.Append('\n');
+        }
+
+        prompt.Append(hasProse ? "Rewrite the room `" : "Write the room `")
+            .Append(request.RoomKey).Append("`.\n")
             .Append("Describe only what is in the room. Do not name mobs, items, or exits: the ")
             .Append("engine lists those, and anything you invent here will not exist.\n");
 

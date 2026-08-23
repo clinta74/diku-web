@@ -12,10 +12,28 @@ namespace DikuWeb.Server.Assist;
 /// <param name="RoomKey">The room being drafted. May not exist yet.</param>
 /// <param name="Instruction">
 /// An optional steer from the builder - "make it colder", "there should be a shrine". Free text,
-/// and the only free text in the request; it lands at the very end of the prompt, after the canon
-/// and after the context, so nothing a builder types can move the cached prefix.
+/// and it lands at the very end of the prompt, after the canon and after the context, so nothing a
+/// builder types can move the cached prefix.
 /// </param>
-public sealed record RoomDraftRequest(string ZoneKey, string RoomKey, string? Instruction);
+/// <param name="Title">
+/// What the editor currently holds, which may not be what the database holds.
+/// </param>
+/// <param name="Description">
+/// The prose the builder has already written, if any.
+/// <para>
+/// <b>Sent by the client rather than read from the database, because the interesting case is the
+/// unsaved one.</b> A builder asks for help with the half-paragraph in front of them - the one
+/// they have just typed and are stuck on - and that text exists only in the browser. Reading the
+/// saved row instead would seed the model with the version they are in the middle of replacing,
+/// which is the one piece of context guaranteed to be stale.
+/// </para>
+/// </param>
+public sealed record RoomDraftRequest(
+    string ZoneKey,
+    string RoomKey,
+    string? Instruction,
+    string? Title = null,
+    string? Description = null);
 
 /// <summary>One drafted room, as the model returned it and the validator accepted it.</summary>
 public sealed record RoomDraft(string Title, string Description, IReadOnlyList<DraftExit> Exits);

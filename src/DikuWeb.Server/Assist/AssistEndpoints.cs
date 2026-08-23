@@ -34,6 +34,11 @@ public static class AssistEndpoints
             .RequireAuthorization(Policies.Builder)
             .RequireRateLimiting(RateLimiting.Assist);
 
+        // Exists only when the assist does, so a 404 here is the client's answer to "is there a
+        // model behind this server". One request per session beats a button that works for some
+        // deployments and quietly 404s for others the first time somebody presses it.
+        group.MapGet("/", () => Results.Ok(new { enabled = true }));
+
         group.MapPost("/rooms", (RoomDraftRequest request, AssistQueue queue) =>
         {
             if (string.IsNullOrWhiteSpace(request.ZoneKey) || string.IsNullOrWhiteSpace(request.RoomKey))

@@ -51,6 +51,10 @@ vi.mock('../net/builderApi', () => ({
         templates: [],
       }),
     roomFlags: () => Promise.resolve([]),
+    // The room editor asks once whether this server has an assistant. Answering "no" here keeps
+    // these tests about the builder rather than about the assist panel; the helper survives the
+    // function being absent entirely, but a mock that says so explicitly is a mock that reads.
+    assistAvailable: () => Promise.reject(new Error('no assistant in this test')),
     worlds: () => Promise.resolve(worlds),
     zones: () => Promise.resolve(zones),
     rooms: () => Promise.resolve(rooms),
