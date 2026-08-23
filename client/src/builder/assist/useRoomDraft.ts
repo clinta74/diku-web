@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../net/api'
-import { builderApi, type RoomDraft, type RoomDraftRequest } from '../../net/builderApi'
+import {
+  builderApi,
+  type ProseDraft,
+  type ProseDraftRequest,
+  type RoomDraft,
+  type RoomDraftRequest,
+} from '../../net/builderApi'
 
 /**
  * How often to ask whether a draft is done.
@@ -18,6 +24,8 @@ export interface RoomDraftState {
   /** Seconds since the request was sent. Shown, because a silent three minutes reads as broken. */
   elapsed: number
   draft: RoomDraft | null
+  /** Set instead of `draft` when the job was for a mob, item, or quest. */
+  prose: ProseDraft | null
   warnings: string[]
   error: string | null
 }
@@ -26,6 +34,7 @@ const IDLE: RoomDraftState = {
   status: 'idle',
   elapsed: 0,
   draft: null,
+  prose: null,
   warnings: [],
   error: null,
 }
@@ -80,12 +89,15 @@ export function useRoomDraft() {
     setState(IDLE)
   }, [])
 
-  const request = useCallback(async (body: RoomDraftRequest) => {
+  // One submit path for both kinds, taking the call rather than the body: the polling, the
+  // elapsed clock, the refusal handling and the cleanup are identical, and the only thing that
+  // differs is which endpoint starts the job.
+  const submit = useCallback(async (start: () => Promise<{ id: string }>) => {
     startedAt.current = Date.now()
     setState({ ...IDLE, status: 'working' })
 
     try {
-      const { id } = await builderApi.draftRoom(body)
+      const { id } = await start()
       jobId.current = id
     } catch (e) {
       jobId.current = null
@@ -102,6 +114,16 @@ export function useRoomDraft() {
     }
   }, [])
 
+  const request = useCallback(
+    (body: RoomDraftRequest) => submit(() => builderApi.draftRoom(body)),
+    [submit],
+  )
+
+  const requestProse = useCallback(
+    (body: ProseDraftRequest) => submit(() => builderApi.draftProse(body)),
+    [submit],
+  )
+
   useEffect(() => {
     if (state.status !== 'working') return
 
@@ -117,12 +139,13 @@ export function useRoomDraft() {
         const job = await builderApi.assistJob(id)
         if (!live) return
 
-        if (job.state === 'Succeeded' && job.draft) {
+        if (job.state === 'Succeeded' && (job.draft || job.prose)) {
           jobId.current = null
           setState({
             status: 'ready',
             elapsed,
             draft: job.draft,
+            prose: job.prose,
             warnings: job.warnings,
             error: null,
           })
@@ -156,5 +179,5 @@ export function useRoomDraft() {
     }
   }, [state.status])
 
-  return { ...state, request, discard }
+  return { ...state, request, requestProse, discard }
 }

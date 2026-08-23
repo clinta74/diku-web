@@ -202,4 +202,145 @@ public static class AssistSchema
                 + "describe them in the prose.",
         };
     }
+    /// <summary>The kinds of thing the assist writes prose for, besides a room.</summary>
+    /// <remarks>
+    /// Rooms keep their own method because they are the only kind with exits, which is the one
+    /// referential rule a grammar here can carry. These three are prose and nothing else.
+    /// </remarks>
+    public enum ProseKind
+    {
+        Mob,
+        Item,
+        Quest,
+    }
+
+    /// <summary>
+    /// The fields of a mob template the model is not asked for.
+    /// </summary>
+    /// <remarks>
+    /// Everything except the two that are writing. This is the <c>respawn: true</c> lesson applied
+    /// before it can happen again: a mob's level, stats, loot table and attack list are mechanical,
+    /// they decide whether a zone is survivable, and handing them to a model that cannot decline
+    /// means it will fill them in plausibly and wrongly. They are worth <em>showing</em> it - see
+    /// <c>MobFacts</c> in the assistant - so the prose matches the creature, but they are not
+    /// its output.
+    /// </remarks>
+    public static readonly IReadOnlyDictionary<string, string> MobNotGenerated =
+        Mechanical(
+            "The builder decides what exists and where; the model describes it.",
+            "Key", "Icon", "Level", "WanderIntervalPulses", "BaseStats", "BaseXp", "BaseGold",
+            "Behavior", "Loot", "Attacks");
+
+    /// <summary>As <see cref="MobNotGenerated"/>: an item's numbers are the item.</summary>
+    /// <remarks>
+    /// Weight, slots and value are the difference between a dagger and a greatsword, and they are
+    /// already chosen by the time anybody wants prose. Generating them would let the description
+    /// and the item disagree - which is the failure this whole feature is supposed to fix, pointed
+    /// the other way.
+    /// </remarks>
+    public static readonly IReadOnlyDictionary<string, string> ItemNotGenerated =
+        Mechanical(
+            "The builder decides what the item is; the model describes it.",
+            "Key", "Icon", "Slots", "IsTwoHanded", "Weight", "BaseValue", "BaseStats",
+            "AttackDelayPulses", "AttackVerb", "IsQuestItem", "IsLore", "IsNoDrop",
+            "IsLightSource", "FoodValue", "DrinkValue", "Paths");
+
+    /// <summary>
+    /// A quest's shape is referential, which is exactly what a per-entity grammar cannot check.
+    /// </summary>
+    /// <remarks>
+    /// Giver, turn-in, required item and rewards all name other content, and
+    /// <c>BundleValidator.CheckQuests</c> asks the question that matters about them - whether the
+    /// required item is obtainable at all. A model cannot see the world that answers it. Dialogue is
+    /// left out for a different reason: it is keyed by quest state, so it is a small structured
+    /// thing rather than prose, and worth its own pass rather than a corner of this one.
+    /// </remarks>
+    public static readonly IReadOnlyDictionary<string, string> QuestNotGenerated =
+        Mechanical(
+            "Names other content, or decides how the quest behaves.",
+            "Key", "ZoneKey", "GiverMobKey", "TurninMobKey", "RequiredItemKey", "RequiredCount",
+            "RewardXp", "RewardGold", "RewardItemKey", "RewardItemCount", "RewardFlagKey",
+            "PrerequisiteQuestKeys", "IsRepeatable", "AutoStart", "Paths", "Dialogue", "SortOrder");
+
+    private static Dictionary<string, string> Mechanical(string why, params string[] fields)
+    {
+        var map = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var field in fields)
+        {
+            map[field] = why;
+        }
+
+        return map;
+    }
+
+    /// <summary>Room titles are a line; so is a mob's or an item's name.</summary>
+    public const int NameMaxLength = 60;
+
+    /// <summary>A quest summary is the one-line version shown in the journal.</summary>
+    public const int SummaryMaxLength = 160;
+
+    /// <summary>
+    /// The schema for one mob, item, or quest's prose.
+    /// </summary>
+    /// <remarks>
+    /// One method for three kinds because the shape genuinely is the same - a name and a
+    /// description, plus a summary where a quest has one. Three near-identical methods would be
+    /// three places to forget <c>additionalProperties</c>.
+    /// </remarks>
+    public static JsonObject ForProse(ProseKind kind)
+    {
+        var properties = new JsonObject
+        {
+            ["name"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["maxLength"] = NameMaxLength,
+                ["description"] = kind switch
+                {
+                    ProseKind.Mob => "What this creature is called, as it appears in the room. "
+                        + "Lower case unless it is a proper name, and articled: 'a rim-wolf'.",
+                    ProseKind.Item => "What this item is called, as it appears in inventory. "
+                        + "Lower case unless it is a proper name, and articled: 'a rusted key'.",
+                    _ => "The quest's title, as it appears in the journal. A short noun phrase.",
+                },
+            },
+            ["description"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["maxLength"] = DescriptionMaxLength,
+                ["description"] = kind switch
+                {
+                    ProseKind.Mob => "What a character sees looking at it. Match the numbers you "
+                        + "were shown: something of this level should read as that dangerous.",
+                    ProseKind.Item => "What a character sees examining it. Match the numbers you "
+                        + "were shown - weight, worth and what it is worn on are the item.",
+                    _ => "What the giver wants and why, in their voice. Do not describe the reward "
+                        + "or how to hand it in; the journal shows those.",
+                },
+            },
+        };
+
+        var required = new JsonArray(JsonValue.Create("name"), JsonValue.Create("description"));
+
+        if (kind == ProseKind.Quest)
+        {
+            properties["summary"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["maxLength"] = SummaryMaxLength,
+                ["description"] = "One line, imperative: what the player is being asked to do.",
+            };
+
+            required.Add(JsonValue.Create("summary"));
+        }
+
+        return new JsonObject
+        {
+            ["type"] = "object",
+            ["properties"] = properties,
+            ["required"] = required,
+            ["additionalProperties"] = false,
+        };
+    }
 }

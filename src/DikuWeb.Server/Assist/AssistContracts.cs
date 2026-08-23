@@ -1,4 +1,21 @@
+using DikuWeb.Server.Building;
+
 namespace DikuWeb.Server.Assist;
+
+/// <summary>
+/// Anything the queue can be asked to draft.
+/// </summary>
+/// <remarks>
+/// A base record rather than one request with a kind field, because the kinds genuinely differ: a
+/// room has exits and a quest has a summary, and a single shape carrying every field for every kind
+/// would be mostly nulls with nothing saying which ones are meaningful when. Each endpoint binds
+/// its own concrete type, so nothing here needs polymorphic deserialisation.
+/// </remarks>
+public abstract record AssistRequest
+{
+    /// <summary>What is being drafted, for the log and for an error message.</summary>
+    public abstract string Subject { get; }
+}
 
 /// <summary>What a builder asked for. Names an entity; does not carry a prompt.</summary>
 /// <remarks>
@@ -33,7 +50,40 @@ public sealed record RoomDraftRequest(
     string RoomKey,
     string? Instruction,
     string? Title = null,
-    string? Description = null);
+    string? Description = null) : AssistRequest
+{
+    public override string Subject => RoomKey;
+}
+
+/// <summary>
+/// A mob, item, or quest, for which the assist writes prose and nothing else.
+/// </summary>
+/// <remarks>
+/// <b>Prose and nothing else is the whole scope, and it is the <c>respawn: true</c> lesson applied
+/// in advance.</b> A mob's level and loot, an item's weight and slots, a quest's giver and rewards
+/// are all decided before anybody wants words for them - and a model handed those fields fills
+/// them in plausibly, because a constrained sampler cannot decline. They go <em>in</em> as context
+/// so the prose matches the thing; they do not come out. See <c>AssistSchema.MobNotGenerated</c>
+/// and its siblings.
+/// </remarks>
+/// <param name="Kind">Which of the three.</param>
+/// <param name="Key">The template or quest key. Must already exist - its numbers are the context.</param>
+/// <param name="Name">What the editor currently holds, which may not be what the database holds.</param>
+/// <param name="Summary">Quests only; ignored for the other two.</param>
+public sealed record ProseDraftRequest(
+    AssistSchema.ProseKind Kind,
+    string Key,
+    string? Instruction,
+    string? Name = null,
+    string? Summary = null,
+    string? Description = null) : AssistRequest
+{
+    public override string Subject => Key;
+}
+
+/// <summary>One drafted mob, item, or quest.</summary>
+/// <param name="Summary">Present for a quest, null for the other two.</param>
+public sealed record ProseDraft(string Name, string Description, string? Summary);
 
 /// <summary>One drafted room, as the model returned it and the validator accepted it.</summary>
 public sealed record RoomDraft(string Title, string Description, IReadOnlyList<DraftExit> Exits);
@@ -65,5 +115,6 @@ public sealed record AssistJob(
     DateTimeOffset? StartedAt,
     DateTimeOffset? FinishedAt,
     RoomDraft? Draft,
+    ProseDraft? Prose,
     string? Error,
     IReadOnlyList<string> Warnings);

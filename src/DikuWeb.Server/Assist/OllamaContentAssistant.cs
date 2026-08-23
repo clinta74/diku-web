@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Text.Json.Nodes;
 using DikuWeb.Server.Building;
 using Microsoft.Extensions.Options;
@@ -71,12 +72,35 @@ public sealed class OllamaContentAssistant : IContentAssistant
             .Where(k => !string.Equals(k, request.RoomKey, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
+        var json = await GenerateAsync(
+            AssistSchema.ForRoom(destinations),
+            Prompt(request, context),
+            request.Subject,
+            cancellationToken).ConfigureAwait(false);
+
+        var draft = Parse(json, AssistJsonContext.Default.RoomDraft);
+
+        if (string.IsNullOrWhiteSpace(draft.Title) || string.IsNullOrWhiteSpace(draft.Description))
+        {
+            throw new InvalidOperationException($"The draft has no title or no prose: {Trim(json)}");
+        }
+
+        return draft;
+    }
+
+    /// <summary>
+    /// One constrained generation. Everything both callers share is here.
+    /// </summary>
+    /// <returns>The model's answer, which the grammar guarantees is JSON of the given shape.</returns>
+    private async Task<string?> GenerateAsync(
+        JsonObject schema, string prompt, string subject, CancellationToken cancellationToken)
+    {
         var payload = new JsonObject
         {
             ["model"] = _options.Model,
             ["stream"] = false,
-            ["format"] = AssistSchema.ForRoom(destinations),
-            ["prompt"] = Prompt(request, context),
+            ["format"] = schema,
+            ["prompt"] = prompt,
             ["options"] = new JsonObject { ["temperature"] = Temperature },
             // Never let one request be the reason the model unloads: an unload discards the canon
             // prefix, and rebuilding it is minutes rather than seconds.
@@ -86,7 +110,7 @@ public sealed class OllamaContentAssistant : IContentAssistant
         using var content = new StringContent(
             payload.ToJsonString(), Encoding.UTF8, "application/json");
 
-        AssistLog.Requesting(_logger, _options.Model, request.RoomKey);
+        AssistLog.Requesting(_logger, _options.Model, subject);
 
         using var response = await _http
             .PostAsync(new Uri("/api/generate", UriKind.Relative), content, cancellationToken)
@@ -105,10 +129,121 @@ public sealed class OllamaContentAssistant : IContentAssistant
             .ConfigureAwait(false)
             ?? throw new InvalidOperationException("The model returned nothing at all.");
 
-        AssistLog.Generated(
-            _logger, request.RoomKey, envelope.PromptEvalCount, envelope.EvalCount);
+        AssistLog.Generated(_logger, subject, envelope.PromptEvalCount, envelope.EvalCount);
 
-        return Parse(envelope.Response);
+        return envelope.Response;
+    }
+
+    public async Task<ProseDraft> DraftProseAsync(
+        ProseDraftRequest request,
+        ProseContext context,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(context);
+
+        var json = await GenerateAsync(
+            AssistSchema.ForProse(request.Kind),
+            ProsePrompt(request, context),
+            request.Subject,
+            cancellationToken).ConfigureAwait(false);
+
+        var draft = Parse(json, AssistJsonContext.Default.ProseDraft);
+
+        if (string.IsNullOrWhiteSpace(draft.Name) || string.IsNullOrWhiteSpace(draft.Description))
+        {
+            throw new InvalidOperationException($"The draft has no name or no prose: {Trim(json)}");
+        }
+
+        return draft;
+    }
+
+    /// <summary>
+    /// The mechanical facts first, then the voice, then what to write.
+    /// </summary>
+    /// <remarks>
+    /// <b>The facts are the feature.</b> A description written without them contradicts the thing
+    /// it describes - a two-kilogram "massive greatsword", a level 4 rat that "would kill a company
+    /// of men" - and a builder who has to correct that every time stops pressing the button. They
+    /// go in as context precisely so they do not have to come out as output, which is where they
+    /// would be dangerous (AssistSchema.MobNotGenerated).
+    /// </remarks>
+    private static string ProsePrompt(ProseDraftRequest request, ProseContext context)
+    {
+        var what = request.Kind switch
+        {
+            AssistSchema.ProseKind.Mob => "creature",
+            AssistSchema.ProseKind.Item => "item",
+            _ => "quest",
+        };
+
+        var prompt = new StringBuilder(Canon.Prefix);
+
+        prompt.Append("\n---\n\nYou are writing the words for one ").Append(what)
+            .Append(" in the world above. Someone else has already decided what it is; these are ")
+            .Append("its facts, and the words have to match them.\n\n")
+            .Append(context.Facts).Append('\n');
+
+        if (context.Exemplars.Count > 0)
+        {
+            // Framed hard as belonging to something else, and told not to reuse them.
+            //
+            // The first live run copied an exemplar's opening sentence word for word into both
+            // drafts - a bare list under "reads like this" is a list the model continues rather
+            // than imitates. Left alone that puts the same sentence at the front of every
+            // description in a zone, which is duplication a builder skims straight past, and in the
+            // item's case it also dragged the prose away from the facts: an exemplar about a short
+            // blade turned a 6.4 kg two-handed axe into one.
+            prompt.Append("For voice and length only, here is how OTHER ").Append(what)
+                .Append("s are written. They are different ").Append(what)
+                .Append("s and none of them is the one you are writing. Do not reuse their ")
+                .Append("sentences, their objects, or their opening words:\n\n");
+
+            foreach (var exemplar in context.Exemplars.Take(ExemplarCount))
+            {
+                prompt.Append("- (a different ").Append(what).Append(") ").Append(exemplar).Append('\n');
+            }
+
+            prompt.Append('\n');
+        }
+
+        var hasProse = !string.IsNullOrWhiteSpace(request.Description);
+
+        if (!string.IsNullOrWhiteSpace(request.Name) || hasProse)
+        {
+            prompt.Append("The builder has already started this. Keep what works and improve it ")
+                .Append("rather than replacing it with something else.\n\n");
+
+            if (!string.IsNullOrWhiteSpace(request.Name))
+            {
+                prompt.Append("Current name: ").Append(request.Name!.Trim()).Append('\n');
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Summary))
+            {
+                prompt.Append("Current summary: ").Append(request.Summary!.Trim()).Append('\n');
+            }
+
+            if (hasProse)
+            {
+                prompt.Append("Current description:\n").Append(request.Description!.Trim()).Append('\n');
+            }
+
+            prompt.Append('\n');
+        }
+
+        prompt.Append(hasProse ? "Rewrite it." : "Write it.")
+            .Append(" Describe only this ").Append(what)
+            .Append(". Do not invent other content: anything you name that is not in the facts ")
+            .Append("above does not exist.\n");
+
+        // Last, always, so nothing a builder types can move the cached prefix.
+        if (!string.IsNullOrWhiteSpace(request.Instruction))
+        {
+            prompt.Append("\nThe builder adds: ").Append(request.Instruction.Trim()).Append('\n');
+        }
+
+        return prompt.ToString();
     }
 
     /// <summary>
@@ -178,18 +313,17 @@ public sealed class OllamaContentAssistant : IContentAssistant
         return prompt.ToString();
     }
 
-    private static RoomDraft Parse(string? json)
+    private static T Parse<T>(string? json, JsonTypeInfo<T> shape)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
             throw new InvalidOperationException("The model returned an empty response.");
         }
 
-        RoomDraft? draft;
-
         try
         {
-            draft = JsonSerializer.Deserialize(json, AssistJsonContext.Default.RoomDraft);
+            return JsonSerializer.Deserialize(json, shape)
+                ?? throw new InvalidOperationException($"The draft was null: {Trim(json)}");
         }
         catch (JsonException e)
         {
@@ -198,14 +332,6 @@ public sealed class OllamaContentAssistant : IContentAssistant
             throw new InvalidOperationException(
                 $"Constrained output did not parse, which should not be possible: {Trim(json)}", e);
         }
-
-        if (draft is null || string.IsNullOrWhiteSpace(draft.Title) ||
-            string.IsNullOrWhiteSpace(draft.Description))
-        {
-            throw new InvalidOperationException($"The draft has no title or no prose: {Trim(json)}");
-        }
-
-        return draft;
     }
 
     private static string Trim(string? text) =>
@@ -242,4 +368,5 @@ internal sealed record GenerateResponse(
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(GenerateResponse))]
 [JsonSerializable(typeof(RoomDraft))]
+[JsonSerializable(typeof(ProseDraft))]
 internal sealed partial class AssistJsonContext : JsonSerializerContext;

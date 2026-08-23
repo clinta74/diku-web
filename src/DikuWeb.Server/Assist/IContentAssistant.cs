@@ -46,4 +46,10 @@ public interface IContentAssistant
         RoomDraftRequest request,
         ZoneContext context,
         CancellationToken cancellationToken);
+
+    /// <summary>Drafts the prose for a mob, item, or quest, or throws.</summary>
+    Task<ProseDraft> DraftProseAsync(
+        ProseDraftRequest request,
+        ProseContext context,
+        CancellationToken cancellationToken);
 }

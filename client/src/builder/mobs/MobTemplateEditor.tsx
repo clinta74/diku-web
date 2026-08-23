@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { builderApi, type MobAttack, type MobTemplate } from '../../net/builderApi'
 import { Button } from '../../ui/Button'
+import { ProseAssist } from '../assist/ProseAssist'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
 import { NumberInput } from '../../ui/NumberInput'
@@ -150,6 +151,15 @@ export function MobTemplateEditor({ templateKey, onChanged, onDeleted }: Props) 
       <Field label="Description">
         <Textarea rows={3} value={description} onChange={change(setDescription)} />
       </Field>
+
+      <ProseAssist
+        kind="Mob"
+        entityKey={templateKey}
+        name={name}
+        description={description}
+        onName={change(setName)}
+        onDescription={change(setDescription)}
+      />
 
       <div className="field-row">
         <Field label="Icon">

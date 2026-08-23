@@ -97,13 +97,13 @@ public sealed class AssistWorker(
             }
             catch (Exception e)
             {
-                AssistLog.Failed(logger, request.RoomKey, e);
+                AssistLog.Failed(logger, request.Subject, e);
                 queue.Failed(id, e.Message);
             }
         }
     }
 
-    private async Task RunAsync(Guid id, RoomDraftRequest request, CancellationToken stoppingToken)
+    private async Task RunAsync(Guid id, AssistRequest request, CancellationToken stoppingToken)
     {
         queue.Started(id);
 
@@ -114,10 +114,36 @@ public sealed class AssistWorker(
 
         using var scope = scopes.CreateScope();
 
-        var contexts = scope.ServiceProvider.GetRequiredService<IZoneContextSource>();
         var assistant = scope.ServiceProvider.GetRequiredService<IContentAssistant>();
 
-        var context = await contexts.ForZoneAsync(request.ZoneKey, timeout.Token).ConfigureAwait(false);
+        switch (request)
+        {
+            case RoomDraftRequest room:
+                await RoomAsync(id, room, scope, assistant, timeout.Token).ConfigureAwait(false);
+                break;
+
+            case ProseDraftRequest prose:
+                await ProseAsync(id, prose, scope, assistant, timeout.Token).ConfigureAwait(false);
+                break;
+
+            default:
+                // Unreachable while AssistRequest has two subtypes, and a job that silently never
+                // finished would be worse than one that says what happened.
+                queue.Failed(id, $"Nothing here knows how to draft a {request.GetType().Name}.");
+                break;
+        }
+    }
+
+    private async Task RoomAsync(
+        Guid id,
+        RoomDraftRequest request,
+        IServiceScope scope,
+        IContentAssistant assistant,
+        CancellationToken cancellationToken)
+    {
+        var contexts = scope.ServiceProvider.GetRequiredService<IZoneContextSource>();
+
+        var context = await contexts.ForZoneAsync(request.ZoneKey, cancellationToken).ConfigureAwait(false);
 
         if (context is null)
         {
@@ -125,7 +151,7 @@ public sealed class AssistWorker(
             return;
         }
 
-        var draft = await assistant.DraftRoomAsync(request, context, timeout.Token).ConfigureAwait(false);
+        var draft = await assistant.DraftRoomAsync(request, context, cancellationToken).ConfigureAwait(false);
 
         var destinations = context.RoomKeys
             .Where(k => !string.Equals(k, request.RoomKey, StringComparison.OrdinalIgnoreCase))
@@ -134,5 +160,34 @@ public sealed class AssistWorker(
         // Reviewed before it is stored, so the warnings reach the builder with the draft rather
         // than after they have already read it and believed it.
         queue.Succeeded(id, draft, RoomDraftReview.Review(draft, destinations));
+    }
+
+    private async Task ProseAsync(
+        Guid id,
+        ProseDraftRequest request,
+        IServiceScope scope,
+        IContentAssistant assistant,
+        CancellationToken cancellationToken)
+    {
+        var contexts = scope.ServiceProvider.GetRequiredService<IProseContextSource>();
+
+        var context = await contexts.ForAsync(request.Kind, request.Key, cancellationToken)
+            .ConfigureAwait(false);
+
+        // The entity has to exist first: its numbers are the context, and prose written without
+        // them is prose that will contradict the thing it describes.
+        if (context is null)
+        {
+            queue.Failed(
+                id,
+                $"There is no {request.Kind.ToString().ToLowerInvariant()} '{request.Key}'. "
+                + "Create it first — the assist describes what exists rather than inventing it.");
+            return;
+        }
+
+        var draft = await assistant.DraftProseAsync(request, context, cancellationToken)
+            .ConfigureAwait(false);
+
+        queue.Succeeded(id, draft, ProseDraftReview.Review(draft, request.Kind, context.Exemplars));
     }
 }

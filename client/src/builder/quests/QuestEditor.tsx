@@ -7,6 +7,7 @@ import {
   type ReachabilityWarning,
 } from '../../net/builderApi'
 import { Button } from '../../ui/Button'
+import { ProseAssist } from '../assist/ProseAssist'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
 import { NumberInput } from '../../ui/NumberInput'
@@ -256,6 +257,26 @@ export function QuestEditor({ questKey, onChanged, onDeleted }: Props) {
           }}
         />
       </Field>
+
+      <ProseAssist
+        kind="Quest"
+        entityKey={questKey}
+        name={name}
+        summary={summary}
+        description={description}
+        onName={(v) => {
+          setName(v)
+          touch()
+        }}
+        onSummary={(v) => {
+          setSummary(v)
+          touch()
+        }}
+        onDescription={(v) => {
+          setDescription(v)
+          touch()
+        }}
+      />
 
       <fieldset className="behavior-editor">
         <legend>Who</legend>

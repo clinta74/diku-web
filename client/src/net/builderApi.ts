@@ -601,6 +601,8 @@ export interface AssistJob {
   startedAt: string | null
   finishedAt: string | null
   draft: RoomDraft | null
+  /** Filled in instead of `draft` when the job was for a mob, item, or quest. */
+  prose: ProseDraft | null
   error: string | null
   /** Things wrong with the draft that the output grammar could not prevent. Never fatal. */
   warnings: string[]
@@ -610,6 +612,31 @@ export interface RoomDraft {
   title: string
   description: string
   exits: Array<{ direction: string; to: string }>
+}
+
+export interface ProseDraft {
+  name: string
+  description: string
+  /** Quests only. */
+  summary: string | null
+}
+
+/** Which of the three kinds a prose draft is for. Matches the server's AssistSchema.ProseKind. */
+export type ProseKind = 'Mob' | 'Item' | 'Quest'
+
+/**
+ * A prose draft request.
+ *
+ * The entity must already exist: its numbers are the context the description is written against,
+ * and prose written without them contradicts the thing it describes.
+ */
+export interface ProseDraftRequest {
+  kind: ProseKind
+  key: string
+  instruction?: string
+  name?: string
+  summary?: string
+  description?: string
 }
 
 /** What the assist is told. The current editor buffer, not the saved row — see the server side. */
@@ -727,6 +754,13 @@ export const builderApi = {
    */
   draftRoom: (body: RoomDraftRequest) =>
     request<{ id: string }>(`${base}/assist/rooms`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  /** Mobs, items and quests share one endpoint, and one job reader with rooms. */
+  draftProse: (body: ProseDraftRequest) =>
+    request<{ id: string }>(`${base}/assist/prose`, {
       method: 'POST',
       body: JSON.stringify(body),
     }),

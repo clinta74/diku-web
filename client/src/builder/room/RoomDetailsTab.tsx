@@ -52,9 +52,11 @@ export function RoomDetailsTab({
     }
   }, [])
 
-  const apply = (next: { title?: string; description?: string }) => {
-    if (next.title !== undefined) onTitle(next.title)
-    if (next.description !== undefined) onDescription(next.description)
+  // The panel names which fields to take; this is the only place that knows what they mean.
+  const apply = (keys: string[]) => {
+    if (!draft.draft) return
+    if (keys.includes('title')) onTitle(draft.draft.title)
+    if (keys.includes('description')) onDescription(draft.draft.description)
     draft.discard()
   }
 
@@ -99,14 +101,17 @@ export function RoomDetailsTab({
       <DraftPanel
         status={draft.status}
         elapsed={draft.elapsed}
-        draft={draft.draft}
+        fields={
+          draft.draft
+            ? [
+                { key: 'title', label: 'Title', value: draft.draft.title },
+                { key: 'description', label: 'Description', value: draft.draft.description },
+              ]
+            : []
+        }
         warnings={draft.warnings}
         error={draft.error}
-        onUseBoth={() =>
-          apply({ title: draft.draft?.title, description: draft.draft?.description })
-        }
-        onUseTitle={() => apply({ title: draft.draft?.title })}
-        onUseDescription={() => apply({ description: draft.draft?.description })}
+        onUse={apply}
         onDiscard={draft.discard}
       />
     </div>

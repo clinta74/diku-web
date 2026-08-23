@@ -8,6 +8,7 @@ import {
   type ItemTemplate,
 } from '../../net/builderApi'
 import { Button } from '../../ui/Button'
+import { ProseAssist } from '../assist/ProseAssist'
 import { Field } from '../../ui/Field'
 import { Textarea } from '../../ui/Textarea'
 import { NumberInput } from '../../ui/NumberInput'
@@ -195,6 +196,21 @@ export function ItemTemplateEditor({ templateKey, onChanged, onDeleted }: Props)
           }}
         />
       </Field>
+
+      <ProseAssist
+        kind="Item"
+        entityKey={templateKey}
+        name={name}
+        description={description}
+        onName={(v) => {
+          setName(v)
+          touch()
+        }}
+        onDescription={(v) => {
+          setDescription(v)
+          touch()
+        }}
+      />
 
       <div className="field-row">
         <Field label="Icon">

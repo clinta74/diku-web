@@ -31,7 +31,7 @@ namespace DikuWeb.Server.Assist;
 public sealed class AssistQueue
 {
     private readonly ConcurrentDictionary<Guid, AssistJob> _jobs = new();
-    private readonly Channel<(Guid Id, RoomDraftRequest Request)> _channel;
+    private readonly Channel<(Guid Id, AssistRequest Request)> _channel;
     private readonly AssistOptions _options;
     private readonly TimeProvider _time;
 
@@ -52,7 +52,7 @@ public sealed class AssistQueue
         // Bounded and rejecting. DropWrite would accept the request and never run it, which is the
         // one behaviour worse than refusing: the builder waits for an answer that was discarded at
         // the door.
-        _channel = Channel.CreateBounded<(Guid, RoomDraftRequest)>(
+        _channel = Channel.CreateBounded<(Guid, AssistRequest)>(
             new BoundedChannelOptions(Math.Max(1, _options.MaxQueued))
             {
                 FullMode = BoundedChannelFullMode.Wait,
@@ -61,13 +61,13 @@ public sealed class AssistQueue
     }
 
     /// <summary>Everything the worker has yet to pick up.</summary>
-    internal ChannelReader<(Guid Id, RoomDraftRequest Request)> Reader => _channel.Reader;
+    internal ChannelReader<(Guid Id, AssistRequest Request)> Reader => _channel.Reader;
 
     /// <summary>
     /// Queues a draft, or refuses when there is no room.
     /// </summary>
     /// <returns>The job id, or null when the queue is full.</returns>
-    public Guid? TryEnqueue(RoomDraftRequest request)
+    public Guid? TryEnqueue(AssistRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -83,7 +83,7 @@ public sealed class AssistQueue
         }
 
         _jobs[id] = new AssistJob(
-            id, AssistJobState.Queued, _time.GetUtcNow(), null, null, null, null, []);
+            id, AssistJobState.Queued, _time.GetUtcNow(), null, null, null, null, null, []);
 
         return id;
     }
@@ -103,6 +103,15 @@ public sealed class AssistQueue
             State = AssistJobState.Succeeded,
             FinishedAt = _time.GetUtcNow(),
             Draft = draft,
+            Warnings = warnings,
+        });
+
+    internal void Succeeded(Guid id, ProseDraft prose, IReadOnlyList<string> warnings) =>
+        Update(id, job => job with
+        {
+            State = AssistJobState.Succeeded,
+            FinishedAt = _time.GetUtcNow(),
+            Prose = prose,
             Warnings = warnings,
         });
 

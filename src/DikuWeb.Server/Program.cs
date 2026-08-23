@@ -211,6 +211,7 @@ if (assistOptions.Enabled)
     });
 
     builder.Services.AddScoped<IZoneContextSource, EfZoneContextSource>();
+    builder.Services.AddScoped<IProseContextSource, EfProseContextSource>();
     builder.Services.AddSingleton<AssistQueue>();
     builder.Services.AddHostedService<AssistWorker>();
 }

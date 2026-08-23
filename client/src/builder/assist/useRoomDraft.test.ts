@@ -18,6 +18,7 @@ function job(state: AssistJob['state'], extra: Partial<AssistJob> = {}): AssistJ
     startedAt: null,
     finishedAt: null,
     draft: null,
+    prose: null,
     error: null,
     warnings: [],
     ...extra,

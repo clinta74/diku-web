@@ -56,6 +56,25 @@ public static class AssistEndpoints
                 : Results.Accepted($"/api/builder/assist/rooms/{id}", new { id });
         });
 
+        // Mobs, items and quests share one endpoint because they share one job: prose for a thing
+        // that already exists. The kind is in the body rather than the path so the client has one
+        // call to make and one shape to handle.
+        group.MapPost("/prose", (ProseDraftRequest request, AssistQueue queue) =>
+        {
+            if (string.IsNullOrWhiteSpace(request.Key))
+            {
+                return Results.BadRequest("A draft needs the key of the thing to describe.");
+            }
+
+            var id = queue.TryEnqueue(request);
+
+            return id is null
+                ? Results.StatusCode(StatusCodes.Status429TooManyRequests)
+                : Results.Accepted($"/api/builder/assist/rooms/{id}", new { id });
+        });
+
+        // One reader for both, because a job is a job: the client polls the same place whatever it
+        // asked for, and reads whichever of `draft` or `prose` is filled in.
         group.MapGet("/rooms/{id:guid}", (Guid id, AssistQueue queue) =>
             queue.Find(id) is { } job ? Results.Ok(job) : Results.NotFound());
     }

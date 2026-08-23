@@ -85,3 +85,97 @@ public static class RoomDraftReview
         return warnings;
     }
 }
+
+/// <summary>
+/// What is wrong with a mob, item, or quest draft that the grammar could not prevent.
+/// </summary>
+/// <remarks>
+/// Thinner than the room's, and honestly so. A room draft carries structure - exits, directions,
+/// destinations - and structure is checkable. Prose is prose: the checks worth having are the ones
+/// with a rule behind them, and inventing more would produce warnings a builder learns to scroll
+/// past, which costs more than it saves.
+/// </remarks>
+public static class ProseDraftReview
+{
+    /// <summary>
+    /// Keys have no business in prose.
+    /// </summary>
+    /// <remarks>
+    /// The facts handed to the model resolve keys to names for exactly this reason, but a quest
+    /// prompt still mentions counts and rewards, and a model that has seen a dotted key once will
+    /// occasionally put one in a sentence. It reads as a bug to a player, because it is one.
+    /// </remarks>
+    private static bool LooksLikeAKey(string text) =>
+        text.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Any(word => word.Count(c => c == '.') >= 2 && !word.EndsWith('.'));
+
+    /// <summary>
+    /// How much of a sentence has to match an exemplar before it is a copy rather than an echo.
+    /// </summary>
+    /// <remarks>
+    /// Whole first sentences, compared case-insensitively. Anything cleverer - shingles, edit
+    /// distance - would catch paraphrase too, and paraphrasing an exemplar is exactly what the
+    /// exemplar is for. What is being caught is verbatim reuse, which is what actually happened.
+    /// </remarks>
+    private static string FirstSentence(string text)
+    {
+        var end = text.IndexOf('.', StringComparison.Ordinal);
+        return (end < 0 ? text : text[..(end + 1)]).Trim();
+    }
+
+    public static IReadOnlyList<string> Review(
+        ProseDraft draft,
+        AssistSchema.ProseKind kind,
+        IReadOnlyCollection<string>? exemplars = null)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        var warnings = new List<string>();
+
+        // Found on the first live run: the model opened both drafts with an exemplar's own first
+        // sentence, word for word. The prompt now says not to, and this is what notices when it
+        // does anyway - because the result reads perfectly well and only looks wrong beside the
+        // description it was copied from, which is not on the same screen.
+        if (exemplars is not null && draft.Description.Length > 0)
+        {
+            var opening = FirstSentence(draft.Description);
+
+            if (opening.Length > 0 &&
+                exemplars.Any(e => FirstSentence(e).Equals(opening, StringComparison.OrdinalIgnoreCase)))
+            {
+                warnings.Add("opens with a sentence copied from another description");
+            }
+        }
+
+        if (draft.Name.Length > AssistSchema.NameMaxLength)
+        {
+            warnings.Add($"has a {draft.Name.Length}-character name, over the "
+                + $"{AssistSchema.NameMaxLength} the schema set");
+        }
+
+        if (draft.Description.Length > AssistSchema.DescriptionMaxLength)
+        {
+            warnings.Add($"has a {draft.Description.Length}-character description, over the "
+                + $"{AssistSchema.DescriptionMaxLength} the schema set");
+        }
+
+        // A quest without one is a journal entry with a blank line in it. The schema requires it,
+        // so this firing means the constraint did not hold.
+        if (kind == AssistSchema.ProseKind.Quest && string.IsNullOrWhiteSpace(draft.Summary))
+        {
+            warnings.Add("has no summary, which the journal needs");
+        }
+
+        if (kind != AssistSchema.ProseKind.Quest && !string.IsNullOrWhiteSpace(draft.Summary))
+        {
+            warnings.Add("carries a summary, which only a quest has");
+        }
+
+        if (LooksLikeAKey(draft.Description) || LooksLikeAKey(draft.Name))
+        {
+            warnings.Add("puts what looks like a content key in the prose, which players would see");
+        }
+
+        return warnings;
+    }
+}
