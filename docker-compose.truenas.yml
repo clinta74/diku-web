@@ -1,0 +1,231 @@
+name: diku-web
+
+# TrueNAS SCALE deployment (custom app / docker compose).
+#
+# Differs from docker-compose.prod.yml in three ways, all deliberate:
+#   - Host ports are remapped (7180, 5434) because TrueNAS itself owns 80/443 and may run its
+#     own Postgres.
+#   - prometheus/grafana are omitted. Monitoring is optional; the backup sidecar is not.
+#   - An ollama service provides the builder AI assist. It is intentionally NOT in any
+#     depends_on chain: the MUD must start and run whether or not inference is available.
+#
+# Hardware assumptions: i5 9600K (6c/6t, no HT), 48 GB DDR4, models on the `ssd` pool.
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: dikuweb-postgres
+    restart: always
+    networks:
+      - dikuweb-network
+    environment:
+      POSTGRES_DB: dikuweb
+      POSTGRES_USER: dikuweb
+      # Must match DatabaseConnection__Password on `web` and PGPASSWORD on `backup`.
+      POSTGRES_PASSWORD:
+      POSTGRES_INITDB_ARGS: '-c timezone=UTC -c shared_buffers=256MB -c max_connections=200'
+    ports:
+      # Loopback only. `web` and `backup` reach Postgres as postgres:5432 over the compose
+      # network; publishing on 0.0.0.0 put the database on the whole LAN for no benefit.
+      # Remove this line entirely if you never need a client on the NAS itself.
+      - '127.0.0.1:5434:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./backups:/backups:rw
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U dikuweb -d dikuweb
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    shm_size: 256mb
+    mem_limit: 2g
+    logging:
+      driver: json-file
+      options:
+        labels: service=postgres
+        max-file: '3'
+        max-size: 10m
+
+  web:
+    image: candrews74/dikuweb-server:latest
+    container_name: dikuweb-web
+    restart: always
+    pull_policy: always
+    networks:
+      - dikuweb-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      DatabaseConnection__Host: postgres
+      DatabaseConnection__Port: '5432'
+      DatabaseConnection__Database: dikuweb
+      DatabaseConnection__User: dikuweb
+      DatabaseConnection__Password:
+      Logging__LogLevel__Default: Warning
+      Logging__LogLevel__Microsoft: Warning
+      Logging__LogLevel__Microsoft.EntityFrameworkCore: Warning
+      Sessions__MaxCharactersPerAccount: '5'
+      Sessions__MaxConcurrentSessions: '100'
+      Auth__CookieName: dikuweb.session
+      Auth__SessionTimeoutMinutes: '20160'
+      # 300, not 30. The engine default is 360 pulses (90s); 30 is shorter than that and drops a
+      # phone that has merely been backgrounded (MOBILE.md section 6). Program.cs applies any
+      # positive value here, so this one is live and a wrong value is a real regression.
+      Engine__LinkDeadGraceSeconds: '300'
+      #
+      # Engine__StartingRoom is deliberately absent. Room keys are dotted
+      # ("aldenmoor.millbrook.north-gate"); "hall@0.0.0" fails RoomKey.TryParse, so Program.cs
+      # silently keeps the seeded room. Set it only with a key that actually parses - an ignored
+      # setting that reads as configured is the trap EngineContracts.cs warns about.
+      SwaggerEnabled: 'false'
+    volumes:
+      - ./logs:/app/logs:rw
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://localhost:8080/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    # The .NET GC reads the cgroup limit and sizes its heap from it. Unset, it sizes against all
+    # 48 GB and lets the heap grow far past what this process needs.
+    mem_limit: 2g
+    logging:
+      driver: json-file
+      options:
+        labels: service=web
+        max-file: '5'
+        max-size: 50m
+
+  client:
+    image: candrews74/dikuweb-client:latest
+    container_name: dikuweb-client
+    restart: always
+    pull_policy: always
+    networks:
+      - dikuweb-network
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      - '7180:80'
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - '-q'
+        - '-O'
+        - '-'
+        - http://localhost/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options:
+        labels: service=client
+        max-file: '3'
+        max-size: 50m
+
+  backup:
+    # Nightly pg_dump that proves itself by restoring into a scratch DB and counting rows;
+    # a dump that will not restore is deleted rather than kept (tools/backup/backup.sh).
+    #
+    # Requires tools/backup/backup.sh to exist next to this file ON THE NAS. If you deploy from
+    # the published images and have no repo checkout there, copy the script to a dataset and
+    # point the mount at an absolute path instead, e.g. /mnt/tank/dikuweb/tools/backup:/scripts:ro
+    image: postgres:18
+    container_name: dikuweb-backup
+    restart: always
+    networks:
+      - dikuweb-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: dikuweb
+      PGDATABASE: dikuweb
+      PGPASSWORD:
+      BACKUP_AT_HOUR: '3'
+      BACKUP_KEEP: '30'
+    volumes:
+      - ./tools/backup:/scripts:ro
+      - ./backups:/backups:rw
+    entrypoint:
+      - /bin/sh
+      - /scripts/backup.sh
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options:
+        labels: service=backup
+        max-file: '3'
+        max-size: 10m
+
+  ollama:
+    # AI assist for the world builder. CPU inference on a 9600K, so every setting here exists to
+    # protect either the cached prompt prefix or the game loop.
+    image: ollama/ollama:latest
+    container_name: dikuweb-ollama
+    restart: always
+    pull_policy: always
+    networks:
+      - dikuweb-network
+    environment:
+      # Never unload. The default is 5m, and an unload discards the KV cache for the canon
+      # prefix - which costs minutes to rebuild on this CPU.
+      OLLAMA_KEEP_ALIVE: '-1'
+      # Generation model + embedding model resident at once.
+      OLLAMA_MAX_LOADED_MODELS: '2'
+      # One slot. Parallel slots divide the context window between them and fragment prefix
+      # caching, and this design depends on one large prefix hitting every request.
+      OLLAMA_NUM_PARALLEL: '1'
+      # 4 of 6 cores, matching the cpus limit below.
+      OLLAMA_NUM_THREAD: '4'
+    # llama.cpp will otherwise take all 6 cores, and a 90-second generation would then compete
+    # with the game loop for every one of them. Costs ~30% generation speed to keep the MUD
+    # responsive while a builder is generating - the right trade for an async authoring tool.
+    cpus: 4.0
+    volumes:
+      # The `ssd` pool, not the spinning array: Ollama mmaps model files, and evicted pages are
+      # re-read from disk on the next token.
+      - /mnt/ssd/ollama:/root/.ollama
+    healthcheck:
+      test:
+        - CMD
+        - ollama
+        - list
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    # Gemma 3 12B Q4 (~7.3 GB) plus KV cache, an embedding model, and headroom.
+    mem_limit: 12g
+    logging:
+      driver: json-file
+      options:
+        labels: service=ollama
+        max-file: '3'
+        max-size: 10m
+
+networks:
+  dikuweb-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+
+volumes:
+  pgdata:
+    driver: local
