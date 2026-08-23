@@ -21,6 +21,15 @@
     </PackageReference>
   </ItemGroup>
 
+  <!--
+    The world canon travels inside the assembly. The builder assist puts it in front of every
+    request and the KV cache only survives if it is byte-identical every time, so it is a property
+    of the build rather than a file the container might or might not have. See Assist/Canon.cs.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\docs\WORLD.md" LogicalName="DikuWeb.Server.Canon.WORLD.md" />
+  </ItemGroup>
+
   <!-- WebApplicationFactory in the integration tests needs to see the entry point. -->
   <ItemGroup>
     <InternalsVisibleTo Include="DikuWeb.Server.Tests" />

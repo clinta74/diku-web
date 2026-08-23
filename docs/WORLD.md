@@ -598,6 +598,15 @@ room describes what is there, not how to feel about it.**
 
 ---
 
+<!-- canon:end -->
+<!--
+  Everything above this line is embedded in the server and sent to the builder assist as its
+  standing context (src/DikuWeb.Server/Assist/Canon.cs). Everything below is authoring process -
+  true, useful, and not part of what the world is. A test fails if the canon above grows past the
+  budget the model's context window allows, so if that test starts failing, the question is which
+  section has stopped being canon rather than how to raise the number.
+-->
+
 ## 10. Authoring notes
 
 ### 10.1 How content lands

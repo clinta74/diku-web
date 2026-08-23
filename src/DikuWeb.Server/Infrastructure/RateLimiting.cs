@@ -45,6 +45,17 @@ public static class RateLimiting
     public const string Auth = "auth";
 
     /// <summary>
+    /// The builder assist. Same trusted role as <see cref="Builder"/>, completely different budget.
+    /// </summary>
+    /// <remarks>
+    /// Every builder read is free and local; one assist call occupies the only model this server
+    /// has for about three minutes. A share of the builder policy's 120-burst would let one person
+    /// fill the queue and hold it for half an hour, so this is a separate policy with a number that
+    /// reflects what the work costs rather than what the request costs.
+    /// </remarks>
+    public const string Assist = "assist";
+
+    /// <summary>
     /// The numbers, so a deployment can loosen or tighten them without a rebuild.
     /// </summary>
     /// <remarks>
@@ -60,6 +71,9 @@ public static class RateLimiting
         public int BuilderBurst { get; set; } = 120;
         public int BuilderPerSecond { get; set; } = 20;
         public int AuthAttemptsPerMinute { get; set; } = 10;
+
+        /// <summary>Assist requests per account per minute. Six is twice the queue's own depth.</summary>
+        public int AssistRequestsPerMinute { get; set; } = 6;
     }
 
     public static IServiceCollection AddDikuWebRateLimiting(
@@ -127,6 +141,19 @@ public static class RateLimiting
             // address unless forwarded headers are honoured — which would turn this into a global
             // cap of ten sign-ins a minute for the whole site. See the deployment note in
             // Program.cs; the numbers are configurable for exactly this reason.
+            // Per account, per minute, in a fixed window - the same shape as Auth and for the same
+            // reason: "six an hour's worth of work" is a sentence about a budget, and a token
+            // bucket's burst is exactly what should not be allowed here.
+            options.AddPolicy(Assist, http => RateLimitPartition.GetFixedWindowLimiter(
+                AccountKey(http),
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = limits.AssistRequestsPerMinute,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true,
+                }));
+
             options.AddPolicy(Auth, http => RateLimitPartition.GetFixedWindowLimiter(
                 AddressKey(http),
                 _ => new FixedWindowRateLimiterOptions

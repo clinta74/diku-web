@@ -11,6 +11,7 @@ using DikuWeb.Persistence.Converters;
 using DikuWeb.Persistence.Seeding;
 using DikuWeb.Server;
 using DikuWeb.Server.Admin;
+using DikuWeb.Server.Assist;
 using DikuWeb.Server.Auth;
 using DikuWeb.Server.Building;
 using DikuWeb.Server.Characters;
@@ -190,6 +191,30 @@ builder.Services.AddScoped<WorldImporter>();
 builder.Services.AddSingleton<DigThrottle>();
 builder.Services.AddSingleton<BuilderChangeFeed>();
 
+// The builder AI assist (PLAN.md §13), and the first outbound HTTP this server has ever done.
+// Off unless configured: a deployment with no model behind it must start and build exactly as it
+// did before, so everything below is inside the flag and MapAssistEndpoints registers nothing.
+var assistOptions = new AssistOptions();
+builder.Configuration.GetSection(AssistOptions.Section).Bind(assistOptions);
+builder.Services.Configure<AssistOptions>(builder.Configuration.GetSection(AssistOptions.Section));
+
+if (assistOptions.Enabled)
+{
+    // A typed client through IHttpClientFactory, which is what keeps sockets from being exhausted
+    // by a new HttpClient per call. The timeout is the handler's backstop only — the worker sets
+    // its own per job, because "how long may one draft take" is a property of the work rather than
+    // of the connection.
+    builder.Services.AddHttpClient<IContentAssistant, OllamaContentAssistant>(http =>
+    {
+        http.BaseAddress = new Uri(assistOptions.BaseUrl);
+        http.Timeout = TimeSpan.FromSeconds(assistOptions.TimeoutSeconds + 30);
+    });
+
+    builder.Services.AddScoped<IZoneContextSource, EfZoneContextSource>();
+    builder.Services.AddSingleton<AssistQueue>();
+    builder.Services.AddHostedService<AssistWorker>();
+}
+
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<DikuWebDbContext>("database", tags: ["ready"]);
 
@@ -223,6 +248,7 @@ app.MapAuthEndpoints();
 app.MapCharacterEndpoints();
 app.MapGameEndpoints();
 app.MapBuilderEndpoints();
+app.MapAssistEndpoints();
 app.MapAdminEndpoints();
 
 // Liveness: is the process up? Deliberately runs no checks, so a database outage never
