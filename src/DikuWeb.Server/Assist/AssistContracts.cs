@@ -96,6 +96,17 @@ public sealed record DraftExit(string Direction, string To);
 public enum AssistJobState
 {
     Queued,
+
+    /// <summary>
+    /// Waiting for the model to finish caching the canon.
+    /// </summary>
+    /// <remarks>
+    /// Its own state rather than <see cref="Queued"/>, because the wait is a different order of
+    /// magnitude and the reason is worth telling somebody. On the deployment a cold canon is about
+    /// half an hour; a queued job is three minutes.
+    /// </remarks>
+    Warming,
+
     Running,
     Succeeded,
     Failed,

@@ -213,6 +213,20 @@ if (assistOptions.Enabled)
     builder.Services.AddScoped<IZoneContextSource, EfZoneContextSource>();
     builder.Services.AddScoped<IProseContextSource, EfProseContextSource>();
     builder.Services.AddSingleton<AssistQueue>();
+
+    // Its own client with its own timeout: the warm-up runs for tens of minutes on modest
+    // hardware, and the drafting client's handler timeout would abandon it partway for no reason.
+    builder.Services.AddHttpClient(AssistWarmUp.ClientName, http =>
+    {
+        http.BaseAddress = new Uri(assistOptions.BaseUrl);
+        http.Timeout = TimeSpan.FromSeconds(assistOptions.WarmUpTimeoutSeconds + 60);
+    });
+
+    // A singleton that is also a hosted service, because the worker asks it whether the model is
+    // ready. AddHostedService<T> alone would construct a second, separate instance, and the worker
+    // would then be waiting on an object nobody is warming.
+    builder.Services.AddSingleton<AssistWarmUp>();
+    builder.Services.AddHostedService(sp => sp.GetRequiredService<AssistWarmUp>());
     builder.Services.AddHostedService<AssistWorker>();
 }
 

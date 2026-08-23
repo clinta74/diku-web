@@ -54,6 +54,34 @@ internal static partial class AssistLog
     public static partial void Generated(
         ILogger logger, string roomKey, int promptTokens, int generatedTokens);
 
+    /// <summary>
+    /// The warm-up, said out loud because it takes tens of minutes on modest hardware.
+    /// </summary>
+    /// <remarks>
+    /// A server that appears to have started but cannot draft for forty-five minutes needs to say
+    /// which of those it is doing. Without this the only symptom is that the first Suggest is
+    /// mysteriously slow and the rest are not.
+    /// </remarks>
+    [LoggerMessage(
+        EventId = 1605,
+        Level = LogLevel.Information,
+        Message = "Warming {Model} with the world canon. On modest hardware this takes tens of "
+            + "minutes; drafts requested before it finishes will wait for it rather than fail.")]
+    public static partial void WarmingUp(ILogger logger, string model);
+
+    [LoggerMessage(
+        EventId = 1606,
+        Level = LogLevel.Information,
+        Message = "Builder assist warm: {PromptTokens} tokens of canon cached in {Seconds}s")]
+    public static partial void Warm(ILogger logger, int promptTokens, int seconds);
+
+    [LoggerMessage(
+        EventId = 1607,
+        Level = LogLevel.Warning,
+        Message = "Warm-up did not finish after {Seconds}s. The assist still works; the first "
+            + "draft will pay the prefill itself and will be slow.")]
+    public static partial void WarmUpFailed(ILogger logger, int seconds, Exception exception);
+
     [LoggerMessage(
         EventId = 1603,
         Level = LogLevel.Warning,

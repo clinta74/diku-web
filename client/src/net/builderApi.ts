@@ -596,7 +596,7 @@ export interface ImportReport {
  */
 export interface AssistJob {
   id: string
-  state: 'Queued' | 'Running' | 'Succeeded' | 'Failed'
+  state: 'Queued' | 'Warming' | 'Running' | 'Succeeded' | 'Failed'
   queuedAt: string
   startedAt: string | null
   finishedAt: string | null

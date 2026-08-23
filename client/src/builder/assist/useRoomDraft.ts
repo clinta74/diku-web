@@ -36,6 +36,14 @@ export type DraftStatus = 'idle' | 'working' | 'ready' | 'failed'
 
 export interface RoomDraftState {
   status: DraftStatus
+  /**
+   * True while the model is still caching the world canon.
+   *
+   * A different order of wait from an ordinary queue - measured at about half an hour on the
+   * deployment against three minutes for a draft - so it is worth telling somebody rather than
+   * leaving them watching a counter climb past anything they expected.
+   */
+  warming: boolean
   /** Seconds since the request was sent. Shown, because a silent three minutes reads as broken. */
   elapsed: number
   draft: RoomDraft | null
@@ -47,6 +55,7 @@ export interface RoomDraftState {
 
 const IDLE: RoomDraftState = {
   status: 'idle',
+  warming: false,
   elapsed: 0,
   draft: null,
   prose: null,
@@ -196,6 +205,7 @@ export function useRoomDraft() {
         setJobId(null)
         setState({
           status: 'ready',
+          warming: false,
           elapsed,
           draft: job.draft,
           prose: job.prose,
@@ -211,6 +221,7 @@ export function useRoomDraft() {
         return true
       }
 
+      setState((previous) => ({ ...previous, warming: job.state === 'Warming' }))
       return false
     }
 

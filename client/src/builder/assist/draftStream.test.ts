@@ -237,6 +237,41 @@ it('does not fall back once the stream has spoken', async () => {
   expect(assistJob).not.toHaveBeenCalled()
 })
 
+/**
+ * Warming is a different wait, and is said to be one.
+ *
+ * Measured on the deployment: a cold canon is about half an hour of prefill against three minutes
+ * for a draft. A counter climbing past everything a builder expected, with the same word beside it
+ * as an ordinary draft, is how a working system gets reported as broken.
+ */
+it('says when it is waiting for the model rather than drafting', async () => {
+  const { result } = await start()
+
+  await act(async () => {
+    FakeEventSource.opened[0].send(job('Warming'))
+  })
+
+  expect(result.current.status).toBe('working')
+  expect(result.current.warming).toBe(true)
+})
+
+/** And stops saying it once the draft actually starts. */
+it('stops saying it is warming once the job runs', async () => {
+  const { result } = await start()
+
+  await act(async () => {
+    FakeEventSource.opened[0].send(job('Warming'))
+  })
+  expect(result.current.warming).toBe(true)
+
+  await act(async () => {
+    FakeEventSource.opened[0].send(job('Running'))
+  })
+
+  expect(result.current.warming).toBe(false)
+  expect(result.current.status).toBe('working')
+})
+
 it('closes the stream when nobody is watching any more', async () => {
   const { unmount } = await start()
 

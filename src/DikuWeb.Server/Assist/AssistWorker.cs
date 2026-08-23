@@ -78,6 +78,7 @@ public sealed class EfZoneContextSource(DikuWebDbContext db) : IZoneContextSourc
 /// </remarks>
 public sealed class AssistWorker(
     AssistQueue queue,
+    AssistWarmUp warmUp,
     IServiceScopeFactory scopes,
     IOptions<AssistOptions> options,
     ILogger<AssistWorker> logger) : BackgroundService
@@ -105,6 +106,20 @@ public sealed class AssistWorker(
 
     private async Task RunAsync(Guid id, AssistRequest request, CancellationToken stoppingToken)
     {
+        // Waited for BEFORE the job's own clock starts, which is the whole point of doing it here.
+        //
+        // Ollama serves one request at a time by design (OLLAMA_NUM_PARALLEL is 1, so that parallel
+        // slots cannot divide the window and fragment the prefix cache). A draft submitted while
+        // the canon is still being cached would therefore sit behind the warm-up inside Ollama —
+        // and on the deployment that is about half an hour, against a job timeout of ten. The job
+        // would be killed for the crime of arriving early, having done nothing wrong and having not
+        // yet been looked at.
+        if (!warmUp.Ready.IsCompleted)
+        {
+            queue.Warming(id);
+            await warmUp.Ready.WaitAsync(stoppingToken).ConfigureAwait(false);
+        }
+
         queue.Started(id);
 
         // Its own timeout, linked to shutdown, so a model that has stopped answering cannot hold

@@ -55,4 +55,29 @@ public sealed class AssistOptions
 
     /// <summary>How long a finished job's result stays readable before it is swept.</summary>
     public int JobRetentionMinutes { get; set; } = 30;
+
+    /// <summary>
+    /// Whether to build the canon's KV cache at startup instead of making the first builder do it.
+    /// </summary>
+    /// <remarks>
+    /// <b>Measured on the deployment, this is the difference between the feature working and not.</b>
+    /// The NAS bulk-prefills at about 6 tokens a second, so the 10,571-token canon costs roughly
+    /// <em>half an hour</em> cold. No request timeout can cover that and no builder would wait for
+    /// it — the first attempt timed out at ten minutes, and it took several more before enough of
+    /// the prefix had accumulated in the slot for a request to finish.
+    /// <para>
+    /// Doing it once, at startup, on nobody's clock turns that into a cost the deployment pays
+    /// rather than a person. Warm, the same machine drafts a room in about three minutes.
+    /// </para>
+    /// </remarks>
+    public bool WarmUpOnStart { get; set; } = true;
+
+    /// <summary>
+    /// How long the warm-up may take before it is given up on.
+    /// </summary>
+    /// <remarks>
+    /// An hour, against a measured half hour — generous because the only thing worse than a slow
+    /// warm-up is one abandoned two minutes from the end, and because nobody is waiting on it.
+    /// </remarks>
+    public int WarmUpTimeoutSeconds { get; set; } = 3600;
 }

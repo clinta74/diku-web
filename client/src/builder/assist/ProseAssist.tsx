@@ -99,6 +99,7 @@ export function ProseAssist({
 
       <DraftPanel
         status={draft.status}
+        warming={draft.warming}
         elapsed={draft.elapsed}
         fields={fields}
         warnings={draft.warnings}

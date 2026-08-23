@@ -170,6 +170,11 @@ public sealed class AssistQueue
         }
     }
 
+    internal void Warming(Guid id) => Update(id, job => job with
+    {
+        State = AssistJobState.Warming,
+    });
+
     internal void Started(Guid id) => Update(id, job => job with
     {
         State = AssistJobState.Running,

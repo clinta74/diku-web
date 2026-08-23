@@ -54,6 +54,32 @@ cold and 4.4 s warm — **42×**. `OLLAMA_KEEP_ALIVE: -1` is not a tuning prefer
 first builder to click Suggest after an idle period waits three minutes here and considerably
 longer on the NAS.
 
+## Measured on the deployment
+
+The numbers above are a 20-thread desktop. The NAS is 4 cores of a 9600K, and it is a different
+feature there:
+
+| | desktop | **NAS (4 cores, 9600K)** |
+|---|---:|---:|
+| bulk prefill (whole canon) | 55 tok/s | **~6 tok/s** |
+| incremental prefill (115-token tail) | — | **3.96 tok/s** |
+| generation | 1.3–1.8 tok/s | **0.93 tok/s** |
+| canon prefix, cold | 187 s | **~25–30 min** |
+| one draft, warm | ~170 s | **~3 min** |
+
+The two prefill rates differ for a reason worth keeping: a long prompt amortises batch work that a
+115-token tail cannot, so the per-request remainder is proportionally the more expensive of the two.
+
+**Half an hour of cold prefill is why `AssistWarmUp` exists.** No request timeout can cover it and
+no builder would wait; the first real attempt on beta timed out at ten minutes, and it took several
+more presses before enough of the prefix had accumulated in llama.cpp's slot for a request to
+finish. The server now does that prefill once at startup, on nobody's clock, and holds queued jobs
+in a `Warming` state until it is done rather than starting a timeout they cannot survive.
+
+Warm, the same machine is fine: a draft is about three minutes, of which only ~30 s is prefill of
+the part that varies per request. The llama.cpp log shows the cache doing its job —
+`cached n_tokens = 10456` of `task.n_tokens = 10571`, so only 115 tokens were new.
+
 **Generation is the bottleneck, and it is slower than estimated.** 1.3–1.8 tok/s, against an
 earlier guess of ~4.8. A 900-character description is ~230 tokens, so **one room takes about three
 minutes on this machine and should be assumed worse on the NAS**. That is not a button with a

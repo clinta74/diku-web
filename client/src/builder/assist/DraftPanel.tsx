@@ -10,6 +10,8 @@ export interface DraftField {
 
 interface Props {
   status: DraftStatus
+  /** True while the model is still caching the world canon — a much longer wait than a draft. */
+  warming?: boolean
   elapsed: number
   fields: DraftField[]
   warnings: string[]
@@ -49,6 +51,7 @@ function elapsedText(elapsed: number): string {
  */
 export function DraftPanel({
   status,
+  warming = false,
   elapsed,
   fields,
   warnings,
@@ -61,12 +64,25 @@ export function DraftPanel({
   if (status === 'working') {
     return (
       <div className="draft-panel" role="status" aria-live="polite">
-        <p>Drafting… {elapsedText(elapsed)}</p>
-        {elapsed >= SLOW_AFTER && (
+        <p>
+          {warming ? 'Waiting for the model to warm up' : 'Drafting'}… {elapsedText(elapsed)}
+        </p>
+        {warming ? (
+          // Said as soon as it is known rather than after SLOW_AFTER, because this wait is a
+          // different order of magnitude - the model reads the whole world once after a restart,
+          // and on modest hardware that is tens of minutes rather than the three a draft takes.
+          // Somebody watching a counter climb past what they expected deserves to know why.
           <p className="dim detail">
-            This runs on the server's own model and takes a few minutes. You can keep editing —
-            the draft will appear here when it is done.
+            The server reads the whole world once after a restart, which takes a while. Your draft
+            is queued and will start on its own — nothing is lost by leaving this.
           </p>
+        ) : (
+          elapsed >= SLOW_AFTER && (
+            <p className="dim detail">
+              This runs on the server's own model and takes a few minutes. You can keep editing —
+              the draft will appear here when it is done.
+            </p>
+          )
         )}
       </div>
     )

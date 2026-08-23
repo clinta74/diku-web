@@ -100,6 +100,7 @@ export function RoomDetailsTab({
 
       <DraftPanel
         status={draft.status}
+        warming={draft.warming}
         elapsed={draft.elapsed}
         fields={
           draft.draft
