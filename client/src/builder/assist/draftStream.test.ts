@@ -77,6 +77,54 @@ async function start() {
   return rendered
 }
 
+/**
+ * The stream opens when the id arrives, not when the status changes.
+ *
+ * <b>A regression test for a draft that was generated and then thrown away.</b> `submit` sets the
+ * status to working and then awaits the POST that returns the job id, so React renders and runs
+ * the watching effect in between. With the id held in a ref, that effect saw null, returned, and
+ * never ran again - the status was already `working` and never changed - so no stream was ever
+ * opened. The server drafted the room, logged it, and nobody collected it.
+ *
+ * Every other test in this file hides that by awaiting the request to completion before React
+ * flushes anything, which is precisely the ordering a browser does not give you. This one drives
+ * the real order: render and flush with the request still in flight, then let it land.
+ */
+it('opens the stream when the job id arrives, not before', async () => {
+  let land: (value: { id: string }) => void = () => undefined
+  vi.spyOn(builderApi, 'draftRoom').mockReturnValue(
+    new Promise((resolve) => {
+      land = resolve
+    }),
+  )
+
+  const { result } = renderHook(() => useRoomDraft())
+
+  // Fire and deliberately do not await: this is the moment the effect runs with no id yet.
+  act(() => {
+    void result.current.request(REQUEST)
+  })
+
+  expect(result.current.status).toBe('working')
+  expect(FakeEventSource.opened).toHaveLength(0)
+
+  await act(async () => {
+    land({ id: 'job-1' })
+    await Promise.resolve()
+  })
+
+  expect(FakeEventSource.opened).toHaveLength(1)
+  expect(FakeEventSource.opened[0].url).toBe('/api/builder/assist/jobs/job-1/stream')
+
+  // And it is a working stream, not just an open socket.
+  await act(async () => {
+    FakeEventSource.opened[0].send(job('Succeeded', { draft: DRAFT }))
+  })
+
+  expect(result.current.status).toBe('ready')
+  expect(result.current.draft).toEqual(DRAFT)
+})
+
 it('opens a stream for the job rather than polling it', async () => {
   const assistJob = vi.spyOn(builderApi, 'assistJob')
 

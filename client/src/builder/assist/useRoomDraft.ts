@@ -94,13 +94,23 @@ export function resetAssistAvailability() {
 export function useRoomDraft() {
   const [state, setState] = useState<RoomDraftState>(IDLE)
 
-  // Held in a ref rather than state so the polling effect does not restart every tick, and so the
-  // cleanup below can stop a poll for a job the component no longer cares about.
-  const jobId = useRef<string | null>(null)
+  /**
+   * The job being watched, in state rather than in a ref.
+   *
+   * <b>This has to be state, and a ref here was a real bug.</b> `submit` sets the status to
+   * working and then awaits the POST that returns the id, so React renders and runs the effect
+   * below in between - with the ref still null. The effect returned, and nothing changed the
+   * status again, so it never re-ran: the stream was never opened and a draft that completed
+   * perfectly well on the server was never collected. The polling version it replaced survived
+   * this by accident, because it read the ref lazily inside each tick three seconds later.
+   *
+   * As state, setting the id is itself what starts the watching.
+   */
+  const [jobId, setJobId] = useState<string | null>(null)
   const startedAt = useRef<number>(0)
 
   const discard = useCallback(() => {
-    jobId.current = null
+    setJobId(null)
     setState(IDLE)
   }, [])
 
@@ -113,9 +123,9 @@ export function useRoomDraft() {
 
     try {
       const { id } = await start()
-      jobId.current = id
+      setJobId(id)
     } catch (e) {
-      jobId.current = null
+      setJobId(null)
       setState({
         ...IDLE,
         status: 'failed',
@@ -168,10 +178,12 @@ export function useRoomDraft() {
    * instead. A silent hang is the one outcome worth this much code to avoid.
    */
   useEffect(() => {
-    if (state.status !== 'working') return
+    // Keyed on the id, so the arrival of the id is what opens the stream. Keying on the status
+    // instead is the bug described above: the status is already `working` before there is an id
+    // to watch, and it never changes again to trigger a second look.
+    if (!jobId) return
 
-    const id = jobId.current
-    if (!id) return
+    const id = jobId
 
     let live = true
     let heard = false
@@ -181,7 +193,7 @@ export function useRoomDraft() {
       const elapsed = Math.floor((Date.now() - startedAt.current) / 1000)
 
       if (job.state === 'Succeeded' && (job.draft || job.prose)) {
-        jobId.current = null
+        setJobId(null)
         setState({
           status: 'ready',
           elapsed,
@@ -194,7 +206,7 @@ export function useRoomDraft() {
       }
 
       if (job.state === 'Failed') {
-        jobId.current = null
+        setJobId(null)
         setState({ ...IDLE, status: 'failed', error: job.error ?? 'The draft failed.' })
         return true
       }
@@ -203,7 +215,7 @@ export function useRoomDraft() {
     }
 
     const fail = (message: string) => {
-      jobId.current = null
+      setJobId(null)
       setState({ ...IDLE, status: 'failed', error: message })
     }
 
@@ -257,7 +269,7 @@ export function useRoomDraft() {
       if (poll) clearInterval(poll)
       source?.close()
     }
-  }, [state.status])
+  }, [jobId])
 
   return { ...state, request, requestProse, discard }
 }
