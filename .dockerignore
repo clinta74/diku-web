@@ -54,6 +54,15 @@ docs/
 README.md
 LICENSE
 
+# ...except the canon, which is build input rather than documentation.
+#
+# docs/WORLD.md is embedded into the server assembly (src/DikuWeb.Server/Assist/Canon.cs) and put
+# in front of every builder-assist request. Excluding it does not degrade the assist; it fails the
+# compile with CS1566 "Error reading resource", which reads like a broken csproj and is really this
+# file. Same reasoning as .editorconfig above: the moment a document becomes something the build
+# reads, ignoring it stops being free.
+!docs/WORLD.md
+
 # Root level files
 # .editorconfig is deliberately NOT ignored: Directory.Build.props sets EnforceCodeStyleInBuild,
 # which makes it build input rather than an editor preference. Excluding it would compile the

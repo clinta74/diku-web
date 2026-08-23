@@ -30,6 +30,18 @@
     <EmbeddedResource Include="..\..\docs\WORLD.md" LogicalName="DikuWeb.Server.Canon.WORLD.md" />
   </ItemGroup>
 
+  <!--
+    Says which file is missing and why it matters, because the compiler does not. Without the
+    canon, csc reports CS1566 "Error reading resource" against a path under /src, which reads like
+    a broken project file and is really a build context that dropped a document nobody had thought
+    of as code. This happened on the first container build after the assist landed.
+  -->
+  <Target Name="EnsureCanonIsPresent" BeforeTargets="BeforeBuild">
+    <Error
+      Condition="!Exists('$(MSBuildThisFileDirectory)..\..\docs\WORLD.md')"
+      Text="docs/WORLD.md is missing from this build. It is embedded as the builder assist's canon (Assist/Canon.cs), which makes it build input rather than documentation - check .dockerignore or whatever assembled this source tree is not excluding it." />
+  </Target>
+
   <!-- WebApplicationFactory in the integration tests needs to see the entry point. -->
   <ItemGroup>
     <InternalsVisibleTo Include="DikuWeb.Server.Tests" />
