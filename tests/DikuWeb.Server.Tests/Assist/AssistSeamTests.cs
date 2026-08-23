@@ -67,6 +67,36 @@ public sealed class RoomDraftReviewTests
     }
 
     /// <summary>
+    /// A room key in the title.
+    /// </summary>
+    /// <remarks>
+    /// Not invented: a 4B model, given this exact prompt, answered the title with
+    /// <c>ossara.gatetown.the-tollhouse-steps</c>. Schema-valid, the right type, the right length,
+    /// and a look line no player should ever see - which is the whole argument for a review beside
+    /// a grammar. The prose review already caught this shape; the room review did not, because the
+    /// failure had not happened yet.
+    /// </remarks>
+    [Fact]
+    public void A_room_key_in_the_title_is_a_warning()
+    {
+        var draft = new RoomDraft(
+            "ossara.gatetown.the-tollhouse-steps", "Cold flagstones.", []);
+
+        Assert.Contains(
+            RoomDraftReview.Review(draft, Rooms),
+            w => w.Contains("content key", StringComparison.Ordinal));
+    }
+
+    /// <summary>An ordinary title with a full stop in it is not a key.</summary>
+    [Fact]
+    public void A_title_with_punctuation_is_not_a_key()
+    {
+        Assert.DoesNotContain(
+            RoomDraftReview.Review(Draft("Cold flagstones."), Rooms),
+            w => w.Contains("content key", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// Prose that describes a way out.
     /// </summary>
     /// <remarks>

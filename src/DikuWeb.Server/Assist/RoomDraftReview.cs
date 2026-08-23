@@ -82,6 +82,16 @@ public static class RoomDraftReview
                 + "names one can contradict it");
         }
 
+        // Found by running the same prompt through a 4B: it answered the title with the room key,
+        // `ossara.gatetown.the-tollhouse-steps`, which is a perfectly schema-valid string and a
+        // look line no player should ever see. The prose review already caught this shape; the
+        // room review did not, because the failure had not happened yet.
+        if (ProseDraftReview.LooksLikeAKey(draft.Title) ||
+            ProseDraftReview.LooksLikeAKey(draft.Description))
+        {
+            warnings.Add("puts what looks like a content key in the words, which players would see");
+        }
+
         return warnings;
     }
 }
@@ -105,7 +115,7 @@ public static class ProseDraftReview
     /// prompt still mentions counts and rewards, and a model that has seen a dotted key once will
     /// occasionally put one in a sentence. It reads as a bug to a player, because it is one.
     /// </remarks>
-    private static bool LooksLikeAKey(string text) =>
+    internal static bool LooksLikeAKey(string text) =>
         text.Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Any(word => word.Count(c => c == '.') >= 2 && !word.EndsWith('.'));
 
