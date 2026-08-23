@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../net/api'
 import {
   builderApi,
+  type AssistJob,
   type ProseDraft,
   type ProseDraftRequest,
   type RoomDraft,
@@ -9,11 +10,25 @@ import {
 } from '../../net/builderApi'
 
 /**
- * How often to ask whether a draft is done.
+ * How often the elapsed clock ticks. Local only — no request is made for this.
+ */
+const TICK_MS = 1000
+
+/**
+ * How long to give the stream before falling back to asking.
  *
- * Three seconds against a job measured at about three minutes. Tighter would be a hundred
- * requests to learn nothing; looser would make the elapsed counter visibly lurch, and the counter
- * is most of what tells a builder the thing is alive.
+ * The server writes the job's current state the instant a stream connects, so silence for this
+ * long means the stream is not working rather than that the job is slow. Generous enough not to
+ * trip on a slow first paint, short enough that a builder does not sit through a whole draft
+ * before anything happens.
+ */
+const STREAM_GRACE_MS = 8000
+
+/**
+ * How often to ask, once asking is all that is left.
+ *
+ * Only reached when the stream could not be used at all. Three seconds against a job measured at
+ * about three minutes.
  */
 const POLL_MS = 3000
 
@@ -124,58 +139,123 @@ export function useRoomDraft() {
     [submit],
   )
 
+  // The elapsed clock, which costs nothing and is most of what tells a builder the thing is alive.
   useEffect(() => {
     if (state.status !== 'working') return
 
+    const timer = setInterval(() => {
+      setState((previous) =>
+        previous.status === 'working'
+          ? { ...previous, elapsed: Math.floor((Date.now() - startedAt.current) / 1000) }
+          : previous,
+      )
+    }, TICK_MS)
+
+    return () => clearInterval(timer)
+  }, [state.status])
+
+  /**
+   * Listen for the answer rather than asking for it.
+   *
+   * A draft takes minutes. Polling it meant twenty-odd requests per draft, an answer up to three
+   * seconds after it existed, and — found the hard way — a fight with the assist rate limiter,
+   * which is sized for submissions and was being spent on reads.
+   *
+   * `EventSource` reconnects by itself and the server writes the current state on every connect,
+   * so a dropped connection heals without anything here noticing. What it cannot do is tell us it
+   * was never going to work at all — a proxy that eats event streams looks exactly like a slow
+   * job — so if nothing arrives within the grace period, this gives up on the stream and asks
+   * instead. A silent hang is the one outcome worth this much code to avoid.
+   */
+  useEffect(() => {
+    if (state.status !== 'working') return
+
+    const id = jobId.current
+    if (!id) return
+
     let live = true
+    let heard = false
+    let poll: ReturnType<typeof setInterval> | undefined
 
-    const tick = async () => {
-      const id = jobId.current
-      if (!id) return
-
+    const settle = (job: AssistJob) => {
       const elapsed = Math.floor((Date.now() - startedAt.current) / 1000)
 
-      try {
-        const job = await builderApi.assistJob(id)
-        if (!live) return
-
-        if (job.state === 'Succeeded' && (job.draft || job.prose)) {
-          jobId.current = null
-          setState({
-            status: 'ready',
-            elapsed,
-            draft: job.draft,
-            prose: job.prose,
-            warnings: job.warnings,
-            error: null,
-          })
-          return
-        }
-
-        if (job.state === 'Failed') {
-          jobId.current = null
-          setState({ ...IDLE, status: 'failed', error: job.error ?? 'The draft failed.' })
-          return
-        }
-
-        // Still queued or running. Only the clock has moved.
-        setState((previous) => ({ ...previous, elapsed }))
-      } catch (e) {
-        if (!live) return
+      if (job.state === 'Succeeded' && (job.draft || job.prose)) {
         jobId.current = null
         setState({
-          ...IDLE,
-          status: 'failed',
-          error: e instanceof Error ? e.message : 'Lost track of the draft.',
+          status: 'ready',
+          elapsed,
+          draft: job.draft,
+          prose: job.prose,
+          warnings: job.warnings,
+          error: null,
         })
+        return true
       }
+
+      if (job.state === 'Failed') {
+        jobId.current = null
+        setState({ ...IDLE, status: 'failed', error: job.error ?? 'The draft failed.' })
+        return true
+      }
+
+      return false
     }
 
-    const timer = setInterval(tick, POLL_MS)
+    const fail = (message: string) => {
+      jobId.current = null
+      setState({ ...IDLE, status: 'failed', error: message })
+    }
+
+    const startPolling = () => {
+      if (poll || !live) return
+
+      poll = setInterval(() => {
+        void builderApi
+          .assistJob(id)
+          .then((job) => {
+            if (live) settle(job)
+          })
+          .catch((e: unknown) => {
+            if (live) fail(e instanceof Error ? e.message : 'Lost track of the draft.')
+          })
+      }, POLL_MS)
+    }
+
+    let source: EventSource | undefined
+
+    try {
+      source = new EventSource(`/api/builder/assist/jobs/${id}/stream`)
+
+      source.onmessage = (event) => {
+        if (!live) return
+        heard = true
+
+        try {
+          settle(JSON.parse(event.data) as AssistJob)
+        } catch {
+          // A malformed frame is not worth losing the job over; the next one will be fine, and
+          // the stream re-sends the current state whenever it reconnects.
+        }
+      }
+
+      // Not treated as failure. EventSource raises this on every reconnect, and reconnecting is
+      // the behaviour being relied on rather than a problem to report.
+      source.onerror = () => undefined
+    } catch {
+      // No EventSource at all (an old browser, a test environment). Ask instead.
+      startPolling()
+    }
+
+    const grace = setTimeout(() => {
+      if (live && !heard) startPolling()
+    }, STREAM_GRACE_MS)
 
     return () => {
       live = false
-      clearInterval(timer)
+      clearTimeout(grace)
+      if (poll) clearInterval(poll)
+      source?.close()
     }
   }, [state.status])
 

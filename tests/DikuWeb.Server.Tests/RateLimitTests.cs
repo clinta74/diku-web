@@ -43,7 +43,11 @@ public sealed class RateLimitTests(PostgresFixture postgres) : IDisposable
             ["RateLimits:AuthAttemptsPerMinute"] = "40",
         });
 
-    public void Dispose() => _strict?.Dispose();
+    public void Dispose()
+    {
+        _strict?.Dispose();
+        _assist?.Dispose();
+    }
 
     private static HttpClient NewClient(WebApplicationFactory<Program> factory) =>
         factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
@@ -196,6 +200,88 @@ public sealed class RateLimitTests(PostgresFixture postgres) : IDisposable
                 username = "nobody-at-all",
                 password = "guess",
             });
+
+            statuses.Add(response.StatusCode);
+        }
+
+        Assert.Contains(HttpStatusCode.TooManyRequests, statuses);
+    }
+    /// <summary>
+    /// Its own host again, with the assist on and its budget tiny.
+    /// </summary>
+    /// <remarks>
+    /// The assist is off unless configured, which is the right default and makes it invisible to
+    /// every other test. Turning it on here needs no model behind it: these assert who is charged
+    /// what, and a job that then fails for want of an Ollama is a job that was still accepted.
+    /// </remarks>
+    private DikuWebAppFactory? _assist;
+
+    private DikuWebAppFactory Assist => _assist ??= new DikuWebAppFactory(
+        postgres.ConnectionString,
+        new Dictionary<string, string>
+        {
+            ["Assist:Enabled"] = "true",
+            ["RateLimits:AuthAttemptsPerMinute"] = "40",
+            // Two, so the third submission is refused and the test does not have to make six.
+            ["RateLimits:AssistRequestsPerMinute"] = "2",
+        });
+
+    /// <summary>
+    /// Reading a job back is not charged the price of asking for one.
+    /// </summary>
+    /// <remarks>
+    /// <b>This is a regression test for a bug that reached a running server.</b> The assist policy
+    /// was applied to the whole endpoint group, so the client's own progress checks were spending
+    /// the submission budget: one POST and five GETs, and the sixth request came back 429 while the
+    /// draft it was asking about was still running — and went on to finish. The builder was shown a
+    /// failure for a job that had succeeded.
+    /// <para>
+    /// The two calls cost wildly different things. Submitting occupies the only model this server
+    /// has for minutes; reading a job back is a dictionary lookup. Charging them the same made the
+    /// cheap one impossible long before the expensive one was.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task Reading_a_job_is_not_charged_the_submission_budget()
+    {
+        using var client = NewClient(Assist);
+        await BuilderClient.RegisterBuilderAsync(Assist, client);
+
+        // Never queued, so this is purely about who the limiter charges. A 404 is the honest
+        // answer and, crucially, is an answer rather than a refusal.
+        var id = Guid.NewGuid();
+        var statuses = new List<HttpStatusCode>();
+
+        for (var i = 0; i < 12; i++)
+        {
+            using var response = await client.GetAsync(
+                new Uri($"/api/builder/assist/rooms/{id}", UriKind.Relative));
+
+            statuses.Add(response.StatusCode);
+        }
+
+        Assert.DoesNotContain(HttpStatusCode.TooManyRequests, statuses);
+        Assert.All(statuses, s => Assert.Equal(HttpStatusCode.NotFound, s));
+    }
+
+    /// <summary>And the expensive call still is charged, at the number configured.</summary>
+    /// <remarks>
+    /// The other half, because a fix that stopped limiting the reads by removing the limit
+    /// altogether would pass the test above and leave one builder able to fill the queue.
+    /// </remarks>
+    [Fact]
+    public async Task Asking_for_a_draft_is_still_limited()
+    {
+        using var client = NewClient(Assist);
+        await BuilderClient.RegisterBuilderAsync(Assist, client);
+
+        var statuses = new List<HttpStatusCode>();
+
+        for (var i = 0; i < 5; i++)
+        {
+            using var response = await client.PostAsJsonAsync(
+                "/api/builder/assist/rooms",
+                new { zoneKey = "nowhere.at-all", roomKey = "nowhere.at-all.a-room" });
 
             statuses.Add(response.StatusCode);
         }

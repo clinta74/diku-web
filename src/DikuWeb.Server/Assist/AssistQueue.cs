@@ -91,6 +91,85 @@ public sealed class AssistQueue
     /// <summary>The job, or null when it never existed or has been swept.</summary>
     public AssistJob? Find(Guid id) => _jobs.GetValueOrDefault(id);
 
+    /// <summary>
+    /// Watchers of one job, so a change can be pushed rather than asked for.
+    /// </summary>
+    /// <remarks>
+    /// Keyed by job because that is the granularity anybody cares about: a builder waiting on their
+    /// own draft has no interest in anyone else's. Modelled on <c>BuilderChangeFeed</c>, which is
+    /// the same shape one level up.
+    /// </remarks>
+    private readonly ConcurrentDictionary<Guid, Channel<AssistJob>> _watchers = new();
+
+    /// <summary>
+    /// Watches one job until the returned handle is disposed.
+    /// </summary>
+    /// <remarks>
+    /// The current state is written immediately, before any change happens. That is what makes a
+    /// dropped SSE connection self-healing: <c>EventSource</c> reconnects on its own, and the
+    /// reconnection is told where things stand rather than waiting for the next transition - which
+    /// for a job that finished during the gap would never come.
+    /// </remarks>
+    public IDisposable Watch(Guid id, out ChannelReader<AssistJob> reader)
+    {
+        // Latest-wins and depth 1: a watcher that falls behind wants the current state, not a
+        // history of states it missed. There are at most four in a job's life anyway.
+        var channel = Channel.CreateBounded<AssistJob>(new BoundedChannelOptions(1)
+        {
+            FullMode = BoundedChannelFullMode.DropOldest,
+            SingleReader = true,
+            SingleWriter = false,
+        });
+
+        var key = Guid.NewGuid();
+        _watchers[key] = channel;
+        reader = channel.Reader;
+
+        if (_jobs.TryGetValue(id, out var job))
+        {
+            channel.Writer.TryWrite(job);
+        }
+
+        return new Watcher(this, key, id);
+    }
+
+    /// <summary>Which job each watcher is watching.</summary>
+    private readonly ConcurrentDictionary<Guid, Guid> _watching = new();
+
+    private sealed class Watcher : IDisposable
+    {
+        private readonly AssistQueue _queue;
+        private readonly Guid _key;
+
+        public Watcher(AssistQueue queue, Guid key, Guid jobId)
+        {
+            _queue = queue;
+            _key = key;
+            queue._watching[key] = jobId;
+        }
+
+        public void Dispose()
+        {
+            _queue._watching.TryRemove(_key, out _);
+
+            if (_queue._watchers.TryRemove(_key, out var channel))
+            {
+                channel.Writer.TryComplete();
+            }
+        }
+    }
+
+    private void Publish(AssistJob job)
+    {
+        foreach (var (key, watched) in _watching)
+        {
+            if (watched == job.Id && _watchers.TryGetValue(key, out var channel))
+            {
+                channel.Writer.TryWrite(job);
+            }
+        }
+    }
+
     internal void Started(Guid id) => Update(id, job => job with
     {
         State = AssistJobState.Running,
@@ -126,7 +205,9 @@ public sealed class AssistQueue
     {
         if (_jobs.TryGetValue(id, out var job))
         {
-            _jobs[id] = change(job);
+            var updated = change(job);
+            _jobs[id] = updated;
+            Publish(updated);
         }
     }
 

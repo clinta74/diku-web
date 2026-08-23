@@ -1,4 +1,8 @@
 // @vitest-environment jsdom
+//
+// The fallback path. jsdom has no EventSource, so the hook's `new EventSource(...)` throws and it
+// drops straight to asking - which makes this file the coverage for exactly that, and
+// `draftStream.test.ts` the coverage for the stream that is normally used instead.
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { ApiError } from '../../net/api'
