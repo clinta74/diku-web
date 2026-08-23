@@ -12,20 +12,52 @@ and `OLLAMA_NUM_PARALLEL: 1` in the compose file are there to protect.
 
 That prefix does not fit in 4096, and this is the shape of the problem rather than a near miss:
 
-| source | chars | ~tokens |
+| source | chars | tokens |
 |---|---:|---:|
-| `docs/WORLD.md` §1–9 — the canon proper | 33,970 | **~8,940** |
-| `docs/WORLD.md` §10 — authoring process, not canon | 10,188 | ~2,681 |
-| whole file | 44,158 | ~11,621 |
-| a whole zone bundle (`content/ossara/gatetown.json`) | 107,346 | ~35,782 |
+| `docs/WORLD.md` §1–9 — the canon proper | 33,970 | **10,183** |
+| `docs/WORLD.md` §10 — authoring process, not canon | 10,188 | ~3,050 |
+| a whole zone bundle (`content/ossara/gatetown.json`) | 107,346 | ~35,800 |
+| the room schema this repo generates | 2,840 | 946 |
 
-(Estimated at 3.8 chars/token for prose and 3.0 for JSON. Close enough to size a window; not close
-enough to size a budget to the token.)
+The first row is measured — `prompt_eval_count` from a real call, not an estimate. Gemma 3
+tokenises this prose at **3.34 chars/token**, denser than the 3.8 first assumed, so the canon is
+14% larger in tokens than first written down here. Rows without a bold figure are still estimates
+at the measured ratio.
 
 An over-long prompt is **truncated, not refused**. So the failure mode is not an error anybody
 sees — it is a model that has apparently read the world and misremembers two thirds of it, which
-is indistinguishable from the model simply being bad at the job. That is the whole reason this is
+is indistinguishable from the model simply being bad at the job. That is the whole reason this was
 the blocker: every claim the design makes about consistency rests on the prefix surviving.
+
+## Measured, on Ollama 0.32.15
+
+Run locally on a 20-thread desktop CPU, no GPU. **The NAS has 4 cores of a 9600K, so treat every
+rate here as an optimistic ceiling** — the memory figures transfer, the speeds do not.
+
+| | gemma3:4b | gemma3:12b |
+|---|---:|---:|
+| loaded size at 16k ctx (`ollama ps`) | 3.1 GB | **8.4 GB** |
+| prefill | 134 tok/s | 55 tok/s |
+| generation | — | **1.3–1.8 tok/s** |
+| canon prefix, cold | — | 10,176 tok in **187 s** |
+| canon prefix, cached | — | 10,197 tok in **4.4 s** |
+
+Three things follow, and all three were open questions before.
+
+**Sliding-window attention is active.** 8.4 GB loaded against ~8.1 GB of weights leaves a few
+hundred MB of KV cache, not the 6 GB a full-window 16k would need. The memory question below is
+settled in favour of the cheap row: 16k is comfortable inside `mem_limit: 12g`, and 32k (~2.4 GiB
+of KV) would now fit too, if the canon ever outgrows the budget.
+
+**Prefix caching works, and it is worth every setting spent on it.** The same prefix costs 187 s
+cold and 4.4 s warm — **42×**. `OLLAMA_KEEP_ALIVE: -1` is not a tuning preference; without it the
+first builder to click Suggest after an idle period waits three minutes here and considerably
+longer on the NAS.
+
+**Generation is the bottleneck, and it is slower than estimated.** 1.3–1.8 tok/s, against an
+earlier guess of ~4.8. A 900-character description is ~230 tokens, so **one room takes about three
+minutes on this machine and should be assumed worse on the NAS**. That is not a button with a
+spinner behind it; it is a queued job with the result arriving later.
 
 ## Applying it
 
@@ -42,7 +74,7 @@ changes; that is also how a changed parameter is applied.
 Point the assist at `dikuweb-builder`, not at `gemma3:12b`. Requesting the base by name gets you
 4096 again.
 
-## The memory question, which is not settled
+## The memory question, now settled
 
 16384 was chosen against a token budget (written out in `Modelfile.builder`). The reason it is not
 32768 is RAM, and the arithmetic is worth having on hand because it decides whether the container
@@ -64,18 +96,19 @@ attention, in which only every 6th layer attends to the full window and the othe
 | 8 global full + 40 local capped (SWA) | **1.3 GiB** | 2.4 GiB |
 
 Against `mem_limit: 12g` with ~7.5 GiB of weights resident, the top-left cell is 13.5 GiB and gets
-the container OOM-killed; the bottom-left is 8.8 GiB and is comfortable. **I could not verify from
-here which one this Ollama build does**, and the difference is the whole margin, so treat it as
-something to check rather than something decided:
+the container OOM-killed; the bottom-left is 8.8 GiB and is comfortable. **Measured on 0.32.15, it
+is the bottom row**: a 12B at 16k reports 8.4 GB loaded. The check, if it ever needs repeating on
+different hardware or a newer Ollama:
 
 ```sh
 docker exec dikuweb-ollama ollama ps
 ```
 
-The `SIZE` column on a loaded model includes its KV cache. Weights plus ~1.3 GiB means SWA is
-working and there is room to spare. Weights plus ~6 GiB means it is not, and 16k is running
-without margin — in which case, before dropping `num_ctx`, try halving the cache instead, in the
-compose file's `ollama` service:
+The `SIZE` column includes the KV cache, and `CONTEXT` shows the window actually loaded — which is
+a better check than `ollama show --parameters`, because it is what the runner did rather than what
+the model declared. Weights plus ~1.3 GiB means SWA is working and there is room to spare; weights
+plus ~6 GiB means it is not, and 16k is running without margin — in which case, before dropping
+`num_ctx`, halve the cache instead, in the compose file's `ollama` service:
 
 ```yaml
       OLLAMA_FLASH_ATTENTION: '1'

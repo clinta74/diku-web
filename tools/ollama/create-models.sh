@@ -37,7 +37,10 @@ docker exec "$CONTAINER" ollama pull "$EMBED"
 
 say "Creating $MODEL"
 docker cp "$HERE/Modelfile.builder" "$CONTAINER:/tmp/Modelfile.builder"
-docker exec "$CONTAINER" ollama create "$MODEL" -f /tmp/Modelfile.builder
+# `cd` first, and -f relative. Verified against Ollama 0.32.15: an absolute path here fails with
+# "no Modelfile or safetensors files found" even though the file is plainly there and readable -
+# `create` resolves -f against the client's working directory and does not accept an absolute one.
+docker exec "$CONTAINER" sh -c "cd /tmp && ollama create '$MODEL' -f Modelfile.builder"
 docker exec "$CONTAINER" rm -f /tmp/Modelfile.builder
 
 # The whole point of the file, asserted rather than assumed. `ollama show --parameters` prints
