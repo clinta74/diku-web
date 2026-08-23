@@ -280,6 +280,18 @@ ServerLog.Starting(logger, app.Environment.EnvironmentName);
 var csb = new NpgsqlConnectionStringBuilder(connectionString);
 ServerLog.DatabaseConfigured(logger, csb.Host ?? "(unset)", csb.Database ?? "(unset)");
 
+// Said either way, because "off" and "broken" look identical from the browser: the endpoints are
+// not registered when it is off, so the probe 404s and the Suggest buttons are absent, which is
+// exactly what a failed deployment looks like too.
+if (assistOptions.Enabled)
+{
+    AssistLog.Enabled(logger, assistOptions.Model, assistOptions.BaseUrl);
+}
+else
+{
+    AssistLog.Disabled(logger);
+}
+
 // Migrate on startup in every environment. The game loop is single-writer by design (§2.1)
 // with no backplane to share world state, so this process cannot be scaled horizontally
 // anyway - there is no second instance to race with. EF also takes an exclusive advisory

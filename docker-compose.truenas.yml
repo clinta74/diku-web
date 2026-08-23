@@ -82,6 +82,20 @@ services:
       # ("aldenmoor.millbrook.north-gate"); "hall@0.0.0" fails RoomKey.TryParse, so Program.cs
       # silently keeps the seeded room. Set it only with a key that actually parses - an ignored
       # setting that reads as configured is the trap EngineContracts.cs warns about.
+      #
+      # The builder AI assist (PLAN.md §13). Off unless these are set, and the server says which
+      # at startup - a deployment without them registers no assist endpoints at all, so the
+      # client's probe 404s and the Suggest buttons simply are not there.
+      #
+      # BaseUrl is the compose service name, not localhost: `web` and `ollama` are separate
+      # containers and the ollama port is deliberately not published.
+      #
+      # The MODEL NAME MATTERS. `gemma3:12b` would answer to this and would answer with a
+      # 4096-token window, silently truncating the canon (tools/ollama/README.md). Point it at the
+      # derived model, which means `sh tools/ollama/create-models.sh` has been run on this box.
+      Assist__Enabled: 'true'
+      Assist__BaseUrl: http://ollama:11434
+      Assist__Model: dikuweb-builder
       SwaggerEnabled: 'false'
     volumes:
       - ./logs:/app/logs:rw
