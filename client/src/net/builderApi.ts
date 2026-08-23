@@ -648,6 +648,18 @@ export interface RoomDraftRequest {
   description?: string
 }
 
+/** A terrain kind the generator can draw. */
+export interface TerrainKindInfo {
+  key: string
+  summary: string
+}
+
+/** A drawn map: the rows, and what each glyph in them means. */
+export interface RoomTerrain {
+  grid: string[]
+  legend: Record<string, string>
+}
+
 export const builderApi = {
   roomFlags: () => request<RoomFlagDefinition[]>(`${base}/room-flags`),
 
@@ -659,6 +671,17 @@ export const builderApi = {
    * a server had not been updated yet was to send it a bundle and read the 400.
    */
   bundleFormat: () => request<BundleFormatInfo>(`${base}/bundle-format`),
+
+  terrainKinds: () => request<TerrainKindInfo[]>(`${base}/terrain-kinds`),
+
+  /**
+   * Draws a room's terrain. Nothing is saved: the result comes back to be looked at and then
+   * written through the same room PATCH a brush stroke uses.
+   *
+   * Seeded by the room key, so asking twice gives the same map.
+   */
+  roomTerrain: (key: string, kind: string) =>
+    request<RoomTerrain>(`${base}/rooms/${key}/terrain/${kind}`),
 
   worlds: () => request<WorldSummary[]>(`${base}/worlds`),
 

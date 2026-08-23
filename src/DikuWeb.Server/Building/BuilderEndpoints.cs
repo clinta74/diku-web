@@ -38,6 +38,22 @@ public static class BuilderEndpoints
         group.MapGet("/room-flags", () => Results.Ok(
             RoomFlags.All.Select(f => new RoomFlagResponse(f.Key, f.Default, f.Summary, f.Phase))));
 
+        // The terrain vocabulary, same idea as the flag registry above: adding a kind reaches the
+        // room editor's dropdown with no client change.
+        group.MapGet("/terrain-kinds", () => Results.Ok(
+            TerrainGenerator.Kinds.Select(k => new { k.Key, k.Summary })));
+
+        // Draws a room's map. A pure function of the kind and the room key - no database, no
+        // write - so it is a GET, and the client saves the result through the same room PATCH a
+        // brush stroke uses. WorldEditor stays the only path into the world.
+        //
+        // Seeded by the room key rather than by chance, which is what makes asking twice give the
+        // same answer and what keeps a regenerated zone's diff readable (WORLD.md §10.1).
+        group.MapGet("/rooms/{key}/terrain/{kind}", (string key, string kind) =>
+            TerrainGenerator.Find(kind) is null
+                ? Results.NotFound($"There is no terrain kind '{kind}'.")
+                : Results.Ok(TerrainGenerator.Generate(kind, key)));
+
         // What this build will accept, so the browser can say so before an upload rather than after
         // a refusal. The format version is the only hard refusal in the import path, and until this
         // existed the sole way to discover a server had not been updated yet was to send it a
