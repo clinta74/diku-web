@@ -214,6 +214,14 @@ public sealed class GameLoop(
             NeedsSystem.Tick(world, pulse / GameTiming.NeedsPulses);
         }
 
+        // Once a minute, and separately from regen despite sharing its cadence: this is the only
+        // thing that ever clears the floor, and burying it inside a block named for recovery is
+        // how a sweep gets removed by somebody tuning something else.
+        if (GameTiming.RunsOn(pulse, GameTiming.GroundDecayPulses))
+        {
+            GroundDecaySystem.Tick(world, clock.UtcNow, view, itemSaveQueue);
+        }
+
         // One comparison per player per pulse, and a frame only when something actually moved.
         // Pushing unconditionally after combat would mean four frames a second per fighter.
         foreach (var actor in world.AllPlayers)

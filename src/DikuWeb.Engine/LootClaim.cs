@@ -1,4 +1,3 @@
-using System.Globalization;
 using DikuWeb.Domain.Characters;
 using DikuWeb.Domain.Items;
 
@@ -70,8 +69,7 @@ public static class LootClaim
         item.State[ItemState.LootClaimKey] =
             earners.Select(e => e.Id.ToString()).ToList();
         item.State[ItemState.LootClaimByKey] = earners[0].Name;
-        item.State[ItemState.LootClaimUntilKey] =
-            (now + Window).ToString("O", CultureInfo.InvariantCulture);
+        item.State[ItemState.LootClaimUntilKey] = JsonBag.Stamp(now + Window);
     }
 
     /// <summary>
@@ -86,7 +84,9 @@ public static class LootClaim
     public static string? Refuse(
         ItemInstance item, Guid characterId, DateTimeOffset now, string article)
     {
-        if (item is null || ExpiryOf(item) is not { } until || until <= now)
+        if (item is null ||
+            JsonBag.Timestamp(item.State, ItemState.LootClaimUntilKey) is not { } until ||
+            until <= now)
         {
             return null;
         }
@@ -121,14 +121,6 @@ public static class LootClaim
         item.State.Remove(ItemState.LootClaimByKey);
         item.State.Remove(ItemState.LootClaimUntilKey);
     }
-
-    /// <summary>When the claim lapses, or null when there is not one to read.</summary>
-    private static DateTimeOffset? ExpiryOf(ItemInstance item) =>
-        JsonBag.Text(item.State, ItemState.LootClaimUntilKey) is { } text &&
-        DateTimeOffset.TryParse(
-            text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var until)
-            ? until
-            : null;
 
     /// <summary>The wait, in words a player would use.</summary>
     /// <remarks>

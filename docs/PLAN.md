@@ -1129,10 +1129,20 @@ picking fights.
   the item changes hands; left on it, a share could be banked for good by taking it and putting it
   down.
 
-  **Nothing tracks how long an item has been on the ground**, and a sweep would need that first —
-  a `droppedAt` stamp written on every path that puts an item in a room, not just this one. Today
-  the only thing that clears the floor is a restart: `RollLoot` adds to the world without enqueuing
-  a save, so mob loot nobody picked up is gone when the process is.
+  **An untaken drop leaves after twenty minutes** (`GroundDecay`, swept once a minute by
+  `GroundDecaySystem`), because before this nothing cleared a floor at all and a farming spot
+  accumulated every drop nobody wanted until the next restart. The room is told — *"A tarnished
+  fang crumbles away."* — since an item leaving the listing with no line to explain it reads as the
+  client having lost track.
+
+  **Only mob loot is on a clock, and that is a property of where the stamp is written**, not of
+  what the sweep knows: `RollLoot` stamps and nothing else does, so a player's drop, a builder's
+  placement and a spawner's population are all exempt by construction rather than by a list that
+  would go stale. **Picking it up ends the countdown for good** — otherwise a stamp already in the
+  past would destroy the item the moment it was set down again.
+
+  Nothing respawns in its place: loot is spawned with no `SpawnerId`, and the sweep counts
+  population by spawner, so a decayed drop cannot be mistaken for a gap the world owes an item.
 
   A corpse container would answer this too, and would have to persist, be looked into, answer
   `get from`, and decay. The claim is the part that was actually missing.
@@ -1587,6 +1597,35 @@ The economics are deliberately flat: a PvP kill yields no XP, no loot, and costs
 *where* that is possible and nothing else is stacked on top of it. **No corpse is created for
 anyone, player or mob**, so there is no body to loot and no loot claim to contest: a PvP kill puts
 nothing on the floor at all.
+
+#### An item on the floor lives until it is taken or the server restarts
+
+**Dropping an item deletes its row rather than writing one**, and the reason is that the row was
+never doing what it looked like it was doing.
+
+Nothing in the server ever reads an item row back except a character's own inventory at login
+(`GameEndpoints`, filtered on `owner_character_id`). A row with a `room_key` is written and never
+looked at again — shipped floor content comes from the spawner, not from these rows. So saving a
+dropped item never made it survive a restart. It only left a row behind, for ever, every time
+anybody put anything down.
+
+The delete still does the necessary half of what the save did: **releasing ownership**. Left alone,
+the row would go on naming the dropper, and their next login would load the item straight back into
+their pack — quietly undoing the drop. That failure has been seen once already, in selling: the
+item left the world, the row stayed, and it reappeared after a restart.
+
+Which leaves one rule covering everything on the floor, and a database that does not grow when
+players leave junk lying around:
+
+| | how long it lasts |
+|---|---|
+| Mob loot, untaken | twenty minutes, then it crumbles away |
+| Anything a player dropped | until somebody takes it, or the server restarts |
+| Builder placements and spawner population | maintained by the spawn sweep, as always |
+
+**If keeping things out of a pack is ever wanted, it should be a thing a player is given** — a bank,
+or a room they own that persists on purpose — rather than a side effect of every dropped torch being
+immortal in Postgres. That is a feature with a door on it and a place to look; this was neither.
 
 ### 4.12 Death — XP loss, no corpse run
 

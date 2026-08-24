@@ -1525,10 +1525,15 @@ public sealed class CombatSystem(
             {
                 var instance = itemSpawner.Spawn(itemTemplate, zone, worldEntity, roomKey);
 
-                // Stamped before it enters the world, so there is no instant in which it is on the
-                // floor and unspoken for. Nothing happens when the kill had no credited group - a
-                // mob killed by another mob drops loot anyone may take, which is the right answer.
-                LootClaim.Stamp(instance, earners, clock?.UtcNow ?? DateTimeOffset.UtcNow);
+                // Both stamps go on before it enters the world, so there is no instant in which
+                // it is on the floor unspoken for or on no clock.
+                //
+                // The claim does nothing when the kill had no credited group - a mob killed by
+                // another mob drops loot anyone may take, which is right. The decay applies
+                // regardless: nobody earned it, and nobody is coming back for it either.
+                var droppedAt = clock?.UtcNow ?? DateTimeOffset.UtcNow;
+                LootClaim.Stamp(instance, earners, droppedAt);
+                GroundDecay.Stamp(instance, droppedAt);
 
                 world.AddItem(instance);
 

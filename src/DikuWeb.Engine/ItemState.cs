@@ -24,6 +24,13 @@ public static class ItemState
     /// <summary>The state key holding when the claim lapses, as a round-trip timestamp.</summary>
     public const string LootClaimUntilKey = "lootClaimUntil";
 
+    /// <summary>The state key holding when an untaken drop leaves the world.</summary>
+    /// <remarks>
+    /// Only mob loot carries this; see <see cref="GroundDecay"/>. An item without it is on no
+    /// clock at all, which is the fate of everything a player drops.
+    /// </remarks>
+    public const string DecaysAtKey = "decaysAt";
+
     /// <summary>
     /// True when this instance is a quest item, which PLAN.md §4.9 defines as *cannot be sold or
     /// destroyed* - droppable, but not disposable for good.

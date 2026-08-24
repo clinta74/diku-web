@@ -805,10 +805,13 @@ public sealed class CommandRegistry
             return;
         }
 
-        // Dropped as it changes hands, not left to lapse. A claim that survived the pickup would
-        // come back the moment the item was put down again, so a party's share could be banked for
-        // good by taking it and dropping it, and the person it was dropped for would be refused.
+        // Both marks come off as it changes hands, not left to lapse. A claim that survived the
+        // pickup would come back the moment the item was put down again, so a party's share could
+        // be banked for good by taking it and dropping it, and the person it was dropped for would
+        // be refused. A decay stamp that survived would be worse: already past, it would delete
+        // the item the instant it touched the floor again.
         LootClaim.Clear(targetItem);
+        GroundDecay.Clear(targetItem);
 
         ctx.World.PickUpItem(targetItem, ctx.Actor.CharacterId);
         ctx.ItemSaveQueue?.Enqueue(targetItem);
@@ -858,7 +861,22 @@ public sealed class CommandRegistry
         }
 
         ctx.World.DropItem(targetItem, ctx.Actor.RoomKey);
-        ctx.ItemSaveQueue?.Enqueue(targetItem);
+
+        // Deleted rather than saved, and the row is the whole reason.
+        //
+        // Nothing ever reads an item row back except a character's own inventory at login
+        // (GameEndpoints, filtered on OwnerCharacterId), so a row with a room key is written and
+        // never looked at again. Saving one did not make the item survive a restart - it does not
+        // - it only left a row behind, for ever, every time anybody put anything down.
+        //
+        // The delete is still doing the necessary half of what the save did: releasing ownership.
+        // Left alone, the row would go on naming the dropper and their next login would load the
+        // item straight back into their pack, quietly undoing the drop.
+        //
+        // So an item on the floor lives until somebody takes it or the server restarts. If
+        // stashing is ever wanted it should be a thing a player is given - a bank, or a room they
+        // own - rather than a side effect of every dropped torch being immortal in Postgres.
+        ctx.ItemSaveQueue?.EnqueueDelete(targetItem.Id);
 
         ctx.Reply($"You drop {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "good");
         ctx.Broadcast($"{ctx.Actor.Name} drops {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "movement");

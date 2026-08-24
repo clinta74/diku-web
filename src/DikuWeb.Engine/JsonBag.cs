@@ -80,6 +80,26 @@ public static class JsonBag
             ? value
             : fallback;
 
+    /// <summary>
+    /// Reads a moment, or null when the key is absent or is not one.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="DateTimeStyles.RoundtripKind"/>, matching the "O" format the writers use, so a
+    /// stamp comes back as the instant it was written rather than being reinterpreted as local
+    /// time on whichever machine read it. Two deadlines are stored this way - a loot claim's and a
+    /// ground item's - and they were parsing it separately until this existed.
+    /// </remarks>
+    public static DateTimeOffset? Timestamp(IReadOnlyDictionary<string, object>? bag, string key) =>
+        Text(bag, key) is { } text &&
+        DateTimeOffset.TryParse(
+            text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var value)
+            ? value
+            : null;
+
+    /// <summary>Writes a moment in the form <see cref="Timestamp"/> reads back.</summary>
+    public static string Stamp(DateTimeOffset moment) =>
+        moment.ToString("O", CultureInfo.InvariantCulture);
+
     /// <summary>Reads a string, or null when the key is absent, null, or blank.</summary>
     public static string? Text(IReadOnlyDictionary<string, object>? bag, string key)
     {
