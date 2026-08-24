@@ -359,6 +359,37 @@ public sealed class CombatTimingTests
         Assert.Contains("was interrupted", fight.Log, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// The line names the ability. It used to name the key — "Your warden.crushing-blow was
+    /// interrupted" — an internal identifier, in a sentence, at the one moment the player is most
+    /// annoyed about what just happened.
+    /// </summary>
+    [Fact]
+    public void A_broken_cast_names_the_ability_rather_than_its_key()
+    {
+        var fight = Fight(
+            mainHandDelay: 40,
+            mobAttacks: [new MobAttack { Verb = "bite", DelayPulses = 4 }],
+            mobHealth: MobHealthThatOutlastsTheTest,
+            mobDamage: 3);
+
+        // A real shipped ability, so the name under test is the one the game would show.
+        fight.Harness.DefineAbility("warden.crushing-blow");
+
+        fight.Harness.World.CastQueue.Enqueue(new CastJob
+        {
+            CharacterId = fight.Player.CharacterId,
+            AbilityKey = "warden.crushing-blow",
+            ResolveAtPulse = 20,
+            StartingRoomKey = West.ToString(),
+        });
+
+        fight.Pump(through: 6);
+
+        Assert.Contains("Your Crushing Blow was interrupted.", fight.Log, StringComparison.Ordinal);
+        Assert.DoesNotContain("warden.crushing-blow", fight.Log, StringComparison.Ordinal);
+    }
+
     // --- Harness ---------------------------------------------------------
 
     /// <param name="offHandDelay">Null with <paramref name="equipOffHand"/> set is the shield case.</param>

@@ -310,11 +310,11 @@ public sealed class CommandRegistry
 
         var origin = ctx.Actor.RoomKey;
 
-        ctx.Broadcast($"{ctx.Actor.Name} leaves {direction.ToLowerName()}.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} leaves {direction.ToLowerName()}.", "movement");
         // The one relocation in the game that does not break following, because it is the only one
         // anybody could have walked behind (§4.17).
         ctx.World.Move(ctx.Actor, destination.Key, walked: true);
-        ctx.Broadcast($"{ctx.Actor.Name} arrives from the {direction.Opposite().ToLowerName()}.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} arrives from the {direction.Opposite().ToLowerName()}.", "movement");
 
         ctx.Reply($"You walk {direction.ToLowerName()}.", "movement");
         ctx.View.SendRoom(ctx.World, ctx.Actor, verbose: false);
@@ -401,7 +401,7 @@ public sealed class CommandRegistry
     private static void Quit(CommandContext ctx)
     {
         ctx.Reply("You gather your things and step out of the world.", "heading");
-        ctx.Broadcast($"{ctx.Actor.Name} leaves the world.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} leaves the world.", "movement");
         ctx.LeaveRequested = LeaveReason.Quit;
     }
 
@@ -817,7 +817,7 @@ public sealed class CommandRegistry
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
         ctx.Reply($"You take {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} takes {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} takes {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "movement");
         ctx.MarkRoomForRefresh(ctx.Actor.RoomKey);
     }
 
@@ -879,7 +879,7 @@ public sealed class CommandRegistry
         ctx.ItemSaveQueue?.EnqueueDelete(targetItem.Id);
 
         ctx.Reply($"You drop {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} drops {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} drops {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "movement");
         ctx.MarkRoomForRefresh(ctx.Actor.RoomKey);
     }
 
@@ -940,7 +940,7 @@ public sealed class CommandRegistry
         ctx.ItemSaveQueue?.EnqueueDelete(targetItem.Id);
 
         ctx.Reply($"You destroy {article}. It is gone for good.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} destroys {article}.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} destroys {article}.", "movement");
     }
 
     private static void Wear(CommandContext ctx)
@@ -1218,7 +1218,7 @@ public sealed class CommandRegistry
         ctx.ItemSaveQueue?.Enqueue(item);
 
         ctx.Reply($"You {selfVerb} {article}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} {othersVerb} {article}.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} {othersVerb} {article}.", "movement");
         return true;
     }
 
@@ -1249,7 +1249,7 @@ public sealed class CommandRegistry
         ctx.ItemSaveQueue?.Enqueue(targetItem);
 
         ctx.Reply($"You remove {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} removes {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} removes {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "movement");
     }
 
     private static void Give(CommandContext ctx)
@@ -1345,7 +1345,7 @@ public sealed class CommandRegistry
 
         ctx.Reply($"You give {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)} to {targetPlayer.Name}.", "good");
         targetPlayer.SendText($"{ctx.Actor.Name} gives you {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} gives {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)} to {targetPlayer.Name}.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} gives {NarrationHelper.WithDefiniteArticle(targetItem.DisplayName)} to {targetPlayer.Name}.", "movement");
         ctx.MarkRoomForRefresh(ctx.Actor.RoomKey);
     }
 
@@ -1381,17 +1381,10 @@ public sealed class CommandRegistry
 
         ctx.Reply(line, "emote");
 
-        // Broadcast by hand rather than through ctx.Broadcast, to skip the sleepers. An emote is
-        // something you do where people can see it, and a sleeping player is not somebody who can.
-        // Speech is deliberately not filtered the same way - `say` is addressed at the room and
-        // being woken by it is the point of shouting at somebody.
-        foreach (var other in ctx.World.OthersIn(ctx.Actor.RoomKey, ctx.Actor))
-        {
-            if (other.Character.RestState != CharacterRestState.Sleep)
-            {
-                other.SendText(line, "emote");
-            }
-        }
+        // An emote is something you do where people can see it, and a sleeping player is not
+        // somebody who can. Speech is deliberately not filtered the same way - `say` is addressed
+        // at the room and being woken by it is the point of shouting at somebody.
+        ctx.BroadcastSight(line, "emote");
     }
 
     private static void Stats(CommandContext ctx)

@@ -255,6 +255,31 @@ public sealed class WorldState(IRandomSource random)
     public IEnumerable<PlayerActor> OthersIn(RoomKey key, PlayerActor except) =>
         OccupantsOf(key).Where(p => p.CharacterId != except.CharacterId);
 
+    /// <summary>
+    /// Everyone in the room with their eyes open - the audience for anything that is only
+    /// <em>seen</em>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Seen is filtered; heard is not.</b> A sleeping player is still told what is said to the
+    /// room, still told they are being hit, and still gets their dreams - but somebody walking in,
+    /// picking something up or wandering out is a thing you perceive by looking, and they are not
+    /// looking. Sleep otherwise costs nothing and pays the best regen in the game, which made a
+    /// sleeper the best-informed person in the room.
+    /// </para>
+    /// <para>
+    /// This existed twice by hand before it existed once here - <c>emote</c> and the mob idle
+    /// lines each wrote the skip themselves, and every other way a room announces something did
+    /// not. One list, so the next one cannot be forgotten.
+    /// </para>
+    /// </remarks>
+    public IEnumerable<PlayerActor> AwakeIn(RoomKey key) =>
+        OccupantsOf(key).Where(p => p.Character.RestState != CharacterRestState.Sleep);
+
+    /// <summary>Everyone awake in the room except the given actor.</summary>
+    public IEnumerable<PlayerActor> OthersAwakeIn(RoomKey key, PlayerActor except) =>
+        AwakeIn(key).Where(p => p.CharacterId != except.CharacterId);
+
     public void Add(PlayerActor actor)
     {
         ArgumentNullException.ThrowIfNull(actor);

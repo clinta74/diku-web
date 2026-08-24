@@ -67,8 +67,18 @@ public sealed class CastQueueService
     }
 
     /// <summary>The one wording for a broken cast, shared by every path that can break one.</summary>
-    public static string InterruptedText(string abilityKey) =>
-        $"Your {abilityKey} was interrupted.";
+    /// <remarks>
+    /// <b>Takes the cache rather than a finished name</b>, because both callers hold a
+    /// <see cref="CastJob"/> and a CastJob carries the key. Asking them for a display name would
+    /// put the same lookup in two places, and the version that skipped it is what shipped: "Your
+    /// warden.rallying-cry was interrupted." — an internal identifier, in a sentence, at the one
+    /// moment the player is most annoyed.
+    ///
+    /// Falls back to the key when the ability cannot be found, which is a bad line but a better
+    /// one than "Your  was interrupted." An unknown key at least says which thing broke.
+    /// </remarks>
+    public static string InterruptedText(string abilityKey, AbilityCache? abilities) =>
+        $"Your {abilities?.Get(abilityKey)?.Name ?? abilityKey} was interrupted.";
 
     public void Clear() => _pending.Clear();
 }

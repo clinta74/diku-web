@@ -79,7 +79,7 @@ public static class GroundDecaySystem
             saves?.EnqueueDelete(item.Id);
 
             var prose = NarrationHelper.BuildSentence(item.DisplayName, "crumbles away.");
-            foreach (var occupant in world.OccupantsOf(roomKey))
+            foreach (var occupant in world.AwakeIn(roomKey))
             {
                 occupant.SendText(prose, "movement");
             }

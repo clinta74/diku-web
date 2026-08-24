@@ -574,6 +574,17 @@ health and stamina are the same number for everyone, so this is a caster's resou
 resource rather than a blanket buff. `RegenCalculator` takes the Path rather than defaulting it,
 because getting it wrong is silent.
 
+**A sleeper does not see the room.** Sleep pays the best recovery in the game and costs only the
+verbs `RestGate` refuses, so a sleeping player used to be the best-informed person present —
+watching every arrival, departure and pickup scroll past with their eyes shut. `WorldState.AwakeIn`
+is the audience for anything that is only *seen*: walking in or out, taking something off the floor,
+putting on a helmet, a mob wandering through, a drop crumbling away.
+
+**Seen is filtered; heard is not.** Speech still reaches a sleeper — being reachable by somebody
+shouting at you is most of what makes sleeping in company safe — and so does combat narration, and
+so do dreams (§4.16). The rule already existed twice, written by hand in `emote` and in the mob idle
+lines, and nowhere else; one list is what stops the next announcement being added to the wrong one.
+
 Four Paths chosen at creation: **Warden** (armored frontline), **Adept** (focus-caster),
 **Temper** (strikes and bleeding), **Hallow** (support/control). A Path grants an ability list
 and shapes stat growth; it does not hard-gate equipment.

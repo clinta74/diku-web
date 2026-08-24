@@ -732,7 +732,7 @@ public sealed class AbilitySystem(
             return;
         }
 
-        actor.SendText(CastQueueService.InterruptedText(cast.AbilityKey), "ability");
+        actor.SendText(CastQueueService.InterruptedText(cast.AbilityKey, cache), "ability");
         if (logger != null)
         {
             EngineLog.AbilityCastInterrupted(logger, actor.Name, cast.AbilityKey);

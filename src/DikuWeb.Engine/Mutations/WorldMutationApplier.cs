@@ -401,7 +401,7 @@ public sealed class WorldMutationApplier(
         // would be a wall of it.
         foreach (var room in touched)
         {
-            foreach (var occupant in world.OccupantsOf(room))
+            foreach (var occupant in world.AwakeIn(room))
             {
                 occupant.SendText("The air ripples, and the world here is made anew.", "arrival");
             }

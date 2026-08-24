@@ -112,7 +112,7 @@ internal static class BuilderCommands
         ctx.Reply(
             $"You open a way {direction.ToLowerName()}. New room: {result.AffectedRoom}.",
             "heading");
-        ctx.Broadcast($"{ctx.Actor.Name} opens a way {direction.ToLowerName()}.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} opens a way {direction.ToLowerName()}.", "movement");
     }
 
     private static void Link(CommandContext ctx)
@@ -330,7 +330,7 @@ internal static class BuilderCommands
             return;
         }
 
-        ctx.Broadcast($"{ctx.Actor.Name} steps out of the world.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} steps out of the world.", "movement");
 
         // `goto` is not a step anyone walks behind, so it ends every follow (§4.17). A builder
         // hopping across realms must not drag a party through with them.
@@ -339,7 +339,7 @@ internal static class BuilderCommands
             dropped.SendText($"{ctx.Actor.Name} steps out of the world, and you stop following.", "bad");
         }
 
-        ctx.Broadcast($"{ctx.Actor.Name} steps into the world.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} steps into the world.", "movement");
 
         ctx.Reply($"You step through to {target}.", "heading");
         ctx.View.SendRoom(ctx.World, ctx.Actor, verbose: true);
@@ -425,7 +425,7 @@ internal static class BuilderCommands
             ctx.ItemSaveQueue?.Enqueue(item);
 
             ctx.Reply($"Spawned: {template.Icon} {template.Name}");
-            ctx.Broadcast($"{ctx.Actor.Name} conjures {NarrationHelper.WithArticle(template.Name)}!", "arrival");
+            ctx.BroadcastSight($"{ctx.Actor.Name} conjures {NarrationHelper.WithArticle(template.Name)}!", "arrival");
             ctx.View.RefreshRoom(ctx.World, roomKey);
         }
         catch (Exception ex)
@@ -480,7 +480,7 @@ internal static class BuilderCommands
 
             var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
             ctx.Reply($"Spawned: {template.Icon} {displayName} (level {template.Level})");
-            ctx.Broadcast($"{ctx.Actor.Name} conjures {NarrationHelper.WithArticle(displayName)}!", "arrival");
+            ctx.BroadcastSight($"{ctx.Actor.Name} conjures {NarrationHelper.WithArticle(displayName)}!", "arrival");
             ctx.View.RefreshRoom(ctx.World, roomKey);
         }
         catch (Exception ex)
@@ -569,7 +569,7 @@ internal static class BuilderCommands
             remaining > 0
                 ? $"Despawned: {displayName}. {remaining} still here."
                 : $"Despawned: {displayName}.");
-        ctx.Broadcast(
+        ctx.BroadcastSight(
             $"{ctx.Actor.Name} banishes {NarrationHelper.WithDefiniteArticle(displayName)}.",
             "movement");
         ctx.View.RefreshRoom(ctx.World, roomKey);

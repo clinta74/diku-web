@@ -1064,7 +1064,7 @@ public sealed class CombatSystem(
 
         foreach (var cast in cancelled)
         {
-            actor.SendText(CastQueueService.InterruptedText(cast.AbilityKey), "ability");
+            actor.SendText(CastQueueService.InterruptedText(cast.AbilityKey, abilities), "ability");
             if (logger != null)
             {
                 EngineLog.AbilityCastInterrupted(logger, actor.Name, cast.AbilityKey);
@@ -1223,7 +1223,7 @@ public sealed class CombatSystem(
                 : $"You died. You wake in {respawnTitle}.",
             "death");
 
-        foreach (var occupant in world.OccupantsOf(respawnRoom))
+        foreach (var occupant in world.AwakeIn(respawnRoom))
         {
             if (occupant.CharacterId != character.Id)
             {

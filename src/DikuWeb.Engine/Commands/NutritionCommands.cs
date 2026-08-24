@@ -133,7 +133,7 @@ public static class NutritionCommands
         ctx.ItemSaveQueue?.EnqueueDelete(item.Id);
 
         ctx.Reply($"You {past} {article}.", "good");
-        ctx.Broadcast($"{ctx.Actor.Name} {past}s {article}.", "movement");
+        ctx.BroadcastSight($"{ctx.Actor.Name} {past}s {article}.", "movement");
 
         var remaining = verb == "eat"
             ? Needs.DescribeHunger(vitals.Hunger)

@@ -107,14 +107,14 @@ public static class FollowSystem
 
         var destination = world.FindRoom(origin)!.ExitTo(direction)!.ToRoomKey;
 
-        foreach (var other in world.OthersIn(origin, follower))
+        foreach (var other in world.OthersAwakeIn(origin, follower))
         {
             other.SendText($"{follower.Name} leaves {direction.ToLowerName()}.", "movement");
         }
 
         world.Move(follower, destination, walked: true);
 
-        foreach (var other in world.OthersIn(destination, follower))
+        foreach (var other in world.OthersAwakeIn(destination, follower))
         {
             other.SendText(
                 $"{follower.Name} arrives from the {direction.Opposite().ToLowerName()}.", "movement");

@@ -557,7 +557,7 @@ internal static class AdminWorldCommands
 
         // Said in the room as well. A character vanishing with no explanation reads as a bug to
         // everyone who was standing there.
-        foreach (var other in ctx.World.OthersIn(target.RoomKey, target))
+        foreach (var other in ctx.World.OthersAwakeIn(target.RoomKey, target))
         {
             other.SendText($"{target.Name} is removed from the world.", "movement");
         }
@@ -622,7 +622,7 @@ internal static class AdminWorldCommands
 
             // Said in the room too. Somebody vanishing with no explanation reads as a bug to
             // everyone who was standing there.
-            foreach (var other in ctx.World.OthersIn(online.RoomKey, online))
+            foreach (var other in ctx.World.OthersAwakeIn(online.RoomKey, online))
             {
                 other.SendText($"{online.Name} is removed from the world.", "movement");
             }

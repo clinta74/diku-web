@@ -150,6 +150,29 @@ public sealed class CommandContext
     public void Reply(string text, string style) => Actor.SendText(text, style);
 
     /// <summary>Sends to everyone else in the actor's room.</summary>
+    /// <summary>
+    /// Tells the rest of the room something they can only have <em>seen</em>, skipping sleepers.
+    /// </summary>
+    /// <remarks>
+    /// The default for anything a character does with their body - walking in or out, taking
+    /// something off the floor, putting a helmet on. <see cref="Broadcast"/> stays the right call
+    /// for speech, which is the one thing in a room that reaches somebody with their eyes shut.
+    /// </remarks>
+    public void BroadcastSight(string text, string? style = null)
+    {
+        foreach (var other in World.OthersAwakeIn(Actor.RoomKey, Actor))
+        {
+            if (style is null)
+            {
+                other.SendText(text);
+            }
+            else
+            {
+                other.SendText(text, style);
+            }
+        }
+    }
+
     public void Broadcast(string text, string? style = null)
     {
         foreach (var other in World.OthersIn(Actor.RoomKey, Actor))

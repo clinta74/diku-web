@@ -173,7 +173,7 @@ public sealed class SpawnerSystem(
                 // the same fallback - which is the duplication Mob.DisplayName exists to end, and
                 // this was one of three surviving copies (BUGS.md #14).
                 var prose = NarrationHelper.BuildSentence(mob.DisplayName, "appears.");
-                foreach (var occupant in world.OccupantsOf(room))
+                foreach (var occupant in world.AwakeIn(room))
                 {
                     occupant.SendText(prose, "arrival");
                 }
@@ -237,7 +237,7 @@ public sealed class SpawnerSystem(
             // Narrate spawn to room occupants. See the mob branch above: ItemInstance carries the
             // same DisplayName property for the same reason.
             var prose = NarrationHelper.BuildSentence(item.DisplayName, "appears.");
-            foreach (var occupant in world.OccupantsOf(room))
+            foreach (var occupant in world.AwakeIn(room))
             {
                 occupant.SendText(prose, "arrival");
             }

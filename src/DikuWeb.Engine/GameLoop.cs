@@ -357,7 +357,7 @@ public sealed class GameLoop(
         {
             actor.SendSys(message.Message, SysKinds.Disconnect);
 
-            foreach (var other in world.OthersIn(actor.RoomKey, actor))
+            foreach (var other in world.OthersAwakeIn(actor.RoomKey, actor))
             {
                 other.SendText($"{actor.Name} is removed from the world.", "movement");
             }
@@ -519,7 +519,7 @@ public sealed class GameLoop(
         PlayerView.SendAbilities(actor, world, abilityCache, clock.CurrentPulse);
         view.SendRoom(world, actor, verbose: true);
 
-        foreach (var other in world.OthersIn(actor.RoomKey, actor))
+        foreach (var other in world.OthersAwakeIn(actor.RoomKey, actor))
         {
             other.SendText($"{actor.Name} appears.", "movement");
         }
@@ -631,7 +631,7 @@ public sealed class GameLoop(
             actor.Output = null;
             actor.LinkDeadSincePulse = clock.CurrentPulse;
 
-            foreach (var other in world.OthersIn(actor.RoomKey, actor))
+            foreach (var other in world.OthersAwakeIn(actor.RoomKey, actor))
             {
                 other.SendText($"{actor.Name} goes still, eyes unfocused.", "movement");
             }
@@ -698,7 +698,7 @@ public sealed class GameLoop(
 
         if (reason == LeaveReason.LinkDeadExpired)
         {
-            foreach (var other in world.OccupantsOf(room))
+            foreach (var other in world.AwakeIn(room))
             {
                 other.SendText($"{actor.Name} fades away.", "movement");
             }

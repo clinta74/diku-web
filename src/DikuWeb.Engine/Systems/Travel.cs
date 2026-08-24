@@ -83,7 +83,7 @@ public static class Travel
 
         var origin = actor.RoomKey;
 
-        foreach (var other in world.OthersIn(origin, actor))
+        foreach (var other in world.OthersAwakeIn(origin, actor))
         {
             other.SendText(departure, "movement");
         }
@@ -95,7 +95,7 @@ public static class Travel
             dropped.SendText($"{actor.Name} vanishes, and you stop following.", "bad");
         }
 
-        foreach (var other in world.OthersIn(destination.Key, actor))
+        foreach (var other in world.OthersAwakeIn(destination.Key, actor))
         {
             other.SendText(arrival, "movement");
         }

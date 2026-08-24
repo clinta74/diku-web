@@ -147,18 +147,13 @@ public sealed class MobAiSystem(
 
         if (due is not null)
         {
-            foreach (var player in world.OccupantsOf(roomKey))
+            // A sleeping player gets none of this. Idle flavour is the bulk of what arrives in a
+            // quiet room, and arriving while asleep it is just noise on a screen nobody is reading
+            // - DreamSystem sends something every five minutes instead. The line is still
+            // *scheduled* below whether or not anyone was awake for it, because the room's clock is
+            // not the sleeper's business.
+            foreach (var player in world.AwakeIn(roomKey))
             {
-                // A sleeping player gets none of this. Idle flavour is the bulk of what arrives in
-                // a quiet room, and arriving while asleep it is just noise on a screen nobody is
-                // reading - DreamSystem sends something every five minutes instead. The line is
-                // still *scheduled* below whether or not anyone was awake for it, because the
-                // room's clock is not the sleeper's business.
-                if (player.Character.RestState == CharacterRestState.Sleep)
-                {
-                    continue;
-                }
-
                 // MobLabel, not template.Name. Every other narration path in the game - the room
                 // listing, examine, combat, death - disambiguates two of a kind as "a terrace crow
                 // (2)", and the AI lines are the ones a player reads most often (BUGS.md #13).
@@ -329,9 +324,9 @@ public sealed class MobAiSystem(
                 MobLabel.For(world.MobsIn(fromRoomKey), mob),
                 $"leaves {exit.Direction.ToLowerName()}");
 
-            // Notify in source room with direction
-            var fromOccupants = world.OccupantsOf(fromRoomKey);
-            foreach (var player in fromOccupants)
+            // Notify in source room with direction. Awake only: a mob padding out of the room
+            // is something you see, and the sleeper is the one person who did not.
+            foreach (var player in world.AwakeIn(fromRoomKey))
             {
                 player.SendText(leaveProse, "movement");
             }
@@ -346,8 +341,7 @@ public sealed class MobAiSystem(
                 $"arrives from the {exit.Direction.Opposite().ToLowerName()}");
 
             // Notify in destination room
-            var toOccupants = world.OccupantsOf(exit.ToRoomKey);
-            foreach (var player in toOccupants)
+            foreach (var player in world.AwakeIn(exit.ToRoomKey))
             {
                 player.SendText(arriveProse, "movement");
             }
