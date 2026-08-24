@@ -115,6 +115,85 @@ public sealed class QuestRewardTests
         Assert.Contains("300 experience", harness.DrainText(kael), StringComparison.Ordinal);
     }
 
+    // -----------------------------------------------------------------------
+    // The relevance window (PLAN.md §4.7)
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// <b>Half the rule was in place and half was not.</b> A level 50 killing a level 28 mob earns
+    /// a fraction; the same level 50 turning in that zone's quest was earning all of it, so a chain
+    /// of them was the best experience in the game for somebody with no business being there.
+    /// </summary>
+    [Fact]
+    public void An_over_level_character_earns_a_fraction_of_a_quest()
+    {
+        var (harness, kael) = ReadyToTurnIn(h => Band(h, 8, 15), rewardXp: 1000);
+
+        kael.Character.Level = 20;
+        var before = kael.Character.Xp;
+
+        harness.Execute(kael, "give ledger elder");
+
+        // Floor(20) is 10, so a level 15 zone sits at (15-10+1)/(20-10+1) of the way up the taper.
+        Assert.Equal(545, kael.Character.Xp - before);
+    }
+
+    /// <summary>
+    /// <b>The top of the band decides, not the bottom.</b> A quest belongs to the whole range its
+    /// author declared, so measuring against <c>MinLevel</c> would dock a player for having
+    /// finished the zone the quest is in — the opposite of the intent.
+    /// </summary>
+    [Fact]
+    public void A_character_at_the_top_of_the_zones_band_is_still_paid_in_full()
+    {
+        var (harness, kael) = ReadyToTurnIn(h => Band(h, 8, 15), rewardXp: 1000);
+
+        kael.Character.Level = 15;
+        var before = kael.Character.Xp;
+
+        harness.Execute(kael, "give ledger elder");
+
+        Assert.Equal(1000, kael.Character.Xp - before);
+    }
+
+    /// <summary>Under-level is never penalised — there is no bonus for punching up, and no tax.</summary>
+    [Fact]
+    public void A_character_below_the_band_is_paid_in_full()
+    {
+        var (harness, kael) = ReadyToTurnIn(h => Band(h, 8, 15), rewardXp: 1000);
+
+        kael.Character.Level = 8;
+        var before = kael.Character.Xp;
+
+        harness.Execute(kael, "give ledger elder");
+
+        Assert.Equal(1000, kael.Character.Xp - before);
+    }
+
+    /// <summary>
+    /// Gold is not touched by the window, matching kills (§4.7): experience is credit for the
+    /// fight and gold is payment for being there.
+    /// </summary>
+    [Fact]
+    public void Gold_is_not_reduced_for_an_over_level_character()
+    {
+        var (harness, kael) = ReadyToTurnIn(h => Band(h, 8, 15), rewardXp: 1000, rewardGold: 200);
+
+        kael.Character.Level = 20;
+        var before = kael.Character.Gold;
+
+        harness.Execute(kael, "give ledger elder");
+
+        Assert.Equal(200, kael.Character.Gold - before);
+    }
+
+    /// <summary>Declares the zone's intended level range, which is what the window measures against.</summary>
+    private static void Band(WorldHarness harness, int min, int max)
+    {
+        harness.Zone.MinLevel = min;
+        harness.Zone.MaxLevel = max;
+    }
+
     [Fact]
     public void A_reward_item_arrives_once_not_once_per_copy()
     {

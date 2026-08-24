@@ -1162,6 +1162,26 @@ One ordering carries real weight: **the window is applied after the experience m
 so a generous zone scales a reward and can never resurrect a worthless one. Reverse it and an
 8×-experience starter zone is the best farm in the game for a level 50.
 
+**Quest turn-ins go through both, and half of that was missing.** Rewards were multiplied by the
+dial and then paid in full whatever the player's level, so the level 50 the window exists to stop
+could not farm a zone's mobs but could walk its whole quest chain. Quest XP now takes the same
+window; the level it is measured against is the **top** of the zone's band, so anybody still inside
+the range the author declared is paid in full and only somebody who has out-levelled the whole zone
+sees the taper. Gold is not scaled by it, matching kills.
+
+**Authored quest rewards are small numbers, and the dial supplies the depth.** This is the same
+rule mob `baseXp` follows — 110 in Ossara to 799 in the Unlit, flat across fifty levels, which is
+why kills land at a steady 42–58 per level in every world. Quest rewards were authored the other
+way, already scaled: 900 in the Rimwalk to 420,000 in the Regard, a 466× spread, and then
+multiplied *again* by a dial that reaches ×4.7. One turn-in in the Regard paid 1,974,000, which at
+level 48 is forty-one levels; the Serrivet quest that raised this paid 2.4.
+
+A turn-in is now **roughly 30% of a level**, with a chain's finale nearer half — the shape Ossara
+already had, and the only range that never read as broken. `QuestRewardBalanceTests` asserts the
+band **after** the multipliers, because that is what the player receives: an assertion on the
+authored number would have passed on all of it, since 420,000 looks reasonable for level 48 and the
+×4.7 lives in a different file.
+
 **The window, as a table.** Percentage of the mob's resolved experience, by the level it fights at:
 
 | Player | m1 | m2 | m5 | m8 | m10 | m15 | m20 | m30 | m40 | m50 |

@@ -1299,10 +1299,24 @@ public static class QuestCommands
     /// difficulty dial.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Rewards used to be paid raw while combat awarded <c>mob.ResolvedXp</c>, so the same zone
     /// multipliers that made a mob worth triple left the quest beside it worth exactly its
     /// authored number. §7.5 calls multipliers "the reason the whole feature exists"; a reward
     /// path that ignores them makes quests the one thing the dial does not move.
+    /// </para>
+    /// <para>
+    /// <b>And then through the same relevance window a kill goes through</b>
+    /// (<see cref="XpRelevance"/>, §4.7). Half of that rule was in place and half was not: a level
+    /// 50 killing a level 28 mob earns a fraction, and the same level 50 turning in that zone's
+    /// quest was earning all of it. A whole chain of them was the best experience in the game for
+    /// somebody with no business being there, which is precisely what the window exists to stop.
+    /// </para>
+    /// <para>
+    /// <b>Gold is not scaled by it</b>, matching kills (§4.7): experience is credit for the fight
+    /// and gold is payment for being there. Only the experience asks whether the fight was worth
+    /// having.
+    /// </para>
     /// </remarks>
     private static void AwardRewards(CommandContext ctx, Quest quest, Character character)
     {
@@ -1315,7 +1329,10 @@ public static class QuestCommands
         var worldMultipliers = world?.Multipliers;
         var zoneMultipliers = zone?.Multipliers;
 
-        var xp = Resolve(quest.RewardXp, MultiplierType.Xp);
+        // The window after the multipliers, in that order, for the reason XpRelevance gives: a
+        // zone may scale a reward and must never be able to resurrect a worthless one.
+        var xp = (int)XpRelevance.ShareOf(
+            Resolve(quest.RewardXp, MultiplierType.Xp), character.Level, LevelOf(zone, character));
         var gold = Resolve(quest.RewardGold, MultiplierType.Gold);
 
         character.Xp += xp;
@@ -1340,6 +1357,23 @@ public static class QuestCommands
                 ? amount
                 : Multipliers.Resolve(amount, worldMultipliers, zoneMultipliers, type);
     }
+
+    /// <summary>
+    /// What level a quest counts as, for the relevance window.
+    /// </summary>
+    /// <remarks>
+    /// <b>The top of the zone's band, not the bottom.</b> A quest belongs to the whole range its
+    /// author declared, so anybody still inside that range should be paid in full — measuring
+    /// against <c>MinLevel</c> would dock a player for having finished the zone the quest is in,
+    /// which is the opposite of the intent. Only somebody who has out-levelled the entire band
+    /// sees the taper.
+    ///
+    /// Falls back to the character's own level when the zone is missing, which yields full value:
+    /// a content bug should not quietly cost a player their reward, and the <c>Zone.MaxLevel</c>
+    /// default of 50 fails in the same direction for a zone whose band was never set.
+    /// </remarks>
+    private static int LevelOf(Zone? zone, Character character) =>
+        zone is null ? character.Level : Math.Max(zone.MinLevel, zone.MaxLevel);
 
     /// <summary>
     /// Grants the capability this quest opens, if it opens one (PLAN.md §4.15) — the only thing in
