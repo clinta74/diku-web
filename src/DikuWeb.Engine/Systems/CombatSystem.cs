@@ -89,7 +89,7 @@ public sealed class CombatSystem(
                 // resolve earlier in the same pulse and write straight to the health bar, so a
                 // mob killed by a kick used to sit at zero health inside the fight for ever: it
                 // could not swing, so nothing ever ended the combat, and the experience, the loot
-                // and the corpse never came. The player was left permanently Fighting and could
+                // and the removal of the body never came. The player was left permanently Fighting and could
                 // not even `kill` again.
                 //
                 // This does not weaken "the blow that kills ends the exchange here and now" -
@@ -148,7 +148,7 @@ public sealed class CombatSystem(
     /// <remarks>
     /// An ability, a trap, or anything else that reaches <c>Vitals.Health</c> from outside this
     /// loop. <see cref="HandleDeath"/> is the same door a swing's kill goes through, so the
-    /// experience, the loot, the corpse and the removal from the fight are identical however the
+    /// experience, the loot, the body's removal and the exit from the fight are identical however the
     /// killing damage arrived - which is the whole point of routing it here rather than letting
     /// each damage source grow its own half of a death.
     ///
@@ -691,9 +691,9 @@ public sealed class CombatSystem(
     /// <remarks>
     /// Inside the combat loop rather than in its own system, because that is where the pieces
     /// already are: <see cref="ApplyDamage"/>, <see cref="HandleDeath"/>, and with them the XP,
-    /// the loot, and the corpse. A separate ticker would have to reach for a <see cref="Combat"/>
-    /// to kill anything, and a bleed that could not land the killing blow would be a strange kind
-    /// of wound.
+    /// the loot, and the removal of the body. A separate ticker would have to reach for a
+    /// <see cref="Combat"/> to kill anything, and a bleed that could not land the killing blow
+    /// would be a strange kind of wound.
     ///
     /// The consequence is that wounds only tick during a fight. Fleeing stops the bleeding, which
     /// is a real balance decision rather than an accident - and it falls out of §4.11's rule that

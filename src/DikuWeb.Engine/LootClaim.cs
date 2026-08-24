@@ -32,10 +32,12 @@ namespace DikuWeb.Engine;
 /// "how long is the fight still yours", and after it the item is loot on the floor like any other.
 /// </para>
 /// <para>
-/// <b>Stamped with a wall clock rather than a pulse.</b> Pulses restart at zero with the server and
-/// the instance's <c>state</c> bag does not, so a pulse deadline would come back from a restart
-/// either already lapsed or lapsing hours late. A round-trip timestamp survives correctly, and an
-/// item that outlived the process still frees up on schedule.
+/// <b>Stamped with a wall clock rather than a pulse.</b> A pulse count means nothing outside the
+/// process that counted it. Mob loot happens not to be persisted today — <c>RollLoot</c> adds to
+/// the world without enqueuing a save, so a restart takes the floor with it — but that is a fact
+/// about the spawn path, not a licence to key a deadline to a number that resets to zero. A
+/// round-trip timestamp is right either way, and stays right if ground items ever start being
+/// written.
 /// </para>
 /// </remarks>
 public static class LootClaim

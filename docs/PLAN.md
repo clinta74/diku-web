@@ -983,7 +983,7 @@ camped room degraded monotonically until a restart.
 - **One method on `Mob`**, for the reason `Mob.DisplayName` gives in its own remark: the hand-written
   version was already in two places, and the heal would have had to be remembered in both.
 - **The heal is guarded on being alive; the idling is not.** Healing a mob at zero health resurrects
-  it, quietly, with the corpse already looted. Clearing its combat state is still right. In practice
+  it, quietly, with its loot already taken. Clearing its combat state is still right. In practice
   the guard never fires, because `HandleDeath` removes the dead from `Combatants` before the
   end-of-fight sweep looks — it is there so the method is safe wherever it gets called from next.
 - **Health only.** Nothing reads a mob's focus or stamina: ability costs come off `character.Vitals`,
@@ -1125,9 +1125,14 @@ picking fights.
   **The expiry is not a balance knob.** Nothing sweeps dropped items, so a claim that never lapsed
   would turn every drop a party walked away from into scenery no living character could pick up —
   a quieter and worse bug than the one being fixed. Stamped with a wall clock rather than a pulse,
-  because pulses restart at zero with the server and the `state` bag does not. The claim is dropped
-  as the item changes hands; left on it, a share could be banked for good by taking it and putting
-  it down.
+  because a pulse count means nothing outside the process that counted it. The claim is dropped as
+  the item changes hands; left on it, a share could be banked for good by taking it and putting it
+  down.
+
+  **Nothing tracks how long an item has been on the ground**, and a sweep would need that first —
+  a `droppedAt` stamp written on every path that puts an item in a room, not just this one. Today
+  the only thing that clears the floor is a restart: `RollLoot` adds to the world without enqueuing
+  a save, so mob loot nobody picked up is gone when the process is.
 
   A corpse container would answer this too, and would have to persist, be looked into, answer
   `get from`, and decay. The claim is the part that was actually missing.
@@ -1226,7 +1231,7 @@ and a second field for it would be a second source of truth to disagree with.
     area effect must never pick one victim out of the room to swing at.
   - *Closing.* Deaths from outside the combat loop are resolved at the top of the next combat
     tick, through the same `HandleDeath` a swing's kill goes through, so the experience, the loot,
-    and the corpse are identical however the killing damage arrived. Without it a mob killed by a
+    and the removal of the body are identical however the killing damage arrived. Without it a mob killed by a
     kick sat in the fight at zero health for ever: it could not swing, so the fight never dropped
     below two combatants and never ended, and the player stayed `Fighting` — unable even to `kill`
     again. Sweeping *first* is what preserves "the blow that kills ends the exchange here and
@@ -1579,7 +1584,9 @@ other content, and the rest of the world stays safe without anyone configuring a
 
 The economics are deliberately flat: a PvP kill yields no XP, no loot, and costs the loser no XP
 (§4.12). There is nothing to farm, so PvP is for people who want the fight — the flag decides
-*where* that is possible and nothing else is stacked on top of it.
+*where* that is possible and nothing else is stacked on top of it. **No corpse is created for
+anyone, player or mob**, so there is no body to loot and no loot claim to contest: a PvP kill puts
+nothing on the floor at all.
 
 ### 4.12 Death — XP loss, no corpse run
 
@@ -1589,7 +1596,7 @@ Death costs experience and time. It never costs items and it never costs the cha
 |---|---|
 | **Items** | Kept. Everything: inventory, equipment, coin. |
 | **Player corpse** | None is created. There is nothing to run back to and nothing to lose to a looter. |
-| **Mob corpse** | Unchanged — mobs still leave lootable corpses. That is how looting works (Phase 4). |
+| **Mob corpse** | None either. No corpse is created anywhere in the game — a mob's loot drops straight to the floor, claimed for whoever earned it (§4.7). |
 | **XP** | A bounded loss, below. |
 | **Level** | Never lost. |
 | **Location** | Respawn at your bind point. |
