@@ -145,6 +145,44 @@ Quantized KV needs flash attention, which is why both go together. This is a che
 smaller window: q8_0 costs very little quality on a cache and buys back half the memory, whereas
 cutting `num_ctx` costs the thing the prefix exists for.
 
+## Giving it a GPU
+
+CPU-only is the deployment this was measured on, and everything above assumes it. A card changes
+the arithmetic in a specific way worth understanding before buying one.
+
+**Generation is memory-bandwidth bound** — every token reads all active weights, and the weights
+are 8.1 GB. So the number that decides how much a card helps is whether it can hold them:
+
+| | VRAM | bandwidth | 12B fits? |
+|---|---|---|---|
+| GTX 1060 6 GB | 6 GB | 192 GB/s | no — ~26–30 of 48 layers |
+| RTX 3050 6 GB | 6 GB | 168 GB/s | no — and *less* bandwidth than the 1060 |
+| Arc Pro B50 | 16 GB | 224 GB/s | yes, easily — but check Ollama's Intel support first |
+| RTX 3060 12 GB | 12 GB | 360 GB/s | yes |
+
+Under 8.1 GB means partial offload: the layers that did not fit are still evaluated on the CPU for
+every token, so the gain is roughly proportional and the CPU limits in the compose file still
+matter. Over it, the whole model is resident and generation goes from ~0.93 tok/s to something in
+the teens or twenties.
+
+**Prefill benefits more than generation, whatever the card.** It is compute-bound where generation
+is bandwidth-bound, so even a partial offload should take a serious bite out of the half-hour
+warm-up. That is the one place a small card earns its slot.
+
+To turn it on, layer the overlay rather than editing the base file:
+
+```sh
+docker compose -f docker-compose.truenas.yml -f docker-compose.truenas.gpu.yml up -d ollama
+```
+
+`docker-compose.truenas.gpu.yml` carries the device reservation, the host prerequisites, and the
+verification steps. The short version of verifying: `docker exec dikuweb-ollama nvidia-smi` proves
+the device arrived, and `ollama ps`'s PROCESSOR column says what fraction is actually on it.
+
+**Since the warm-up landed, a GPU is a comfort rather than a requirement.** The half-hour prefill
+now happens once at startup with nobody waiting on it, and drafts run at about three minutes. A
+card makes that pleasant; it is no longer the difference between the feature working and not.
+
 ## What is deliberately not in the Modelfile
 
 **The canon prefix.** It could go in `SYSTEM`, and that would make it byte-identical across
