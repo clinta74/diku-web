@@ -40,7 +40,8 @@ public sealed class CombatSystem(
     ItemSpawner? itemSpawner = null,
     ILogger<CombatSystem>? logger = null,
     EffectRegistry? effects = null,
-    AbilityCache? abilities = null)
+    AbilityCache? abilities = null,
+    Time.IGameClock? clock = null)
 {
     /// <summary>Combat is evaluated every pulse; per-attack delays do the pacing.</summary>
     public const int TickIntervalPulses = 1;
@@ -1267,7 +1268,15 @@ public sealed class CombatSystem(
             AwardKill(world, killerChar, mob, mobRoomKey);
         }
 
-        var dropped = RollLoot(world, mob, mobRoomKey);
+        // Asked once, here, and used for both the claim on the drops and the line that announces
+        // them. KillCredit reads the room, and this runs before the mob is removed - but the real
+        // reason it is hoisted is the one its own remarks give: a party member who was told about
+        // loot they are not allowed to touch is the same disagreement in a new place.
+        List<Character> earners = killerChar is null
+            ? []
+            : KillCredit(world, killerChar, mobRoomKey);
+
+        var dropped = RollLoot(world, mob, mobRoomKey, earners);
 
         // Narrate mob death to the room
         var deathProse = NarrationHelper.BuildSentence(label, "falls.");
@@ -1286,13 +1295,13 @@ public sealed class CombatSystem(
         // The same people the experience went to, read from the same helper, because "the group
         // that got the kill" answered two different ways is the kind of disagreement nobody
         // notices until a party member sees loot they were not paid for.
-        if (killerChar is not null && dropped.Count > 0)
+        if (dropped.Count > 0 && earners.Count > 0)
         {
             var lootProse = NarrationHelper.BuildSentence(
                 label,
                 $"drops {NarrationHelper.List([.. dropped.Select(d => NarrationHelper.WithArticle(d))])}.");
 
-            foreach (var earner in KillCredit(world, killerChar, mobRoomKey))
+            foreach (var earner in earners)
             {
                 world.FindByCharacter(earner.Id)?.SendText(lootProse, "loot");
             }
@@ -1442,9 +1451,9 @@ public sealed class CombatSystem(
     }
 
     /// <summary>
-    /// Rolls the dead mob's loot table onto the floor. Reads the template caches rather than the
-    /// repositories, which is what lets this run on the loop thread - and means a builder's edit
-    /// to a loot table takes effect without a restart.
+    /// Rolls the dead mob's loot table onto the floor, claimed for whoever earned it. Reads the
+    /// template caches rather than the repositories, which is what lets this run on the loop
+    /// thread - and means a builder's edit to a loot table takes effect without a restart.
     /// </summary>
     /// <returns>
     /// The display names of what actually dropped, in table order, so the caller can name them.
@@ -1456,7 +1465,8 @@ public sealed class CombatSystem(
     /// handing out live world objects for the sake of reading one property off them invites somebody
     /// to mutate them later.
     /// </remarks>
-    private List<string> RollLoot(WorldState world, Mob mob, RoomKey roomKey)
+    private List<string> RollLoot(
+        WorldState world, Mob mob, RoomKey roomKey, IReadOnlyList<Character> earners)
     {
         var dropped = new List<string>();
 
@@ -1514,6 +1524,12 @@ public sealed class CombatSystem(
             if (itemTemplates.Get(itemKey) is { } itemTemplate)
             {
                 var instance = itemSpawner.Spawn(itemTemplate, zone, worldEntity, roomKey);
+
+                // Stamped before it enters the world, so there is no instant in which it is on the
+                // floor and unspoken for. Nothing happens when the kill had no credited group - a
+                // mob killed by another mob drops loot anyone may take, which is the right answer.
+                LootClaim.Stamp(instance, earners, clock?.UtcNow ?? DateTimeOffset.UtcNow);
+
                 world.AddItem(instance);
 
                 // The instance's name, not the template's: DisplayName is what every other verb

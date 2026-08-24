@@ -106,7 +106,12 @@ public static class EngineServiceCollectionExtensions
                 sp.GetService<EffectRegistry>(),
                 // Read only to name what a level-up just granted. Absent, a player levels in
                 // silence and finds their new ability by guessing.
-                sp.GetService<AbilityCache>()));
+                sp.GetService<AbilityCache>(),
+                // Stamps the loot claim's expiry (LootClaim). Required rather than optional: the
+                // fallback would be the ambient wall clock, which is right in production and
+                // wrong in a test, where a claim has to be watched expiring rather than waited
+                // out - and a test that silently waited out two real minutes would just hang.
+                sp.GetRequiredService<IGameClock>()));
 
         // Phase 5 systems (abilities, quests). Explicit for the same reason as CombatSystem: the
         // mob templates are what tell an area effect which mobs are non-combatants, and a

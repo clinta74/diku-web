@@ -782,6 +782,19 @@ public sealed class CommandRegistry
             return;
         }
 
+        // Asked first, because it is the question of whether this is theirs to touch at all -
+        // ahead of lore, which is a question about what they may end up holding.
+        if (LootClaim.Refuse(
+                targetItem,
+                ctx.Actor.CharacterId,
+                ctx.Clock?.UtcNow ?? DateTimeOffset.UtcNow,
+                NarrationHelper.WithDefiniteArticle(targetItem.DisplayName, capitalize: true))
+            is { } claimed)
+        {
+            ctx.Reply(claimed, "bad");
+            return;
+        }
+
         if (ItemRules.IsLore(ctx.ItemTemplates, targetItem.TemplateKey) &&
             ItemRules.AlreadyHolds(ctx.World, ctx.Actor.CharacterId, targetItem.TemplateKey))
         {
@@ -791,6 +804,11 @@ public sealed class CommandRegistry
                 "bad");
             return;
         }
+
+        // Dropped as it changes hands, not left to lapse. A claim that survived the pickup would
+        // come back the moment the item was put down again, so a party's share could be banked for
+        // good by taking it and dropping it, and the person it was dropped for would be refused.
+        LootClaim.Clear(targetItem);
 
         ctx.World.PickUpItem(targetItem, ctx.Actor.CharacterId);
         ctx.ItemSaveQueue?.Enqueue(targetItem);

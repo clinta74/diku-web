@@ -1109,6 +1109,28 @@ picking fights.
   for, or the reverse, and that is the kind of disagreement nobody notices for months. **A bystander
   is not told**: the room already learns there is something on the floor, so this line is the answer
   to *did I get anything for that* rather than news about the floor.
+- **A drop belongs to whoever earned it, for two minutes.** Loot lands on the floor rather than in
+  a corpse, and `get` asked nothing about entitlement — so someone who stood and watched was
+  exactly as entitled as the party that fought, and typing faster was the whole of the rule.
+  `LootClaim` stamps each drop with the credited group, in the instance's `state` bag, and `get`
+  refuses everyone else: *"The tarnished fang belongs to Bram for another minute."*
+
+  **The claimants are the kill credit**, `CombatSystem.KillCredit` again and for the same reason —
+  a member told about a drop and then refused it would be the same disagreement in a new place.
+  Any member may take any of it; nobody has to be the one who landed the blow.
+
+  **Named, and with the wait spelled out**, because a bare refusal is indistinguishable from a bug
+  and leaves the player unable to tell whether waiting helps.
+
+  **The expiry is not a balance knob.** Nothing sweeps dropped items, so a claim that never lapsed
+  would turn every drop a party walked away from into scenery no living character could pick up —
+  a quieter and worse bug than the one being fixed. Stamped with a wall clock rather than a pulse,
+  because pulses restart at zero with the server and the `state` bag does not. The claim is dropped
+  as the item changes hands; left on it, a share could be banked for good by taking it and putting
+  it down.
+
+  A corpse container would answer this too, and would have to persist, be looked into, answer
+  `get from`, and decay. The claim is the part that was actually missing.
 
 One ordering carries real weight: **the window is applied after the experience multiplier** (§4.4),
 so a generous zone scales a reward and can never resurrect a worthless one. Reverse it and an
