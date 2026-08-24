@@ -179,6 +179,9 @@ docker compose -f docker-compose.truenas.yml -f docker-compose.truenas.gpu.yml u
 verification steps. The short version of verifying: `docker exec dikuweb-ollama nvidia-smi` proves
 the device arrived, and `ollama ps`'s PROCESSOR column says what fraction is actually on it.
 
+**[GPU-SETUP.md](GPU-SETUP.md) is the step-by-step**, from installing the TrueNAS driver through
+verifying and rolling back.
+
 **Since the warm-up landed, a GPU is a comfort rather than a requirement.** The half-hour prefill
 now happens once at startup with nobody waiting on it, and drafts run at about three minutes. A
 card makes that pleasant; it is no longer the difference between the feature working and not.
