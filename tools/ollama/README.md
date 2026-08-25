@@ -85,6 +85,26 @@ earlier guess of ~4.8. A 900-character description is ~230 tokens, so **one room
 minutes on this machine and should be assumed worse on the NAS**. That is not a button with a
 spinner behind it; it is a queued job with the result arriving later.
 
+## Measured with a GPU
+
+The dev box has an RTX 5070 Ti — 16 GB, so all 49 layers are resident and `ollama ps` reads
+`100% GPU`. It is the same feature again and barely the same experience:
+
+| | NAS (4 cores, CPU) | **dev box (5070 Ti)** |
+|---|---:|---:|
+| bulk prefill (whole canon) | ~6 tok/s | **635 tok/s** |
+| generation | 0.93 tok/s | **21.5 tok/s** |
+| canon prefix, cold | ~25–30 min | **16 s** |
+| one draft, warm | ~3 min | **~7 s** |
+
+**The warm prefill barely registers**: 10,181 tokens in 0.9 s, because only the ~100-token tail was
+actually new and the cache answered for the rest. That is the same prefix caching the whole design
+rests on — it is simply no longer the thing you are waiting for.
+
+At these speeds `AssistWarmUp` costs sixteen seconds and could arguably go. It stays: it is the NAS
+it exists for, it is harmless here, and a warm-up that only runs on the slow machine is a warm-up
+nobody tests.
+
 ## Applying it
 
 From the repository root, on whichever machine runs the container:
