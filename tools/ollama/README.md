@@ -115,10 +115,53 @@ there is nothing further to configure — and that URL is why the dev compose pu
 while the NAS one deliberately does not. There, `web` is a container and reaches ollama by service
 name across the compose network; locally the server runs on the host and has no such network.
 
-**Expect the same half-hour warm-up on a first run**, and expect it on every restart of the
-container: the KV cache lives in the process. `docker compose stop ollama` between sessions is
-cheaper than `down`, which would also be fine — the model itself is in a named volume and survives
-either.
+**Expect the same half-hour warm-up on a first run** *if it is running on the CPU*, and expect it
+on every restart of the container: the KV cache lives in the process, not the volume.
+`docker compose stop ollama` between sessions is cheaper than `down`, which would also be fine —
+the model itself is in a named volume and survives either.
+
+### ...with the dev box's GPU
+
+`docker-compose.gpu.yml` is an overlay, so a machine without a usable card still brings the assist
+up on CPU:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile assist up -d
+```
+
+**It looks nothing like `docker-compose.truenas.gpu.yml`, and it has to.** That file uses
+`deploy.resources.reservations.devices`, which is right on a Linux host running the NVIDIA
+container toolkit. On a Windows box under Rancher Desktop it fails outright:
+
+```
+failed to discover GPU vendor from CDI: no known GPU vendor found
+```
+
+Rancher Desktop's WSL distribution ships no `nvidia-container-toolkit` and generates no CDI spec,
+so there is no vendor for Docker to discover. What it *does* have is the card: WSL2 exposes it as
+`/dev/dxg` and puts the driver libraries in `/usr/lib/wsl/lib`. Handing the container those two
+things and pointing `LD_LIBRARY_PATH` at the mount is the whole mechanism — precisely what the
+toolkit would otherwise automate.
+
+Confirm it took by asking ollama what it found:
+
+```sh
+docker logs dikuweb-ollama | grep "inference compute"
+```
+
+```
+inference compute  library=CUDA compute=12.0  name=CUDA0
+description="NVIDIA GeForce RTX 5070 Ti"  driver=13.2  total="15.9 GiB" available="14.7 GiB"
+```
+
+**`library=CUDA` is the line that matters.** Ollama falls back to the CPU silently and
+successfully when the mounts do not land, so the failure mode is a working assist that is
+dramatically slower than it should be, rather than an error anyone would notice.
+
+At ~14.7 GiB available against ~8.1 GB of weights the whole model is resident, so none of the
+CPU-side reasoning in this file applies: `ollama ps` should read **100% GPU**, and the half-hour
+canon prefill is seconds. The NAS's `OLLAMA_KV_CACHE_TYPE: q8_0` is deliberately *not* copied here
+— quantising the cache buys layers on a 6 GB card and there is nothing to buy at 16 GB.
 
 ## The memory question, now settled
 

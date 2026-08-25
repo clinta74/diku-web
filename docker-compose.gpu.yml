@@ -1,0 +1,80 @@
+# The dev box's GPU, handed to the local assist container.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile assist up -d
+#
+# Or, so every later command does not need both flags:
+#
+#   export COMPOSE_FILE=docker-compose.yml:docker-compose.gpu.yml
+#
+# An overlay rather than an edit, for the same reason the NAS one is: a machine without a usable
+# card must still be able to bring the assist up on CPU, and asking for a device the host cannot
+# supply does not degrade - the container refuses to start.
+#
+# ---------------------------------------------------------------------------
+# Why this looks nothing like docker-compose.truenas.gpu.yml
+# ---------------------------------------------------------------------------
+#
+# That file uses `deploy.resources.reservations.devices`, which is the right spelling on a Linux
+# host running the NVIDIA container toolkit. On this Windows box it fails outright:
+#
+#   failed to discover GPU vendor from CDI: no known GPU vendor found
+#
+# Rancher Desktop's WSL distribution has no nvidia-container-toolkit and generates no CDI spec, so
+# there is no vendor for Docker to discover. What it does have is the GPU itself: WSL2 exposes the
+# card as /dev/dxg and ships the driver libraries in /usr/lib/wsl/lib. Handing the container those
+# two things directly is the whole mechanism, and it is what the toolkit would have automated.
+#
+# Verified on this machine, from ollama's own startup log:
+#
+#   inference compute  library=CUDA compute=12.0  name=CUDA0
+#   description="NVIDIA GeForce RTX 5070 Ti"  driver=13.2  total="15.9 GiB" available="14.7 GiB"
+#
+# On a Linux dev box with the toolkit installed, copy the `deploy` block out of
+# docker-compose.truenas.gpu.yml instead - this file will do nothing there, because /dev/dxg is a
+# WSL invention and does not exist.
+
+services:
+  ollama:
+    devices:
+      # WSL2's GPU device. Present in the Rancher Desktop distribution without any extra install.
+      - /dev/dxg
+
+    volumes:
+      # The WSL driver libraries - libcuda.so and friends - which live on the host side of WSL and
+      # are not in the image. Read-only: the container has no business writing to the host's
+      # driver directory.
+      - /usr/lib/wsl:/usr/lib/wsl:ro
+
+    environment:
+      # Without this the loader never looks in the mount above and ollama falls back to CPU, which
+      # it does silently and successfully - the failure mode is a working assist that is fifty
+      # times slower than it should be, not an error.
+      LD_LIBRARY_PATH: /usr/lib/wsl/lib
+
+      # Worth having on a card with room to spare, and not free on one without: it speeds up
+      # attention and is the prerequisite for a quantised KV cache if the model ever outgrows the
+      # card. Deliberately NOT paired with OLLAMA_KV_CACHE_TYPE here - the NAS quantises its cache
+      # to buy layers on a 6 GB card, and there is nothing to buy at 16 GB.
+      OLLAMA_FLASH_ATTENTION: '1'
+
+    # cpus and mem_limit are left exactly as the base file sets them, and stop mattering much once
+    # the model is resident on the card: the CPU is not evaluating layers any more. They are still
+    # the right ceiling for the host-side buffers, and for the case where a future larger model
+    # does not fit and falls back to a partial offload.
+
+# ---------------------------------------------------------------------------
+# Checking it took
+# ---------------------------------------------------------------------------
+#
+#   docker logs dikuweb-ollama | grep "inference compute"
+#       Names the card and the library. `library=CUDA` is the answer; no line at all, or one
+#       naming the CPU, means the mounts above did not land.
+#
+#   docker exec dikuweb-ollama ollama ps
+#       After a model is loaded. The PROCESSOR column should read 100% GPU - Gemma 3 12B Q4 is
+#       ~8.1 GB against ~14.7 GB available, so the whole thing is resident and none of it is being
+#       evaluated on the CPU.
+#
+#   docker logs dikuweb-web | grep -i "assist warm"
+#       Not applicable to local development, where the server runs on the host - watch its console
+#       instead. The half-hour CPU warm-up should be seconds.

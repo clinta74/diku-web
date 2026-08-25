@@ -9,7 +9,10 @@ name: diku-web-dev
 # hour of first-run prefill and nobody wanting a database should pay for that by accident:
 #
 #     docker compose up -d                      # postgres + adminer, as before
-#     docker compose --profile assist up -d     # ...and ollama
+#     docker compose --profile assist up -d     # ...and ollama, on the CPU
+#
+# If this machine has a usable GPU, layer docker-compose.gpu.yml over this one - the assist is
+# perfectly usable without it and unrecognisably faster with it.
 #
 # After the first `--profile assist` start, build the derived model once:
 #
