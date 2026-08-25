@@ -109,9 +109,9 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ```
 # Database for local development
-DB_NAME=dikuweb
-DB_USER=dikuweb
-DB_PASSWORD=password
+POSTGRES_DB=dikuweb
+POSTGRES_USER=dikuweb
+POSTGRES_PASSWORD=dikuweb_dev_only
 ```
 
 ### Production (.env or command-line)

@@ -18,6 +18,11 @@ name: diku-web-dev
 #
 #     sh tools/ollama/create-models.sh
 #
+# Credentials come from .env (see .env.example). The default password here matches the connection
+# string in appsettings.Development.json, so a checkout with no .env at all still works - but note
+# that Postgres reads POSTGRES_PASSWORD only when it initialises an empty data directory. Changing
+# it later changes nothing until the `pgdata` volume is recreated or the role is altered by hand.
+#
 # appsettings.Development.json already points the server at http://localhost:11434 and the model
 # `dikuweb-builder`, so nothing else needs configuring - which is also why ollama's port is
 # published here and deliberately is not on the NAS: there, `web` is a container on the compose
@@ -32,22 +37,31 @@ services:
     networks:
       - dikuweb-network
     environment:
-      POSTGRES_DB: ${DB_NAME:-dikuweb}
-      POSTGRES_USER: ${DB_USER:-dikuweb}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      # POSTGRES_*, matching the names the container itself uses, the names deploy.dev.conf uses,
+      # and the names the prod and NAS compose files use.
+      #
+      # These were DB_NAME/DB_USER/DB_PASSWORD, which nothing else in the repository said, and the
+      # failure was silent in the worst way: `${DB_PASSWORD:-password}` against a .env written in
+      # the other dialect resolves happily to "password", so Postgres initialised with a password
+      # the .env never mentioned and appsettings.Development.json did not share. Nothing errored;
+      # the server simply could not authenticate.
+      POSTGRES_DB: ${POSTGRES_DB:-dikuweb}
+      POSTGRES_USER: ${POSTGRES_USER:-dikuweb}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dikuweb_dev_only}
       POSTGRES_INITDB_ARGS: >-
         -c timezone=UTC
         -c shared_buffers=256MB
         -c max_connections=200
     ports:
-      # Expose to localhost for local development
-      - "127.0.0.1:5432:5432"
+      # Loopback only; the port is a variable because 5432 is often already taken by a Postgres
+      # somebody installed natively, and .env was already setting this and being ignored.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       # Persist data between runs
       - pgdata:/var/lib/postgresql
       - ./backups:/backups:rw
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-dikuweb} -d ${DB_NAME:-dikuweb}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dikuweb} -d ${POSTGRES_DB:-dikuweb}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -71,12 +85,12 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      # Web UI for database browsing/editing
-      - "127.0.0.1:8080:8080"
+      # Web UI for database browsing/editing.
+      - "127.0.0.1:${ADMINER_PORT:-8080}:8080"
     environment:
       ADMINER_DEFAULT_SERVER: postgres
-      ADMINER_DEFAULT_DB: ${DB_NAME:-dikuweb}
-      ADMINER_DEFAULT_USER: ${DB_USER:-dikuweb}
+      ADMINER_DEFAULT_DB: ${POSTGRES_DB:-dikuweb}
+      ADMINER_DEFAULT_USER: ${POSTGRES_USER:-dikuweb}
     logging:
       driver: json-file
       options:
