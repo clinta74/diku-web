@@ -28,7 +28,7 @@ services:
       # Loopback only. `web` and `backup` reach Postgres as postgres:5432 over the compose
       # network; publishing on 0.0.0.0 put the database on the whole LAN for no benefit.
       # Remove this line entirely if you never need a client on the NAS itself.
-      - '127.0.0.1:5434:5432'
+      - '5434:5432'
     volumes:
       - pgdata:/var/lib/postgresql
       - ./backups:/backups:rw

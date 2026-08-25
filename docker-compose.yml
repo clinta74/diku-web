@@ -55,7 +55,7 @@ services:
     ports:
       # Loopback only; the port is a variable because 5432 is often already taken by a Postgres
       # somebody installed natively, and .env was already setting this and being ignored.
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+      - ${POSTGRES_PORT:-5432}:5432
     volumes:
       # Persist data between runs
       - pgdata:/var/lib/postgresql
@@ -86,7 +86,7 @@ services:
         condition: service_healthy
     ports:
       # Web UI for database browsing/editing.
-      - "127.0.0.1:${ADMINER_PORT:-8080}:8080"
+      - ${ADMINER_PORT:-8080}:8080
     environment:
       ADMINER_DEFAULT_SERVER: postgres
       ADMINER_DEFAULT_DB: ${POSTGRES_DB:-dikuweb}
@@ -114,7 +114,7 @@ services:
       # Loopback, and published unlike the NAS deployment - the server runs on the host here, so
       # there is no compose network for it to reach ollama across. This is the address
       # appsettings.Development.json already uses.
-      - '127.0.0.1:11434:11434'
+      - 11434:11434
     environment:
       # Never unload. The default is 5m, and an unload discards the KV cache for the canon prefix
       # - which is the whole cost this design is built around (tools/ollama/README.md).
