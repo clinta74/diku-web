@@ -87,7 +87,7 @@ spinner behind it; it is a queued job with the result arriving later.
 
 ## Applying it
 
-On the NAS, from the directory holding the compose file:
+From the repository root, on whichever machine runs the container:
 
 ```sh
 sh tools/ollama/create-models.sh
@@ -99,6 +99,26 @@ changes; that is also how a changed parameter is applied.
 
 Point the assist at `dikuweb-builder`, not at `gemma3:12b`. Requesting the base by name gets you
 4096 again.
+
+### Locally, for development
+
+`docker-compose.yml` carries the same service behind a profile, so a dev box can run the assist
+without one being forced on anybody who only wanted a database:
+
+```sh
+docker compose --profile assist up -d
+sh tools/ollama/create-models.sh
+```
+
+`appsettings.Development.json` already names `http://localhost:11434` and `dikuweb-builder`, so
+there is nothing further to configure — and that URL is why the dev compose publishes the port
+while the NAS one deliberately does not. There, `web` is a container and reaches ollama by service
+name across the compose network; locally the server runs on the host and has no such network.
+
+**Expect the same half-hour warm-up on a first run**, and expect it on every restart of the
+container: the KV cache lives in the process. `docker compose stop ollama` between sessions is
+cheaper than `down`, which would also be fine — the model itself is in a named volume and survives
+either.
 
 ## The memory question, now settled
 

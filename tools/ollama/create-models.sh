@@ -1,9 +1,13 @@
 #!/bin/sh
 # Builds the derived models the builder assist talks to, and proves the context window took.
 #
-# Run on the NAS, from the directory holding docker-compose.truenas.yml:
+# Run from the repository root, on whichever machine is running the ollama container:
 #
 #   sh tools/ollama/create-models.sh
+#
+# Nothing in here is deployment-specific - it works entirely through `docker exec` on $CONTAINER,
+# so the same command builds the model on the NAS (docker-compose.truenas.yml) and on a dev box
+# (docker compose --profile assist up -d).
 #
 # Idempotent: `ollama create` overwrites a model of the same name, so this is also how a changed
 # Modelfile is applied. It is a deploy step rather than a compose service on purpose - the model

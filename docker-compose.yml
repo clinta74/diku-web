@@ -1,8 +1,24 @@
 name: diku-web-dev
 
 # Local development docker-compose
-# Runs only PostgreSQL database for local development
-# Run the .NET server and React client locally with dotnet and npm
+#
+# Runs PostgreSQL (and Adminer) for local development; the .NET server and the React client run on
+# the host with `dotnet` and `npm`.
+#
+# The builder's AI assist is here too, behind a profile, because it is 8 GB of model and half an
+# hour of first-run prefill and nobody wanting a database should pay for that by accident:
+#
+#     docker compose up -d                      # postgres + adminer, as before
+#     docker compose --profile assist up -d     # ...and ollama
+#
+# After the first `--profile assist` start, build the derived model once:
+#
+#     sh tools/ollama/create-models.sh
+#
+# appsettings.Development.json already points the server at http://localhost:11434 and the model
+# `dikuweb-builder`, so nothing else needs configuring - which is also why ollama's port is
+# published here and deliberately is not on the NAS: there, `web` is a container on the compose
+# network and reaches it by service name. Here the server is on the host.
 
 services:
   postgres:
@@ -65,6 +81,56 @@ services:
         max-file: "2"
         labels: "service=adminer"
 
+  # The builder's AI assist. Opt-in: `--profile assist`.
+  #
+  # Not in any depends_on chain, here or on the NAS: the MUD starts and runs whether or not
+  # inference is available, and the assist endpoints answer "not configured" rather than failing.
+  ollama:
+    image: ollama/ollama:latest
+    container_name: dikuweb-ollama
+    profiles:
+      - assist
+    restart: unless-stopped
+    networks:
+      - dikuweb-network
+    ports:
+      # Loopback, and published unlike the NAS deployment - the server runs on the host here, so
+      # there is no compose network for it to reach ollama across. This is the address
+      # appsettings.Development.json already uses.
+      - '127.0.0.1:11434:11434'
+    environment:
+      # Never unload. The default is 5m, and an unload discards the KV cache for the canon prefix
+      # - which is the whole cost this design is built around (tools/ollama/README.md).
+      OLLAMA_KEEP_ALIVE: '-1'
+      # Generation model + embedding model resident at once.
+      OLLAMA_MAX_LOADED_MODELS: '2'
+      # One slot. Parallel slots divide the context window between them and fragment prefix
+      # caching, and this design depends on one large prefix hitting every request.
+      OLLAMA_NUM_PARALLEL: '1'
+      # Matching the cpus limit below. Both are variables because a dev machine is not a known
+      # quantity the way the NAS is; the default leaves a couple of cores for the compiler and
+      # the game you are testing against.
+      OLLAMA_NUM_THREAD: ${OLLAMA_THREADS:-4}
+    cpus: ${OLLAMA_CPUS:-4.0}
+    # Gemma 3 12B Q4 is ~8.1 GB of weights, plus KV cache and headroom. Lower this on a smaller
+    # machine and the model will not load rather than swapping; raise it if you run a bigger one.
+    mem_limit: ${OLLAMA_MEMORY:-12g}
+    volumes:
+      # A named volume, so `docker compose down` does not throw away the 8 GB you just pulled.
+      - ollamadata:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=ollama"
+
 networks:
   dikuweb-network:
     driver: bridge
@@ -74,4 +140,6 @@ networks:
 
 volumes:
   pgdata:
+    driver: local
+  ollamadata:
     driver: local
