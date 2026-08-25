@@ -413,16 +413,35 @@ public sealed class CommandRegistry
 
         var spans = new List<TextSpan>();
 
-        if (equipped.Count > 0)
-        {
-            spans.Add(new TextSpan("You are wearing/wielding:", "heading"));
+        // Always, and every slot - not only the filled ones.
+        //
+        // <b>The empty lines are how the slot list is learned.</b> Showing only what was worn
+        // made a slot nobody had filled yet invisible, so a player wearing six things had no way
+        // to discover that Feet and Trinket exist at all: a whole equipment category findable
+        // only by happening to pick one up and read its usage line. The list is fixed and short,
+        // so printing it whole costs eight lines and answers "what else could I be wearing".
+        spans.Add(new TextSpan("You are wearing/wielding:", "heading"));
 
-            // Worn items are never collapsed, however many share a name: they are listed under
-            // their slots and the slot is the information. Two identical rings in two places is
-            // two facts, not one fact twice (§4.14).
-            foreach (var item in equipped.OrderBy(i => i.EquippedSlot))
+        // Worn items are never collapsed, however many share a name: they are listed under their
+        // slots and the slot is the information. Two identical rings in two places is two facts,
+        // not one fact twice (§4.14).
+        var bySlot = equipped
+            .Where(i => i.EquippedSlot is not null)
+            .ToLookup(i => i.EquippedSlot!.Value);
+
+        foreach (var slot in Enum.GetValues<ItemSlot>())
+        {
+            var worn = bySlot[slot].ToList();
+
+            if (worn.Count == 0)
             {
-                var slot = item.EquippedSlot?.ToString() ?? "Unknown";
+                spans.Add(new TextSpan($"\n  [{slot}] "));
+                spans.Add(new TextSpan("empty", "dim"));
+                continue;
+            }
+
+            foreach (var item in worn)
+            {
                 spans.Add(new TextSpan($"\n  [{slot}] {item.DisplayName}"));
 
                 // Worn quest items are tagged too. A quest reward with a slot is ordinary
@@ -431,19 +450,21 @@ public sealed class CommandRegistry
                 {
                     spans.Add(new TextSpan(" (q)", "dim"));
                 }
+
+                // What it is doing for you, on the screen that lists what you are wearing.
+                // `stats` has carried this since the bonuses block was fixed; the pack listing
+                // is where somebody deciding what to keep is actually looking.
+                if (ItemStatLine.For(item.ResolvedStats) is { } line)
+                {
+                    spans.Add(new TextSpan($"\n    {line}", "dim"));
+                }
             }
         }
 
         if (unequipped.Count > 0)
         {
-            if (equipped.Count > 0)
-            {
-                spans.Add(new TextSpan("\n\nYou are carrying:", "heading"));
-            }
-            else
-            {
-                spans.Add(new TextSpan("You are carrying:", "heading"));
-            }
+            // Always preceded by the equipment block above, which always prints.
+            spans.Add(new TextSpan("\n\nYou are carrying:", "heading"));
 
             // One line per kind of thing carried, with a count (§4.14). A pack holding six stones
             // is six lines of "stone" otherwise, which pushes everything else off the screen and
@@ -481,8 +502,11 @@ public sealed class CommandRegistry
 
         if (items.Count == 0)
         {
-            ctx.Reply("You aren't carrying anything.", "dim");
-            return;
+            // Appended rather than sent instead of the slot list. This used to return
+            // here, discarding the spans built above - which meant the one player who most
+            // needs to be told there are eight slots, the one who has filled none of them,
+            // was the only player never shown them.
+            spans.Add(new TextSpan("\n\nYou aren't carrying anything.", "dim"));
         }
 
         ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
@@ -1447,7 +1471,12 @@ public sealed class CommandRegistry
                 // promising bonuses and then showed nothing (BUGS.md #11). `examine` never
                 // filtered, which is why the builder view was right and only the player's was
                 // wrong.
-                var statsStr = Describe(item.ResolvedStats);
+                // Through ItemStatLine rather than Describe, which is the other half of that same
+                // mistake: having started printing the whole bag, this printed it the way a
+                // builder reads one - `bonus=4, damageMax=13, damageMin=7`, alphabetical, so
+                // the maximum came before the minimum and the one term that is accuracy
+                // rather than damage was named only by its authored key.
+                var statsStr = ItemStatLine.For(item.ResolvedStats);
 
                 spans.Add(new TextSpan($"\n  [{slot}] {displayName}"));
                 if (!string.IsNullOrEmpty(statsStr))

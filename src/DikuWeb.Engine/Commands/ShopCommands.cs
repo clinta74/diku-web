@@ -1,4 +1,5 @@
 using DikuWeb.Domain.Characters;
+using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Items;
 using DikuWeb.Domain.Narration;
@@ -116,8 +117,82 @@ public static class ShopCommands
 
                 var price = ShopPricing.Price(itemTemplate.BaseValue, MobBehavior.MarkupOf(template.Behavior));
                 ctx.Reply($"{itemTemplate.Icon} {itemTemplate.Name}: {price} gold");
+                AppendComparison(ctx, itemTemplate);
             }
         }
+    }
+
+    /// <summary>
+    /// What the item on the shelf does, and how it compares to what the customer is wearing.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>A shop listing used to be a name and a price.</b> Nothing anywhere would tell you what a
+    /// weapon hit for before you owned it — <c>examine</c> reaches your pack, the floor and the
+    /// people in the room, and shop stock is none of those: it is a template that has never been
+    /// spawned. So the only way to find out whether a sword beat the one on your hip was to buy it.
+    /// </para>
+    /// <para>
+    /// <b>The comparison is the part that was asked for.</b> Slot and stats alone still leave the
+    /// player doing arithmetic across two screens; naming the piece it would replace and what
+    /// moves is the answer to "is this better than mine". It stops short of saying <em>better</em>,
+    /// because three more damage for one less accuracy is a trade and calling that an upgrade
+    /// would be guessing on their behalf.
+    /// </para>
+    /// <para>
+    /// <b>Base stats against resolved ones is a fair comparison, and only by luck.</b>
+    /// <c>ItemSpawner</c> copies <c>BaseStats</c> into <c>ResolvedStats</c> untouched — only
+    /// <c>Value</c> is multiplied — so what is on the shelf is what you would be carrying. If item
+    /// stats ever start being scaled at spawn, this has to resolve the template through the room's
+    /// zone first or it will quietly quote the wrong numbers.
+    /// </para>
+    /// </remarks>
+    private static void AppendComparison(CommandContext ctx, ItemTemplate stock)
+    {
+        var stats = ItemStatLine.For(stock.BaseStats);
+        var slots = SlotRules.Normalize(stock.Slots);
+
+        if (stats is null && slots.Count == 0)
+        {
+            // A rope, a lamp, a loaf. The price is the whole story and a blank line under it is
+            // noise on a listing that may be twenty items long.
+            return;
+        }
+
+        var where = slots.Count == 0
+            ? null
+            : string.Join(" or ", slots.Select(SlotRules.Name));
+
+        ctx.Reply(
+            "    " + string.Join(" - ", new[] { where, stats }.Where(part => part is not null)),
+            "dim");
+
+        if (slots.Count == 0)
+        {
+            return;
+        }
+
+        // The first of the slots it could go in that already holds something. A blade for either
+        // hand is compared against whichever hand is occupied, which is the swap a player is
+        // actually weighing.
+        var equipped = ctx.World.EquipmentOf(ctx.Actor.CharacterId);
+        var worn = slots
+            .Select(slot => equipped.FirstOrDefault(i => i.EquippedSlot == slot))
+            .FirstOrDefault(i => i is not null);
+
+        if (worn is null)
+        {
+            ctx.Reply("    You have nothing there.", "dim");
+            return;
+        }
+
+        var delta = ItemStatLine.Delta(stock.BaseStats, worn.ResolvedStats);
+
+        ctx.Reply(
+            delta is null
+                ? $"    No different from your {worn.DisplayName}."
+                : $"    Against your {worn.DisplayName}: {delta}.",
+            "dim");
     }
 
     private static void Buy(CommandContext ctx)

@@ -1,58 +1,75 @@
-I would expect the offer to have the link as part of the actual text. this may take re-authoring the offer. Then once the quest is given it should give the in progress text as that is the instructions on what to do. those are the instructsion a character would get again if talking to the NPC later to remind them what to do. 
+- listing in a shop there is no way to know if an item is better than the one you have without buying it.
+- empty slots should be shown in inventory
 
-Ilvaro's House
-Exits: east
-Deacon Pell of Ilvaro's house is here.
-> talk pell
-'Still up there, are they? They are not getting lighter.'
-'They are holding things,' Pell says, and stops, and starts again. 'Somebody is missing those things. That is all I am confident about.'
-(What Sulveth Keeps — 'talk house sulveth' to take it on.)
-> talk house sulveth
-'They are holding things,' Pell says, and stops, and starts again. 'Somebody is missing those things. That is all I am confident about.'
-You take on What Sulveth Keeps.
-> talk house
-'Still up there, are they? They are not getting lighter.'
-'Six should do. Take them to the Keeper, not to me. She will know what they are. I will only guess and be wrong in front of you.'
+You are wearing/wielding:
+  [Head] helm of vision
+  [Chest] a scaled mantle
+  [Hands] a pair of measurer's gloves
+  [Legs] a plated skirt
+  [MainHand] a measured oathmaul (q)
+  [OffHand] a keening blade
 
-I would think the link should be on the things which means we have to add some sort of marker in the offer phrase to be able to author the text to include the links and trigger the right phrase to get the quest.
+- stats command should have a friendlier equipped bonus
+    Equipped Bonuses:
+  [Head] helm of vision
+    armor=10, defense=1
+  [Chest] a scaled mantle
+    armor=26
+  [Hands] a pair of measurer's gloves
+    armor=8
+  [Legs] a plated skirt
+    armor=16
+  [MainHand] a measured oathmaul
+    bonus=4, damageMax=13, damageMin=7
+  [OffHand] a keening blade
+    bonus=5, damageMax=8, damageMin=4
 
 ---
 
-## Done: the link is in the sentence, and accepting tells you what to do
+## Done: all three were the same bug
 
-**The marker is `<angle brackets>` in the offer**, and the marked words are the keyword — the same
-string, parsed back out, so there is nothing to keep in step. Not square brackets, which are what a
-writer reaches for when inserting an aside and this prose is full of people trailing off; not
-braces, which already mean *substitute a value* in the login greeting. Angle brackets appear
-nowhere in the Reaches — the pipes and square brackets that turned up in a search were all
-single-character item icons.
+**The player was being shown the builder's view of an item, or no view at all.** `Describe` prints a
+stat bag as `key=value` and belongs under `examine`'s builder block, where it is exactly right. It
+had leaked onto the `stats` screen. The shop had the opposite failure and showed nothing but a
+price.
 
-All 35 offers are re-authored. Pell now reads:
+`ItemStatLine` is the player's reading of the same six numbers, and it sits beside
+`EquipmentResolver` on purpose — every key it names is a key that class acts on, so the wording has
+to keep step with what the number does. **`bonus` is accuracy, not damage**, which is the one the
+old screen hid worst: `bonus=4` beside a damage range reads as more damage and is not.
 
-> 'They are holding things,' Pell says, and stops, and starts again. 'Somebody is missing those
-> **things**. That is all I am confident about.'
+The vocabulary is closed — six keys, and `BundleValidator` errors on a seventh — so a test asserts
+that every stat the engine reads produces a word, and that a movement in any of them shows up in a
+comparison. A number that changed a fight and appeared on no screen is how `armor`, `bonus` and
+`defense` stayed hidden once before (BUGS.md #11).
 
-Clicking *things* runs `talk pell things`, and the transcript shows that command — which is the
-point. The label is a word and the command is a command, so unlike the old parenthetical they
-differ on purpose: watching `talk pell things` appear is how the syntax gets learned.
+**Empty slots.** Your transcript shows six; there are eight. Nothing told you Feet and Trinket
+existed — a whole equipment category discoverable only by happening to pick one up. Every slot now
+prints, filled or not, and the pack listing carries each item's numbers too, since that is where
+somebody deciding what to keep is looking.
 
-**Accepting now says the in-progress line**, exactly as you asked — the same words the giver
-repeats when you come back and ask again. The offer is the pitch and you have just read it. The one
-exception is a chain step that starts itself off a turn-in: nobody pitched that one, so it still
-speaks its offer, with the markers stripped, since an invitation to take on a quest already in your
-journal is a lie.
+The `items.Count == 0` early return used to build the block and then discard it, so **the one player
+who most needs to be told there are eight slots — the one who has filled none of them — was the
+only player never shown them.** It now appends instead.
 
-**And the address in that transcript was wrong.** You typed `talk pell`; the game told you to type
-`talk house`, because the address was the last word of the mob's name and Pell is named after a
-building. It was six of the eight givers: `talk gates` for Vesh, who follows the gates, `talk
-expelled` for Sister Aveth, `talk plates` for Bellic Vane. The name is now cut at the first word
-that opens a describing clause — but the real fix is that **every command is round-tripped before
-it is sent**, back through the same targeting and matching your own typing goes through, and only
-rendered if it comes back holding the right mob and the right quest. A link that starts the wrong
-quest is not a thing that can ship; the worst case is that it degrades to the old parenthetical.
+**The shop compares.** Slot, what it does, and what changes against the piece it would replace:
 
-That is also the answer to two quests on one table marking the same word: the word means neither,
-so neither is linked, and the import refuses the content (`check-bundle` errors, demonstrated
-failing before it was believed). No giver in the Reaches can currently offer two at once — every
-multi-quest giver is a chain or a Path fan-out — so the rule is future-proofing, but Vesh's twenty
-quests are exactly where it would first go wrong. 
+```
+/ a measured oathmaul: 420 gold
+    main hand - Damage 7-13, +4 to hit
+    Against your a keening blade: +4 damage, -1 to hit.
+```
+
+It stops short of saying *better*, because three more damage for one less accuracy is a trade and
+calling that an upgrade would be guessing on your behalf. Naming what moves was the part that was
+missing — the arithmetic, not the judgement.
+
+Comparing the shelf's `BaseStats` against a worn item's `ResolvedStats` is honest only because
+`ItemSpawner` copies one into the other untouched; only `Value` is multiplied. If item stats ever
+start scaling at spawn, that comparison has to resolve the template first or it will quietly quote
+the wrong numbers. Said out loud in the code, where it would be found.
+
+**Not done: `examine` on shop stock.** It reaches your pack, the floor and the people in the room,
+and stock is a template that was never spawned. The listing now carries everything actionable, so a
+second examine path for templates would mostly duplicate `ExamineItem` and drift from it. Say if
+the description is wanted on the shelf as well.
