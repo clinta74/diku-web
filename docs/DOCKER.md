@@ -128,8 +128,12 @@ DIKUWEB_IMAGE_TAG=latest
 Local development database connection string:
 
 ```
-Server=localhost;Port=5432;Database=dikuweb;User Id=dikuweb;Password=password;
+Host=localhost;Port=5432;Database=dikuweb;Username=dikuweb;Password=dikuweb_dev_only
 ```
+
+Copied from `appsettings.Development.json`, which is the file that actually holds it — the keys are
+Npgsql's (`Host`, `Username`), not SqlClient's, and this said `Password=password` while the real one
+said otherwise.
 
 Used by:
 - `appsettings.Development.json` in .NET backend
