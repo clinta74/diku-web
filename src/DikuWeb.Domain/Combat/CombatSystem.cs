@@ -60,7 +60,7 @@ public static class CombatSystem
                 TargetId: targetName,
                 AttackerName: attackerName,
                 TargetName: targetName,
-                Damage: new DamageResult(Hit: false, IsCritical: false, DamageDealt: 0, NaturalRoll: 0),
+                Damage: new DamageResult(Hit: false, IsCritical: false, DamageDealt: 0, HitChance: 0),
                 TargetDefeated: false,
                 AttackerNarration: refusal,
                 TargetNarration: $"{attackerName} tried to attack you but cannot here.",

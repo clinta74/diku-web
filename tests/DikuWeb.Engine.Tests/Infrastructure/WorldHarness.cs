@@ -94,6 +94,18 @@ internal sealed class ScriptedChanceSource(double nextDouble, int seed = 42) : I
     /// <summary>Never rolls a chance: any probability below 1.0 fails.</summary>
     public static ScriptedChanceSource Never => new(0.999);
 
+    /// <summary>
+    /// Lands the swing but turns nothing aside.
+    /// </summary>
+    /// <remarks>
+    /// Above the largest parry chance in the game - a Warden's 0.20 - and below any hit chance a
+    /// fight worth testing produces. <see cref="Never"/> cannot be used to mean "does not parry"
+    /// any more: landing a blow is a probability now (PLAN.md §4.6) and reads the same
+    /// <see cref="IRandomSource.NextDouble"/> the parry does, so refusing every chance refuses the
+    /// swing itself and the blow that was supposed to get through never happens.
+    /// </remarks>
+    public static ScriptedChanceSource LandsUnparried => new(0.3);
+
     /// <summary>Always rolls a chance: any probability above 0 succeeds.</summary>
     public static ScriptedChanceSource Always => new(0.0);
 

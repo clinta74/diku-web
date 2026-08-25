@@ -152,12 +152,12 @@ public sealed class GuardAndMaxHealthTests
         harness.LoadTestWorld();
 
         // A deliberately decisive guard, and the size is worth explaining rather than tuning
-        // quietly. The first version used +20 and failed while the code was correct: the harness
-        // mob's attack rating is high enough to clear a defence of 30 on every roll, so a modest
-        // guard changed no outcome and the test reported a working feature as broken. Nothing here
-        // is measuring balance - the property is that the delta reaches the defender combat rolls
-        // against at all, and a value that cannot be lost in the dice is the right way to ask it.
-        var guarded = DamageTaken(guard: 500, seed: 20260814);
+        // quietly. Nothing here is measuring balance - the property is that the delta reaches the
+        // defender combat rolls against at all, and a value that cannot be lost in the dice is the
+        // right way to ask it. DamageTaken pins the mob's accuracy to its level for the same
+        // reason: the harness gives every mob a rating of 100 so that swings connect and
+        // assertions are about timing, and against that a guard of any size is lost in the clamp.
+        var guarded = DamageTaken(guard: 300, seed: 20260814);
         var open = DamageTaken(guard: 0, seed: 20260814);
 
         Assert.True(
@@ -181,6 +181,10 @@ public sealed class GuardAndMaxHealthTests
 
         var player = harness.AddPlayer("Kael", West);
         var rat = harness.AddMob("rat", West, health: 10_000);
+
+        // Its own level rather than the harness default of 100, so the guard has something it can
+        // actually move. See the note in the test above.
+        rat.ResolvedStats["attackRating"] = rat.Level;
 
         player.Character.Vitals.HealthMax = 10_000;
         player.Character.Vitals.Health = 10_000;

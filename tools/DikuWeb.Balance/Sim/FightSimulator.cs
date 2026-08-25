@@ -470,8 +470,8 @@ public sealed class FightSimulator
     // ---------------------------------------------------------------------------------------
 
     /// <summary>
-    /// Mirrors <c>CombatSystem.WithEffects</c>: guard effects fold into the armour rating through
-    /// <see cref="ArmorCurve"/> rather than sitting beside it, so the cap applies exactly once.
+    /// Mirrors <c>CombatSystem.WithEffects</c>: guard effects ride beside the armour rating rather
+    /// than being folded into it, and <see cref="DamageCalculator"/> clamps the sum once.
     /// </summary>
     private static DefenderStats WithEffects(DefenderStats stats, EffectBag effects)
     {
@@ -483,22 +483,12 @@ public sealed class FightSimulator
             return stats;
         }
 
-        var absorbed = ArmorCurve.Mitigation(stats.Armor, mitigation);
-
         return stats with
         {
             DefenseRating = Math.Max(0, stats.DefenseRating + defense),
-            Armor = RatingFor(absorbed),
+            MitigationDelta = mitigation,
         };
     }
-
-    /// <summary><see cref="ArmorCurve"/> run backwards, as the engine runs it.</summary>
-    private static int RatingFor(decimal absorbed) =>
-        absorbed <= 0m
-            ? 0
-            : absorbed >= ArmorCurve.Cap
-                ? ArmorCurve.Midpoint * 100
-                : (int)Math.Round(ArmorCurve.Midpoint * absorbed / (1m - absorbed));
 
     private static DefenderStats DefenderFor(Mob mob, EffectBag effects) =>
         WithEffects(DamageCalculator.DefenderStatsFrom(mob), effects);

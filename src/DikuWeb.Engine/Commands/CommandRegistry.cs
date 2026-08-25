@@ -1440,6 +1440,18 @@ public sealed class CommandRegistry
         var mainDelay = AttackTiming.Clamp(
             mainHand is null ? null : ctx.ItemTemplates?.Get(mainHand.TemplateKey)?.AttackDelayPulses);
 
+        // An opponent of the player's own level carrying nothing, which is what both percentages
+        // above are quoted against. Neither attack nor defence has a meaning on its own now that
+        // landing a blow is a ratio between the two - only a meaning against somebody.
+        var peer = new DefenderStats(Level: character.Level, DefenseRating: 0, Armor: 0);
+        var peerAttack = new AttackerStats(
+            Level: character.Level,
+            AttackRating: (int)Math.Round(
+                DamageCalculator.MobSkill * character.Level, MidpointRounding.AwayFromZero),
+            BaseDamage: 0,
+            MinDamage: 1,
+            MaxDamage: 1);
+
         var spans = new List<TextSpan>
         {
             new($"Combat Stats", "heading"),
@@ -1449,11 +1461,14 @@ public sealed class CommandRegistry
             new($"\n  Dice: {attack.MinDamage}-{attack.MaxDamage}, Might bonus: {attack.BaseDamage:+#;-#;+0}"),
             new($"\n  Speed: one swing every {mainDelay * 0.25:0.##}s"),
             new($"\nAttack Rating: {attack.AttackRating}", "good"),
-            // The number an attacker has to reach, shown whole rather than as its parts - it is
-            // what the player is actually being measured against, and the level term inside it is
-            // not something they can act on.
-            new($"\nDefense: {10 + (character.Level / 2) + defense.DefenseRating}", "good"),
-            new($"\n  Armour: {defense.Armor} rating, {ArmorCurve.Mitigation(defense.Armor):P0} of each hit absorbed"),
+            new($"\n  Lands {DamageCalculator.HitChance(attack, peer):P0} of swings against an even match"),
+            // Evasion whole rather than as its parts - it is what an attacker is measured against, and
+            // the level term inside it is not something the player can act on. Both percentages name an
+            // even match because neither number means anything alone any more: hit chance is a ratio, so
+            // what a guard is worth depends on who is swinging (PLAN.md 4.6).
+            new($"\nDefense: {DamageCalculator.Evasion(defense):0}", "good"),
+            new($"\n  Evaded by {1 - DamageCalculator.HitChance(peerAttack, defense):P0} of an even match's swings"),
+            new($"\n  Armour: {defense.Armor} rating, absorbs {ArmorCurve.Mitigation(defense.Armor, character.Level):P0} of an even match's blows"),
         };
 
         AppendOffHand(ctx, spans, character, equipped);

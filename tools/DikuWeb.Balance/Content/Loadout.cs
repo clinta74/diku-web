@@ -159,10 +159,11 @@ public sealed record Loadout(
     /// </summary>
     /// <remarks>
     /// <c>armor</c> and <c>defense</c> do different jobs — what a blow costs, and how often one
-    /// lands (PLAN.md §4.6) — so they cannot simply be added. A defence point moves the needed roll
-    /// by one face of twenty, which is five percent of incoming damage; near
-    /// <c>ArmorCurve.Midpoint</c> it takes roughly twenty armour to buy the same five percent. That
-    /// is where the 20 comes from. It only has to rank pieces within one realm, not price them.
+    /// lands (PLAN.md §4.6) — so they cannot simply be added. A defence point raises evasion by a
+    /// thirtieth of the wearer's level (<c>DamageCalculator.GearScale</c>), and around a
+    /// level-appropriate set it takes roughly twenty armour to buy the same reduction in damage
+    /// taken. That is where the 20 comes from. It only has to rank pieces within one realm, not
+    /// price them.
     /// </remarks>
     private static double ArmorScore(BundleItemTemplate item) =>
         Stat(item, "armor", 0) + (20 * Stat(item, "defense", 0));

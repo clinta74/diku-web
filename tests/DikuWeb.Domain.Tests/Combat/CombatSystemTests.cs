@@ -1,5 +1,6 @@
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Randomness;
+using DikuWeb.Domain.Tests.Infrastructure;
 
 namespace DikuWeb.Domain.Tests.Combat;
 
@@ -9,6 +10,7 @@ public sealed class CombatSystemTests
     public void ExecuteRound_valid_hit_deals_damage()
     {
         var attacker = new AttackerStats(
+            Level: 0,
             AttackRating: 4,
             BaseDamage: 2,
             MinDamage: 4,
@@ -19,7 +21,7 @@ public sealed class CombatSystemTests
             Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
-        var random = new SeededRandomSource(1234);
+        var random = FixedChanceSource.OrdinaryHit();
 
         var result = CombatSystem.ExecuteRound(
             CombatantType.Player,
@@ -44,6 +46,7 @@ public sealed class CombatSystemTests
     public void ExecuteRound_miss_deals_no_damage()
     {
         var attacker = new AttackerStats(
+            Level: 0,
             AttackRating: -5,
             BaseDamage: 2,
             MinDamage: 1,
@@ -54,7 +57,7 @@ public sealed class CombatSystemTests
             Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
-        var random = new SeededRandomSource(9999);
+        var random = FixedChanceSource.Never;
 
         var result = CombatSystem.ExecuteRound(
             CombatantType.Player,
@@ -78,6 +81,7 @@ public sealed class CombatSystemTests
     public void ExecuteRound_critical_hit_marked()
     {
         var attacker = new AttackerStats(
+            Level: 0,
             AttackRating: 8,
             BaseDamage: 3,
             MinDamage: 8,
@@ -114,6 +118,7 @@ public sealed class CombatSystemTests
     public void ExecuteRound_target_defeated_when_health_drops_to_zero()
     {
         var attacker = new AttackerStats(
+            Level: 0,
             AttackRating: 5,
             BaseDamage: 8,
             MinDamage: 10,
@@ -124,7 +129,7 @@ public sealed class CombatSystemTests
             Armor: 0);
 
         var validation = new TargetValidationResult(true, null);
-        var random = new SeededRandomSource(100);
+        var random = FixedChanceSource.Always;
 
         var result = CombatSystem.ExecuteRound(
             CombatantType.Player,
@@ -147,6 +152,7 @@ public sealed class CombatSystemTests
     public void ExecuteRound_target_not_defeated_if_survives()
     {
         var attacker = new AttackerStats(
+            Level: 0,
             AttackRating: -3,
             BaseDamage: 1,
             MinDamage: 1,
@@ -179,6 +185,7 @@ public sealed class CombatSystemTests
     public void ExecuteRound_validation_refusal_ends_engagement()
     {
         var attacker = new AttackerStats(
+            Level: 0,
             AttackRating: 4,
             BaseDamage: 3,
             MinDamage: 6,
@@ -213,6 +220,7 @@ public sealed class CombatSystemTests
     public void ExecuteRound_narration_includes_damage_amount()
     {
         var attacker = new AttackerStats(
+            Level: 0,
             AttackRating: 2,
             BaseDamage: 1,
             MinDamage: 4,
@@ -248,6 +256,7 @@ public sealed class CombatSystemTests
     public void ExecuteRound_narration_distinguishes_attacker_target_room()
     {
         var attacker = new AttackerStats(
+            Level: 0,
             AttackRating: 3,
             BaseDamage: 2,
             MinDamage: 5,
@@ -290,6 +299,7 @@ public sealed class CombatSystemTests
     public void ExecuteRound_mob_vs_player_allowed_in_normal_room()
     {
         var attacker = new AttackerStats(
+            Level: 0,
             AttackRating: 1,
             BaseDamage: 1,
             MinDamage: 3,
@@ -323,6 +333,7 @@ public sealed class CombatSystemTests
     public void ExecuteRound_validates_attacker_name()
     {
         var attacker = new AttackerStats(
+            Level: 0,
             AttackRating: 3,
             BaseDamage: 2,
             MinDamage: 5,
@@ -355,6 +366,7 @@ public sealed class CombatSystemTests
     public void ExecuteRound_validates_target_name()
     {
         var attacker = new AttackerStats(
+            Level: 0,
             AttackRating: 3,
             BaseDamage: 2,
             MinDamage: 5,
@@ -387,6 +399,7 @@ public sealed class CombatSystemTests
     public void ExecuteRound_returns_correct_round_info()
     {
         var attacker = new AttackerStats(
+            Level: 0,
             AttackRating: 2,
             BaseDamage: 1,
             MinDamage: 4,

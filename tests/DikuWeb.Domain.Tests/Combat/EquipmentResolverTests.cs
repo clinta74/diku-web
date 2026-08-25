@@ -14,8 +14,9 @@ public sealed class EquipmentResolverTests
             mightModifier: 2,
             equippedMainHand: null);
 
-        // Attack rating: 5/2 = 2 (integer division) + Might 2 = 4
-        Assert.Equal(4, stats.AttackRating);
+        // Accuracy: skill 1.75 x level 5 x (1 + Might 2/30) = 9.33, to 9. The whole level, and
+        // the attribute as a share of it rather than a flat addition (DamageCalculator.GearScale).
+        Assert.Equal(9, stats.AttackRating);
         // Base damage: Might modifier only
         Assert.Equal(2, stats.BaseDamage);
         // Unarmed: 1d2
@@ -43,8 +44,8 @@ public sealed class EquipmentResolverTests
             mightModifier: 1,
             equippedMainHand: weapon);
 
-        // Attack rating: 5/2 + Might 1 + weapon bonus 3 = 2 + 1 + 3 = 6
-        Assert.Equal(6, stats.AttackRating);
+        // Accuracy: 1.75 x 5 x (1 + (Might 1 + bonus 3)/30) = 9.92, to 10.
+        Assert.Equal(10, stats.AttackRating);
         // Base damage: Might 1 + weapon damage 2 = 3
         Assert.Equal(3, stats.BaseDamage);
         // Weapon dice: 6d10
@@ -64,7 +65,10 @@ public sealed class EquipmentResolverTests
         var unarmed = EquipmentResolver.ResolveAttackerStats(level: 10, mightModifier: 0, equippedMainHand: null);
         var armed = EquipmentResolver.ResolveAttackerStats(level: 10, mightModifier: 0, equippedMainHand: weapon);
 
-        Assert.Equal(unarmed.AttackRating + 2, armed.AttackRating);
+        // The bonus is worth a share of the wielder's level rather than a flat two, so this is a
+        // comparison rather than an equality: at level 10 it buys 1.75 x 10 x 2/30, a little over
+        // one point. The same weapon is worth proportionally the same at level 50.
+        Assert.True(armed.AttackRating > unarmed.AttackRating);
     }
 
     [Fact]
@@ -82,8 +86,9 @@ public sealed class EquipmentResolverTests
         var low = EquipmentResolver.ResolveAttackerStats(level: 4, mightModifier: 0, equippedMainHand: null);
         var high = EquipmentResolver.ResolveAttackerStats(level: 6, mightModifier: 0, equippedMainHand: null);
 
-        // Level difference is 2, so attack rating difference is 1
-        Assert.Equal(1, high.AttackRating - low.AttackRating);
+        // Accuracy carries the whole level now rather than half of it, times the skill factor:
+        // two levels are worth 1.75 x 2 = 3.5, which lands as 4 between 7 and 11.
+        Assert.Equal(4, high.AttackRating - low.AttackRating);
     }
 
     [Fact]
@@ -212,8 +217,9 @@ public sealed class EquipmentResolverTests
             mightModifier: -2,
             equippedMainHand: null);
 
-        // Attack rating: 8/2 + (-2) = 4 - 2 = 2
-        Assert.Equal(2, stats.AttackRating);
+        // Accuracy: 1.75 x 8 x (1 - 2/30) = 13.07, to 13. A penalty takes a share off rather
+        // than a flat amount, the same way a bonus adds one.
+        Assert.Equal(13, stats.AttackRating);
         // Base damage: -2
         Assert.Equal(-2, stats.BaseDamage);
     }

@@ -1,194 +1,215 @@
 using DikuWeb.Domain.Combat;
 using DikuWeb.Domain.Inhabitants;
 using DikuWeb.Domain.Randomness;
+using DikuWeb.Domain.Tests.Infrastructure;
 
 namespace DikuWeb.Domain.Tests.Combat;
 
 public class DamageCalculatorTests
 {
-    /// <summary>
-    /// A defender at level 0, so <c>defenseVal</c> is <c>10 + DefenseRating</c> and a test about
-    /// the roll is not also a test about the level term.
-    /// </summary>
-    private static DefenderStats Defender(int defenseRating = 0, int armor = 0) =>
-        new(Level: 0, DefenseRating: defenseRating, Armor: armor);
+    private static AttackerStats Attacker(
+        int level = 10,
+        int attackRating = 100,
+        int baseDamage = 0,
+        int minDamage = 1,
+        int maxDamage = 6) =>
+        new(level, attackRating, baseDamage, minDamage, maxDamage);
 
-    /// <summary>A seed whose first d20 is the face asked for.</summary>
-    private static SeededRandomSource RollOf(int face)
+    private static DefenderStats Defender(
+        int level = 10,
+        int defenseRating = 0,
+        int armor = 0,
+        decimal mitigationDelta = 0m) =>
+        new(level, defenseRating, armor, mitigationDelta);
+
+    /// <summary>How often this pairing landed, over enough swings for a percent to mean something.</summary>
+    private static double MeasuredHitRate(AttackerStats attacker, DefenderStats defender, int samples = 40_000)
     {
-        for (var seed = 0; seed < 100_000; seed++)
-        {
-            if (new SeededRandomSource(seed).Next(1, 21) == face)
-            {
-                return new SeededRandomSource(seed);
-            }
-        }
-
-        throw new InvalidOperationException($"No seed under 100000 rolls a {face}.");
-    }
-
-    // =========================================================================
-    // Hit / Miss Basics
-    // =========================================================================
-
-    [Fact]
-    public void Basic_hit_when_attack_meets_defense()
-    {
-        var attacker = new AttackerStats(AttackRating: 5, BaseDamage: 3, MinDamage: 1, MaxDamage: 6);
-
-        // defenseVal 14, so a 9 or better lands. Rolling 15.
-        var result = DamageCalculator.CalculateDamage(attacker, Defender(defenseRating: 4), RollOf(15));
-
-        Assert.True(result.Hit);
-        Assert.NotEqual(0, result.DamageDealt);
-    }
-
-    [Fact]
-    public void Miss_when_attack_less_than_defense()
-    {
-        var attacker = new AttackerStats(AttackRating: 2, BaseDamage: 3, MinDamage: 1, MaxDamage: 6);
-
-        // defenseVal 20, so an 18 or better lands. Rolling 3.
-        var result = DamageCalculator.CalculateDamage(attacker, Defender(defenseRating: 10), RollOf(3));
-
-        Assert.False(result.Hit);
-        Assert.Equal(0, result.DamageDealt);
-    }
-
-    [Fact]
-    public void Hit_exactly_at_defense_threshold()
-    {
-        var attacker = new AttackerStats(AttackRating: 5, BaseDamage: 2, MinDamage: 1, MaxDamage: 6);
-
-        // defenseVal 15, attackRating 5, so exactly 10 is needed.
-        Assert.False(DamageCalculator.CalculateDamage(attacker, Defender(defenseRating: 5), RollOf(9)).Hit);
-        Assert.True(DamageCalculator.CalculateDamage(attacker, Defender(defenseRating: 5), RollOf(10)).Hit);
-    }
-
-    // =========================================================================
-    // The two ends are always open (PLAN.md §4.6)
-    // =========================================================================
-
-    [Fact]
-    public void A_natural_1_always_misses_however_outmatched_the_defender_is()
-    {
-        // Nothing may be authored into certainty. Without the clamp this attacker needs a -30 and
-        // would land every blow it ever threw.
-        var overwhelming = new AttackerStats(AttackRating: 500, BaseDamage: 5, MinDamage: 1, MaxDamage: 6);
-
-        var result = DamageCalculator.CalculateDamage(overwhelming, Defender(), RollOf(1));
-
-        Assert.False(result.Hit);
-    }
-
-    [Fact]
-    public void A_natural_20_always_hits_however_defended_the_defender_is()
-    {
-        var hopeless = new AttackerStats(AttackRating: -50, BaseDamage: 5, MinDamage: 1, MaxDamage: 6);
-        var fortress = new DefenderStats(Level: 50, DefenseRating: 500, Armor: 100_000);
-
-        var result = DamageCalculator.CalculateDamage(hopeless, fortress, RollOf(20));
-
-        Assert.True(result.Hit);
-        Assert.True(result.DamageDealt >= 1);
-    }
-
-    [Fact]
-    public void No_defender_can_be_missed_more_than_ninety_five_percent_of_the_time()
-    {
-        var hopeless = new AttackerStats(AttackRating: 0, BaseDamage: 1, MinDamage: 1, MaxDamage: 1);
-        var fortress = new DefenderStats(Level: 50, DefenseRating: 900, Armor: 0);
-
+        var random = new SeededRandomSource(20260825);
         var hits = 0;
-        for (var seed = 0; seed < 4000; seed++)
+
+        for (var i = 0; i < samples; i++)
         {
-            if (DamageCalculator.CalculateDamage(hopeless, fortress, new SeededRandomSource(seed)).Hit)
+            if (DamageCalculator.CalculateDamage(attacker, defender, random).Hit)
             {
                 hits++;
             }
         }
 
-        // Exactly the natural 20s, which is one face in twenty.
-        Assert.InRange(hits / 4000d, 0.02, 0.08);
+        return (double)hits / samples;
     }
 
     // =========================================================================
-    // Level cancels, which is what keeps the die deciding (PLAN.md §4.6)
+    // Hit chance is a ratio of powers
     // =========================================================================
 
     [Fact]
-    public void An_even_matchup_needs_the_same_roll_at_every_level()
+    public void An_even_match_is_a_coin()
     {
-        // Attack rating and the number to beat both carry level/2, so two evenly matched
-        // combatants face the same die at level 2 and at level 50. Before this, the gap widened
-        // by level/4 until the d20 could no longer express it and everything hit everything.
-        int? needed = null;
+        // Equal accuracy against equal evasion is 50/50 by construction - the ratio's whole point
+        // is that this is true of the arithmetic rather than of a chosen constant.
+        Assert.Equal(0.5, DamageCalculator.HitChance(Attacker(attackRating: 40), Defender(level: 40)), precision: 6);
+    }
 
-        foreach (var level in new[] { 2, 10, 20, 30, 40, 50 })
-        {
-            var attacker = new AttackerStats(
-                AttackRating: level / 2, BaseDamage: 0, MinDamage: 1, MaxDamage: 1);
-            var defender = new DefenderStats(Level: level, DefenseRating: 0, Armor: 0);
+    [Fact]
+    public void What_a_swing_rolls_against_is_what_it_actually_lands()
+    {
+        // The measured rate has to match the advertised one, or the number the stats screen shows
+        // is decoration.
+        var attacker = Attacker(attackRating: 60);
+        var defender = Defender(level: 40, defenseRating: 10);
 
-            var lowest = Enumerable.Range(1, 20).First(face =>
-                DamageCalculator.CalculateDamage(attacker, defender, RollOf(face)).Hit);
+        var advertised = DamageCalculator.HitChance(attacker, defender);
 
-            needed ??= lowest;
-            Assert.Equal(needed, lowest);
-        }
+        Assert.InRange(MeasuredHitRate(attacker, defender), advertised - 0.01, advertised + 0.01);
+    }
+
+    [Fact]
+    public void More_accuracy_helps_and_more_evasion_hurts()
+    {
+        var baseline = DamageCalculator.HitChance(Attacker(attackRating: 50), Defender(level: 40));
+
+        Assert.True(DamageCalculator.HitChance(Attacker(attackRating: 70), Defender(level: 40)) > baseline);
+        Assert.True(DamageCalculator.HitChance(Attacker(attackRating: 50), Defender(level: 40, defenseRating: 20)) < baseline);
     }
 
     [Fact]
     public void A_higher_level_defender_is_harder_to_hit()
     {
-        // The level term cancelling at parity must not mean level stops mattering across it.
-        var attacker = new AttackerStats(AttackRating: 5, BaseDamage: 0, MinDamage: 1, MaxDamage: 1);
+        var attacker = Attacker(attackRating: 50);
 
-        var lowLevel = Enumerable.Range(1, 20).First(face => DamageCalculator
-            .CalculateDamage(attacker, new DefenderStats(10, 0, 0), RollOf(face)).Hit);
-        var highLevel = Enumerable.Range(1, 20).First(face => DamageCalculator
-            .CalculateDamage(attacker, new DefenderStats(40, 0, 0), RollOf(face)).Hit);
-
-        Assert.True(highLevel > lowLevel, $"needed {highLevel} at level 40 vs {lowLevel} at level 10");
+        Assert.True(
+            DamageCalculator.HitChance(attacker, Defender(level: 40)) <
+            DamageCalculator.HitChance(attacker, Defender(level: 10)));
     }
 
-    // =========================================================================
-    // Critical Hits
-    // =========================================================================
-
+    /// <summary>
+    /// The property the d20 could not have, and the reason it was replaced.
+    /// </summary>
+    /// <remarks>
+    /// The old formula spent <c>(defLevel − attLevel)/2</c> faces on the level gap out of nineteen,
+    /// while the gap that still pays experience is <c>L/2</c> levels wide — so the same matchup got
+    /// steadily more lopsided the higher both sides were. A ratio has no width to run out of: an
+    /// attacker at three quarters of the defender's level faces the same odds at every level.
+    /// </remarks>
     [Fact]
-    public void Natural_20_is_critical()
+    public void The_same_matchup_is_the_same_odds_at_every_level()
     {
-        var attacker = new AttackerStats(AttackRating: 15, BaseDamage: 2, MinDamage: 1, MaxDamage: 6);
+        double? expected = null;
 
-        var result = DamageCalculator.CalculateDamage(attacker, Defender(defenseRating: 5), RollOf(20));
-
-        Assert.True(result.Hit);
-        Assert.True(result.IsCritical);
-    }
-
-    [Fact]
-    public void Overshooting_the_defence_is_not_a_critical()
-    {
-        // A crit used to also trigger on beating the defence by ten or more. Overshoot grows with
-        // the level gap without bound, so at level 50 every landed mob blow was a critical and the
-        // dice were rolled twice on all of them. Only the face counts now.
-        var overwhelming = new AttackerStats(AttackRating: 60, BaseDamage: 2, MinDamage: 1, MaxDamage: 6);
-
-        foreach (var face in new[] { 1, 7, 12, 19 })
+        foreach (var level in new[] { 8, 16, 24, 32, 40, 48 })
         {
-            var result = DamageCalculator.CalculateDamage(overwhelming, Defender(), RollOf(face));
-            Assert.False(result.IsCritical, $"natural {face} beat the defence by 50 and must not crit");
+            var attacker = Attacker(level: level * 3 / 4, attackRating: level * 3 / 4);
+            var chance = DamageCalculator.HitChance(attacker, Defender(level: level));
+
+            expected ??= chance;
+            Assert.InRange(chance, expected.Value - 0.02, expected.Value + 0.02);
         }
+    }
+
+    // =========================================================================
+    // Nobody is ever certain, either way
+    // =========================================================================
+
+    [Fact]
+    public void The_most_outmatched_attacker_still_lands_something()
+    {
+        var hopeless = Attacker(attackRating: 1);
+        var fortress = Defender(level: 50, defenseRating: 100_000, armor: 100_000);
+
+        Assert.Equal(DamageCalculator.MinHitChance, DamageCalculator.HitChance(hopeless, fortress));
+        Assert.InRange(MeasuredHitRate(hopeless, fortress), 0.03, 0.07);
+    }
+
+    [Fact]
+    public void The_most_overwhelming_attacker_still_misses_sometimes()
+    {
+        var overwhelming = Attacker(attackRating: 100_000);
+        var helpless = Defender(level: 1, defenseRating: -50);
+
+        Assert.Equal(DamageCalculator.MaxHitChance, DamageCalculator.HitChance(overwhelming, helpless));
+        Assert.InRange(MeasuredHitRate(overwhelming, helpless), 0.93, 0.97);
+    }
+
+    [Fact]
+    public void Being_defenceless_is_never_a_defence()
+    {
+        // Evasion is floored before it is squared. A negative agility modifier, or an expose that
+        // strips a guard past nothing, would otherwise square back into a positive and protect.
+        var attacker = Attacker(attackRating: 30);
+
+        Assert.True(
+            DamageCalculator.HitChance(attacker, Defender(level: 0, defenseRating: -40)) >=
+            DamageCalculator.HitChance(attacker, Defender(level: 0, defenseRating: 0)));
+    }
+
+    [Fact]
+    public void An_attacker_with_no_accuracy_at_all_is_not_a_divide_by_zero()
+    {
+        Assert.Equal(DamageCalculator.MinHitChance, DamageCalculator.HitChance(Attacker(attackRating: 0), Defender()));
+        Assert.Equal(DamageCalculator.MinHitChance, DamageCalculator.HitChance(Attacker(attackRating: -5), Defender()));
+    }
+
+    // =========================================================================
+    // Criticals are their own roll
+    // =========================================================================
+
+    /// <summary>
+    /// The bug that ended the d20, asserted so it cannot come back.
+    /// </summary>
+    /// <remarks>
+    /// A critical used to be a natural 20, which is also the only face that beats a maxed-out
+    /// defence — so the harder a defender was to hit, the larger the share of what reached them was
+    /// doubled, reaching *all of it* at the clamp. A level 48 saw a level 28 mob, still worth a
+    /// fifth of full experience, land nothing but criticals.
+    /// </remarks>
+    [Fact]
+    public void The_critical_share_of_landed_blows_does_not_move_with_the_defence()
+    {
+        foreach (var defenceRating in new[] { 0, 10, 40, 200, 100_000 })
+        {
+            var attacker = Attacker(attackRating: 50, minDamage: 1, maxDamage: 6);
+            var defender = Defender(level: 30, defenseRating: defenceRating);
+            var random = new SeededRandomSource(4242);
+
+            int hits = 0, crits = 0;
+            for (var i = 0; i < 200_000; i++)
+            {
+                var result = DamageCalculator.CalculateDamage(attacker, defender, random);
+                if (!result.Hit)
+                {
+                    continue;
+                }
+
+                hits++;
+                if (result.IsCritical)
+                {
+                    crits++;
+                }
+            }
+
+            var share = (double)crits / hits;
+            Assert.InRange(share, DamageCalculator.CriticalChance - 0.015, DamageCalculator.CriticalChance + 0.015);
+        }
+    }
+
+    [Fact]
+    public void A_missed_swing_is_never_a_critical()
+    {
+        var result = DamageCalculator.CalculateDamage(Attacker(), Defender(), FixedChanceSource.Never);
+
+        Assert.False(result.Hit);
+        Assert.False(result.IsCritical);
+        Assert.Equal(0, result.DamageDealt);
     }
 
     [Fact]
     public void Critical_hits_sum_both_dice_rather_than_taking_the_better()
     {
         // Fixed dice make the rule visible: with a 4-4 weapon and no modifier, a crit must deal 8.
-        var attacker = new AttackerStats(AttackRating: 10, BaseDamage: 0, MinDamage: 4, MaxDamage: 4);
+        var attacker = Attacker(attackRating: 100, baseDamage: 0, minDamage: 4, maxDamage: 4);
 
-        var result = DamageCalculator.CalculateDamage(attacker, Defender(), RollOf(20));
+        var result = DamageCalculator.CalculateDamage(attacker, Defender(), FixedChanceSource.Always);
 
         Assert.True(result.IsCritical);
         Assert.Equal(8, result.DamageDealt);
@@ -198,68 +219,102 @@ public class DamageCalculatorTests
     public void The_flat_modifier_is_added_once_on_a_crit_not_twice()
     {
         // Dice twice, modifier once: a 4-4 weapon with +3 Might crits for 4 + 4 + 3.
-        var attacker = new AttackerStats(AttackRating: 10, BaseDamage: 3, MinDamage: 4, MaxDamage: 4);
+        var attacker = Attacker(attackRating: 100, baseDamage: 3, minDamage: 4, maxDamage: 4);
 
-        var result = DamageCalculator.CalculateDamage(attacker, Defender(), RollOf(20));
+        var result = DamageCalculator.CalculateDamage(attacker, Defender(), FixedChanceSource.Always);
 
         Assert.True(result.IsCritical);
         Assert.Equal(11, result.DamageDealt);
     }
 
+    [Fact]
+    public void An_ordinary_hit_rolls_the_dice_once()
+    {
+        var attacker = Attacker(attackRating: 100, baseDamage: 3, minDamage: 4, maxDamage: 4);
+
+        var result = DamageCalculator.CalculateDamage(attacker, Defender(), FixedChanceSource.OrdinaryHit());
+
+        Assert.True(result.Hit);
+        Assert.False(result.IsCritical);
+        Assert.Equal(7, result.DamageDealt);
+    }
+
     // =========================================================================
-    // Armor absorbs a fraction (ArmorCurve)
+    // Armour absorbs a fraction, measured against the attacker
     // =========================================================================
 
     [Fact]
     public void Armor_reduces_damage()
     {
-        var attacker = new AttackerStats(AttackRating: 10, BaseDamage: 40, MinDamage: 1, MaxDamage: 6);
+        var attacker = Attacker(level: 10, attackRating: 100, baseDamage: 10, minDamage: 10, maxDamage: 10);
 
-        // Same face both times, so the dice are identical and armour is the only difference.
-        var armoured = DamageCalculator.CalculateDamage(attacker, Defender(armor: 100), RollOf(15));
-        var bare = DamageCalculator.CalculateDamage(attacker, Defender(), RollOf(15));
+        var bare = DamageCalculator.CalculateDamage(attacker, Defender(), FixedChanceSource.OrdinaryHit());
+        var armoured = DamageCalculator.CalculateDamage(attacker, Defender(armor: 100), FixedChanceSource.OrdinaryHit());
 
-        Assert.True(armoured.Hit);
-        Assert.True(bare.Hit);
-        Assert.True(
-            armoured.DamageDealt < bare.DamageDealt,
-            $"armour should reduce damage: {armoured.DamageDealt} vs {bare.DamageDealt}");
+        Assert.True(armoured.DamageDealt < bare.DamageDealt);
     }
 
     [Fact]
-    public void Armor_at_the_midpoint_halves_the_blow()
+    public void Armor_matching_the_attackers_bite_halves_the_blow()
     {
-        // The one sentence the whole curve is tuned against: a rating equal to Midpoint absorbs
-        // half. Fixed dice so the assertion is arithmetic rather than a range.
-        var attacker = new AttackerStats(AttackRating: 30, BaseDamage: 0, MinDamage: 40, MaxDamage: 40);
+        // The one sentence every authored armour value is chosen against: a rating of
+        // Bite x attackerLevel absorbs half.
+        var attacker = Attacker(level: 10, attackRating: 100, baseDamage: 0, minDamage: 20, maxDamage: 20);
+        var defender = Defender(armor: ArmorCurve.Bite * 10);
 
-        var result = DamageCalculator.CalculateDamage(
-            attacker, Defender(armor: ArmorCurve.Midpoint), RollOf(10));
+        var result = DamageCalculator.CalculateDamage(attacker, defender, FixedChanceSource.OrdinaryHit());
 
-        Assert.True(result.Hit);
-        Assert.Equal(20, result.DamageDealt);
+        Assert.Equal(10, result.DamageDealt);
+    }
+
+    /// <summary>
+    /// The property a global constant could not give armour, and the reason it was replaced.
+    /// </summary>
+    /// <remarks>
+    /// <c>armor / (armor + 100)</c> meant an armour point was worth the same against everything, so
+    /// mitigation crept upward tier by tier - 20% in Ossara to 60% in Nemhal, measured across the
+    /// authored realms - and endgame content was on its way to simply sitting on the cap.
+    /// </remarks>
+    [Fact]
+    public void The_same_armour_absorbs_more_from_a_weaker_attacker()
+    {
+        Assert.True(ArmorCurve.Mitigation(150, attackerLevel: 20) > ArmorCurve.Mitigation(150, attackerLevel: 40));
+    }
+
+    [Fact]
+    public void A_level_appropriate_set_absorbs_the_same_share_at_every_tier()
+    {
+        // Content authors a full set at roughly 3.5 x level. That has to mean the same thing in
+        // Ossara and in the Unlit, or builders are aiming at a number they cannot see.
+        decimal? expected = null;
+
+        foreach (var level in new[] { 6, 18, 29, 40, 50 })
+        {
+            var absorbed = ArmorCurve.Mitigation((int)(3.5 * level), attackerLevel: level);
+
+            expected ??= absorbed;
+            Assert.InRange(absorbed, expected.Value - 0.02m, expected.Value + 0.02m);
+        }
     }
 
     [Fact]
     public void No_amount_of_armor_reaches_immunity()
     {
-        // The property the old flat subtraction could not have: absurd input, bounded output.
-        var attacker = new AttackerStats(AttackRating: 30, BaseDamage: 0, MinDamage: 400, MaxDamage: 400);
+        var attacker = Attacker(level: 50, attackRating: 100, baseDamage: 0, minDamage: 1000, maxDamage: 1000);
+        var defender = Defender(armor: int.MaxValue);
 
-        var result = DamageCalculator.CalculateDamage(attacker, Defender(armor: 100_000_000), RollOf(10));
+        var result = DamageCalculator.CalculateDamage(attacker, defender, FixedChanceSource.OrdinaryHit());
 
-        Assert.True(result.Hit);
-
-        // The cap binds long before the curve does, so a quarter of the blow always lands.
-        Assert.Equal(100, result.DamageDealt);
+        // The cap leaves a quarter of every blow that lands.
+        Assert.Equal(250, result.DamageDealt);
     }
 
     [Fact]
     public void Armor_cannot_reduce_a_landed_blow_below_one()
     {
-        var attacker = new AttackerStats(AttackRating: 10, BaseDamage: 0, MinDamage: 1, MaxDamage: 1);
+        var attacker = Attacker(level: 50, attackRating: 100, baseDamage: 0, minDamage: 1, maxDamage: 1);
 
-        var result = DamageCalculator.CalculateDamage(attacker, Defender(armor: 10_000), RollOf(10));
+        var result = DamageCalculator.CalculateDamage(attacker, Defender(armor: 100_000), FixedChanceSource.OrdinaryHit());
 
         Assert.True(result.Hit);
         Assert.Equal(1, result.DamageDealt);
@@ -268,103 +323,48 @@ public class DamageCalculatorTests
     [Fact]
     public void Negative_armor_absorbs_nothing_rather_than_amplifying()
     {
-        var attacker = new AttackerStats(AttackRating: 10, BaseDamage: 0, MinDamage: 20, MaxDamage: 20);
+        var attacker = Attacker(level: 10, attackRating: 100, baseDamage: 0, minDamage: 10, maxDamage: 10);
 
-        var negative = DamageCalculator.CalculateDamage(attacker, Defender(armor: -500), RollOf(10));
-        var none = DamageCalculator.CalculateDamage(attacker, Defender(armor: 0), RollOf(10));
+        var result = DamageCalculator.CalculateDamage(attacker, Defender(armor: -500), FixedChanceSource.OrdinaryHit());
 
-        Assert.Equal(none.DamageDealt, negative.DamageDealt);
-    }
-
-    // =========================================================================
-    // Negative Modifiers
-    // =========================================================================
-
-    [Fact]
-    public void Negative_attack_rating_increases_difficulty()
-    {
-        var weak = new AttackerStats(AttackRating: -5, BaseDamage: 5, MinDamage: 1, MaxDamage: 6);
-        var strong = new AttackerStats(AttackRating: 5, BaseDamage: 5, MinDamage: 1, MaxDamage: 6);
-
-        // defenseVal 15: the weak one needs a 20, the strong one a 10. Both roll 15.
-        Assert.False(DamageCalculator.CalculateDamage(weak, Defender(defenseRating: 5), RollOf(15)).Hit);
-        Assert.True(DamageCalculator.CalculateDamage(strong, Defender(defenseRating: 5), RollOf(15)).Hit);
+        Assert.Equal(10, result.DamageDealt);
     }
 
     [Fact]
-    public void Negative_defense_rating_makes_easier_to_hit()
+    public void A_guard_effects_mitigation_rides_beside_the_rating()
     {
-        var attacker = new AttackerStats(AttackRating: 2, BaseDamage: 5, MinDamage: 1, MaxDamage: 6);
+        // Carried on DefenderStats rather than folded back into an armour rating: the curve reads
+        // the attacker's level now, so there is no rating that means "this much absorption" until
+        // you know who is swinging.
+        var attacker = Attacker(level: 10, attackRating: 100, baseDamage: 0, minDamage: 100, maxDamage: 100);
 
-        Assert.False(DamageCalculator.CalculateDamage(attacker, Defender(defenseRating: 5), RollOf(5)).Hit);
-        Assert.True(DamageCalculator.CalculateDamage(attacker, Defender(defenseRating: -5), RollOf(5)).Hit);
-    }
+        var plain = DamageCalculator.CalculateDamage(attacker, Defender(armor: 50), FixedChanceSource.OrdinaryHit());
+        var guarded = DamageCalculator.CalculateDamage(
+            attacker, Defender(armor: 50, mitigationDelta: 0.20m), FixedChanceSource.OrdinaryHit());
 
-    // =========================================================================
-    // Damage Variance
-    // =========================================================================
-
-    [Fact]
-    public void Damage_varies_within_weapon_range()
-    {
-        var attacker = new AttackerStats(AttackRating: 10, BaseDamage: 0, MinDamage: 1, MaxDamage: 6);
-
-        var damageValues = new HashSet<int>();
-
-        for (var i = 1; i <= 100; i++)
-        {
-            var result = DamageCalculator.CalculateDamage(attacker, Defender(), new SeededRandomSource(i * 17));
-            if (result.Hit)
-            {
-                damageValues.Add(result.DamageDealt);
-            }
-        }
-
-        Assert.True(damageValues.Count > 1, "Damage should vary across runs");
-
-        // A crit sums two dice, so the reachable ceiling is two maximum faces rather than one.
-        Assert.All(damageValues, d => Assert.True(d >= 1 && d <= 12, $"Damage {d} outside 1-12"));
-    }
-
-    // =========================================================================
-    // Natural Roll Tracking
-    // =========================================================================
-
-    [Fact]
-    public void Natural_roll_is_tracked()
-    {
-        var attacker = new AttackerStats(AttackRating: 0, BaseDamage: 1, MinDamage: 1, MaxDamage: 1);
-
-        var result = DamageCalculator.CalculateDamage(attacker, Defender(), new SeededRandomSource(42));
-
-        Assert.InRange(result.NaturalRoll, 1, 20);
+        Assert.Equal(plain.DamageDealt - 20, guarded.DamageDealt);
     }
 
     [Fact]
-    public void Natural_roll_range_covers_all_values()
+    public void Stacked_mitigation_is_still_held_at_the_cap()
     {
-        var attacker = new AttackerStats(AttackRating: 0, BaseDamage: 1, MinDamage: 1, MaxDamage: 1);
+        var attacker = Attacker(level: 10, attackRating: 100, baseDamage: 0, minDamage: 100, maxDamage: 100);
+        var defender = Defender(armor: 50, mitigationDelta: 0.90m);
 
-        var rolls = new HashSet<int>();
-        for (var seed = 0; seed < 1000; seed++)
-        {
-            rolls.Add(DamageCalculator
-                .CalculateDamage(attacker, Defender(), new SeededRandomSource(seed)).NaturalRoll);
-        }
+        var result = DamageCalculator.CalculateDamage(attacker, defender, FixedChanceSource.OrdinaryHit());
 
-        Assert.True(rolls.Count >= 15, $"Expected at least 15 different rolls in 1000 attempts, got {rolls.Count}");
-        Assert.All(rolls, r => Assert.InRange(r, 1, 20));
+        Assert.Equal(25, result.DamageDealt);
     }
 
     // =========================================================================
-    // Determinism
+    // Determinism and reporting
     // =========================================================================
 
     [Fact]
     public void Same_inputs_same_seed_same_output()
     {
-        var attacker = new AttackerStats(AttackRating: 7, BaseDamage: 3, MinDamage: 2, MaxDamage: 8);
-        var defender = new DefenderStats(Level: 12, DefenseRating: 4, Armor: 30);
+        var attacker = Attacker(level: 12, attackRating: 40, baseDamage: 3, minDamage: 2, maxDamage: 8);
+        var defender = Defender(level: 12, defenseRating: 4, armor: 30);
 
         var first = DamageCalculator.CalculateDamage(attacker, defender, new SeededRandomSource(42));
         var second = DamageCalculator.CalculateDamage(attacker, defender, new SeededRandomSource(42));
@@ -373,18 +373,33 @@ public class DamageCalculatorTests
     }
 
     [Fact]
-    public void Different_seeds_different_results()
+    public void The_result_reports_the_chance_it_was_measured_against()
     {
-        var attacker = new AttackerStats(AttackRating: 0, BaseDamage: 0, MinDamage: 1, MaxDamage: 6);
+        var attacker = Attacker(attackRating: 55);
+        var defender = Defender(level: 30, defenseRating: 5);
 
-        var results = new HashSet<int>();
-        for (var seed = 1; seed <= 20; seed++)
+        var result = DamageCalculator.CalculateDamage(attacker, defender, new SeededRandomSource(1));
+
+        Assert.Equal(DamageCalculator.HitChance(attacker, defender), result.HitChance, precision: 10);
+    }
+
+    [Fact]
+    public void Damage_varies_within_weapon_range()
+    {
+        var attacker = Attacker(attackRating: 100, baseDamage: 0, minDamage: 1, maxDamage: 6);
+        var dealt = new HashSet<int>();
+
+        for (var seed = 0; seed < 200; seed++)
         {
-            results.Add(DamageCalculator
-                .CalculateDamage(attacker, Defender(), new SeededRandomSource(seed)).NaturalRoll);
+            var result = DamageCalculator.CalculateDamage(attacker, Defender(), FixedChanceSource.OrdinaryHit(seed));
+            if (result.Hit)
+            {
+                dealt.Add(result.DamageDealt);
+            }
         }
 
-        Assert.True(results.Count > 1);
+        Assert.True(dealt.Count > 1, "Damage should vary across runs");
+        Assert.All(dealt, d => Assert.InRange(d, 1, 6));
     }
 
     // =========================================================================
@@ -394,9 +409,9 @@ public class DamageCalculatorTests
     [Fact]
     public void Zero_base_damage_still_hits()
     {
-        var attacker = new AttackerStats(AttackRating: 10, BaseDamage: 0, MinDamage: 1, MaxDamage: 6);
+        var attacker = Attacker(attackRating: 100, baseDamage: 0, minDamage: 1, maxDamage: 6);
 
-        var result = DamageCalculator.CalculateDamage(attacker, Defender(), RollOf(15));
+        var result = DamageCalculator.CalculateDamage(attacker, Defender(), FixedChanceSource.OrdinaryHit());
 
         Assert.True(result.Hit);
         Assert.True(result.DamageDealt >= 1);
@@ -406,9 +421,9 @@ public class DamageCalculatorTests
     public void Negative_base_damage_reduced_by_roll()
     {
         // Fixed 1-1 dice so the clamp is what is being tested: a hit gives 1 - 2 = -1, which floors.
-        var attacker = new AttackerStats(AttackRating: 10, BaseDamage: -2, MinDamage: 1, MaxDamage: 1);
+        var attacker = Attacker(attackRating: 100, baseDamage: -2, minDamage: 1, maxDamage: 1);
 
-        var result = DamageCalculator.CalculateDamage(attacker, Defender(), RollOf(15));
+        var result = DamageCalculator.CalculateDamage(attacker, Defender(), FixedChanceSource.OrdinaryHit());
 
         Assert.True(result.Hit);
         Assert.Equal(1, result.DamageDealt);
@@ -417,14 +432,13 @@ public class DamageCalculatorTests
     [Fact]
     public void Very_high_damage_values_work()
     {
-        var attacker = new AttackerStats(
-            AttackRating: 50, BaseDamage: 1000, MinDamage: 100, MaxDamage: 200);
+        var attacker = Attacker(level: 10, attackRating: 100, baseDamage: 1000, minDamage: 100, maxDamage: 200);
 
-        var result = DamageCalculator.CalculateDamage(attacker, Defender(armor: 10), RollOf(15));
+        var result = DamageCalculator.CalculateDamage(attacker, Defender(armor: 10), FixedChanceSource.OrdinaryHit());
 
         Assert.True(result.Hit);
 
-        // 1100 at the very least, less the ~9% a rating of 10 absorbs.
+        // 1100 at the very least, less the ~17% a rating of 10 absorbs from a level 10 attacker.
         Assert.True(result.DamageDealt > 900, $"dealt {result.DamageDealt}");
     }
 
@@ -439,9 +453,11 @@ public class DamageCalculatorTests
 
         var stats = DamageCalculator.StatsFrom(mob);
 
-        // level / 2, plus the baseline that stands for competence rather than level. Without it
-        // the level term cancels against the defence and no mob can reach a geared character.
-        Assert.Equal(10, stats.AttackRating);
+        // The mob's level, times the skill factor that stands for competence rather than level.
+        // This was `level/2 + 6` while the number had to fit inside twenty faces beside a base
+        // of 10; accuracy is one side of a ratio now and has no budget to fit inside.
+        Assert.Equal(9, stats.Level);
+        Assert.Equal(11, stats.AttackRating);   // round(1.25 x 9)
 
         // Every face of the die scales, and the flat adder is gone: all the level scaling is in
         // one place, so an authored `damage` means what it says.
@@ -487,8 +503,8 @@ public class DamageCalculatorTests
     [Fact]
     public void Mob_defence_is_zero_unless_the_template_says_otherwise()
     {
-        // It used to be level/4 on top of a defence that did not carry level at all. The formula
-        // owns the level term now, so silence means "no harder than its level already makes it".
+        // The mob's own level is already the bulk of its evasion, so silence means "no harder to
+        // hit than its level already makes it".
         var mob = NewMob(level: 40, stats: new() { { "health", 40 } });
 
         var defence = DamageCalculator.DefenderStatsFrom(mob);
@@ -496,6 +512,7 @@ public class DamageCalculatorTests
         Assert.Equal(40, defence.Level);
         Assert.Equal(0, defence.DefenseRating);
         Assert.Equal(0, defence.Armor);
+        Assert.Equal(0m, defence.MitigationDelta);
     }
 
     [Fact]
@@ -507,7 +524,7 @@ public class DamageCalculatorTests
 
         Assert.Equal(4, stats.MinDamage);
         Assert.Equal(7, stats.MaxDamage);
-        Assert.Equal(10, stats.AttackRating);
+        Assert.Equal(11, stats.AttackRating);
 
         // No hidden adder on top of authored dice. A template that says 4-7 deals 4-7, and its
         // level scaling comes from the zone dials (§4.4) like everything else about it.
@@ -564,7 +581,9 @@ public class DamageCalculatorTests
         var attack = DamageCalculator.StatsFrom(mob);
         var defence = DamageCalculator.DefenderStatsFrom(mob);
 
-        Assert.Equal(15, attack.AttackRating);
+        // An authored rating replaces the level, and then takes the same skill factor every other
+        // mob takes - so two mobs with the same number are equally accurate however they got it.
+        Assert.Equal(19, attack.AttackRating);   // round(1.25 x 15)
         Assert.Equal(12, defence.DefenseRating);
         Assert.Equal(30, defence.Armor);
     }
@@ -577,7 +596,10 @@ public class DamageCalculatorTests
         var mob = NewMob(level: 1, stats: new() { { "damageMin", 9 }, { "damageMax", 2 } });
 
         var stats = DamageCalculator.StatsFrom(mob);
-        var result = DamageCalculator.CalculateDamage(stats, Defender(), RollOf(15));
+
+        // Forced to land, because what is being tested is the roll not throwing - a level 1 mob
+        // against anything else would spend the test missing.
+        var result = DamageCalculator.CalculateDamage(stats, Defender(level: 1), FixedChanceSource.Always);
 
         Assert.True(stats.MaxDamage >= stats.MinDamage);
         Assert.True(result.DamageDealt >= 1);

@@ -89,10 +89,19 @@ public sealed class RiderNarrationTests
             Assert.DoesNotContain(".", Word(Struck(key)), StringComparison.Ordinal);
         }
 
+        // Just the sentence the rider announces itself in, not the rest of the fight. Reading to
+        // the end of the log meant this passed or failed on whether another line happened to
+        // follow - any "You cut a rat for 2 damage." after it carries a dot of its own.
         static string Word(string text)
         {
             var start = text.IndexOf("You are ", StringComparison.Ordinal);
-            return start < 0 ? string.Empty : text[start..];
+            if (start < 0)
+            {
+                return string.Empty;
+            }
+
+            var end = text.IndexOf('!', start);
+            return end < 0 ? text[start..] : text[start..end];
         }
     }
 }

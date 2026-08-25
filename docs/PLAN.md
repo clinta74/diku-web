@@ -764,45 +764,74 @@ section rather than left to be discovered.
 Explicitly not THAC0. Each round, per attack:
 
 ```
-attackRating = level/2 + MightMod + weaponBonus       (a mob: level/2 + 6)
-defenseVal   = 10 + level/2 + defenseRating           defenseRating = AgilityMod + Σ item defense
-needed       = clamp(defenseVal − attackRating, 2, 20)
+accuracy   = 1.75 × (level + MightMod + weaponBonus)  a mob: 1.25 × level
+evasion    = level + AgilityMod + Σ item defense + Σ active guards
+hitChance  = clamp(accuracy² / (accuracy² + evasion²), 0.05, 0.95)
 
-miss   if natural d20 <  needed
-hit    if natural d20 >= needed
-crit   if natural 20                                  → damage dice rolled twice, modifier once
+miss   with probability 1 − hitChance
+hit    with probability hitChance
+crit   an independent 5% roll on a blow that landed → dice twice, modifier once
 
 damage     = weaponDice + MightMod (+ ability riders)
              a silent mob's dice are (1 + level/2) to (4 + 3·level/2)
-mitigation = min(0.75, armor / (armor + 100))         armor = Σ item armor
+mitigation = min(0.75, armor / (armor + 5 × attackerLevel))   armor = Σ item armor
 final      = max(1, damage × (1 − mitigation))
 ```
+
+**Ratios rather than a die, because the reward window widens with level and a die does not.** This
+was a d20 for a long time: `needed = clamp(10 + defLevel/2 + defenseRating − attackRating, 2, 20)`.
+Both sides carried `level/2`, so it cancelled and an even match reduced to `needed = 4 +
+defenseRating` — sixteen faces for gear, attributes and every buff at once. The level gap then
+entered as a *difference*, spending `(defLevel − attLevel)/2` faces, while the window of mobs that
+still pay experience is `[L/2, L]` (§4.7) and so `L/2` levels wide. At level 48 the gap alone wanted
+twelve of the nineteen usable faces. Measured: a level 48 in ordinary gear, carrying no buff at all,
+could be hit by a level 28 mob — still worth a fifth of full experience — only on a natural 20. A
+natural 20 is also the critical, so *every blow that mob ever landed was a critical*. The same
+window at level 10 sits at a healthy 44–55%: the system broke by being levelled up.
+
+A ratio has no width to run out of. `A²/(A²+D²)` is scale-free, so the experience window maps to the
+same band of hit chances at level 10 and at level 50, and evasion sits in a denominator, so no
+amount of it produces a defender nothing can reach. There is no defence budget any more and nothing
+that needs a curve to stay inside one.
+
+**Squared, and the exponent is borrowed rather than invented.** §4.4 already anchors the game to
+power ∝ level², derived from the experience curve `1000·L·(L−1)/2`. `A²/(A²+D²)` is therefore the
+ratio of combat *powers*, so one idea of what a level is worth serves progression and the swing
+alike.
+
+**Armour is measured against the attacker, not against a constant.** `armor/(armor + 100)` made an
+armour point mean something different at every tier — measured across the authored realms, a full
+set absorbed 20% in Ossara, 35% in Grask, 49% in Azhen and 60% in Nemhal, walking steadily toward
+the cap. Content is already authored at roughly `3.5 × level` for a set, so dividing by
+`5 × attackerLevel` holds a level-appropriate set at a constant ~41% at every tier, and gives armour
+the property the old form could not: the same set absorbs *more* from a weaker attacker. That is
+what makes gear a reward for risk already taken without making anything that still pays experience
+risk-free.
+
+**The rule the whole shape serves:** anything that still pays experience must be able to hurt you
+without needing a critical. `HitModelTests` asserts it directly, walking every level and every mob
+in `[XpRelevance.Floor(L), L]`.
 
 No positional terms and no zone terms anywhere in the formula — the whole thing is a pure
 function of the two combatants, which is exactly what makes it unit-testable in isolation.
 
-**Both sides carry `level/2`, and that is not decoration.** Attack rating grew at `level/2` while
-the number to beat grew at `level/4`, so the gap between them widened past the die's entire range:
-by level 15 a player hit on every swing, by level 30 so did every mob, and a d20 had stopped being
-consulted anywhere in the game. Matching the rate cancels it at parity, leaving gear, attributes and
-the *level difference* to decide — all small enough for twenty faces to express. A higher-level
-defender is still harder to hit; an equally-matched one is a coin the die can actually flip.
+**The clamps are the guarantee, and the guarantee is the point.** A hit chance is held inside
+5%–95%, so nobody is ever certain either way whatever anyone authors or buffs. Nothing can be
+equipped into being unhittable and nothing can be stripped into being auto-hit — the same promise
+the old natural 1 and natural 20 made, no longer tied to a face and no longer competing with the
+level gap for room.
 
-**The clamp is the guarantee, and the guarantee is the point.** Clamping `needed` to 2–20 means a
-natural 1 always misses and a natural 20 always hits, whatever anyone authors or buffs. Nothing can
-be equipped into being unhittable and nothing can be stripped into being auto-hit, so neither
-property depends on somebody's numbers being sensible. The two ends stay open by construction.
-
-**A critical is a natural 20 and nothing else.** It also used to trigger on beating the defence by
-ten or more, which was reasonable while overshoot stayed small and became absurd once it did not:
-at level 50 every landed mob blow overshot by ten, so *every* hit was a critical and the dice were
-rolled twice permanently. Overshoot is a symptom of the scaling above, so a rule that read it was
-measuring the bug.
+**A critical is its own roll, and that is the bug report that ended the d20.** It used to be a
+natural 20, which is *also* the only face that beats a maxed-out defence — so the better-guarded a
+defender got, the larger the share of what reached them was doubled, until at the clamp it was all
+of it. Rolling the critical separately, on a blow that already landed, makes its share of landed
+blows a flat 5% at every defence gap and every level difference: what everyone assumed it already
+was.
 
 **Armor absorbs a fraction, never a fixed amount** (`ArmorCurve`). Subtraction has no usable value
 at any level: a rating of 10 reduced a level 25 mob's blow to the 1-damage floor and a level 50
 mob's by less than half, and there is no number that behaves reasonably across even one band,
-because the thing it is subtracted from grows and it does not. `armor / (armor + 100)` is scale-free,
+because the thing it is subtracted from grows and it does not. `armor / (armor + 5 × attackerLevel)` is scale-free,
 cannot reach 1, and is capped at 0.75 well below that — so a fully equipped character still takes a
 quarter of every blow that lands, and a mistyped extra zero changes nothing.
 

@@ -184,8 +184,14 @@ public static class EquipmentResolver
         int mightModifier,
         ItemInstance? mainHand)
     {
-        // Base attack rating: half level + Might modifier (PLAN.md §4.6)
-        var baseAttackRating = (level / 2) + mightModifier;
+        // Accuracy is built on the whole level rather than half of it. Half the level was a d20
+        // modifier, sized so the two sides cancelled inside twenty faces; accuracy is one side of a
+        // ratio now (PLAN.md §4.6) and has no budget to fit inside.
+        //
+        // Floored at level 1, because a level 0 attacker would have no accuracy at all and land
+        // every swing on the clamp - which is a test fixture's problem quietly becoming a
+        // balance one.
+        var fightingLevel = Math.Max(1, level);
 
         if (mainHand?.ResolvedStats is null)
         {
@@ -224,8 +230,19 @@ public static class EquipmentResolver
         // A weapon authored with max below min would otherwise make the roll throw.
         maxDamage = Math.Max(minDamage, maxDamage);
 
+        // Might and the weapon raise accuracy by a share of the character's own level rather than
+        // by a flat amount, the same way item defence raises evasion - so a +5 weapon is worth the
+        // same proportion of a fight at level 5 and at level 50 (DamageCalculator.GearScale). The
+        // skill factor is applied once, here, so everything downstream compares two finished
+        // accuracies without needing to know what kind of combatant produced each.
+        var gear = 1m + ((mightModifier + weaponBonus) / DamageCalculator.GearScale);
+        var accuracy = (int)Math.Round(
+            DamageCalculator.CharacterSkill * fightingLevel * gear,
+            MidpointRounding.AwayFromZero);
+
         return new AttackerStats(
-            AttackRating: baseAttackRating + weaponBonus,
+            Level: level,
+            AttackRating: accuracy,
             BaseDamage: baseDamage,
             MinDamage: minDamage,
             MaxDamage: maxDamage);

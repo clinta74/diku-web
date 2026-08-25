@@ -30,14 +30,15 @@ namespace DikuWeb.Server.Tests.Building;
 public sealed class MobReachTests
 {
     /// <summary>
-    /// The worst roll a level-appropriate player should ever need. Sixteen leaves a 25% chance.
+    /// The least often a level-appropriate player should be able to land a blow.
     /// </summary>
     /// <remarks>
     /// Deliberately loose. The point is to catch a wall, not to tune evasiveness — a mob that wants
-    /// to be hard to hit is entitled to be, and the authored spread today tops out at 6, which
-    /// lands on 11. Anything approaching 20 is the die falling out of the fight.
+    /// to be hard to hit is entitled to be. This was "the worst roll you should need", sixteen on a
+    /// d20, back when landing a blow was a die face; it is the same 25% said in the vocabulary the
+    /// model actually uses now (PLAN.md §4.6).
     /// </remarks>
-    private const int WorstNeededRoll = 16;
+    private const double LeastReachable = 0.25;
 
     /// <summary>
     /// The most a blow should ever be absorbed. <see cref="ArmorCurve.Cap"/> allows 75%.
@@ -59,7 +60,13 @@ public sealed class MobReachTests
     /// would pass while the zone was unplayable for anybody who arrived without the right weapon —
     /// and arriving without it is what happens on the way in.
     /// </remarks>
-    private static int AttackRatingAt(int level) => (level / 2) + 5;
+    private static AttackerStats PlayerAt(int level) => new(
+        Level: level,
+        AttackRating: (int)Math.Round(
+            DamageCalculator.CharacterSkill * (level + 5), MidpointRounding.AwayFromZero),
+        BaseDamage: 0,
+        MinDamage: 1,
+        MaxDamage: 1);
 
     private static string RepoRoot()
     {
@@ -147,7 +154,7 @@ public sealed class MobReachTests
     }
 
     /// <summary>
-    /// A player who has reached a mob's level can land a blow on better than a natural 20.
+    /// A player who has reached a mob's level can actually land a blow on it.
     /// </summary>
     [Fact]
     public void Every_spawned_mob_can_be_hit_by_someone_of_its_own_level()
@@ -156,22 +163,21 @@ public sealed class MobReachTests
 
         foreach (var (zone, mob, level, defence, _) in Spawned())
         {
-            // DamageCalculator: defenceVal = 10 + level/2 + defenceRating, and both sides carry
-            // the level/2 so it cancels at equal levels.
-            var defenceValue = 10 + (level / 2) + defence;
-            var needed = Math.Clamp(defenceValue - AttackRatingAt(level), 2, 20);
+            // Read through DamageCalculator rather than reimplemented here, so this guard cannot
+            // go on passing against a formula the game has stopped using.
+            var chance = DamageCalculator.HitChance(
+                PlayerAt(level),
+                new DefenderStats(Level: level, DefenseRating: defence, Armor: 0));
 
-            if (needed > WorstNeededRoll)
+            if (chance < LeastReachable)
             {
-                walls.Add(
-                    $"{zone} / {mob} at level {level}: defence {defence} needs a {needed} "
-                    + $"({(21 - needed) * 5}% to hit)");
+                walls.Add($"{zone} / {mob} at level {level}: defence {defence} is hit {chance:P0} of the time");
             }
         }
 
         Assert.True(
             walls.Count == 0,
-            "Out of reach of the die:" + Environment.NewLine + string.Join(Environment.NewLine, walls));
+            "Out of reach:" + Environment.NewLine + string.Join(Environment.NewLine, walls));
     }
 
     /// <summary>
@@ -184,7 +190,7 @@ public sealed class MobReachTests
 
         foreach (var (zone, mob, level, _, armor) in Spawned())
         {
-            var absorbed = ArmorCurve.Mitigation(armor);
+            var absorbed = ArmorCurve.Mitigation(armor, attackerLevel: level);
 
             if (absorbed > WorstAbsorbed)
             {

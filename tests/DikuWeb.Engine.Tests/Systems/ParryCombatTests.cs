@@ -83,7 +83,7 @@ public sealed class ParryCombatTests
     [Fact]
     public void An_unparried_blow_still_lands()
     {
-        var (harness, player, _) = Fight(CharacterPath.Warden, 4, ScriptedChanceSource.Never);
+        var (harness, player, _) = Fight(CharacterPath.Warden, 4, ScriptedChanceSource.LandsUnparried);
         var before = player.Character.Vitals.Health;
 
         var log = PumpAndRead(harness, player, 12);

@@ -990,33 +990,18 @@ public sealed class CombatSystem(
         // Defence is floored at zero rather than allowed negative: a stripped guard should make
         // somebody easy to hit, not easier than a defenceless one.
         //
-        // Mitigation is folded back into an armour rating rather than carried alongside one,
-        // because DefenderStats holds a rating and ArmorCurve owns the conversion — inverting the
-        // curve here keeps that ownership intact and keeps the cap applied exactly once, at the
-        // point of use. An expose that drives the total below zero lands on zero armour, which is
-        // the worst any defender can be, not a bonus to the attacker.
-        var absorbed = ArmorCurve.Mitigation(stats.Armor, mitigation);
-
+        // Mitigation rides alongside the rating rather than being folded into it. It used to be
+        // converted into an equivalent armour rating by running ArmorCurve backwards, which worked
+        // only while the curve had a single inverse - it was `armor / (armor + 100)`, and 100 was
+        // the same number for everybody. The curve now reads the attacker's level, so there is no
+        // rating that means "this much absorption" until you know who is swinging, and the inverse
+        // had nothing left to invert. DamageCalculator clamps the sum once, at the point of use.
         return stats with
         {
             DefenseRating = Math.Max(0, stats.DefenseRating + defense),
-            Armor = RatingFor(absorbed),
+            MitigationDelta = mitigation,
         };
     }
-
-    /// <summary>
-    /// The armour rating that absorbs this fraction — <see cref="ArmorCurve"/> run backwards.
-    /// </summary>
-    /// <remarks>
-    /// At the cap the curve is flat and has no single inverse, so anything at or above it maps to a
-    /// rating comfortably past the cap's own threshold; the forward call clamps it straight back.
-    /// </remarks>
-    private static int RatingFor(decimal absorbed) =>
-        absorbed <= 0m
-            ? 0
-            : absorbed >= ArmorCurve.Cap
-                ? ArmorCurve.Midpoint * 100
-                : (int)Math.Round(ArmorCurve.Midpoint * absorbed / (1m - absorbed));
 
     private void ApplyDamage(WorldState world, string targetId, int damage)
     {

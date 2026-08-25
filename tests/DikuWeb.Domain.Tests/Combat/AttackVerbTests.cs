@@ -72,7 +72,7 @@ public sealed class AttackVerbTests
         DikuWeb.Domain.Combat.CombatSystem.ExecuteRound(
             CombatantType.Player,
             "Theron",
-            new AttackerStats(AttackRating: attackRating, BaseDamage: 2, MinDamage: 4, MaxDamage: 8),
+            new AttackerStats(Level: 0, AttackRating: attackRating, BaseDamage: 2, MinDamage: 4, MaxDamage: 8),
             CombatantType.Mob,
             "goblin",
             new DefenderStats(Level: 0, DefenseRating: 2, Armor: 0),

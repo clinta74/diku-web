@@ -128,7 +128,10 @@ public sealed class ScaledMobSpawnTests
         Assert.Equal(8, mob.EffectiveLevel);
         Assert.Equal(4, stats.MinDamage);
         Assert.Equal(7, stats.MaxDamage);
-        Assert.Equal(9, stats.AttackRating);
+
+        // The authored rating survives the unscaled zone untouched and then takes the skill factor
+        // every mob takes, which is the one thing between a template's number and its accuracy.
+        Assert.Equal(11, stats.AttackRating);   // round(1.25 x 9)
     }
 
     [Fact]
