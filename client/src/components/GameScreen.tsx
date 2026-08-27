@@ -869,11 +869,21 @@ function VitalsBar({
             <Meter label="HP" value={vitals.health} max={vitals.healthMax} tone="health" />
             <Meter label="FO" value={vitals.focus} max={vitals.focusMax} tone="focus" />
             <Meter label="ST" value={vitals.stamina} max={vitals.staminaMax} tone="stamina" />
+            {/*
+              Two spans rather than one run of text, so the phone layout can stack who you are
+              over how far along you are. Desktop still reads as one line - the separator the
+              split removed is put back in CSS rather than in the markup, so neither layout
+              carries a dot the other has to hide.
+            */}
             <span className="identity">
-              {characterName} · {vitals.path} · level {vitals.level} ·{' '}
-              {vitals.xp.toLocaleString()} xp
-              {' · '}
-              <span className="gold">{vitals.gold.toLocaleString()} gold</span>
+              <span className="identity-who">
+                {characterName} · {vitals.path} · level {vitals.level}
+              </span>
+              <span className="identity-progress">
+                {vitals.xp.toLocaleString()} xp
+                {' · '}
+                <span className="gold">{vitals.gold.toLocaleString()} gold</span>
+              </span>
             </span>
           </>
         ) : (

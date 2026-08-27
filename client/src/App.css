@@ -572,7 +572,17 @@ input:focus {
   color: var(--accent);
 }
 
+/*
+ * `flex: 1` is what keeps the field on the prompt's line. The phone layout makes .input-bar a
+ * wrapping flex row so the chips can take a row of their own, and a bare <input> carries an
+ * intrinsic width of about twenty characters - wide enough, next to the prompt and at the 16px
+ * Safari forces below, to push itself onto a second line. The result was a `>` alone on one line
+ * with the box under it. Growing from zero instead of shrinking from intrinsic means the field
+ * fills whatever is left and can never be the thing that wraps.
+ */
 .input-bar input {
+  flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   padding: var(--space-1) 0;
@@ -617,7 +627,10 @@ input:focus {
 .vitals-self {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  /* Split, the way .party-bar below already splits it: the meters need the wide column gap to
+     stay readable side by side, but on a phone this wraps to three rows and a 1rem row gap made
+     the bottom of the screen sprawl. */
+  gap: var(--space-2) var(--space-4);
   flex-wrap: wrap;
 }
 
@@ -691,6 +704,14 @@ input:focus {
 
 .identity {
   color: var(--dim);
+}
+
+/*
+ * Desktop reads as one line, so the separator the two-span split removed is put back here rather
+ * than in the markup - that way neither layout carries a dot the other has to hide.
+ */
+.identity-progress::before {
+  content: ' · ';
 }
 
 /* Gold is the one number in the identity line a player watches change, so it is not dimmed. */
@@ -895,7 +916,9 @@ input:focus {
   grid-area: pad;
   display: flex;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-2);
+  /* Tighter above and below than beside: the keys are already 44px, so the padding was adding
+     height to a row that had enough of it, and every pixel here comes out of the transcript. */
+  padding: var(--space-1) var(--space-2);
   background: var(--panel);
   border-top: 1px solid var(--border);
 }
@@ -928,22 +951,40 @@ input:focus {
   display: flex;
   gap: var(--space-2);
   overflow-x: auto;
+  /*
+   * `min-width: 0` is what stops the chips from widening the whole screen. A flex item defaults to
+   * `min-width: auto`, which means "never shrink below your content" - so this scroller reported
+   * the full laid-out width of every chip as its minimum, that became the minimum of .input-bar,
+   * and .input-bar is a grid item, so it became the minimum of the .game column. The grid grew
+   * past the viewport and everything in it - the room description, the identity line, the leave
+   * button - was left wrapping to a width the screen does not have and clipped at the edge.
+   * The overflow-x above could not help while the element was never allowed to be narrow.
+   */
+  min-width: 0;
   scrollbar-width: none;
-  padding-bottom: var(--space-2);
-  margin-bottom: var(--space-1);
+  /* The chips grew to a thumb's size below; this is where that height comes from, rather than
+     from the transcript. Twelve pixels of gap under a row that already ends in a rounded edge
+     was reading as a break in the layout anyway. */
+  padding-bottom: var(--space-1);
 }
 
 .command-chips::-webkit-scrollbar {
   display: none;
 }
 
+/*
+ * 44px, the same as the exit keys and the sheet toggle. These were 34px with 0.5rem of padding,
+ * which is a desktop chip on a control that only ever renders on a phone - small enough to miss
+ * next to the pad directly above it, and visibly a different size from every other button on the
+ * screen. The extra horizontal padding is what stops a one-word chip from reading as a stub.
+ */
 .command-chip {
-  min-height: 34px;
-  padding: 0 var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-3);
   white-space: nowrap;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--dim);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .command-chip:hover {
@@ -951,6 +992,15 @@ input:focus {
 }
 
 /* The chips live inside the input bar, which is a row — they need the column above the field. */
+/*
+ * No child may be the reason the column is wide. Each of these is a grid item holding content that
+ * would rather not wrap - chips, a meter row, a long identity line - and any one of them with an
+ * automatic minimum can stretch the grid and take the other five with it.
+ */
+.game[data-layout='phone'] > * {
+  min-width: 0;
+}
+
 .game[data-layout='phone'] .input-bar {
   flex-wrap: wrap;
   padding-left: calc(1rem + env(safe-area-inset-left, 0px));
@@ -959,6 +1009,89 @@ input:focus {
 
 .game[data-layout='phone'] .command-chips {
   flex-basis: 100%;
+}
+
+/*
+ * On a phone the printed number goes under its own bar rather than beside it, which is what lets
+ * all three meters sit on one line.
+ *
+ * Beside is what a desktop wants and what the markup is: label, bar, value, all on the baseline.
+ * At phone width that made each meter about 155px, so HP and FO took the first row and ST was
+ * pushed onto a second one - three bars that are meant to be read together, split across two
+ * lines and no longer aligned with each other. Moving the value into a second grid row costs no
+ * height at all, because the meters were already wrapping to two lines; it just spends those two
+ * lines on one tidy row instead of two ragged ones.
+ *
+ * The value is forced into column two so it sits under the bar rather than under the label, and
+ * the column is sized by the wider of the two - the bar is ten characters and every value the
+ * game can print is shorter, so in practice the bar sets the width and the meters stay even.
+ */
+.game[data-layout='phone'] .meter {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0 var(--space-2);
+  align-items: baseline;
+}
+
+.game[data-layout='phone'] .meter-value {
+  grid-column: 2;
+  text-align: center;
+}
+
+/*
+ * The whole readout centres as a block: three meters on one row, the identity under them, the two
+ * buttons under that. Left-aligned, the meters sat against the edge with the row's slack collecting
+ * on the right, which read as three bars that had failed to fill the line rather than as a group.
+ */
+.game[data-layout='phone'] .vitals-self {
+  justify-content: center;
+}
+
+/*
+ * Who you are over how far along you are. One run of text is about 45 characters and had nowhere
+ * to go on a phone but a second line broken wherever it happened to land - mid-number as often as
+ * not. Two lines chosen at the seam read as two facts instead of one sentence that ran out of room.
+ */
+.game[data-layout='phone'] .identity {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.game[data-layout='phone'] .identity-progress::before {
+  content: none;
+}
+
+/*
+ * The word "connected" is a duplicate on a phone and costs a row to say so. The header strip
+ * already carries the dot, and it is up there precisely because this row wraps - the comment on
+ * `.room-header-dot` in GameScreen says as much. The dot keeps the accessible name, so nothing is
+ * lost but the width.
+ */
+.game[data-layout='phone'] .vitals-self .status {
+  display: none;
+}
+
+/*
+ * Builder and leave, as a pair pushed to the right edge rather than trailing whatever happened to
+ * wrap ahead of them. They were inheriting the base button padding, which is 0.5rem against a
+ * 0.8rem font - about 30px tall, well under the 44px the exit keys and the chips now use, and the
+ * two smallest targets on the screen sat next to each other.
+ *
+ * The auto margin is on whichever button comes first, since `builder` only renders for an account
+ * that has it.
+ */
+/*
+ * Centred as a pair by the rule above, rather than pushed to the right edge - a right-aligned pair
+ * under two centred rows reads as a third alignment for no reason. They were also inheriting the
+ * base button padding, which is 0.5rem against a 0.8rem font: about 30px tall, well under the 44px
+ * the exit keys and the chips use, and the two smallest targets on the screen sat side by side.
+ */
+.game[data-layout='phone'] .vitals-self button {
+  min-height: 44px;
+  padding: 0 var(--space-3);
 }
 
 /* ------------------------------------------------------------------ */
