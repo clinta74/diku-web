@@ -347,8 +347,8 @@ public sealed class MobAiSystem(
             }
 
             // Update map for both rooms
-            view.RefreshRoom(world, fromRoomKey);
-            view.RefreshRoom(world, exit.ToRoomKey);
+            view.MarkRoomChanged(fromRoomKey);
+            view.MarkRoomChanged(exit.ToRoomKey);
 
             return;
         }

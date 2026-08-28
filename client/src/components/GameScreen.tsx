@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { api } from '../net/api'
 import { connectStream } from '../net/stream'
 import { gameReducer, initialGameState } from '../state/gameReducer'
+import { markSelfInContents, markSelfOnMap } from '../state/self'
 import type {
   ContentEntry,
   MapPayload,
@@ -191,7 +192,10 @@ export function GameScreen({
   // on this frame would be wrong rather than merely incomplete: contents is sent when a room
   // changes, so a list that also claimed to describe the pack would be stale after every buy.
   const candidates = useMemo(() => {
-    const entries = [...(state.contents?.occupants ?? []), ...(state.contents?.items ?? [])]
+    const entries = [
+      ...markSelfInContents(state.contents?.occupants ?? [], characterName),
+      ...(state.contents?.items ?? []),
+    ]
 
     return entries
       // The viewer is sent as "you", which is not a name anything answers to.
@@ -264,12 +268,12 @@ export function GameScreen({
           </button>
         </div>
 
-        <MapPanel map={state.map} />
+        <MapPanel map={state.map} characterName={characterName} />
         <RoomPanel
           title={state.room?.title ?? '...'}
           description={state.room?.description ?? ''}
           exits={state.room?.exits ?? []}
-          contents={state.contents?.occupants ?? []}
+          contents={markSelfInContents(state.contents?.occupants ?? [], characterName)}
           onKeyword={(keyword) => insertKeyword.current?.(keyword)}
           onCommand={(command) => {
             send(command)
@@ -337,7 +341,7 @@ export function GameScreen({
   )
 }
 
-function MapPanel({ map }: { map: MapPayload | null }) {
+function MapPanel({ map, characterName }: { map: MapPayload | null; characterName: string }) {
   if (!map) {
     return (
       <section className="panel map-panel">
@@ -347,15 +351,18 @@ function MapPanel({ map }: { map: MapPayload | null }) {
     )
   }
 
+  // The server draws the room the same way for everybody in it, so the viewer marks themselves.
+  const entities = markSelfOnMap(map.entities, characterName)
+
   // Overlay entities onto a mutable copy of the terrain rows.
   const rows = map.terrain.map((row) => row.split(''))
-  for (const entity of map.entities) {
+  for (const entity of entities) {
     if (rows[entity.y] && entity.x < rows[entity.y].length) {
       rows[entity.y][entity.x] = entity.icon
     }
   }
 
-  const items = map.entities.filter((entity) => entity.type === 'item')
+  const items = entities.filter((entity) => entity.type === 'item')
 
   return (
     <section className="panel map-panel">

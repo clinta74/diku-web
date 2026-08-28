@@ -160,31 +160,39 @@ public sealed class CommandContext
     /// </remarks>
     public void BroadcastSight(string text, string? style = null)
     {
+        var message = Line(text, style);
+
         foreach (var other in World.OthersAwakeIn(Actor.RoomKey, Actor))
         {
-            if (style is null)
-            {
-                other.SendText(text);
-            }
-            else
-            {
-                other.SendText(text, style);
-            }
+            other.Send(message);
         }
     }
 
     public void Broadcast(string text, string? style = null)
     {
+        var message = Line(text, style);
+
         foreach (var other in World.OthersIn(Actor.RoomKey, Actor))
         {
-            if (style is null)
-            {
-                other.SendText(text);
-            }
-            else
-            {
-                other.SendText(text, style);
-            }
+            other.Send(message);
         }
     }
+
+    /// <summary>
+    /// One sentence, built once, for everybody who is about to be told it.
+    /// </summary>
+    /// <remarks>
+    /// <b>The event is shared, not copied per recipient, and that is safe by construction.</b>
+    /// <c>OutboundEvent</c> and every payload under it are immutable records, and a session does
+    /// nothing to what it is handed but serialise it — so one instance can sit in every recipient's
+    /// channel at once.
+    ///
+    /// Calling <c>SendText</c> per recipient allocated four objects apiece — the event, the
+    /// payload, the span and the array holding it — for a sentence identical for all of them. A
+    /// movement broadcasts twice, so in a room holding sixty people that was some five hundred
+    /// objects to say somebody walked in, and the allocation rate showed up in the pulse histogram
+    /// as a long tail rather than as a steady slowdown (PLAN.md §11).
+    /// </remarks>
+    private static OutboundEvent Line(string text, string? style) =>
+        new(EventTypes.Text, style is null ? TextPayload.Plain(text) : TextPayload.Styled(text, style));
 }

@@ -67,7 +67,8 @@ public sealed class GameFlowTests(PostgresFixture postgres)
         var factory = postgres.App;
         using var client = NewClient(factory);
 
-        var characterId = await CreatePlayerAsync(client, UniqueName("Kael"));
+        var name = UniqueName("Kael");
+        var characterId = await CreatePlayerAsync(client, name);
         var enter = await client.PostAsJsonAsync($"/api/game/{characterId}/enter", new { });
         Assert.Equal(HttpStatusCode.OK, enter.StatusCode);
 
@@ -84,11 +85,17 @@ public sealed class GameFlowTests(PostgresFixture postgres)
         var map = frames.First(f => f.EventType == "map");
         Assert.True(map.Json.GetProperty("w").GetInt32() > 0);
 
-        // The viewer draws as "you". Asserting they are the *only* entity would be asserting
-        // that no other test left a character standing in the starting room, which is not what
-        // this test is about and is not true once the host is shared across the collection.
+        // The viewer is on the map, drawn by name.
+        //
+        // This used to look for a label of "you", and the change is deliberate: a room is now
+        // built once and the identical payload goes to everyone standing in it, so the server
+        // cannot mark anybody. The client draws its own "@" on arrival - see
+        // client/src/state/self.ts, covered by self.test.ts. Asserting the viewer is the *only*
+        // entity would mean asserting no other test left a character in the starting room, which
+        // is not true once the host is shared across the collection.
         var entities = map.Json.GetProperty("entities").EnumerateArray().ToList();
-        Assert.Contains(entities, e => e.GetProperty("label").GetString() == "you");
+        Assert.Contains(entities, e => e.GetProperty("label").GetString() == name);
+        Assert.DoesNotContain(entities, e => e.GetProperty("label").GetString() == "you");
     }
 
     [Fact]

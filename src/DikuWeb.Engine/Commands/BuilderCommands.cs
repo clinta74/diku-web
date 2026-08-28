@@ -343,8 +343,8 @@ internal static class BuilderCommands
 
         ctx.Reply($"You step through to {target}.", "heading");
         ctx.View.SendRoom(ctx.World, ctx.Actor, verbose: true);
-        ctx.View.RefreshRoom(ctx.World, origin);
-        ctx.View.RefreshRoom(ctx.World, destination.Key);
+        ctx.View.MarkRoomChanged(origin);
+        ctx.View.MarkRoomChanged(destination.Key);
     }
 
     private static void Spawn(CommandContext ctx, SpawnTools tools)
@@ -426,7 +426,7 @@ internal static class BuilderCommands
 
             ctx.Reply($"Spawned: {template.Icon} {template.Name}");
             ctx.BroadcastSight($"{ctx.Actor.Name} conjures {NarrationHelper.WithArticle(template.Name)}!", "arrival");
-            ctx.View.RefreshRoom(ctx.World, roomKey);
+            ctx.View.MarkRoomChanged(roomKey);
         }
         catch (Exception ex)
         {
@@ -481,7 +481,7 @@ internal static class BuilderCommands
             var displayName = string.IsNullOrEmpty(template.Name) ? template.Key : template.Name;
             ctx.Reply($"Spawned: {template.Icon} {displayName} (level {template.Level})");
             ctx.BroadcastSight($"{ctx.Actor.Name} conjures {NarrationHelper.WithArticle(displayName)}!", "arrival");
-            ctx.View.RefreshRoom(ctx.World, roomKey);
+            ctx.View.MarkRoomChanged(roomKey);
         }
         catch (Exception ex)
         {
@@ -572,7 +572,7 @@ internal static class BuilderCommands
         ctx.BroadcastSight(
             $"{ctx.Actor.Name} banishes {NarrationHelper.WithDefiniteArticle(displayName)}.",
             "movement");
-        ctx.View.RefreshRoom(ctx.World, roomKey);
+        ctx.View.MarkRoomChanged(roomKey);
     }
 
     /// <summary>
@@ -615,7 +615,7 @@ internal static class BuilderCommands
         ctx.Broadcast(
             $"{ctx.Actor.Name} banishes {NarrationHelper.WithDefiniteArticle(displayName)}.",
             "death");
-        ctx.View.RefreshRoom(ctx.World, roomKey);
+        ctx.View.MarkRoomChanged(roomKey);
     }
 
     /// <summary>

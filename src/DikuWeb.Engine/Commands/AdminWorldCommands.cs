@@ -557,10 +557,8 @@ internal static class AdminWorldCommands
 
         // Said in the room as well. A character vanishing with no explanation reads as a bug to
         // everyone who was standing there.
-        foreach (var other in ctx.World.OthersAwakeIn(target.RoomKey, target))
-        {
-            other.SendText($"{target.Name} is removed from the world.", "movement");
-        }
+        ctx.World.TellOthersWhoCanSee(
+            target.RoomKey, target, $"{target.Name} is removed from the world.", "movement");
 
         ctx.RequestRemoval(target.CharacterId, LeaveReason.Kicked);
         ctx.Reply($"You disconnect {target.Name}.", "heading");
@@ -622,10 +620,8 @@ internal static class AdminWorldCommands
 
             // Said in the room too. Somebody vanishing with no explanation reads as a bug to
             // everyone who was standing there.
-            foreach (var other in ctx.World.OthersAwakeIn(online.RoomKey, online))
-            {
-                other.SendText($"{online.Name} is removed from the world.", "movement");
-            }
+            ctx.World.TellOthersWhoCanSee(
+                online.RoomKey, online, $"{online.Name} is removed from the world.", "movement");
 
             ctx.RequestRemoval(online.CharacterId, LeaveReason.Kicked);
         }

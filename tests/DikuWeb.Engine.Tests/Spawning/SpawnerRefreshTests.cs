@@ -81,6 +81,7 @@ public sealed class SpawnerRefreshTests
             harness.View);
 
         await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
+        harness.View.FlushChangedRooms(harness.World);
 
         var events = harness.Drain(kael);
 
@@ -112,6 +113,7 @@ public sealed class SpawnerRefreshTests
             harness.View);
 
         await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
+        harness.View.FlushChangedRooms(harness.World);
 
         var events = harness.Drain(kael);
 
@@ -172,6 +174,10 @@ public sealed class SpawnerRefreshTests
         var system = provider.GetRequiredService<SpawnerSystem>();
 
         await system.RunAsync(harness.World, pulse: 0, CancellationToken.None);
+
+        // The view this system was handed is the container's, not the harness's, so that is the
+        // one to flush. Spawning marks the room; the loop sends it at the end of the pulse.
+        provider.GetRequiredService<PlayerView>().FlushChangedRooms(harness.World);
 
         var events = harness.Drain(kael);
         Assert.Contains(events, e => e.Type == EventTypes.Map);

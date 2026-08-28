@@ -454,6 +454,14 @@ internal sealed class WorldHarness
         };
 
         definition.Handler(context);
+
+        // The loop flushes marked rooms at the end of every pulse, so the harness does it at the
+        // end of every command - otherwise a handler that marks a room would leave its map and
+        // contents frames un-sent, and a test asserting on them would be asserting against a
+        // dispatch path the game never takes. Mirrors GameLoop.Pulse, for the same reason the
+        // ability-verb fallback above mirrors GameLoop.HandleCommand.
+        View.FlushChangedRooms(World);
+
         return context;
     }
 

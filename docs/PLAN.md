@@ -3142,14 +3142,44 @@ owed. That is a distinct and worse failure from a slow pulse, and no percentile 
 because the missed pulses were never recorded. It is the reason the report leads with pulses-owed
 rather than with p99.
 
-**Both runs still miss the 25 ms p99 budget** (3.0% over, against the 1% a p99 target allows), so
-that target is unmet even uncrowded — but at p50 0.99 ms it is a tail to investigate rather than a
-loop in trouble.
+At 200 crowded, **both runs also missed the 25 ms p99 budget** — 48.7% and 3.0% of pulses over it,
+against the 1% a p99 target allows.
+
+### The target, met
+
+Four changes to the room-refresh path, each measured on the same pinned container against the same
+crowded plan. [PERFORMANCE.md](PERFORMANCE.md) is the worked account of how they were found; this
+is what they did.
+
+| 200 crowded | baseline | hoist the layout | mark on the client | coalesce per pulse |
+|---|---|---|---|---|
+| pulses kept | 70.9% | 99.9% | 100.0% | **100.0%** |
+| mean pulse | 223 ms | 76.8 ms | 34.6 ms | **2.60 ms** |
+| p50 | 16.1 ms | 36.4 ms | 24.8 ms | **1.72 ms** |
+| p99 | *top bucket* | *top bucket* | 237.8 ms | **19.5 ms** |
+| over 25 ms | 48.7% | 53.7% | 49.7% | **0.14%** |
+| commands | 14,994 | 15,954 | 15,797 | **16,016** |
+| **handler time / 180 s** | **114 s** | **55 s** | **25 s** | **1.9 s** |
+
+**§11's session target is met**: 200 concurrent sessions on one process, on two CPUs, with a pulse
+p99 of 19.5 ms against a 25 ms budget and one pulse in 720 over it — in the worst room layout the
+apparatus can construct, while handling 7% more commands than the failing baseline did.
+
+Two things in that table are worth reading carefully rather than skimming, because both would
+mislead somebody checking only the headline column:
+
+- **The middle two columns look like regressions and are not.** p50 and the over-budget share both
+  *rose* while the system got faster, because fixing the pulse-skipping changed which pulses
+  existed to be measured. A percentile over a changing population is not a comparison; handler time
+  over a fixed window is, and it halved at every step.
+- **Coalescing is worth more than the other three combined.** At roughly twenty-two commands a
+  pulse concentrated in three rooms, most refreshes were redundant before they were sent. The first
+  three fixes made each redundant refresh cheap; the fourth stopped performing them.
 
 **What this does and does not establish.** The crowded plan is a deliberate worst case: real players
-spread over 236 rooms, not three. It is not a prediction of what 200 players cost. It *is* the
-shape of a launch, a world event, or everyone standing in the starting room — and those are real.
-The unfinished work is a middle case: 200 sessions spread naturally across the world, which the
+spread over 236 rooms, not three. It is not a prediction of what 200 players cost — it is the shape
+of a launch, a world event, or everyone standing in the starting room, and those are real. The
+unfinished work is a middle case: 200 sessions spread naturally across the world, which the
 apparatus can now measure in one command.
 
 ---

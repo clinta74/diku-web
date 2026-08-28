@@ -136,28 +136,10 @@ public sealed class StarterRoomArtTests
                 Legend = new Dictionary<string, string>(legend, StringComparer.Ordinal),
             };
 
-            var map = service.BuildMap(room, [], [], [], NewViewer());
+            var map = service.BuildMap(room, [], [], []);
 
             Assert.Equal(21, map.W);
             Assert.Equal(9, map.H);
         }
     }
-
-    private static Engine.World.PlayerActor NewViewer() => new()
-    {
-        Character = new Domain.Characters.Character
-        {
-            AccountId = Guid.NewGuid(),
-            Name = "Viewer",
-            Path = Domain.Characters.CharacterPath.Warden,
-            Attributes = Domain.Characters.AttributeSet.Baseline,
-            Vitals = Domain.Characters.Vitals.StartingFor(Domain.Characters.CharacterPath.Warden),
-            RoomKey = RoomKey.Create("test", "zone", "x"),
-            CreatedAt = DateTimeOffset.UnixEpoch,
-        },
-        Role = Domain.Accounts.AccountRole.Player,
-        SessionId = Guid.NewGuid(),
-        Output = System.Threading.Channels.Channel
-            .CreateUnbounded<Engine.Protocol.OutboundEvent>().Writer,
-    };
 }

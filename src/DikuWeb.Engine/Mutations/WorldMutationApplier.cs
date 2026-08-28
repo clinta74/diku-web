@@ -406,7 +406,7 @@ public sealed class WorldMutationApplier(
                 occupant.SendText("The air ripples, and the world here is made anew.", "arrival");
             }
 
-            view.RefreshRoom(world, room);
+            view.MarkRoomChanged(room);
         }
 
         return MutationResult.Ok(new RespawnTally(despawned, spawned));
@@ -485,7 +485,7 @@ public sealed class WorldMutationApplier(
 
         if (stranded.Count > 0)
         {
-            view.RefreshRoom(world, refuge);
+            view.MarkRoomChanged(refuge);
         }
 
         return MutationResult.Ok([change]);

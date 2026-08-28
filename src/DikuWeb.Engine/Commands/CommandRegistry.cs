@@ -320,8 +320,8 @@ public sealed class CommandRegistry
         ctx.View.SendRoom(ctx.World, ctx.Actor, verbose: false);
 
         // Both rooms changed occupancy, so both maps need redrawing for everyone in them.
-        ctx.View.RefreshRoom(ctx.World, origin);
-        ctx.View.RefreshRoom(ctx.World, destination.Key);
+        ctx.View.MarkRoomChanged(origin);
+        ctx.View.MarkRoomChanged(destination.Key);
 
         // Last, so the leader's own arrival is on screen before anyone else's. Each follower
         // refreshes the two rooms again, which is the price of them being ordinary movers.

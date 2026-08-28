@@ -186,7 +186,7 @@ public sealed class SpawnerSystem(
             // mob, so a spawner filling three slots in one room sends one update, not three.
             foreach (var room in touched)
             {
-                view?.RefreshRoom(world, room);
+                view?.MarkRoomChanged(room);
             }
         }
         catch (Exception ex)
@@ -247,7 +247,7 @@ public sealed class SpawnerSystem(
         // room contents until something else forces a redraw.
         foreach (var room in touched)
         {
-            view?.RefreshRoom(world, room);
+            view?.MarkRoomChanged(room);
         }
     }
 }

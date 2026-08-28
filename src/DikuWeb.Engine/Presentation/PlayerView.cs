@@ -85,13 +85,13 @@ public sealed class PlayerView(RoomLayoutService layout, ItemTemplateCache? item
                 exits)));
 
         var legend = LegendFor(room, dark);
-        var map = _layout.BuildMap(room, occupants, mobs, roomItems, actor);
+        var map = _layout.BuildMap(room, occupants, mobs, roomItems);
 
         actor.Send(new OutboundEvent(EventTypes.Map, dark ? Unlit(map) : map));
 
         actor.Send(new OutboundEvent(
             EventTypes.Contents,
-            BuildContents(occupants, mobs, roomItems, actor, legend)));
+            BuildContents(occupants, mobs, roomItems, legend)));
 
         SendProse(actor, room, occupants, mobs, roomItems, exits, verbose, dark);
     }
@@ -115,7 +115,81 @@ public sealed class PlayerView(RoomLayoutService layout, ItemTemplateCache? item
                 ? room.Legend
                 : new Dictionary<string, string>(StringComparer.Ordinal) { ["."] = "floor" };
 
-    /// <summary>Refreshes the map and contents for everyone standing in a room.</summary>
+    /// <summary>
+    /// Notes that a room's map and contents have changed, to be sent once at the end of the pulse.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Marking, not sending.</b> A room is redrawn because its occupancy changed, and within one
+    /// 250 ms tick that can happen many times over: twenty people walking through the same room
+    /// used to mean twenty full rebuilds and twenty broadcasts of a room whose <em>final</em> state
+    /// is the only one anybody needed. Nobody can perceive the nineteen intermediate frames — they
+    /// are all superseded before the tick ends — so the set is deduplicated and flushed once.
+    /// </para>
+    /// <para>
+    /// Movement marks two rooms, the one being left and the one being entered, and both collapse
+    /// across everyone who moved. This is the last of the quadratic behaviour on the refresh path:
+    /// laying the room out per viewer went first, then copying the payload per viewer, and what
+    /// remained was the number of <em>refreshes</em> rising with the number of movers while the
+    /// recipients of each rose with the occupancy (PLAN.md §11).
+    /// </para>
+    /// <para>
+    /// <b>Thread-safe on purpose.</b> Mob AI and the spawner are launched fire-and-forget onto the
+    /// thread pool, so they mark rooms from somewhere other than the loop. A mark that lands after
+    /// this pulse's flush is simply sent on the next one, which is a quarter second later and
+    /// already true of anything those systems do.
+    /// </para>
+    /// </remarks>
+    public void MarkRoomChanged(RoomKey roomKey)
+    {
+        lock (_changedRooms)
+        {
+            _changedRooms.Add(roomKey);
+        }
+    }
+
+    /// <summary>
+    /// Sends every room marked since the last flush, once each.
+    /// </summary>
+    /// <remarks>
+    /// Called from the game loop at the end of a pulse, after everything that could have moved
+    /// somebody. The state each room is drawn from is therefore the state the tick finished in,
+    /// which is the only one worth sending.
+    /// </remarks>
+    public void FlushChangedRooms(WorldState world)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+
+        RoomKey[] rooms;
+
+        lock (_changedRooms)
+        {
+            if (_changedRooms.Count == 0)
+            {
+                return;
+            }
+
+            rooms = [.. _changedRooms];
+            _changedRooms.Clear();
+        }
+
+        foreach (var roomKey in rooms)
+        {
+            RefreshRoom(world, roomKey);
+        }
+    }
+
+    /// <summary>Rooms marked since the last flush.</summary>
+    private readonly HashSet<RoomKey> _changedRooms = [];
+
+    /// <summary>
+    /// Sends the map and contents to everyone standing in a room, now.
+    /// </summary>
+    /// <remarks>
+    /// The flush does this; so does a test that wants one room drawn without running a pulse.
+    /// <b>Ordinary game code should call <see cref="MarkRoomChanged"/> instead</b> — calling this
+    /// directly from a command handler is what made a busy room cost a rebuild per mover.
+    /// </remarks>
     public void RefreshRoom(WorldState world, RoomKey roomKey)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -136,17 +210,28 @@ public sealed class PlayerView(RoomLayoutService layout, ItemTemplateCache? item
         IReadOnlyList<Mob> mobs = dark ? [] : world.MobsIn(roomKey);
         IReadOnlyList<ItemInstance> roomItems = dark ? [] : world.ItemsIn(roomKey);
 
-        var contents = BuildContentsFor(occupants, mobs, roomItems);
         var legend = LegendFor(room, dark);
+
+        // Two events for the whole room, built once and handed to everybody by reference.
+        //
+        // Refreshing a room used to be quadratic in how many people were in it, twice over: the
+        // map was laid out once per viewer, and then the contents list was copied once per viewer
+        // to relabel a single entry as "you". Neither had to be. Placement is a pure function of
+        // the room and its occupancy, and marking the viewer is a rendering decision - so the
+        // layout is hoisted and the marking has moved to the client, which is the only party that
+        // knows whose screen this is. What is left is one build and N channel writes.
+        //
+        // Sharing the events is safe by construction: OutboundEvent and every payload beneath it
+        // are immutable records, and a session does nothing to what it is handed but serialise it.
+        var built = _layout.BuildMap(room, occupants, mobs, roomItems);
+        var map = new OutboundEvent(EventTypes.Map, dark ? Unlit(built) : built);
+        var contents = new OutboundEvent(
+            EventTypes.Contents, BuildContents(occupants, mobs, roomItems, legend));
 
         foreach (var viewer in viewers)
         {
-            var map = _layout.BuildMap(room, occupants, mobs, roomItems, viewer);
-
-            viewer.Send(new OutboundEvent(EventTypes.Map, dark ? Unlit(map) : map));
-            viewer.Send(new OutboundEvent(
-                EventTypes.Contents,
-                BuildContents(occupants, mobs, roomItems, viewer, legend, contents)));
+            viewer.Send(map);
+            viewer.Send(contents);
         }
     }
 
@@ -475,24 +560,25 @@ public sealed class PlayerView(RoomLayoutService layout, ItemTemplateCache? item
         actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
     }
 
+    /// <summary>
+    /// What is in the room, the same for everyone in it.
+    /// </summary>
+    /// <remarks>
+    /// No viewer, deliberately. This used to take one and copy the whole occupant list to relabel
+    /// a single entry as "you" - once per person in the room, so the copying was quadratic and the
+    /// comparison it did to find the entry allocated a lowercased name per entry per viewer on top.
+    /// Whose screen this is belongs to the client, which relabels its own entry on arrival; the
+    /// keyword is untouched either way, so the verbs a player can type still name a real character.
+    /// </remarks>
     private static ContentsPayload BuildContents(
         IReadOnlyList<PlayerActor> occupants,
         IReadOnlyList<Mob> mobs,
         IReadOnlyList<ItemInstance> items,
-        PlayerActor viewer,
-        IReadOnlyDictionary<string, string>? legend = null,
-        (List<ContentEntry> Occupants, List<ContentEntry> Items)? prebuilt = null)
+        IReadOnlyDictionary<string, string>? legend = null)
     {
-        var (occupantEntries, itemEntries) = prebuilt ?? BuildContentsFor(occupants, mobs, items);
+        var (occupantEntries, itemEntries) = BuildContentsFor(occupants, mobs, items);
 
-        // The viewer is shown as "you" to match how they appear on the map.
-        var adjusted = occupantEntries
-            .Select(e => e.Keyword == viewer.Name.ToLowerInvariant()
-                ? e with { Icon = "@", Label = "you" }
-                : e)
-            .ToList();
-
-        return new ContentsPayload(adjusted, itemEntries, legend);
+        return new ContentsPayload(occupantEntries, itemEntries, legend);
     }
 
     private static (List<ContentEntry> Occupants, List<ContentEntry> Items) BuildContentsFor(

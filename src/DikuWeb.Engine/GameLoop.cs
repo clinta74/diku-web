@@ -222,6 +222,15 @@ public sealed class GameLoop(
             GroundDecaySystem.Tick(world, clock.UtcNow, view, itemSaveQueue);
         }
 
+        // After everything that could have moved somebody, and before the per-player frames below.
+        //
+        // Rooms are marked dirty during the pulse rather than redrawn on the spot, so this is
+        // where they are actually sent - once each, from the state the tick finished in. Twenty
+        // people walking through the same room in one pulse marks it twenty times and sends it
+        // once; the nineteen intermediate versions were superseded before anyone could have seen
+        // them. See PlayerView.MarkRoomChanged.
+        view.FlushChangedRooms(world);
+
         // One comparison per player per pulse, and a frame only when something actually moved.
         // Pushing unconditionally after combat would mean four frames a second per fighter.
         foreach (var actor in world.AllPlayers)
@@ -357,10 +366,8 @@ public sealed class GameLoop(
         {
             actor.SendSys(message.Message, SysKinds.Disconnect);
 
-            foreach (var other in world.OthersAwakeIn(actor.RoomKey, actor))
-            {
-                other.SendText($"{actor.Name} is removed from the world.", "movement");
-            }
+            world.TellOthersWhoCanSee(
+                actor.RoomKey, actor, $"{actor.Name} is removed from the world.", "movement");
 
             RemovePlayer(actor, LeaveReason.Kicked);
         }
@@ -472,7 +479,7 @@ public sealed class GameLoop(
             // fired while it was away (PLAN.md §3.5).
             PlayerView.SendAbilities(existing, world, abilityCache, clock.CurrentPulse);
             view.SendRoom(world, existing, verbose: true);
-            view.RefreshRoom(world, existing.RoomKey);
+            view.MarkRoomChanged(existing.RoomKey);
             return;
         }
 
@@ -519,12 +526,9 @@ public sealed class GameLoop(
         PlayerView.SendAbilities(actor, world, abilityCache, clock.CurrentPulse);
         view.SendRoom(world, actor, verbose: true);
 
-        foreach (var other in world.OthersAwakeIn(actor.RoomKey, actor))
-        {
-            other.SendText($"{actor.Name} appears.", "movement");
-        }
+        world.TellOthersWhoCanSee(actor.RoomKey, actor, $"{actor.Name} appears.", "movement");
 
-        view.RefreshRoom(world, actor.RoomKey);
+        view.MarkRoomChanged(actor.RoomKey);
         EngineLog.PlayerEntered(logger, actor.Name, actor.RoomKey.ToString());
     }
 
@@ -596,7 +600,7 @@ public sealed class GameLoop(
         // Refresh any rooms marked for update by the command handler
         foreach (var roomKey in context.RoomsToRefresh)
         {
-            view.RefreshRoom(world, roomKey);
+            view.MarkRoomChanged(roomKey);
         }
 
         // Other people first, so an admin who kicked someone still sees the result before their
@@ -631,12 +635,10 @@ public sealed class GameLoop(
             actor.Output = null;
             actor.LinkDeadSincePulse = clock.CurrentPulse;
 
-            foreach (var other in world.OthersAwakeIn(actor.RoomKey, actor))
-            {
-                other.SendText($"{actor.Name} goes still, eyes unfocused.", "movement");
-            }
+            world.TellOthersWhoCanSee(
+                actor.RoomKey, actor, $"{actor.Name} goes still, eyes unfocused.", "movement");
 
-            view.RefreshRoom(world, actor.RoomKey);
+            view.MarkRoomChanged(actor.RoomKey);
             return;
         }
 
@@ -704,7 +706,7 @@ public sealed class GameLoop(
             }
         }
 
-        view.RefreshRoom(world, room);
+        view.MarkRoomChanged(room);
         EngineLog.PlayerLeft(logger, actor.Name, reason.ToString());
     }
 }
