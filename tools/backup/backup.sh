@@ -46,9 +46,9 @@ log() { echo "[backup $(date -u '+%Y-%m-%dT%H:%M:%SZ')] $*"; }
 # Exact row counts for every table in `public`, as sorted `name=count` lines.
 #
 # Discovered from the catalogue rather than from a hand-written table list, deliberately.
-# tools/export-content.sql carries a hand-copied column list and opens with a maintenance hazard
-# note explaining how that already produced an unloadable export once; a verify step that only
-# checked the nine tables somebody remembered would pass while silently ignoring a tenth.
+# The retired SQL export carried a hand-copied column list and drifted from the schema five times,
+# each drift silent; a verify step that only checked the nine tables somebody remembered would pass
+# while silently ignoring a tenth.
 # query_to_xml is the standard way to get a real count(*) per table in one statement - n_live_tup
 # is an estimate and would make this a vibe check rather than a comparison.
 row_counts() {

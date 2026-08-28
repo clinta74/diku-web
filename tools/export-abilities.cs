@@ -19,9 +19,17 @@
 // silently, and in one statement. `--all` is there for a database being rebuilt from nothing;
 // anything else should name the rows it means to change.
 //
-// The column list is a hand-written copy of the schema, exactly as tools/export-content.sql's is,
-// and carries the same hazard: **add or rename a column on `abilities` and you must edit this
-// file in the same commit.** Nothing compiles this string.
+// The column list is a hand-written copy of the schema: **add or rename a column on `abilities`
+// and you must edit this file in the same commit.** Nothing compiles this string.
+//
+// It is the last such list in the repository, and it is guarded rather than derived. The content
+// export had the identical flaw and drifted five times before it was retired for
+// `tools/export-bundle.cs`; the player export went the same way, to `tools/export-players.cs`.
+// Both of those read a database, so both could take their columns off the EF model. This one
+// reads `AbilityCatalogue` and deliberately depends on DikuWeb.Domain alone - it never opens a
+// connection, which is what lets it run against a database that does not exist yet. So the diff
+// lives in `AbilityExportCompletenessTests` instead, which fails if this list drifts from the
+// model in either direction, or if a column is inserted but not updated on conflict.
 //
 // NOTE: `dotnet run` on a file-based app caches its build against *this file's* content, so a
 // change in DikuWeb.Domain alone may not be picked up. Touch this file if output looks stale.

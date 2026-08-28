@@ -15,8 +15,8 @@ namespace DikuWeb.Server.Building;
 /// </summary>
 /// <remarks>
 /// <para>
-/// This carries <em>content</em> and nothing else: the same eight tables
-/// <c>tools/export-content.sql</c> covers, for the same reasons. Accounts, characters, item
+/// This carries <em>content</em> and nothing else: the same eight tables the retired SQL export
+/// covered, for the same reasons. Accounts, characters, item
 /// instances, character quests, and the two audit tables are player data and history, and an
 /// import that resurrected deleted characters would be a bug rather than a feature.
 /// </para>

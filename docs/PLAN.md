@@ -2424,15 +2424,15 @@ breaks it.
 **Squashing means every dev database is rebuilt, which means content has to survive it.** §6 makes
 Postgres the only source of truth for the world, so a database that is dropped takes the world with
 it — and the seeder rebuilds only twelve rooms of Millbrook, not the Sunken Crypt somebody dug, the
-mob templates they authored, or the spawners that place them. `tools/export-content.sql` writes
-those eight tables out as upserts:
+mob templates they authored, or the spawners that place them. `tools/export-bundle.cs` writes those
+eight tables out as a `WorldBundle`:
 
 ```
-tools/export-content.ps1                      # writes backups/content-<date>.sql
-docker exec dikuweb-postgres psql -U dikuweb -d dikuweb -f /tmp/content.sql
+dotnet run tools/export-bundle.cs -o content/the-reaches.json   # reads the DB, no server needed
+# then apply it through POST /api/builder/import
 ```
 
-Upserts rather than inserts, so the file does not care whether the seeder has already run — applied
+A merge rather than a mirror, so the file does not care whether the seeder has already run — applied
 to a seeded database the twelve Millbrook rooms are updated in place with whatever they had actually
 become, and to a bare one they are inserted. It exports **content only**: accounts, characters,
 items, quest progress, and the audit tables are player data and history, and a content restore that
@@ -2895,7 +2895,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
       so one bad pulse and a p99 creeping up for a week look identical. Where it is sent is a
       deployment decision, made below.
 - [x] **World export/import (JSON)** — `GET /api/builder/export`, `POST /api/builder/import`,
-      carrying the same eight content tables `tools/export-content.sql` covers (§6.1). A scoped
+      carrying the same eight content tables the SQL export covered (§6.1). A scoped
       export is **closed over its references, not merely filtered**: `?zone=` also carries the
       templates its spawners place, the mobs and items its quests name, the items those mobs drop,
       and the world above it — a bundle that was only filtered imports cleanly and then spawns
@@ -2945,9 +2945,9 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
       writable layer where they look completely normal and vanish on recreate.
       `tools/restore-drill.ps1` is the rehearsal: it restores a dump, **starts the server against
       it**, and reads the room count out of the loop's own startup line. That is a different
-      question from "does it restore", and §6.1's `backups/dikuweb-full-2026-08-10.dump` answers
-      the two differently — it restores perfectly and the server will not start against it,
-      because it predates the migration squash. Procedure in
+      question from "does it restore", and a pre-squash dump answers the two differently — it
+      restores perfectly and the server will not start against it, because it predates the
+      migration squash. Procedure in
       [RUNBOOK.md](RUNBOOK.md) §3b, tested.
 - [ ] Deployment pipeline:
       - [x] Dockerfile (multi-stage: publish layer, runtime layer, `dumb-init` entrypoint)

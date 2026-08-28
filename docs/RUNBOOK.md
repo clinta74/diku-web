@@ -57,7 +57,7 @@ container means backups are failing — read the log.
 
 ```powershell
 tools/restore-drill.ps1                                        # newest scheduled dump
-tools/restore-drill.ps1 -Dump backups/dikuweb-2026-08-14T144408Z.dump
+tools/restore-drill.ps1 -Dump backups/dikuweb-<stamp>.dump   # a specific one
 ```
 
 Restores into a scratch database, **starts the server against it**, waits for `/health/ready`, and
@@ -113,8 +113,9 @@ missing columns the baseline creates (`room_exits.required_flag_key`, `quests.re
 leaves those columns permanently absent. The server starts and then fails on the first query that
 names one.
 
-Since almost no dump in `backups/` predates 2026-08-15, **the honest default for a database with no
-characters worth keeping is to drop and recreate it** rather than repair the history:
+Since any dump taken before the 2026-08-15 baseline carries the pre-squash history, **the honest
+default for a database with no characters worth keeping is to drop and recreate it** rather than
+repair the history:
 
 ```sql
 DROP DATABASE dikuweb; CREATE DATABASE dikuweb;
@@ -125,8 +126,8 @@ a `WorldBundle` import (§10.1 of `WORLD.md`), which is what that format is for.
 
 ---
 
-`backups/dikuweb-full-2026-08-10.dump` restores with no errors and the server **will not start
-against it**:
+A pre-squash dump — `dikuweb-full-2026-08-10.dump`, kept as a specimen and since deleted —
+restored with no errors, and the server **would not start against it**:
 
 ```
 Applying migration '20260810145400_InitialCreate'.
@@ -294,16 +295,46 @@ a one-column correction — meets the same two traps, and they are the two steps
    a direct SQL write. Until the process reloads, the database is right and the game is wrong —
    which reads exactly like the patch not having worked, and invites running it again.
 
-**`tools/retag-weapon-slots.sql`** is the current worked example: it sets 12 weapons to either hand
-and 5 to two-handed, after the `ItemSlotList` migration has converted every `slot` into a one-element
-`slots`. It is idempotent — it sets values rather than toggling them — and it ends with a count that
-should read 12 and 5.
+The weapon-slot retag was the worked example: after the `ItemSlotList` migration converted every
+`slot` into a one-element `slots`, it set 12 weapons to either hand and 5 to two-handed. Two
+properties are what made it safe, and a patch written here should copy both — it **set** values
+rather than toggling them, so running it twice was running it once, and it **ended with a count**
+that had to read 12 and 5 before you believed it had worked.
 
 Prefer **importing `build/the-reaches.json`** when the world is otherwise up to date, since that
 carries everything else authored since the last import and goes through the loop, the audit trail
 and the validator. Prefer the SQL when it is not, and you only want the one change.
 
 ---
+
+## 5b. Moving an account to another server
+
+```bash
+dotnet run tools/export-players.cs --account clint
+dotnet run tools/export-players.cs --account clint --relocate ossara.gatetown.the-gate-yard
+```
+
+Writes a re-runnable SQL file and **touches nothing** — applying it is a separate command, printed
+at the end. It carries the account, its characters (deleted ones included, because `deleted_at` is
+the record of a retired name), everything those characters own walked recursively through
+containers, and their quest journals. It carries no content at all.
+
+**Run the world in first.** A character whose `room_key` names a room the target does not have is
+relocated to the starting room on entry — graceful, logged as `RelocatedFromMissingRoom`, and not
+what you wanted. `--relocate` is the answer when you already know the target lacks the room; the
+tool prints the rooms the target needs either way.
+
+Three things it refuses, all enforced in the generated SQL so they still hold when somebody applies
+the file by hand: overwriting a character name held by another account, overwriting a different
+account with the same email or username, and applying half of itself. **Re-running is destructive by
+design** — it replaces the moved characters' items and quests, scoped to those character ids and
+nothing else, which is what makes a second run produce the same state rather than a pile of ghosts.
+
+Its column lists are read off the EF relational model rather than typed in. That is not tidiness:
+the SQL script it replaced hand-copied four of them, and the sibling script that hand-copied nine
+drifted from the schema five times — silently every time, because a column that stops being
+emitted restores as its default (§3b, and BUGS.md #30).
+
 
 ## 6. Triage
 
