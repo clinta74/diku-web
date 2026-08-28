@@ -272,6 +272,11 @@ docker compose -f docker-compose.load.yml run --rm runner     --server http://we
 | `--hold <s>` | The measured window, which opens only once it is. |
 | `--metrics <url>` | Where `/metrics` is, when it is not on the same address as the game. |
 
+*On Windows, run that second command with `MSYS_NO_PATHCONV=1` in front of it.* Git Bash rewrites
+anything that looks like a Unix path before the process sees it, so `--out /runs` arrives as
+`C:/...` and the run dies on `Access to the path '/app/C:' is denied` — which reads like a
+container permissions problem and is not one.
+
 ### The verdict does not come from anything timed here
 
 **A command POST returns `202 Accepted` the moment it is queued.** `GameEndpoints.SubmitCommand`
