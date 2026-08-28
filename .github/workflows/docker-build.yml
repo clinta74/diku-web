@@ -58,6 +58,15 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # No provenance or SBOM attestations. Buildx attaches both by default, and each one
+          # adds a second manifest to the tag with platform "unknown/unknown" - which turns the
+          # tag from a plain image into an OCI index. A puller stores the image under the
+          # *platform* manifest's digest while the tag resolves to the *index* digest, so anything
+          # comparing "what I have" against "what the tag points to" sees two different values
+          # forever, including immediately after a successful pull. That is why TrueNAS reported
+          # an update available on every check, updated correctly, and then reported one again.
+          provenance: false
+          sbom: false
           cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/dikuweb-server:buildcache
           cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}/dikuweb-server:buildcache,mode=max', env.IMAGE_NAMESPACE) || '' }}
 
@@ -102,5 +111,14 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # No provenance or SBOM attestations. Buildx attaches both by default, and each one
+          # adds a second manifest to the tag with platform "unknown/unknown" - which turns the
+          # tag from a plain image into an OCI index. A puller stores the image under the
+          # *platform* manifest's digest while the tag resolves to the *index* digest, so anything
+          # comparing "what I have" against "what the tag points to" sees two different values
+          # forever, including immediately after a successful pull. That is why TrueNAS reported
+          # an update available on every check, updated correctly, and then reported one again.
+          provenance: false
+          sbom: false
           cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/dikuweb-client:buildcache
           cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}/dikuweb-client:buildcache,mode=max', env.IMAGE_NAMESPACE) || '' }}
