@@ -74,6 +74,9 @@ services:
       # How many characters the account may have at all, and how many may be in world at once.
       Sessions__MaxCharactersPerAccount: '8'
       Sessions__MaxConcurrentCharactersPerAccount: '3'
+      # Three missed 20s heartbeats before a quiet client is treated as link-dead. Zero disables
+      # the sweep and falls back to the kernel's retransmission timeout, which is minutes.
+      Sessions__HeartbeatTimeoutSeconds: '60'
       # No global session cap: Sessions__MaxConcurrentSessions was never a setting, and a hundred
       # would contradict the 200 concurrent sessions PLAN.md §11 targets and has now measured.
       Auth__CookieName: dikuweb.session

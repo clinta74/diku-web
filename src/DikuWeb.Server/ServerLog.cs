@@ -200,4 +200,24 @@ internal static partial class ServerLog
         Level = LogLevel.Information,
         Message = "Character '{Name}' was deleted by an administrator")]
     public static partial void CharacterDeleted(ILogger logger, string name);
+
+    [LoggerMessage(
+        EventId = 1030,
+        Level = LogLevel.Information,
+        Message = "'{Character}' stopped answering {QuietSeconds:0}s ago; treating as link-dead")]
+    public static partial void SessionWentQuiet(ILogger logger, string character, double quietSeconds);
+
+    [LoggerMessage(
+        EventId = 1031,
+        Level = LogLevel.Warning,
+        Message = "Session liveness sweeping is disabled. A client that vanishes without closing "
+            + "its socket will hold its session until the kernel gives up retransmitting, which "
+            + "was measured at over sixteen minutes.")]
+    public static partial void LivenessSweepDisabled(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 1032,
+        Level = LogLevel.Error,
+        Message = "A session liveness sweep failed. The sweeper is still running.")]
+    public static partial void LivenessSweepFailed(ILogger logger, Exception exception);
 }

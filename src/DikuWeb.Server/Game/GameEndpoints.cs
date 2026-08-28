@@ -44,6 +44,7 @@ public static class GameEndpoints
             .RequireRateLimiting(RateLimiting.Commands);
 
         group.MapPost("/{characterId:guid}/leave", Leave);
+        group.MapPost("/{characterId:guid}/heartbeat", Heartbeat);
     }
 
     /// <summary>Which of this account's characters are currently in the world.</summary>
@@ -390,6 +391,11 @@ public static class GameEndpoints
             return Results.BadRequest(new { error = "Command too long." });
         }
 
+        // A command is evidence the client is there, quite apart from what it asks for. It does
+        // not set SendsHeartbeats: typing is not a promise to keep typing, and holding a session
+        // to a deadline it never agreed to is what the flag exists to prevent.
+        session.Seen(TimeProvider.System.GetUtcNow(), heartbeat: false);
+
         var accepted = gateway.TrySubmit(new PlayerCommand
         {
             SessionId = session.Id,
@@ -399,6 +405,45 @@ public static class GameEndpoints
         // A full inbound queue means the loop is already behind, so 429 is honest: retrying
         // immediately would only make it worse.
         return accepted ? Results.Accepted() : Results.StatusCode(StatusCodes.Status429TooManyRequests);
+    }
+
+    /// <summary>
+    /// The client saying it is still there.
+    /// </summary>
+    /// <remarks>
+    /// <b>The only direction that proves anything.</b> Everything the server writes to a client
+    /// goes into a kernel send buffer and succeeds whether or not anybody is listening, which is
+    /// why a vanished client used to hold a live session for seventeen minutes (PLAN.md §11).
+    /// A request arriving is the one signal that cannot be faked by a socket that has stopped
+    /// working.
+    ///
+    /// Deliberately not the command endpoint: a player reading their scrollback sends no commands
+    /// for minutes at a time and is entirely present. Deliberately not rate limited either — it is
+    /// smaller and rarer than a command, and throttling the evidence of life into silence would
+    /// invent the very failure this exists to detect.
+    /// </remarks>
+    private static IResult Heartbeat(
+        Guid characterId,
+        HttpContext http,
+        SessionRegistry sessions,
+        TimeProvider clock)
+    {
+        if (!http.TryGetAccountId(out var accountId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var session = sessions.Find(accountId, characterId);
+
+        if (session is null)
+        {
+            // Not in the world. The client should stop beating and re-enter; saying so is more
+            // use than a 204 that lets it keep talking to nothing.
+            return Results.Conflict(new { error = "That character is not in the world." });
+        }
+
+        session.Seen(clock.GetUtcNow(), heartbeat: true);
+        return Results.NoContent();
     }
 
     /// <summary>

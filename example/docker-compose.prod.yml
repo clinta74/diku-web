@@ -91,6 +91,12 @@ services:
       # How many of them may be in the world at once, each holding an SSE connection:
       Sessions__MaxConcurrentCharactersPerAccount: "3"
       #
+      # How long a client may go quiet before it is treated as link-dead. The client beats every
+      # 20s, so this is three missed beats. Zero disables the sweep, and the server then falls
+      # back to noticing a dropped connection only when the kernel gives up retransmitting -
+      # measured at over sixteen minutes, proxy or no proxy (PLAN.md §11).
+      Sessions__HeartbeatTimeoutSeconds: "60"
+      #
       # There is deliberately no global session cap. A Sessions__MaxConcurrentSessions of 100 used
       # to sit here and bound to nothing - there is no such setting - and a hundred would now
       # contradict PLAN.md §11, which targets 200 concurrent sessions on one process and has

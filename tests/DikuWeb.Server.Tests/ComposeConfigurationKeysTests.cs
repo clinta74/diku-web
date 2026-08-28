@@ -71,11 +71,12 @@ public sealed class ComposeConfigurationKeysTests
     }
 
     [Fact]
-    public void The_section_holds_the_two_caps_and_no_others()
+    public void The_section_holds_exactly_the_settings_the_deployments_declare()
     {
-        // Pins the shape the test above depends on. If a third setting is added, this fails and
-        // whoever added it decides whether the example deployments should set it - which is the
-        // conversation that never happened for the two keys that bound to nothing.
+        // Pins the shape the test above depends on. When a setting is added this fails, and
+        // whoever added it decides whether the example deployments should declare it - which is
+        // the conversation that never happened for the two keys that bound to nothing. It has
+        // already earned its keep once: HeartbeatTimeoutSeconds arrived and this caught it.
         //
         // The two are easy to confuse and were confused: one bounds how many characters an
         // account may HAVE, the other how many may be in the world AT ONCE. The shipped compose
@@ -89,6 +90,7 @@ public sealed class ComposeConfigurationKeysTests
 
         Assert.Equal(
             [
+                nameof(SessionRegistryOptions.HeartbeatTimeoutSeconds),
                 nameof(SessionRegistryOptions.MaxCharactersPerAccount),
                 nameof(SessionRegistryOptions.MaxConcurrentCharactersPerAccount),
             ],
@@ -96,11 +98,11 @@ public sealed class ComposeConfigurationKeysTests
     }
 
     [Fact]
-    public void The_example_deployments_set_both_caps()
+    public void The_example_deployments_declare_every_session_setting()
     {
         // Not merely "no unknown keys": a deployment that silently dropped one of these would be
         // running an undeclared default, which is the sort of thing nobody notices until it
-        // matters. Both are named in both files, so both are a deliberate choice.
+        // matters. Every one is named, so every one is a deliberate choice.
         foreach (var file in Directory.EnumerateFiles(
             Path.Combine(RepoRoot(), "example"), "docker-compose*.yml"))
         {
@@ -116,6 +118,8 @@ public sealed class ComposeConfigurationKeysTests
             Assert.Contains("Sessions__MaxCharactersPerAccount", text, StringComparison.Ordinal);
             Assert.Contains(
                 "Sessions__MaxConcurrentCharactersPerAccount", text, StringComparison.Ordinal);
+            Assert.Contains(
+                "Sessions__HeartbeatTimeoutSeconds", text, StringComparison.Ordinal);
         }
     }
 

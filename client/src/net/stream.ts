@@ -38,8 +38,48 @@ function mintConnectionId(): string {
  * Last-Event-ID header, which the server answers from its ring buffer (PLAN.md §3.4).
  * It also cannot set request headers, which is exactly why auth is a cookie.
  */
+/**
+ * How often to tell the server this screen is still here.
+ *
+ * A third of the server's sixty-second deadline, so two beats can be lost to a slow network
+ * without anybody being thrown out of the world. The traffic is nothing: at two hundred players
+ * this is ten requests a second against the eighty-nine commands a second a busy world was
+ * measured handling.
+ */
+export const HEARTBEAT_INTERVAL_MS = 20_000
+
+/**
+ * Tells the server the player is still there, because nothing else does.
+ *
+ * **The SSE stream cannot prove this and never could.** Everything the server writes goes into a
+ * kernel send buffer and succeeds whether or not anyone is listening, so a phone that goes into a
+ * tunnel leaves a character standing in the world — broadcast to, regenerated, and looking to
+ * everyone else like somebody idle rather than somebody dropped. Measured at over sixteen minutes
+ * before the server noticed (PLAN.md §11). A request travelling the other way is the one signal a
+ * dead socket cannot produce.
+ *
+ * Failures are ignored on purpose. A missed beat is what a flaky network looks like, the next one
+ * is twenty seconds away, and the server allows three before it does anything.
+ */
+function startHeartbeat(characterId: string): () => void {
+  const beat = () => {
+    void fetch(`/api/game/${characterId}/heartbeat`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      keepalive: true,
+    }).catch(() => {})
+  }
+
+  // One immediately, so a reconnecting client is not counted as quiet for its first interval.
+  beat()
+
+  const timer = setInterval(beat, HEARTBEAT_INTERVAL_MS)
+  return () => clearInterval(timer)
+}
+
 export function connectStream(characterId: string, handlers: StreamHandlers): () => void {
   const connectionId = mintConnectionId()
+  const stopHeartbeat = startHeartbeat(characterId)
 
   // Set when the server says another device has taken over. Everything that would reopen the
   // stream checks it, because reconnecting is precisely what must not happen.
@@ -70,6 +110,7 @@ export function connectStream(characterId: string, handlers: StreamHandlers): ()
           // start the tug-of-war this frame exists to end.
           if (type === 'sys' && data?.kind === 'displaced') {
             displaced = true
+            stopHeartbeat()
             stream.close()
             handlers.onDisplaced?.(String(data.message ?? ''))
             return
@@ -115,6 +156,7 @@ export function connectStream(characterId: string, handlers: StreamHandlers): ()
 
   return () => {
     document.removeEventListener('visibilitychange', onVisible)
+    stopHeartbeat()
     source.close()
   }
 }

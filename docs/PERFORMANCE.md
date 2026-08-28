@@ -286,6 +286,50 @@ are real, and which is why the worst case was worth measuring.
 
 ---
 
+## 7b. A coda: the same method, a different bug
+
+The apparatus built for §11's session target found a second defect on the way, and it is worth
+reading because **none of the rules above changed — only the subject did.**
+
+The server could not tell a departed player from an idle one for over sixteen minutes. Link-dead is
+signalled when a write to the SSE socket fails, and a small write into a kernel send buffer succeeds
+for a very long time after the peer stops acknowledging. The fifteen-second heartbeat the server
+already sent looks exactly like a liveness check and is not one: it proves the *server* is alive.
+
+| the client goes away by… | detection |
+|---|---|
+| its container being killed — a reset is sent | ~7 s |
+| its network being severed — silence | **~16.7 min** |
+| the same, through nginx | ~16.4 min |
+
+Four things in that investigation generalise:
+
+**An anecdote is not a measurement, in either direction.** The first report of this was "about five
+minutes", noticed incidentally during another run. It was wrong, and it was wrong *optimistically*
+— the truth was three times worse. A number nobody timed is a hypothesis wearing a number's clothes.
+
+**Test the failure mode you mean, not the one that is easy to produce.** `docker kill` tears down a
+container's network, which sends a reset, which the server sees in seven seconds. That is a real
+scenario and it was already fine. The scenario that mattered — a phone entering a tunnel — sends
+nothing at all, and reproducing it needed the container kept alive with its network severed. Two
+experiments that look the same differ by three orders of magnitude.
+
+**The obvious mitigation was measured before it was trusted.** nginx sets `proxy_send_timeout 60s`
+and it was reasonable to expect that would bound the problem. It did not: the proxy has the identical
+blind spot, its own writes succeed into its own buffer, and it changed 1,093 seconds to 1,072. Had
+that been assumed rather than measured, the conclusion would have been "fine in production" and the
+defect would have shipped.
+
+**A test that cannot fail proves nothing, and one that measures the wrong thing is worse.** Twice in
+this investigation a run reported a plausible number for the wrong reason: `/metrics` through nginx
+returned the SPA's `index.html` — HTTP 200, no pulse samples — and the load apparatus initially sent
+no heartbeats, which would have exercised the old-client fallback and shown no improvement at all.
+The first was caught because the probe refuses to parse an empty histogram into a healthy zero. The
+second was caught by asking what the apparatus was actually doing before believing its output.
+
+> **Rule 13 — Reproduce the failure you mean, not the one that is convenient.**
+> **Rule 14 — Measure the mitigation before you rely on it, especially when it is obvious.**
+
 ## 8. The rules, collected
 
 1. A benchmark that does not reproduce the shape of production measures nothing.
@@ -300,6 +344,8 @@ are real, and which is why the worst case was worth measuring.
 10. Ask which side of the wire a piece of work belongs on.
 11. In a tick-based system, ask what is observable at the tick boundary.
 12. When a metric stops moving, check whether it is still measuring what you think.
+13. Reproduce the failure you mean, not the one that is convenient.
+14. Measure the mitigation before you rely on it, especially when it is obvious.
 
 ## 9. Where the code is
 
@@ -310,4 +356,5 @@ are real, and which is why the worst case was worth measuring.
 | [RoomBroadcast.cs](../src/DikuWeb.Engine/World/RoomBroadcast.cs) | Build-once-send-many for room prose |
 | [self.ts](../client/src/state/self.ts) | The client half of the protocol change |
 | [RoomRefreshCoalescingTests.cs](../tests/DikuWeb.Engine.Tests/Presentation/RoomRefreshCoalescingTests.cs) | The invariants, pinned |
+| [SessionLivenessMonitor.cs](../src/DikuWeb.Server/Game/SessionLivenessMonitor.cs) | The coda: reaping clients that stopped saying they were there |
 | [PLAYTEST.md](PLAYTEST.md) | The load harness that produced every number here |

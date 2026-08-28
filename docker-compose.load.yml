@@ -93,6 +93,40 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # The production front door, for the runs that need to measure through it rather than around it.
+  #
+  # Not started by default: most load runs want the server on its own, so that what is measured is
+  # the game loop rather than a proxy. It exists because one question genuinely depends on the
+  # proxy being there — how fast a vanished client is *noticed*. Kestrel only learns that a peer
+  # is gone when a write fails, and a write into a kernel send buffer succeeds for a long time
+  # after the peer stops acknowledging. In production nginx is the peer, it is on the same host,
+  # and it has its own timeouts — so the answer through here and the answer around here can differ
+  # by minutes, and only the first one is about the deployment.
+  proxy:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: dikuweb-load-proxy
+    profiles: ["proxy"]
+
+    networks:
+      - dikuweb-network
+
+    depends_on:
+      web:
+        condition: service_healthy
+
+    environment:
+      # The service name of the server in this file, which is what the client image already
+      # defaults to. Stated rather than inherited so the coupling is visible.
+      BACKEND_ORIGIN: http://web:8080
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # The apparatus. Not started with the stack — it is a run, not a service.
   runner:
     build:

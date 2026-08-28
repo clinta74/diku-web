@@ -25,6 +25,7 @@ public sealed class Actor : IAsyncDisposable
 
     private SseStream? _stream;
     private Task? _pump;
+    private Task? _heartbeat;
 
     private Actor(
         string role,
@@ -201,6 +202,58 @@ public sealed class Actor : IAsyncDisposable
 
         _stream = new SseStream(await response.Content.ReadAsStreamAsync(cancellationToken));
         _pump = Task.Run(() => PumpAsync(_pumpStop.Token), CancellationToken.None);
+        _heartbeat = Task.Run(() => HeartbeatAsync(_pumpStop.Token), CancellationToken.None);
+    }
+
+    /// <summary>
+    /// How often to tell the server this actor is still here. Matches the browser client.
+    /// </summary>
+    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(20);
+
+    /// <summary>
+    /// Says "still here" on the same cadence the real client does.
+    /// </summary>
+    /// <remarks>
+    /// <b>The apparatus has to speak the protocol the browser speaks, or it measures a different
+    /// game.</b> The server only holds a session to the liveness deadline once that session has
+    /// sent at least one heartbeat - which is what keeps a cached old build from being reaped - so
+    /// an apparatus that never beat would quietly exercise the fallback path on every run, and a
+    /// load test of the reaping would have measured its own absence.
+    /// </remarks>
+    private async Task HeartbeatAsync(CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(HeartbeatInterval);
+
+        try
+        {
+            // One immediately, so a session is never counted as quiet for its first interval.
+            await BeatAsync(cancellationToken);
+
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                await BeatAsync(cancellationToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Shutting down.
+        }
+    }
+
+    private async Task BeatAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _client.PostAsync(
+                new Uri($"/api/game/{CharacterId}/heartbeat", UriKind.Relative),
+                null,
+                cancellationToken);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException)
+        {
+            // A missed beat is what a bad network looks like; the server allows three. Recording
+            // it would fill a load run's transcript with the noise this is designed to tolerate.
+        }
     }
 
     /// <summary>
@@ -346,6 +399,11 @@ public sealed class Actor : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await _pumpStop.CancelAsync();
+
+        if (_heartbeat is not null)
+        {
+            await Task.WhenAny(_heartbeat, Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None));
+        }
 
         if (_pump is not null)
         {

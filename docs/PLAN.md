@@ -3182,6 +3182,51 @@ of a launch, a world event, or everyone standing in the starting room, and those
 unfinished work is a middle case: 200 sessions spread naturally across the world, which the
 apparatus can now measure in one command.
 
+### Noticing a client that vanished
+
+The apparatus was built to measure the session target and found something else on the way: **the
+server could not tell a departed player from an idle one for over a quarter of an hour.**
+
+Link-dead is signalled in exactly one place — when the SSE pump returns, which happens when
+`RequestAborted` fires or a write throws. So §3.6's ninety-second grace window does not start until
+the HTTP layer notices, and the HTTP layer notices by failing to write. The fifteen-second `: ping`
+looks like it should catch this and cannot: eight bytes into a kernel send buffer *succeeds*, for
+thousands of pings, on a peer that stopped acknowledging long ago. Nothing fails until the kernel
+gives up retransmitting.
+
+Measured, 50 sessions, timing `dikuweb_sessions_active` to zero:
+
+| the client goes away by… | before | after |
+|---|---|---|
+| its container being killed — a reset is sent | 97 s | 97 s |
+| its network being severed — no FIN, no RST | **1,093 s** | **154 s** |
+| the same, through nginx | 1,072 s | — |
+
+**The proxy made no difference**, which is the finding that decided the fix. nginx has the identical
+blind spot: its own writes to the client succeed into its own send buffer, so its timeouts never
+arm and it sits there as blind as Kestrel. Adding a proxy added a second component waiting on
+`tcp_retries2`. The decay shape says the same thing — flat for seventeen minutes, then 50 → 0 in
+about fifty seconds, fifty retransmission timers expiring together.
+
+For those seventeen minutes the character was not link-dead. It was an ordinary player: standing in
+a room, broadcast to, regenerated, ticked, and looking to everyone else like somebody idle rather
+than somebody dropped, because nothing had noticed there was anything to grace.
+
+**So the client says it is there, and the server reaps the sessions that stop saying it.**
+A heartbeat every 20 s, a 60 s deadline, an ordinary `LeaveReason.LinkDead` when it lapses — so
+everything downstream is unchanged. Detection is now ~64 s and the remaining 90 s of the 154 is the
+grace window, which is the part that is supposed to be there.
+
+Two details are load-bearing rather than incidental:
+
+- **A session is only held to the deadline once it has sent one heartbeat.** A browser running a
+  cached build from before this existed sends none, and reaping it for that would take a healthy
+  player out of the world for running yesterday's JavaScript. Those keep exactly the old behaviour,
+  and the fallback disappears on its own as bundles refresh.
+- **`so_keepalive` on nginx is defence in depth, not the mechanism.** It is one line and it fails
+  independently, but the measurement above is why it cannot be the answer: the proxy is not always
+  in front, and knowing a player is there beats inferring it from a socket.
+
 ---
 
 ## 12. Next step

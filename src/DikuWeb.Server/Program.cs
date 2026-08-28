@@ -117,6 +117,11 @@ builder.Configuration.GetSection("Sessions").Bind(sessionOptions);
 builder.Services.AddSingleton(sessionOptions);
 builder.Services.AddSingleton<SessionRegistry>();
 
+// Reaps sessions whose client has stopped saying it is there. Without it, a client that vanishes
+// without closing its socket is not noticed until the kernel gives up retransmitting - measured at
+// over sixteen minutes, with or without nginx in front (PLAN.md §11).
+builder.Services.AddHostedService<SessionLivenessMonitor>();
+
 builder.Services.AddSingleton<IPasswordHasher<Account>, PasswordHasher<Account>>();
 
 var authOptions = new AuthOptions();

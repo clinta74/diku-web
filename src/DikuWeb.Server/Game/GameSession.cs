@@ -52,6 +52,58 @@ public sealed class GameSession
     public bool IsStreaming { get; internal set; }
 
     /// <summary>
+    /// When this client last proved it was still there.
+    /// </summary>
+    /// <remarks>
+    /// <b>Not the last time we wrote to it, which proves nothing.</b> A TCP write into a kernel
+    /// send buffer succeeds long after the peer has stopped acknowledging it, so the fifteen-second
+    /// SSE heartbeat is a keep-alive for proxies rather than a liveness check — measured, a client
+    /// whose network vanished silently was still holding a live session seventeen minutes later,
+    /// with or without nginx in front (PLAN.md §11). This is the other direction: the client says
+    /// something, so somebody is there.
+    /// </remarks>
+    public DateTimeOffset LastSeenAt { get; private set; } = DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// Whether this client has ever sent a heartbeat, and so may be held to a deadline.
+    /// </summary>
+    /// <remarks>
+    /// <b>The migration hinge, and the reason reaping is safe to turn on.</b> A browser holding a
+    /// cached build from before heartbeats existed sends none — and reaping it for that would take
+    /// a perfectly healthy player out of the world for running yesterday's JavaScript. So a session
+    /// is only ever held to the deadline once it has proved, at least once, that it knows how to
+    /// meet it. Old clients keep exactly the behaviour they have today: nothing better, nothing
+    /// worse, and no cliff on the day this deploys.
+    /// </remarks>
+    public bool SendsHeartbeats { get; private set; }
+
+    private int _reaped;
+
+    /// <summary>Records that the client is still there.</summary>
+    public void Seen(DateTimeOffset at, bool heartbeat)
+    {
+        LastSeenAt = at;
+
+        if (heartbeat)
+        {
+            SendsHeartbeats = true;
+        }
+    }
+
+    /// <summary>
+    /// Claims this session for reaping, returning false if it was already claimed.
+    /// </summary>
+    /// <remarks>
+    /// The loop leaves a session in the registry for the whole link-dead grace window, so without
+    /// this the sweep would re-submit every six seconds for ninety seconds. The loop ignores the
+    /// repeats, but the log would report fifteen disconnections where one happened.
+    /// </remarks>
+    public bool MarkReaped() => Interlocked.Exchange(ref _reaped, 1) == 0;
+
+    /// <summary>Whether the liveness sweep has already given up on this session.</summary>
+    public bool IsReaped => Volatile.Read(ref _reaped) == 1;
+
+    /// <summary>
     /// The id the next recorded event would get, without taking it.
     /// </summary>
     /// <remarks>
@@ -326,6 +378,21 @@ public sealed class SessionRegistryOptions
     /// </para>
     /// </remarks>
     public int MaxCharactersPerAccount { get; set; } = 8;
+
+    /// <summary>
+    /// How long a heartbeating client may go quiet before it is treated as gone, in seconds.
+    /// </summary>
+    /// <remarks>
+    /// Comfortably more than the client's interval, because the cost of the two errors is not
+    /// symmetric: reaping a live player who was briefly slow throws them out of the world, while
+    /// waiting a few seconds longer on a client that has genuinely gone costs a session slot
+    /// nobody is contending for. Three missed beats before anything happens.
+    ///
+    /// Zero or less disables the sweep entirely, which is the escape hatch if it ever misbehaves
+    /// in a deployment: the server falls back to noticing dropped connections the way it always
+    /// has, which is to say slowly.
+    /// </remarks>
+    public int HeartbeatTimeoutSeconds { get; set; } = 60;
 }
 
 /// <summary>
@@ -414,6 +481,9 @@ public sealed class SessionRegistry(SessionRegistryOptions options)
         var session = _byCharacter.GetValueOrDefault(characterId);
         return session?.AccountId == accountId ? session : null;
     }
+
+    /// <summary>Every live session, for the sweep that reaps the ones that have gone quiet.</summary>
+    public IReadOnlyList<GameSession> All => [.. _byCharacter.Values];
 
     public IReadOnlyList<GameSession> ForAccount(Guid accountId) =>
         [.. _byCharacter.Values.Where(s => s.AccountId == accountId)];

@@ -65,8 +65,19 @@ http {
     resolver ${DNS_RESOLVER} valid=10s ipv6=off;
 
     server {
-        listen 80 default_server;
-        listen [::]:80 default_server;
+        # so_keepalive is defence in depth for the SSE stream, and the numbers are deliberate:
+        # probe after 30s of silence, again every 10s, give up after 3 failures - so a client that
+        # vanished without closing its socket is noticed in about a minute rather than whenever the
+        # kernel finishes retransmitting.
+        #
+        # It is NOT the mechanism. The client sends its own heartbeat and the server reaps sessions
+        # that stop arriving, because nginx is not always in front and because knowing a player is
+        # there beats inferring it from a socket. Measured before this line existed: a client whose
+        # network was severed held a live session for sixteen and a half minutes through nginx and
+        # sixteen and a half minutes without it - the proxy made no difference at all, because its
+        # own writes were succeeding into a send buffer exactly as Kestrel's were (PLAN.md §11).
+        listen 80 default_server so_keepalive=30s:10s:3;
+        listen [::]:80 default_server so_keepalive=30s:10s:3;
         server_name _;
 
         root /usr/share/nginx/html;
