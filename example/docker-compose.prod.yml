@@ -82,8 +82,19 @@ services:
       Logging__LogLevel__Microsoft: Warning
       Logging__LogLevel__Microsoft.EntityFrameworkCore: Warning
       # Sessions (PLAN.md §3.2)
-      Sessions__MaxCharactersPerAccount: "5"
-      Sessions__MaxConcurrentSessions: "100"
+      #
+      # Two different limits, and the names have to be exact - the binder ignores a key it does
+      # not recognise, so a misspelling takes effect nowhere and says nothing.
+      #
+      # How many characters this account may have at all:
+      Sessions__MaxCharactersPerAccount: "8"
+      # How many of them may be in the world at once, each holding an SSE connection:
+      Sessions__MaxConcurrentCharactersPerAccount: "3"
+      #
+      # There is deliberately no global session cap. A Sessions__MaxConcurrentSessions of 100 used
+      # to sit here and bound to nothing - there is no such setting - and a hundred would now
+      # contradict PLAN.md §11, which targets 200 concurrent sessions on one process and has
+      # measured them being held.
       # Auth (PLAN.md §7.1)
       Auth__CookieName: dikuweb.session
       Auth__SessionTimeoutMinutes: "20160"

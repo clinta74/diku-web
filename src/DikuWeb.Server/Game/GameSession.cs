@@ -305,6 +305,27 @@ public sealed class SessionRegistryOptions
     /// policy wants more.
     /// </remarks>
     public int MaxConcurrentCharactersPerAccount { get; set; } = 3;
+
+    /// <summary>
+    /// How many characters one account may <b>have</b>, in the world or not.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A roster limit, and a different question from
+    /// <see cref="MaxConcurrentCharactersPerAccount"/> above — that one is a resource bound on how
+    /// many may be <em>playing at once</em>, because each holds an open SSE connection and a ring
+    /// buffer. This one bounds how many may exist at all, which costs a row rather than a socket.
+    /// The two are easy to confuse and were: the shipped compose files set
+    /// <c>Sessions__MaxCharactersPerAccount</c> for months against a server that had no such
+    /// setting and no roster cap of any kind, so an account could create characters without limit
+    /// while the deployment read as though it were capped at five.
+    /// </para>
+    /// <para>
+    /// Counted over characters that have not been deleted, matching what the character list
+    /// returns — a player who deleted one has the slot back, which is what deleting is for.
+    /// </para>
+    /// </remarks>
+    public int MaxCharactersPerAccount { get; set; } = 8;
 }
 
 /// <summary>

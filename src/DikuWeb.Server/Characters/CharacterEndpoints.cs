@@ -3,6 +3,7 @@ using DikuWeb.Domain.Characters;
 using DikuWeb.Engine;
 using DikuWeb.Persistence;
 using DikuWeb.Server.Auth;
+using DikuWeb.Server.Game;
 using Microsoft.EntityFrameworkCore;
 
 namespace DikuWeb.Server.Characters;
@@ -52,6 +53,7 @@ public static partial class CharacterEndpoints
         HttpContext http,
         DikuWebDbContext db,
         EngineOptions engineOptions,
+        SessionRegistryOptions sessionOptions,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
@@ -76,6 +78,26 @@ public static partial class CharacterEndpoints
         if (await db.Characters.AnyAsync(c => c.Name == request.Name, cancellationToken))
         {
             return Results.Conflict(new { error = "That name is taken." });
+        }
+
+        // A roster cap, distinct from the concurrent-session cap the same options class carries.
+        // Deleted characters do not count, matching the list this account can see - deleting one
+        // is how a player frees a slot.
+        //
+        // Checked after the name and path, so somebody at the cap who also mistyped a name is told
+        // about the name first. The cap is the answer they can do nothing about in this request,
+        // and reporting it while a fixable problem is also present would send them away to delete
+        // a character they did not need to.
+        var existing = await db.Characters
+            .CountAsync(c => c.AccountId == accountId && c.DeletedAt == null, cancellationToken);
+
+        if (existing >= sessionOptions.MaxCharactersPerAccount)
+        {
+            return Results.Conflict(new
+            {
+                error = $"You already have {existing} characters, which is the limit. "
+                    + "Delete one to make room.",
+            });
         }
 
         var character = new Character

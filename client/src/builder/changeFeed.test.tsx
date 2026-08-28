@@ -49,7 +49,14 @@ class FakeEventSource {
 
   closed = false
 
-  constructor(public url: string) {
+  // Declared and assigned rather than written as a parameter property. `erasableSyntaxOnly` is on
+  // in tsconfig, and a parameter property is the one piece of TypeScript here that emits runtime
+  // code rather than being erased - so it fails the build (TS1294) while looking like ordinary
+  // type annotation. This spelling is the same thing without the codegen.
+  url: string
+
+  constructor(url: string) {
+    this.url = url
     FakeEventSource.last = this
   }
 

@@ -68,11 +68,15 @@ Game routes are scoped by character (`/api/game/{characterId}/stream`), so each 
 stream, scrollback, and link-dead window. The character select screen marks the ones already
 in world.
 
-The default cap is **3 characters per account**, set by
+The default cap is **3 characters per account in the world at once**, set by
 `Sessions:MaxConcurrentCharactersPerAccount` in `appsettings.json`. It exists because each
 character in the world holds an open SSE connection and a ring buffer, not as a game rule
 about multi-boxing — raise it if you want. Reconnecting a character that is already in world
 does not consume a slot.
+
+Separately, an account may **have 8 characters** in total, played or not
+(`Sessions:MaxCharactersPerAccount`). That one is a roster limit rather than a resource bound: a
+character in the list costs a row, not a socket. Deleting one frees the slot.
 
 ## Building the world
 

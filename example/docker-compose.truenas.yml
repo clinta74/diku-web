@@ -69,8 +69,13 @@ services:
       Logging__LogLevel__Default: Warning
       Logging__LogLevel__Microsoft: Warning
       Logging__LogLevel__Microsoft.EntityFrameworkCore: Warning
-      Sessions__MaxCharactersPerAccount: '5'
-      Sessions__MaxConcurrentSessions: '100'
+      # Two different limits, and the names have to be exact: the binder ignores what it does not
+      # recognise, so a misspelt key takes effect nowhere and says nothing.
+      # How many characters the account may have at all, and how many may be in world at once.
+      Sessions__MaxCharactersPerAccount: '8'
+      Sessions__MaxConcurrentCharactersPerAccount: '3'
+      # No global session cap: Sessions__MaxConcurrentSessions was never a setting, and a hundred
+      # would contradict the 200 concurrent sessions PLAN.md §11 targets and has now measured.
       Auth__CookieName: dikuweb.session
       Auth__SessionTimeoutMinutes: '20160'
       # 300, not 30. The engine default is 360 pulses (90s); 30 is shorter than that and drops a
