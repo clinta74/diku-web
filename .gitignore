@@ -52,3 +52,7 @@ __pycache__/
 
 # Worktrees created by the agent harness. Each is a checkout of this repo.
 .claude/worktrees/
+
+# Playtest and load-run output. A run directory is an artefact of one execution — the
+# transcripts and histograms are for reading now, not for keeping in history.
+runs/

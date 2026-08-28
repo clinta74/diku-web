@@ -1,0 +1,85 @@
+name: Load - the Gatetown circuit
+about: |
+  What two hundred people doing ordinary things costs the game loop.
+
+  Written for `--sessions`, and shaped by what actually makes a single-threaded loop work. Request
+  rate is not the expensive thing here: a command POST returns 202 the moment it is queued, so a
+  client hammering the endpoint measures the queue rather than the game. What costs the loop is
+  world state — and the sharpest version of that is **fan-out**, because every movement is
+  broadcast to everyone standing in the room being left and the room being entered. Two hundred
+  characters circling three rooms is the closest an honest plan gets to the quadratic case: if a
+  per-room broadcast is O(occupants) inside a sweep that is already O(occupants), this is where it
+  shows, and nowhere else in the suite would.
+
+  The circuit is Gatetown's spine — the Gate Yard, the Common, North Lane, and back the same way.
+  Three rooms rather than a wider ring, deliberately: spreading two hundred characters over a
+  dozen rooms would be gentler and would prove less. Everything passes through the Common twice a
+  lap, so that room carries the heaviest traffic in the run and is where a quadratic broadcast
+  would first become visible.
+
+  It starts at the Gate Yard because that is where the active world puts a new character
+  (`the-reaches`, `game_configurations.starting_room_key`), so no session has to travel before it
+  begins contributing load. And it ends there too — `--sessions` cycles a plan's steps for the
+  whole hold, so a plan finishing anywhere else would walk its cast into a wall on the second lap
+  and spend the measured window recording two hundred people failing to move.
+
+  `who` is in here on purpose. It is the one ordinary command whose cost scales with the number of
+  people online, so at two hundred sessions each invocation does two hundred times the work it
+  does in a playtest — and two hundred people running it is the only part of this plan that is
+  quadratic by intent rather than by accident.
+
+  **Every step carries two seconds of think time**, and the number is load-bearing. Without it a
+  session runs its lap as fast as the server answers, which came out at four commands a second —
+  faster than a person can type, and close enough to the five-a-second rate limiter that the run
+  measures a client being throttled rather than a game being played. Two seconds puts each session
+  at roughly half a command a second, which is a busy player rather than a held-down key, and
+  makes the total offered rate scale with the session count in a way somebody can reason about.
+  The report prints the commands-per-second it actually saw, so this can be checked rather than
+  trusted.
+
+  This plan deliberately declares no `world:` fixtures. It runs against whatever is in the
+  database, needs no builder credential, and cannot leave content behind — all three of which
+  matter for something that will be pointed at a staging box.
+
+cast:
+  - name: Wanderer
+    path: Warden
+
+steps:
+  - actor: Wanderer
+    note: |
+      Read the room first. At two hundred sessions this is also the first honest look at whether
+      the arrival burst still lands promptly with a full world — a description that shows up late
+      here is the loop already behind before anybody has walked anywhere.
+    do: look
+    wait: { text: "Exits:", seconds: 2 }
+    expect: "Exits:"
+
+  - actor: Wanderer
+    note: |
+      North into the Common, which is the busiest room in the run: every session crosses it twice
+      a lap, so at two hundred sessions it is where the fan-out cost concentrates.
+    do: north
+    wait: { text: "The Common", seconds: 2 }
+
+  - actor: Wanderer
+    note: |
+      The command whose cost is the population. Trivial alone, and the reason it is in a load plan.
+    do: who
+    wait: { text: "online", seconds: 2 }
+
+  - actor: Wanderer
+    do: north
+    wait: { text: "North Lane", seconds: 2 }
+
+  - actor: Wanderer
+    do: south
+    wait: { text: "The Common", seconds: 2 }
+
+  - actor: Wanderer
+    note: |
+      Back where the lap began, so the next one starts from the same room. The circuit closing is
+      what makes this plan safe to cycle for as long as the hold runs.
+    do: south
+    wait: { text: "The Gate Yard", seconds: 2 }
+    expect: "The Gate Yard"

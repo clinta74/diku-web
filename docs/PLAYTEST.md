@@ -255,6 +255,114 @@ the default `itemValue` of 1.0, since sellback is half of the *instance's* value
 of what the smith charges. Tuning that zone moves one line of one plan, which is cheap — but it
 will look like a shop bug if nobody knows.
 
+## Load mode
+
+The same apparatus, asked a different question. `--sessions` holds a stated number of characters in
+the world, plays a plan with all of them at once, and reports what it did to the game loop.
+
+```
+docker compose -f docker-compose.load.yml up -d --build web
+docker compose -f docker-compose.load.yml run --rm runner     --server http://web:8080 --plans Plans/load-village.yaml     --sessions 200 --ramp 120 --hold 180
+```
+
+| Flag | |
+|---|---|
+| `--sessions <n>` | Concurrent character sessions to hold. Rounded up to a whole number of casts. |
+| `--ramp <s>` | Arrivals are spread over this long, then the run waits for the world to actually be full. |
+| `--hold <s>` | The measured window, which opens only once it is. |
+| `--metrics <url>` | Where `/metrics` is, when it is not on the same address as the game. |
+
+### The verdict does not come from anything timed here
+
+**A command POST returns `202 Accepted` the moment it is queued.** `GameEndpoints.SubmitCommand`
+hands the input to the gateway and returns without waiting for the loop to touch it. So every
+latency this apparatus could measure at the socket is the time to enqueue a string — and under a
+loop that had fallen four seconds behind, that number would stay beautiful. It is not a useful
+signal and it is worse than useless as a headline, because it looks like one.
+
+The signal is **pulse duration**, it lives inside the server, and `/metrics` is how it gets out.
+`MetricsProbe` scrapes it at both ends of the hold and `Histogram.Since` subtracts them: every
+instrument there is a total since boot, so the difference is exactly the pulses that happened while
+the world was full, with the idle minutes before the run excluded rather than averaged in.
+
+Three properties of that report are worth knowing:
+
+- **"Over 25 ms" is a count, not an estimate.** The exporter puts an explicit bucket boundary at
+  25 because that is the §11 budget, so the number of pulses above it is read off the histogram
+  rather than interpolated across a bucket. `CountAbove` returns null for any bound that is *not* a
+  boundary rather than quietly interpolating an answer that would look just as authoritative.
+- **Percentiles carry the bucket they were interpolated inside.** `p99 12.4 ms (bucket 10–25)` is
+  honest where a bare `12.4` is not: everything inside one bucket is indistinguishable, and the
+  decimals are arithmetic rather than measurement.
+- **Pulses owed is the sharpest line in the report.** A 250 ms loop owes four pulses a second; if
+  it delivered three it is behind, and no percentile can show that, because the pulses it missed
+  were never recorded at all. A loop running half as often reports the same healthy p99 as one
+  keeping up.
+
+The verdict refuses to answer when the world did not hold the sessions asked for. A run that only
+got 180 in has measured a smaller world, and "p99 under budget" about that world would be true and
+useless.
+
+### Why not k6
+
+"Why it was built rather than installed" above rejects load tools because they emit aggregates
+rather than transcripts. Under `--sessions` this tool emits aggregates too, so that reason no
+longer applies and a better one is owed. It is the load *shape*: request rate is not what stresses a single-threaded loop. Two hundred characters standing
+in separate rooms typing `look` is nearly free. The expensive work is fan-out, combat, threat and
+regen — most of it landing on pulses where no request arrived at all. k6 generates request volume
+and has no way to drive the world into an expensive state; a plan does, because a plan is a
+description of what players *do*.
+
+The other half is that k6 would have to reimplement register → create → enter → stream → command,
+which `Actor` already does, and its SSE support is a newer non-core module. Where request rate
+genuinely *is* the metric — the auth and builder APIs — k6 remains the right tool.
+
+### The plan matters more than the number
+
+`Plans/load-village.yaml` walks Gatetown's three-room spine, which concentrates two hundred
+characters where fan-out costs the most, and runs `who`, whose cost *is* the population.
+`Plans/load-idle.yaml` is its control: the same sessions at the same cadence, but every command
+local to the caller, so nothing is broadcast.
+
+**Run both, or the number means nothing.** On its own the circuit cannot separate *"the server
+cannot hold 200 sessions"* from *"the server cannot hold 200 sessions in three rooms"* — different
+findings with different fixes. Together they answered it in one line: the control handled more
+commands on a twenty-fifth of the CPU. See PLAN.md §11 for the numbers.
+
+Two details in the circuit were learned rather than designed:
+
+**The circuit has to close.** `--sessions` cycles a plan's steps for the whole hold, so a plan
+ending somewhere other than where it started walks its cast into a wall on the second lap and
+spends the measured window recording two hundred people failing to move.
+
+**Think time is load-bearing.** Without it a session runs its lap as fast as the server answers,
+which measured four commands a second — faster than a person types and close enough to the
+five-a-second limiter that the run measures a client being throttled. Two seconds a step puts each
+session near half a command a second. The report prints the rate it actually saw, so this can be
+checked rather than trusted.
+
+### Two things the first load runs taught
+
+**The generator will die before the server does, if you let it.** Two hundred sessions each keeping
+a full transcript is the largest thing in the process, and a run that holds every line ends up
+measuring its own garbage collector. Capping at two thousand *entries* was not a bound at all — one
+`who` reply naming two hundred people is kilobytes on its own — and the apparatus died of an
+OutOfMemoryException at seventy sessions with the measurement half-taken. `Transcript` now takes a
+**byte** budget, which is self-tuning: a session drowning in fan-out keeps fewer lines. It also
+drops the raw SSE payload, which nothing reads on a load session.
+
+**The ramp ending is not everybody having arrived.** The last session's stagger lands on the ramp
+deadline and arriving takes four round trips after it, so a window opened on the deadline itself
+measures a world still filling — and the verdict correctly refused to answer. The runner now waits
+for the server's own `dikuweb_sessions_active` gauge to reach the target, and starts the hold clock
+from there.
+
+### What it leaves behind
+
+The same accounts an ordinary run leaves, two hundred at a time — see the purge above. The janitor
+needs an admin credential to sweep the characters; without one, pass `--no-cleanup` and expect to
+purge by hand.
+
 ## What is declared and not built
 
 **`--hosted`** — booting a server in-process against a throwaway database. It says so and exits 2,

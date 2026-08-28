@@ -1,0 +1,65 @@
+name: Load - present but not crowded
+about: |
+  The control for `load-village.yaml`, and the plan that makes its result mean something.
+
+  The village circuit walks every session through three rooms, so every move is broadcast to
+  everyone standing in both. That is deliberate — it is the sharpest probe for a quadratic
+  broadcast this suite can build — but on its own it cannot distinguish two very different
+  findings: *"the server cannot hold two hundred sessions"* and *"the server cannot hold two
+  hundred sessions **in three rooms**"*. Those have different fixes and different urgency, and
+  reporting the first when the truth is the second would be a straightforward error.
+
+  So this plan removes the crowd and keeps everything else. The sessions still arrive, still hold
+  an open SSE stream, still sit in the world being ticked by regen and the spawn sweep, and still
+  send commands at the same cadence — but every command is **local to the caller**. `look` renders
+  the room the caller is in. `stats` reads the caller's own sheet. Neither is broadcast, so no
+  session's work is a function of how many other sessions exist.
+
+  Read the two runs together:
+
+  - if this one is healthy and the circuit is not, the cost is **fan-out**, and it scales with
+    occupants per room rather than with sessions;
+  - if this one is unhealthy too, the cost is in holding the sessions at all, and the room layout
+    is beside the point.
+
+  There is deliberately no `who` here, for the same reason there deliberately *is* one there: its
+  cost is the population, which is exactly the variable this plan is trying to hold out.
+
+cast:
+  - name: Bystander
+    path: Warden
+
+steps:
+  - actor: Bystander
+    note: |
+      Rendering the room the caller is standing in. Sent to one session, whatever else is going on.
+    do: look
+    wait: { text: "Exits:", seconds: 2 }
+    expect: "Exits:"
+
+  - actor: Bystander
+    note: |
+      The caller's own sheet, and the same cadence the circuit uses so the two runs offer the same
+      commands per second per session — which is the only way their numbers can be compared.
+    do: stats
+    wait: { text: "Level", seconds: 2 }
+
+  - actor: Bystander
+    do: look
+    wait: { text: "Exits:", seconds: 2 }
+
+  - actor: Bystander
+    do: inventory
+    wait: { seconds: 2 }
+
+  - actor: Bystander
+    do: stats
+    wait: { text: "Level", seconds: 2 }
+
+  - actor: Bystander
+    note: |
+      Nobody has moved, so the next lap starts exactly where this one did — the same property the
+      circuit gets by closing its ring, obtained here by never leaving.
+    do: look
+    wait: { text: "Exits:", seconds: 2 }
+    expect: "Exits:"

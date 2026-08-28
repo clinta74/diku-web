@@ -1,3 +1,4 @@
+using System.Globalization;
 using DikuWeb.Playtest.Targets;
 
 namespace DikuWeb.Playtest;
@@ -49,6 +50,35 @@ public sealed record Options
     /// </remarks>
     public bool NoCleanup { get; init; }
 
+    /// <summary>
+    /// Hold this many concurrent character sessions and measure what it does to the game loop.
+    /// </summary>
+    /// <remarks>
+    /// Zero means an ordinary playtest, which is a recording of one session. Anything above turns
+    /// the run into a measurement: the plan is replicated until this many characters are in the
+    /// world at once, and the answer comes from the server's own pulse histogram rather than from
+    /// anything timed out here — see <see cref="Load.MetricsProbe"/> for why that distinction is
+    /// the whole point.
+    /// </remarks>
+    public int Sessions { get; init; }
+
+    /// <summary>How long arrivals are spread over before the measured window opens.</summary>
+    public TimeSpan Ramp { get; init; } = TimeSpan.FromSeconds(60);
+
+    /// <summary>How long the full complement plays while the loop is measured.</summary>
+    public TimeSpan Hold { get; init; } = TimeSpan.FromSeconds(120);
+
+    /// <summary>Where <c>/metrics</c> is, when it is not on the same address as the game.</summary>
+    /// <remarks>
+    /// Separate because a real deployment does not serve it publicly — nginx is expected to keep
+    /// <c>/metrics</c> unreachable from outside — so a load run against staging reaches the game
+    /// through the front door and the exporter through the back one.
+    /// </remarks>
+    public Uri? Metrics { get; init; }
+
+    /// <summary>Whether this run is a measurement rather than a recording.</summary>
+    public bool IsLoadRun => Sessions > 0;
+
     public static Options Parse(IReadOnlyList<string> args)
     {
         ArgumentNullException.ThrowIfNull(args);
@@ -97,6 +127,28 @@ public sealed record Options
                     options = options with { NoCleanup = true };
                     break;
 
+                case "--sessions":
+                    options = options with { Sessions = Count(args, ref i, "--sessions") };
+                    break;
+
+                case "--ramp":
+                    options = options with
+                    {
+                        Ramp = TimeSpan.FromSeconds(Count(args, ref i, "--ramp")),
+                    };
+                    break;
+
+                case "--hold":
+                    options = options with
+                    {
+                        Hold = TimeSpan.FromSeconds(Count(args, ref i, "--hold")),
+                    };
+                    break;
+
+                case "--metrics":
+                    options = options with { Metrics = new Uri(Next(args, ref i, "--metrics")) };
+                    break;
+
                 default:
                     throw new ArgumentException($"Unknown option '{args[i]}'. Try --help.");
             }
@@ -116,7 +168,22 @@ public sealed record Options
             throw new ArgumentException("Pass --server <url> or --hosted.");
         }
 
+        if (options.IsLoadRun && options.Hold <= TimeSpan.Zero)
+        {
+            throw new ArgumentException("--hold must be more than zero: it is the measured window.");
+        }
+
         return options;
+    }
+
+    private static int Count(IReadOnlyList<string> args, ref int index, string flag)
+    {
+        var raw = Next(args, ref index, flag);
+
+        return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+            && value > 0
+            ? value
+            : throw new ArgumentException($"{flag} needs a positive whole number, not '{raw}'.");
     }
 
     private static string Next(IReadOnlyList<string> args, ref int index, string flag)
@@ -146,8 +213,16 @@ public sealed record Options
           --follow                Print the transcript as it happens
           --no-cleanup            Leave the characters this run created in the world
 
+        Load mode — hold sessions open and measure the game loop rather than read a transcript:
+
+          --sessions <n>          Concurrent character sessions to hold (default 0: no load run)
+          --ramp <seconds>        Spread arrivals over this long (default 60)
+          --hold <seconds>        Measure for this long once they are all in (default 120)
+          --metrics <url>         Where /metrics is, if not on --server's address
+
         Examples:
           dotnet run --project tools/DikuWeb.Playtest -- --server http://localhost:5010
           dotnet run --project tools/DikuWeb.Playtest -- --hosted --plans plans/combat
+          dotnet run --project tools/DikuWeb.Playtest -- --server http://localhost:8080               --plans plans/load-idle.yaml --sessions 200 --ramp 120 --hold 180
         """;
 }

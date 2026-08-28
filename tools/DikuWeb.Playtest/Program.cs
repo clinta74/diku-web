@@ -1,6 +1,7 @@
 using System.Globalization;
 using DikuWeb.Playtest;
 using DikuWeb.Playtest.Building;
+using DikuWeb.Playtest.Load;
 using DikuWeb.Playtest.Plans;
 using DikuWeb.Playtest.Recording;
 using DikuWeb.Playtest.Running;
@@ -80,6 +81,103 @@ await File.WriteAllTextAsync(
     Path.Combine(runDirectory, "fixtures.log"),
     string.Join(Environment.NewLine, fixtureLog),
     CancellationToken.None);
+
+// A load run is a different question with the same apparatus, so it forks here rather than
+// threading a flag through every plan: it holds one plan open at scale and reports the server's
+// pulse histogram, where an ordinary run plays every plan once and reports transcripts.
+if (options.IsLoadRun)
+{
+    if (plans.Count > 1)
+    {
+        Console.Error.WriteLine(
+            $"--sessions takes one plan; {plans.Count} were given. Two hundred sessions playing "
+            + "different plans measures a mixture nobody can reason about afterwards.");
+
+        return 2;
+    }
+
+    var loadPlan = plans[0];
+
+    var load = new LoadRunner(
+        target,
+        options.Metrics ?? options.Server!,
+        new LoadSettings
+        {
+            Sessions = options.Sessions,
+            Ramp = options.Ramp,
+            Hold = options.Hold,
+        });
+
+    LoadOutcome result;
+
+    try
+    {
+        result = await load.RunAsync(loadPlan, stopping.Token);
+    }
+    catch (PlaytestException ex)
+    {
+        Console.Error.WriteLine(ex.Message);
+        return 2;
+    }
+
+    var summary = LoadReport.Build(result);
+    Console.Write(summary);
+
+    await File.WriteAllTextAsync(
+        Path.Combine(runDirectory, "load.txt"), summary, CancellationToken.None);
+
+    await File.WriteAllTextAsync(
+        Path.Combine(runDirectory, "load.json"), LoadReport.Json(result), CancellationToken.None);
+
+    // The observed replica's transcript, in full. The histogram says whether the loop kept up;
+    // this says whether the game was still playable while it did, which no percentile can.
+    await File.WriteAllTextAsync(
+        Path.Combine(runDirectory, "observed.log"),
+        TranscriptWriter.Interleaved(result.Observed, [.. loadPlan.Cast.Select(c => c.Name)]),
+        CancellationToken.None);
+
+    if (result.ObservedOutcome is { } observed)
+    {
+        Console.WriteLine(
+            $"  observed session   {observed.Met} met, {observed.Unmet} unmet"
+            + (observed.Problems.Count > 0 ? $", {observed.Problems.Count} problem(s)" : string.Empty));
+
+        foreach (var problem in observed.Problems.Take(5))
+        {
+            Console.WriteLine($"    ! {problem}");
+        }
+    }
+
+    foreach (var failure in result.Sessions.Where(s => !s.Arrived).Take(5))
+    {
+        Console.WriteLine($"    ! session {failure.Replica} never arrived: {failure.Failure}");
+    }
+
+    if (!options.NoCleanup)
+    {
+        var made = result.Sessions
+            .Where(s => s.Outcome is not null)
+            .SelectMany(s => s.Outcome!.CharacterNames)
+            .ToList();
+
+        var sweep = new Transcript();
+        Console.WriteLine();
+        Console.WriteLine(await Janitor.SweepAsync(target, sweep, made, CancellationToken.None));
+
+        await File.WriteAllTextAsync(
+            Path.Combine(runDirectory, "cleanup.log"),
+            TranscriptWriter.Interleaved(sweep, ["Janitor"]),
+            CancellationToken.None);
+    }
+
+    Console.WriteLine();
+    Console.WriteLine(new Uri(Path.GetFullPath(runDirectory)).AbsoluteUri);
+
+    // Zero regardless, for the same reason an ordinary run exits zero: this is a measurement, and
+    // a measurement that exits non-zero because the answer was disappointing is a test suite
+    // wearing a disguise. The verdict line is the result; read it.
+    return 0;
+}
 
 var reported = new List<ReportedPlan>();
 

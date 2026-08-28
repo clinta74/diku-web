@@ -1,0 +1,139 @@
+# The load-testing stack: a CPU-pinned server and the apparatus that measures it.
+#
+# WHY THIS IS A CONTAINER AND NOT `dotnet run`
+#
+# PLAN.md §11 targets "200 concurrent sessions on one process" without saying on how much CPU,
+# which makes it unfalsifiable as written: a result on a 16-core workstation and a result on a
+# 2-vCPU VPS are both "200 sessions" and neither one predicts the other. Pinning the server here
+# forces the target to mean something, and makes two runs a month apart comparable.
+#
+# The generator gets its own limit for the same reason. Both processes live on one machine, so
+# without a stated split the apparatus can starve the thing it is measuring and report the result
+# as the server being slow.
+#
+#   docker compose -f docker-compose.load.yml up -d --build web
+#   docker compose -f docker-compose.load.yml run --rm runner \
+#       --server http://web:8080 --plans Plans/load-village.yaml --sessions 200
+#
+# The measurement comes back on stdout and in ./runs.
+
+name: dikuweb-load
+
+services:
+  # The server under test. Deliberately the same image the root Dockerfile builds — measuring a
+  # differently-built binary would answer a question nobody asked.
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dikuweb-load-web
+
+    # The whole point of the file. Two cores and 2 GB is a small VPS, which is the deployment
+    # worth knowing about: if the loop holds 200 sessions here it holds them anywhere, and if it
+    # does not, the number to quote alongside the failure is right on this line.
+    cpus: "2.0"
+    mem_limit: 2g
+
+    networks:
+      - dikuweb-network
+
+    ports:
+      # Bound to loopback so the histogram can be read from the host during a run without exposing
+      # /metrics — which is unauthenticated by design and expected to be unreachable from outside.
+      - "127.0.0.1:8090:8080"
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+      # Against the development database, which is the only one holding an authored world. A load
+      # run needs 236 real rooms in memory and real spawners ticking; a freshly seeded database
+      # has rooms and nothing else, and would measure an emptier world than any player will meet.
+      #
+      # The cost is that this writes to that database: 200 throwaway accounts per run, prefixed
+      # `playtest_`, with their characters swept afterwards by the janitor. See PLAYTEST.md for
+      # the purge. Point it at a scratch database if that trade is wrong for you.
+      DatabaseConnection__Host: dikuweb-postgres
+      DatabaseConnection__Port: "5432"
+      DatabaseConnection__Database: dikuweb
+      DatabaseConnection__User: dikuweb
+      DatabaseConnection__Password: ${POSTGRES_PASSWORD:-dikuweb_dev_only}
+
+      # Warning only. At 200 sessions an Information-level log line per command is thousands of
+      # writes a second into the container's json-file driver, and stdio backpressure would show
+      # up in the pulse histogram as the game loop being slow — measuring the logger instead of
+      # the loop. This is the single most important line in this file after the CPU limit.
+      Logging__LogLevel__Default: Warning
+      Logging__LogLevel__Microsoft: Warning
+      Logging__LogLevel__Microsoft.EntityFrameworkCore: Warning
+
+      # Ten a minute per remote address is right for people and impossible for this: every session
+      # registers an account of its own, and behind a container they all arrive from one address
+      # and share one bucket, so 200 arrivals would take twenty minutes of waiting and the ramp
+      # would be measuring the front door. Raised here and nowhere else — RateLimiting.Options is
+      # configurable precisely so "a load generator pointed at a staging box" can say so.
+      RateLimits__AuthAttemptsPerMinute: "10000"
+
+      # Left alone on purpose. Five commands a second is per character, and a session on this plan
+      # sends well under two — so the limiter stays in force and the run stays representative of
+      # people playing rather than of a client that has been let off the leash.
+      # RateLimits__CommandsPerSecond: unchanged
+
+      SwaggerEnabled: "false"
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # The apparatus. Not started with the stack — it is a run, not a service.
+  runner:
+    build:
+      context: .
+      dockerfile: tools/DikuWeb.Playtest/Dockerfile
+    container_name: dikuweb-load-runner
+    profiles: ["run"]
+
+    # Half the server's budget. Enough to drive 200 SSE streams, and little enough that the
+    # apparatus cannot quietly take cores away from the process whose timings are the result.
+    cpus: "1.0"
+    mem_limit: 2g
+
+    networks:
+      - dikuweb-network
+
+    depends_on:
+      web:
+        condition: service_healthy
+
+    volumes:
+      # Run directories out to the host: the report, the observed session's transcript, and the
+      # JSON for trending one run against the next.
+      - ./runs:/runs
+
+    # Overridden per invocation by `docker compose run --rm runner <args>`; this is the shape of
+    # a sensible default rather than something to rely on.
+    command:
+      - --server
+      - http://web:8080
+      - --plans
+      - Plans/load-village.yaml
+      - --out
+      - /runs
+      - --sessions
+      - "200"
+
+networks:
+  # The development stack's network, so this reaches the Postgres already running there rather
+  # than standing up a second empty one. External because that stack owns it: `docker compose up`
+  # in this file must never be able to delete the database's network out from under it.
+  dikuweb-network:
+    external: true
+    name: diku-web-dev_dikuweb-network

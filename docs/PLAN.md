@@ -3108,6 +3108,50 @@ and a 250 ms tick is the game's heartbeat rather than latency to be shaved. Left
 make rather than silently adjusted — it has been an unverified target from the start, and the
 useful thing about verifying it is finding out it was the wrong one.
 
+### The session target, measured
+
+**Then measured under load**, once `--sessions` existed to apply it (PLAYTEST.md). Server pinned at
+**2 CPUs / 2 GB** in a container, against the real 236-room world, driving the load from a separate
+container with its own budget — because "200 concurrent sessions on one process" says nothing about
+how much machine the process gets, and is unfalsifiable until it does.
+
+Two plans, three minutes of steady state each, both sending the same commands at the same cadence.
+The only difference is whether those commands are **broadcast**:
+
+| 200 sessions | pulses kept | mean | p50 | p99 | over 25 ms | commands | CPU |
+|---|---|---|---|---|---|---|---|
+| Crowded — three rooms, everyone moving | **70.9%** | 223 ms | 16.1 ms | *top bucket* | **48.7%** | 83/s | 140–178% |
+| Spread — same cadence, nothing broadcast | 99.8% | 3.96 ms | 0.99 ms | 66.7 ms | 3.0% | 91/s | 2–7% |
+
+**Holding two hundred sessions is nearly free. Crowding them is not.** The spread run handled *more*
+commands than the crowded one, on a twenty-fifth of the CPU, with a mean pulse fifty-six times
+lower. So the §11 session count is not the constraint and never was — the constraint is **occupants
+per room**, because a movement is broadcast to everyone in the room being left and the room being
+entered, and both the number of movers and the number of recipients rise together.
+
+The scaling confirms it. On the crowded plan, doubling the sessions roughly quadrupled the cost:
+
+| sessions | pulses kept | mean | over 25 ms |
+|---|---|---|---|
+| 4 | 100% | 0.15 ms | 0% |
+| 100 | 100% | 17.9 ms | 34.2% |
+| 200 | 70.9% | 223 ms | 48.7% |
+
+At 200 crowded the loop **stopped keeping its own schedule** — 511 pulses delivered against 720
+owed. That is a distinct and worse failure from a slow pulse, and no percentile can show it,
+because the missed pulses were never recorded. It is the reason the report leads with pulses-owed
+rather than with p99.
+
+**Both runs still miss the 25 ms p99 budget** (3.0% over, against the 1% a p99 target allows), so
+that target is unmet even uncrowded — but at p50 0.99 ms it is a tail to investigate rather than a
+loop in trouble.
+
+**What this does and does not establish.** The crowded plan is a deliberate worst case: real players
+spread over 236 rooms, not three. It is not a prediction of what 200 players cost. It *is* the
+shape of a launch, a world event, or everyone standing in the starting room — and those are real.
+The unfinished work is a middle case: 200 sessions spread naturally across the world, which the
+apparatus can now measure in one command.
+
 ---
 
 ## 12. Next step

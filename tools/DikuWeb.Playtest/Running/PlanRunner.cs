@@ -81,6 +81,31 @@ public sealed class PlanRunner(IGameTarget target, Transcript transcript, RunSet
             await Task.Delay(settings.SettleAfterArrival, cancellationToken);
 
             await RunStepsAsync(plan.Steps, actors, since, problems, cancellationToken);
+
+            // Cycling, for a load run that needs this cast to still be playing in ten minutes.
+            // The cast is built once and kept: re-running the whole plan would register a fresh
+            // account every lap, which is a different test entirely - it would measure signing up
+            // rather than playing, and never hold a steady number of sessions in the world.
+            while (settings.PlayUntil is { } until
+                && DateTimeOffset.UtcNow < until
+                && !cancellationToken.IsCancellationRequested)
+            {
+                // A fresh window per lap, or the second lap would judge itself against the first
+                // lap's output and pass without the server having said anything.
+                foreach (var name in since.Keys.ToList())
+                {
+                    since[name] = transcript.Now;
+                }
+
+                // Collapsed each lap so a plan whose wait never matches accumulates one problem
+                // rather than one per lap. Two hundred sessions cycling for ten minutes would
+                // otherwise report the same sentence tens of thousands of times.
+                var distinct = problems.Distinct(StringComparer.Ordinal).ToList();
+                problems.Clear();
+                problems.AddRange(distinct);
+
+                await RunStepsAsync(plan.Steps, actors, since, problems, cancellationToken);
+            }
         }
         catch (PlaytestException ex)
         {
@@ -100,15 +125,16 @@ public sealed class PlanRunner(IGameTarget target, Transcript transcript, RunSet
             }
         }
 
-        var observations = transcript.Entries.Where(e => e.Kind == EntryKind.Observation).ToList();
-
+        // Read off the transcript's own counters rather than recounted from what it still holds:
+        // a load session caps its scrollback, so the observation that proved something may have
+        // been dropped long before anybody asks for the total.
         return new PlanOutcome(
             plan.Name,
             plan.SourcePath,
             [.. plan.Cast.Select(c => c.Name)],
-            observations.Count(o => o.Met == true),
-            observations.Count(o => o.Met == false),
-            problems)
+            transcript.Met,
+            transcript.Unmet,
+            [.. problems.Distinct(StringComparer.Ordinal)])
         {
             CharacterNames = created,
         };
@@ -372,4 +398,15 @@ public sealed record RunSettings
 
     /// <summary>How often a wait re-reads the transcript.</summary>
     public TimeSpan PollInterval { get; init; } = TimeSpan.FromMilliseconds(50);
+
+    /// <summary>
+    /// Keep cycling the plan's steps until this moment, rather than playing it once.
+    /// </summary>
+    /// <remarks>
+    /// Null for an ordinary playtest, which is a recording of one session and ends when the plan
+    /// does. A load run sets it, because the thing being measured is the server's steady state and
+    /// a cast that walked off after forty seconds would leave the histogram describing an empty
+    /// world.
+    /// </remarks>
+    public DateTimeOffset? PlayUntil { get; init; }
 }
