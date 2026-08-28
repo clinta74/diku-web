@@ -1876,3 +1876,19 @@ code.dim {
   color: var(--accent);
   letter-spacing: -0.05em;
 }
+
+/*
+  The build the server is running, tucked under the panels on the sign-in and character screens.
+  Quiet on purpose: it is for the person asking whether a deploy landed, not for the player.
+*/
+.version-badge {
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
+
+.version-badge span {
+  cursor: help;
+}

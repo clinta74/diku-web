@@ -9,6 +9,9 @@ vi.mock('../net/api', () => ({
     sessions: () => Promise.resolve([]),
     createCharacter: () => Promise.resolve({}),
     enter: () => Promise.resolve({}),
+    // CharacterScreen renders the version badge, which asks the server what build it is. This
+    // factory replaces the whole module, so anything the screen reaches for has to be here.
+    version: () => Promise.resolve({ version: '0.0.0', revision: 'test', shortRevision: 'test' }),
   },
 }))
 

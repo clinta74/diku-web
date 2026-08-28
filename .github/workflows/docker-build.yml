@@ -50,6 +50,19 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
+      # metadata-action's version output is the tag text, which for a branch build is the
+      # branch name - and `<Version>main</Version>` is not a version MSBuild will take. Resolved
+      # explicitly instead: a release tag supplies its own number, anything else is 0.0.0, which
+      # is the honest answer for a build that is not a release.
+      - name: Resolve build version
+        id: ver
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0.0" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
@@ -58,6 +71,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.ver.outputs.version }}
+            REVISION=${{ github.sha }}
           # No provenance or SBOM attestations. Buildx attaches both by default, and each one
           # adds a second manifest to the tag with platform "unknown/unknown" - which turns the
           # tag from a plain image into an OCI index. A puller stores the image under the

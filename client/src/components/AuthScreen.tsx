@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/Button'
+import { VersionBadge } from './VersionBadge'
 import { api, type Account, type Character } from '../net/api'
 import { ChangePasswordPanel } from './ChangePasswordPanel'
 
@@ -91,6 +92,7 @@ export function AuthScreen({ onReady }: { onReady: (account: Account) => void })
           {busy ? 'Working…' : mode === 'login' ? 'Log in' : 'Create account'}
         </Button>
       </form>
+      <VersionBadge />
     </main>
   )
 }
@@ -237,6 +239,7 @@ export function CharacterScreen({
       <Button variant="link" onClick={onLogout}>
         Log out
       </Button>
+      <VersionBadge />
     </main>
   )
 }

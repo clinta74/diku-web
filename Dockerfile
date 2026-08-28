@@ -27,6 +27,16 @@ RUN dotnet restore "src/DikuWeb.Server/DikuWeb.Server.csproj"
 # Copy source code
 COPY . .
 
+# What build this is, baked in at publish time. There is no git repository inside the
+# runtime image and there should not be, so the version has to arrive as a build
+# argument or not at all. The defaults are deliberately honest: a plain `docker build`
+# produces an image that says 0.0.0/unknown rather than claiming to be a release.
+#
+# The SDK combines Version and SourceRevisionId into AssemblyInformationalVersion as
+# `0.0.0+<sha>`, which is what BuildInfo reads back and /api/version reports.
+ARG VERSION=0.0.0
+ARG REVISION=unknown
+
 # One publish, rather than a build followed by a --no-build publish. `dotnet build -o` moves
 # OutputPath, which is not where a later `--no-build` publish looks for the assemblies - so that
 # pair would have failed the moment the restore above started working. Publish builds by default,
@@ -35,7 +45,9 @@ RUN dotnet publish "src/DikuWeb.Server/DikuWeb.Server.csproj" \
     -c Release \
     -o /app/publish \
     --no-restore \
-    --self-contained=false
+    --self-contained=false \
+    -p:Version="$VERSION" \
+    -p:SourceRevisionId="$REVISION"
 
 # Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

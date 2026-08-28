@@ -271,6 +271,10 @@ app.MapBuilderEndpoints();
 app.MapAssistEndpoints();
 app.MapAdminEndpoints();
 
+// What build this is. Beside the health checks because it is the same kind of route - an
+// operator question, not a game one - and like them it takes no authentication.
+app.MapVersionEndpoint();
+
 // Liveness: is the process up? Deliberately runs no checks, so a database outage never
 // causes an orchestrator to restart an otherwise healthy server.
 app.MapHealthChecks("/health", new HealthCheckOptions

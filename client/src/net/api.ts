@@ -21,6 +21,12 @@ export interface Character {
   lastPlayedAt: string | null
 }
 
+export interface BuildVersion {
+  version: string
+  revision: string
+  shortRevision: string
+}
+
 export class ApiError extends Error {
   // A plain field rather than a constructor parameter property: the tsconfig sets
   // erasableSyntaxOnly, so only syntax that strips cleanly to JavaScript is allowed.
@@ -58,6 +64,15 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   me: () => request<Account>('/api/auth/me'),
+
+  /**
+   * What build the server is running. Anonymous, so the sign-in screen can show it too.
+   *
+   * The server reports its own version rather than the client reading a baked-in constant: the
+   * two images are deployed separately, and a number compiled into this bundle would describe
+   * whichever client you happen to be holding, not the server it is talking to.
+   */
+  version: () => request<BuildVersion>('/api/version'),
 
   register: (email: string, username: string, password: string) =>
     request<Account>('/api/auth/register', {
