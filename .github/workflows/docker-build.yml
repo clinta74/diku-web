@@ -25,6 +25,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Full history and tags, because `Resolve build version` runs `git describe`. The
+          # default shallow checkout has neither, and git describe would fail to a bare 0.0.0
+          # every time - silently, since the fallback looks like a legitimate answer.
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -53,18 +58,27 @@ jobs:
             type=sha,prefix={{branch}}-,enable=${{ startsWith(github.ref, 'refs/heads/') }}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      # metadata-action's version output is the tag text, which for a branch build is the
-      # branch name - and `<Version>main</Version>` is not a version MSBuild will take. Resolved
-      # explicitly instead: a release tag supplies its own number, anything else is 0.0.0, which
-      # is the honest answer for a build that is not a release.
+      # metadata-action's version output is the tag text, which for a branch build is the branch
+      # name - and `<Version>main</Version>` is not a version MSBuild will take. Resolved here
+      # instead.
+      #
+      # A branch build reports its DISTANCE FROM THE LAST TAG rather than 0.0.0. It used to say
+      # 0.0.0, which meant /api/version fell back to showing a commit hash - and since `latest`
+      # only ever comes from a branch build, deploying `latest` could never show a version at all.
+      # `1.0.1-dev.4` says what a hash cannot: which release you are past, and by how much.
       - name: Resolve build version
         id: ver
         run: |
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+            version="${GITHUB_REF#refs/tags/v}"
           else
-            echo "version=0.0.0" >> "$GITHUB_OUTPUT"
+            # --abbrev=0 gives the tag itself; without any tag at all, start from 0.0.0.
+            last="$(git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)"
+            count="$(git rev-list --count "${last}..HEAD" 2>/dev/null || git rev-list --count HEAD)"
+            version="${last#v}-dev.${count}"
           fi
+          echo "resolved $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Build and push backend
         uses: docker/build-push-action@v5

@@ -40,9 +40,24 @@ it('shows a tagged release as a version', async () => {
   expect(await screen.findByText('v1.0.0')).toBeTruthy()
 })
 
-it('shows the commit when the build is not a release', async () => {
-  // A branch build has no version to report. Showing "v0.0.0" would read as a real release of a
-  // very early one, which is worse than saying nothing - so it shows the commit instead.
+it('shows how far a branch build is past the last release', async () => {
+  // `latest` only ever comes from a branch build, so this is what a beta deployment shows almost
+  // all of the time. It used to report 0.0.0 and fall back to a commit hash, which said nothing
+  // about which release you were on. "1.0.1-dev.4" says both.
+  vi.stubGlobal(
+    'fetch',
+    version({ version: '1.0.1-dev.4', revision: '12230c3ef2418', shortRevision: '12230c3' }),
+  )
+
+  render(<VersionBadge />)
+
+  expect(await screen.findByText('v1.0.1-dev.4')).toBeTruthy()
+})
+
+it('shows the commit when the build has no version at all', async () => {
+  // The floor case: a build from a checkout with no tags and no history to measure against, or an
+  // image built outside CI. Showing "v0.0.0" would read as a real release of a very early one,
+  // which is worse than saying nothing - so it shows the commit instead.
   vi.stubGlobal(
     'fetch',
     version({ version: '0.0.0', revision: 'ff2a2da9911', shortRevision: 'ff2a2da' }),
