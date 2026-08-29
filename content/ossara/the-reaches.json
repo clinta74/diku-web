@@ -2143,6 +2143,54 @@
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-terraces.the-fold-track",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        }
+      ]
+    },
+    {
+      "key": "ossara.the-terraces.the-fold-track",
+      "zoneKey": "ossara.the-terraces",
+      "title": "The Fold Track",
+      "description": "A track between the drying frames and the fold, fenced on the downhill side with hurdles that have been shifted so often the old postholes make a dotted line across the slope.\n\nThe ground is churned in a band down the middle and untouched to either side. The goats come along here twice a day and do not deviate.\n\nA gate hangs at the fold end, latched with a loop of cord. The cord is newer than the gate, and the gate is newer than the posts.",
+      "flags": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"",
+        "♣\"\"\"\"\"\"\"♣\"\"\"♣\"\"\"\"\"\"\"♣",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"····",
+        "\"·♣···\"\"\"\"♣\"\"\"\"···\"\"\"",
+        "····♣···\"♣♣\"·♣··\"\"\"\"\"",
+        "\"\"\"\"\"\"\"··\"···\"\"\"♣\"\"\"\"",
+        "\"\"\"\"\"\"\"\"···\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "♣": "tree",
+        "·": "path"
+      },
+      "editorX": 3,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.the-terraces.the-drying-frames",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "ossara.the-terraces.the-goat-fold",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
         }
       ]
     },
@@ -2174,6 +2222,13 @@
         {
           "direction": "west",
           "to": "ossara.the-terraces.the-lower-rows",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "north",
+          "to": "ossara.the-terraces.the-fold-track",
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null

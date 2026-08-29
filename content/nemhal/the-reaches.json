@@ -105,25 +105,25 @@
       "description": "A low room outside the last door where the bearers wait and the shroud is folded. The door is not locked and has no lock.\n\nIt is simply that nobody goes through it without being on the rota.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE...\u25AE...\u25AE...\u25AE...\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 2,
       "editorY": 4,
@@ -152,6 +152,52 @@
       ]
     },
     {
+      "key": "nemhal.keshvaun.the-attending-hall",
+      "zoneKey": "nemhal.keshvaun",
+      "title": "The Attending Hall",
+      "description": "A hall between the court and the washing room, benched down both long walls, with a drain running the length of the floor. The drain is clear.\n\nLamps sit in brackets every few paces. They are trimmed, filled, and unlit.\n\nThe oil in the nearest is fresh enough to smell.",
+      "flags": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│..▮...▮...▮...▮....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│.▮...▮...▮...▮...▮.│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "─": "wall",
+        "┐": "wall",
+        "│": "wall",
+        ".": "floor",
+        "▮": "pillar",
+        "└": "wall",
+        "┘": "wall"
+      },
+      "editorX": 1,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.keshvaun.the-lamp-court",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.keshvaun.the-washing-room",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        }
+      ]
+    },
+    {
       "key": "nemhal.keshvaun.the-chapter-house",
       "zoneKey": "nemhal.keshvaun",
       "title": "The Chapter House",
@@ -160,25 +206,25 @@
         "indoors": true
       },
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE...\u25AE...\u25AE...\u25AE...\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 2,
       "editorY": 2,
@@ -213,26 +259,26 @@
       "description": "A covered walk round three sides, with the office read aloud somewhere along it at every hour of the day and night.\n\nYou can hear it. You cannot find who is reading it.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...\u2591........\u2591......\u2502",
-        "\u2591..........\u2591...\u2593....\u2502",
-        "\u2502..\u2591..\u2591....\u2591.....\u2591..\u2502",
-        "\u2502....\u2591..............\u2502",
-        "\u2502...\u2591..\u2591...\u2591\u2591.....\u2591.\u2591",
-        "\u2502..........\u2591........\u2591",
-        "\u2502..........\u2591........\u2502",
-        "\u2514\u2591\u2591\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2591\u2591\u2500\u2500\u2500\u2500\u2518"
+        "┌──░────────────────┐",
+        "│...░........░......│",
+        "░..........░...▓....│",
+        "│..░..░....░.....░..│",
+        "│....░..............│",
+        "│...░..░...░░.....░.░",
+        "│..........░........░",
+        "│..........░........│",
+        "└░░─░───────░─░░────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 1,
@@ -267,26 +313,26 @@
       "description": "A stair going down under the chapter house, broad, shallow, and worn into hollows by two hundred years of people going down carefully.\n\nThe hollows are in the middle of each step. Nobody has ever hurried on this stair.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2591.........\u2591.........\u2502",
-        "\u2502......\u2591.....\u2591......\u2502",
-        "\u2502.........\u2591.....\u2591...\u2591",
-        "\u2502...\u2591...............\u2591",
-        "\u2502....\u2593...........\u2591..\u2591",
-        "\u2502...\u2591\u2591.........\u2591....\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2591\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2591\u2500\u2591\u2591\u2500\u2500\u2500\u2591\u2518"
+        "┌─░───────░─────────┐",
+        "░.........░.........│",
+        "│......░.....░......│",
+        "│.........░.....░...░",
+        "│...░...............░",
+        "│....▓...........░..░",
+        "│...░░.........░....│",
+        "│...................│",
+        "└░─────░────░─░░───░┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 3,
@@ -321,25 +367,25 @@
       "description": "A niche beside the lying place with one stool in it, worn to the shape of one person, and a rail worn where one pair of hands has held it.\n\nShe has not been relieved. She has never asked to be.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 1,
       "editorY": 5,
@@ -360,25 +406,25 @@
       "description": "One long table, one stack of folded linen, one stack waiting.\n\nCorners are cut off the old shroud as it is replaced, and kept, and there is a box of them going back to the first week.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE...\u25AE...\u25AE...\u25AE...\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE...\u25AE...\u25AE...\u25AE...\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 3,
       "editorY": 4,
@@ -399,25 +445,25 @@
       "description": "A court of unlit lamps on posts, a hundred of them in a grid, each filled.\n\nWhen she wakes they are lit. That is the whole rule and it has never been amended.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502..............\u2666....\u2502",
-        "\u2502............\u2666......\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│..............♦....│",
+        "│............♦......│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2666": "brazier"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "♦": "brazier"
       },
       "editorX": 1,
       "editorY": 1,
@@ -425,6 +471,13 @@
         {
           "direction": "east",
           "to": "nemhal.keshvaun.the-cloister-walk",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.keshvaun.the-attending-hall",
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
@@ -438,26 +491,26 @@
       "description": "A chamber cut out of the same dark stone the gates are made from, all six faces, with no seam. It is the largest single piece of gate-stone anyone has found.\n\nShe is lying at the middle of it, under clean linen, and she is exactly the size of a person.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2591\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2591\u2500\u2500\u2510",
-        "\u2502..............\u2591....\u2591",
-        "\u2502...\u2593......\u2591...\u2591....\u2502",
-        "\u2502......\u2591.....\u2591..\u2591...\u2502",
-        "\u2502.\u2593......\u2591\u2591........\u2591\u2502",
-        "\u2502...................\u2502",
-        "\u2502......\u2591\u2591......\u2591....\u2591",
-        "\u2502...............\u2591...\u2591",
-        "\u2514\u2500\u2500\u2591\u2591\u2591\u2500\u2500\u2500\u2500\u2591\u2500\u2591\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2518"
+        "┌─░░──────────░──░──┐",
+        "│..............░....░",
+        "│...▓......░...░....│",
+        "│......░.....░..░...│",
+        "│.▓......░░........░│",
+        "│...................│",
+        "│......░░......░....░",
+        "│...............░...░",
+        "└──░░░────░─░────░──┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 5,
@@ -499,19 +552,19 @@
       "description": "A court open to a sky that is the wrong colour, ringed with cloister on three sides and standing on the fourth side at the edge of everything.\n\nThe cloister is swept. The fourth side has no rail and needs none: nobody here goes near it.\n\nThere is nothing to see. The rim of Nemhal is where the land has already gone, and what is past it is not distance - it is the absence of the question.",
       "flags": {},
       "grid": [
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591 \u2591\u2591\u2591\u2591\u2591\u2591      \u2591\u2591\u2591\u2591\u2591\u2591",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░ ░░░░░░      ░░░░░░",
         "                     ",
         "                     ",
         "                     "
       ],
       "legend": {
         " ": "void",
-        "\u2591": "rubble"
+        "░": "rubble"
       },
       "editorX": 2,
       "editorY": 0,
@@ -546,25 +599,25 @@
       "description": "Shelves of minutes. Every meeting, every week, in order, all of them recording that the vigil continues and the office is kept.\n\nThe first volume is different. Somebody has taken it out and put it back many times.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 3,
       "editorY": 2,
@@ -585,19 +638,19 @@
       "description": "Past the bier, where the chamber narrows to a slot, and the slot ends at a face of gate-stone that is not a wall - it is a surface, and it is the outside.\n\nShe is not lying in a tomb. She is lying in the gap she is filling, and the shape of her is the shape of the hole.\n\nThere is nothing to see here because she is in the way. That is the whole of it. She stood in the way, once, on purpose, and it cost her everything, and it worked, and Nemhal has been failing at exactly the rate she has.",
       "flags": {},
       "grid": [
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591 \u2591\u2591\u2591\u2591\u2591  \u2591\u2591\u2591\u2591 \u2591\u2591\u2591\u2591  \u2591",
-        "    \u2591\u2591               ",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░ ░░░░░  ░░░░ ░░░░  ░",
+        "    ░░               ",
         "                     ",
         "                     "
       ],
       "legend": {
         " ": "void",
-        "\u2591": "rubble"
+        "░": "rubble"
       },
       "editorX": 2,
       "editorY": 6,
@@ -622,28 +675,28 @@
       "key": "nemhal.keshvaun.the-unwritten-page",
       "zoneKey": "nemhal.keshvaun",
       "title": "The Unwritten Page",
-      "description": "A desk in the wall of the lying place with the vigil book open on it, and the day\u0027s entry begun and not finished.\n\nIt has been begun and not finished every day for two hundred years, in the same hand, and it is always the same three words.",
+      "description": "A desk in the wall of the lying place with the vigil book open on it, and the day's entry begun and not finished.\n\nIt has been begun and not finished every day for two hundred years, in the same hand, and it is always the same three words.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE...\u25AE...\u25AE...\u25AE...\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 3,
       "editorY": 5,
@@ -666,26 +719,26 @@
         "indoors": true
       },
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2591\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2591...................\u2502",
-        "\u2502.................\u2593.\u2502",
-        "\u2502...\u2591...\u2591........\u2591..\u2502",
-        "\u2502.............\u2591..\u2593.\u2591\u2502",
-        "\u2502\u2591\u2591............\u2591....\u2502",
-        "\u2591.\u2591..\u2591....\u2591.....\u2591\u2591\u2591.\u2502",
-        "\u2514\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2591\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌────░───────░─░────┐",
+        "│...................│",
+        "░...................│",
+        "│.................▓.│",
+        "│...░...░........░..│",
+        "│.............░..▓.░│",
+        "│░░............░....│",
+        "░.░..░....░.....░░░.│",
+        "└─░──────░──░─░─────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 3,
       "editorY": 0,
@@ -706,25 +759,25 @@
       "description": "Basins, cloths and clean water, where the hands are washed on the way down and again on the way up.\n\nThe water is warm.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE...\u25AE...\u25AE...\u25AE...\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE...\u25AE...\u25AE...\u25AE...\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 1,
       "editorY": 3,
@@ -735,30 +788,37 @@
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.keshvaun.the-attending-hall",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
         }
       ]
     },
     {
       "key": "nemhal.olmenneth.the-bearers-rest",
       "zoneKey": "nemhal.olmenneth",
-      "title": "The Bearers\u0027 Rest",
+      "title": "The Bearers' Rest",
       "description": "A bench, a water butt, and a rail to lean a shoulder-frame against while the crew changes over.\n\nThe rail is worn in eight places.",
       "flags": {},
       "grid": [
-        "\u2591\u2591\u2593\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u00B7\u00B7\u00B7\u00B7\u2591\u2591\u2591\u2591\u2591\u00B7",
-        "\u2591\u2591\u2591\u2591\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u2591\u2591\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u2591\u00B7\u00B7\u00B7\u00B7\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u00B7\u00B7\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2593\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591"
+        "░░▓░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░····░░░░░·",
+        "░░░░········░░·······",
+        "░····░░░░░░░░░░░░░░░░",
+        "··░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░▓░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░"
       ],
       "legend": {
-        "\u00B7": "path",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "·": "path",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 3,
       "editorY": 6,
@@ -773,32 +833,79 @@
       ]
     },
     {
+      "key": "nemhal.olmenneth.the-dressing-floor",
+      "zoneKey": "nemhal.olmenneth",
+      "title": "The Dressing Floor",
+      "description": "An open floor between the yard and the press, laid with stone offcuts packed flat. Chips crunch underfoot and have been swept into low banks at the edges by somebody working here.\n\nA block sits half-dressed on trestles in the middle, the chisels laid out beside it in order of size.\n\nIt is the order you would want them in. Nothing has moved them in a very long time.",
+      "flags": {},
+      "grid": [
+        "┌───────────────────┐",
+        "│...................│",
+        "│....░.░............│",
+        "│.............▓.....│",
+        "│......▓....░.......│",
+        "│.....▓.......▓...░.│",
+        "│.....░.░▓.░...▓....│",
+        "│...................│",
+        "└───────────────────┘"
+      ],
+      "legend": {
+        "┌": "wall",
+        "─": "wall",
+        "┐": "wall",
+        "│": "wall",
+        ".": "floor",
+        "░": "rubble",
+        "▓": "rock",
+        "└": "wall",
+        "┘": "wall"
+      },
+      "editorX": 1,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.olmenneth.the-mason-yard",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.olmenneth.the-oil-press",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        }
+      ]
+    },
+    {
       "key": "nemhal.olmenneth.the-first-station",
       "zoneKey": "nemhal.olmenneth",
       "title": "The First Station",
       "description": "A roofed halt at the roadside with benches, a water trough, and a lamp bracket. The lamp is in the bracket and it is not lit.\n\nThe oil is fresh.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502..\u2591....\u2591......\u2591..\u2591.\u2502",
-        "\u2502\u2591..................\u2502",
-        "\u2502\u2591......\u2593......\u2593...\u2591\u2502",
-        "\u2591\u2591\u2591.............\u2591\u2591..\u2502",
-        "\u2502...............\u2591...\u2591",
-        "\u2591........\u2593..........\u2502",
-        "\u2502..............\u2591....\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2591\u2518"
+        "┌─────────░░────────┐",
+        "│..░....░......░..░.│",
+        "│░..................│",
+        "│░......▓......▓...░│",
+        "░░░.............░░..│",
+        "│...............░...░",
+        "░........▓..........│",
+        "│..............░....│",
+        "└──────────░─░─────░┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 1,
@@ -835,25 +942,25 @@
         "indoors": true
       },
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 2,
       "editorY": 2,
@@ -888,26 +995,26 @@
       "description": "A sunken court off the road where the mourning is done, walled to hold the sound in, with tiers of benches on all four sides.\n\nIt is not empty and it is not quiet.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2591\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...\u2591.\u2591..\u2591..\u2591.......\u2502",
-        "\u2502...................\u2502",
-        "\u2502............\u2591.....\u2591\u2502",
-        "\u2502...\u2591\u2591........\u2591.....\u2502",
-        "\u2502.........\u2593.........\u2591",
-        "\u2502...\u2591.............\u2591.\u2502",
-        "\u2591..........\u2591..\u2591..\u2591..\u2502",
-        "\u2514\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2591\u2500\u2500\u2500\u2500\u2591\u2500\u2518"
+        "┌─░───░────░───░────┐",
+        "│...░.░..░..░.......│",
+        "│...................│",
+        "│............░.....░│",
+        "│...░░........░.....│",
+        "│.........▓.........░",
+        "│...░.............░.│",
+        "░..........░..░..░..│",
+        "└░─────────░─░────░─┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 3,
       "editorY": 4,
@@ -930,26 +1037,26 @@
         "indoors": true
       },
       "grid": [
-        "\u250C\u2500\u2591\u2500\u2591\u2500\u2591\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502.\u2591..........\u2591......\u2502",
-        "\u2591........\u2591..\u2593.....\u2591\u2591\u2502",
-        "\u2502....\u2593..............\u2502",
-        "\u2502....\u2591..\u2591......\u2591\u2591...\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502..\u2591..........\u2591.....\u2502",
-        "\u2514\u2591\u2500\u2500\u2500\u2591\u2500\u2500\u2591\u2500\u2591\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌─░─░─░───░─────────┐",
+        "│.░..........░......│",
+        "░........░..▓.....░░│",
+        "│....▓..............│",
+        "│....░..░......░░...│",
+        "│...................│",
+        "│...................│",
+        "│..░..........░.....│",
+        "└░───░──░─░──░──────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 3,
@@ -984,26 +1091,26 @@
       "description": "The final halt before Keshvaun, where the bearers change and the procession re-forms.\n\nThe frames are here on their trestles. There is one at each corner, and the middle of the frame is empty.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2591\u2591\u2510",
-        "\u2502...............\u2591...\u2502",
-        "\u2502...................\u2502",
-        "\u2502.\u2591.....\u2593...\u2591.\u2591.....\u2502",
-        "\u2591.\u2591.\u2591.............\u2591.\u2502",
-        "\u2502.......\u2591......\u2591....\u2502",
-        "\u2502...........\u2591...\u2591...\u2502",
-        "\u2502......\u2591............\u2591",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2591\u2591\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2518"
+        "┌─────░───░───░───░░┐",
+        "│...............░...│",
+        "│...................│",
+        "│.░.....▓...░.░.....│",
+        "░.░.░.............░.│",
+        "│.......░......░....│",
+        "│...........░...░...│",
+        "│......░............░",
+        "└───────░──░░─────░─┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 6,
@@ -1038,26 +1145,26 @@
       "description": "Blocks squared and stacked, chisels laid out, and a half-cut figure on the bench with its arms roughed and its burden not begun.\n\nThe mason has been at this stage for a long time.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2591\u2500\u2500\u2500\u2510",
-        "\u2502........\u2591..\u2591\u2591.\u2591....\u2502",
-        "\u2502.............\u2591.....\u2502",
-        "\u2502.....\u2593.............\u2502",
-        "\u2502....\u2591...\u2591..........\u2502",
-        "\u2502..........\u2591......\u2591.\u2502",
-        "\u2502....\u2593.......\u2591......\u2502",
-        "\u2502..........\u2591........\u2502",
-        "\u2514\u2591\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2591\u2500\u2591\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌──────────────░░───┐",
+        "│........░..░░.░....│",
+        "│.............░.....│",
+        "│.....▓.............│",
+        "│....░...░..........│",
+        "│..........░......░.│",
+        "│....▓.......░......│",
+        "│..........░........│",
+        "└░────░──░─░░───────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 1,
       "editorY": 1,
@@ -1065,6 +1172,13 @@
         {
           "direction": "east",
           "to": "nemhal.olmenneth.the-first-station",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.olmenneth.the-dressing-floor",
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
@@ -1078,26 +1192,26 @@
       "description": "The road halves in width, walled on both sides above head height, and runs on straight.\n\nThe walls carry hands. Thousands of them, pressed in wet plaster, all at the height of a person walking.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502.................\u2591.\u2591",
-        "\u2502........\u2591\u2591.........\u2591",
-        "\u2591..\u2591.\u2591..............\u2502",
-        "\u2502..\u2591..........\u2591.....\u2502",
-        "\u2502....\u2591.\u2593...\u2591......\u2591.\u2502",
-        "\u2502...........\u2591...\u2591...\u2502",
-        "\u2502..................\u2591\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2591\u2591\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2591\u2518"
+        "┌───────░───░───────┐",
+        "│.................░.░",
+        "│........░░.........░",
+        "░..░.░..............│",
+        "│..░..........░.....│",
+        "│....░.▓...░......░.│",
+        "│...........░...░...│",
+        "│..................░│",
+        "└───────░░░──░─────░┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 5,
@@ -1132,25 +1246,25 @@
       "description": "A press, a vat, and the smell of clean oil. It runs. There is no crop in Nemhal and it runs.\n\nNobody has asked where the oil comes from because everybody has decided not to.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE...\u25AE...\u25AE...\u25AE...\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 1,
       "editorY": 3,
@@ -1161,6 +1275,13 @@
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.olmenneth.the-dressing-floor",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
         }
       ]
     },
@@ -1168,28 +1289,28 @@
       "key": "nemhal.olmenneth.the-plaster-store",
       "zoneKey": "nemhal.olmenneth",
       "title": "The Plaster Store",
-      "description": "Lime, sand, water, and a board with a fresh patch drying on it.\n\nThe patch has a hand in it. It is this morning\u0027s.",
+      "description": "Lime, sand, water, and a board with a fresh patch drying on it.\n\nThe patch has a hand in it. It is this morning's.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE...\u25AE...\u25AE...\u25AE...\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮...▮...▮...▮...│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 1,
       "editorY": 5,
@@ -1210,20 +1331,20 @@
       "description": "A road forty feet wide in dressed slabs, running dead straight east, walled with standing stones at intervals.\n\nIt was built for a great many people walking slowly. It is still used that way.",
       "flags": {},
       "grid": [
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2593\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2593\u2591\u2591\u2591\u2591\u2591",
-        "\u00B7\u00B7\u00B7\u2593\u2591\u2591\u2593\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u2591\u00B7\u00B7\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2593\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591"
+        "░░░░░░░░░░░▓░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░▓░░░░░",
+        "···▓░░▓░░░░░░░░······",
+        "·░··░░░░░░░░······░░░",
+        "░░░··········░░░░░░░░",
+        "░░░░░░░░░░░░░▓░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░"
       ],
       "legend": {
-        "\u00B7": "path",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "·": "path",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 0,
@@ -1260,25 +1381,25 @@
         "indoors": true
       },
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 3,
       "editorY": 2,
@@ -1299,25 +1420,25 @@
       "description": "The second halt, and the point where the procession is supposed to go silent. There is a line cut across the road.\n\nEverything that walks this road stops talking here, and everything on this road walks it.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 2,
       "editorY": 4,
@@ -1354,20 +1475,20 @@
         "indoors": true
       },
       "grid": [
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2593\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u00B7\u00B7\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u00B7\u00B7\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u2591\u2591",
-        "\u2591\u2591\u00B7\u00B7\u00B7\u00B7\u00B7\u2591\u2591\u2591\u2591\u2591\u00B7\u00B7\u2591\u2591\u2591\u2591\u00B7\u00B7\u00B7",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2593\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591"
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░▓░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "··░░░░░░░░░░░░░░░░░░░",
+        "░··░░░░░░░░░░······░░",
+        "░░·····░░░░░··░░░░···",
+        "░░░░░░·······░░░░░░░░",
+        "░░░░░░░▓░░░░░░░░░░░░░"
       ],
       "legend": {
-        "\u00B7": "path",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "·": "path",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 7,
@@ -1395,20 +1516,20 @@
       "description": "The standing stones close to, each carved with a figure carrying something, each figure faced the same way along the road.\n\nThe thing being carried is not shown on any of them.",
       "flags": {},
       "grid": [
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2593\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u00B7\u00B7",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u00B7\u00B7\u00B7\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u00B7\u00B7\u2591",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u2593\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u2591\u2591",
-        "\u2591\u00B7\u00B7\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591"
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░▓░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░··",
+        "░░░░░░···░░░░░░░░░··░",
+        "·······▓···········░░",
+        "░··░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░"
       ],
       "legend": {
-        "\u00B7": "path",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "·": "path",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 3,
       "editorY": 0,
@@ -1426,28 +1547,28 @@
       "key": "nemhal.the-hold.the-chapel-corner",
       "zoneKey": "nemhal.the-hold",
       "title": "The Chapel Corner",
-      "description": "A corner of the long room with a rail across it, a lamp, and no image of anybody. The Hold does not keep Nemhalla\u0027s office and does not say why.\n\nSomebody has put fresh water in the bowl regardless.",
+      "description": "A corner of the long room with a rail across it, a lamp, and no image of anybody. The Hold does not keep Nemhalla's office and does not say why.\n\nSomebody has put fresh water in the bowl regardless.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502.....\u2591.....\u2591.......\u2502",
-        "\u2502.\u2591........\u2591..\u2591.....\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502.............\u2591\u2591....\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│.....░.....░.......│",
+        "│.░........░..░.....│",
+        "│...................│",
+        "│...................│",
+        "│.............░░....│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble"
       },
       "editorX": 3,
       "editorY": 3,
@@ -1458,6 +1579,13 @@
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.the-hold.the-wall-walk",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
         }
       ]
     },
@@ -1465,28 +1593,28 @@
       "key": "nemhal.the-hold.the-gate-yard",
       "zoneKey": "nemhal.the-hold",
       "title": "The Hold Gate",
-      "description": "The ring stands inside the wall, in a yard swept twice a day by people who have decided that keeping it swept is the same as holding on.\n\nYrriska\u0027s shrine is a niche in the wall with a lamp in it, and the lamp is lit.",
+      "description": "The ring stands inside the wall, in a yard swept twice a day by people who have decided that keeping it swept is the same as holding on.\n\nYrriska's shrine is a niche in the wall with a lamp in it, and the lamp is lit.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502.......\u25AC....\u25AC......\u2502",
-        "\u2502...\u25AC...............\u2502",
-        "\u2502................\u25AC..\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│.......▬....▬......│",
+        "│...▬...............│",
+        "│................▬..│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AC": "table"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▬": "table"
       },
       "editorX": 2,
       "editorY": 0,
@@ -1511,30 +1639,30 @@
       "key": "nemhal.the-hold.the-infirmary",
       "zoneKey": "nemhal.the-hold",
       "title": "The Infirmary",
-      "description": "Eight beds, two occupied, and a shelf of Nemhal\u0027s own remedies that are better than anything in Grask and running out.\n\nNobody is making more.",
+      "description": "Eight beds, two occupied, and a shelf of Nemhal's own remedies that are better than anything in Grask and running out.\n\nNobody is making more.",
       "flags": {
         "indoors": true
       },
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502..\u2591................\u2502",
-        "\u2502......\u2591............\u2502",
-        "\u2502.................\u2591.\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│..░................│",
+        "│......░............│",
+        "│.................░.│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble"
       },
       "editorX": 1,
       "editorY": 2,
@@ -1552,30 +1680,30 @@
       "key": "nemhal.the-hold.the-long-room",
       "zoneKey": "nemhal.the-hold",
       "title": "The Long Room",
-      "description": "The Hold\u0027s common room: one table the length of the wall, a fire, and eleven places laid whether or not eleven people come.\n\nAveth sits at the far end and is not asked to leave.",
+      "description": "The Hold's common room: one table the length of the wall, a fire, and eleven places laid whether or not eleven people come.\n\nAveth sits at the far end and is not asked to leave.",
       "flags": {
         "indoors": true
       },
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...............\u25AC...\u2502",
-        "\u2502.................\u25AC.\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...............▬...│",
+        "│.................▬.│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AC": "table"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▬": "table"
       },
       "editorX": 2,
       "editorY": 3,
@@ -1607,28 +1735,28 @@
       "key": "nemhal.the-hold.the-muster-yard",
       "zoneKey": "nemhal.the-hold",
       "title": "The Muster Yard",
-      "description": "A square of hard ground where the Hold\u0027s eleven form up every morning, which takes under a minute and is done anyway.\n\nThe yard was cut for two hundred.",
+      "description": "A square of hard ground where the Hold's eleven form up every morning, which takes under a minute and is done anyway.\n\nThe yard was cut for two hundred.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502............\u25AC....\u25AC.\u2502",
-        "\u2502...................\u2502",
-        "\u2502......\u25AC............\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│............▬....▬.│",
+        "│...................│",
+        "│......▬............│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AC": "table"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▬": "table"
       },
       "editorX": 2,
       "editorY": 1,
@@ -1663,25 +1791,25 @@
       "description": "A low arch through the wall with two doors and a drop-bar between them, opening on the road east into Vurrach.\n\nThe bar is lifted. Nobody has dropped it in living memory and nobody has removed it either.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502.....\u2591\u2591............\u2502",
-        "\u2502..\u2591................\u2502",
-        "\u2502...\u2591...............\u2502",
-        "\u2502......\u2591....\u2591.......\u2502",
-        "\u2502..\u2591.....\u2591..........\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│.....░░............│",
+        "│..░................│",
+        "│...░...............│",
+        "│......░....░.......│",
+        "│..░.....░..........│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble"
       },
       "editorX": 2,
       "editorY": 4,
@@ -1706,30 +1834,30 @@
       "key": "nemhal.the-hold.the-stores",
       "zoneKey": "nemhal.the-hold",
       "title": "The Stores",
-      "description": "A vaulted room half full, with Dell\u0027s ledger on a lectern by the door and everything on the shelves counted against it.\n\nRationing, not trading. Dell will say so before you ask.",
+      "description": "A vaulted room half full, with Dell's ledger on a lectern by the door and everything on the shelves counted against it.\n\nRationing, not trading. Dell will say so before you ask.",
       "flags": {
         "indoors": true
       },
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502.\u25AC......\u25AC..........\u2502",
-        "\u2502...............\u25AC...\u2502",
-        "\u2502...\u25AC........\u25AC......\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│.▬......▬..........│",
+        "│...............▬...│",
+        "│...▬........▬......│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AC": "table"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▬": "table"
       },
       "editorX": 2,
       "editorY": 2,
@@ -1758,25 +1886,65 @@
       ]
     },
     {
+      "key": "nemhal.the-hold.the-wall-walk",
+      "zoneKey": "nemhal.the-hold",
+      "title": "The Wall Walk",
+      "description": "A walkway along the top of the wall, joining the parapet to the corner where the chapel backs onto it. Wide enough for two, with a rope strung at waist height on the outer side.\n\nThe rope is new, and spliced in the pattern anybody on the Reaches is taught.\n\nOn the outer side the wall goes down, and then there is nothing to describe.",
+      "flags": {},
+      "grid": [
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░  ░░░░   ░░░  ",
+        "   ░░   ░  ░         ",
+        "                     ",
+        "                     "
+      ],
+      "legend": {
+        "░": "rubble",
+        " ": "void"
+      },
+      "editorX": 3,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.the-hold.the-west-parapet",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.the-hold.the-chapel-corner",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        }
+      ]
+    },
+    {
       "key": "nemhal.the-hold.the-west-parapet",
       "zoneKey": "nemhal.the-hold",
       "title": "The West Parapet",
       "description": "A walkway on the wall, facing west, with a rail and three sentry posts. Two of the posts are boarded up.\n\nThe wall was built to face an enemy. It faces the edge instead, which does not care.\n\nThere is nothing to see. The rim of Nemhal is where the land has already gone, and what is past it is not distance - it is the absence of the question.",
       "flags": {},
       "grid": [
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "            \u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "               \u2591\u2591\u2591\u2591  ",
-        "                \u2591\u2591   ",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "            ░░░░░░░░░",
+        "               ░░░░  ",
+        "                ░░   ",
         "                     "
       ],
       "legend": {
         " ": "void",
-        "\u2591": "rubble"
+        "░": "rubble"
       },
       "editorX": 3,
       "editorY": 1,
@@ -1784,6 +1952,13 @@
         {
           "direction": "west",
           "to": "nemhal.the-hold.the-muster-yard",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.the-hold.the-wall-walk",
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
@@ -1797,26 +1972,26 @@
       "description": "A square tower with an open bell stage, and a bell that has been rung on the hour every hour for two hundred years.\n\nIt is rung on the hour. You can wait and see.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2591\u2500\u2591\u2591\u2591\u2500\u2500\u2500\u2591\u2500\u2500\u2510",
-        "\u2502.........\u2591.........\u2502",
-        "\u2502...\u2593...\u2593..\u2591........\u2591",
-        "\u2502....\u2591..............\u2502",
-        "\u2502....\u2591..............\u2502",
-        "\u2502.............\u2591.....\u2591",
-        "\u2502.....\u2591\u2591........\u2591...\u2502",
-        "\u2502\u2591..................\u2502",
-        "\u2514\u2591\u2500\u2500\u2591\u2500\u2591\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───░────░─░░░───░──┐",
+        "│.........░.........│",
+        "│...▓...▓..░........░",
+        "│....░..............│",
+        "│....░..............│",
+        "│.............░.....░",
+        "│.....░░........░...│",
+        "│░..................│",
+        "└░──░─░───░───░─────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 4,
@@ -1855,15 +2030,15 @@
         "~~~~~~~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
-        "~~~~~~~\u2593~~~~~~~~~~~~~",
-        "~\u2593~~~~~~~~~~\u2593~~~~~~~~",
-        "~~~~~\u2593~~~~~~~~~~~~~~~",
+        "~~~~~~~▓~~~~~~~~~~~~~",
+        "~▓~~~~~~~~~~▓~~~~~~~~",
+        "~~~~~▓~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
-        "~~~~~~~~~~~~~\u2593~~~~~~~"
+        "~~~~~~~~~~~~~▓~~~~~~~"
       ],
       "legend": {
         "~": "ash",
-        "\u2593": "rock"
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 6,
@@ -1900,19 +2075,19 @@
         "indoors": true
       },
       "grid": [
-        "\u2593~~~~~~~~~~~~~~~~~~~~",
+        "▓~~~~~~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
-        "~~~~~~~~~~~~~\u2593~~~~~~~",
-        "~~~~~\u2593~~~~~~~~~~~~~~~",
-        "~~~~~~~~~\u2593~~~~~~~~~~~",
+        "~~~~~~~~~~~~~▓~~~~~~~",
+        "~~~~~▓~~~~~~~~~~~~~~~",
+        "~~~~~~~~~▓~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
-        "~\u2593~~~~~~~~~~~~~~~~~~~"
+        "~▓~~~~~~~~~~~~~~~~~~~"
       ],
       "legend": {
         "~": "ash",
-        "\u2593": "rock"
+        "▓": "rock"
       },
       "editorX": 1,
       "editorY": 3,
@@ -1933,19 +2108,19 @@
       "description": "Racks and racks of them, all empty, all dusted, in a shed with the door wedged open for the airflow.\n\nThe wedge is a folded page of the office.",
       "flags": {},
       "grid": [
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022"
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"▓\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"▓\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"▓\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"▓\"\"\"\"▓\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
       ],
       "legend": {
-        "\u0022": "grass",
-        "\u2593": "rock"
+        "\"": "grass",
+        "▓": "rock"
       },
       "editorX": 3,
       "editorY": 2,
@@ -1956,6 +2131,13 @@
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
+        },
+        {
+          "direction": "north",
+          "to": "nemhal.vurrach.the-verge",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
         }
       ]
     },
@@ -1963,29 +2145,29 @@
       "key": "nemhal.vurrach.the-far-verge",
       "zoneKey": "nemhal.vurrach",
       "title": "The Far Verge",
-      "description": "Where Vurrach\u0027s kept country gives out and the processional road begins: the verges stop being cut, and the road surface changes to worn slabs.\n\nEverything from here is older and better made and less looked after.",
+      "description": "Where Vurrach's kept country gives out and the processional road begins: the verges stop being cut, and the road surface changes to worn slabs.\n\nEverything from here is older and better made and less looked after.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2591\u2591\u2591\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2510",
-        "\u2591...........\u2591.......\u2502",
-        "\u2502...\u2593........\u2591.....\u2591\u2502",
-        "\u2502...................\u2591",
-        "\u2502...................\u2502",
-        "\u2502\u2591.....\u2591.......\u2591....\u2502",
-        "\u2502......\u2591......\u2593.....\u2502",
-        "\u2591.............\u2591.....\u2502",
-        "\u2514\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌──────░░░░░───────░┐",
+        "░...........░.......│",
+        "│...▓........░.....░│",
+        "│...................░",
+        "│...................│",
+        "│░.....░.......░....│",
+        "│......░......▓.....│",
+        "░.............░.....│",
+        "└──░─────░──────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 7,
@@ -2013,26 +2195,26 @@
       "description": "A steading with the yard swept, the byre mucked out, and the door standing open. Every tool is on its hook.\n\nThere are no animals and there is no straw and the byre has been mucked out this morning.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2591\u2500\u2591\u2500\u2591\u2591\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2591\u2500\u2591\u2510",
-        "\u2502.....\u2591.............\u2502",
-        "\u2502..\u2593\u2591....\u2591\u2591.......\u2591.\u2502",
-        "\u2591...\u2593....\u2591..........\u2502",
-        "\u2502...................\u2502",
-        "\u2502..\u2591................\u2502",
-        "\u2502..\u2591.....\u2593..........\u2591",
-        "\u2502.......\u2591...........\u2502",
-        "\u2514\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2518"
+        "┌─░─░─░░░──────░─░─░┐",
+        "│.....░.............│",
+        "│..▓░....░░.......░.│",
+        "░...▓....░..........│",
+        "│...................│",
+        "│..░................│",
+        "│..░.....▓..........░",
+        "│.......░...........│",
+        "└──░──────░───────░─┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 1,
@@ -2067,19 +2249,19 @@
       "description": "Down among the fallen masonry, where the middle of the bridge came to rest, dressed stone in a heap and every block numbered.\n\nSomebody numbered them for rebuilding. Nobody has come.",
       "flags": {},
       "grid": [
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022"
+        "\"\"\"\"\"\"\"\"\"\"\"▓\"\"\"▓\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"▓\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"▓\"\"\"\"\"\"\"\"\"\"\"\"\"▓\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"▓\"\"\""
       ],
       "legend": {
-        "\u0022": "grass",
-        "\u2593": "rock"
+        "\"": "grass",
+        "▓": "rock"
       },
       "editorX": 3,
       "editorY": 6,
@@ -2097,12 +2279,12 @@
       "key": "nemhal.vurrach.the-hold-road",
       "zoneKey": "nemhal.vurrach",
       "title": "The Hold Road",
-      "description": "A made road running east out of the Hold, kept clear, with the verges cut back to a spear\u0027s length on both sides.\n\nSomebody cuts them. It is not the Hold.",
+      "description": "A made road running east out of the Hold, kept clear, with the verges cut back to a spear's length on both sides.\n\nSomebody cuts them. It is not the Hold.",
       "flags": {},
       "grid": [
-        "~~~~\u2593~~~~~~~~~~~~~~~\u2593",
+        "~~~~▓~~~~~~~~~~~~~~~▓",
         "~~~~~~~~~~~~~~~~~~~~~",
-        "~~~~~~~~~~~~~~~~~~~\u2593~",
+        "~~~~~~~~~~~~~~~~~~~▓~",
         "~~~~~~~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
@@ -2112,7 +2294,7 @@
       ],
       "legend": {
         "~": "ash",
-        "\u2593": "rock"
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 0,
@@ -2147,19 +2329,19 @@
       "description": "The road drops into a cutting here, and the cutting has been kept clear of the slips that come down after rain.\n\nThere is a slip half cleared. The barrows are standing in it.",
       "flags": {},
       "grid": [
-        "~~~~~~~~~~~~~~~~~\u2593~~~",
-        "~~~~~~~~~~~~\u2593~~~~~~~~",
-        "~\u2593~~~~~~~~~\u2593~~~~~~~~~",
+        "~~~~~~~~~~~~~~~~~▓~~~",
+        "~~~~~~~~~~~~▓~~~~~~~~",
+        "~▓~~~~~~~~~▓~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
-        "~~~~~~~~\u2593~~~~~~~~~~~~",
-        "\u2593~~~~~~~~~~~~~~~~~~~~"
+        "~~~~~~~~▓~~~~~~~~~~~~",
+        "▓~~~~~~~~~~~~~~~~~~~~"
       ],
       "legend": {
         "~": "ash",
-        "\u2593": "rock"
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 5,
@@ -2194,19 +2376,19 @@
       "description": "A stone at the roadside giving the distance to Keshvaun in a measure nobody uses now.\n\nIt has been re-cut. The figure is smaller than it was and the old figure is still faintly there.",
       "flags": {},
       "grid": [
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022"
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"▓\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"▓\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
       ],
       "legend": {
-        "\u0022": "grass",
-        "\u2593": "rock"
+        "\"": "grass",
+        "▓": "rock"
       },
       "editorX": 3,
       "editorY": 0,
@@ -2214,6 +2396,13 @@
         {
           "direction": "west",
           "to": "nemhal.vurrach.the-hold-road",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.vurrach.the-verge",
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
@@ -2233,13 +2422,13 @@
         "~~~~~~~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~",
-        "~~~~~\u2593~~~~~\u2593~~~~~~~~~",
-        "~~~~~\u2593~~~~~~~~~~~~~~~",
+        "~~~~~▓~~~~~▓~~~~~~~~~",
+        "~~~~~▓~~~~~~~~~~~~~~~",
         "~~~~~~~~~~~~~~~~~~~~~"
       ],
       "legend": {
         "~": "ash",
-        "\u2593": "rock"
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 2,
@@ -2276,19 +2465,19 @@
         "indoors": true
       },
       "grid": [
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u2593",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022",
-        "\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022"
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"▓\"▓",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"▓\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"▓\"",
+        "\"\"\"\"▓\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"▓\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
       ],
       "legend": {
-        "\u0022": "grass",
-        "\u2593": "rock"
+        "\"": "grass",
+        "▓": "rock"
       },
       "editorX": 3,
       "editorY": 4,
@@ -2303,32 +2492,72 @@
       ]
     },
     {
+      "key": "nemhal.vurrach.the-verge",
+      "zoneKey": "nemhal.vurrach",
+      "title": "The Verge",
+      "description": "A strip of turf between the milestone and the shed, worn to a path by people cutting the corner rather than by anyone laying one.\n\nA stone trough stands at the edge, full of clean rainwater, a tin cup on a chain beside it.\n\nThe chain is long enough to reach the road. Somebody thought about that.",
+      "flags": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"▓▓▓▓\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"▓\"▓\"\"\"▓\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"▓▓\"\"\"▓▓\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"▓▓\"\"▓\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"▓\"\"▓▓▓\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"▓▓▓▓\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"▓▓\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "▓": "rock"
+      },
+      "editorX": 3,
+      "editorY": 1,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "nemhal.vurrach.the-milestone",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "nemhal.vurrach.the-drying-shed",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        }
+      ]
+    },
+    {
       "key": "nemhal.vurrach.the-verge-camp",
       "zoneKey": "nemhal.vurrach",
       "title": "The Verge Camp",
       "description": "A shelter of hurdles where the road crew sleeps, with eight beds made up and a pot hung over a fire that is banked, not out.\n\nThe crew is on shift. The crew has been on shift for two hundred years.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2591\u2591\u2500\u2500\u2500\u2500\u2591\u2500\u2510",
-        "\u2591\u2591..................\u2502",
-        "\u2502....\u2591.\u2593.......\u2591..\u2591.\u2591",
-        "\u2502..........\u2591........\u2591",
-        "\u2502.........\u2591..\u2591......\u2502",
-        "\u2502...\u2593.........\u2591\u2591....\u2502",
-        "\u2591.....\u2593....\u2591.\u2593......\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2591\u2518"
+        "┌─────────░─░░────░─┐",
+        "░░..................│",
+        "│....░.▓.......░..░.░",
+        "│..........░........░",
+        "│.........░..░......│",
+        "│...▓.........░░....│",
+        "░.....▓....░.▓......│",
+        "│...................│",
+        "└░────────────░────░┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 1,
       "editorY": 5,
@@ -2349,26 +2578,26 @@
       "description": "A green with a cross at the middle and houses on three sides, every window shuttered and every shutter hung straight.\n\nThe grass is cut. There is nothing to cut it with in any of the houses.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2591\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2591\u2500\u2500\u2500\u2510",
-        "\u2502...........\u2591.......\u2502",
-        "\u2502....\u2591\u2593...\u2593.........\u2502",
-        "\u2502\u2591...........\u2591....\u2591.\u2502",
-        "\u2502....\u2593.\u2593...\u2591\u2591\u2591......\u2502",
-        "\u2502..\u2591.......\u2591........\u2591",
-        "\u2502.\u2591............\u2591....\u2591",
-        "\u2502...................\u2502",
-        "\u2514\u2591\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2591\u2500\u2500\u2500\u2500\u2500\u2591\u2591\u2500\u2518"
+        "┌──░░────────░──░───┐",
+        "│...........░.......│",
+        "│....░▓...▓.........│",
+        "│░...........░....░.│",
+        "│....▓.▓...░░░......│",
+        "│..░.......░........░",
+        "│.░............░....░",
+        "│...................│",
+        "└░─────────░─────░░─┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2591": "rubble",
-        "\u2593": "rock"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "░": "rubble",
+        "▓": "rock"
       },
       "editorX": 2,
       "editorY": 3,
@@ -2403,19 +2632,19 @@
       "description": "A roofed well with a bucket on a chain and the chain oiled.\n\nThe water is good. Somebody draws it.",
       "flags": {},
       "grid": [
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593",
-        "\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2593\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022"
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"▓\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"▓\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"▓\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"▓",
+        "\"\"\"\"\"▓\"\"\"\"\"\"\"\"▓\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
       ],
       "legend": {
-        "\u0022": "grass",
-        "\u2593": "rock"
+        "\"": "grass",
+        "▓": "rock"
       },
       "editorX": 1,
       "editorY": 1,
@@ -2435,7 +2664,7 @@
       "key": "bandage-roll",
       "name": "a roll of clean bandage",
       "description": "Boiled linen, rolled tight, tied with a scrap of the same. Sold by the roll because nobody needs half of one.",
-      "icon": "\u002B",
+      "icon": "+",
       "slots": [],
       "isTwoHanded": false,
       "weight": 100,
@@ -2454,7 +2683,7 @@
     {
       "key": "bread",
       "name": "a loaf of dark bread",
-      "description": "Heavy, close-grained, and baked at Khaldra\u0027s Hearth like everything else in this town. Keeps four days and admits it.",
+      "description": "Heavy, close-grained, and baked at Khaldra's Hearth like everything else in this town. Keeps four days and admits it.",
       "icon": "b",
       "slots": [],
       "isTwoHanded": false,
@@ -2699,7 +2928,7 @@
     },
     {
       "key": "nemhal-bearers-gauntlets",
-      "name": "a pair of bearer\u0027s gauntlets",
+      "name": "a pair of bearer's gauntlets",
       "description": "Made for carrying something heavy a long way without setting it down.",
       "icon": "[",
       "slots": [
@@ -3027,7 +3256,7 @@
     {
       "key": "torch",
       "name": "a pitch torch",
-      "description": "A hand\u0027s length of ash wrapped in pitch-soaked rag. Takes a hand to carry and smells like it the whole time.",
+      "description": "A hand's length of ash wrapped in pitch-soaked rag. Takes a hand to carry and smells like it the whole time.",
       "icon": "!",
       "slots": [
         "OffHand"
@@ -3089,7 +3318,7 @@
             "minSeconds": 150
           },
           {
-            "text": "says, \u0027I do not sell. Bring me something and I will make it better.\u0027",
+            "text": "says, 'I do not sell. Bring me something and I will make it better.'",
             "maxSeconds": 600,
             "minSeconds": 300
           },
@@ -3161,7 +3390,7 @@
             "minSeconds": 120
           },
           {
-            "text": "says, \u0027They are not lying to you. Nobody has ever told them.\u0027",
+            "text": "says, 'They are not lying to you. Nobody has ever told them.'",
             "maxSeconds": 600,
             "minSeconds": 300
           }
@@ -3192,15 +3421,15 @@
             "minSeconds": 120
           },
           {
-            "text": "says, \u0027We have moved the wall twice. We will move it again.\u0027",
+            "text": "says, 'We have moved the wall twice. We will move it again.'",
             "maxSeconds": 600,
             "minSeconds": 300
           }
         ],
         "wanders": false,
         "greeting": [
-          "\u0027Eleven of us hold this. You would be the twelfth, if you were staying. You are not staying.\u0027",
-          "\u0027Do not go west of the wall after dark. That is not an order I can enforce, which is why I am asking.\u0027"
+          "'Eleven of us hold this. You would be the twelfth, if you were staying. You are not staying.'",
+          "'Do not go west of the wall after dark. That is not an order I can enforce, which is why I am asking.'"
         ]
       },
       "loot": [],
@@ -3209,7 +3438,7 @@
     {
       "key": "nemhal-hollow-hound",
       "name": "a hollow hound",
-      "description": "It was somebody\u0027s and it still runs the route it was walked on.",
+      "description": "It was somebody's and it still runs the route it was walked on.",
       "icon": "d",
       "level": 8,
       "wanderIntervalPulses": 24,
@@ -3273,7 +3502,7 @@
         ],
         "emotes": [
           {
-            "text": "says, \u0027Take what you need. Write what you took. Somebody will want to know.\u0027",
+            "text": "says, 'Take what you need. Write what you took. Somebody will want to know.'",
             "maxSeconds": 480,
             "minSeconds": 240
           },
@@ -3842,7 +4071,7 @@
       "path": "Warden",
       "unlockLevel": 43,
       "name": "Sundering Blow",
-      "description": "Take the guard apart so that everyone else\u0027s work lands on what is left.",
+      "description": "Take the guard apart so that everyone else's work lands on what is left.",
       "costType": "Stamina",
       "costValue": 34,
       "cooldownPulses": 120,
@@ -5666,10 +5895,10 @@
       "autoStart": false,
       "paths": [],
       "dialogue": {
-        "giverOffer": "Aveth does not soften it. \u0027Every one of them is on a rota, and every one of them has a \u003Ctoken\u003E. I want ten. You will have to take them, and they will not understand why, because nobody has told them anything.\u0027",
-        "turninReady": "She lays them in a line and counts under her breath. \u0027Two hundred years of issue and the numbers are still climbing,\u0027 she says. \u0027They are not leftovers. They are being replaced.\u0027",
-        "giverComplete": "\u0027Ten. And do not apologise to them. It does not reach.\u0027",
-        "giverInProgress": "\u0027Ten tokens. Carved bone. They wear them under everything, which tells you what they think of them.\u0027"
+        "giverOffer": "Aveth does not soften it. 'Every one of them is on a rota, and every one of them has a <token>. I want ten. You will have to take them, and they will not understand why, because nobody has told them anything.'",
+        "turninReady": "She lays them in a line and counts under her breath. 'Two hundred years of issue and the numbers are still climbing,' she says. 'They are not leftovers. They are being replaced.'",
+        "giverComplete": "'Ten. And do not apologise to them. It does not reach.'",
+        "giverInProgress": "'Ten tokens. Carved bone. They wear them under everything, which tells you what they think of them.'"
       },
       "sortOrder": 1
     },
@@ -5695,10 +5924,10 @@
       "autoStart": false,
       "paths": [],
       "dialogue": {
-        "giverOffer": "\u0027They read it on the hour,\u0027 Aveth says. \u0027I have heard it through a wall for nine years and I have never once seen the text. Bring me \u003Cpages\u003E.\u0027",
-        "turninReady": "She reads all six without stopping. \u0027Every prayer is for a recovery,\u0027 she says at last. \u0027Not for the dead. For the sick. They are not mourning her.\u0027 She folds them very carefully. \u0027They are nursing her.\u0027",
-        "giverComplete": "\u0027Six pages. Any six. They are all the same and I want to be sure of that.\u0027",
-        "giverInProgress": "\u0027Six. From the cloister if you can - the chapter house copies are corrected and I want the ones they actually read.\u0027"
+        "giverOffer": "'They read it on the hour,' Aveth says. 'I have heard it through a wall for nine years and I have never once seen the text. Bring me <pages>.'",
+        "turninReady": "She reads all six without stopping. 'Every prayer is for a recovery,' she says at last. 'Not for the dead. For the sick. They are not mourning her.' She folds them very carefully. 'They are nursing her.'",
+        "giverComplete": "'Six pages. Any six. They are all the same and I want to be sure of that.'",
+        "giverInProgress": "'Six. From the cloister if you can - the chapter house copies are corrected and I want the ones they actually read.'"
       },
       "sortOrder": 2
     },
@@ -5724,10 +5953,10 @@
       "autoStart": false,
       "paths": [],
       "dialogue": {
-        "giverOffer": "\u0027I have been within forty feet of her for nine years,\u0027 Aveth says. \u0027I have never gone down. Not out of respect. I did not want to be right.\u0027 She looks at you steadily. \u0027Bring me a corner of \u003Cthe shroud\u003E. And look past her while you are down there. Properly.\u0027",
-        "turninReady": "Aveth holds the linen and does not look at it. \u0027You saw it, then,\u0027 she says. \u0027She is not lying in a tomb. She is lying in the gap. She stood in the way and it cost her all of it and it worked - and Nemhal has been coming apart at exactly the rate she has, because she is what is left holding it.\u0027 She hands the corner back. \u0027Take it with you. And listen: past the next gate, recall does not work. Not weakened. Does not work. You walk in and you walk out, or you die and pay for it. Say it back to me before you go.\u0027",
-        "giverComplete": "\u0027She is still there. She has been still there for two hundred years and she has never once been relieved.\u0027",
-        "giverInProgress": "\u0027Past the bier the chamber narrows. Go to the end of it. The First Mourner is in the niche and she will not let you take anything, so do not plan on asking.\u0027"
+        "giverOffer": "'I have been within forty feet of her for nine years,' Aveth says. 'I have never gone down. Not out of respect. I did not want to be right.' She looks at you steadily. 'Bring me a corner of <the shroud>. And look past her while you are down there. Properly.'",
+        "turninReady": "Aveth holds the linen and does not look at it. 'You saw it, then,' she says. 'She is not lying in a tomb. She is lying in the gap. She stood in the way and it cost her all of it and it worked - and Nemhal has been coming apart at exactly the rate she has, because she is what is left holding it.' She hands the corner back. 'Take it with you. And listen: past the next gate, recall does not work. Not weakened. Does not work. You walk in and you walk out, or you die and pay for it. Say it back to me before you go.'",
+        "giverComplete": "'She is still there. She has been still there for two hundred years and she has never once been relieved.'",
+        "giverInProgress": "'Past the bier the chamber narrows. Go to the end of it. The First Mourner is in the niche and she will not let you take anything, so do not plan on asking.'"
       },
       "sortOrder": 3
     },
@@ -5756,10 +5985,10 @@
         "Adept"
       ],
       "dialogue": {
-        "giverOffer": "Vesh holds a hand out without looking up. \u0027\u003CGive it here\u003E. It has been through something and I can do more with it now than I could before.\u0027",
-        "turninReady": "She works without hurrying and hands them back. \u0027Better,\u0027 she says. That is the whole of her opinion and it is worth more than it sounds.",
-        "giverComplete": "\u0027When it has been through something. Not before.\u0027",
-        "giverInProgress": "\u0027The pair I gave you. I am not making a second set - I am making those again, and better.\u0027"
+        "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
+        "turninReady": "She works without hurrying and hands them back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "giverInProgress": "'The pair I gave you. I am not making a second set - I am making those again, and better.'"
       },
       "sortOrder": 14
     },
@@ -5788,10 +6017,10 @@
         "Hallow"
       ],
       "dialogue": {
-        "giverOffer": "Vesh holds a hand out without looking up. \u0027\u003CGive it here\u003E. It has been through something and I can do more with it now than I could before.\u0027",
-        "turninReady": "She works without hurrying and hands them back. \u0027Better,\u0027 she says. That is the whole of her opinion and it is worth more than it sounds.",
-        "giverComplete": "\u0027When it has been through something. Not before.\u0027",
-        "giverInProgress": "\u0027The pair I gave you. I am not making a second set - I am making those again, and better.\u0027"
+        "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
+        "turninReady": "She works without hurrying and hands them back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "giverInProgress": "'The pair I gave you. I am not making a second set - I am making those again, and better.'"
       },
       "sortOrder": 14
     },
@@ -5820,10 +6049,10 @@
         "Temper"
       ],
       "dialogue": {
-        "giverOffer": "Vesh holds a hand out without looking up. \u0027\u003CGive it here\u003E. It has been through something and I can do more with it now than I could before.\u0027",
-        "turninReady": "She works without hurrying and hands them back. \u0027Better,\u0027 she says. That is the whole of her opinion and it is worth more than it sounds.",
-        "giverComplete": "\u0027When it has been through something. Not before.\u0027",
-        "giverInProgress": "\u0027The pair I gave you. I am not making a second set - I am making those again, and better.\u0027"
+        "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
+        "turninReady": "She works without hurrying and hands them back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "giverInProgress": "'The pair I gave you. I am not making a second set - I am making those again, and better.'"
       },
       "sortOrder": 14
     },
@@ -5852,10 +6081,10 @@
         "Warden"
       ],
       "dialogue": {
-        "giverOffer": "Vesh holds a hand out without looking up. \u0027\u003CGive it here\u003E. It has been through something and I can do more with it now than I could before.\u0027",
-        "turninReady": "She works without hurrying and hands them back. \u0027Better,\u0027 she says. That is the whole of her opinion and it is worth more than it sounds.",
-        "giverComplete": "\u0027When it has been through something. Not before.\u0027",
-        "giverInProgress": "\u0027The pair I gave you. I am not making a second set - I am making those again, and better.\u0027"
+        "giverOffer": "Vesh holds a hand out without looking up. '<Give it here>. It has been through something and I can do more with it now than I could before.'",
+        "turninReady": "She works without hurrying and hands them back. 'Better,' she says. That is the whole of her opinion and it is worth more than it sounds.",
+        "giverComplete": "'When it has been through something. Not before.'",
+        "giverInProgress": "'The pair I gave you. I am not making a second set - I am making those again, and better.'"
       },
       "sortOrder": 14
     }
@@ -5864,7 +6093,7 @@
     {
       "key": "aldenmoor-starter",
       "name": "Aldenmoor",
-      "description": "The original starter world, kept as a sandbox and as the fixture the playtest plans run against. Matches the engine\u0027s built-in fallback.",
+      "description": "The original starter world, kept as a sandbox and as the fixture the playtest plans run against. Matches the engine's built-in fallback.",
       "startingRoomKey": "aldenmoor.millbrook.north-gate",
       "welcomeMessage": "Welcome to Aldenmoor, {name}."
     },

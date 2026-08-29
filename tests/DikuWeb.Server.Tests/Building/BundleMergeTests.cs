@@ -153,32 +153,19 @@ public sealed class BundleMergeTests
     // Against the world as authored
     // -----------------------------------------------------------------------
 
-    [Fact]
-    public void The_authored_content_merges_into_one_world()
-    {
-        var merged = BundleMerge.Merge(AuthoredContent());
-
-        Assert.True(merged.Ok, string.Join("\n", merged.Errors));
-
-        var bundle = merged.Bundle!;
-
-        // Keys are deduplicated, so these are counts of distinct entities rather than of rows read.
-        Assert.Equal(5, bundle.Worlds.Count);
-        Assert.Equal(18, bundle.Zones.Count);
-        // 226 rather than 224: Gatetown gained The Bank Path and The Cart Turn, two outdoor
-        // rooms that exist to close circuits rather than to hold content. Before them the
-        // zone was a tree - 16 rooms, 15 links, no way to leave the square one way and come
-        // back another, which is what made it read as a road rather than a town.
-        Assert.Equal(226, bundle.Rooms.Count);
-        // 69 rather than 68 since content/unplaced.json joined the set. A scoped export closes over
-        // references and so cannot reach a template nothing places - and `spawn <item|mob> <key>`
-        // means an unplaced template is still content somebody can put down. That file is where
-        // they live, and the union is what makes content/ a snapshot rather than a subset.
-        Assert.Equal(69, bundle.MobTemplates.Count);
-        Assert.Equal(93, bundle.ItemTemplates.Count);
-        Assert.Equal(100, bundle.Spawners.Count);
-        Assert.Equal(35, bundle.Quests.Count);
-    }
+    // A census of the authored world used to sit here - 5 worlds, 18 zones, 238 rooms, and four
+    // more counts. It was deleted rather than updated again.
+    //
+    // It asserted nothing about merging. Every rule this file exists to prove is proven above on
+    // two-line fixtures: that an identical key is carried once, that a conflicting one is refused
+    // naming both files, that versions must agree, that the timestamp is the newest input. The
+    // counts only restated how much content happened to exist on the day they were written, so
+    // authoring a room failed the test, and the fix was always to edit the number - which teaches
+    // people to change an assertion without reading it. It was bumped twice in one day before
+    // anybody said so out loud.
+    //
+    // What it usefully checked - that the real content merges - is asserted below, as a property
+    // rather than a number.
 
     /// <summary>
     /// <b>The whole point of merging.</b> Each file alone warns about references it cannot resolve,
