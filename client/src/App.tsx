@@ -16,7 +16,11 @@ import './App.css'
 type Stage =
   | { name: 'loading' }
   | { name: 'anonymous' }
-  | { name: 'choosing'; account: Account }
+  // `departed` carries the character that was just walked out of the world, so the list can show
+  // it as gone before the server has finished being told. It lives on the stage rather than in its
+  // own state because every route into 'choosing' then has to say what it means - there is nothing
+  // left over from the previous visit to forget to clear.
+  | { name: 'choosing'; account: Account; departed?: string }
   | { name: 'playing'; account: Account; character: Character }
 
 const BUILDER_ROLES = ['Builder', 'Admin']
@@ -73,6 +77,7 @@ export default function App() {
       return (
         <CharacterScreen
           notice={notice}
+          departed={stage.departed}
           onEnter={(character) => {
             setNotice(null)
             setStage({ name: 'playing', account: stage.account, character })
@@ -115,7 +120,11 @@ export default function App() {
                 void api.leave(stage.character.id).catch(() => undefined)
                 setNotice(null)
                 navigate('/')
-                setStage({ name: 'choosing', account: stage.account })
+                setStage({
+                  name: 'choosing',
+                  account: stage.account,
+                  departed: stage.character.id,
+                })
               }}
               // Another device took this character. Pointedly *not* calling `api.leave`: the
               // character is in the world being played, and leaving would pull it out from under

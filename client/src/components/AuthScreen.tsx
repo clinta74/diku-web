@@ -101,6 +101,7 @@ export function CharacterScreen({
   onEnter,
   onLogout,
   notice,
+  departed,
 }: {
   onEnter: (character: Character) => void
   onLogout: () => void
@@ -113,6 +114,19 @@ export function CharacterScreen({
    * click the same character again, so the reason has to be in front of them before they do.
    */
   notice?: string | null
+
+  /**
+   * The character this screen was just left with, if it was left rather than arrived at.
+   *
+   * It exists to settle a race the player would otherwise see: App fires the leave and switches
+   * screens in the same tick, so the session list below can be fetched - and answered - before
+   * the leave request reaches the registry. The character then reads as still in the world when
+   * the player has just walked it out, which is the one row on this screen they are looking at.
+   *
+   * Deliberately not set when another device takes the character over. It really is in the world
+   * then, on somebody else's screen, and saying otherwise would be the more misleading answer.
+   */
+  departed?: string
 }) {
   const [characters, setCharacters] = useState<Character[] | null>(null)
   const [active, setActive] = useState<Set<string>>(new Set())
@@ -129,11 +143,16 @@ export function CharacterScreen({
 
     // Several characters can be in the world at once, so show which already are - otherwise
     // it is impossible to tell from here.
+    //
+    // Minus the one we know left, because this request races the leave that took it out - see
+    // `departed`. The client is the authority on that single id and the server is on the rest.
     void api
       .sessions()
-      .then((sessions) => setActive(new Set(sessions.map((s) => s.characterId))))
+      .then((sessions) =>
+        setActive(new Set(sessions.map((s) => s.characterId).filter((id) => id !== departed))),
+      )
       .catch(() => undefined)
-  }, [])
+  }, [departed])
 
   async function create(event: React.FormEvent) {
     event.preventDefault()
