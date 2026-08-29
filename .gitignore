@@ -56,3 +56,9 @@ __pycache__/
 # Playtest and load-run output. A run directory is an artefact of one execution — the
 # transcripts and histograms are for reading now, not for keeping in history.
 runs/
+# The beta compose carries live credentials for a running server and must never be committed.
+# It was, once, in eda9922, and the passwords in it had to be rotated. The other files here are
+# deployment examples with every secret blank - they stay tracked, because
+# ComposeConfigurationKeysTests reads them and is what catches a Sessions__ key that binds to
+# nothing (it caught one in each of two files this week).
+tmp/

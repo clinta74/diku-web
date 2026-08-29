@@ -1,3 +1,8 @@
+# NO SECRETS IN THIS FILE. Every password below is deliberately empty and is set in the TrueNAS
+# app's own environment instead. This file is committed to a public repository; an earlier revision
+# of it carried the live beta passwords in plain text, and they had to be rotated because of it.
+# If you paste a password in here to make something work, you have made that mistake again.
+#
 # diku-web - beta, on TrueNAS SCALE as a custom app.
 #
 # CONFIG TRAVELS IN IMAGES, NOT IN BIND MOUNTS. A TrueNAS custom app renders this file on its own,
@@ -62,7 +67,7 @@ services:
       BACKUP_KEEP: '30'
       PGDATABASE: dikuweb
       PGHOST: postgres
-      PGPASSWORD: wH2nyWDJzoCh3scbsH46
+      PGPASSWORD:
       PGUSER: dikuweb
     image: candrews74/dikuweb-backup:latest
     logging:
@@ -148,7 +153,7 @@ services:
     environment:
       POSTGRES_DB: dikuweb
       POSTGRES_INITDB_ARGS: '-c timezone=UTC -c shared_buffers=256MB -c max_connections=200'
-      POSTGRES_PASSWORD: wH2nyWDJzoCh3scbsH46
+      POSTGRES_PASSWORD:
       POSTGRES_USER: dikuweb
     healthcheck:
       interval: 10s
@@ -224,8 +229,8 @@ services:
       # a public repository.
       - "3000:3000"
     environment:
-      # CHANGE THIS. It is the admin account for everything the dashboard can see.
-      GF_SECURITY_ADMIN_PASSWORD: WiPfmqVfP96kBRG6G
+      # Set in the TrueNAS app's environment, not here. This UI is published on the LAN.
+      GF_SECURITY_ADMIN_PASSWORD:
       # Nobody is signing up for a metrics dashboard for one server.
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
@@ -255,7 +260,7 @@ services:
       Auth__SessionTimeoutMinutes: '20160'
       DatabaseConnection__Database: dikuweb
       DatabaseConnection__Host: postgres
-      DatabaseConnection__Password: wH2nyWDJzoCh3scbsH46
+      DatabaseConnection__Password:
       DatabaseConnection__Port: '5432'
       DatabaseConnection__User: dikuweb
       Engine__LinkDeadGraceSeconds: '300'
