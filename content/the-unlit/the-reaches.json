@@ -68,7 +68,7 @@
       "key": "the-unlit.the-crossing.the-arrival",
       "zoneKey": "the-unlit.the-crossing",
       "title": "The Arrival",
-      "description": "You come out of the ring onto a surface. Not ground - it does not end and it does not begin, and it takes a footprint and keeps it.\n\nThe ring behind you is a ring. From this side it is not set into anything.\n\nYou are the view now. Whatever a person on an Ossaran rim is squinting at, on a clear afternoon, leaning on a low wall with their heels knocking against it, is you.",
+      "description": "You come out of the ring onto a surface. Not ground - it does not end and it does not begin, and it takes a footprint and keeps it.\n\nThe ring behind you is a ring. From this side it is not set into anything.\n\nYou are the view now. Whatever a person on an Ossaran rim is squinting at, on a clear afternoon, leaning on a low wall with their heels knocking against it, is you.\n\nThe way back is up. There is nothing above you here - that is the one thing this place is - and the way back is still up.",
       "flags": {},
       "grid": [
         "░░░░░░░░░░░░░░░░░░░░░",
@@ -89,7 +89,7 @@
       "editorY": 0,
       "exits": [
         {
-          "direction": "north",
+          "direction": "up",
           "to": "nemhal.keshvaun.the-standing-place",
           "requiredFlagKey": null,
           "requiredItemKey": null,

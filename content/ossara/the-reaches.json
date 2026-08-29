@@ -1862,7 +1862,7 @@
       "key": "ossara.the-rimwalk.the-rim-gate",
       "zoneKey": "ossara.the-rimwalk",
       "title": "The Rim Gate",
-      "description": "A ring of dark stone, twin to the dead one in Gatetown's yard, standing at the very edge with nothing behind it.\n\nThis one works. It has always worked. This season it does not, and the difference is not visible: it stands exactly as it stood, and what was through it is not.\n\nWhatever should be on the other side is not there. Not dark, not distance - the same nothing as everywhere else past the edge, arriving where a place used to.",
+      "description": "A ring of dark stone, twin to the dead one in Gatetown's yard, standing at the very edge with nothing behind it.\n\nThis one works. It has always worked. This season it does not, and the difference is not visible: it stands exactly as it stood, and what was through it is not.\n\nWhatever should be on the other side is not there. Not dark, not distance - the same nothing as everywhere else past the edge, arriving where a place used to.\n\nThe way through is up. Nobody local finds that worth explaining, and the people who used to walk out here on an afternoon to watch it working never seemed to expect otherwise.",
       "flags": {},
       "grid": [
         "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
@@ -1897,7 +1897,7 @@
           "refusalMessage": null
         },
         {
-          "direction": "south",
+          "direction": "up",
           "to": "grask.the-landing.the-gate-quay",
           "requiredFlagKey": "attuned.grask",
           "requiredItemKey": null,

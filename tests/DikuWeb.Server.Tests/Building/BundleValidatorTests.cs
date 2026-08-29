@@ -59,6 +59,69 @@ public sealed class BundleValidatorTests
 
     private static BundleCheck Check(WorldBundle bundle) => BundleValidator.Validate(bundle);
 
+    // -----------------------------------------------------------------------
+    // Crossings between Reaches are up from both sides
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// A bundle carrying two worlds joined by one crossing, which is the shape of every gate in
+    /// the Reaches.
+    /// </summary>
+    private static WorldBundle TwoWorlds(string outDirection, string backDirection) => new(
+        BundleFormat.CurrentVersion,
+        DateTimeOffset.UtcNow,
+        new BundleScope("all", null),
+        [
+            new BundleWorld("here", "Here", "", 0, NoFlags, new Dictionary<string, decimal>()),
+            new BundleWorld("there", "There", "", 1, NoFlags, new Dictionary<string, decimal>()),
+        ],
+        [
+            new BundleZone("here.zone", "here", "Zone", "", 1, 10, NoFlags, new Dictionary<string, decimal>()),
+            new BundleZone("there.zone", "there", "Zone", "", 1, 10, NoFlags, new Dictionary<string, decimal>()),
+        ],
+        [
+            Room("here.zone.gate", "here.zone", new BundleExit(outDirection, "there.zone.gate")),
+            Room("there.zone.gate", "there.zone", new BundleExit(backDirection, "here.zone.gate")),
+        ],
+        [], [], [], [], [], []);
+
+    [Fact]
+    public void A_crossing_between_worlds_may_be_up_from_both_sides()
+    {
+        // The portals are deliberately impossible as geography: you go up to leave one Reach and
+        // up again to arrive in the next, so neither is above the other. That is what marks the
+        // moment as a crossing rather than a walk - every other exit in the game is a compass
+        // direction. Reciprocity used to insist on a `down` coming back, which would have made
+        // the whole design unauthorable.
+        Assert.Empty(Check(TwoWorlds("up", "up")).Findings);
+    }
+
+    [Fact]
+    public void A_vertical_pair_inside_one_world_still_owes_a_down()
+    {
+        // The exemption is scoped to a crossing between worlds on purpose. Inside one world a
+        // vertical pair is a stair or a cellar - the Terraces' root cellar is exactly that - and
+        // two rooms that both go `up` to each other are a mistake worth hearing about.
+        var bundle = Valid() with
+        {
+            Rooms =
+            [
+                Room("test.zone.west", "test.zone", new BundleExit("up", "test.zone.east")),
+                Room("test.zone.east", "test.zone", new BundleExit("up", "test.zone.west")),
+            ],
+        };
+
+        AssertWarning(bundle, "one-way exit");
+    }
+
+    [Fact]
+    public void A_crossing_that_is_up_one_way_and_lateral_back_is_still_wrong()
+    {
+        // Only a matched pair is exempt. One side `up` and the other `north` is the half-applied
+        // edit this rule exists to catch.
+        AssertWarning(TwoWorlds("up", "north"), "one-way exit");
+    }
+
     private static void AssertError(WorldBundle bundle, string fragment)
     {
         var check = Check(bundle);

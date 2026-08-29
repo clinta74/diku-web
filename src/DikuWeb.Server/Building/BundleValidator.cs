@@ -229,6 +229,22 @@ public static class BundleValidator
         return edges;
     }
 
+    /// <summary>
+    /// The world a room key belongs to - the first of its three dot-separated segments.
+    /// </summary>
+    /// <remarks>
+    /// Compare these with <see cref="MemoryExtensions.SequenceEqual{T}(ReadOnlySpan{T}, ReadOnlySpan{T})"/>
+    /// and never with <c>==</c> or <c>!=</c>. Span equality compares what the span points at, not
+    /// what it contains, so two spans reading "test" out of two different strings are unequal -
+    /// which quietly exempted every vertical pair in the world from the reciprocity check until a
+    /// test asked for the failing case.
+    /// </remarks>
+    private static ReadOnlySpan<char> World(string roomKey)
+    {
+        var dot = roomKey.IndexOf('.', StringComparison.Ordinal);
+        return dot < 0 ? roomKey.AsSpan() : roomKey.AsSpan(0, dot);
+    }
+
     private static void CheckReciprocity(HashSet<Edge> edges, HashSet<string> rooms, Action<string> warn)
     {
         foreach (var edge in edges.OrderBy(e => e.From, StringComparer.Ordinal).ThenBy(e => e.Direction))
@@ -239,13 +255,29 @@ public static class BundleValidator
                 continue;
             }
 
-            var back = new Edge(edge.To, edge.Direction.Opposite(), edge.From);
-
-            if (!edges.Contains(back))
+            if (edges.Contains(new Edge(edge.To, edge.Direction.Opposite(), edge.From)))
             {
-                warn($"one-way exit: {edge.From} --{edge.Direction.ToLowerName()}--> {edge.To} "
-                    + $"has no {edge.Direction.Opposite().ToLowerName()} coming back");
+                continue;
             }
+
+            // A crossing between two Reaches is `up` from BOTH sides, which is deliberate and is
+            // the whole point of it: up answered by up is impossible as geography, and that is
+            // what tells a player they have stopped walking and started transiting. Every other
+            // exit in the game is a compass direction, so the one that is not reads as a portal
+            // without a word of explanation.
+            //
+            // Scoped to a crossing between worlds rather than allowed everywhere. Inside one
+            // world a vertical pair is a stair or a cellar and still owes a `down` - the
+            // Terraces' root cellar is exactly that, and it should keep being checked.
+            if (edge.Direction is Direction.Up or Direction.Down
+                && !World(edge.From).SequenceEqual(World(edge.To))
+                && edges.Contains(new Edge(edge.To, edge.Direction, edge.From)))
+            {
+                continue;
+            }
+
+            warn($"one-way exit: {edge.From} --{edge.Direction.ToLowerName()}--> {edge.To} "
+                + $"has no {edge.Direction.Opposite().ToLowerName()} coming back");
         }
     }
 

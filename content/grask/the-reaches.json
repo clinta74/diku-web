@@ -1441,7 +1441,7 @@
       "key": "grask.the-landing.the-gate-quay",
       "zoneKey": "grask.the-landing",
       "title": "The Gate Quay",
-      "description": "The ring stands at the head of a stone quay, and unlike Ossara's it is busy: a crew of four works the crossing all day, waving loads through in both directions.\n\nYrriska's shrine here is enormous and disgraceful, three feet deep in coins and dice and written oaths, and the crew touch it every single time.",
+      "description": "The ring stands at the head of a stone quay, and unlike Ossara's it is busy: a crew of four works the crossing all day, waving loads through in both directions.\n\nYrriska's shrine here is enormous and disgraceful, three feet deep in coins and dice and written oaths, and the crew touch it every single time.\n\nThe way through is up, which the crew stopped finding remarkable about a generation ago. They call it stepping off, and they shout it at each other all day.",
       "flags": {},
       "grid": [
         "─────────────────────",
@@ -1463,7 +1463,7 @@
       "editorY": 0,
       "exits": [
         {
-          "direction": "north",
+          "direction": "up",
           "to": "ossara.the-rimwalk.the-rim-gate",
           "requiredFlagKey": null,
           "requiredItemKey": null,
@@ -2023,7 +2023,7 @@
       "key": "grask.the-owing.the-first-workings",
       "zoneKey": "grask.the-owing",
       "title": "The First Workings",
-      "description": "The bottom of the Owing, and the oldest cut in Grask: the hole the first company drove two generations ago before there was a Landing to come back to.\n\nThe gate-stone is in the wall here, raw and unshaped, and the first mark is cut into it. Azhen cut every gate in the Reaches. This is the piece they cut them from.",
+      "description": "The bottom of the Owing, and the oldest cut in Grask: the hole the first company drove two generations ago before there was a Landing to come back to.\n\nThe gate-stone is in the wall here, raw and unshaped, and the first mark is cut into it. Azhen cut every gate in the Reaches. This is the piece they cut them from.\n\nThe way through is up, out of the bottom of the deepest cut in Grask. The company that drove this hole went up to leave it and went up to come back, and wrote both down the same way.",
       "flags": {},
       "grid": [
         "░░░░░░░░░░░░░░░░░░░░░",
@@ -2059,7 +2059,7 @@
           "refusalMessage": null
         },
         {
-          "direction": "west",
+          "direction": "up",
           "to": "azhen.the-camp.the-gate-hall",
           "requiredFlagKey": "attuned.azhen",
           "requiredItemKey": null,

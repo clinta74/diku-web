@@ -871,7 +871,7 @@
       "key": "azhen.the-camp.the-gate-hall",
       "zoneKey": "azhen.the-camp",
       "title": "The Gate Hall",
-      "description": "The ring stands at one end of a hall eighty feet high, cut square, with the walls dressed so flat they take a shine. It is not a room built around a gate. It is a room the gate was fitted into.\n\nYrriska's shrine is a scratch on the floor and a handful of coins. Nobody has had the nerve to build anything bigger in here.",
+      "description": "The ring stands at one end of a hall eighty feet high, cut square, with the walls dressed so flat they take a shine. It is not a room built around a gate. It is a room the gate was fitted into.\n\nYrriska's shrine is a scratch on the floor and a handful of coins. Nobody has had the nerve to build anything bigger in here.\n\nThe way through is up. The hall is eighty feet of dressed stone and the ring sits at the foot of it, which is either the wrong way round or exactly right, depending on what the builders knew that nobody here does.",
       "flags": {},
       "grid": [
         "┌───────────────────┐",
@@ -898,7 +898,7 @@
       "editorY": 0,
       "exits": [
         {
-          "direction": "east",
+          "direction": "up",
           "to": "grask.the-owing.the-first-workings",
           "requiredFlagKey": null,
           "requiredItemKey": null,
@@ -1837,7 +1837,7 @@
       "key": "azhen.thessivar.the-silent-room",
       "zoneKey": "azhen.thessivar",
       "title": "The Silent Room",
-      "description": "A chamber off the cable heads, cut square, lined with gate-stone on all six faces. It takes sound and does not give it back.\n\nSpeaking in here is like speaking into a coat. It is also the only room in Azhen with no instrument in it, which for these people is a statement.",
+      "description": "A chamber off the cable heads, cut square, lined with gate-stone on all six faces. It takes sound and does not give it back.\n\nSpeaking in here is like speaking into a coat. It is also the only room in Azhen with no instrument in it, which for these people is a statement.\n\nThe way through is up. In a room that takes sound and gives nothing back, it is the only direction anything in here goes.",
       "flags": {},
       "grid": [
         "┌───────────────────┐",
@@ -1871,7 +1871,7 @@
           "refusalMessage": null
         },
         {
-          "direction": "south",
+          "direction": "up",
           "to": "nemhal.the-hold.the-gate-yard",
           "requiredFlagKey": "attuned.nemhal",
           "requiredItemKey": null,

@@ -635,7 +635,7 @@
       "key": "nemhal.keshvaun.the-standing-place",
       "zoneKey": "nemhal.keshvaun",
       "title": "The Standing Place",
-      "description": "Past the bier, where the chamber narrows to a slot, and the slot ends at a face of gate-stone that is not a wall - it is a surface, and it is the outside.\n\nShe is not lying in a tomb. She is lying in the gap she is filling, and the shape of her is the shape of the hole.\n\nThere is nothing to see here because she is in the way. That is the whole of it. She stood in the way, once, on purpose, and it cost her everything, and it worked, and Nemhal has been failing at exactly the rate she has.",
+      "description": "Past the bier, where the chamber narrows to a slot, and the slot ends at a face of gate-stone that is not a wall - it is a surface, and it is the outside.\n\nShe is not lying in a tomb. She is lying in the gap she is filling, and the shape of her is the shape of the hole.\n\nThere is nothing to see here because she is in the way. That is the whole of it. She stood in the way, once, on purpose, and it cost her everything, and it worked, and Nemhal has been failing at exactly the rate she has.\n\nThe way on is up, past her and through the surface she is filling. There is nowhere else for it to go, and she is not in the way of it. She is the edge of it.",
       "flags": {},
       "grid": [
         "░░░░░░░░░░░░░░░░░░░░░",
@@ -663,7 +663,7 @@
           "refusalMessage": null
         },
         {
-          "direction": "south",
+          "direction": "up",
           "to": "the-unlit.the-crossing.the-arrival",
           "requiredFlagKey": "attuned.the-unlit",
           "requiredItemKey": null,
@@ -1593,7 +1593,7 @@
       "key": "nemhal.the-hold.the-gate-yard",
       "zoneKey": "nemhal.the-hold",
       "title": "The Hold Gate",
-      "description": "The ring stands inside the wall, in a yard swept twice a day by people who have decided that keeping it swept is the same as holding on.\n\nYrriska's shrine is a niche in the wall with a lamp in it, and the lamp is lit.",
+      "description": "The ring stands inside the wall, in a yard swept twice a day by people who have decided that keeping it swept is the same as holding on.\n\nYrriska's shrine is a niche in the wall with a lamp in it, and the lamp is lit.\n\nThe way through is up, and the yard is swept right to the foot of the ring so that nobody carries grit through with them. That is not a rule anyone wrote down.",
       "flags": {},
       "grid": [
         "┌───────────────────┐",
@@ -1620,7 +1620,7 @@
       "editorY": 0,
       "exits": [
         {
-          "direction": "north",
+          "direction": "up",
           "to": "azhen.thessivar.the-silent-room",
           "requiredFlagKey": null,
           "requiredItemKey": null,
