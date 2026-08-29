@@ -117,6 +117,10 @@ builder.Configuration.GetSection("Sessions").Bind(sessionOptions);
 builder.Services.AddSingleton(sessionOptions);
 builder.Services.AddSingleton<SessionRegistry>();
 
+// The drawn maps, read out of the assembly once. Five files of about 150 KB, and they cannot
+// change without a redeploy, so holding them costs less than decompressing one per request.
+builder.Services.AddSingleton<MapSheets>();
+
 // Reaps sessions whose client has stopped saying it is there. Without it, a client that vanishes
 // without closing its socket is not noticed until the kernel gives up retransmitting - measured at
 // over sixteen minutes, with or without nginx in front (PLAN.md §11).
@@ -267,6 +271,7 @@ app.UseRateLimiter();
 app.MapAuthEndpoints();
 app.MapCharacterEndpoints();
 app.MapGameEndpoints();
+app.MapMapEndpoints();
 app.MapBuilderEndpoints();
 app.MapAssistEndpoints();
 app.MapAdminEndpoints();

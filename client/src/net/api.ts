@@ -138,4 +138,31 @@ export const api = {
     request<{ characterId: string; character: string; streaming: boolean }[]>(
       '/api/game/sessions',
     ),
+
+  /**
+   * The drawn maps this server carries, one per realm.
+   *
+   * Not filtered by where the character has been - see MapEndpoints. The sheet itself is not
+   * fetched here: it is an image, so it is fetched by putting `mapSheetUrl()` in an <img> and
+   * letting the browser do the conditional request, the caching and the decoding.
+   */
+  maps: () => request<MapSheet[]>('/api/maps'),
 }
+
+export interface MapSheet {
+  world: string
+  title: string
+
+  /** Intrinsic size in SVG user units, so a frame can be sized before the sheet arrives. */
+  width: number
+  height: number
+}
+
+/**
+ * Where a realm's sheet lives.
+ *
+ * A URL rather than a fetch on purpose. The server answers `If-None-Match` with a 304, and an
+ * <img> gets that for free from the browser cache - where reading the bytes ourselves would mean
+ * re-downloading 150 KB on every open and then handing it back to the browser to decode anyway.
+ */
+export const mapSheetUrl = (world: string) => `/api/maps/${encodeURIComponent(world)}`

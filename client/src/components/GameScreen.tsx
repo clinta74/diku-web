@@ -40,6 +40,11 @@ interface Props {
    * it on a specific entity, which is what the deep links in `examine` and `stats` use.
    */
   onOpenBuilder?: (path?: string) => void
+  /**
+   * Opens the drawn maps. Unlike the builder this is shown to everyone: a map is of the world,
+   * not a way to change it.
+   */
+  onOpenMap?: () => void
   /** Ref to focus the command input from parent (used when closing builder). */
   focusInputRef?: React.RefObject<(() => void) | null>
   /**
@@ -98,6 +103,7 @@ export function GameScreen({
   onDisplaced,
   onRoomChange,
   onOpenBuilder,
+  onOpenMap,
   focusInputRef,
   active = true,
 }: Props) {
@@ -337,6 +343,7 @@ export function GameScreen({
         connected={state.connected}
         onLeave={onLeave}
         onOpenBuilder={onOpenBuilder}
+        onOpenMap={onOpenMap}
       />
     </div>
   )
@@ -868,6 +875,7 @@ function VitalsBar({
   connected,
   onLeave,
   onOpenBuilder,
+  onOpenMap,
 }: {
   vitals: VitalsPayload | null
   party: PartyMemberEntry[]
@@ -875,6 +883,7 @@ function VitalsBar({
   connected: boolean
   onLeave: () => void
   onOpenBuilder?: () => void
+  onOpenMap?: () => void
 }) {
   return (
     <div className="vitals-bar">
@@ -908,6 +917,13 @@ function VitalsBar({
         <span className={connected ? 'status good' : 'status bad'}>
           {connected ? 'connected' : 'reconnecting…'}
         </span>
+        {onOpenMap && (
+          // Before the builder, because every player has this one and only some have that one -
+          // so the row does not change shape around a control depending on who is looking at it.
+          <button type="button" className="leave" onClick={() => onOpenMap()}>
+            map
+          </button>
+        )}
         {onOpenBuilder && (
           // Called with no arguments on purpose. Passing the handler straight to onClick hands it
           // React's MouseEvent as its first argument, which this signature now reads as a builder

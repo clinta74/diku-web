@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
 import { AuthScreen, CharacterScreen } from './components/AuthScreen'
 import { GameScreen } from './components/GameScreen'
+import { MapShell } from './components/MapShell'
 import { BuilderShell } from './builder/BuilderShell'
 import { WorldTab } from './builder/world/WorldTab'
 import { AbilitiesTab } from './builder/abilities/AbilitiesTab'
@@ -36,6 +37,12 @@ export default function App() {
   const navigate = useNavigate()
   const location = useLocation()
   const inBuilder = location.pathname.startsWith('/builder')
+  const inMap = location.pathname.startsWith('/map')
+
+  // Anything drawn over the game hides the workspace and stops it reading keystrokes. Both are
+  // the same question - "is the game the thing on screen" - so they are one flag rather than a
+  // condition each caller has to remember to widen when a third overlay arrives.
+  const overlaid = inBuilder || inMap
 
   // The session cookie survives a reload, so check for an existing login before showing
   // the form - otherwise a refresh mid-session looks like being logged out.
@@ -49,12 +56,12 @@ export default function App() {
   // Stable so GameScreen's effect does not re-fire on every render of App.
   const onRoomChange = useCallback((roomKey: string) => setCurrentRoom(roomKey), [])
 
-  // Focus the game input when returning from the builder.
+  // Focus the game input when returning from whatever was over it.
   useEffect(() => {
-    if (!inBuilder) {
+    if (!overlaid) {
       focusInputRef.current?.()
     }
-  }, [inBuilder])
+  }, [overlaid])
 
   async function logout() {
     await api.logout().catch(() => undefined)
@@ -97,7 +104,7 @@ export default function App() {
               and follow mode depends on that stream staying live to know where you are.
               GameScreen sits OUTSIDE <Routes> for the same reason: route changes must not
               remount it. */}
-          <div className={inBuilder ? 'workspace hidden' : 'workspace'}>
+          <div className={overlaid ? 'workspace hidden' : 'workspace'}>
             <GameScreen
               characterId={stage.character.id}
               characterName={stage.character.name}
@@ -114,6 +121,10 @@ export default function App() {
                   ? (path?: string) => navigate(typeof path === 'string' ? path : '/builder')
                   : undefined
               }
+              // Open to everyone, unlike the builder - a map is of the world, not a way to
+              // change it. Wrapped for the same reason onOpenBuilder is: wiring a handler
+              // straight to onClick hands it React's MouseEvent as its first argument.
+              onOpenMap={() => navigate('/map')}
               onLeave={() => {
                 // Frees the slot against the per-account cap straight away rather than waiting
                 // out the 90 s link-dead window.
@@ -138,11 +149,23 @@ export default function App() {
               focusInputRef={focusInputRef}
               // Hidden is not unmounted, so the game has to be told to stop listening for
               // keystrokes - otherwise typing a room name in the builder would type it here.
-              active={!inBuilder}
+              active={!overlaid}
             />
           </div>
 
           <Routes>
+            {/* Open to any logged-in player, so there is no role check here and none on the
+                server either - see MapEndpoints. */}
+            <Route
+              path="/map"
+              element={
+                <MapShell
+                  currentWorld={currentRoom?.split('.')[0] ?? null}
+                  onClose={() => navigate('/')}
+                />
+              }
+            />
+
             <Route
               path="/builder"
               element={
