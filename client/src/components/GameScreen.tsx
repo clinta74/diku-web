@@ -18,6 +18,7 @@ import { applyCompletion, completionsFor, type Completions } from './completion'
 import { loadHistory, remember, saveHistory } from './commandHistory'
 import { AbilityBar } from './AbilityBar'
 import { followSlack, isAtBottom } from './scrollFollow'
+import { reflow } from './reflow'
 
 interface Props {
   characterId: string
@@ -465,7 +466,10 @@ function RoomPanel({
   return (
     <section className="panel room-panel">
       <h1 className="room-title">{title}</h1>
-      {description && <p className="room-description">{description}</p>}
+      {/* Re-flowed for the same reason the transcript's copy is, and it needs the CSS below
+          as well: a <p> is `white-space: normal`, which collapsed every paragraph break in
+          the description into a space and rendered the whole room as one block. */}
+      {description && <p className="room-description">{reflow(description)}</p>}
       <p className="exits">
         {exits.length ? `Exits: ${exits.join(', ')}` : 'There are no obvious exits.'}
       </p>
@@ -583,8 +587,12 @@ function Scrollback({
                 {span.t}
               </button>
             ) : (
+              // A room description is the one span whose line breaks belong to whoever wrote it
+              // rather than to the protocol, so it is re-flowed to the window - see reflow().
+              // Everything else keeps its newlines exactly, which is what puts Exits, occupants
+              // and mobs each on their own line under `white-space: pre-wrap`.
               <span key={i} className={span.s ?? undefined}>
-                {span.t}
+                {span.s === 'room-description' ? reflow(span.t) : span.t}
               </span>
             ),
           )}

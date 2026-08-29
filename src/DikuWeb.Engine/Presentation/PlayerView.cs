@@ -530,7 +530,13 @@ public sealed class PlayerView(RoomLayoutService layout, ItemTemplateCache? item
         }
         else if (verbose && !string.IsNullOrWhiteSpace(room.Description))
         {
-            spans.Add(new TextSpan("\n" + room.Description));
+            // Classed so the client can tell prose from the structured lines around it.
+            // Every other span in a look is one line by construction - Exits, an occupant,
+            // a mob - and is rendered with its newlines intact. A description is the one
+            // span whose newlines are the author's rather than the protocol's, so the
+            // client re-flows it and a hard-wrapped paragraph fills the window instead of
+            // the editor it was typed in.
+            spans.Add(new TextSpan("\n" + room.Description, "room-description"));
         }
 
         spans.Add(new TextSpan(
