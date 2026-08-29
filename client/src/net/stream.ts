@@ -60,8 +60,11 @@ export const HEARTBEAT_INTERVAL_MS = 20_000
  *
  * Failures are ignored on purpose. A missed beat is what a flaky network looks like, the next one
  * is twenty seconds away, and the server allows three before it does anything.
+ *
+ * `beat` is handed back as well as `stop` because the interval alone cannot be relied on: see the
+ * visibility handler in `connectStream`.
  */
-function startHeartbeat(characterId: string): () => void {
+function startHeartbeat(characterId: string): { beat: () => void; stop: () => void } {
   const beat = () => {
     void fetch(`/api/game/${characterId}/heartbeat`, {
       method: 'POST',
@@ -74,12 +77,12 @@ function startHeartbeat(characterId: string): () => void {
   beat()
 
   const timer = setInterval(beat, HEARTBEAT_INTERVAL_MS)
-  return () => clearInterval(timer)
+  return { beat, stop: () => clearInterval(timer) }
 }
 
 export function connectStream(characterId: string, handlers: StreamHandlers): () => void {
   const connectionId = mintConnectionId()
-  const stopHeartbeat = startHeartbeat(characterId)
+  const { beat, stop: stopHeartbeat } = startHeartbeat(characterId)
 
   // Set when the server says another device has taken over. Everything that would reopen the
   // stream checks it, because reconnecting is precisely what must not happen.
@@ -142,11 +145,30 @@ export function connectStream(characterId: string, handlers: StreamHandlers): ()
    */
   const onVisible = () => {
     if (document.visibilityState !== 'visible') return
-    if (source.readyState !== EventSource.CLOSED) return
 
-    // A displaced stream is CLOSED on purpose. Reopening it here would walk straight back into
-    // the fight over the session every time the player glanced at the old device.
+    // A displaced screen is finished on purpose - its stream is CLOSED and its heartbeat stopped.
+    // Doing either again here would walk straight back into the fight over the session every time
+    // the player glanced at the old device.
     if (displaced) return
+
+    // Beat first, and unconditionally, because the beat is the thing most likely to be overdue and
+    // the stream is often perfectly fine.
+    //
+    // `setInterval` is not a clock the browser owes you. A hidden tab has its timers clamped to
+    // roughly once a minute - Chrome does this after five minutes hidden, and a suspended laptop
+    // or phone simply stops running them - against a server deadline of sixty seconds. So the
+    // twenty-second interval quietly becomes something the server reads as a client that has
+    // stopped answering.
+    //
+    // This closes the window on the way *back*: returning to a tab that has been away for fifty
+    // seconds otherwise waits out the rest of the interval before saying anything, and can lose a
+    // session it had every right to keep. It cannot save a tab that was hidden longer than the
+    // deadline - that one is already link-dead by the time anybody looks at it, and the fix for
+    // that is on the server, where a reconnect has to be able to revive a session rather than
+    // finding a channel that was completed while it was away.
+    beat()
+
+    if (source.readyState !== EventSource.CLOSED) return
 
     source.close()
     source = open()

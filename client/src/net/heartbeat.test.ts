@@ -88,6 +88,62 @@ describe('the client heartbeat', () => {
     expect(HEARTBEAT_INTERVAL_MS * 3).toBeLessThanOrEqual(60_000)
   })
 
+  /**
+   * Coming back to the tab is a beat, whatever the interval thinks.
+   *
+   * `setInterval` is not a clock the browser owes you: a hidden tab has its timers clamped to
+   * about once a minute, and a suspended machine stops running them altogether. The server's
+   * deadline is sixty seconds and does not care why nothing arrived. So the moment the player
+   * looks at the page again is the moment to say so, rather than waiting out the remainder of an
+   * interval that may already have overrun.
+   */
+  const becomeVisible = (state: 'visible' | 'hidden' = 'visible') => {
+    Object.defineProperty(document, 'visibilityState', { value: state, configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+  }
+
+  it('beats the moment the tab is looked at again', () => {
+    const close = connectStream('abc', { onEvent: () => {} })
+    expect(beats()).toHaveLength(1)
+
+    becomeVisible()
+
+    expect(beats()).toHaveLength(2)
+    close()
+  })
+
+  it('beats on return even though the stream is still healthy', () => {
+    // The stream and the heartbeat fail for different reasons, and this is the case that matters:
+    // a throttled timer leaves a perfectly good socket attached to a session the server is about
+    // to give up on. Gating the beat on the stream being CLOSED - which is what the reconnect
+    // beside it is gated on - would skip exactly the case it is needed for.
+    const close = connectStream('abc', { onEvent: () => {} })
+
+    expect(FakeEventSource.last?.readyState).toBe(1)
+    becomeVisible()
+
+    expect(beats()).toHaveLength(2)
+    close()
+  })
+
+  it('does not beat while the tab is being hidden', () => {
+    const close = connectStream('abc', { onEvent: () => {} })
+
+    becomeVisible('hidden')
+
+    expect(beats()).toHaveLength(1)
+    close()
+  })
+
+  it('does not beat after teardown, however visible the page becomes', () => {
+    const close = connectStream('abc', { onEvent: () => {} })
+    close()
+
+    becomeVisible()
+
+    expect(beats()).toHaveLength(1)
+  })
+
   it('survives a failed beat', () => {
     // A missed beat is what a flaky network looks like. The next one is twenty seconds away and
     // the server allows three, so a rejected request must not stop the timer or raise.
