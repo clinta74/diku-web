@@ -9,7 +9,7 @@
     {
       "key": "ossara",
       "name": "Ossara",
-      "description": "The green Reach, and the one everybody starts in. Ilvaro\u0027s country: worked land, short roads, and a gate in the middle of town that has not opened in living memory.",
+      "description": "The green Reach, and the one everybody starts in. Ilvaro's country: worked land, short roads, and a gate in the middle of town that has not opened in living memory.",
       "sortOrder": 1,
       "flags": {},
       "multipliers": {
@@ -52,20 +52,20 @@
       "description": "The road south out of the yard, wide enough for two carts and rutted like it has carried them. Drainage ditches on both sides, dug straight, cleared every spring.\n\nThe last houses give out here and the terraces start showing green over the rise ahead.",
       "flags": {},
       "grid": [
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u00B7\u00B7\u00B7\u00B7\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u0022\u0022\u00B7\u00B7\u00B7\u00B7\u2663\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u00B7\u00B7\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u00B7\u00B7\u00B7\u00B7",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022"
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"····\"\"\"\"\"\"",
+        "············\"\"····♣\"\"",
+        "\"\"\"\"··\"\"\"\"\"\"\"\"\"\"\"····",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
       ],
       "legend": {
-        "\u0022": "grass",
-        "\u00B7": "path",
-        "\u2663": "tree"
+        "\"": "grass",
+        "·": "path",
+        "♣": "tree"
       },
       "editorX": 2,
       "editorY": 4,
@@ -83,37 +83,44 @@
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
+        },
+        {
+          "direction": "east",
+          "to": "ossara.gatetown.the-cart-turn",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
         }
       ]
     },
     {
       "key": "ossara.gatetown.ilvaros-house",
       "zoneKey": "ossara.gatetown",
-      "title": "Ilvaro\u0027s House",
+      "title": "Ilvaro's House",
       "description": "One long room with a plank floor and too many benches, built for a congregation twice this size and used for weddings, inquests, and the storage of a very large cooking pot.\n\nIlvaro is carved over the door with his arms full of things he is dropping. The carving is not very good. It is beloved, and every proposal to replace it has been voted down.",
       "flags": {
         "indoors": true
       },
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502..\u2666................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502.........\u2666.........\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│..♦................│",
+        "│...................│",
+        "│...................│",
+        "│.........♦.........│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u2666": "brazier"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "♦": "brazier"
       },
       "editorX": 1,
       "editorY": 2,
@@ -130,31 +137,31 @@
     {
       "key": "ossara.gatetown.khaldras-hearth",
       "zoneKey": "ossara.gatetown",
-      "title": "Khaldra\u0027s Hearth",
+      "title": "Khaldra's Hearth",
       "description": "The inn, the bakehouse, and the place the town holds its arguments, in that order of importance and reverse order of volume. The fire in the long wall has not been out in nineteen years.\n\nThere are two ovens. One is for bread and one is for everything else, and mixing them up is the sort of mistake people still bring up years later.",
       "flags": {
         "indoors": true
       },
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502..............\u25AC..\u25AC.\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│..............▬..▬.│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AC": "table"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▬": "table"
       },
       "editorX": 3,
       "editorY": 2,
@@ -172,23 +179,23 @@
       "key": "ossara.gatetown.market-row",
       "zoneKey": "ossara.gatetown",
       "title": "Market Row",
-      "description": "Six stalls under a shared awning that leaks in one particular place everyone has learned to stand clear of. Wick\u0027s yard is at the west end and the weaponwright\u0027s shed is behind, down the short lane south.\n\nPrices are chalked on a board and revised about as often as the weather changes, which here is twice a day.",
+      "description": "Six stalls under a shared awning that leaks in one particular place everyone has learned to stand clear of. Wick's yard is at the west end and the weaponwright's shed is behind, down the short lane south.\n\nPrices are chalked on a board and revised about as often as the weather changes, which here is twice a day.",
       "flags": {},
       "grid": [
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25AC\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25AC\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25AC\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25AC\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25AC\u00B7\u00B7\u25AC\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+        "─────────────────────",
+        "·····················",
+        "·········▬······▬····",
+        "··········▬··········",
+        "·····················",
+        "·····················",
+        "······▬········▬··▬··",
+        "·····················",
+        "─────────────────────"
       ],
       "legend": {
-        "\u00B7": "path",
-        "\u2500": "wall",
-        "\u25AC": "table"
+        "·": "path",
+        "─": "wall",
+        "▬": "table"
       },
       "editorX": 1,
       "editorY": 3,
@@ -223,20 +230,20 @@
       "description": "A packed-dirt lane running north out of the common, wide enough for one cart and used by two. Houses on both sides, each with a strip of garden and an opinion about the strip next door.\n\nThe ground rises towards the north end, where the town stops at a wall about waist high.",
       "flags": {},
       "grid": [
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25A3\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25A3\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+        "─────────────────────",
+        "─────────────────────",
+        "·····················",
+        "············▣········",
+        "·················▣···",
+        "·····················",
+        "·····················",
+        "─────────────────────",
+        "─────────────────────"
       ],
       "legend": {
-        "\u00B7": "path",
-        "\u2500": "wall",
-        "\u25A3": "crate"
+        "·": "path",
+        "─": "wall",
+        "▣": "crate"
       },
       "editorX": 2,
       "editorY": 1,
@@ -275,23 +282,23 @@
       "key": "ossara.gatetown.terrace-gate",
       "zoneKey": "ossara.gatetown",
       "title": "The Terrace Gate",
-      "description": "Not a gate in any defensive sense \u2014 two posts, a lintel, and a bell on a bracket that is rung when somebody comes back hurt. It marks where the town\u0027s responsibility stops and the farms\u0027 begins.\n\nBeyond it the land steps down in long green shelves, each one walled in dry stone, all the way to the haze.",
+      "description": "Not a gate in any defensive sense — two posts, a lintel, and a bell on a bracket that is rung when somebody comes back hurt. It marks where the town's responsibility stops and the farms' begins.\n\nBeyond it the land steps down in long green shelves, each one walled in dry stone, all the way to the haze.",
       "flags": {},
       "grid": [
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u25A3\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25A3\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25A3\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u25A3\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+        "─────────────────────",
+        "·····················",
+        "··▣············▣·····",
+        "···········▣·········",
+        "···▣·················",
+        "·····················",
+        "·····················",
+        "·····················",
+        "─────────────────────"
       ],
       "legend": {
-        "\u00B7": "path",
-        "\u2500": "wall",
-        "\u25A3": "crate"
+        "·": "path",
+        "─": "wall",
+        "▣": "crate"
       },
       "editorX": 2,
       "editorY": 5,
@@ -315,31 +322,31 @@
     {
       "key": "ossara.gatetown.the-armoury",
       "zoneKey": "ossara.gatetown",
-      "title": "The Armourer\u0027s Shop",
-      "description": "Hides on frames, a long cutting bench, and the smell of oil and boiled leather. Finished pieces hang along the back wall in size order.\n\nA ledger sits open on the bench listing every jerkin sold in the last four years and who is due an alteration. Three names have been crossed out with a note beside them that says only \u0027no longer needs it\u0027.",
+      "title": "The Armourer's Shop",
+      "description": "Hides on frames, a long cutting bench, and the smell of oil and boiled leather. Finished pieces hang along the back wall in size order.\n\nA ledger sits open on the bench listing every jerkin sold in the last four years and who is due an alteration. Three names have been crossed out with a note beside them that says only 'no longer needs it'.",
       "flags": {
         "indoors": true
       },
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502..\u25A3.\u25A3..............\u2502",
-        "\u2502..\u25A3............\u25A3...\u2502",
-        "\u2502.\u25A3\u25A3........\u25A3.\u25A3.....\u2502",
-        "\u2502.................\u25A3.\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│..▣.▣..............│",
+        "│..▣............▣...│",
+        "│.▣▣........▣.▣.....│",
+        "│.................▣.│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25A3": "crate"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▣": "crate"
       },
       "editorX": 0,
       "editorY": 4,
@@ -354,25 +361,106 @@
       ]
     },
     {
+      "key": "ossara.gatetown.the-bank-path",
+      "zoneKey": "ossara.gatetown",
+      "title": "The Bank Path",
+      "description": "Duckboards laid end to end along the bank, from the ferry landing down to the back of Wick's yard. They flex when you walk on them and have been flexing for years.\n\nEvery fourth or fifth board is paler than the rest. Someone replaces them as they go soft, one at a time, without being asked and without any system anyone has worked out.\n\nA handcart stands tipped on its end against the bank, well clear of the boards. It is Wick's. Everyone knows it is Wick's, so it stays where it is.",
+      "flags": {},
+      "grid": [
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"≈≈\"≈≈≈≈≈\"\"\"\"\"\"\"\"\"\"\"",
+        "\"≈≈≈≈\"\"≈≈≈\"\"\"\"\"\"\"\"\"\"\"",
+        "\"≈≈≈≈\"≈≈≈\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""
+      ],
+      "legend": {
+        "\"": "grass",
+        "≈": "water"
+      },
+      "editorX": 0,
+      "editorY": 2,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.gatetown.the-rope-ferry",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "ossara.gatetown.the-general-store",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        }
+      ]
+    },
+    {
+      "key": "ossara.gatetown.the-cart-turn",
+      "zoneKey": "ossara.gatetown",
+      "title": "The Cart Turn",
+      "description": "A widening at the top of the gate road, beaten flat and kept clear, where a loaded cart can come about without unhitching the team. The ruts here curve one way only.\n\nA stone post stands at the outside of the turn, scarred down one whole side and unmarked on the other three. It is not a boundary stone. It is what the carts hit.\n\nThe provisioner's stall backs onto the turn with its counter to the road. Drivers buy from the seat without getting down.",
+      "flags": {},
+      "grid": [
+        "♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣♣",
+        "\"\"\"\"\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"♣",
+        "♣\"\"♣\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"·",
+        "···\"····\"\"\"\"\"\"·♣··♣··",
+        "\"\"···\"\"········\"\"\"\"\"\"",
+        "\"\"\"\"♣\"\"\"\"\"\"♣\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\"\""
+      ],
+      "legend": {
+        "♣": "tree",
+        "\"": "grass",
+        "·": "path"
+      },
+      "editorX": 3,
+      "editorY": 4,
+      "exits": [
+        {
+          "direction": "north",
+          "to": "ossara.gatetown.the-provisioner",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "west",
+          "to": "ossara.gatetown.gate-road",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        }
+      ]
+    },
+    {
       "key": "ossara.gatetown.the-common",
       "zoneKey": "ossara.gatetown",
       "title": "The Common",
-      "description": "Grass, mostly, kept short by geese that belong to four separate households and recognise none of them. A well stands at the middle under a slate cap.\n\nIlvaro\u0027s house is west, low and whitewashed. Khaldra\u0027s Hearth is east and you can find it by the smell of bread at any hour, including the ones when nobody should be baking.",
+      "description": "Grass, mostly, kept short by geese that belong to four separate households and recognise none of them. A well stands at the middle under a slate cap.\n\nIlvaro's house is west, low and whitewashed. Khaldra's Hearth is east and you can find it by the smell of bread at any hour, including the ones when nobody should be baking.",
       "flags": {},
       "grid": [
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2663\u0022\u0022"
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"♣\"\""
       ],
       "legend": {
-        "\u0022": "grass",
-        "\u2663": "tree"
+        "\"": "grass",
+        "♣": "tree"
       },
       "editorX": 2,
       "editorY": 2,
@@ -411,28 +499,28 @@
       "key": "ossara.gatetown.the-gate-yard",
       "zoneKey": "ossara.gatetown",
       "title": "The Gate Yard",
-      "description": "The gate stands where it has always stood: a ring of dark stone twice the height of a man, set into the cobbles with no foundation and no seam. Nothing moves in it. Nobody living has seen anything move in it.\n\nGatetown grew up around it anyway and treats it the way a town treats a large rock. Crates lean against the near side, children are told not to climb it, and the stone is worn shiny at shoulder height by three generations of people touching it on their way past.\n\nYrriska\u0027s shrine sits at its foot \u2014 a bowl of coins, a knot of ribbon, and somebody\u0027s dice. It is the only untidy thing in the yard, and the sweepers go around it.",
+      "description": "The gate stands where it has always stood: a ring of dark stone twice the height of a man, set into the cobbles with no foundation and no seam. Nothing moves in it. Nobody living has seen anything move in it.\n\nGatetown grew up around it anyway and treats it the way a town treats a large rock. Crates lean against the near side, children are told not to climb it, and the stone is worn shiny at shoulder height by three generations of people touching it on their way past.\n\nYrriska's shrine sits at its foot — a bowl of coins, a knot of ribbon, and somebody's dice. It is the only untidy thing in the yard, and the sweepers go around it.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...\u25AE....\u25AE....\u25AE.....\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│...▮....▮....▮.....│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AE": "pillar"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▮": "pillar"
       },
       "editorX": 2,
       "editorY": 3,
@@ -470,29 +558,29 @@
     {
       "key": "ossara.gatetown.the-general-store",
       "zoneKey": "ossara.gatetown",
-      "title": "Wick\u0027s Yard",
+      "title": "Wick's Yard",
       "description": "Less a shop than a roofed yard with a counter across the front of it, stacked to head height with crates, coils, sacks, and at least one thing that is definitely a boat.\n\nThere is no order to any of it that a customer can see. There is an order to it.",
       "flags": {},
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502....\u25A3......\u25A3.......\u2502",
-        "\u2502.......\u25A3...\u25A3.......\u2502",
-        "\u2502.....\u25A3......\u25A3......\u2502",
-        "\u2502....\u25A3.....\u25A3........\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│....▣......▣.......│",
+        "│.......▣...▣.......│",
+        "│.....▣......▣......│",
+        "│....▣.....▣........│",
+        "│...................│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25A3": "crate"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▣": "crate"
       },
       "editorX": 0,
       "editorY": 3,
@@ -510,6 +598,13 @@
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
+        },
+        {
+          "direction": "north",
+          "to": "ossara.gatetown.the-bank-path",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
         }
       ]
     },
@@ -517,22 +612,22 @@
       "key": "ossara.gatetown.the-low-wall",
       "zoneKey": "ossara.gatetown",
       "title": "The Low Wall",
-      "description": "The wall is waist high, dry-laid, and has never stopped anything. It is where the town ends because somebody once decided the town should end somewhere, and the ground past it slopes down through gorse for about two hundred feet.\n\nThen it stops. Not a cliff \u2014 a cliff has a bottom. The turf ends in a clean line, roots and soil and all, and there is nothing under it.\n\nPeople picnic here. There are cut marks on the wall\u0027s flat stones from generations of people sitting and swinging their heels against it.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
+      "description": "The wall is waist high, dry-laid, and has never stopped anything. It is where the town ends because somebody once decided the town should end somewhere, and the ground past it slopes down through gorse for about two hundred feet.\n\nThen it stops. Not a cliff — a cliff has a bottom. The turf ends in a clean line, roots and soil and all, and there is nothing under it.\n\nPeople picnic here. There are cut marks on the wall's flat stones from generations of people sitting and swinging their heels against it.\n\nFar out past the edge, on a clear afternoon, there are shapes in the distance that could be land. They never resolve, however long you look, and the haze between never quite behaves like haze.",
       "flags": {},
       "grid": [
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "  \u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591   \u2591\u2591  \u2591",
-        "   \u2591\u2591\u2591\u2591\u2591\u2591\u2591           ",
-        "       \u2591             "
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "  ░░░░░░░░░░░   ░░  ░",
+        "   ░░░░░░░           ",
+        "       ░             "
       ],
       "legend": {
         " ": "void",
-        "\u2591": "rubble"
+        "░": "rubble"
       },
       "editorX": 2,
       "editorY": 0,
@@ -553,20 +648,20 @@
       "description": "A square of beaten earth behind the lane, fenced on three sides, with a rack of practice staves and a straw man on a post who has been repaired so often he is now entirely repairs.\n\nThe town has no soldiers. It has about forty people who can hold a line for as long as it takes everyone else to get behind the wall, and this is where they find that out.",
       "flags": {},
       "grid": [
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25A3\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25A3\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25A3\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25A3\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+        "─────────────────────",
+        "·····················",
+        "········▣············",
+        "···········▣·········",
+        "··········▣··········",
+        "···············▣·····",
+        "·····················",
+        "·····················",
+        "─────────────────────"
       ],
       "legend": {
-        "\u00B7": "path",
-        "\u2500": "wall",
-        "\u25A3": "crate"
+        "·": "path",
+        "─": "wall",
+        "▣": "crate"
       },
       "editorX": 3,
       "editorY": 1,
@@ -583,24 +678,24 @@
     {
       "key": "ossara.gatetown.the-provisioner",
       "zoneKey": "ossara.gatetown",
-      "title": "The Provisioner\u0027s Stall",
-      "description": "The last stall before the road out, which is not an accident. Sacks of meal, strings of onions, hard cheese under a cloth, and bandage rolled by the dozen.\n\nA slate by the scale reads: TWO DAYS OUT \u2014 THREE DAYS FOOD. It has been rewritten so many times the slate is going soft.",
+      "title": "The Provisioner's Stall",
+      "description": "The last stall before the road out, which is not an accident. Sacks of meal, strings of onions, hard cheese under a cloth, and bandage rolled by the dozen.\n\nA slate by the scale reads: TWO DAYS OUT — THREE DAYS FOOD. It has been rewritten so many times the slate is going soft.",
       "flags": {},
       "grid": [
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
-        "\u00B7\u00B7\u25AC\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25AC\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25AC\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u25AC\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7\u00B7",
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
-        "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+        "─────────────────────",
+        "─────────────────────",
+        "··▬··················",
+        "·····················",
+        "······▬··············",
+        "······▬··············",
+        "···········▬·········",
+        "─────────────────────",
+        "─────────────────────"
       ],
       "legend": {
-        "\u00B7": "path",
-        "\u2500": "wall",
-        "\u25AC": "table"
+        "·": "path",
+        "─": "wall",
+        "▬": "table"
       },
       "editorX": 3,
       "editorY": 3,
@@ -608,6 +703,13 @@
         {
           "direction": "west",
           "to": "ossara.gatetown.the-gate-yard",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "ossara.gatetown.the-cart-turn",
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
@@ -621,19 +723,19 @@
       "description": "A flat raft on a hemp line strung bank to bank, with a stool on it that is nailed down. The far bank is close enough to shout across and everybody does.\n\nThe rope is spliced in eleven places and each splice is dated in tar. The most recent is from this spring.",
       "flags": {},
       "grid": [
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591",
-        "\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2248\u2591\u2248\u2248\u2248\u2248\u2248",
-        "\u2248\u2248\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248",
-        "\u2248\u2248\u2248\u2248\u2591\u2591\u2591\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248",
-        "\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248",
-        "\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248"
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░░░░░░░░",
+        "░░░░░░░░░░░░░░≈░≈≈≈≈≈",
+        "≈≈░░░░░░░░░░≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈░░░≈≈≈≈≈≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈"
       ],
       "legend": {
-        "\u2248": "water",
-        "\u2591": "rubble"
+        "≈": "water",
+        "░": "rubble"
       },
       "editorX": 0,
       "editorY": 1,
@@ -641,6 +743,13 @@
         {
           "direction": "east",
           "to": "ossara.gatetown.the-water-steps",
+          "requiredFlagKey": null,
+          "requiredItemKey": null,
+          "refusalMessage": null
+        },
+        {
+          "direction": "south",
+          "to": "ossara.gatetown.the-bank-path",
           "requiredFlagKey": null,
           "requiredItemKey": null,
           "refusalMessage": null
@@ -654,19 +763,19 @@
       "description": "Eleven stone steps down to a cut in the bank where the river runs slow and brown. Two women are beating laundry against the flat rock and have not looked up.\n\nBuckets go up these steps all day. The steps are worn into shallow bowls and somebody has scratched a tally into the wall that stopped counting at four hundred.",
       "flags": {},
       "grid": [
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u0022\u0022\u0022\u2248\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u2248\u0022\u2248\u2248\u2248\u2248\u0022\u2248\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u0022",
-        "\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u0022\u0022\u0022\u0022\u0022\u0022\u0022\u2248\u0022",
-        "\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248\u2248"
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "\"\"\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈\"≈≈≈≈\"≈\"\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈≈≈≈≈≈≈≈≈\"\"\"\"\"\"\"\"\"\"\"\"",
+        "≈≈≈≈≈≈≈≈≈≈≈≈\"\"\"\"\"\"\"≈\"",
+        "≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈"
       ],
       "legend": {
-        "\u0022": "grass",
-        "\u2248": "water"
+        "\"": "grass",
+        "≈": "water"
       },
       "editorX": 1,
       "editorY": 1,
@@ -690,31 +799,31 @@
     {
       "key": "ossara.gatetown.the-weaponwrights",
       "zoneKey": "ossara.gatetown",
-      "title": "The Weaponwright\u0027s Shed",
+      "title": "The Weaponwright's Shed",
       "description": "A forge, an anvil, a slack tub, and a wall of tools hung on painted outlines so a missing one is obvious. Two of the outlines are empty and have been for a while.\n\nThe blades for sale are laid on a cloth rather than hung up, which the smith will tell you is because they are for working with and not for looking at.",
       "flags": {
         "indoors": true
       },
       "grid": [
-        "\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510",
-        "\u2502...................\u2502",
-        "\u2502...........\u25AC.......\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502...................\u2502",
-        "\u2502..........\u25AC........\u2502",
-        "\u2502...................\u2502",
-        "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518"
+        "┌───────────────────┐",
+        "│...................│",
+        "│...........▬.......│",
+        "│...................│",
+        "│...................│",
+        "│...................│",
+        "│..........▬........│",
+        "│...................│",
+        "└───────────────────┘"
       ],
       "legend": {
         ".": "floor",
-        "\u2500": "wall",
-        "\u2502": "wall",
-        "\u250C": "wall",
-        "\u2510": "wall",
-        "\u2514": "wall",
-        "\u2518": "wall",
-        "\u25AC": "table"
+        "─": "wall",
+        "│": "wall",
+        "┌": "wall",
+        "┐": "wall",
+        "└": "wall",
+        "┘": "wall",
+        "▬": "table"
       },
       "editorX": 1,
       "editorY": 4,
@@ -734,7 +843,7 @@
       "key": "bandage-roll",
       "name": "a roll of clean bandage",
       "description": "Boiled linen, rolled tight, tied with a scrap of the same. Sold by the roll because nobody needs half of one.",
-      "icon": "\u002B",
+      "icon": "+",
       "slots": [],
       "isTwoHanded": false,
       "weight": 100,
@@ -753,7 +862,7 @@
     {
       "key": "bread",
       "name": "a loaf of dark bread",
-      "description": "Heavy, close-grained, and baked at Khaldra\u0027s Hearth like everything else in this town. Keeps four days and admits it.",
+      "description": "Heavy, close-grained, and baked at Khaldra's Hearth like everything else in this town. Keeps four days and admits it.",
       "icon": "b",
       "slots": [],
       "isTwoHanded": false,
@@ -921,7 +1030,7 @@
     {
       "key": "ossara-luck-token",
       "name": "a gate-shrine token",
-      "description": "A pierced copper disc from the bowl at Yrriska\u0027s shrine, worn smooth on one face. Taking one is fine. Taking one without leaving something is the part people have opinions about.",
+      "description": "A pierced copper disc from the bowl at Yrriska's shrine, worn smooth on one face. Taking one is fine. Taking one without leaving something is the part people have opinions about.",
       "icon": "*",
       "slots": [
         "Trinket"
@@ -1066,7 +1175,7 @@
     {
       "key": "torch",
       "name": "a pitch torch",
-      "description": "A hand\u0027s length of ash wrapped in pitch-soaked rag. Takes a hand to carry and smells like it the whole time.",
+      "description": "A hand's length of ash wrapped in pitch-soaked rag. Takes a hand to carry and smells like it the whole time.",
       "icon": "!",
       "slots": [
         "OffHand"
@@ -1137,7 +1246,7 @@
             "minSeconds": 120
           },
           {
-            "text": "says, \u0027Shoulders first. Everything else you can survive.\u0027",
+            "text": "says, 'Shoulders first. Everything else you can survive.'",
             "maxSeconds": 600,
             "minSeconds": 300
           }
@@ -1170,15 +1279,15 @@
             "minSeconds": 120
           },
           {
-            "text": "says, \u0027It goes when I go. That is the timetable.\u0027",
+            "text": "says, 'It goes when I go. That is the timetable.'",
             "maxSeconds": 600,
             "minSeconds": 300
           }
         ],
         "wanders": false,
         "greeting": [
-          "\u0027You want across? Then you want me standing up. Give me a moment.\u0027",
-          "\u0027Ossa is the river and Ossa is me. Pick whichever one gets you over.\u0027"
+          "'You want across? Then you want me standing up. Give me a moment.'",
+          "'Ossa is the river and Ossa is me. Pick whichever one gets you over.'"
         ]
       },
       "loot": [],
@@ -1211,7 +1320,7 @@
             "minSeconds": 90
           },
           {
-            "text": "says, \u0027Rope. Everyone comes back for rope.\u0027",
+            "text": "says, 'Rope. Everyone comes back for rope.'",
             "maxSeconds": 480,
             "minSeconds": 240
           }
@@ -1225,7 +1334,7 @@
     },
     {
       "key": "ossara-ilvaro-deacon",
-      "name": "Deacon Pell of Ilvaro\u0027s house",
+      "name": "Deacon Pell of Ilvaro's house",
       "description": "Young, enormously enthusiastic, and about three years short of knowing what he is doing. He is the fourth deacon in six years and the first who seems to be enjoying it.",
       "icon": "@",
       "level": 3,
@@ -1244,7 +1353,7 @@
             "minSeconds": 120
           },
           {
-            "text": "says, \u0027Ilvaro does not mind if you get it wrong. That is rather the whole thing.\u0027",
+            "text": "says, 'Ilvaro does not mind if you get it wrong. That is rather the whole thing.'",
             "maxSeconds": 600,
             "minSeconds": 300
           }
@@ -1257,7 +1366,7 @@
     {
       "key": "ossara-innkeeper",
       "name": "Corun, who keeps the fire",
-      "description": "He tends Khaldra\u0027s hearth, which in practice means he has not let it go out in nineteen years and will tell you the number without being asked.",
+      "description": "He tends Khaldra's hearth, which in practice means he has not let it go out in nineteen years and will tell you the number without being asked.",
       "icon": "@",
       "level": 3,
       "wanderIntervalPulses": 24,
@@ -1275,7 +1384,7 @@
             "minSeconds": 90
           },
           {
-            "text": "says, \u0027Nineteen years. Not once.\u0027",
+            "text": "says, 'Nineteen years. Not once.'",
             "maxSeconds": 600,
             "minSeconds": 300
           },
@@ -1287,8 +1396,8 @@
         ],
         "wanders": false,
         "greeting": [
-          "\u0027Sit where you like. The near side is warmer and everyone chooses the far.\u0027",
-          "\u0027Nineteen years I have kept this in. Ask me in twenty and it will be twenty.\u0027"
+          "'Sit where you like. The near side is warmer and everyone chooses the far.'",
+          "'Nineteen years I have kept this in. Ask me in twenty and it will be twenty.'"
         ]
       },
       "loot": [],
@@ -1321,7 +1430,7 @@
             "minSeconds": 120
           },
           {
-            "text": "says, \u0027Two days out, three days of food. That is the whole trick.\u0027",
+            "text": "says, 'Two days out, three days of food. That is the whole trick.'",
             "maxSeconds": 480,
             "minSeconds": 240
           }
@@ -1336,7 +1445,7 @@
     {
       "key": "ossara-shrine-keeper",
       "name": "Hesper, who sweeps around the shrine",
-      "description": "A wiry woman of about sixty with a besom and a grievance about pigeons. She sweeps the whole gate yard and stops a foot short of Yrriska\u0027s bowl, every time, in a neat little curve.",
+      "description": "A wiry woman of about sixty with a besom and a grievance about pigeons. She sweeps the whole gate yard and stops a foot short of Yrriska's bowl, every time, in a neat little curve.",
       "icon": "@",
       "level": 2,
       "wanderIntervalPulses": 24,
@@ -1354,7 +1463,7 @@
             "minSeconds": 90
           },
           {
-            "text": "says, \u0027Touch it if you like. Everyone does.\u0027",
+            "text": "says, 'Touch it if you like. Everyone does.'",
             "maxSeconds": 420,
             "minSeconds": 200
           },
@@ -1366,8 +1475,8 @@
         ],
         "wanders": false,
         "greeting": [
-          "\u0027Mind your feet. I have done that bit.\u0027",
-          "\u0027The pigeons are not sacred. I have asked. Twice.\u0027"
+          "'Mind your feet. I have done that bit.'",
+          "'The pigeons are not sacred. I have asked. Twice.'"
         ]
       },
       "loot": [],
@@ -1400,7 +1509,7 @@
             "minSeconds": 120
           },
           {
-            "text": "says, \u0027Buy the staff. You will not, but buy the staff.\u0027",
+            "text": "says, 'Buy the staff. You will not, but buy the staff.'",
             "maxSeconds": 600,
             "minSeconds": 300
           }
@@ -1792,7 +1901,7 @@
       "path": "Warden",
       "unlockLevel": 43,
       "name": "Sundering Blow",
-      "description": "Take the guard apart so that everyone else\u0027s work lands on what is left.",
+      "description": "Take the guard apart so that everyone else's work lands on what is left.",
       "costType": "Stamina",
       "costValue": 34,
       "cooldownPulses": 120,
@@ -3415,7 +3524,7 @@
     {
       "key": "aldenmoor-starter",
       "name": "Aldenmoor",
-      "description": "The original starter world, kept as a sandbox and as the fixture the playtest plans run against. Matches the engine\u0027s built-in fallback.",
+      "description": "The original starter world, kept as a sandbox and as the fixture the playtest plans run against. Matches the engine's built-in fallback.",
       "startingRoomKey": "aldenmoor.millbrook.north-gate",
       "welcomeMessage": "Welcome to Aldenmoor, {name}."
     },

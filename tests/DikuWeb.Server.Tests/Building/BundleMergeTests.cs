@@ -165,7 +165,11 @@ public sealed class BundleMergeTests
         // Keys are deduplicated, so these are counts of distinct entities rather than of rows read.
         Assert.Equal(5, bundle.Worlds.Count);
         Assert.Equal(18, bundle.Zones.Count);
-        Assert.Equal(224, bundle.Rooms.Count);
+        // 226 rather than 224: Gatetown gained The Bank Path and The Cart Turn, two outdoor
+        // rooms that exist to close circuits rather than to hold content. Before them the
+        // zone was a tree - 16 rooms, 15 links, no way to leave the square one way and come
+        // back another, which is what made it read as a road rather than a town.
+        Assert.Equal(226, bundle.Rooms.Count);
         // 69 rather than 68 since content/unplaced.json joined the set. A scoped export closes over
         // references and so cannot reach a template nothing places - and `spawn <item|mob> <key>`
         // means an unplaced template is still content somebody can put down. That file is where
