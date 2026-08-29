@@ -50,7 +50,7 @@ const report = vi.hoisted(
   (): ImportReport => ({
     formatVersion: 7,
     dryRun: true,
-    counts: [{ kind: 'room', created: 16, updated: 0 }],
+    counts: [{ kind: 'room', created: 16, updated: 0, removed: 0 }],
     warnings: [],
     failures: [],
     ok: true,

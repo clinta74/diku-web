@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using DikuWeb.Domain.Worlds;
 using DikuWeb.Persistence;
 using DikuWeb.Server.Building;
@@ -810,6 +811,112 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
     }
 
     // -----------------------------------------------------------------------
+    // Exits the bundle does not ask for (WorldImporter remarks)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task An_exit_re_authored_as_a_different_direction_does_not_leave_its_old_self_behind()
+    {
+        // The case that found this. An exit is keyed by room and direction, so moving one from
+        // north to up writes a new key and says nothing about the old one - and the report read
+        // "1 created" and was telling the truth. Eight crossings between the Reaches were moved to
+        // `up` that way and every one kept its lateral twin, so the Reaches were still walkable
+        // sideways and the import had reported complete success twice.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var content = await AuthorZoneAsync(client);
+        var json = await ExportZoneJsonAsync(client, content.ZoneKey);
+
+        await ImportAsync(client, Redirected(json, content.RoomKey, from: "north", to: "up"));
+
+        var directions = await DirectionsAsync(client, content.RoomKey);
+
+        Assert.Contains("up", directions);
+        Assert.DoesNotContain("north", directions);
+    }
+
+    [Fact]
+    public async Task An_exit_dug_by_hand_out_of_a_room_the_bundle_owns_does_not_survive_the_next_import()
+    {
+        // The price of the rule above, pinned rather than left to be discovered. A room in the
+        // bundle states its complete exit set, so anything else in that room is something the
+        // bundle has decided against. Reciprocal is off so the assertion is about one exit.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var content = await AuthorZoneAsync(client);
+        var json = await ExportZoneJsonAsync(client, content.ZoneKey);
+
+        (await client.PutAsJsonAsync(
+            $"/api/builder/rooms/{content.RoomKey}/exits/east",
+            new { to = content.NorthRoomKey, reciprocal = false })).EnsureSuccessStatusCode();
+
+        var report = await ImportAsync(client, json);
+
+        Assert.DoesNotContain("east", await DirectionsAsync(client, content.RoomKey));
+        Assert.Equal(1, Count(report, "exit").GetProperty("removed").GetInt32());
+    }
+
+    [Fact]
+    public async Task An_exit_in_a_room_the_bundle_has_never_heard_of_is_left_alone()
+    {
+        // The safety boundary, and the reason this is not a general replace mode. The prune reads
+        // only rooms the bundle carries; a zone somebody else authored is not consulted, is not
+        // compared, and cannot be pruned by importing something unrelated over the top of it.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var mine = await AuthorZoneAsync(client);
+        var theirs = await AuthorZoneAsync(client);
+
+        var json = await ExportZoneJsonAsync(client, mine.ZoneKey);
+        var report = await ImportAsync(client, json);
+
+        Assert.Contains("north", await DirectionsAsync(client, theirs.RoomKey));
+        Assert.Equal(0, Count(report, "exit").GetProperty("removed").GetInt32());
+    }
+
+    [Fact]
+    public async Task A_dry_run_names_every_exit_it_would_remove_and_removes_none_of_them()
+    {
+        // A deletion is the one thing in an import that re-importing cannot undo, so the rehearsal
+        // has to work out the same removals the real run does - from the same code, which is why
+        // the bundle's wanted set is collected before the dry-run check rather than after it.
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var content = await AuthorZoneAsync(client);
+        var json = await ExportZoneJsonAsync(client, content.ZoneKey);
+
+        (await client.PutAsJsonAsync(
+            $"/api/builder/rooms/{content.RoomKey}/exits/east",
+            new { to = content.NorthRoomKey, reciprocal = false })).EnsureSuccessStatusCode();
+
+        var report = await ImportAsync(client, json, dryRun: true);
+
+        Assert.Equal(1, Count(report, "exit").GetProperty("removed").GetInt32());
+
+        var named = report.GetProperty("warnings").EnumerateArray()
+            .Where(w => w.GetProperty("kind").GetString() == "stale-exit")
+            .Select(w => (Key: w.GetProperty("entityKey").GetString(), Message: w.GetProperty("message").GetString()))
+            .ToList();
+
+        var mine = Assert.Single(named, w => w.Key == content.RoomKey);
+        Assert.Contains("east", mine.Message);
+
+        // Said in the conditional, because a rehearsal that reports a removal in the past tense is
+        // reporting something that has not happened.
+        Assert.Contains("would be removed", mine.Message);
+
+        Assert.Contains("east", await DirectionsAsync(client, content.RoomKey));
+    }
+
+    // -----------------------------------------------------------------------
     // Authoring a zone with one of everything
     // -----------------------------------------------------------------------
 
@@ -942,6 +1049,44 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
             $"Import returned {(int)response.StatusCode}: {body}");
 
         return JsonDocument.Parse(body).RootElement;
+    }
+
+    /// <summary>The directions leaving a room, as the builder API reports them.</summary>
+    private static async Task<IReadOnlyList<string>> DirectionsAsync(HttpClient client, string roomKey)
+    {
+        var room = await BuilderClient.JsonAsync(
+            await client.GetAsync(new Uri($"/api/builder/rooms/{roomKey}", UriKind.Relative)));
+
+        return
+        [
+            .. room.GetProperty("exits").EnumerateArray()
+                .Select(e => e.GetProperty("direction").GetString()!),
+        ];
+    }
+
+    private static JsonElement Count(JsonElement report, string kind) =>
+        report.GetProperty("counts").EnumerateArray()
+            .Single(c => c.GetProperty("kind").GetString() == kind);
+
+    /// <summary>
+    /// Re-authors one exit's direction in the bundle, which is what a content edit looks like by
+    /// the time it reaches the importer. Done to the JSON rather than through the builder API on
+    /// purpose: the point is a bundle that disagrees with this environment, and editing the
+    /// environment first would remove the disagreement.
+    /// </summary>
+    private static string Redirected(string bundleJson, string roomKey, string from, string to)
+    {
+        var bundle = JsonNode.Parse(bundleJson)!;
+
+        var room = bundle["rooms"]!.AsArray()
+            .Single(r => r!["key"]!.GetValue<string>() == roomKey)!;
+
+        var exit = room["exits"]!.AsArray()
+            .Single(e => string.Equals(
+                e!["direction"]!.GetValue<string>(), from, StringComparison.OrdinalIgnoreCase))!;
+
+        exit["direction"] = to;
+        return bundle.ToJsonString();
     }
 
     private static IReadOnlyList<string> KeysOf(JsonElement bundle, string collection) =>

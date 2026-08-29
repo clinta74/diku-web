@@ -31,6 +31,24 @@ namespace DikuWeb.Server.Building;
 /// deliberate, per-entity act.
 /// </para>
 /// <para>
+/// <b>Exits of the bundle's own rooms are the one exception, and it is not a softening of the
+/// rule above.</b> An exit is keyed by room and direction, so re-authoring one as a different
+/// direction writes the new key and leaves the old one behind - and the report said "created 1,
+/// updated 0" and was telling the truth. Eight crossings between the Reaches were moved to
+/// <c>up</c> that way and every one of them kept its lateral twin, so both halves of the world
+/// were still walkable sideways and nobody could tell from the import that anything had been
+/// left over.
+/// </para>
+/// <para>
+/// So a room in the bundle states its <em>complete</em> exit set, and any exit it does not name
+/// is removed. The blast radius is what makes this safe where a general replace mode is not: it
+/// touches only rooms the bundle carries, never a room it has never heard of, and never any other
+/// kind of entity. The cost is real and worth naming - an exit dug by hand out of a room the
+/// bundle owns does not survive the next import of that bundle. Every removal is reported as a
+/// <c>stale-exit</c> warning, named individually, and a dry run lists them without touching
+/// anything.
+/// </para>
+/// <para>
 /// <b>Entities go through in batches of <see cref="BatchSize"/>, and that is the difference between
 /// seconds and minutes.</b> A change costs a full 250ms pulse if you wait for it before submitting
 /// the next, and the loop will drain 512 messages in one pulse - so the old one-at-a-time loop spent
@@ -77,7 +95,9 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
         // The reads below are cancellable; the writes deliberately are not. See ApplyBatchAsync.
 
         var existing = await ExistingKeysAsync(bundle, cancellationToken);
-        var warnings = await WarningsAsync(bundle, cancellationToken);
+        // Mutable, because the exit pass appends to it: a pruned exit is reported the same way a
+        // dangling reference is, in the one list a builder already reads.
+        var warnings = new List<ValidationWarning>(await WarningsAsync(bundle, cancellationToken));
         var counts = new List<ImportCount>();
         var failures = new List<ImportFailure>();
 
@@ -185,6 +205,9 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
             var updated = 0;
             var batch = new List<(string Key, WorldChange Change)>();
 
+            // Every exit this bundle asks for, so what is left over can be told from what is meant.
+            var wanted = new HashSet<string>(StringComparer.Ordinal);
+
             foreach (var room in b.Rooms ?? [])
             {
                 if (!RoomKey.TryParse(room.Key, out var from))
@@ -211,6 +234,10 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
                             "exit", label, $"'{exit.To}' is not a room key."));
                         continue;
                     }
+
+                    // Recorded before the dry-run check below, so a rehearsal works out the same
+                    // removals a real run would - which is the whole of what a rehearsal is for.
+                    wanted.Add($"{from}:{direction.ToLowerName()}");
 
                     if (existing.Contains(("exit", $"{from}:{direction.ToLowerName()}")))
                     {
@@ -239,12 +266,85 @@ public sealed class WorldImporter(DikuWebDbContext db, WorldEditor editor)
                 }
             }
 
+            // The one place an import deletes anything - see the class remarks for the bound on
+            // it. Appended after the writes above rather than before them, so a re-authored
+            // crossing exists in its new direction before it stops existing in its old one: a
+            // player standing in the room is never briefly walled in.
+            var removed = 0;
+
+            foreach (var (from, direction, to) in await StaleExitsAsync(b, wanted, cancellationToken))
+            {
+                removed++;
+
+                warnings.Add(new ValidationWarning(
+                    "stale-exit",
+                    from.ToString(),
+                    dryRun
+                        ? $"{direction.ToLowerName()} points at '{to}' and is not in this bundle; it would be removed."
+                        : $"{direction.ToLowerName()} pointed at '{to}' and was not in this bundle; it was removed."));
+
+                if (dryRun)
+                {
+                    continue;
+                }
+
+                // RemoveExit, which is one-sided. The reciprocal half belongs to another room and
+                // is that room's business: if the bundle carries it and no longer wants it, it is
+                // pruned on its own merit, and if the bundle has never heard of it, removing it
+                // here would be exactly the overreach this is scoped to avoid.
+                batch.Add((
+                    $"{from}:{direction.ToLowerName()}",
+                    new RemoveExit(from, direction)));
+            }
+
             // After every room in the bundle has been walked, so the batches are as full as they can
             // be - 462 exits is four batches rather than 224 batches of one or two.
             await ApplyBatchesAsync("exit", batch);
 
-            counts.Add(new ImportCount("exit", created, updated));
+            counts.Add(new ImportCount("exit", created, updated, removed));
         }
+    }
+
+    /// <summary>
+    /// Exits belonging to the bundle's own rooms that the bundle does not ask for.
+    /// </summary>
+    /// <remarks>
+    /// Scoped by <c>roomKeys</c> and nothing else, which is the whole safety argument: a room the
+    /// bundle does not carry is never read here, so its exits cannot be removed however stale they
+    /// look. A bundle with no parseable rooms therefore prunes nothing rather than everything -
+    /// worth stating, because the empty-set case is the one that would be catastrophic if the
+    /// filter were ever inverted.
+    /// </remarks>
+    private async Task<IReadOnlyList<(RoomKey From, Direction Direction, RoomKey To)>> StaleExitsAsync(
+        WorldBundle bundle,
+        HashSet<string> wanted,
+        CancellationToken cancellationToken)
+    {
+        var roomKeys = (bundle.Rooms ?? [])
+            .Select(r => RoomKey.TryParse(r.Key, out var k) ? k : (RoomKey?)null)
+            .OfType<RoomKey>()
+            .ToList();
+
+        if (roomKeys.Count == 0)
+        {
+            return [];
+        }
+
+        var live = await db.RoomExits.AsNoTracking()
+            .Where(e => roomKeys.Contains(e.FromRoomKey))
+            .Select(e => new { e.FromRoomKey, e.Direction, e.ToRoomKey })
+            .ToListAsync(cancellationToken);
+
+        // Ordered so the warnings read as a list somebody can check off against a room, rather
+        // than in whatever order the rows came back.
+        return
+        [
+            .. live
+                .Where(e => !wanted.Contains($"{e.FromRoomKey}:{e.Direction.ToLowerName()}"))
+                .Select(e => (From: e.FromRoomKey, Direction: e.Direction, To: e.ToRoomKey))
+                .OrderBy(e => e.From.ToString(), StringComparer.Ordinal)
+                .ThenBy(e => e.Direction.ToLowerName(), StringComparer.Ordinal)
+        ];
     }
 
     private static string Describe(EditOutcome outcome) => outcome.Status switch

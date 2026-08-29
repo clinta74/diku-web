@@ -347,7 +347,7 @@ export function TransferPanel({ onImported }: Props) {
 
           <ul className="setup-list">
             {report.counts
-              .filter((c) => c.created > 0 || c.updated > 0)
+              .filter((c) => c.created > 0 || c.updated > 0 || c.removed > 0)
               .map((c) => (
                 <li key={c.kind}>
                   <code>{c.kind}</code>
@@ -355,11 +355,20 @@ export function TransferPanel({ onImported }: Props) {
                     {' '}
                     · {c.created} new, {c.updated} updated
                   </span>
+                  {/* Only when there are any, and not dimmed: a deletion is the one number here
+                      that cannot be undone by importing again, so it does not get to look like
+                      the other two. Each one is named in the warnings below. */}
+                  {c.removed > 0 && (
+                    <span className="bad">
+                      {' '}
+                      · {c.removed} removed
+                    </span>
+                  )}
                 </li>
               ))}
           </ul>
 
-          {report.counts.every((c) => c.created === 0 && c.updated === 0) && (
+          {report.counts.every((c) => c.created === 0 && c.updated === 0 && c.removed === 0) && (
             <p className="dim">Nothing to write — this server already matches the file.</p>
           )}
 

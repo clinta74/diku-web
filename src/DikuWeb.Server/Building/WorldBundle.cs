@@ -372,6 +372,11 @@ public sealed record ImportReport(
     public bool Ok => Failures.Count == 0;
 }
 
-public sealed record ImportCount(string Kind, int Created, int Updated);
+/// <param name="Removed">
+/// Exits the bundle's own rooms had and the bundle does not ask for, which the import deleted.
+/// Zero for every other kind: exits are the one thing an import prunes, and
+/// <see cref="WorldImporter"/> says why.
+/// </param>
+public sealed record ImportCount(string Kind, int Created, int Updated, int Removed = 0);
 
 public sealed record ImportFailure(string Kind, string Key, string Message);

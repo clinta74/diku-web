@@ -569,6 +569,15 @@ export interface ImportCount {
   kind: string
   created: number
   updated: number
+
+  /**
+   * Exits the bundle's own rooms had and the bundle did not ask for, which the import deleted.
+   *
+   * Always 0 for every other kind. Exits are keyed by room and direction, so re-authoring one as
+   * a different direction writes the new key and leaves the old one behind - the server prunes
+   * those and names each one as a `stale-exit` warning.
+   */
+  removed: number
 }
 
 export interface ImportFailure {
