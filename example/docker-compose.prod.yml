@@ -242,7 +242,7 @@ services:
     ports:
       # Bound to loopback: reach it over an SSH tunnel rather than exposing it. Grafana is not
       # part of the game and has no business on the public interface.
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     environment:
       # CHANGE THIS. It is the admin account for everything the dashboard can see.
       GF_SECURITY_ADMIN_PASSWORD: change_this_password_in_production

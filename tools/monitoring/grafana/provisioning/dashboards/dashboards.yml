@@ -3,9 +3,13 @@ apiVersion: 1
 providers:
   - name: dikuweb
     type: file
-    # Edits made in the UI are written back here, so a panel someone improves during an incident
-    # survives to be committed rather than being lost on the next container recreate.
-    allowUiUpdates: true
+    # False, and it costs something real: a panel improved in the UI during an incident cannot be
+    # saved back. The directory below is a read-only image layer now, because the alternative was
+    # worse. /var/lib/grafana/dashboards sits inside the `grafana-data` named volume, and a named
+    # volume is seeded from the image only on first creation - so a bind mount was needed to get
+    # the files in at all, and a bind mount is exactly what could not survive a TrueNAS custom app
+    # having no repository beside it. Dashboards are authored in git and arrive by rebuild.
+    allowUiUpdates: false
     options:
-      path: /var/lib/grafana/dashboards
+      path: /etc/grafana/dashboards
       foldersFromFilesStructure: false

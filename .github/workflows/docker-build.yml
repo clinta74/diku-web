@@ -144,3 +144,67 @@ jobs:
           sbom: false
           cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/dikuweb-client:buildcache
           cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}/dikuweb-client:buildcache,mode=max', env.IMAGE_NAMESPACE) || '' }}
+
+  # The three sidecars that used to read their config off a bind mount. They now carry it, because
+  # a TrueNAS custom app renders its compose file with no repository beside it - a relative bind
+  # source resolves to nothing, and Docker creates a missing source as an empty directory instead
+  # of failing. Six mounts did that silently; the backup sidecar's script was one of them, so
+  # backups never ran at all.
+  #
+  # A matrix rather than three copies of the same twelve lines. They differ only in name, context
+  # and dockerfile, and nothing here needs the .NET build the two jobs above do.
+  build-sidecars:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: dikuweb-backup
+            context: ./tools/backup
+            dockerfile: ./tools/backup/Dockerfile
+          - name: dikuweb-prometheus
+            context: ./tools/monitoring
+            dockerfile: ./tools/monitoring/Dockerfile.prometheus
+          - name: dikuweb-grafana
+            context: ./tools/monitoring
+            dockerfile: ./tools/monitoring/Dockerfile.grafana
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAMESPACE }}/${{ matrix.name }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-,enable=${{ startsWith(github.ref, 'refs/heads/') }}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Same reason as the two jobs above: an attestation turns the tag into an OCI index and
+          # no digest comparison can match, which is what made TrueNAS report a permanent update.
+          provenance: false
+          sbom: false

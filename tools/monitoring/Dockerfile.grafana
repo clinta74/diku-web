@@ -1,0 +1,16 @@
+# Grafana with its provisioning and dashboards baked in.
+#
+# **The dashboards deliberately do NOT live at /var/lib/grafana/dashboards.** That path is inside
+# the `grafana-data` named volume, and a named volume is seeded from the image exactly once, when
+# it is first created. Baking them there would look right, work on a fresh host, and then silently
+# ignore every dashboard change in every later image - the volume already exists, so nothing is
+# copied again. They go to /etc/grafana/dashboards instead, which no volume covers, and
+# provisioning/dashboards/dashboards.yml points there.
+#
+# The cost is that `allowUiUpdates` is now false: the provisioned directory is a read-only image
+# layer, so a panel edited in the UI cannot be written back to it. Dashboards are authored in
+# git and arrive by rebuild. Edit the JSON, not the browser.
+FROM grafana/grafana:12.2.0
+
+COPY grafana/provisioning /etc/grafana/provisioning
+COPY grafana/dashboards   /etc/grafana/dashboards

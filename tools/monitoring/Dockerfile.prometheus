@@ -1,0 +1,15 @@
+# Prometheus with its scrape config baked in.
+#
+# The config was the one bind source in the whole deployment that is a *file*, which is the only
+# reason the problem was ever visible: Docker will invent a missing directory, but it cannot mount
+# a directory onto a file, so this is what failed the deploy while six silent siblings passed.
+#
+#   error mounting ".../prometheus.yml" to rootfs at "/etc/prometheus/prometheus.yml"
+#   ... not a directory: Are you trying to mount a directory onto a file (or vice-versa)?
+#
+# Version pinned to match what the compose files pin. Prometheus reads this at startup only, so a
+# config change is an image rebuild and a container restart - which is the same shape as every
+# other change here, rather than a special case somebody has to remember.
+FROM prom/prometheus:v3.6.0
+
+COPY prometheus.yml /etc/prometheus/prometheus.yml
