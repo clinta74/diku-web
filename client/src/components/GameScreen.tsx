@@ -66,7 +66,12 @@ interface Props {
  * height — so the command input, the last row of the grid, ends up underneath the keyboard the
  * moment it is tapped. VisualViewport is the only thing that reports that overlap.
  */
-function useKeyboardInset() {
+function useKeyboardInset(): boolean {
+  // Returned as well as published, because two different things need it: the grid height is a
+  // number and belongs in CSS, and whether to draw the shortcut rows at all is a question React
+  // has to answer.
+  const [open, setOpen] = useState(false)
+
   useEffect(() => {
     const viewport = window.visualViewport
     if (!viewport) return
@@ -78,10 +83,14 @@ function useKeyboardInset() {
 
       // A pixel or two of disagreement is normal and constant; only a real keyboard is worth
       // reflowing the grid for.
+      const up = covered > 40
+
       document.documentElement.style.setProperty(
         '--keyboard-inset',
-        covered > 40 ? `${Math.round(covered)}px` : '0px',
+        up ? `${Math.round(covered)}px` : '0px',
       )
+
+      setOpen(up)
     }
 
     sync()
@@ -94,6 +103,8 @@ function useKeyboardInset() {
       document.documentElement.style.removeProperty('--keyboard-inset')
     }
   }, [])
+
+  return open
 }
 
 export function GameScreen({
@@ -212,7 +223,7 @@ export function GameScreen({
       .filter(Boolean)
   }, [state.contents])
 
-  useKeyboardInset()
+  const keyboard = useKeyboardInset()
 
   // Escape closes the sheet, as it would any overlay. Bound while it is open rather than always,
   // so Escape means whatever it usually means the rest of the time.
@@ -240,7 +251,14 @@ export function GameScreen({
   )
 
   return (
-    <div className="game" data-layout={phone ? 'phone' : 'desktop'}>
+    <div
+      className="game"
+      data-layout={phone ? 'phone' : 'desktop'}
+      // The exit pad and the command chips exist to save you from the keyboard. Once it is up
+      // they are two rows of shortcut to something you are already doing, taken out of a
+      // transcript that has just lost half its height - so they stand down until it goes away.
+      data-keyboard={keyboard ? 'open' : 'closed'}
+    >
       {/*
         The phone header. Hidden on desktop, where the room panel is on screen and says all of
         this already — this is that panel collapsed to one line, plus the way back to it.
@@ -1002,9 +1020,9 @@ function VitalsBar({
       <div className="vitals-self">
         {vitals ? (
           <>
-            <Meter label="HP" value={vitals.health} max={vitals.healthMax} tone="health" />
-            <Meter label="FO" value={vitals.focus} max={vitals.focusMax} tone="focus" />
-            <Meter label="ST" value={vitals.stamina} max={vitals.staminaMax} tone="stamina" />
+            <Meter label="HP" value={vitals.health} max={vitals.healthMax} tone="health" cells={compact ? 6 : 10} />
+            <Meter label="FO" value={vitals.focus} max={vitals.focusMax} tone="focus" cells={compact ? 6 : 10} />
+            <Meter label="ST" value={vitals.stamina} max={vitals.staminaMax} tone="stamina" cells={compact ? 6 : 10} />
             {/*
               Two spans rather than one run of text, so the phone layout can stack who you are
               over how far along you are. Desktop still reads as one line - the separator the
@@ -1107,20 +1125,34 @@ function Meter({
   value,
   max,
   tone,
+  cells = 10,
 }: {
   label: string
   value: number
   max: number
   tone: string
+
+  /**
+   * How many glyphs wide the bar is, which is the only thing about a meter that can be narrowed.
+   *
+   * The bar is literal block characters, so its width is a character count and no amount of CSS
+   * will shrink it. At ten cells the three meters could not share a phone's width: HP and FO took
+   * the first line and ST wrapped onto a second, and since each meter is already two rows - the
+   * value sits under the bar - the row came to four lines of a screen with room for about six.
+   *
+   * Six is what MiniMeter has always used for somebody else's health, so it is a proven number
+   * for reading a proportion off at a glance rather than a guess.
+   */
+  cells?: number
 }) {
-  const filled = max > 0 ? Math.round((value / max) * 10) : 0
+  const filled = max > 0 ? Math.round((value / max) * cells) : 0
 
   return (
     <span className={`meter ${tone}`} title={`${label} ${value}/${max}`}>
       <span className="meter-label">{label}</span>
       <span className="meter-bar">
         {'█'.repeat(filled)}
-        <span className="dim">{'░'.repeat(Math.max(0, 10 - filled))}</span>
+        <span className="dim">{'░'.repeat(Math.max(0, cells - filled))}</span>
       </span>
       <span className="meter-value">
         {value}/{max}

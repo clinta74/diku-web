@@ -272,6 +272,110 @@ it('offers the builder in the menu only to an account that has one', async () =>
   expect(screen.queryByRole('menuitem', { name: 'Builder' })).toBeNull()
 })
 
+/**
+ * A visual viewport that can be made to shrink, the way an on-screen keyboard shrinks a real one.
+ *
+ * jsdom has none at all, so the whole mechanism is invisible to a test unless one is supplied. It
+ * starts uncovered on purpose: the component syncs on mount, so a stub that arrives already
+ * covered would put the layout in its keyboard state before the test had done anything.
+ */
+function fakeViewport() {
+  const listeners: (() => void)[] = []
+  const viewport = {
+    height: 800,
+    offsetTop: 0,
+    addEventListener: (_: string, fn: () => void) => listeners.push(fn),
+    removeEventListener: () => {},
+  }
+
+  vi.stubGlobal('visualViewport', viewport)
+  Object.defineProperty(window, 'innerHeight', { value: 800, configurable: true })
+
+  return (covered: number) =>
+    act(() => {
+      viewport.height = 800 - covered
+      listeners.forEach((fn) => fn())
+    })
+}
+
+it('takes the shortcut rows away while the keyboard is up', () => {
+  // The pad and the chips are both ways of avoiding the keyboard, so once it is up they are two
+  // rows of shortcut to something you are already doing - taken out of a transcript that has just
+  // lost half its height to the keyboard itself.
+  pretendToBe('phone')
+  const cover = fakeViewport()
+  const { container } = play()
+  arriveIn(['north', 'east'])
+
+  const game = container.querySelector('.game') as HTMLElement
+  expect(game.dataset.keyboard).toBe('closed')
+
+  cover(400)
+
+  expect(game.dataset.keyboard).toBe('open')
+})
+
+it('leaves the shortcut rows alone for a disagreement of a pixel or two', () => {
+  // The two viewports differ by a hair all the time on real hardware. Only a real keyboard is
+  // worth reflowing the grid for, and a pad that flickered on scroll would be worse than one that
+  // never moved.
+  pretendToBe('phone')
+  const cover = fakeViewport()
+  const { container } = play()
+
+  cover(12)
+
+  expect((container.querySelector('.game') as HTMLElement).dataset.keyboard).toBe('closed')
+})
+
+it('narrows the bars on a phone so three of them fit one line', () => {
+  // The bar is literal block characters, so its width is a character count and no CSS will shrink
+  // it. At ten cells the three could not share a folding Pixel's width - HP and FO took the first
+  // line and ST wrapped to a second, and each meter is two rows to begin with.
+  pretendToBe('phone')
+  const { container } = play()
+  vitals()
+
+  for (const bar of container.querySelectorAll('.vitals-self .meter-bar')) {
+    expect(bar.textContent).toHaveLength(6)
+  }
+})
+
+it('keeps the full-width bars on a desktop', () => {
+  pretendToBe('desktop')
+  const { container } = play()
+  vitals()
+
+  for (const bar of container.querySelectorAll('.vitals-self .meter-bar')) {
+    expect(bar.textContent).toHaveLength(10)
+  }
+})
+
+it('still reads the right proportion off a narrowed bar', () => {
+  // Fewer cells is a coarser bar, not a wrong one. Two thirds of six is four filled.
+  pretendToBe('phone')
+  const { container } = play()
+
+  act(() =>
+    stream.emit?.({
+      type: 'vitals',
+      data: {
+        health: 40, healthMax: 60,
+        focus: 20, focusMax: 20,
+        stamina: 0, staminaMax: 30,
+        level: 12, path: 'Warden', xp: 3400, gold: 275,
+      },
+    }),
+  )
+
+  const bars = [...container.querySelectorAll('.vitals-self .meter-bar')]
+  const filled = (i: number) => [...(bars[i].textContent ?? '')].filter((c) => c === '█').length
+
+  expect(filled(0)).toBe(4)
+  expect(filled(1)).toBe(6)
+  expect(filled(2)).toBe(0)
+})
+
 it('walks with a tap, and keeps the missing directions on the pad', () => {
   // The reason M2 exists: the main verb of a MUD is walking, and walking used to mean typing
   // `north` on a keyboard covering half the screen.

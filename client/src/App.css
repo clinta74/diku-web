@@ -1063,6 +1063,25 @@ input:focus {
 }
 
 /*
+ * The exit pad and the chips exist to save you from the keyboard. Once it is up they are two rows
+ * of shortcut to something you are already doing - and two rows is most of what is left: measured
+ * on a folding Pixel with the keyboard open, the pad and the chips together were about as tall as
+ * everything else below the transcript put together, and the transcript itself was one line.
+ *
+ * `display: none` rather than a height animation. The rows are gone for as long as the keyboard
+ * is there and back the moment it goes, which reads as the screen making room rather than as
+ * something sliding about while you type.
+ *
+ * Not applied on a desktop at all: `--keyboard-inset` is zero there, so data-keyboard never says
+ * open, but the layout selector says so anyway - a docked tablet with a hardware keyboard should
+ * not lose its pad because something reported an inset.
+ */
+.game[data-layout='phone'][data-keyboard='open'] .exit-pad,
+.game[data-layout='phone'][data-keyboard='open'] .command-chips {
+  display: none;
+}
+
+/*
  * On a phone the printed number goes under its own bar rather than beside it, which is what lets
  * all three meters sit on one line.
  *
@@ -1090,12 +1109,23 @@ input:focus {
 }
 
 /*
- * The whole readout centres as a block: three meters on one row, the identity under them, the two
- * buttons under that. Left-aligned, the meters sat against the edge with the row's slack collecting
- * on the right, which read as three bars that had failed to fill the line rather than as a group.
+ * Three columns, so the meters cannot wrap however narrow the phone is.
+ *
+ * They were a flex row that wrapped when it ran out of width, and on a folding Pixel it did: HP
+ * and FO on the first line, ST alone on a second. Each meter is two rows to begin with - the
+ * value sits under its bar - so the readout came to four lines of a screen that had room for
+ * about six once the keyboard was up.
+ *
+ * `minmax(0, 1fr)` rather than `1fr`, because a grid column's automatic minimum is its content
+ * and the bar is a run of characters that will not break: with plain `1fr` a bar too wide for its
+ * third pushes the track out and takes the other two with it, which is the same overflow by
+ * another road. The narrowing that makes them fit is the cell count, in Meter.
  */
 .game[data-layout='phone'] .vitals-self {
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: center;
+  gap: var(--space-1) var(--space-2);
 }
 
 /*
