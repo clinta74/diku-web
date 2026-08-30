@@ -60,10 +60,48 @@ function pretendToBe(kind: 'phone' | 'desktop') {
   }))
 }
 
+/**
+ * What Radix needs and jsdom does not have.
+ *
+ * The session menu is a Radix dropdown, which measures its trigger to place the panel and takes
+ * pointer capture to track the press. jsdom implements neither, and the failure is not an error -
+ * the menu simply never opens, so a test asserting on its contents reads as the menu being empty
+ * rather than as the environment being incomplete.
+ */
+function stubTheDomRadixExpects() {
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  )
+
+  Element.prototype.hasPointerCapture ??= () => false
+  Element.prototype.setPointerCapture ??= () => {}
+  Element.prototype.releasePointerCapture ??= () => {}
+  Element.prototype.scrollIntoView ??= () => {}
+}
+
+/**
+ * Radix opens on `pointerdown`, not on `click` - it commits to the menu when the finger lands
+ * rather than when it lifts, which is what makes a press-and-drag onto an item work on a phone.
+ * `fireEvent.click` therefore does nothing at all here.
+ */
+async function openTheMenu() {
+  const trigger = screen.getByRole('button', { name: /character and session/i })
+
+  await act(async () => {
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: 'mouse' })
+  })
+}
+
 beforeEach(() => {
   sent.length = 0
   entered.length = 0
   localStorage.clear()
+  stubTheDomRadixExpects()
 })
 
 afterEach(() => {
@@ -133,6 +171,105 @@ it('leaves the panels visible and unhidden on a desktop', () => {
 
   expect(container.querySelector('.game')?.getAttribute('data-layout')).toBe('desktop')
   expect(sheet(container).getAttribute('aria-hidden')).toBe('false')
+})
+
+/**
+ * What the bottom row costs, and why it is now one line.
+ *
+ * The phone grid is header / scroll / notice / pad / cooldowns / input / vitals, and `scroll` is
+ * the only row that flexes - so every pixel any other row spends is taken from the transcript.
+ * When the on-screen keyboard opens, `--keyboard-inset` shrinks the whole grid and `scroll`
+ * absorbs all of that too, on top of what the other rows were already holding. Identity was two
+ * wrapped lines and the buttons a 44px row: about eighty pixels out of the two or three hundred
+ * left to read in.
+ */
+const vitals = () =>
+  act(() =>
+    stream.emit?.({
+      type: 'vitals',
+      data: {
+        health: 40, healthMax: 60,
+        focus: 10, focusMax: 20,
+        stamina: 30, staminaMax: 30,
+        level: 12, path: 'Warden', xp: 3400, gold: 275,
+      },
+    }),
+  )
+
+it('keeps only the meters in the bottom row on a phone', () => {
+  pretendToBe('phone')
+  const { container } = play()
+  vitals()
+
+  const bar = container.querySelector('.vitals-bar') as HTMLElement
+
+  // The three that change while you are looking at them stay.
+  expect(bar.querySelectorAll('.meter')).toHaveLength(3)
+
+  // What does not change while you read it goes to the header menu.
+  expect(bar.querySelector('.identity')).toBeNull()
+  expect(bar.textContent).not.toContain('gold')
+  expect(bar.querySelector('button')).toBeNull()
+})
+
+it('still puts everything in the bottom row on a desktop', () => {
+  // The row is only a problem where the keyboard takes half the screen. On a desktop it has the
+  // width for all of it and a menu would be a tap where there was none.
+  pretendToBe('desktop')
+  const { container } = play()
+  vitals()
+
+  const bar = container.querySelector('.vitals-bar') as HTMLElement
+
+  expect(bar.querySelector('.identity')).not.toBeNull()
+  expect(bar.textContent).toContain('gold')
+  expect(screen.getByRole('button', { name: 'leave' })).toBeTruthy()
+  expect(screen.queryByRole('button', { name: /character and session/i })).toBeNull()
+})
+
+it('reaches who you are and the way out from the header menu', async () => {
+  pretendToBe('phone')
+  play()
+  vitals()
+
+  await openTheMenu()
+
+  // The identity readout is the reason the menu exists, so it is a label rather than an item -
+  // there to be read, not chosen.
+  expect(screen.getByText(/Kael · Warden · level 12/)).toBeTruthy()
+  expect(screen.getByText(/275 gold/)).toBeTruthy()
+
+  expect(screen.getByRole('menuitem', { name: 'Leave the world' })).toBeTruthy()
+})
+
+it('leaves the world from the menu', async () => {
+  pretendToBe('phone')
+  const left: number[] = []
+
+  render(
+    <GameScreen characterId="c1" characterName="Kael" onLeave={() => left.push(1)} active />,
+  )
+  vitals()
+
+  await openTheMenu()
+
+  await act(async () => {
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Leave the world' }))
+  })
+
+  expect(left).toHaveLength(1)
+})
+
+it('offers the builder in the menu only to an account that has one', async () => {
+  // Same rule the bottom row followed: the control is absent, not disabled, for a player who
+  // cannot use it.
+  pretendToBe('phone')
+  render(<GameScreen characterId="c1" characterName="Kael" onLeave={() => {}} active />)
+  vitals()
+
+  await openTheMenu()
+
+  expect(screen.queryByRole('menuitem', { name: 'Builder' })).toBeNull()
 })
 
 it('walks with a tap, and keeps the missing directions on the pad', () => {

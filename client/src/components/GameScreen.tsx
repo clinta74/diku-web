@@ -251,6 +251,17 @@ export function GameScreen({
         connected={state.connected}
         open={sheetOpen}
         onToggle={() => setSheetOpen((open) => !open)}
+        menu={
+          phone ? (
+            <SessionMenu
+              vitals={state.vitals}
+              characterName={characterName}
+              onLeave={onLeave}
+              onOpenBuilder={onOpenBuilder}
+              onOpenMap={onOpenMap}
+            />
+          ) : null
+        }
       />
 
       {/*
@@ -344,6 +355,9 @@ export function GameScreen({
         onLeave={onLeave}
         onOpenBuilder={onOpenBuilder}
         onOpenMap={onOpenMap}
+        // On a phone who you are and where you can go live in the header menu instead, and this
+        // row keeps only the three numbers that change while you are reading it.
+        compact={phone}
       />
     </div>
   )
@@ -402,12 +416,19 @@ function RoomHeader({
   connected,
   open,
   onToggle,
+  menu,
 }: {
   title: string
   exits: string[]
   connected: boolean
   open: boolean
   onToggle: () => void
+
+  /**
+   * Everything about this session that is reference rather than reading: who you are, and the
+   * ways out of the game. Null on a desktop, where the vitals row has the width for all of it.
+   */
+  menu: React.ReactNode
 }) {
   return (
     <header className="room-header">
@@ -435,6 +456,8 @@ function RoomHeader({
         ▤ room
         {exits.length > 0 && <span className="dim"> · {exits.length}</span>}
       </button>
+
+      {menu}
     </header>
   )
 }
@@ -868,6 +891,79 @@ function InputBar({
   )
 }
 
+/**
+ * Who you are, and the ways out of the game - on a phone, where the row that used to hold them is
+ * the row the keyboard squeezes.
+ *
+ * A dropdown rather than a second sheet: the room sheet is reference material you read, and this
+ * is four things you tap once and dismiss. Radix directly rather than `OverflowMenu`, because
+ * that component takes a flat list of actions and this needs a readout above them - the identity
+ * line is the reason the menu exists, not an item in it.
+ */
+function SessionMenu({
+  vitals,
+  characterName,
+  onLeave,
+  onOpenBuilder,
+  onOpenMap,
+}: {
+  vitals: VitalsPayload | null
+  characterName: string
+  onLeave: () => void
+  onOpenBuilder?: () => void
+  onOpenMap?: () => void
+}) {
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button type="button" className="room-header-toggle" aria-label="Character and session">
+          ⋯
+        </button>
+      </DropdownMenu.Trigger>
+
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content className="menu session-menu" align="end" sideOffset={4}>
+          {/*
+            A label, not an item: it is read, never chosen, so it takes no focus and closes
+            nothing. Absent until the first vitals frame arrives, which is a real moment - the
+            header is on screen before the stream has said anything.
+          */}
+          {vitals && (
+            <DropdownMenu.Label className="session-identity">
+              <span className="session-who">
+                {characterName} · {vitals.path} · level {vitals.level}
+              </span>
+              <span className="session-progress">
+                {vitals.xp.toLocaleString()} xp
+                {' · '}
+                <span className="gold">{vitals.gold.toLocaleString()} gold</span>
+              </span>
+            </DropdownMenu.Label>
+          )}
+
+          {onOpenMap && (
+            <DropdownMenu.Item className="menu-item" onSelect={() => onOpenMap()}>
+              Map
+            </DropdownMenu.Item>
+          )}
+
+          {onOpenBuilder && (
+            <DropdownMenu.Item className="menu-item" onSelect={() => onOpenBuilder()}>
+              Builder
+            </DropdownMenu.Item>
+          )}
+
+          {/* Destructive in the sense that matters here: it takes the character out of the world,
+              and it is now one tap from a menu rather than a button you had to aim at. */}
+          <DropdownMenu.Item className="menu-item menu-item-danger" onSelect={onLeave}>
+            Leave the world
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  )
+}
+
 function VitalsBar({
   vitals,
   party,
@@ -876,6 +972,7 @@ function VitalsBar({
   onLeave,
   onOpenBuilder,
   onOpenMap,
+  compact = false,
 }: {
   vitals: VitalsPayload | null
   party: PartyMemberEntry[]
@@ -884,6 +981,21 @@ function VitalsBar({
   onLeave: () => void
   onOpenBuilder?: () => void
   onOpenMap?: () => void
+
+  /**
+   * Three meters and nothing else, because the keyboard is about to take half the screen.
+   *
+   * This row is the last one in the phone grid and `scroll` is the only row that flexes, so every
+   * pixel spent here comes out of the transcript - and when the on-screen keyboard opens it comes
+   * out of a transcript that has already lost half its height. Identity was two wrapped lines and
+   * the buttons a 44px row: about eighty pixels of a screen that had roughly three hundred left
+   * to read in.
+   *
+   * What stays is what changes while you are looking at it. Your name, your level and your gold
+   * do not, and neither does where the map is, so they are in the header menu - one tap away and
+   * costing nothing until it is taken.
+   */
+  compact?: boolean
 }) {
   return (
     <div className="vitals-bar">
@@ -899,16 +1011,18 @@ function VitalsBar({
               split removed is put back in CSS rather than in the markup, so neither layout
               carries a dot the other has to hide.
             */}
-            <span className="identity">
-              <span className="identity-who">
-                {characterName} · {vitals.path} · level {vitals.level}
+            {!compact && (
+              <span className="identity">
+                <span className="identity-who">
+                  {characterName} · {vitals.path} · level {vitals.level}
+                </span>
+                <span className="identity-progress">
+                  {vitals.xp.toLocaleString()} xp
+                  {' · '}
+                  <span className="gold">{vitals.gold.toLocaleString()} gold</span>
+                </span>
               </span>
-              <span className="identity-progress">
-                {vitals.xp.toLocaleString()} xp
-                {' · '}
-                <span className="gold">{vitals.gold.toLocaleString()} gold</span>
-              </span>
-            </span>
+            )}
           </>
         ) : (
           <span className="dim">{characterName}</span>
@@ -917,14 +1031,14 @@ function VitalsBar({
         <span className={connected ? 'status good' : 'status bad'}>
           {connected ? 'connected' : 'reconnecting…'}
         </span>
-        {onOpenMap && (
+        {!compact && onOpenMap && (
           // Before the builder, because every player has this one and only some have that one -
           // so the row does not change shape around a control depending on who is looking at it.
           <button type="button" className="leave" onClick={() => onOpenMap()}>
             map
           </button>
         )}
-        {onOpenBuilder && (
+        {!compact && onOpenBuilder && (
           // Called with no arguments on purpose. Passing the handler straight to onClick hands it
           // React's MouseEvent as its first argument, which this signature now reads as a builder
           // path — so the button navigated to an event object instead of /builder.
@@ -932,9 +1046,11 @@ function VitalsBar({
             builder
           </button>
         )}
-        <button type="button" className="leave" onClick={onLeave}>
-          leave
-        </button>
+        {!compact && (
+          <button type="button" className="leave" onClick={onLeave}>
+            leave
+          </button>
+        )}
       </div>
 
       <PartyBar party={party} characterName={characterName} />

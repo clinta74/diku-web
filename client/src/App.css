@@ -835,6 +835,41 @@ input:focus {
   white-space: nowrap;
 }
 
+/*
+ * The session menu: who you are and the ways out, moved off the bottom row.
+ *
+ * The header now carries two controls beside a title that was already taking the slack, so the
+ * gap between them tightens rather than the title losing more of itself. `⋯` is one glyph, so it
+ * needs the height for a thumb and none of the width.
+ */
+.session-menu {
+  min-width: 12rem;
+}
+
+/*
+ * Read, never chosen. Radix labels take no focus, so this needs no hover or highlight state - and
+ * it must not have one, or it reads as an item that does nothing when tapped.
+ */
+.session-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2);
+  margin-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border);
+  cursor: default;
+}
+
+.session-who {
+  color: var(--accent);
+  font-size: 0.9em;
+}
+
+.session-progress {
+  color: var(--dim);
+  font-size: 0.85em;
+}
+
 /* The sheet itself: a full-screen overlay rather than a panel sharing the height, because a room
    description and a map cut to a third of a phone screen are worse than either one whole. */
 .game[data-layout='phone'] .room-sheet {
@@ -1100,14 +1135,29 @@ input:focus {
  * that has it.
  */
 /*
- * Centred as a pair by the rule above, rather than pushed to the right edge - a right-aligned pair
- * under two centred rows reads as a third alignment for no reason. They were also inheriting the
- * base button padding, which is 0.5rem against a 0.8rem font: about 30px tall, well under the 44px
- * the exit keys and the chips use, and the two smallest targets on the screen sat side by side.
+ * Kept for any button that ends up in this row on a phone, though as of the session menu none
+ * does: 0.5rem of base padding against a 0.8rem font is about 30px, well under the 44px the exit
+ * keys and the chips use.
  */
 .game[data-layout='phone'] .vitals-self button {
   min-height: 44px;
   padding: 0 var(--space-3);
+}
+
+/*
+ * Three meters and nothing else, so the row is one line rather than three.
+ *
+ * This is the last row of the phone grid and `scroll` is the only one that flexes, so everything
+ * here is taken from the transcript - and when the on-screen keyboard opens it is taken from a
+ * transcript that has already lost half its height to the keyboard. Identity was two wrapped
+ * lines and the buttons a 44px row; both are in the header menu now.
+ *
+ * The padding comes down with them. A row that was three lines tall needed the breathing room; a
+ * single row of meters beside the command input does not, and the pair reads better close.
+ */
+.game[data-layout='phone'] .vitals-bar {
+  padding-top: var(--space-1);
+  padding-bottom: calc(var(--space-1) + env(safe-area-inset-bottom, 0px));
 }
 
 /* ------------------------------------------------------------------ */
