@@ -59,21 +59,8 @@ public sealed class ChangeRecordCompletenessTests
         ["writer:UpsertGameConfiguration.Live"] = "IsActive moves only through activation",
     };
 
-    private static string RepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Muwbta.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        Assert.NotNull(dir);
-        return dir!.FullName;
-    }
-
     private static string Source(params string[] parts) =>
-        File.ReadAllText(Path.Combine([RepoRoot(), .. parts]));
+        File.ReadAllText(Path.Combine([RepoPath.Root(), .. parts]));
 
     /// <summary>Every <c>Upsert*</c> record and the positional fields it declares.</summary>
     private static IEnumerable<(string Name, IReadOnlyList<string> Fields)> ChangeRecords()

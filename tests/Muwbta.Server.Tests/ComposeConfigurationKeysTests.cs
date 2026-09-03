@@ -37,7 +37,7 @@ public sealed class ComposeConfigurationKeysTests
 
     public static TheoryData<string> ExampleDeployments =>
         [.. Directory
-            .EnumerateFiles(Path.Combine(RepoRoot(), "example"), "docker-compose*.yml")
+            .EnumerateFiles(Path.Combine(RepoPath.Root(), "example"), "docker-compose*.yml")
             .Select(Path.GetFileName)
             .OfType<string>()];
 
@@ -45,7 +45,7 @@ public sealed class ComposeConfigurationKeysTests
     [MemberData(nameof(ExampleDeployments))]
     public void Every_session_key_names_a_real_setting(string file)
     {
-        var text = File.ReadAllText(Path.Combine(RepoRoot(), "example", file));
+        var text = File.ReadAllText(Path.Combine(RepoPath.Root(), "example", file));
 
         var settable = typeof(SessionRegistryOptions)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -104,7 +104,7 @@ public sealed class ComposeConfigurationKeysTests
         // running an undeclared default, which is the sort of thing nobody notices until it
         // matters. Every one is named, so every one is a deliberate choice.
         foreach (var file in Directory.EnumerateFiles(
-            Path.Combine(RepoRoot(), "example"), "docker-compose*.yml"))
+            Path.Combine(RepoPath.Root(), "example"), "docker-compose*.yml"))
         {
             var text = File.ReadAllText(file);
 
@@ -121,18 +121,5 @@ public sealed class ComposeConfigurationKeysTests
             Assert.Contains(
                 "Sessions__HeartbeatTimeoutSeconds", text, StringComparison.Ordinal);
         }
-    }
-
-    private static string RepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Muwbta.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        Assert.NotNull(dir);
-        return dir!.FullName;
     }
 }

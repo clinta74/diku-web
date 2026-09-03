@@ -21,23 +21,10 @@ namespace Muwbta.Server.Tests.Building;
 /// </remarks>
 public sealed class QuestOfferContentTests
 {
-    private static string RepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Muwbta.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        Assert.NotNull(dir);
-        return dir!.FullName;
-    }
-
     private static WorldBundle World()
     {
         var sources = Directory
-            .EnumerateFiles(Path.Combine(RepoRoot(), "content"), "*.json", SearchOption.AllDirectories)
+            .EnumerateFiles(Path.Combine(RepoPath.Root(), "content"), "*.json", SearchOption.AllDirectories)
             .OrderBy(p => p, StringComparer.Ordinal)
             .Select(path =>
             {

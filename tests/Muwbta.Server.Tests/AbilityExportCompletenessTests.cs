@@ -52,7 +52,7 @@ public sealed class AbilityExportCompletenessTests
     }
 
     private static string Tool() =>
-        File.ReadAllText(Path.Combine(RepoRoot(), "tools", "export-abilities.cs"));
+        File.ReadAllText(Path.Combine(RepoPath.Root(), "tools", "export-abilities.cs"));
 
     /// <summary>
     /// The columns the tool's <c>INSERT INTO abilities (...)</c> lists.
@@ -148,18 +148,5 @@ public sealed class AbilityExportCompletenessTests
             "tools/export-abilities.cs inserts these columns but does not update them on conflict, "
             + "so re-applying it would leave them stale: "
             + string.Join(", ", unassigned.Order(StringComparer.Ordinal)));
-    }
-
-    private static string RepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Muwbta.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        Assert.NotNull(dir);
-        return dir!.FullName;
     }
 }

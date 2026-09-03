@@ -60,19 +60,6 @@ public sealed class AbilityContentTests
         "hallow.the-long-vigil",
     };
 
-    private static string RepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Muwbta.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        Assert.NotNull(dir);
-        return dir!.FullName;
-    }
-
     /// <summary>
     /// The shipped abilities, as the import would store them.
     /// </summary>
@@ -85,7 +72,7 @@ public sealed class AbilityContentTests
     {
         get
         {
-            var path = Path.Combine(RepoRoot(), "content", "abilities.json");
+            var path = Path.Combine(RepoPath.Root(), "content", "abilities.json");
 
             Assert.True(File.Exists(path), $"{path} is the ability set and is missing.");
             Assert.True(

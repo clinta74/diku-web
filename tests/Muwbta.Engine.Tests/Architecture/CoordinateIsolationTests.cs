@@ -59,15 +59,20 @@ public sealed class CoordinateIsolationTests
     {
         // PLAN.md §2.2: Domain has zero dependencies, and that isolation is what keeps the
         // rules unit-testable without mocks.
-        var referenced = DomainAssembly
-            .GetReferencedAssemblies()
-            .Select(a => a.Name!)
-            .Where(name => name.StartsWith("Muwbta", StringComparison.Ordinal))
-            .ToList();
+        // The prefix is read off the assembly under test rather than written down. A literal
+        // that no longer matches anything makes this pass by finding nothing, which is how it
+        // survived being renamed without anyone noticing it had stopped checking.
+        var prefix = DomainAssembly.GetName().Name!.Split('.')[0];
+
+        // Proof the filter still matches something before trusting it to match nothing: Engine
+        // does reference Domain, so an empty result here means the predicate is broken.
+        Assert.NotEmpty(SolutionReferencesOf(EngineAssembly, prefix));
+
+        var referenced = SolutionReferencesOf(DomainAssembly, prefix);
 
         Assert.True(
             referenced.Count == 0,
-            "Muwbta.Domain must reference no other Muwbta project. Found: "
+            $"{DomainAssembly.GetName().Name} must reference no other {prefix} project. Found: "
             + string.Join(", ", referenced));
     }
 
@@ -79,9 +84,16 @@ public sealed class CoordinateIsolationTests
         var layoutType = typeof(RoomLayoutService);
         var offenders = new List<string>();
 
+        var commandsNamespace = typeof(CommandRegistry).Namespace!;
+
         var commandTypes = EngineAssembly.GetTypes()
-            .Where(t => t.Namespace?.StartsWith("Muwbta.Engine.Commands", StringComparison.Ordinal) == true)
-            .Where(t => !IsCompilerGenerated(t));
+            .Where(t => t.Namespace?.StartsWith(commandsNamespace, StringComparison.Ordinal) == true)
+            .Where(t => !IsCompilerGenerated(t))
+            .ToList();
+
+        // Same reason: no candidates and no offenders are indistinguishable in the assertion
+        // below, and only one of them means the rule is being enforced.
+        Assert.NotEmpty(commandTypes);
 
         foreach (var type in commandTypes)
         {
@@ -132,15 +144,23 @@ public sealed class CoordinateIsolationTests
     public void The_layout_service_is_the_only_type_producing_map_coordinates()
     {
         // Confirms the escape hatch stays a single, findable place rather than spreading.
+        var presentationNamespace = typeof(RoomLayoutService).Namespace!;
+
         var producers = EngineAssembly.GetTypes()
             .Where(t => !IsCompilerGenerated(t))
-            .Where(t => t.Namespace?.StartsWith("Muwbta.Engine.Presentation", StringComparison.Ordinal) == true)
+            .Where(t => t.Namespace?.StartsWith(presentationNamespace, StringComparison.Ordinal) == true)
             .Select(t => t.Name)
             .ToList();
 
         Assert.Contains(nameof(RoomLayoutService), producers);
         Assert.Contains(nameof(PlayerView), producers);
     }
+
+    private static List<string> SolutionReferencesOf(Assembly assembly, string prefix) =>
+        assembly.GetReferencedAssemblies()
+            .Select(a => a.Name!)
+            .Where(name => name.StartsWith(prefix, StringComparison.Ordinal))
+            .ToList();
 
     private static bool IsCoordinateName(string name) =>
         CoordinateNames.Contains(name.ToLowerInvariant());

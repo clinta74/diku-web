@@ -22,29 +22,16 @@ namespace Muwbta.Server.Tests.Building;
 /// </remarks>
 public sealed class BundleMergeTests
 {
-    private static string RepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Muwbta.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        Assert.NotNull(dir);
-        return dir!.FullName;
-    }
-
     private static IReadOnlyList<BundleSource> AuthoredContent()
     {
-        var root = Path.Combine(RepoRoot(), "content");
+        var root = Path.Combine(RepoPath.Root(), "content");
         var sources = new List<BundleSource>();
 
         foreach (var path in Directory.EnumerateFiles(root, "*.json", SearchOption.AllDirectories)
             .OrderBy(p => p, StringComparer.Ordinal))
         {
             Assert.True(BundleFormat.TryRead(File.ReadAllText(path), out var bundle, out var error), error);
-            sources.Add(new BundleSource(Path.GetRelativePath(RepoRoot(), path), bundle!));
+            sources.Add(new BundleSource(Path.GetRelativePath(RepoPath.Root(), path), bundle!));
         }
 
         Assert.NotEmpty(sources);

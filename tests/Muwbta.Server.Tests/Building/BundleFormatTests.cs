@@ -27,31 +27,18 @@ namespace Muwbta.Server.Tests.Building;
 /// </remarks>
 public sealed class BundleFormatTests
 {
-    private static string RepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Muwbta.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        Assert.NotNull(dir);
-        return dir!.FullName;
-    }
-
     /// <summary>
     /// Every authored bundle. Fails loudly when there are none, because a glob that silently
     /// matches nothing turns this whole file into a test that always passes.
     /// </summary>
     public static TheoryData<string> ContentFiles()
     {
-        var root = Path.Combine(RepoRoot(), "content");
+        var root = Path.Combine(RepoPath.Root(), "content");
         var data = new TheoryData<string>();
 
         foreach (var path in Directory.EnumerateFiles(root, "*.json", SearchOption.AllDirectories))
         {
-            data.Add(Path.GetRelativePath(RepoRoot(), path));
+            data.Add(Path.GetRelativePath(RepoPath.Root(), path));
         }
 
         Assert.NotEmpty(data);
@@ -62,7 +49,7 @@ public sealed class BundleFormatTests
     [MemberData(nameof(ContentFiles))]
     public void An_authored_bundle_declares_the_version_this_build_reads(string relativePath)
     {
-        var json = File.ReadAllText(Path.Combine(RepoRoot(), relativePath));
+        var json = File.ReadAllText(Path.Combine(RepoPath.Root(), relativePath));
 
         Assert.True(
             BundleFormat.TryRead(json, out var bundle, out var error),
@@ -82,7 +69,7 @@ public sealed class BundleFormatTests
     [MemberData(nameof(ContentFiles))]
     public void An_authored_bundle_binds_through_the_converters_the_endpoint_uses(string relativePath)
     {
-        var json = File.ReadAllText(Path.Combine(RepoRoot(), relativePath));
+        var json = File.ReadAllText(Path.Combine(RepoPath.Root(), relativePath));
 
         Assert.True(BundleFormat.TryRead(json, out var bundle, out var error), error);
 
@@ -186,7 +173,7 @@ public sealed class BundleFormatTests
     [Fact]
     public void The_content_readme_names_the_version_this_build_reads()
     {
-        var readme = File.ReadAllText(Path.Combine(RepoRoot(), "content", "README.md"));
+        var readme = File.ReadAllText(Path.Combine(RepoPath.Root(), "content", "README.md"));
 
         var stated = Regex.Match(readme, @"these files are at \*\*(\d+)\*\*");
 
@@ -212,7 +199,7 @@ public sealed class BundleFormatTests
     [Fact]
     public void No_tool_keeps_its_own_copy_of_the_version()
     {
-        var tools = Path.Combine(RepoRoot(), "tools");
+        var tools = Path.Combine(RepoPath.Root(), "tools");
 
         // Anything that looks like a version constant assigned a bare integer. Deliberately loose:
         // this is meant to catch a shape, not a spelling.
@@ -229,7 +216,7 @@ public sealed class BundleFormatTests
             .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                 && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .Where(f => suspicious.IsMatch(File.ReadAllText(f)))
-            .Select(f => Path.GetRelativePath(RepoRoot(), f))
+            .Select(f => Path.GetRelativePath(RepoPath.Root(), f))
             .ToList();
 
         Assert.True(
