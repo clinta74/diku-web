@@ -43,7 +43,7 @@ export function AuthScreen({ onReady }: { onReady: (account: Account) => void })
 
   return (
     <main className="shell">
-      <h1>diku-web</h1>
+      <h1>The Reaches</h1>
       <p className="tagline">Aldenmoor is open.</p>
 
       <form className="panel form" onSubmit={submit}>
@@ -182,7 +182,7 @@ export function CharacterScreen({
 
   return (
     <main className="shell">
-      <h1>diku-web</h1>
+      <h1>The Reaches</h1>
       <p className="tagline">Choose a character.</p>
 
       {notice && (

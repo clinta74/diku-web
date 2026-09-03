@@ -4,7 +4,7 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
-const API_TARGET = process.env.DIKUWEB_API ?? 'http://localhost:5180'
+const API_TARGET = process.env.MUWBTA_API ?? 'http://localhost:5180'
 
 export default defineConfig({
   plugins: [react()],

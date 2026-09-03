@@ -1,6 +1,6 @@
 {
-  "name": "diku-web",
-  "short_name": "diku-web",
+  "name": "The Reaches",
+  "short_name": "The Reaches",
   "description": "A text MUD you can play in a browser.",
   "start_url": "/",
   "scope": "/",
