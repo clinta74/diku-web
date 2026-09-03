@@ -103,7 +103,7 @@ public sealed class EngineMetricsTests
         metrics.RecordPulse(0.6, overBudget: false);
         metrics.RecordPulse(40, overBudget: true);
 
-        Assert.Equal([0.4, 0.6, 40], recorder.ValuesOf("dikuweb.pulse.duration"));
+        Assert.Equal([0.4, 0.6, 40], recorder.ValuesOf("muwbta.pulse.duration"));
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public sealed class EngineMetricsTests
         metrics.RecordPulse(40, overBudget: true);
         metrics.RecordPulse(90, overBudget: true);
 
-        Assert.Equal(2, recorder.ValuesOf("dikuweb.pulse.over_budget").Sum());
+        Assert.Equal(2, recorder.ValuesOf("muwbta.pulse.over_budget").Sum());
     }
 
     [Fact]
@@ -131,8 +131,8 @@ public sealed class EngineMetricsTests
 
         metrics.RecordCommand(12.5);
 
-        Assert.Equal(1, recorder.ValuesOf("dikuweb.commands.handled").Sum());
-        Assert.Equal([12.5], recorder.ValuesOf("dikuweb.command.latency"));
+        Assert.Equal(1, recorder.ValuesOf("muwbta.commands.handled").Sum());
+        Assert.Equal([12.5], recorder.ValuesOf("muwbta.command.latency"));
     }
 
     [Fact]
@@ -146,8 +146,8 @@ public sealed class EngineMetricsTests
 
         metrics.RecordCommand(null);
 
-        Assert.Equal(1, recorder.ValuesOf("dikuweb.commands.handled").Sum());
-        Assert.Empty(recorder.ValuesOf("dikuweb.command.latency"));
+        Assert.Equal(1, recorder.ValuesOf("muwbta.commands.handled").Sum());
+        Assert.Empty(recorder.ValuesOf("muwbta.command.latency"));
     }
 
     [Fact]
@@ -165,8 +165,8 @@ public sealed class EngineMetricsTests
         players = 7;
         recorder.Collect();
 
-        Assert.Equal([7], recorder.ValuesOf("dikuweb.sessions.active"));
-        Assert.Equal([42], recorder.ValuesOf("dikuweb.rooms.loaded"));
+        Assert.Equal([7], recorder.ValuesOf("muwbta.sessions.active"));
+        Assert.Equal([42], recorder.ValuesOf("muwbta.rooms.loaded"));
     }
 
     [Fact]
@@ -178,12 +178,12 @@ public sealed class EngineMetricsTests
     }
 
     [Theory]
-    [InlineData("dikuweb.pulse.duration")]
-    [InlineData("dikuweb.pulse.over_budget")]
-    [InlineData("dikuweb.command.latency")]
-    [InlineData("dikuweb.commands.handled")]
-    [InlineData("dikuweb.sessions.active")]
-    [InlineData("dikuweb.rooms.loaded")]
+    [InlineData("muwbta.pulse.duration")]
+    [InlineData("muwbta.pulse.over_budget")]
+    [InlineData("muwbta.command.latency")]
+    [InlineData("muwbta.commands.handled")]
+    [InlineData("muwbta.sessions.active")]
+    [InlineData("muwbta.rooms.loaded")]
     public void The_instrument_names_are_pinned(string name)
     {
         // Same reasoning as the meter name, one level down.

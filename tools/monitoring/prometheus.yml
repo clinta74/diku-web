@@ -14,10 +14,10 @@ global:
   # Store metrics under classic underscore names. Not cosmetic - without these two the dashboard
   # is entirely "No data", and it took running the stack to find out.
   #
-  # OpenTelemetry instruments are named with dots (`dikuweb.pulse.duration`). Prometheus 3
+  # OpenTelemetry instruments are named with dots (`muwbta.pulse.duration`). Prometheus 3
   # supports UTF-8 metric names, negotiates for them at scrape time, and stores what the exporter
-  # calls them - so the series is `dikuweb.pulse.duration_milliseconds_bucket`, queryable only
-  # with the quoted syntax `{"dikuweb.pulse.duration_milliseconds_bucket"}`. Fetch /metrics with
+  # calls them - so the series is `muwbta.pulse.duration_milliseconds_bucket`, queryable only
+  # with the quoted syntax `{"muwbta.pulse.duration_milliseconds_bucket"}`. Fetch /metrics with
   # curl and you see underscores, because curl does not send the header that asks for UTF-8; the
   # names Prometheus holds are not the names the endpoint appears to serve.
   #
@@ -27,7 +27,7 @@ global:
   metric_name_escaping_scheme: underscores
 
 scrape_configs:
-  - job_name: dikuweb
+  - job_name: muwbta
     metrics_path: /metrics
     static_configs:
       # The compose service name. Port 8080 is the container port, not the published one - nginx
@@ -35,7 +35,7 @@ scrape_configs:
       # works from inside the compose network. That is the intent.
       - targets: ['web:8080']
         labels:
-          service: dikuweb
+          service: muwbta
 
   # Prometheus scraping itself, kept because it costs nothing and answers "is the monitoring
   # broken or is the thing it monitors broken" - which is the first question during an incident.

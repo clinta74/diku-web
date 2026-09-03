@@ -147,14 +147,14 @@ public sealed record MetricsSnapshot(
     /// <summary>The instrument names, as the Prometheus exporter renames them.</summary>
     /// <remarks>
     /// OpenTelemetry appends the unit and, for a counter, <c>_total</c>: the instrument
-    /// <c>dikuweb.pulse.duration</c> recorded in <c>ms</c> is exported as
-    /// <c>dikuweb_pulse_duration_milliseconds</c>. Spelled out here because the apparatus is a
+    /// <c>muwbta.pulse.duration</c> recorded in <c>ms</c> is exported as
+    /// <c>muwbta_pulse_duration_milliseconds</c>. Spelled out here because the apparatus is a
     /// client and cannot reference <c>EngineMetrics</c> to ask.
     /// </remarks>
-    public const string PulseFamily = "dikuweb_pulse_duration_milliseconds";
+    public const string PulseFamily = "muwbta_pulse_duration_milliseconds";
 
     /// <inheritdoc cref="PulseFamily"/>
-    public const string CommandLatencyFamily = "dikuweb_command_latency_milliseconds";
+    public const string CommandLatencyFamily = "muwbta_command_latency_milliseconds";
 
     public static MetricsSnapshot Read(string exposition, DateTimeOffset at)
     {
@@ -164,10 +164,10 @@ public sealed record MetricsSnapshot(
             at,
             ReadHistogram(samples, PulseFamily),
             ReadHistogram(samples, CommandLatencyFamily),
-            (long)Counter(samples, "dikuweb_commands_handled"),
-            (long)Counter(samples, "dikuweb_pulse_over_budget"),
-            (int)Counter(samples, "dikuweb_sessions_active"),
-            (int)Counter(samples, "dikuweb_rooms_loaded"));
+            (long)Counter(samples, "muwbta_commands_handled"),
+            (long)Counter(samples, "muwbta_pulse_over_budget"),
+            (int)Counter(samples, "muwbta_sessions_active"),
+            (int)Counter(samples, "muwbta_rooms_loaded"));
     }
 
     private static Histogram ReadHistogram(IReadOnlyList<PrometheusSample> samples, string family)

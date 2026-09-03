@@ -8,7 +8,7 @@ datasources:
   - name: Prometheus
     # Pinned rather than generated, because the dashboard JSON references it by uid. Let Grafana
     # invent one and every panel in a provisioned dashboard says "datasource not found".
-    uid: dikuweb-prometheus
+    uid: muwbta-prometheus
     type: prometheus
     access: proxy
     url: http://prometheus:9090

@@ -38,10 +38,10 @@ public sealed class EngineMetrics : IDisposable
     /// to an instrument <em>by name</em>. Spelled here so a rename breaks the build instead of
     /// silently reverting the dashboard to default buckets, which still draws a plausible line.
     /// </remarks>
-    public const string PulseDurationInstrument = "dikuweb.pulse.duration";
+    public const string PulseDurationInstrument = "muwbta.pulse.duration";
 
     /// <inheritdoc cref="PulseDurationInstrument"/>
-    public const string CommandLatencyInstrument = "dikuweb.command.latency";
+    public const string CommandLatencyInstrument = "muwbta.command.latency";
 
     private readonly Meter _meter;
     private readonly Histogram<double> _pulseDuration;
@@ -70,13 +70,13 @@ public sealed class EngineMetrics : IDisposable
             description: "Gateway acceptance to handler completion. The in-process part of the §11 command target.");
 
         _commands = _meter.CreateCounter<long>(
-            "dikuweb.commands.handled",
+            "muwbta.commands.handled",
             description: "Player commands executed by the loop.");
 
         // Counted as well as logged. The log says which pulses were slow; the counter says how
         // often, which is the question you ask when deciding whether it matters.
         _slowPulses = _meter.CreateCounter<long>(
-            "dikuweb.pulse.over_budget",
+            "muwbta.pulse.over_budget",
             description: "Pulses that exceeded the §11 budget.");
     }
 
@@ -95,12 +95,12 @@ public sealed class EngineMetrics : IDisposable
         ArgumentNullException.ThrowIfNull(roomCount);
 
         _meter.CreateObservableGauge(
-            "dikuweb.sessions.active",
+            "muwbta.sessions.active",
             playerCount,
             description: "Characters currently in the world. §11 targets 200 on one process.");
 
         _meter.CreateObservableGauge(
-            "dikuweb.rooms.loaded",
+            "muwbta.rooms.loaded",
             roomCount,
             description: "Rooms held in memory.");
     }

@@ -16,7 +16,7 @@ namespace Muwbta.Server.Tests;
 /// It cannot catch the naming problem that actually bit while building this, and that is worth
 /// writing down rather than pretending otherwise. Prometheus 3 negotiates for UTF-8 metric names
 /// at scrape time and stores what the exporter calls them, so it held
-/// <c>dikuweb.pulse.duration_milliseconds_bucket</c> — with dots — while an ordinary HTTP fetch of
+/// <c>muwbta.pulse.duration_milliseconds_bucket</c> — with dots — while an ordinary HTTP fetch of
 /// the same endpoint showed underscores, because a plain fetch does not send the header that asks
 /// for UTF-8. The names Prometheus keeps are not the names this test sees. That gap is closed in
 /// <c>tools/monitoring/prometheus.yml</c> by escaping to underscores, and nothing in .NET can
@@ -39,9 +39,9 @@ public sealed class MetricsEndpointTests(PostgresFixture postgres)
         // Counters with no observations are not exported at all, so the two gauges and the pulse
         // histogram are the only three that can be asserted on an idle host. That is not a gap:
         // it is the same reason the dashboard's command panels read "No data" on a quiet server.
-        Assert.Contains("dikuweb_pulse_duration_milliseconds", body, StringComparison.Ordinal);
-        Assert.Contains("dikuweb_rooms_loaded", body, StringComparison.Ordinal);
-        Assert.Contains("dikuweb_sessions_active", body, StringComparison.Ordinal);
+        Assert.Contains("muwbta_pulse_duration_milliseconds", body, StringComparison.Ordinal);
+        Assert.Contains("muwbta_rooms_loaded", body, StringComparison.Ordinal);
+        Assert.Contains("muwbta_sessions_active", body, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -65,7 +65,7 @@ public sealed class MetricsEndpointTests(PostgresFixture postgres)
         {
             body = await client.GetStringAsync(new Uri("/metrics", UriKind.Relative));
 
-            if (body.Contains("dikuweb_pulse_duration_milliseconds", StringComparison.Ordinal))
+            if (body.Contains("muwbta_pulse_duration_milliseconds", StringComparison.Ordinal))
             {
                 return body;
             }
@@ -108,8 +108,8 @@ public sealed class MetricsEndpointTests(PostgresFixture postgres)
         // Views bind to an instrument by name. Spelled as constants so a rename breaks the build
         // rather than silently reverting the dashboard to default buckets — which still draws a
         // plausible line, which is the whole problem.
-        Assert.Equal("dikuweb.pulse.duration", EngineMetrics.PulseDurationInstrument);
-        Assert.Equal("dikuweb.command.latency", EngineMetrics.CommandLatencyInstrument);
+        Assert.Equal("muwbta.pulse.duration", EngineMetrics.PulseDurationInstrument);
+        Assert.Equal("muwbta.command.latency", EngineMetrics.CommandLatencyInstrument);
         Assert.Equal("Muwbta.Engine", EngineMetrics.MeterName);
     }
 }

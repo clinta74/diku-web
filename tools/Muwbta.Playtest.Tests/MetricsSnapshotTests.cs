@@ -19,30 +19,30 @@ public class MetricsSnapshotTests
     /// detail is the one worth pinning.
     /// </summary>
     private const string Exposition = """
-        # HELP dikuweb_pulse_duration_milliseconds Wall time for one game-loop pulse.
-        # TYPE dikuweb_pulse_duration_milliseconds histogram
-        dikuweb_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="0.10000000000000001"} 400
-        dikuweb_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="0.25"} 700
-        dikuweb_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="0.5"} 900
-        dikuweb_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="1"} 950
-        dikuweb_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="2"} 970
-        dikuweb_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="5"} 980
-        dikuweb_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="10"} 985
-        dikuweb_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="25"} 990
-        dikuweb_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="50"} 996
-        dikuweb_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="100"} 999
-        dikuweb_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="250"} 1000
-        dikuweb_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="+Inf"} 1000
-        dikuweb_pulse_duration_milliseconds_count{otel_scope_name="Muwbta.Engine"} 1000
-        dikuweb_pulse_duration_milliseconds_sum{otel_scope_name="Muwbta.Engine"} 512.5
-        # TYPE dikuweb_pulse_over_budget_total counter
-        dikuweb_pulse_over_budget_total{otel_scope_name="Muwbta.Engine"} 10
-        # TYPE dikuweb_commands_handled_total counter
-        dikuweb_commands_handled_total{otel_scope_name="Muwbta.Engine"} 4200
-        # TYPE dikuweb_sessions_active gauge
-        dikuweb_sessions_active{otel_scope_name="Muwbta.Engine"} 200
-        # TYPE dikuweb_rooms_loaded gauge
-        dikuweb_rooms_loaded{otel_scope_name="Muwbta.Engine"} 143
+        # HELP muwbta_pulse_duration_milliseconds Wall time for one game-loop pulse.
+        # TYPE muwbta_pulse_duration_milliseconds histogram
+        muwbta_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="0.10000000000000001"} 400
+        muwbta_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="0.25"} 700
+        muwbta_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="0.5"} 900
+        muwbta_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="1"} 950
+        muwbta_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="2"} 970
+        muwbta_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="5"} 980
+        muwbta_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="10"} 985
+        muwbta_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="25"} 990
+        muwbta_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="50"} 996
+        muwbta_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="100"} 999
+        muwbta_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="250"} 1000
+        muwbta_pulse_duration_milliseconds_bucket{otel_scope_name="Muwbta.Engine",le="+Inf"} 1000
+        muwbta_pulse_duration_milliseconds_count{otel_scope_name="Muwbta.Engine"} 1000
+        muwbta_pulse_duration_milliseconds_sum{otel_scope_name="Muwbta.Engine"} 512.5
+        # TYPE muwbta_pulse_over_budget_total counter
+        muwbta_pulse_over_budget_total{otel_scope_name="Muwbta.Engine"} 10
+        # TYPE muwbta_commands_handled_total counter
+        muwbta_commands_handled_total{otel_scope_name="Muwbta.Engine"} 4200
+        # TYPE muwbta_sessions_active gauge
+        muwbta_sessions_active{otel_scope_name="Muwbta.Engine"} 200
+        # TYPE muwbta_rooms_loaded gauge
+        muwbta_rooms_loaded{otel_scope_name="Muwbta.Engine"} 143
         """;
 
     private static MetricsSnapshot Snapshot() =>
@@ -99,7 +99,7 @@ public class MetricsSnapshotTests
     {
         var snapshot = Snapshot();
 
-        // The instrument is dikuweb.pulse.over_budget; the exporter renames it with _total.
+        // The instrument is muwbta.pulse.over_budget; the exporter renames it with _total.
         Assert.Equal(10, snapshot.PulsesOverBudget);
         Assert.Equal(4200, snapshot.CommandsHandled);
 

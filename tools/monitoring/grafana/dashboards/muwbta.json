@@ -1,8 +1,8 @@
 {
-  "uid": "dikuweb-engine",
-  "title": "diku-web engine",
+  "uid": "muwbta-engine",
+  "title": "Muwbta engine",
   "description": "The PLAN.md §11 targets, measured. Panels are ordered the way an incident reads: is it up, is the loop keeping time, is anything queued behind it.",
-  "tags": ["dikuweb"],
+  "tags": ["muwbta"],
   "timezone": "utc",
   "schemaVersion": 39,
   "version": 1,
@@ -15,9 +15,9 @@
       "title": "Server",
       "description": "Prometheus's own view of whether the process answers. The one signal a push pipeline could not give us.",
       "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "datasource": { "type": "prometheus", "uid": "muwbta-prometheus" },
       "targets": [
-        { "refId": "A", "expr": "up{job=\"dikuweb\"}", "instant": true }
+        { "refId": "A", "expr": "up{job=\"muwbta\"}", "instant": true }
       ],
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"] },
@@ -41,9 +41,9 @@
       "title": "Sessions",
       "description": "§11 targets 200 concurrent sessions on one process.",
       "gridPos": { "h": 4, "w": 5, "x": 4, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "datasource": { "type": "prometheus", "uid": "muwbta-prometheus" },
       "targets": [
-        { "refId": "A", "expr": "dikuweb_sessions_active", "instant": true, "legendFormat": "in the world" }
+        { "refId": "A", "expr": "muwbta_sessions_active", "instant": true, "legendFormat": "in the world" }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
       "fieldConfig": {
@@ -66,9 +66,9 @@
       "title": "Rooms loaded",
       "description": "The world the loop is actually holding. A drop here after a deploy means content did not come back.",
       "gridPos": { "h": 4, "w": 5, "x": 9, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "datasource": { "type": "prometheus", "uid": "muwbta-prometheus" },
       "targets": [
-        { "refId": "A", "expr": "dikuweb_rooms_loaded", "instant": true }
+        { "refId": "A", "expr": "muwbta_rooms_loaded", "instant": true }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "none", "graphMode": "none" },
       "fieldConfig": { "defaults": {}, "overrides": [] }
@@ -79,9 +79,9 @@
       "title": "Pulses over budget (1h)",
       "description": "Counted as well as logged. The log says which pulses were slow; this says how often, which is the question you ask when deciding whether it matters. Absent entirely until the first one happens — a counter with no observations is not exported.",
       "gridPos": { "h": 4, "w": 5, "x": 14, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "datasource": { "type": "prometheus", "uid": "muwbta-prometheus" },
       "targets": [
-        { "refId": "A", "expr": "sum(increase(dikuweb_pulse_over_budget_total[1h])) or vector(0)", "instant": true }
+        { "refId": "A", "expr": "sum(increase(muwbta_pulse_over_budget_total[1h])) or vector(0)", "instant": true }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
       "fieldConfig": {
@@ -105,9 +105,9 @@
       "title": "Commands / sec",
       "description": "Load on the single writer.",
       "gridPos": { "h": 4, "w": 5, "x": 19, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "datasource": { "type": "prometheus", "uid": "muwbta-prometheus" },
       "targets": [
-        { "refId": "A", "expr": "sum(rate(dikuweb_commands_handled_total[5m])) or vector(0)", "instant": true }
+        { "refId": "A", "expr": "sum(rate(muwbta_commands_handled_total[5m])) or vector(0)", "instant": true }
       ],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "none", "graphMode": "area" },
       "fieldConfig": { "defaults": { "decimals": 2, "unit": "reqps" }, "overrides": [] }
@@ -118,21 +118,21 @@
       "title": "Pulse duration — §11 target: p99 under 25 ms",
       "description": "The load-bearing panel. A healthy pulse is well under a millisecond against a 250 ms budget, so the y-axis is logarithmic: on a linear scale the whole distribution is a flat line along the bottom until the moment it is already too late. The red line is the budget.",
       "gridPos": { "h": 9, "w": 12, "x": 0, "y": 4 },
-      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "datasource": { "type": "prometheus", "uid": "muwbta-prometheus" },
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.99, sum(rate(dikuweb_pulse_duration_milliseconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(muwbta_pulse_duration_milliseconds_bucket[5m])) by (le))",
           "legendFormat": "p99"
         },
         {
           "refId": "B",
-          "expr": "histogram_quantile(0.95, sum(rate(dikuweb_pulse_duration_milliseconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(muwbta_pulse_duration_milliseconds_bucket[5m])) by (le))",
           "legendFormat": "p95"
         },
         {
           "refId": "C",
-          "expr": "histogram_quantile(0.50, sum(rate(dikuweb_pulse_duration_milliseconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(muwbta_pulse_duration_milliseconds_bucket[5m])) by (le))",
           "legendFormat": "median"
         }
       ],
@@ -166,16 +166,16 @@
       "title": "Command latency, in-process — §11 target: p95 under 150 ms end to end",
       "description": "Gateway acceptance to handler completion: the half of 'command to first SSE byte' that this process controls. The network half is not measurable from in here, so this being under target is necessary and not sufficient.",
       "gridPos": { "h": 9, "w": 12, "x": 12, "y": 4 },
-      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "datasource": { "type": "prometheus", "uid": "muwbta-prometheus" },
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(dikuweb_command_latency_milliseconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(muwbta_command_latency_milliseconds_bucket[5m])) by (le))",
           "legendFormat": "p95"
         },
         {
           "refId": "B",
-          "expr": "histogram_quantile(0.50, sum(rate(dikuweb_command_latency_milliseconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(muwbta_command_latency_milliseconds_bucket[5m])) by (le))",
           "legendFormat": "median"
         }
       ],
@@ -204,7 +204,7 @@
       "title": "GC pause and thread pool queue",
       "description": "Here because the loop is one thread that must not be starved (§2.1). In a request/response service a GC pause costs one slow response; here it is the whole world stopping. A thread-pool queue that will not drain is the same symptom from the other direction.",
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
-      "datasource": { "type": "prometheus", "uid": "dikuweb-prometheus" },
+      "datasource": { "type": "prometheus", "uid": "muwbta-prometheus" },
       "targets": [
         {
           "refId": "A",
