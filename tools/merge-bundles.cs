@@ -1,4 +1,4 @@
-#:project ../src/DikuWeb.Server/DikuWeb.Server.csproj
+#:project ../src/Muwbta.Server/Muwbta.Server.csproj
 #:property JsonSerializerIsReflectionEnabledByDefault=true
 
 // Merges several WorldBundle files into one, so a whole world imports in a single upload.
@@ -27,7 +27,7 @@
 // The rules themselves run in `dotnet test`, which has no such cache - that is the authority, and
 // this is the convenience.
 
-using DikuWeb.Server.Building;
+using Muwbta.Server.Building;
 
 var inputs = new List<string>();
 string? output = null;

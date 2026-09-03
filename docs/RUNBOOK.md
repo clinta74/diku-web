@@ -372,7 +372,7 @@ Named rather than hidden.
 
 ## 8. Metrics
 
-`EngineMetrics` publishes six instruments on the `DikuWeb.Engine` meter; `docker-compose.prod.yml`
+`EngineMetrics` publishes six instruments on the `Muwbta.Engine` meter; `docker-compose.prod.yml`
 runs Prometheus and Grafana against them. Dashboard at `:3000`, and the four §11 targets are the
 four panels.
 

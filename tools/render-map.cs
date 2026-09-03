@@ -1,4 +1,4 @@
-#:project ../src/DikuWeb.Server/DikuWeb.Server.csproj
+#:project ../src/Muwbta.Server/Muwbta.Server.csproj
 #:property JsonSerializerIsReflectionEnabledByDefault=true
 #:property PublishAot=false
 
@@ -19,7 +19,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using DikuWeb.Server.Building;
+using Muwbta.Server.Building;
 
 var realm = "ossara";
 var output = (string?)null;

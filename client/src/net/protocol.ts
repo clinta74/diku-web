@@ -1,5 +1,5 @@
 /**
- * Mirrors DikuWeb.Engine.Protocol. Kept hand-written rather than generated: the surface is
+ * Mirrors Muwbta.Engine.Protocol. Kept hand-written rather than generated: the surface is
  * small, and a mismatch shows up immediately in the reducer tests.
  */
 

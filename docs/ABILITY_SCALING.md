@@ -5,7 +5,7 @@ line is the answer to it, and on what the balance harness found when the questio
 measured.
 
 Everything here comes from `content/` and `src/` on this branch, or from
-`tools/DikuWeb.Balance` run against them. Numbers marked **measured** come from 41 simulated fights
+`tools/Muwbta.Balance` run against them. Numbers marked **measured** come from 41 simulated fights
 per cell; everything else is derived from an authored number or a formula in the code.
 
 > **Measured against a fresh export of the live database** (`build/live.json`, 2026-08-21), not
@@ -78,7 +78,7 @@ Armour bypass does move the comparison in abilities' favour (typical mob armour 
 
 ## 4. What the harness measured
 
-`tools/DikuWeb.Balance` fights a Path at a level, in that realm's gear, against the median-health
+`tools/Muwbta.Balance` fights a Path at a level, in that realm's gear, against the median-health
 combat mob of a zone whose authored band contains that level. Then it fights the identical fight
 again with the ability bar switched off.
 
@@ -334,13 +334,13 @@ direct damage only. This is a content gap, not a curve.
 
 ## 8. The harness
 
-`tools/DikuWeb.Balance` — a console tool, in the shape of `tools/DikuWeb.Playtest`.
+`tools/Muwbta.Balance` — a console tool, in the shape of `tools/Muwbta.Playtest`.
 
 ```
-dotnet run --project tools/DikuWeb.Balance
-dotnet run --project tools/DikuWeb.Balance -- --content build/live.json
-dotnet run --project tools/DikuWeb.Balance -- --paths Temper --levels 40,50 --runs 200
-dotnet run --project tools/DikuWeb.Balance -- --csv build/balance.csv
+dotnet run --project tools/Muwbta.Balance
+dotnet run --project tools/Muwbta.Balance -- --content build/live.json
+dotnet run --project tools/Muwbta.Balance -- --paths Temper --levels 40,50 --runs 200
+dotnet run --project tools/Muwbta.Balance -- --csv build/balance.csv
 ```
 
 Four tables: the encounters and what they hit for; where each Path's damage comes from; what the

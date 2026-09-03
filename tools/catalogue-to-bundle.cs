@@ -1,4 +1,4 @@
-#:project ../src/DikuWeb.Server/DikuWeb.Server.csproj
+#:project ../src/Muwbta.Server/Muwbta.Server.csproj
 #:property JsonSerializerIsReflectionEnabledByDefault=true
 #:property PublishAot=false
 
@@ -14,8 +14,8 @@
 // builder, exported, and merged into content is how a change travels now. Writing content back
 // into C# would put the two in a race.
 
-using DikuWeb.Domain.Abilities;
-using DikuWeb.Server.Building;
+using Muwbta.Domain.Abilities;
+using Muwbta.Server.Building;
 
 string output = "content/abilities.json";
 

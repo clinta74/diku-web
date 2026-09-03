@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Muwbta.Domain\Muwbta.Domain.csproj" />
+  </ItemGroup>
+
+  <!--
+    Framework reference rather than packages: the engine needs ILogger, hosted services,
+    and Channels, all of which ship in the shared framework. The app host supplies providers.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <!--
+    So the tests can assert that optional collaborators were actually supplied by the container.
+    A missing template cache degrades combat silently rather than throwing, which is exactly the
+    kind of regression only a container-resolution test can catch.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Muwbta.Engine.Tests" />
+  </ItemGroup>
+
+</Project>

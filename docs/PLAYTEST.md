@@ -4,8 +4,8 @@ A standalone application that logs characters into a running world, drives them 
 plans, and records everything every session saw — for a person to read.
 
 ```
-dotnet run --project tools/DikuWeb.Playtest -- --server http://localhost:5050
-dotnet run --project tools/DikuWeb.Playtest -- --server http://localhost:5050 --plans tools/DikuWeb.Playtest/plans
+dotnet run --project tools/Muwbta.Playtest -- --server http://localhost:5050
+dotnet run --project tools/Muwbta.Playtest -- --server http://localhost:5050 --plans tools/Muwbta.Playtest/plans
 ```
 
 It writes a run directory and prints a `file://` link to `index.html`.
@@ -39,7 +39,7 @@ suite that CI learns to ignore.
   of magnitude slower and flakier than speaking the protocol.
 
 Meanwhile the protocol plumbing already existed here and was already correct: the SSE frame parser
-is lifted from `tests/DikuWeb.Server.Tests/Infrastructure/SseReader.cs`, which had already solved
+is lifted from `tests/Muwbta.Server.Tests/Infrastructure/SseReader.cs`, which had already solved
 the two failures that make hand-rolled SSE readers flaky.
 
 ## How a plan is written
@@ -105,7 +105,7 @@ text.
 
 ## Design
 
-Five pieces, in `tools/DikuWeb.Playtest/`:
+Five pieces, in `tools/Muwbta.Playtest/`:
 
 | Piece | What it is |
 |---|---|
@@ -136,7 +136,7 @@ tears it down; that is the only mode that should.
 
 *(If a server does outlive the shell that started it, that is `dotnet run` — it spawns the app as a
 child and killing the wrapper does not take the child with it. That orphan is what locks build
-outputs into MSB3021. `Get-Process DikuWeb.Server | Stop-Process -Force`.)*
+outputs into MSB3021. `Get-Process Muwbta.Server | Stop-Process -Force`.)*
 
 **It cleans up its own characters.** A janitor runs after every run — one Admin actor that deletes
 every character the run created, by the name the world actually gave it. On wherever an admin
@@ -382,6 +382,6 @@ actual meaning — but a plan about the talk → fetch → deliver loop would ne
 
 ## The apparatus is a client
 
-It references `DikuWeb.Domain` and nothing else. If it ever needs `Engine` or `Server` to work,
+It references `Muwbta.Domain` and nothing else. If it ever needs `Engine` or `Server` to work,
 that is a finding about the protocol rather than a reason to add a reference — and no production
 code should ever change to accommodate it.

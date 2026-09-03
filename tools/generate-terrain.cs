@@ -1,4 +1,4 @@
-#:project ../src/DikuWeb.Server/DikuWeb.Server.csproj
+#:project ../src/Muwbta.Server/Muwbta.Server.csproj
 #:property JsonSerializerIsReflectionEnabledByDefault=true
 #:property PublishAot=false
 
@@ -19,7 +19,7 @@
 
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using DikuWeb.Server.Building;
+using Muwbta.Server.Building;
 
 if (args.Length == 0 || args.Length % 2 != 0)
 {

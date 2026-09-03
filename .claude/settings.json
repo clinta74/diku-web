@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(cd e:/Projects/diku-web; Start-Process -FilePath \"dotnet\" -ArgumentList \"run\",\"--project\",\"src/DikuWeb.Server\",\"--urls\",\"http://localhost:5199\",\"--no-build\" -RedirectStandardOutput \"$env:TEMP\\\\dw2.log\" -RedirectStandardError \"$env:TEMP\\\\dw2err.log\" -NoNewWindow; Start-Sleep -Seconds 12; try { \\(Invoke-WebRequest \"http://localhost:5199/health\" -UseBasicParsing\\).StatusCode } catch { $_.Exception.Message })",
+      "PowerShell(cd e:/Projects/diku-web; Start-Process -FilePath \"dotnet\" -ArgumentList \"run\",\"--project\",\"src/Muwbta.Server\",\"--urls\",\"http://localhost:5199\",\"--no-build\" -RedirectStandardOutput \"$env:TEMP\\\\dw2.log\" -RedirectStandardError \"$env:TEMP\\\\dw2err.log\" -NoNewWindow; Start-Sleep -Seconds 12; try { \\(Invoke-WebRequest \"http://localhost:5199/health\" -UseBasicParsing\\).StatusCode } catch { $_.Exception.Message })",
       "Bash(cd /tmp)",
       "Bash(cat tgtname.txt)",
       "Bash(echo \"=== promote via API ===\")",

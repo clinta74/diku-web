@@ -22,7 +22,7 @@ describe('the offered effects', () => {
   })
 
   it('names effect keys the engine registry actually has', () => {
-    // Transcribed from DikuWeb.Domain/Abilities/Effects. A key with no executor behind it is an
+    // Transcribed from Muwbta.Domain/Abilities/Effects. A key with no executor behind it is an
     // attack that swings for damage and applies nothing, with no error anywhere.
     const known = [
       'damage.physical',

@@ -2,7 +2,7 @@
  * Every ability effect and the parameters it reads — and, separately, the subset a mob attack may
  * carry as a rider.
  *
- * Transcribed from the executors in `DikuWeb.Domain/Abilities/Effects`. They read parameters by
+ * Transcribed from the executors in `Muwbta.Domain/Abilities/Effects`. They read parameters by
  * name and **skip anything they do not recognise**, so a plausible-but-wrong key produces an
  * effect that runs with defaults and reports nothing — which is why these are fields rather than
  * a free-text bag.

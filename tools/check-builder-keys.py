@@ -51,11 +51,11 @@ REPO = Path(__file__).resolve().parent.parent
 
 # Where the engine names the keys it reads off a stat bag or an effect's parameters.
 ENGINE_SOURCES = [
-    ('src', 'DikuWeb.Domain', 'Combat'),
-    ('src', 'DikuWeb.Domain', 'Inhabitants'),
-    ('src', 'DikuWeb.Domain', 'Abilities', 'Effects'),
-    ('src', 'DikuWeb.Engine', 'Spawning'),
-    ('src', 'DikuWeb.Engine', 'Systems'),
+    ('src', 'Muwbta.Domain', 'Combat'),
+    ('src', 'Muwbta.Domain', 'Inhabitants'),
+    ('src', 'Muwbta.Domain', 'Abilities', 'Effects'),
+    ('src', 'Muwbta.Engine', 'Spawning'),
+    ('src', 'Muwbta.Engine', 'Systems'),
 ]
 
 # The forms whose keys are checked, and the shape their entries take.

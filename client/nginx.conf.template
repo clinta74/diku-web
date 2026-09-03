@@ -1,4 +1,4 @@
-# Minimal nginx configuration for DikuWeb SPA + API proxy
+# Minimal nginx configuration for Muwbta SPA + API proxy
 # Serves React app on / and proxies /api to backend
 #
 # A template, not a finished config. The nginx image's entrypoint runs envsubst over everything in

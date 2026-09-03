@@ -1,4 +1,4 @@
-# DikuWeb Docker Production Environment Setup - Summary
+# Muwbta Docker Production Environment Setup - Summary
 
 ## Files Created
 

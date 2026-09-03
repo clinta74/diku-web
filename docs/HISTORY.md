@@ -773,7 +773,7 @@ here for the same reason the phases above were.
       (`DigThrottle` predates this and still covers `dig` on its own, guarding against a held key
       carving forty rooms rather than against load.)
 - [x] **Instrumented, with no exporter** — `EngineMetrics`, six instruments on a meter named
-      `DikuWeb.Engine`: pulse duration, pulses over budget, command latency, commands handled,
+      `Muwbta.Engine`: pulse duration, pulses over budget, command latency, commands handled,
       active sessions, rooms loaded. All `System.Diagnostics.Metrics` primitives from the base
       library, so **nothing was added to the dependency graph**.
       The line is drawn there deliberately: instrumentation has to live in the code, but where it

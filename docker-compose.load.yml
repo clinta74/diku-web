@@ -131,7 +131,7 @@ services:
   runner:
     build:
       context: .
-      dockerfile: tools/DikuWeb.Playtest/Dockerfile
+      dockerfile: tools/Muwbta.Playtest/Dockerfile
     container_name: dikuweb-load-runner
     profiles: ["run"]
 

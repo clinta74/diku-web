@@ -1,4 +1,4 @@
-#:project ../src/DikuWeb.Server/DikuWeb.Server.csproj
+#:project ../src/Muwbta.Server/Muwbta.Server.csproj
 #:property JsonSerializerIsReflectionEnabledByDefault=true
 
 // Checks a WorldBundle JSON file before it is imported.
@@ -31,7 +31,7 @@
 // The rules themselves run in `dotnet test`, which has no such cache - that is the authority, and
 // this is the convenience.
 
-using DikuWeb.Server.Building;
+using Muwbta.Server.Building;
 
 if (args.Length == 0)
 {

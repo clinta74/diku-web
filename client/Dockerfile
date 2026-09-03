@@ -1,4 +1,4 @@
-# Multi-stage build for DikuWeb React client
+# Multi-stage build for Muwbta React client
 # Stage 1: Build
 #
 # Node 24 is the current Active LTS. Nothing from this stage is shipped - only /src/dist crosses

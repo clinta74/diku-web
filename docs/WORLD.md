@@ -142,7 +142,7 @@ above them.
 ## 3. The Reaches
 
 Five realms, each a `World` row. `strength` composes as `world × zone` and level moves linearly
-with it ([MobLevel.cs](../src/DikuWeb.Domain/Inhabitants/MobLevel.cs)), so with a mob chassis
+with it ([MobLevel.cs](../src/Muwbta.Domain/Inhabitants/MobLevel.cs)), so with a mob chassis
 authored at levels 1–10 (§7.1) a realm's world-level `strength` is about **its band ceiling ÷ 10,
 less the ~10% the zone dials add back**.
 
@@ -155,7 +155,7 @@ less the ~10% the zone dials add back**.
 | `the-unlit` | 46–50 | 4.7 | 4.7 | **0.0** | 0.0 | none |
 
 **`xp` tracks `strength`, and that is forced rather than chosen.** Required XP per level is
-`1000·L·(L−1)/2` ([XpProgression.cs](../src/DikuWeb.Domain/Characters/XpProgression.cs)), so the XP
+`1000·L·(L−1)/2` ([XpProgression.cs](../src/Muwbta.Domain/Characters/XpProgression.cs)), so the XP
 needed for one more level grows linearly in `L`. Level also grows linearly in `strength`. Setting
 `xp = strength` therefore keeps a kill worth the same fraction of a level everywhere in the game,
 which is the only setting that does.
@@ -174,7 +174,7 @@ something without writing a word of prose:
 - **Nemhal's economy is dying** (`itemValue` 0.8). Its things are worth less than they were and
   everyone there knows it.
 - **The Unlit has no economy at all** (`gold` 0.0, `itemValue` 0.0). A zero multiplier legitimately
-  means *none* ([Multipliers.cs](../src/DikuWeb.Domain/Worlds/Multipliers.cs) — `xp`, `gold` and
+  means *none* ([Multipliers.cs](../src/Muwbta.Domain/Worlds/Multipliers.cs) — `xp`, `gold` and
   `itemValue` floor at 0 rather than 1), so coin simply does not drop past the last gate. It is the
   cleanest statement in the design: down here, there is nothing to buy and nobody to buy it from.
 
@@ -199,7 +199,7 @@ are the only things in those Reaches that living people built.
 
 Sixteen zones. `S` is the composed `world × zone` strength; `min`/`max` are `Zone.MinLevel` and
 `Zone.MaxLevel`. **`min` does real work** — effective level is floored at it
-([MobLevel.cs:75](../src/DikuWeb.Domain/Inhabitants/MobLevel.cs#L75)), which is how a low chassis
+([MobLevel.cs:75](../src/Muwbta.Domain/Inhabitants/MobLevel.cs#L75)), which is how a low chassis
 mob gets lifted into band instead of becoming worthless filler. This is the exact defect
 `PlayTestingNotes.md` records: *"both zones leave every multiplier at 1.0, and both declare
 `min_level` 1 — so nothing gets lifted."*
@@ -226,7 +226,7 @@ mob gets lifted into band instead of becoming worthless filler. This is the exac
 | `the-unlit.the-regard` | **Story** — Act V | none | 48–50 | 1.06 | 4.98 | — | `noRecall`, `dark` | ~9 |
 
 Every flag named above is in the registry
-([RoomFlags.cs](../src/DikuWeb.Domain/Worlds/RoomFlags.cs)). **No new flag is required by this
+([RoomFlags.cs](../src/Muwbta.Domain/Worlds/RoomFlags.cs)). **No new flag is required by this
 design.** Flags are set at the zone level wherever they apply to the whole zone — that is what
 zone flags are for, and it keeps `peaceful` off sixteen individual room rows.
 
@@ -319,7 +319,7 @@ That last row is the payoff, and it is worth authoring the other four carefully 
 ### 6.1 Bands interlock, and the taper is why
 
 A character earns nothing from a mob below `level / 2`
-([XpRelevance.cs](../src/DikuWeb.Domain/Characters/XpRelevance.cs)) and full value from a mob at or
+([XpRelevance.cs](../src/Muwbta.Domain/Characters/XpRelevance.cs)) and full value from a mob at or
 above their own level, on a straight line between. So the design constraint is not "cover every
 level" — it is **every level must have something at or above it that is reachable.**
 
@@ -430,7 +430,7 @@ Eight slots exist (`ItemSlot`: Head, Chest, Hands, Legs, Feet, MainHand, OffHand
 spine is **one full set per realm**, five sets, plus per-act quest rewards.
 
 **There is no item-power dial, so the mob trick does not transfer.**
-[ItemSpawner.cs](../src/DikuWeb.Engine/Spawning/ItemSpawner.cs) copies `BaseStats` verbatim and
+[ItemSpawner.cs](../src/Muwbta.Engine/Spawning/ItemSpawner.cs) copies `BaseStats` verbatim and
 resolves only `ItemValue`, into the price. **Each realm's set is authored at its own final
 numbers.**
 
@@ -576,9 +576,9 @@ is a personal act, and it is the one thing too large to have a true name.
 ### 9.2 Keys
 
 `RoomKey` is exactly three dot-separated segments of `[a-z0-9-]`, no leading or trailing hyphen,
-128 characters maximum ([RoomKey.cs](../src/DikuWeb.Domain/Worlds/RoomKey.cs)). A zone key must
+128 characters maximum ([RoomKey.cs](../src/Muwbta.Domain/Worlds/RoomKey.cs)). A zone key must
 begin with its world key plus a dot, which the engine enforces
-([WorldMutationApplier.cs:192](../src/DikuWeb.Engine/Mutations/WorldMutationApplier.cs#L192)).
+([WorldMutationApplier.cs:192](../src/Muwbta.Engine/Mutations/WorldMutationApplier.cs#L192)).
 
 | Kind | Convention | Example |
 |---|---|---|
@@ -601,7 +601,7 @@ room describes what is there, not how to feel about it.**
 <!-- canon:end -->
 <!--
   Everything above this line is embedded in the server and sent to the builder assist as its
-  standing context (src/DikuWeb.Server/Assist/Canon.cs). Everything below is authoring process -
+  standing context (src/Muwbta.Server/Assist/Canon.cs). Everything below is authoring process -
   true, useful, and not part of what the world is. A test fails if the canon above grows past the
   budget the model's context window allows, so if that test starts failing, the question is which
   section has stopped being canon rather than how to raise the number.
@@ -612,7 +612,7 @@ room describes what is there, not how to feel about it.**
 ### 10.1 How content lands
 
 Content is authored as **v6 `WorldBundle` JSON** checked into the repository and applied through
-`POST /api/builder/import` ([WorldBundle.cs](../src/DikuWeb.Server/Building/WorldBundle.cs)). The
+`POST /api/builder/import` ([WorldBundle.cs](../src/Muwbta.Server/Building/WorldBundle.cs)). The
 bundle carries worlds, zones, rooms with nested exits, item templates, mob templates, abilities,
 spawners, and quests — everything this document specifies and nothing player-owned.
 
@@ -626,7 +626,7 @@ Three properties of that path worth knowing before authoring against it:
   minted fresh ids would double every zone's population on the second run. Author the GUIDs once and
   keep them.
 - **Import is a merge, not a mirror.** There is no replace or delete mode
-  ([WorldImporter.cs](../src/DikuWeb.Server/Building/WorldImporter.cs)), so removing something from
+  ([WorldImporter.cs](../src/Muwbta.Server/Building/WorldImporter.cs)), so removing something from
   a bundle does not remove it from the world. Deletions are explicit API calls.
 
 **The world is authored.** As of 2026-08-15 all eighteen zones exist in `content/`: 224 rooms,
@@ -673,16 +673,16 @@ Three doors are worth having checked rather than assumed, and all three shut on 
 | Door | Where it leads | Why it shuts |
 |---|---|---|
 | A new character's first room | `options.StartingRoom` | Moves to `ossara.gatetown` |
-| `recall`, bound or not | bind point, else `StartingRoom` ([TravelCommands.cs:44](../src/DikuWeb.Engine/Commands/TravelCommands.cs#L44)) | Nobody is bound in Aldenmoor — production has no characters |
-| Death | `RespawnRoomKey ?? StartingRoom` ([CombatSystem.cs:1142](../src/DikuWeb.Engine/Systems/CombatSystem.cs#L1142)) | Same |
+| `recall`, bound or not | bind point, else `StartingRoom` ([TravelCommands.cs:44](../src/Muwbta.Engine/Commands/TravelCommands.cs#L44)) | Nobody is bound in Aldenmoor — production has no characters |
+| Death | `RespawnRoomKey ?? StartingRoom` ([CombatSystem.cs:1142](../src/Muwbta.Engine/Systems/CombatSystem.cs#L1142)) | Same |
 
 So the cost is smaller than this section used to claim, in three ways:
 
 - **Production never seeds Aldenmoor at all.** Seeding is gated behind `IsDevelopment()`
-  ([Program.cs:297](../src/DikuWeb.Server/Program.cs#L297)) — *"starter content, which is a fixture,
+  ([Program.cs:297](../src/Muwbta.Server/Program.cs#L297)) — *"starter content, which is a fixture,
   not schema."* After the migration squash there is nothing on the production server to delete.
 - **Moving the starting room is configuration, not code.** `Engine__StartingRoom` is read at
-  [Program.cs:65](../src/DikuWeb.Server/Program.cs#L65) and overrides the default. The constant in
+  [Program.cs:65](../src/Muwbta.Server/Program.cs#L65) and overrides the default. The constant in
   `EngineContracts.cs` stays as it is and remains correct for development and tests.
 - **The four playtest plans keep working**, and are better for it: a retired Millbrook stops changing,
   which makes it a steadier regression fixture than a zone under active balance work.
@@ -691,7 +691,7 @@ Keeping it also leaves a builder sandbox that is not authored content — somewh
 engine behaviour without spawning test mobs into a zone players will see.
 
 **One thing genuinely must change**, and it is unrelated to whether Aldenmoor stays:
-[GameLoop.cs:489](../src/DikuWeb.Engine/GameLoop.cs#L489) greets every player on every login with a
+[GameLoop.cs:489](../src/Muwbta.Engine/GameLoop.cs#L489) greets every player on every login with a
 hardcoded `"Welcome to Aldenmoor"`, whichever world they are standing in. Tracked in
 `PlayTestingNotes.md`, to be done when the Gatetown rooms exist to point at.
 

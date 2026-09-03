@@ -20,7 +20,7 @@ This project uses Docker for the database in local development, and for full sta
 3. Run the application locally:
    ```bash
    # Terminal 1: Start .NET backend
-   dotnet run --project src/DikuWeb.Server
+   dotnet run --project src/Muwbta.Server
 
    # Terminal 2: Start React frontend
    cd client && npm run dev
@@ -72,7 +72,7 @@ docker-compose exec postgres psql -U dikuweb -d dikuweb
 ```bash
 # Terminal 1: Backend
 cd /path/to/diku-web
-dotnet run --project src/DikuWeb.Server
+dotnet run --project src/Muwbta.Server
 
 # Terminal 2: Frontend
 cd /path/to/diku-web/client

@@ -1,5 +1,5 @@
 # A leading-directory pattern here matches only at the root: `obj/` does NOT match
-# `src/DikuWeb.Server/obj/`. Every directory that occurs at more than one depth therefore needs
+# `src/Muwbta.Server/obj/`. Every directory that occurs at more than one depth therefore needs
 # `**/`, and the two that went wrong were the expensive ones. The host's per-project `obj/` was
 # being copied over the container's own restore output, so `project.assets.json` arrived naming
 # Windows package paths and the publish died inside FallbackPackagePathResolver. And
@@ -56,7 +56,7 @@ LICENSE
 
 # ...except the canon, which is build input rather than documentation.
 #
-# docs/WORLD.md is embedded into the server assembly (src/DikuWeb.Server/Assist/Canon.cs) and put
+# docs/WORLD.md is embedded into the server assembly (src/Muwbta.Server/Assist/Canon.cs) and put
 # in front of every builder-assist request. Excluding it does not degrade the assist; it fails the
 # compile with CS1566 "Error reading resource", which reads like a broken csproj and is really this
 # file. Same reasoning as .editorconfig above: the moment a document becomes something the build

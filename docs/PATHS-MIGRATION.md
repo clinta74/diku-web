@@ -28,7 +28,7 @@ This model needs no pathless fallback path, no path-switch operation, and no att
 
 ### 1. `PathDefinition` entity + `paths` table
 
-New `src/DikuWeb.Domain/Characters/PathDefinition.cs`:
+New `src/Muwbta.Domain/Characters/PathDefinition.cs`:
 
 - `Key` (slug, `^[a-z][a-z0-9-]*$`, max 32 — e.g. `warden`, `soldier`), `Name` (display), `Blurb` (picker text — moves `PATH_BLURBS` server-side), `Description`, `SortOrder`
 - `StartingVitals` (jsonb owned, reuse `Vitals`), `GrowthPerLevel` (jsonb, existing `StatGrowth` record), `FocusRegenRate` (double, replaces `FocusRateFor`)
@@ -38,7 +38,7 @@ New `src/DikuWeb.Domain/Characters/PathDefinition.cs`:
   - `passive.ambidextrous` → no params
   - Ramp formula (half-share at unlock → full at mastery) stays in code. Unknown passive keys/params = validator **warning**, code-side defaults apply.
 
-New `PathConfiguration` in Persistence (scalars as columns, vitals/growth/passives jsonb — matches existing conventions), DbSet on `DikuWebDbContext`.
+New `PathConfiguration` in Persistence (scalars as columns, vitals/growth/passives jsonb — matches existing conventions), DbSet on `MuwbtaDbContext`.
 
 ### 2. Schema migrations (ordinal map: 0→warden, 1→adept, 2→temper, 3→hallow)
 
@@ -92,11 +92,11 @@ The enum itself is deleted from Domain code in Phase C (code, not schema).
 ## Files to touch (by area)
 
 - **Domain**: `CharacterPath.cs` (delete, Phase C), `PathDefinition.cs` (new), `Character.cs`, `Vitals.cs`, `PathGrowth.cs`, `AbilityProgression.cs`, `Ability.cs` (Path→PathKey), `RegenCalculator.cs`, `VitalCalculator.cs`, `CharacterProgression.cs`, `ItemRules.cs`
-- **Persistence**: `PathConfiguration.cs` (new), `AbilityConfiguration.cs`, `CharacterConfiguration.cs`, `ItemTemplateConfiguration.cs`, `QuestConfiguration.cs`, `GameConfigurationConfiguration.cs`, `DikuWebDbContext.cs`, 3 migrations, `StarterWorldSeeder.cs`, `EfPathRepository` (new)
+- **Persistence**: `PathConfiguration.cs` (new), `AbilityConfiguration.cs`, `CharacterConfiguration.cs`, `ItemTemplateConfiguration.cs`, `QuestConfiguration.cs`, `GameConfigurationConfiguration.cs`, `MuwbtaDbContext.cs`, 3 migrations, `StarterWorldSeeder.cs`, `EfPathRepository` (new)
 - **Engine**: `PathCache` (new), `EngineContracts.cs` (EngineOptions.PathKeys), `GameLoop.cs` (cache load order, entry gate), `CombatSystem.cs` (:396, :409, :668, :821, :1428-1441), `RegenSystem.cs`, `AbilityLookup.cs`, `LevelUpUnlocks.cs`, `Mutations/WorldChange.cs` (UpsertPath/DeletePath, UpsertAbility.Path→string, config records), `WorldMutationApplier`, `PlayerView.cs` (:179, :280, :403, :424), `CommandRegistry.cs` (:358, :1026-1088, :1151, :1352), `AbilityCommands.cs`, `CombatCommands.cs`, `PartyCommands.cs`, `AdminWorldCommands.cs`, `QuestCommands.cs`
 - **Server**: `CharacterEndpoints.cs` (creation, list `available` flag, `/paths`), `GameEndpoints.cs` (enter gate), `BuilderEndpoints.cs`, `BuilderContracts.cs`, `BuilderQueries`, `WorldEditor`/`WorldWriter`/`WorldImporter`/`WorldExporter`, `WorldBundle.cs`, `AbilityValidator.cs`, `PathValidator.cs` (new), `BundleValidator`, `Program.cs` (`LoadActiveConfigurationAsync`)
 - **Client**: `AuthScreen.tsx`, `net/api.ts`, HUD, `builder/builderApi.ts`, `PathsTab`/`PathEditor` (new), `ItemTemplateEditor`, `QuestEditor`, `AbilityCreateDialog`, config editor, `pathPicker.test.tsx`
-- **Tools/tests/docs**: `tools/describe-abilities.cs` (**fixes pre-existing `CharacterPath.Shade` compile error**), `tools/DikuWeb.Playtest/PlanRunner.cs:125`, bundle tools; `AbilityContentTests.cs:30` (4-path array → read seeded paths), `PassiveProgressionTests`, `RegenCalculatorTests` (enum iteration → seeded-path fixtures), new PathValidator/PathCache/entry-gate tests; `ABILITIES.md`, `PLAN.md`, `content/paths.json`
+- **Tools/tests/docs**: `tools/describe-abilities.cs` (**fixes pre-existing `CharacterPath.Shade` compile error**), `tools/Muwbta.Playtest/PlanRunner.cs:125`, bundle tools; `AbilityContentTests.cs:30` (4-path array → read seeded paths), `PassiveProgressionTests`, `RegenCalculatorTests` (enum iteration → seeded-path fixtures), new PathValidator/PathCache/entry-gate tests; `ABILITIES.md`, `PLAN.md`, `content/paths.json`
 
 ## Phasing (each phase leaves the game working)
 

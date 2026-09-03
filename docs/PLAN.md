@@ -144,29 +144,29 @@ A watchdog logs any pulse exceeding its budget.
 
 ```
 diku-web/
-├─ DikuWeb.sln
+├─ Muwbta.sln
 ├─ Directory.Build.props            # shared TFM (net10.0), nullable, warnings-as-errors
 ├─ docker-compose.yml               # postgres:18 + adminer
 ├─ README.md                        # the only document in the root
 ├─ LICENSE
 ├─ docs/                            # this file, and everything else written down
 ├─ src/
-│  ├─ DikuWeb.Domain/               # entities, rules, scaling math, validation.
+│  ├─ Muwbta.Domain/               # entities, rules, scaling math, validation.
 │  │                                # ZERO external deps. NO coordinates.
-│  ├─ DikuWeb.Engine/               # game loop, systems, dispatch, world state
+│  ├─ Muwbta.Engine/               # game loop, systems, dispatch, world state
 │  │  ├─ Mutations/                 # builder edits applied on the loop
 │  │  └─ Presentation/              # RoomLayoutService — the only place x,y exists
-│  ├─ DikuWeb.Persistence/          # EF Core 10 + Npgsql, migrations, repos, seeder
-│  └─ DikuWeb.Server/               # ASP.NET Core: auth, REST, SSE, builder API, DI
+│  ├─ Muwbta.Persistence/          # EF Core 10 + Npgsql, migrations, repos, seeder
+│  └─ Muwbta.Server/               # ASP.NET Core: auth, REST, SSE, builder API, DI
 ├─ client/                          # React 19 + Vite + TypeScript
 │  └─ src/
 │     ├─ game/{map,room,scrollback,input,vitals}/
 │     ├─ builder/{tree,zone,room,grid,templates,spawners,canvas}/
 │     └─ {net,state}/
 └─ tests/
-   ├─ DikuWeb.Domain.Tests/
-   ├─ DikuWeb.Engine.Tests/
-   └─ DikuWeb.Server.Tests/
+   ├─ Muwbta.Domain.Tests/
+   ├─ Muwbta.Engine.Tests/
+   └─ Muwbta.Server.Tests/
 ```
 
 Dependency direction is one-way: `Server → Engine → Domain`, `Server → Persistence → Domain`.
@@ -450,11 +450,11 @@ The rules of play are untouched and stay classic MUD:
 | Pathing | Mobs wander room to room. They never path across cells. |
 
 This is enforced structurally, not by discipline: **Domain entities have no x,y field at all.**
-Coordinates live only in `DikuWeb.Engine/Presentation/RoomLayoutService`, which sits downstream
+Coordinates live only in `Muwbta.Engine/Presentation/RoomLayoutService`, which sits downstream
 of the rules and is consulted only when building `map` and `mapdelta` events. Game logic
 *cannot* read a position, because from Domain's perspective positions do not exist.
 
-An architecture test asserts this: no type in `DikuWeb.Domain` may declare a coordinate, and no
+An architecture test asserts this: no type in `Muwbta.Domain` may declare a coordinate, and no
 command handler may reference `RoomLayoutService`.
 
 *(The builder stores separate `editor_x, editor_y` on rooms for its zone canvas — §7.2. That is
@@ -2890,7 +2890,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
       every caller shares the proxy's address, so the auth limit is a site-wide cap until
       forwarded headers are honoured — which needs a trusted-proxy list this repo does not have.
 - [x] **Instrumented, with no exporter.** `EngineMetrics`, six instruments on a meter named
-      `DikuWeb.Engine`, all from `System.Diagnostics.Metrics` so nothing joined the dependency
+      `Muwbta.Engine`, all from `System.Diagnostics.Metrics` so nothing joined the dependency
       graph. Every pulse is recorded rather than only the slow ones — a log has no distribution,
       so one bad pulse and a p99 creeping up for a week look identical. Where it is sent is a
       deployment decision, made below.

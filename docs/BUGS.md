@@ -67,7 +67,7 @@ class. Only going and looking is, which is what #22–#24 are meant to replace.
 for you: {summary}"*, *"Still working on {name}?"* — and never in the voice it was written in.
 
 **Evidence.** The engine reads four keys out of `Quest.Dialogue`
-([QuestCommands.cs:114,122,346,715](../src/DikuWeb.Engine/Commands/QuestCommands.cs#L114)):
+([QuestCommands.cs:114,122,346,715](../src/Muwbta.Engine/Commands/QuestCommands.cs#L114)):
 `giverOffer`, `giverInProgress`, `giverComplete`, `turninReady`. The key histogram across all six
 bundles in `content/`:
 
@@ -96,13 +96,13 @@ finding that argues for it: a free-form bag is exactly where a vocabulary drifts
 server and the same character walks through.
 
 **Evidence.** `ApplyUpsertQuest`
-([WorldMutationApplier.cs:1245](../src/DikuWeb.Engine/Mutations/WorldMutationApplier.cs#L1245))
+([WorldMutationApplier.cs:1245](../src/Muwbta.Engine/Mutations/WorldMutationApplier.cs#L1245))
 builds the cached `Quest` from 18 fields. `RewardFlagKey` is not one of them. Every other layer
 carries it — the domain object, `QuestConfiguration`, `UpsertQuest`, `BuilderEndpoints`,
 `WorldBundle`, the exporter, the importer, and `WorldWriter`, which writes the row correctly.
 
 So the **database is right and the live cache is wrong**, and
-[QuestCommands.cs:809](../src/DikuWeb.Engine/Commands/QuestCommands.cs#L809) reads null and grants
+[QuestCommands.cs:809](../src/Muwbta.Engine/Commands/QuestCommands.cs#L809) reads null and grants
 nothing. A restart reloads the cache from the database and it works.
 
 **Blast radius.** `content/README.md` calls the four attunement flags *"the only progression lock"*
@@ -120,7 +120,7 @@ applier, so no test drives the live path. `RewardFlagKey` appears in no test fil
 **Symptom.** A character can wear an unbounded number of items in one slot and gets the armour of
 all of them.
 
-**Evidence.** [WorldState.cs:517](../src/DikuWeb.Engine/World/WorldState.cs#L517) (`PickUpItem`) and
+**Evidence.** [WorldState.cs:517](../src/Muwbta.Engine/World/WorldState.cs#L517) (`PickUpItem`) and
 `:532` (`DropItem`) both change ownership and leave `EquippedSlot` untouched. So:
 
 1. `wear ring` — `EquippedSlot = Trinket`.
@@ -147,7 +147,7 @@ never be able to see two items in one slot whichever path put them there.
 ## 9. `sell` bypasses the guards the other three exits enforce
 
 `Sell` resolves against `InventoryOf`, which returns equipped items too, and its only guard is
-`IsQuestItem` ([ShopCommands.cs:263](../src/DikuWeb.Engine/Commands/ShopCommands.cs#L263)). So you
+`IsQuestItem` ([ShopCommands.cs:263](../src/Muwbta.Engine/Commands/ShopCommands.cs#L263)). So you
 can **sell the weapon in your hand** — `destroy` refuses this explicitly — and **sell a `noDrop`
 item**, whose refusal in `drop` tells the player that destroying it is the only sanctioned way to be
 rid of it. The shop is an unsanctioned way that also pays.
@@ -160,8 +160,8 @@ rid of it. The shop is an unsanctioned way that also pays.
 templates on a deliberate scheme — `r` vermin, `c` flyers, `d` canines, `@` named NPCs. **`Mob` has
 no `Icon` property at all**, so unlike `ItemSpawner`, nothing copies it at spawn, and both render
 paths use `DisplayName[0]`
-([RoomLayoutService.cs:126](../src/DikuWeb.Engine/Presentation/RoomLayoutService.cs#L126),
-[PlayerView.cs:513](../src/DikuWeb.Engine/Presentation/PlayerView.cs#L513)).
+([RoomLayoutService.cs:126](../src/Muwbta.Engine/Presentation/RoomLayoutService.cs#L126),
+[PlayerView.cs:513](../src/Muwbta.Engine/Presentation/PlayerView.cs#L513)).
 
 Because nearly every mob name begins with an article, **the map is a field of lowercase `a`.** Item
 icons are read correctly, which is what makes the map look deliberate rather than broken.
@@ -170,7 +170,7 @@ icons are read correctly, which is what makes the map look deliberate rather tha
 
 ## 11. `stats` promises equipped bonuses and shows two thirds of nothing
 
-[CommandRegistry.cs:1282](../src/DikuWeb.Engine/Commands/CommandRegistry.cs#L1282) prints the
+[CommandRegistry.cs:1282](../src/Muwbta.Engine/Commands/CommandRegistry.cs#L1282) prints the
 heading unconditionally, then filters entries on `Key.Contains("Multiplier")`. The tally across
 `content/`: `armor` ×36, `damageMultiplier` ×35, `bonus` ×29, `defense` ×5. The filter admits one of
 the four. Every armour piece and every `bonus` item prints a heading with nothing under it.
@@ -198,7 +198,7 @@ was never updated. See #22 for the test that should have caught all three.
 ## 13. Mob AI narration bypasses `MobLabel`
 
 Five sites print `template.Name` raw — idle emote, wander leave and arrive, and both aggression
-lines ([MobAiSystem.cs:162,316,317,397,403](../src/DikuWeb.Engine/Inhabitants/MobAiSystem.cs#L162)).
+lines ([MobAiSystem.cs:162,316,317,397,403](../src/Muwbta.Engine/Inhabitants/MobAiSystem.cs#L162)).
 Every other narration path uses `MobLabel.For`. So in a room with two terrace crows, `look` and the
 combat log say *"a terrace crow (2)"* while the AI says *"a terrace crow"* — reintroducing the exact
 ambiguity `MobLabel` was written to close, on the lines a player sees most often.
@@ -264,7 +264,7 @@ made — it was the default of a field nothing read.
 
 Every other flag reader goes through `WorldState.IsFlagSet`, which resolves room → zone → world →
 default. `noMob` reads `room.Flags` directly at
-[MobAiSystem.cs:198](../src/DikuWeb.Engine/Inhabitants/MobAiSystem.cs#L198) and `:291`. A builder
+[MobAiSystem.cs:198](../src/Muwbta.Engine/Inhabitants/MobAiSystem.cs#L198) and `:291`. A builder
 who sets `noMob` on a zone — which the builder offers, and which the flags tab will show as "on,
 from zone" — gets a flag the AI ignores. No content sets it, which is why nothing has noticed.
 
@@ -366,7 +366,7 @@ either consumer reads every field.
 row, for months; `RewardFlagKey` (#7) never reaches the cache. Both were found by running the same
 throwaway script by hand.
 
-Make it a test in `tests/DikuWeb.Engine.Tests/Architecture/`, beside `CoordinateIsolationTests` —
+Make it a test in `tests/Muwbta.Engine.Tests/Architecture/`, beside `CoordinateIsolationTests` —
 the established precedent for enforcing a promise by scanning rather than by discipline.
 
 ---
@@ -773,8 +773,8 @@ so once the rat was dead the answer was "You don't see 'rat' here" and the check
 Movement is refused only for being in combat, so both members now walk out instead — unambiguous.
 
 ```
-dotnet run --project tools/DikuWeb.Playtest -- --server http://localhost:5050 \
-    --plans tools/DikuWeb.Playtest/plans
+dotnet run --project tools/Muwbta.Playtest -- --server http://localhost:5050 \
+    --plans tools/Muwbta.Playtest/plans
 ```
 
 ### Step 4 — Hosted target and world fixtures — **partly done, and partly overtaken**

@@ -29,7 +29,7 @@ cp .env.example .env          # defaults are fine for local work
 docker compose up -d
 
 # 2. Server - applies migrations and seeds the starter world on startup
-dotnet run --project src/DikuWeb.Server --urls http://localhost:5180
+dotnet run --project src/Muwbta.Server --urls http://localhost:5180
 
 # 3. Client (separate terminal)
 cd client
@@ -148,7 +148,7 @@ PLAN.md §10.
 
 ### Room flags
 
-Flags live in a registry in `DikuWeb.Domain/Worlds/RoomFlags.cs` and resolve **room → zone →
+Flags live in a registry in `Muwbta.Domain/Worlds/RoomFlags.cs` and resolve **room → zone →
 world → default**, nearest level wins. Adding one is a `Register(...)` line plus the code that
 reads it — no migration, and no client change either, since the editor renders its checkboxes
 from `GET /api/builder/room-flags`.
@@ -189,13 +189,13 @@ the live SSE stream, read incrementally rather than buffered. Docker must be run
 
 Two test groups are worth knowing about:
 
-- **Architecture tests** (`DikuWeb.Engine.Tests/Architecture`) assert that Domain declares no
+- **Architecture tests** (`Muwbta.Engine.Tests/Architecture`) assert that Domain declares no
   coordinates and that command handlers cannot reach `RoomLayoutService`. They exist so the
   room map stays cosmetic as the codebase grows — see PLAN.md §4.2. If one fails, the fix is
   almost never to loosen the test.
 - **Engine tests** run against a manual clock and a seeded RNG, so a "ten minutes of combat"
   test finishes in milliseconds and fails identically every time.
-- **Graceful-degradation tests** (`DikuWeb.Engine.Tests/Mutations`) cover every row of PLAN.md
+- **Graceful-degradation tests** (`Muwbta.Engine.Tests/Mutations`) cover every row of PLAN.md
   §7.4 one by one. Live editing means the world is *allowed* to be invalid, so the contract is
   that a mutation refuses rather than throws — a mutation that took down the loop would take the
   world down for every connected player.
@@ -204,12 +204,12 @@ Two test groups are worth knowing about:
 
 ```
 src/
-  DikuWeb.Domain/        entities, rules, RoomKey, RoomFlags registry. ZERO deps, no coordinates.
-  DikuWeb.Engine/        game loop, commands, world state, IGameClock, IRandomSource
+  Muwbta.Domain/        entities, rules, RoomKey, RoomFlags registry. ZERO deps, no coordinates.
+  Muwbta.Engine/        game loop, commands, world state, IGameClock, IRandomSource
     Mutations/           WorldChange + the applier that runs builder edits on the loop
     Presentation/        RoomLayoutService - the ONLY place x,y exists
-  DikuWeb.Persistence/   EF Core 10 + Npgsql, migrations, starter-world seeder
-  DikuWeb.Server/        ASP.NET Core: auth, characters, SSE, command endpoint
+  Muwbta.Persistence/   EF Core 10 + Npgsql, migrations, starter-world seeder
+  Muwbta.Server/        ASP.NET Core: auth, characters, SSE, command endpoint
     Admin/               role administration, admin_audit
     Building/            builder API, queries, world writer, content_audit
 client/                  React 19 + Vite + TypeScript
@@ -254,7 +254,7 @@ Domain references nothing — that isolation is what keeps the rules unit-testab
 volume must mount at `/var/lib/postgresql`, not `/var/lib/postgresql/data` as it was through
 PG 17. If you have an old volume, `docker compose down -v` and recreate.
 
-**`dotnet build` fails with a file lock on `DikuWeb.Server.exe`.** A server instance is still
+**`dotnet build` fails with a file lock on `Muwbta.Server.exe`.** A server instance is still
 running. Stop it before rebuilding.
 
 **Server tests fail to start a container.** Docker is not running, or the CLI cannot reach the

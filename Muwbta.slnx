@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Solution Version="0.1" MinimumVisualStudioVersion="17.0">
+  <Folder Name="/src/">
+    <Project Path="src/Muwbta.Domain/Muwbta.Domain.csproj" />
+    <Project Path="src/Muwbta.Engine/Muwbta.Engine.csproj" />
+    <Project Path="src/Muwbta.Persistence/Muwbta.Persistence.csproj" />
+    <Project Path="src/Muwbta.Server/Muwbta.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Muwbta.Domain.Tests/Muwbta.Domain.Tests.csproj" />
+    <Project Path="tests/Muwbta.Engine.Tests/Muwbta.Engine.Tests.csproj" />
+    <Project Path="tests/Muwbta.Server.Tests/Muwbta.Server.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Muwbta.Balance/Muwbta.Balance.csproj" />
+    <Project Path="tools/Muwbta.Playtest/Muwbta.Playtest.csproj" />
+    <Project Path="tools/Muwbta.Playtest.Tests/Muwbta.Playtest.Tests.csproj" />
+  </Folder>
+</Solution>

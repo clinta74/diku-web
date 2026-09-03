@@ -351,10 +351,10 @@ second was caught by asking what the apparatus was actually doing before believi
 
 | Piece | |
 |---|---|
-| [RoomLayoutService.cs](../src/DikuWeb.Engine/Presentation/RoomLayoutService.cs) | Viewer-agnostic map build; the span and allocation work |
-| [PlayerView.cs](../src/DikuWeb.Engine/Presentation/PlayerView.cs) | `MarkRoomChanged` / `FlushChangedRooms`, shared payloads |
-| [RoomBroadcast.cs](../src/DikuWeb.Engine/World/RoomBroadcast.cs) | Build-once-send-many for room prose |
+| [RoomLayoutService.cs](../src/Muwbta.Engine/Presentation/RoomLayoutService.cs) | Viewer-agnostic map build; the span and allocation work |
+| [PlayerView.cs](../src/Muwbta.Engine/Presentation/PlayerView.cs) | `MarkRoomChanged` / `FlushChangedRooms`, shared payloads |
+| [RoomBroadcast.cs](../src/Muwbta.Engine/World/RoomBroadcast.cs) | Build-once-send-many for room prose |
 | [self.ts](../client/src/state/self.ts) | The client half of the protocol change |
-| [RoomRefreshCoalescingTests.cs](../tests/DikuWeb.Engine.Tests/Presentation/RoomRefreshCoalescingTests.cs) | The invariants, pinned |
-| [SessionLivenessMonitor.cs](../src/DikuWeb.Server/Game/SessionLivenessMonitor.cs) | The coda: reaping clients that stopped saying they were there |
+| [RoomRefreshCoalescingTests.cs](../tests/Muwbta.Engine.Tests/Presentation/RoomRefreshCoalescingTests.cs) | The invariants, pinned |
+| [SessionLivenessMonitor.cs](../src/Muwbta.Server/Game/SessionLivenessMonitor.cs) | The coda: reaping clients that stopped saying they were there |
 | [PLAYTEST.md](PLAYTEST.md) | The load harness that produced every number here |

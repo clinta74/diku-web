@@ -1,4 +1,4 @@
-#:project ../src/DikuWeb.Server/DikuWeb.Server.csproj
+#:project ../src/Muwbta.Server/Muwbta.Server.csproj
 #:property JsonSerializerIsReflectionEnabledByDefault=true
 #:property PublishAot=false
 
@@ -11,17 +11,17 @@
 // DbContext - so what lands on disk is the file the endpoint would have sent.
 //
 // **It exists so that reading the world does not require starting the server.** Booting
-// DikuWeb.Server migrates on startup in every environment, and in Development it also seeds
+// Muwbta.Server migrates on startup in every environment, and in Development it also seeds
 // starter content and reconciles the ability table against the catalogue. All three are writes,
 // and none of them is what somebody who wants to *read* the world asked for - a balance run that
 // silently rewrote the abilities it was about to measure would be the worst possible outcome.
 //
 // This opens a connection, reads, and closes it. Nothing here writes.
 
-using DikuWeb.Domain.Spawning;
-using DikuWeb.Engine.Inhabitants;
-using DikuWeb.Persistence;
-using DikuWeb.Server.Building;
+using Muwbta.Domain.Spawning;
+using Muwbta.Engine.Inhabitants;
+using Muwbta.Persistence;
+using Muwbta.Server.Building;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -84,11 +84,11 @@ dataSourceBuilder.EnableDynamicJson();
 
 await using var dataSource = dataSourceBuilder.Build();
 
-var options = new DbContextOptionsBuilder<DikuWebDbContext>()
+var options = new DbContextOptionsBuilder<MuwbtaDbContext>()
     .UseNpgsql(dataSource)
     .Options;
 
-await using var db = new DikuWebDbContext(options);
+await using var db = new MuwbtaDbContext(options);
 
 var exporter = new WorldExporter(db, TimeProvider.System);
 

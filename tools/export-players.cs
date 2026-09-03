@@ -1,4 +1,4 @@
-#:project ../src/DikuWeb.Server/DikuWeb.Server.csproj
+#:project ../src/Muwbta.Server/Muwbta.Server.csproj
 #:property JsonSerializerIsReflectionEnabledByDefault=true
 #:property PublishAot=false
 
@@ -73,7 +73,7 @@
 // yourself, printed at the end.
 
 using System.Text;
-using DikuWeb.Persistence;
+using Muwbta.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Npgsql;
@@ -146,8 +146,8 @@ var dataSourceBuilder = new NpgsqlDataSourceBuilder(connection);
 dataSourceBuilder.EnableDynamicJson();
 await using var dataSource = dataSourceBuilder.Build();
 
-var options = new DbContextOptionsBuilder<DikuWebDbContext>().UseNpgsql(dataSource).Options;
-await using var db = new DikuWebDbContext(options);
+var options = new DbContextOptionsBuilder<MuwbtaDbContext>().UseNpgsql(dataSource).Options;
+await using var db = new MuwbtaDbContext(options);
 
 var relational = db.Model.GetRelationalModel();
 

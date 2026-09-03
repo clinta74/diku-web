@@ -1,4 +1,4 @@
-# Multi-stage build for DikuWeb ASP.NET Core application
+# Multi-stage build for Muwbta ASP.NET Core application
 # Stage 1: Build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
@@ -16,13 +16,13 @@ WORKDIR /src
 COPY ["Directory.Build.props", "Directory.Packages.props", ".editorconfig", "./"]
 
 # Project files next, so that editing source does not invalidate the restore layer.
-COPY ["src/DikuWeb.Server/DikuWeb.Server.csproj", "src/DikuWeb.Server/"]
-COPY ["src/DikuWeb.Engine/DikuWeb.Engine.csproj", "src/DikuWeb.Engine/"]
-COPY ["src/DikuWeb.Persistence/DikuWeb.Persistence.csproj", "src/DikuWeb.Persistence/"]
-COPY ["src/DikuWeb.Domain/DikuWeb.Domain.csproj", "src/DikuWeb.Domain/"]
+COPY ["src/Muwbta.Server/Muwbta.Server.csproj", "src/Muwbta.Server/"]
+COPY ["src/Muwbta.Engine/Muwbta.Engine.csproj", "src/Muwbta.Engine/"]
+COPY ["src/Muwbta.Persistence/Muwbta.Persistence.csproj", "src/Muwbta.Persistence/"]
+COPY ["src/Muwbta.Domain/Muwbta.Domain.csproj", "src/Muwbta.Domain/"]
 
 # Restore dependencies
-RUN dotnet restore "src/DikuWeb.Server/DikuWeb.Server.csproj"
+RUN dotnet restore "src/Muwbta.Server/Muwbta.Server.csproj"
 
 # Copy source code
 COPY . .
@@ -41,7 +41,7 @@ ARG REVISION=unknown
 # OutputPath, which is not where a later `--no-build` publish looks for the assemblies - so that
 # pair would have failed the moment the restore above started working. Publish builds by default,
 # and the separate build step bought nothing.
-RUN dotnet publish "src/DikuWeb.Server/DikuWeb.Server.csproj" \
+RUN dotnet publish "src/Muwbta.Server/Muwbta.Server.csproj" \
     -c Release \
     -o /app/publish \
     --no-restore \
@@ -80,4 +80,4 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=20s \
 # the wrong path here is not a startup warning, it is the container failing to create a process
 # at all, with an error from runc rather than from anything in this application.
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["dotnet", "DikuWeb.Server.dll"]
+CMD ["dotnet", "Muwbta.Server.dll"]

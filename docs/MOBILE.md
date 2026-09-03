@@ -4,7 +4,7 @@
 `mobile-client` branch. What has *not* happened is a real device: jsdom cannot prove a layout and
 emulation cannot prove a keyboard, so §8 is the part still owed.
 
-Findings were read out of `client/src` and `src/DikuWeb.Engine` at commit `1a5fe83`, and the line
+Findings were read out of `client/src` and `src/Muwbta.Engine` at commit `1a5fe83`, and the line
 references are from that commit — most have since moved, being the lines this work changed. They
 are kept as written because a record of what was wrong is worth more than a set of citations that
 tracks the fix.

@@ -1,0 +1,206 @@
+using System.Text.Json.Nodes;
+using Muwbta.Domain.Worlds;
+using Muwbta.Server.Building;
+
+namespace Muwbta.Server.Tests.Building;
+
+/// <summary>
+/// The generated schema stays in step with the registries the validator reads.
+/// </summary>
+/// <remarks>
+/// The point of generating the schema instead of writing it down is that it cannot drift. That is
+/// only true if something checks, which is what these do - the same guarantee
+/// <c>ChangeRecordCompletenessTests</c> and <c>ExportScriptCompletenessTests</c> give the two other
+/// places the content shape is spelled out.
+/// </remarks>
+public sealed class AssistSchemaTests
+{
+    private static readonly string[] Destinations =
+    [
+        "ossara.gatetown.the-market",
+        "ossara.gatetown.the-north-road",
+    ];
+
+    private static JsonObject Properties(JsonObject schema) =>
+        schema["properties"]!.AsObject();
+
+    /// <summary>
+    /// Every field of <see cref="BundleRoom"/> is either generated or deliberately excluded.
+    /// </summary>
+    /// <remarks>
+    /// The test that earns the file. A field added to the record and forgotten here is a field the
+    /// assist silently never fills in - which reads, from the builder's side, as the model being
+    /// bad at its job rather than as nobody having decided.
+    /// </remarks>
+    [Fact]
+    public void Every_room_field_is_generated_or_explained()
+    {
+        var generated = Properties(AssistSchema.ForRoom(Destinations))
+            .Select(p => p.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var undecided = typeof(BundleRoom)
+            .GetProperties()
+            .Select(p => p.Name)
+            .Where(name => !generated.Contains(name) && !AssistSchema.NotGenerated.ContainsKey(name))
+            .ToList();
+
+        Assert.Empty(undecided);
+    }
+
+    /// <summary>And nothing is excluded that no longer exists.</summary>
+    /// <remarks>
+    /// The other direction, because a stale exclusion is a reason nobody can act on: it reads as a
+    /// decision about a field, and the field is gone.
+    /// </remarks>
+    [Fact]
+    public void Nothing_is_excluded_that_the_record_does_not_have()
+    {
+        var fields = typeof(BundleRoom)
+            .GetProperties()
+            .Select(p => p.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var stale = AssistSchema.NotGenerated.Keys.Where(k => !fields.Contains(k)).ToList();
+
+        Assert.Empty(stale);
+    }
+
+    /// <summary>
+    /// The model is not offered the flags, and the reason is on file.
+    /// </summary>
+    /// <remarks>
+    /// This test replaced two that asserted the opposite. Flags were generated from the registry,
+    /// documented by their own summaries, and the first real generation used that to set
+    /// <c>respawn: true</c> - a bind point, against WORLD.md 4.1's "five zones and nowhere else",
+    /// which nothing validates and which 4.1 relies on to close the conditional-exit exploit by
+    /// construction. Asserted rather than merely deleted so that re-adding flags has to argue with
+    /// this comment first.
+    /// </remarks>
+    [Fact]
+    public void The_model_is_not_asked_to_set_flags()
+    {
+        Assert.False(Properties(AssistSchema.ForRoom(Destinations)).ContainsKey("flags"));
+        Assert.Contains("Flags", AssistSchema.NotGenerated.Keys);
+    }
+
+    /// <summary>
+    /// A refinement worth remembering: not every flag is policy.
+    /// </summary>
+    /// <remarks>
+    /// <c>dark</c> and <c>indoors</c> are observations about a room and would be safe to generate;
+    /// <c>respawn</c>, <c>pvp</c>, <c>peaceful</c> and <c>noRecall</c> are policy with mechanical
+    /// consequences. Splitting them is the better design and is deliberately not built, because
+    /// <see cref="RoomFlag"/> carries no such classification and inventing one here would put it in
+    /// the wrong place. This test only pins that the registry has not quietly grown one.
+    /// </remarks>
+    [Fact]
+    public void The_registry_still_has_no_notion_of_a_safe_flag()
+    {
+        Assert.DoesNotContain(
+            typeof(RoomFlag).GetProperties(),
+            p => p.Name.Contains("Safe", StringComparison.Ordinal)
+                || p.Name.Contains("Policy", StringComparison.Ordinal));
+    }
+
+    /// <summary>The directions are the engine's six, lowercased the way the bundle spells them.</summary>
+    [Fact]
+    public void The_directions_are_the_engines()
+    {
+        var direction = Properties(AssistSchema.ForRoom(Destinations))["exits"]!
+            .AsObject()["items"]!
+            .AsObject()["properties"]!
+            .AsObject()["direction"]!
+            .AsObject()["enum"]!
+            .AsArray()
+            .Select(v => v!.GetValue<string>());
+
+        Assert.Equal(
+            DirectionExtensions.All.Select(d => d.ToString().ToLowerInvariant()),
+            direction);
+    }
+
+    /// <summary>
+    /// An exit may only lead somewhere that already exists.
+    /// </summary>
+    /// <remarks>
+    /// The one referential rule a per-entity grammar can carry, and the reason it can is that the
+    /// legal set is known before generation starts. Everything else about the exit graph -
+    /// reciprocity, connectivity - is a property of the whole bundle and stays with the validator.
+    /// </remarks>
+    [Fact]
+    public void An_exit_may_only_lead_to_a_room_that_exists()
+    {
+        var to = Properties(AssistSchema.ForRoom(Destinations))["exits"]!
+            .AsObject()["items"]!
+            .AsObject()["properties"]!
+            .AsObject()["to"]!
+            .AsObject()["enum"]!
+            .AsArray()
+            .Select(v => v!.GetValue<string>());
+
+        Assert.Equal(Destinations, to);
+    }
+
+    /// <summary>With nowhere to lead, the model is not asked for exits at all.</summary>
+    /// <remarks>
+    /// An empty <c>enum</c> is a rule no completion can satisfy, which is a grammar the sampler
+    /// cannot get out of. Omitting the field is the honest version of "there is nothing to link to
+    /// yet".
+    /// </remarks>
+    [Fact]
+    public void No_destinations_means_no_exits_field()
+    {
+        var schema = AssistSchema.ForRoom([]);
+
+        Assert.False(Properties(schema).ContainsKey("exits"));
+        Assert.DoesNotContain(
+            "exits",
+            schema["required"]!.AsArray().Select(v => v!.GetValue<string>()));
+    }
+
+    /// <summary>
+    /// The two keywords the grammar actually rests on are present at every level.
+    /// </summary>
+    /// <remarks>
+    /// Without <c>required</c>, <c>{}</c> is a legal completion and by some distance the cheapest
+    /// one. Without <c>additionalProperties: false</c>, the model may invent a field and spend the
+    /// generation budget filling it in. Neither is tidiness; both change what the sampler is
+    /// allowed to do.
+    /// </remarks>
+    [Fact]
+    public void Every_object_is_closed_and_says_what_it_requires()
+    {
+        var schema = AssistSchema.ForRoom(Destinations);
+
+        Assert.False(schema["additionalProperties"]!.GetValue<bool>());
+        Assert.Equal(
+            ["title", "description", "exits"],
+            schema["required"]!.AsArray().Select(v => v!.GetValue<string>()));
+
+        var item = Properties(schema)["exits"]!.AsObject()["items"]!.AsObject();
+
+        Assert.False(item["additionalProperties"]!.GetValue<bool>());
+        Assert.Equal(
+            ["direction", "to"],
+            item["required"]!.AsArray().Select(v => v!.GetValue<string>()));
+    }
+
+    /// <summary>
+    /// No constraint is expressed as a regex.
+    /// </summary>
+    /// <remarks>
+    /// Schema-to-grammar converters support <c>pattern</c> only partially, and one that does not
+    /// convert is a constraint that silently is not applied - which puts it in the same family as
+    /// the truncation this whole feature had to fix first. Where the legal set is knowable it is
+    /// enumerated instead, which is stricter and certain to hold.
+    /// </remarks>
+    [Fact]
+    public void Nothing_relies_on_a_regex()
+    {
+        Assert.DoesNotContain(
+            "\"pattern\"",
+            AssistSchema.ForRoom(Destinations).ToJsonString(),
+            StringComparison.Ordinal);
+    }
+}

@@ -18,7 +18,7 @@
     What it does, against a scratch database that is dropped afterwards:
 
       1. Restores the dump (newest in backups/ by default).
-      2. Starts DikuWeb.Server pointed at it on a spare port, which is what runs the startup
+      2. Starts Muwbta.Server pointed at it on a spare port, which is what runs the startup
          migrations - §6.1 makes startup the only place migrations are applied, so this is the
          real code path and not an approximation of it.
       3. Waits for /health/ready, which includes the database check.
@@ -114,13 +114,13 @@ try {
 
     # ---------------------------------------------------------------- boot
     Step 'Starting the server against it'
-    $env:ConnectionStrings__DikuWeb = "Host=localhost;Port=5432;Database=$DrillDatabase;Username=$User;Password=$Password"
+    $env:ConnectionStrings__Muwbta = "Host=localhost;Port=5432;Database=$DrillDatabase;Username=$User;Password=$Password"
     $env:ASPNETCORE_URLS = "http://localhost:$Port"
     $env:ASPNETCORE_ENVIRONMENT = 'Development'
 
     $log = Join-Path ([IO.Path]::GetTempPath()) "drill-$PID.log"
     $server = Start-Process -PassThru -NoNewWindow -FilePath 'dotnet' `
-        -ArgumentList 'run', '--project', (Join-Path $repoRoot 'src/DikuWeb.Server'), '--no-launch-profile' `
+        -ArgumentList 'run', '--project', (Join-Path $repoRoot 'src/Muwbta.Server'), '--no-launch-profile' `
         -RedirectStandardOutput $log -RedirectStandardError "$log.err"
 
     # Sixty seconds: a cold `dotnet run` builds first, and a drill that times out during a restore
@@ -171,5 +171,5 @@ finally {
     if ($restored) {
         docker exec $Container psql -U $User -d postgres -q -c "drop database if exists $DrillDatabase;" | Out-Null
     }
-    Remove-Item Env:ConnectionStrings__DikuWeb, Env:ASPNETCORE_URLS -ErrorAction SilentlyContinue
+    Remove-Item Env:ConnectionStrings__Muwbta, Env:ASPNETCORE_URLS -ErrorAction SilentlyContinue
 }

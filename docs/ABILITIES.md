@@ -75,7 +75,7 @@ that already exist and already have executors:
 | Temper: damage over time and burst | `damage.overtime`, `damage.physical` | Both registered |
 
 **AoE resolves by direction already**, which is the part worth confirming rather than assuming
-([AbilitySystem.cs](../src/DikuWeb.Engine/Abilities/AbilitySystem.cs) `AreaTargets`). A harmful area
+([AbilitySystem.cs](../src/Muwbta.Engine/Abilities/AbilitySystem.cs) `AreaTargets`). A harmful area
 effect gathers every mob plus other players only where the room resolves `pvp`, never the caster and
 never their party. A helpful one gathers the caster plus their party, or everyone in the room when
 they have no party. **So a group heal works today** — it lands on your side, not on the strangers,
@@ -270,7 +270,7 @@ Every row above is checkable before a line of it is authored, and should be:
 
 - **Validator rules** — a key prefixed with its Path, a non-empty name, `CostValue > 0`, a
   non-negative cooldown, an unlock level in 1–50, and at least one effect
-  ([AbilityValidator.cs](../src/DikuWeb.Domain/Abilities/AbilityValidator.cs)).
+  ([AbilityValidator.cs](../src/Muwbta.Domain/Abilities/AbilityValidator.cs)).
 - **Required params present** — every effect in §2's table carries the parameter it actually reads.
   An effect missing its one meaningful key is an ability that runs and does nothing.
 - **No effect listed twice in one ability**, which the validator refuses: the second refreshes the
