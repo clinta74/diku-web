@@ -66,6 +66,11 @@ internal sealed class CharacterConfiguration : IEntityTypeConfiguration<Characte
             .HasColumnName("flags")
             .HasColumnType("text[]")
             .IsRequired();
+
+        builder.Property(c => c.IgnoredNames)
+            .HasColumnName("ignored_names")
+            .HasColumnType("text[]")
+            .IsRequired();
         builder.Property(c => c.RestState).HasColumnName("rest_state").HasConversion<int>().IsRequired();
         builder.Property(c => c.CombatState).HasColumnName("combat_state").HasConversion<int>().IsRequired();
         builder.Property(c => c.CurrentTarget).HasColumnName("current_target").HasMaxLength(64);

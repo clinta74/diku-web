@@ -42,6 +42,18 @@ public sealed class PlayerActor
     /// Used where the character speaks or is listed to others - who, tell, say, chat, emote -
     /// and not where they are merely narrated moving about, which is not a claim of anything.
     /// </remarks>
+    /// <summary>
+    /// Whether this character has chosen not to hear from <paramref name="sender"/>. Never true of
+    /// staff: a moderator telling you to stop is not a conversation you get to opt out of.
+    /// </summary>
+    public bool Ignores(PlayerActor sender)
+    {
+        ArgumentNullException.ThrowIfNull(sender);
+
+        return sender.Role == AccountRole.Player
+            && Character.IgnoredNames.Contains(sender.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
     public string TaggedName => Role switch
     {
         AccountRole.Admin => $"[Admin] {Name}",

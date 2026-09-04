@@ -454,7 +454,7 @@ public static class PartyCommands
         // that is not the room.
         foreach (var memberId in party.Members)
         {
-            if (world.FindByCharacter(memberId) is not { } member)
+            if (world.FindByCharacter(memberId) is not { } member || member.Ignores(ctx.Actor))
             {
                 continue;
             }
@@ -462,7 +462,7 @@ public static class PartyCommands
             member.SendText(
                 memberId == ctx.Actor.CharacterId
                     ? $"You tell the group, '{ctx.Argument}'"
-                    : $"{ctx.Actor.Name} tells the group, '{ctx.Argument}'",
+                    : $"{ctx.Actor.TaggedName} tells the group, '{ctx.Argument}'",
                 "party");
         }
     }

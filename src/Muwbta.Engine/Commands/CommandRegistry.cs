@@ -119,6 +119,7 @@ public sealed class CommandRegistry
         // matching is first-match-wins, and the older verb keeps the shorter abbreviation.
         PartyCommands.Register(_commands);
         ChannelCommands.Register(_commands);
+        IgnoreCommands.Register(_commands);
         TravelCommands.Register(_commands);
         ShopCommands.Register(_commands);
         StatusCommands.Register(_commands);
@@ -346,7 +347,7 @@ public sealed class CommandRegistry
         }
 
         ctx.Reply($"You say, '{ctx.Argument}'", "speech");
-        ctx.Broadcast($"{ctx.Actor.TaggedName} says, '{ctx.Argument}'", "speech");
+        ctx.Broadcast($"{ctx.Actor.TaggedName} says, '{ctx.Argument}'", "speech", speech: true);
     }
 
     private static void Who(CommandContext ctx)
@@ -1445,7 +1446,7 @@ public sealed class CommandRegistry
         // An emote is something you do where people can see it, and a sleeping player is not
         // somebody who can. Speech is deliberately not filtered the same way - `say` is addressed
         // at the room and being woken by it is the point of shouting at somebody.
-        ctx.BroadcastSight(line, "emote");
+        ctx.BroadcastSight(line, "emote", speech: true);
     }
 
     private static void Stats(CommandContext ctx)

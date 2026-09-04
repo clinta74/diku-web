@@ -74,6 +74,18 @@ public sealed class Character
     /// </remarks>
     public List<string> Flags { get; set; } = [];
 
+    /// <summary>
+    /// Characters this one has chosen not to hear from - tells, room speech, emotes, the world
+    /// channel and party chat. Names, compared case-insensitively; they need not be online or
+    /// even exist. Staff are delivered regardless.
+    /// </summary>
+    /// <remarks>
+    /// Persisted for the same reason a quest flag is: an ignore that reset on logout would be a
+    /// promise the game broke every evening. Mutated in place by the ignore commands and copied
+    /// into <c>CharacterSnapshot</c>, which is the whole of what reaches the database.
+    /// </remarks>
+    public List<string> IgnoredNames { get; set; } = [];
+
     /// <summary>Whether this character holds a capability. Absent is always the closed answer.</summary>
     public bool HasFlag(string? key) =>
         key is not null && Flags.Contains(key, StringComparer.Ordinal);

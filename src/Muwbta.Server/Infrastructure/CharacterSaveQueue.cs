@@ -176,6 +176,10 @@ public sealed class CharacterSaveWorker(
             // Completed, so the chain cannot be re-run to earn it again (PLAN.md §4.15).
             tracked.Flags = [.. snapshot.Flags];
 
+            // The fourth field this step could have dropped. An ignore list that did not survive
+            // a restart would put the pest back the next morning.
+            tracked.IgnoredNames = [.. snapshot.IgnoredNames];
+
             tracked.LastPlayedAt = snapshot.LastPlayedAt;
             tracked.PlaytimeSeconds = snapshot.PlaytimeSeconds;
             saved++;

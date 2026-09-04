@@ -204,7 +204,8 @@ public sealed record CharacterSnapshot(
     /// </summary>
     IReadOnlyList<string> Flags,
     DateTimeOffset LastPlayedAt,
-    long PlaytimeSeconds)
+    long PlaytimeSeconds,
+    IReadOnlyList<string> IgnoredNames)
 {
     public static CharacterSnapshot From(Character character, DateTimeOffset now)
     {
@@ -237,7 +238,9 @@ public sealed record CharacterSnapshot(
             character.Gold,
             [.. character.Flags],
             now,
-            character.PlaytimeSeconds);
+            character.PlaytimeSeconds,
+            // Copied for the reason Flags is: the list on the character is mutated in place.
+            [.. character.IgnoredNames]);
     }
 }
 

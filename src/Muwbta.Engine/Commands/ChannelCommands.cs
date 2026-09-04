@@ -98,6 +98,15 @@ public static class ChannelCommands
             return;
         }
 
+        // Told, not silently dropped: a tell that vanishes reads as a bug, and a pest who thinks
+        // the game is broken keeps trying. Checked after the mute so a muted player is told about
+        // the mute, which is the thing that is actually stopping them.
+        if (target.Ignores(ctx.Actor))
+        {
+            ctx.Reply($"{target.Name} is not listening to you.", "bad");
+            return;
+        }
+
         ctx.Reply($"You tell {target.Name}, '{message}'", "tell");
         target.SendText($"{ctx.Actor.TaggedName} tells you, '{message}'", "tell");
 
@@ -159,7 +168,7 @@ public static class ChannelCommands
 
         foreach (var player in ctx.World.AllPlayers)
         {
-            if (player.ChatOff)
+            if (player.ChatOff || player.Ignores(ctx.Actor))
             {
                 continue;
             }

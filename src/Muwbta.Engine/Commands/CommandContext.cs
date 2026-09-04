@@ -158,22 +158,39 @@ public sealed class CommandContext
     /// something off the floor, putting a helmet on. <see cref="Broadcast"/> stays the right call
     /// for speech, which is the one thing in a room that reaches somebody with their eyes shut.
     /// </remarks>
-    public void BroadcastSight(string text, string? style = null)
+    /// <param name="speech">
+    /// True for something the actor <em>said</em> - speech, an emote - which a listener may have
+    /// chosen not to hear (see <see cref="PlayerActor.Ignores"/>). False, the default, for
+    /// narration of what happened in the room, which everybody sees regardless: an ignore is
+    /// about what is said to you, not about pretending somebody is not there.
+    /// </param>
+    public void BroadcastSight(string text, string? style = null, bool speech = false)
     {
         var message = Line(text, style);
 
         foreach (var other in World.OthersAwakeIn(Actor.RoomKey, Actor))
         {
+            if (speech && other.Ignores(Actor))
+            {
+                continue;
+            }
+
             other.Send(message);
         }
     }
 
-    public void Broadcast(string text, string? style = null)
+    /// <inheritdoc cref="BroadcastSight"/>
+    public void Broadcast(string text, string? style = null, bool speech = false)
     {
         var message = Line(text, style);
 
         foreach (var other in World.OthersIn(Actor.RoomKey, Actor))
         {
+            if (speech && other.Ignores(Actor))
+            {
+                continue;
+            }
+
             other.Send(message);
         }
     }
