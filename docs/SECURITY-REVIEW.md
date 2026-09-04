@@ -30,6 +30,42 @@ pass as staff.
 | **Low** | Real, narrow, or needs a second weakness to matter |
 | **Info** | Verified sound; recorded so nobody re-audits it |
 
+## Status on `harden-api` — 2026-09-04
+
+What the branch did about each finding, in the order it was built. "Left" items are not
+forgotten; each has a reason beside it.
+
+| Finding | Status | Commit |
+|---|---|---|
+| A1 forwarded headers | Fixed. Kestrel trusts only the proxies named in `Proxy__KnownNetworks` / `Proxy__KnownProxies`; the client image gained a self-signed 443 listener so the inner hop is TLS and `$scheme` is truthful. An empty trust list turns the middleware off — the framework's default would have trusted everyone. | `b7d46b7` |
+| A2 cookie `Secure` | Fixed. Unconditional in Production. HSTS is a toggle on the NPM proxy host — operator's side. | `b7d46b7` |
+| A3 published ports | Left, by decision: LAN access is used. Postgres publish goes when exports are trusted. | — |
+| A4 security headers | Left. CSP not added; HSTS belongs on NPM. | — |
+| B1 password ceiling at registration | Fixed. `PasswordPolicy` at all three surfaces. | `f41046f` |
+| B2 login timing oracle | Fixed. Unknown names are verified against a decoy hash. | `f41046f` |
+| B3 email enumeration | Left. Accepted trade-off; the rate limit now really is per address. | — |
+| B4 ban reason shown to player | Left. Documentation/policy. | — |
+| C1 first account is admin | Left. Item 0 confirmed the beta's first account is the operator's. | — |
+| C2 per-account login backoff | Fixed. Growing pause after five failures, capped at fifteen minutes, admin can lift it; password-change draws on the same fuse. | `fe19a74` |
+| C3 admin resets admin | Left. Audit row covers it. | — |
+| C4 sign out everywhere | Left. | — |
+| C5 integer path | Fixed. `Enum.IsDefined`. | `f41046f` |
+| D1 ban evasion / no address | Fixed. Registration and last-login addresses recorded; admin search by address. Retention is the operator's policy — no purge built. | `f8ea67d` |
+| D2 no ignore | Fixed. `ignore` / `unignore`, persisted per character, staff exempt. | `1b2ccb9` |
+| E2 enter/leave unlimited | Fixed. Both draw on the character's command bucket. | `f41046f` |
+| F1 anyone can be Admin | Fixed. Reserved names at both doors; staff tag on who, tell, say, chat, emote; a staff notice on every arrival. | `7e09240` |
+| F2 emote forges speech | Fixed. `* ` marker; speech-verb openers refused. | `486f217` |
+| F3 recovery through a human | Left. The written protocol is still to do; recovery codes remain the email-free option. | — |
+| F4 content as trusted channel | Partly. Builders now wear the `[Builder]` tag. The welcome cap already existed. | `7e09240` |
+| F5 lookalike names | Left. | — |
+| F6 email unverified | Dropped: no outbound mail that would not be flagged as spam. | — |
+| — Word filter (new) | Added. Optional list on the game configuration; whole words; refused at the five speech doors and at character creation; live without a restart. | `babd53c` |
+
+Still on the operator's side before beta reflects this: `Proxy__KnownProxies` needs the NPM
+host's address in `tmp/docker-compose.truenas.beta.yml`, the compose port becomes `7180:443`,
+the NPM proxy host switches to scheme `https` with HSTS on, and the three migrations run at the
+next start.
+
 ## Do this first — done
 
 **Confirm who owns the first account on beta.** The database was wiped and redeployed
