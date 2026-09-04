@@ -2,6 +2,10 @@
 
 > Status: findings for evaluation, 2026-09-03. Branch `harden-api`. Nothing here has been
 > changed in code; every item cites the line it was read from so it can be re-verified.
+>
+> Deployment facts confirmed by the operator after the first draft: an HTTPS proxy (Nginx
+> Proxy Manager, on its own server) fronts the beta and forwards only to port 7180; ports
+> 5434 and 3000 are LAN-only. A1, A2 and A3 were revised on that basis.
 
 Scope: the HTTP surface of `Muwbta.Server` (auth, characters, game, builder, admin, assist,
 operator routes), the deployment in front of it (nginx, compose, the beta NAS), and the
@@ -13,9 +17,9 @@ The short version: **the code is in good shape and most of the risk is in the de
 around it.** Authorization is checked on every route that needs it, ownership is checked on
 every character-scoped route, the database is reached only through parameterized EF Core,
 passwords are hashed with PBKDF2 and never serialized, and the client renders text without
-HTML. What lets the code down is one missing middleware, the absence of TLS in the beta
-compose, two published ports, and a game that gives a stranger everything they need to pass
-as staff.
+HTML. What lets the code down is one missing middleware, a proxy hop that overwrites the
+header the middleware would need, and a game that gives a stranger everything they need to
+pass as staff.
 
 ## Severity
 
@@ -66,44 +70,75 @@ values:
 3. **Moderation has no IP.** Nothing can record where an account registered or logged in
    from, so a banned player's second account cannot be correlated with their first. See D2.
 
-**Fix.** Add forwarded-header handling *before* authentication, and pin it to the proxy:
+**There are two hops, and the inner one undoes the outer.** Nginx Proxy Manager
+terminates TLS and, by its stock template, sends `X-Forwarded-For`, `X-Forwarded-Proto:
+https` and `X-Real-IP` to port 7180. The compose nginx then does this
+([nginx.conf.template:119-122](../client/nginx.conf.template)):
 
-```csharp
-builder.Services.Configure<ForwardedHeadersOptions>(o =>
-{
-    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    o.KnownNetworks.Clear();
-    o.KnownProxies.Clear();
-    o.KnownNetworks.Add(new IPNetwork(IPAddress.Parse("172.25.0.0"), 16)); // muwbta-network
-});
-// ...
-app.UseForwardedHeaders();
-app.UseAuthentication();
+```nginx
+proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;   # appends - fine
+proxy_set_header X-Forwarded-Proto $scheme;                      # overwrites with "http"
 ```
 
-The pinning is not optional. Honouring the header from *any* source is worse than ignoring
-it: a caller could then set a fresh `X-Forwarded-For` per request and the auth limiter
-would never fire at all. The subnet is the one both compose files declare for
-`muwbta-network`. If TLS terminates at a proxy *outside* compose (TrueNAS, Caddy), that hop
-must also be in the known list, and it must overwrite rather than append.
+`$scheme` on that hop is `http`, so NPM's `https` is replaced before Kestrel ever sees it.
+Even with the middleware below in place, the request would still read as HTTP and the
+cookie would still not be `Secure` (A2). Nothing needs changing on NPM for this; the fix
+is entirely on this side.
 
-### A2 — No TLS, and the cookie could not be `Secure` even if there were — **High**
+**Fix, three parts.**
 
-The beta compose publishes nginx on plain `7180:80`
-([docker-compose.truenas.beta.yml:66](../tmp/docker-compose.truenas.beta.yml)) and carries
-no TLS configuration. If players reach it at `http://…:7180`, **every password and every
-session cookie crosses the network in cleartext.** If a TrueNAS proxy terminates TLS in
-front, that risk is gone but the next one remains.
+1. Compose nginx passes the proto through when an upstream already set it:
+
+   ```nginx
+   map $http_x_forwarded_proto $fwd_proto { default $scheme; https https; }
+   # in both proxy locations:
+   proxy_set_header X-Forwarded-Proto $fwd_proto;
+   ```
+
+2. Kestrel honours the headers, trusting exactly the two hops. `X-Forwarded-For` arrives
+   as `client, <npm>` — the rightmost entry is what compose nginx appended — so the walk
+   has to be allowed two steps, and NPM's address has to be known or the walk stops at it
+   and every player still shares one address:
+
+   ```csharp
+   builder.Services.Configure<ForwardedHeadersOptions>(o =>
+   {
+       o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+       o.ForwardLimit = 2;
+       o.KnownNetworks.Clear();
+       o.KnownProxies.Clear();
+       o.KnownNetworks.Add(new IPNetwork(IPAddress.Parse("172.25.0.0"), 16)); // muwbta-network
+       o.KnownProxies.Add(IPAddress.Parse(config["Proxy:NpmAddress"]!));         // the NPM host
+   });
+   // ...
+   app.UseForwardedHeaders();
+   app.UseAuthentication();
+   ```
+
+   The pinning is not optional. Honouring the header from *any* source is worse than
+   ignoring it: a caller could then set a fresh `X-Forwarded-For` per request and the auth
+   limiter would never fire at all. Port 7180 is reachable on the LAN, so a LAN caller
+   bypassing NPM is exactly the case the known list exists for.
+
+3. HSTS, on NPM: it is a toggle on the proxy host's SSL tab, and that is where a
+   TLS-terminating header belongs.
+
+### A2 — The session cookie is never `Secure` — **Medium**
+
+TLS terminates at Nginx Proxy Manager, so passwords and cookies are not crossing the
+network in cleartext — that half of the first draft is withdrawn. What remains is the flag.
 
 The cookie is issued with `CookieSecurePolicy.SameAsRequest`
 ([Program.cs:149](../src/Muwbta.Server/Program.cs)). The comment says that "still sets
-Secure in production", but Kestrel sees the request from nginx as HTTP (A1), so the policy
-resolves to "not secure" on every deployment that has a proxy in front — which is every
-deployment. A cookie without `Secure` is sent on any plain-HTTP request to the same host,
-which is how it gets read by anything on the path.
+Secure in production", but the request reaches Kestrel as HTTP twice over — no forwarded
+headers are read, and the one that would say `https` is overwritten on the way in (A1) —
+so the policy resolves to "not secure" on this deployment and on every deployment shaped
+like it. A cookie without `Secure` is offered on any plain-HTTP request to the same host.
+With HSTS on and nothing but 443 exposed that is a narrow window, which is why this is
+Medium rather than High; it is still a flag that should be on and is not.
 
-**Fix.** Terminate TLS (at nginx or in front of it). With A1 in place `SameAsRequest`
-becomes correct, but the safer setting in Production is unconditional:
+**Fix.** A1's proto passthrough makes `SameAsRequest` correct. The safer setting in
+Production does not depend on the chain being right:
 
 ```csharp
 options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
@@ -111,17 +146,16 @@ options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
     : CookieSecurePolicy.Always;
 ```
 
-Then add HSTS at the TLS terminator. The cookie is already `HttpOnly` and `SameSite=Lax`,
-which is right.
+The cookie is already `HttpOnly` and `SameSite=Lax`, which is right.
 
-### A3 — Postgres and Grafana are published on the NAS host — **Medium**
+### A3 — Postgres and Grafana are published on the NAS host — **Low**
 
 `5434:5432` and `3000:3000`
 ([docker-compose.truenas.beta.yml:153, :88](../tmp/docker-compose.truenas.beta.yml)) bind
-to every interface on the NAS. Postgres is password-protected and Grafana has an admin
-password, but neither has any business being reachable from the LAN, let alone anything
-beyond it. The prod example gets this right for Grafana — "bound to loopback: reach it over
-an SSH tunnel" — and the beta file diverged.
+to every interface on the NAS. Confirmed LAN-only, and both are password-protected, which
+is why this is Low. It stays on the list because neither has any business being reachable
+from the LAN either: the prod example gets this right for Grafana — "bound to loopback:
+reach it over an SSH tunnel" — and the beta file diverged.
 
 **Fix.** `127.0.0.1:5434:5432` and `127.0.0.1:3000:3000`, or drop the Postgres publish
 entirely; `adminer` and `psql` inside the compose network do not need it.
@@ -289,7 +323,7 @@ default 64-level depth limit; the admin search uses `Contains`, which Npgsql tra
 `strpos`, so `%` and `_` are not wildcards. The connection string is logged as host and
 database only. Migrations run at startup under EF's advisory lock.
 
-### E1 — Postgres reachable from the host network — **Medium** (A3)
+### E1 — Postgres reachable from the LAN — **Low** (A3)
 
 ### E2 — `/enter` and `/leave` are not rate limited — **Low**
 
@@ -429,9 +463,9 @@ cap in A1.
 | # | Item | Effort | Unlocks |
 |---|---|---|---|
 | 0 | Confirm the first beta account is yours | 5 min | — |
-| 1 | A1 forwarded headers, pinned to the proxy subnet | 1 hr | A2, C2, D1 |
-| 2 | A2 TLS in front of beta; `Secure` cookie; HSTS | ½ day | — |
-| 3 | A3 unpublish Postgres and Grafana | 5 min | — |
+| 1 | A1 proto passthrough in compose nginx; forwarded headers in Kestrel, both hops pinned | 2 hr | A2, C2, D1 |
+| 2 | A2 `Secure` cookie unconditional in Production; HSTS toggle on NPM | 1 hr | — |
+| 3 | A3 bind Postgres and Grafana to loopback | 5 min | — |
 | 4 | F1 reserved names + staff tag + welcome line | ½ day | F2, F4 |
 | 5 | F2 emote marker | 1 hr | — |
 | 6 | C2 per-account login backoff | ½ day | — |
