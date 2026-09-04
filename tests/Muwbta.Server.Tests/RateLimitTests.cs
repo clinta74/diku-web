@@ -47,6 +47,94 @@ public sealed class RateLimitTests(PostgresFixture postgres) : IDisposable
     {
         _strict?.Dispose();
         _assist?.Dispose();
+        _behindProxy?.Dispose();
+        _notBehindProxy?.Dispose();
+    }
+
+    /// <summary>
+    /// A host that trusts loopback as a proxy, which is what the test server's connection reads as.
+    /// </summary>
+    /// <remarks>
+    /// Five sign-in attempts a minute, so exhausting one forwarded address takes six requests
+    /// rather than forty-one. Behind a trusted proxy the auth limiter must partition by the
+    /// address in <c>X-Forwarded-For</c>, because the connection's own address is the proxy's for
+    /// every caller — and a limit keyed on that is a site-wide cap that one stranger can spend
+    /// for everybody.
+    /// </remarks>
+    private MuwbtaAppFactory? _behindProxy;
+
+    private MuwbtaAppFactory BehindProxy => _behindProxy ??= new MuwbtaAppFactory(
+        postgres.ConnectionString,
+        new Dictionary<string, string>
+        {
+            ["RateLimits:AuthAttemptsPerMinute"] = "5",
+            ["Proxy:KnownProxies"] = "127.0.0.1",
+        });
+
+    /// <summary>The same limits with nothing trusted, so the header must be ignored.</summary>
+    private MuwbtaAppFactory? _notBehindProxy;
+
+    private MuwbtaAppFactory NotBehindProxy => _notBehindProxy ??= new MuwbtaAppFactory(
+        postgres.ConnectionString,
+        new Dictionary<string, string>
+        {
+            ["RateLimits:AuthAttemptsPerMinute"] = "5",
+        });
+
+    [Fact]
+    public async Task Behind_a_trusted_proxy_failed_logins_are_limited_per_forwarded_address()
+    {
+        var factory = BehindProxy;
+        using var client = NewClient(factory);
+
+        // Six guesses from one address: past the five-a-minute budget, so the last is refused.
+        var fromFirst = await FailedLoginsAsync(client, forwardedFor: "203.0.113.10", count: 6);
+        Assert.Equal(HttpStatusCode.TooManyRequests, fromFirst[^1]);
+
+        // A different caller, through the same proxy, has a budget of their own. Refusing them
+        // here is exactly the site-wide lockout the trust list exists to prevent.
+        var fromSecond = await FailedLoginsAsync(client, forwardedFor: "203.0.113.11", count: 1);
+        Assert.Equal(HttpStatusCode.Unauthorized, fromSecond[0]);
+    }
+
+    [Fact]
+    public async Task With_nothing_trusted_the_forwarded_address_is_ignored()
+    {
+        // The dangerous configuration is the opposite one: believing the header from anyone. A
+        // caller who could reach the port directly would then set a fresh address on every
+        // request and never be limited at all. With no proxy trusted, two callers claiming
+        // different addresses land in the same partition - the connection's - and the second
+        // inherits the first's exhaustion.
+        var factory = NotBehindProxy;
+        using var client = NewClient(factory);
+
+        var fromFirst = await FailedLoginsAsync(client, forwardedFor: "203.0.113.10", count: 6);
+        Assert.Equal(HttpStatusCode.TooManyRequests, fromFirst[^1]);
+
+        var fromSecond = await FailedLoginsAsync(client, forwardedFor: "203.0.113.11", count: 1);
+        Assert.Equal(HttpStatusCode.TooManyRequests, fromSecond[0]);
+    }
+
+    private static async Task<List<HttpStatusCode>> FailedLoginsAsync(
+        HttpClient client,
+        string forwardedFor,
+        int count)
+    {
+        var statuses = new List<HttpStatusCode>();
+
+        for (var i = 0; i < count; i++)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login")
+            {
+                Content = JsonContent.Create(new { username = "nobody-at-all", password = "guess" }),
+            };
+            request.Headers.Add("X-Forwarded-For", forwardedFor);
+
+            using var response = await client.SendAsync(request);
+            statuses.Add(response.StatusCode);
+        }
+
+        return statuses;
     }
 
     private static HttpClient NewClient(WebApplicationFactory<Program> factory) =>

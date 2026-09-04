@@ -129,6 +129,12 @@ internal static partial class ServerLog
     public static partial void FirstAccountPromoted(ILogger logger, string username);
 
     [LoggerMessage(
+        EventId = 1033,
+        Level = LogLevel.Information,
+        Message = "Forwarded headers are trusted from: {Proxies}")]
+    public static partial void ProxiesTrusted(ILogger logger, string proxies);
+
+    [LoggerMessage(
         EventId = 1012,
         Level = LogLevel.Information,
         Message = "Account '{Username}' role changed from {Before} to {After}")]

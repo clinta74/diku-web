@@ -78,6 +78,22 @@ http {
         # own writes were succeeding into a send buffer exactly as Kestrel's were (PLAN.md §11).
         listen 80 default_server so_keepalive=30s:10s:3;
         listen [::]:80 default_server so_keepalive=30s:10s:3;
+
+        # 443 exists for one reason: the X-Forwarded-Proto this server sends upstream is $scheme,
+        # and $scheme is whatever THIS listener spoke. A front proxy that terminates TLS and
+        # forwards here over port 80 has its `https` overwritten with `http` on the way through,
+        # and the API then issues a session cookie without the Secure flag. Forwarding to 443
+        # instead makes $scheme https and the header truthful, with no map or special case.
+        #
+        # The certificate is whatever is in /etc/nginx/tls - mounted, or self-signed by the
+        # entrypoint when nothing is (docker-entrypoint.d/05-selfsign.sh, which also says what a
+        # certificate nobody validates does and does not protect against).
+        listen 443 ssl default_server so_keepalive=30s:10s:3;
+        listen [::]:443 ssl default_server so_keepalive=30s:10s:3;
+        ssl_certificate     /etc/nginx/tls/cert.pem;
+        ssl_certificate_key /etc/nginx/tls/key.pem;
+        ssl_protocols TLSv1.2 TLSv1.3;
+
         server_name _;
 
         root /usr/share/nginx/html;

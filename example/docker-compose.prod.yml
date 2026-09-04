@@ -105,6 +105,12 @@ services:
       Auth__CookieName: muwbta.session
       Auth__SessionTimeoutMinutes: "20160"
       Auth__RevalidationIntervalSeconds: "60"
+      # Which proxies' X-Forwarded-* headers to believe. The compose network is the one hop in this
+      # file, so the nginx in front is trusted by its network. A TLS terminator outside compose - a
+      # reverse proxy on another host - goes in KnownProxies, or the walk stops at it and every
+      # visitor shares its address for rate limiting. Both empty means the headers are ignored.
+      Proxy__KnownNetworks: "172.25.0.0/16"
+      Proxy__KnownProxies: ""
       # Game engine
       #
       # These two did nothing until the Engine section was actually read (Program.cs). The old

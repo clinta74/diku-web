@@ -20,6 +20,7 @@ using Muwbta.Server.Infrastructure;
 using Muwbta.Server.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -143,10 +144,19 @@ builder.Services
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
 
-        // SameAsRequest keeps development over plain HTTP working while still setting
-        // Secure in production. The dev client proxies through Vite so the browser sees one
-        // origin, which is what lets SameSite=Lax behave identically in both environments.
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        // Unconditional in Production. It used to follow the request scheme everywhere, on the
+        // theory that production is HTTPS - but the request reaches Kestrel from nginx as plain
+        // HTTP, so the flag was never set on any deployment with a proxy in front, which is every
+        // deployment. Honouring forwarded headers (ProxyOptions) makes SameAsRequest correct when
+        // the chain is configured right; Always means the cookie does not depend on that.
+        //
+        // Elsewhere it still follows the scheme: the dev client and the test host both talk
+        // plain HTTP to localhost, and a Secure cookie the browser refuses to return over HTTP is
+        // a sign-in that does not stick. The dev client proxies through Vite so the browser sees
+        // one origin, which is what lets SameSite=Lax behave identically in both.
+        options.Cookie.SecurePolicy = builder.Environment.IsProduction()
+            ? CookieSecurePolicy.Always
+            : CookieSecurePolicy.SameAsRequest;
 
         options.ExpireTimeSpan = authOptions.SessionTimeout;
         options.SlidingExpiration = true;
@@ -245,17 +255,28 @@ builder.Services.AddHealthChecks()
 // Per-caller limits (§8, Phase 6). The numbers come from configuration so a deployment can adjust
 // them without a rebuild — see RateLimiting.Options.
 //
-// DEPLOYMENT NOTE: the auth limit partitions by remote address, and behind the nginx front end
-// (docker-compose.prod.yml) that address is the proxy's for every caller. Until forwarded headers
-// are honoured, treat `RateLimits:AuthAttemptsPerMinute` as a site-wide cap rather than a
-// per-visitor one, and set it accordingly.
+// The auth limit partitions by remote address. Behind the nginx front end that address is the
+// proxy's for every caller unless the forwarded headers are honoured - which is what the Proxy
+// section below is for. With nothing listed there, `RateLimits:AuthAttemptsPerMinute` is a
+// site-wide cap rather than a per-visitor one.
 builder.Services.AddMuwbtaRateLimiting(builder.Configuration);
+
+// Which proxies may say who the caller really is (ProxyOptions). Nothing configured means nothing
+// trusted, and the headers are ignored exactly as they were before this existed.
+var proxyOptions = new ProxyOptions();
+builder.Configuration.GetSection(ProxyOptions.Section).Bind(proxyOptions);
+builder.Services.AddSingleton(proxyOptions);
+builder.Services.Configure<ForwardedHeadersOptions>(proxyOptions.Apply);
 
 // Ships EngineMetrics to Prometheus. All of the "where do the numbers go" decision is in
 // MetricsExport; EngineMetrics itself still knows nothing about any of it.
 builder.Services.AddMuwbtaMetricsExport();
 
 var app = builder.Build();
+
+// First, so that everything after it - the rate limiter's address partition, the cookie's Secure
+// flag, anything that logs an address - sees the caller rather than the proxy.
+app.UseForwardedHeaders();
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -307,6 +328,10 @@ ServerLog.Starting(logger, app.Environment.EnvironmentName);
 
 var csb = new NpgsqlConnectionStringBuilder(connectionString);
 ServerLog.DatabaseConfigured(logger, csb.Host ?? "(unset)", csb.Database ?? "(unset)");
+
+// Said at startup because it is the one setting whose absence looks like success: with nothing
+// trusted the site still works, the rate limit still fires, and only the partition is wrong.
+ServerLog.ProxiesTrusted(logger, proxyOptions.Describe());
 
 // Said either way, because "off" and "broken" look identical from the browser: the endpoints are
 // not registered when it is off, so the probe 404s and the Suggest buttons are absent, which is

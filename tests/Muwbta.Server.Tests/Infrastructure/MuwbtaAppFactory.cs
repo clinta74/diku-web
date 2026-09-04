@@ -1,5 +1,9 @@
+using System.Net;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
@@ -11,7 +15,8 @@ namespace Muwbta.Server.Tests.Infrastructure;
 /// </summary>
 public sealed class MuwbtaAppFactory(
     string connectionString,
-    IReadOnlyDictionary<string, string>? settings = null) : WebApplicationFactory<Program>
+    IReadOnlyDictionary<string, string>? settings = null,
+    string environment = "Testing") : WebApplicationFactory<Program>
 {
     /// <summary>
     /// Small on purpose. Each test builds its own host, and a host's pool is not torn down the
@@ -28,8 +33,18 @@ public sealed class MuwbtaAppFactory(
         ArgumentNullException.ThrowIfNull(builder);
 
         // "Testing" rather than "Development" so appsettings.Development.json - which points
-        // at the docker-compose database - cannot leak into a test run.
-        builder.UseEnvironment("Testing");
+        // at the docker-compose database - cannot leak into a test run. A test may ask for
+        // "Production" instead, for the handful of things that key on it: the session cookie's
+        // Secure flag is one.
+        builder.UseEnvironment(environment);
+
+        // The test server never sets a remote address on the connection, and the forwarded-headers
+        // middleware trusts nothing it cannot place - so a test of that middleware would see every
+        // header ignored, indistinguishable from the middleware being absent. Loopback is what a
+        // proxy on the same host would present, and it is what Proxy:KnownProxies names in the
+        // tests that exercise this.
+        builder.ConfigureServices(services =>
+            services.AddTransient<IStartupFilter, LoopbackRemoteAddressFilter>());
         builder.UseSetting("ConnectionStrings:Muwbta", CapPool(connectionString));
 
         // Revalidate the principal on every authenticated request rather than once a minute
@@ -77,6 +92,21 @@ public sealed class MuwbtaAppFactory(
             logging.ClearProviders();
             logging.AddDebug();
         });
+    }
+
+    /// <summary>Wraps the whole pipeline, so it runs ahead of the forwarded-headers middleware.</summary>
+    private sealed class LoopbackRemoteAddressFilter : IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
+        {
+            app.Use((http, nextMiddleware) =>
+            {
+                http.Connection.RemoteIpAddress ??= IPAddress.Loopback;
+                return nextMiddleware(http);
+            });
+
+            next(app);
+        };
     }
 
     private static string CapPool(string raw) =>

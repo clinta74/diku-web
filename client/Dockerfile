@@ -33,6 +33,9 @@ RUN npm run build
 # if that is ever preferred.
 FROM nginx:1.31-alpine
 
+# For the certificate the entrypoint self-signs when none is mounted (docker-entrypoint.d).
+RUN apk add --no-cache openssl
+
 WORKDIR /usr/share/nginx/html
 
 # Copy built app from build stage
@@ -53,6 +56,11 @@ ENV DNS_RESOLVER=127.0.0.11
 
 COPY nginx.conf.template /etc/nginx/templates/nginx.conf.template
 
+# Runs before nginx starts, as the container user. Executable bit set here because the image's
+# entrypoint skips a .sh it cannot execute - with a warning nobody reads, and then nginx fails to
+# find the certificate the script did not write.
+COPY --chmod=755 docker-entrypoint.d/05-selfsign.sh /docker-entrypoint.d/05-selfsign.sh
+
 # Create non-root user for security.
 #
 # /etc/nginx has to be writable by it, which is easy to miss: the entrypoint renders the template
@@ -61,12 +69,15 @@ COPY nginx.conf.template /etc/nginx/templates/nginx.conf.template
 # healthy while serving a configuration nobody asked for.
 RUN addgroup -g 1000 nginx-app && \
     adduser -D -u 1000 -G nginx-app nginx-app && \
+    mkdir -p /etc/nginx/tls && \
     chown -R nginx-app:nginx-app \
         /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx
 
 USER nginx-app
 
-EXPOSE 80
+# 80 for the container healthcheck and for a deployment that terminates TLS nowhere; 443 for the
+# hop from a front proxy, so the scheme this nginx forwards is the one the caller actually used.
+EXPOSE 80 443
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=10s \
     CMD wget -q -O - http://localhost/health || exit 1

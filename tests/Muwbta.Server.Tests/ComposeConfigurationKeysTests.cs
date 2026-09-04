@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Muwbta.Server.Auth;
 using Muwbta.Server.Game;
+using Muwbta.Server.Infrastructure;
 
 namespace Muwbta.Server.Tests;
 
@@ -45,6 +46,7 @@ public sealed class ComposeConfigurationKeysTests
     [
         ("Sessions", typeof(SessionRegistryOptions)),
         ("Auth", typeof(AuthOptions)),
+        ("Proxy", typeof(ProxyOptions)),
     ];
 
     /// <summary>The double underscore is how an environment variable spells a config section.</summary>
@@ -127,6 +129,20 @@ public sealed class ComposeConfigurationKeysTests
                 nameof(AuthOptions.SessionTimeoutMinutes),
             ],
             SettableNames(typeof(AuthOptions)));
+    }
+
+    [Fact]
+    public void The_proxy_section_holds_exactly_the_settings_the_deployments_declare()
+    {
+        // The same pin, for the section that decides who may say where a request came from. A
+        // setting added here without the deployments declaring it is a proxy hop nobody trusts,
+        // and the symptom of that is the site-wide rate limit quietly coming back.
+        Assert.Equal(
+            [
+                nameof(ProxyOptions.KnownNetworks),
+                nameof(ProxyOptions.KnownProxies),
+            ],
+            SettableNames(typeof(ProxyOptions)));
     }
 
     [Theory]

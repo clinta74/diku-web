@@ -82,6 +82,12 @@ services:
       Auth__CookieName: muwbta.session
       Auth__SessionTimeoutMinutes: '20160'
       Auth__RevalidationIntervalSeconds: '60'
+      # Which proxies' X-Forwarded-* headers to believe. The compose network is the nginx hop; the
+      # TLS terminator in front of port 7180 - on another host - goes in KnownProxies, or the walk
+      # stops at it and every visitor shares its address for rate limiting. Both empty means the
+      # headers are ignored.
+      Proxy__KnownNetworks: '172.25.0.0/16'
+      Proxy__KnownProxies: ''
       # 300, not 30. The engine default is 360 pulses (90s); 30 is shorter than that and drops a
       # phone that has merely been backgrounded (MOBILE.md section 6). Program.cs applies any
       # positive value here, so this one is live and a wrong value is a real regression.
@@ -139,7 +145,11 @@ services:
       web:
         condition: service_healthy
     ports:
-      - '7180:80'
+      # 443, not 80: the front proxy terminates TLS and re-encrypts to here, so the scheme this
+      # nginx forwards to the API is https and the session cookie gets its Secure flag. The
+      # certificate is self-signed at container start and nothing validates it (see
+      # client/docker-entrypoint.d/05-selfsign.sh for what that does and does not protect).
+      - '7180:443'
     healthcheck:
       test:
         - CMD
