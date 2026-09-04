@@ -104,6 +104,7 @@ services:
       # Auth (PLAN.md §7.1)
       Auth__CookieName: dikuweb.session
       Auth__SessionTimeoutMinutes: "20160"
+      Auth__RevalidationIntervalSeconds: "60"
       # Game engine
       #
       # These two did nothing until the Engine section was actually read (Program.cs). The old

@@ -136,7 +136,7 @@ builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.Cookie.Name = "dikuweb.session";
+        options.Cookie.Name = authOptions.CookieName;
 
         // PLAN.md §3.2: HttpOnly because the browser's native EventSource cannot send an
         // Authorization header, so the cookie is the only credential the stream can carry.
@@ -148,7 +148,7 @@ builder.Services
         // origin, which is what lets SameSite=Lax behave identically in both environments.
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 
-        options.ExpireTimeSpan = TimeSpan.FromDays(14);
+        options.ExpireTimeSpan = authOptions.SessionTimeout;
         options.SlidingExpiration = true;
 
         // This is an API, not a site with a login page. Without these the framework answers

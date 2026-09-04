@@ -81,6 +81,7 @@ services:
       # would contradict the 200 concurrent sessions PLAN.md §11 targets and has now measured.
       Auth__CookieName: dikuweb.session
       Auth__SessionTimeoutMinutes: '20160'
+      Auth__RevalidationIntervalSeconds: '60'
       # 300, not 30. The engine default is 360 pulses (90s); 30 is shorter than that and drops a
       # phone that has merely been backgrounded (MOBILE.md section 6). Program.cs applies any
       # positive value here, so this one is live and a wrong value is a real regression.
