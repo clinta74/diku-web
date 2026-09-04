@@ -12,6 +12,7 @@ import {
   type BehaviorDraft,
   type Disposition,
   type EmoteDraft,
+  type TopicDraft,
 } from './behavior'
 
 interface Props {
@@ -163,6 +164,77 @@ export function MobBehaviorEditor({ draft, itemTemplates, onChange }: Props) {
 
         <button type="button" onClick={() => set({ greeting: [...draft.greeting, ''] })}>
           Add greeting
+        </button>
+      </div>
+
+      <div className="emote-list">
+        <span className="field-label">Topics</span>
+        <p className="dim">
+          What this mob can be asked about: <strong>talk &lt;npc&gt; &lt;keyword&gt;</strong>{' '}
+          answers with the text. Mark a word in a greeting or an answer with angle brackets, like{' '}
+          <code>&lt;stone&gt;</code>, and it becomes a link to the topic of that name. A gate keeps
+          the topic closed until the player holds the flag or has finished the quest; leave both
+          blank for something anyone can ask. A word one of this mob's own quests answers to cannot
+          be a topic, because the quest is asked first.
+        </p>
+
+        {draft.topics.map((topic, index) => {
+          const update = (patch: Partial<TopicDraft>) =>
+            set({
+              topics: draft.topics.map((t, i) => (i === index ? { ...t, ...patch } : t)),
+            })
+          return (
+            <div className="field-row" key={index}>
+              <Field label="Keyword">
+                <input
+                  value={topic.keyword}
+                  placeholder="stone"
+                  onChange={(e) => update({ keyword: e.target.value })}
+                />
+              </Field>
+              <Field label="Answer">
+                <input
+                  value={topic.text}
+                  placeholder="'Somebody clears the turf round it. Not me.'"
+                  onChange={(e) => update({ text: e.target.value })}
+                />
+              </Field>
+              <Field label="Needs flag">
+                <input
+                  value={topic.requiresFlag}
+                  placeholder="attuned.grask"
+                  onChange={(e) => update({ requiresFlag: e.target.value })}
+                />
+              </Field>
+              <Field label="Needs quest done">
+                <input
+                  value={topic.requiresQuest}
+                  placeholder="a1-1-the-road-out"
+                  onChange={(e) => update({ requiresQuest: e.target.value })}
+                />
+              </Field>
+              <Button
+                variant="danger"
+                onClick={() => set({ topics: draft.topics.filter((_, i) => i !== index) })}
+              >
+                Remove
+              </Button>
+            </div>
+          )
+        })}
+
+        <button
+          type="button"
+          onClick={() =>
+            set({
+              topics: [
+                ...draft.topics,
+                { keyword: '', text: '', requiresFlag: '', requiresQuest: '' },
+              ],
+            })
+          }
+        >
+          Add topic
         </button>
       </div>
 

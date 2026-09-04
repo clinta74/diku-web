@@ -573,6 +573,123 @@ public sealed class BundleValidatorTests
     }
 
     /// <summary>A quest marking the same words as itself is one quest, and fine.</summary>
+    // -----------------------------------------------------------------------
+    // Topics (PLAN.md §4.9)
+    // -----------------------------------------------------------------------
+
+    private static Dictionary<string, object> Topic(
+        string keyword, string text, string? flag = null, string? quest = null)
+    {
+        var row = new Dictionary<string, object> { ["keyword"] = keyword, ["text"] = text };
+        if (flag is not null)
+        {
+            row["requiresFlag"] = flag;
+        }
+
+        if (quest is not null)
+        {
+            row["requiresQuest"] = quest;
+        }
+        return row;
+    }
+
+    private static BundleMobTemplate WithTopics(string key, params Dictionary<string, object>[] topics) =>
+        Mob(key, new Dictionary<string, object>
+        {
+            ["type"] = "npc",
+            ["topics"] = topics.Cast<object>().ToList(),
+        });
+
+    [Fact]
+    public void A_topic_on_a_mob_is_fine()
+    {
+        var bundle = Valid();
+
+        Assert.True(Check(bundle with
+        {
+            MobTemplates = [.. bundle.MobTemplates, WithTopics("adda", Topic("stone", "'Not me.'"))],
+        }).Ok);
+    }
+
+    /// <summary>
+    /// The one that matters: talk tries a giver's quests first, so a topic keyed with a word one
+    /// of their offers marks is a topic nobody can ever reach.
+    /// </summary>
+    [Fact]
+    public void A_topic_shadowed_by_the_givers_own_quest_is_an_error()
+    {
+        var bundle = Valid();
+
+        AssertError(
+            bundle with
+            {
+                MobTemplates = [.. bundle.MobTemplates, WithTopics("elder", Topic("things", "'What things?'"))],
+                Quests = [Marked("errand", "elder")],
+            },
+            "shadowed");
+    }
+
+    [Fact]
+    public void A_topic_with_no_text_is_an_error()
+    {
+        var bundle = Valid();
+        var half = new Dictionary<string, object> { ["keyword"] = "stone" };
+
+        AssertError(
+            bundle with { MobTemplates = [.. bundle.MobTemplates, WithTopics("adda", half)] },
+            "no text");
+    }
+
+    [Fact]
+    public void Two_topics_with_one_keyword_is_an_error()
+    {
+        var bundle = Valid();
+
+        AssertError(
+            bundle with
+            {
+                MobTemplates = [.. bundle.MobTemplates, WithTopics("adda", Topic("stone", "'One.'"), Topic("Stone", "'Two.'"))],
+            },
+            "two topics");
+    }
+
+    [Fact]
+    public void A_topic_gated_on_a_flag_nothing_grants_is_a_warning()
+    {
+        var bundle = Valid();
+
+        AssertWarning(
+            bundle with
+            {
+                MobTemplates = [.. bundle.MobTemplates, WithTopics("adda", Topic("grask", "'Later.'", flag: "attuned.grask"))],
+            },
+            "no quest in this bundle grants");
+    }
+
+    [Fact]
+    public void A_topic_gated_on_a_quest_the_bundle_lacks_is_a_warning()
+    {
+        var bundle = Valid();
+
+        AssertWarning(
+            bundle with
+            {
+                MobTemplates = [.. bundle.MobTemplates, WithTopics("adda", Topic("ember", "'Later.'", quest: "e1-adept"))],
+            },
+            "does not carry");
+    }
+
+    [Fact]
+    public void A_greeting_with_a_malformed_marker_is_an_error()
+    {
+        var bundle = Valid();
+        var greeting = new Dictionary<string, object> { ["greeting"] = new List<object> { "'Mind the <step.'" } };
+
+        AssertError(
+            bundle with { MobTemplates = [.. bundle.MobTemplates, Mob("adda", greeting)] },
+            "greeting");
+    }
+
     private static BundleQuest Marked(string key, string giver) =>
         Quest(key, new Dictionary<string, string> { ["giverOffer"] = "Bring me those <things>." })
             with { GiverMobKey = giver };

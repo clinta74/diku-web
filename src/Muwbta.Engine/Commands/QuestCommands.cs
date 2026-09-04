@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Muwbta.Domain.Characters;
 using Muwbta.Domain.Inhabitants;
 using Muwbta.Domain.Narration;
@@ -24,6 +25,11 @@ public static class QuestCommands
     {
         commands.Add(new CommandDefinition(
             "talk", 1, "talk <npc> [what you say] (t) - speak to someone; answer a giver to take a quest", Talk));
+
+        // The same verb with an "about" in it, because that is how the sentence is said. Three
+        // characters, so `as` keeps reaching assist.
+        commands.Add(new CommandDefinition(
+            "ask", 3, "ask <npc> about <topic> - ask someone what they know", Ask));
 
         // "quest" goes in FIRST, and the order is load-bearing. A verb matches on any prefix of
         // its name, and Find takes the first definition that matches - so with "quests" ahead of
@@ -77,12 +83,37 @@ public static class QuestCommands
             return;
         }
 
+        TalkTo(ctx, ctx.Argument);
+    }
+
+    /// <summary>
+    /// <c>ask adda about the stone</c>: <c>talk</c> with the word "about" taken out, so a topic
+    /// (<see cref="MobTopic"/>) can be reached by the sentence a person would actually say.
+    /// </summary>
+    private static void Ask(CommandContext ctx)
+    {
+        if (!ctx.HasArgument)
+        {
+            ctx.Reply("Ask whom about what?");
+            return;
+        }
+
+        // Only the first "about", and only as a whole word: a mob called "the man about town"
+        // keeps his name, and "ask adda about about" still asks her about "about".
+        var argument = Regex.Replace(
+            ctx.Argument, @"\s+about\s+", " ", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(100));
+
+        TalkTo(ctx, argument.Trim());
+    }
+
+    private static void TalkTo(CommandContext ctx, string argument)
+    {
         var character = ctx.Actor.Character;
-        var (targetMob, said) = FindTarget(ctx.World.MobsIn(character.RoomKey), ctx.Argument);
+        var (targetMob, said) = FindTarget(ctx.World.MobsIn(character.RoomKey), argument);
 
         if (targetMob is null)
         {
-            ctx.Reply($"You don't see '{ctx.Argument}' here.");
+            ctx.Reply($"You don't see '{argument}' here.");
             return;
         }
 
@@ -222,9 +253,15 @@ public static class QuestCommands
             // mentioned.
         }
 
+        var topics = OpenTopics(ctx, mob);
+        var linkedTopics = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         if (lines.Count == 0)
         {
-            lines.Add(Prose(SmallTalk(ctx, mob)));
+            // The greeting may mark words that are topics, rendered as links the way an offer's
+            // marked words are - and checked the same way, so a marker that leads nowhere reads
+            // as prose rather than as a button that does nothing.
+            lines.Add(Rendered(ctx, mob, SmallTalk(ctx, mob), topics, available, linkedTopics));
         }
 
         foreach (var line in lines)
@@ -238,6 +275,129 @@ public static class QuestCommands
         {
             Affordance(ctx, mob, quest, available);
         }
+
+        // And what else they could be asked, for any topic the lines above did not already offer.
+        // The same stage direction as the quest affordance, for the same reason: a topic nobody
+        // can discover is a line nobody hears.
+        TopicAffordance(ctx, mob, topics, available, linkedTopics);
+    }
+
+    /// <summary>
+    /// The topics this character may ask <paramref name="mob"/> about right now: every one the
+    /// template carries whose gates are satisfied (<see cref="MobTopic.IsOpenTo"/>).
+    /// </summary>
+    private static IReadOnlyList<MobTopic> OpenTopics(CommandContext ctx, Mob mob)
+    {
+        var character = ctx.Actor.Character;
+        var behavior = ctx.MobTemplates?.Get(mob.TemplateKey)?.Behavior;
+
+        return [.. MobBehavior.TopicsOf(behavior).Where(topic => topic.IsOpenTo(
+            character,
+            key => ctx.World.GetQuestState(character.Id, key)?.Status == QuestStatus.Completed))];
+    }
+
+    /// <summary>The topic a word asks for, among those open, or null.</summary>
+    private static MobTopic? TopicFor(IReadOnlyList<MobTopic> topics, string word) =>
+        topics.FirstOrDefault(topic => topic.AnswersTo(word));
+
+    /// <summary>
+    /// A line somebody says, with any marked word that names an open topic rendered as the
+    /// command that asks about it. Used for greetings and for topic answers, so one topic can
+    /// lead to the next.
+    /// </summary>
+    /// <remarks>
+    /// The same round trip <see cref="Offer"/> makes for quest links, and for the same reason: a
+    /// link is only shipped if feeding its command back through <see cref="FindTarget"/> lands on
+    /// this mob and this topic, and on no quest - quests answer first, so a word both could take
+    /// would go to the errand and the link would lie.
+    /// </remarks>
+    private static IReadOnlyList<TextSpan> Rendered(
+        CommandContext ctx,
+        Mob mob,
+        string text,
+        IReadOnlyList<MobTopic> topics,
+        IReadOnlyList<Quest> available,
+        HashSet<string> linkedTopics)
+    {
+        var spans = new List<TextSpan>();
+
+        foreach (var segment in QuestOffer.Parse(text))
+        {
+            if (segment.IsLink
+                && TopicFor(topics, segment.Text) is { } topic
+                && TopicCommand(ctx, mob, topic, topics, available) is { } command)
+            {
+                spans.Add(new TextSpan(segment.Text, null, C: command));
+                linkedTopics.Add(topic.Keyword);
+                continue;
+            }
+
+            spans.Add(new TextSpan(segment.Text));
+        }
+
+        return spans;
+    }
+
+    /// <summary>
+    /// The command that asks <paramref name="mob"/> about <paramref name="topic"/>, or null when
+    /// no way of addressing them makes the word land there.
+    /// </summary>
+    private static string? TopicCommand(
+        CommandContext ctx,
+        Mob mob,
+        MobTopic topic,
+        IReadOnlyList<MobTopic> topics,
+        IReadOnlyList<Quest> available)
+    {
+        foreach (var address in Addresses(mob))
+        {
+            var command = $"talk {address} {topic.Keyword}".ToLowerInvariant();
+
+            var (who, said) = FindTarget(
+                ctx.World.MobsIn(ctx.Actor.Character.RoomKey), command["talk ".Length..]);
+
+            if (ReferenceEquals(who, mob)
+                && said is not null
+                && Match(available, said) is null
+                && TopicFor(topics, said) == topic)
+            {
+                return command;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// A dim line naming the topics still unasked, each clickable, after everything else.
+    /// </summary>
+    private static void TopicAffordance(
+        CommandContext ctx,
+        Mob mob,
+        IReadOnlyList<MobTopic> topics,
+        IReadOnlyList<Quest> available,
+        HashSet<string> linkedTopics)
+    {
+        var spans = new List<TextSpan>();
+
+        foreach (var topic in topics.Where(t => !linkedTopics.Contains(t.Keyword)))
+        {
+            if (TopicCommand(ctx, mob, topic, topics, available) is not { } command)
+            {
+                continue;
+            }
+
+            spans.Add(new TextSpan(spans.Count == 0 ? "(You could ask about '" : "', '", "dim"));
+            spans.Add(new TextSpan(command, "dim", C: command));
+        }
+
+        if (spans.Count == 0)
+        {
+            return;
+        }
+
+        spans.Add(new TextSpan("'.)", "dim"));
+        ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
     }
 
     /// <summary>A line nobody can click: one plain span, which is what most lines are.</summary>
@@ -420,6 +580,23 @@ public static class QuestCommands
             if (held is not null)
             {
                 ctx.Reply($"You are already on {held.Name}.");
+                return;
+            }
+        }
+
+        // Not an errand, so perhaps a question. After the quests, deliberately: an errand's word
+        // is a commitment and a topic's is a curiosity, and the validator refuses a template that
+        // gives both the same word so this order is never the difference.
+        var topics = OpenTopics(ctx, mob);
+
+        foreach (var word in Spoken(said))
+        {
+            if (TopicFor(topics, word) is { } topic)
+            {
+                var linked = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { topic.Keyword };
+
+                ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(
+                    Rendered(ctx, mob, topic.Text, topics, available, linked))));
                 return;
             }
         }

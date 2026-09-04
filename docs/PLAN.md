@@ -1498,6 +1498,18 @@ is that an emote is unprompted and a greeting is an answer, so greetings carry n
 new key in an open bag, it needs no format bump: an older bundle simply lacks it and gets the stock
 line.
 
+**`topics` is the second half of the conversation.** A greeting is what somebody says when spoken
+to; a topic is what they say when *asked*. Each row on the bag is a keyword, a text, and optionally
+a `requiresFlag` or a `requiresQuest` that opens it: `talk adda stone` reaches the topic keyed
+`stone`, and `ask adda about the stone` is the same verb with the word taken out. Quests are tried
+first, so a topic can never take a word an errand needs, and the bundle validator refuses a template
+that gives both the same word. A greeting or a topic may mark words the way an offer does —
+`'Somebody clears the <stone>.'` — and a marked word that names an open topic is rendered as the
+command that asks it, after the same round trip that keeps quest links honest; whatever is left
+unasked is listed dim beneath. This is how a quest giver keeps driving the story *between* quests
+without a fourth quest to hand out, and how someone with no quest at all has anything to say: the
+gate is the story's progress, and nothing in the journal mentions it.
+
 **Turn-in is strict.** Handing over the item only completes a quest the character has
 *Active*. A player who stumbles across the ledger before ever meeting Kaelen cannot skip
 straight to the reward — otherwise chains could be completed out of order and the story would

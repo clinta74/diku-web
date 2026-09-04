@@ -649,4 +649,172 @@ public sealed class TalkTests
         Assert.Contains(
             "You don't see", Say(harness, actor, "talk nobody"), StringComparison.Ordinal);
     }
+
+    // -----------------------------------------------------------------------
+    // Topics: the second half of a conversation (PLAN.md §4.9)
+    // -----------------------------------------------------------------------
+
+    private static Dictionary<string, object> Topic(
+        string keyword, string text, string? flag = null, string? quest = null)
+    {
+        var row = new Dictionary<string, object> { ["keyword"] = keyword, ["text"] = text };
+        if (flag is not null)
+        {
+            row["requiresFlag"] = flag;
+        }
+
+        if (quest is not null)
+        {
+            row["requiresQuest"] = quest;
+        }
+        return row;
+    }
+
+    /// <summary>
+    /// Through <see cref="WorldHarness.AsPersisted"/>, every time: a topic list out of jsonb is a
+    /// list of <c>JsonElement</c> rows, which is the bug class this codebase keeps rediscovering.
+    /// </summary>
+    private static void WithTopics(
+        WorldHarness harness, IReadOnlyList<string>? greeting, params Dictionary<string, object>[] topics)
+    {
+        var bag = new Dictionary<string, object>
+        {
+            ["type"] = "npc",
+            ["topics"] = topics.Cast<object>().ToList(),
+        };
+
+        if (greeting is not null)
+        {
+            bag["greeting"] = greeting.Cast<object>().ToList();
+        }
+
+        harness.AddMob("adda", Room, name: "Keeper Adda", behavior: WorldHarness.AsPersisted(bag));
+    }
+
+    /// <summary>The change, stated: asking somebody about a word they know gets the answer.</summary>
+    [Fact]
+    public void An_npc_answers_a_topic_it_is_asked_about()
+    {
+        var (harness, actor) = Ready();
+        WithTopics(harness, null, Topic("stone", "'Somebody clears the turf round it. Not me.'"));
+
+        Assert.Contains(
+            "Somebody clears the turf", Say(harness, actor, "talk adda stone"), StringComparison.Ordinal);
+    }
+
+    /// <summary><c>ask</c> is the same verb with "about" taken out.</summary>
+    [Fact]
+    public void Ask_about_reaches_the_same_topic()
+    {
+        var (harness, actor) = Ready();
+        WithTopics(harness, null, Topic("stone", "'Not me.'"));
+
+        Assert.Contains("Not me.", Say(harness, actor, "ask adda about the stone"), StringComparison.Ordinal);
+        Assert.Contains("Ask whom", Say(harness, actor, "ask"), StringComparison.Ordinal);
+    }
+
+    /// <summary>A word nobody has authored still gets the old answer, not a crash or silence.</summary>
+    [Fact]
+    public void An_unknown_word_is_still_not_understood()
+    {
+        var (harness, actor) = Ready();
+        WithTopics(harness, null, Topic("stone", "'Not me.'"));
+
+        Assert.Contains("does not know", Say(harness, actor, "talk adda weather"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The gate is the story's progress: the same person says more once the player has earned it,
+    /// and says nothing about why until then.
+    /// </summary>
+    [Fact]
+    public void A_topic_closed_by_a_flag_opens_when_the_flag_is_held()
+    {
+        var (harness, actor) = Ready();
+        WithTopics(harness, null, Topic("grask", "'Mind what looks back.'", flag: "attuned.grask"));
+
+        Assert.Contains("does not know", Say(harness, actor, "talk adda grask"), StringComparison.Ordinal);
+
+        actor.Character.Flags.Add("attuned.grask");
+
+        Assert.Contains("Mind what looks back.", Say(harness, actor, "talk adda grask"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_topic_closed_by_a_quest_opens_when_it_is_done()
+    {
+        var (harness, actor) = Ready();
+        WithTopics(harness, null, Topic("ember", "'She took a coal and paid in a knife.'", quest: "e1-adept"));
+
+        Assert.Contains("does not know", Say(harness, actor, "talk adda ember"), StringComparison.Ordinal);
+
+        harness.World.SetQuestState(actor.CharacterId, "e1-adept", new CharacterQuest
+        {
+            CharacterId = actor.CharacterId,
+            QuestKey = "e1-adept",
+            Status = QuestStatus.Completed,
+            StartedAt = DateTimeOffset.UtcNow,
+            CompletedAt = DateTimeOffset.UtcNow,
+            TimesCompleted = 1,
+        });
+
+        Assert.Contains("paid in a knife", Say(harness, actor, "talk adda ember"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A greeting may mark a word the way an offer does, and the marked word is the command that
+    /// asks about it - after the same round trip that keeps quest links honest.
+    /// </summary>
+    [Fact]
+    public void A_greeting_marks_a_topic_as_a_link()
+    {
+        var (harness, actor) = Ready();
+        WithTopics(harness, ["'Somebody clears the <stone>.'"], Topic("stone", "'Not me.'"));
+
+        var spans = Spans(harness, actor, "talk adda");
+
+        Assert.Equal("talk adda stone", Link(spans)?.C);
+        Assert.Equal("stone", Link(spans)?.T);
+    }
+
+    /// <summary>A marker naming a topic the player cannot hear yet is prose, not a dead button.</summary>
+    [Fact]
+    public void A_marked_word_for_a_closed_topic_is_plain_prose()
+    {
+        var (harness, actor) = Ready();
+        WithTopics(harness, ["'Ask me about <grask>.'"], Topic("grask", "'Later.'", flag: "attuned.grask"));
+
+        var spans = Spans(harness, actor, "talk adda");
+
+        Assert.Null(Link(spans));
+        Assert.Contains("Ask me about grask.", string.Concat(spans.Select(s => s.T)), StringComparison.Ordinal);
+    }
+
+    /// <summary>Whatever the lines above did not offer is listed dim beneath, clickable.</summary>
+    [Fact]
+    public void Unlinked_topics_are_listed_as_an_affordance()
+    {
+        var (harness, actor) = Ready();
+        WithTopics(harness, ["'Mind the step.'"], Topic("stone", "'Not me.'"), Topic("gate", "'It forgets.'"));
+
+        var commands = Spans(harness, actor, "talk adda").Where(s => s.C is not null).Select(s => s.C).ToList();
+
+        Assert.Equal(["talk adda stone", "talk adda gate"], commands);
+    }
+
+    /// <summary>One answer can lead to the next, which is how a conversation has a shape.</summary>
+    [Fact]
+    public void A_topic_answer_can_link_another_topic()
+    {
+        var (harness, actor) = Ready();
+        WithTopics(
+            harness,
+            null,
+            Topic("stone", "'Older than the markers. Ask about the <watch>.'"),
+            Topic("watch", "'Somebody keeps the turf clear. With a blade.'"));
+
+        var spans = Spans(harness, actor, "talk adda stone");
+
+        Assert.Equal("talk adda watch", Link(spans)?.C);
+    }
 }

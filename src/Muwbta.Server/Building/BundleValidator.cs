@@ -7,6 +7,7 @@ using Muwbta.Domain.Items;
 using Muwbta.Domain.Quests;
 using Muwbta.Domain.Spawning;
 using Muwbta.Domain.Worlds;
+using Muwbta.Engine;
 using Muwbta.Engine.Inhabitants;
 using Muwbta.Engine.Presentation;
 using Muwbta.Engine.Quests;
@@ -452,6 +453,12 @@ public static class BundleValidator
         Action<string> error,
         Action<string> warn)
     {
+        var questKeys = bundle.Quests.Select(q => q.Key).ToHashSet(StringComparer.Ordinal);
+        var grantedFlags = bundle.Quests
+            .Where(q => !string.IsNullOrWhiteSpace(q.RewardFlagKey))
+            .Select(q => q.RewardFlagKey!)
+            .ToHashSet(StringComparer.Ordinal);
+
         foreach (var mob in bundle.MobTemplates)
         {
             var behavior = mob.Behavior ?? [];
@@ -470,6 +477,110 @@ public static class BundleValidator
             {
                 error($"{mob.Key} has behavior key '{key}', which the engine does not read; "
                     + $"it reads {string.Join(", ", MobBehavior.KnownKeys.Order(StringComparer.Ordinal))}");
+            }
+
+            // Greetings may mark topic words now, so a malformed marker is spoken brackets and
+            // all - the same finding the quest dialogue check makes, for the same reason.
+            foreach (var line in MobBehavior.GreetingsOf(behavior))
+            {
+                if (QuestOffer.Malformed(line) is { } why)
+                {
+                    error($"{mob.Key} greeting: {why}");
+                }
+            }
+
+            CheckTopics(bundle, mob, behavior, questKeys, grantedFlags, error, warn);
+        }
+    }
+
+    /// <summary>
+    /// What a mob can be asked about (PLAN.md §4.9): every row whole, no word given twice, no word
+    /// an errand of the same giver already answers to, and every gate naming something.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The collision is the one that matters.</b> <c>talk</c> tries a giver's quests before
+    /// their topics, so a topic keyed with a word one of their offers marks - or with the last
+    /// word of a quest's name, which <c>NameMatch</c> also accepts - is a topic nobody can ever
+    /// reach, and nothing at runtime would say so. Checked with the engine's own matcher rather
+    /// than a copy of its rules, so the two cannot drift.
+    /// </para>
+    /// <para>
+    /// Gates are warnings, not errors, because a zone-scoped bundle legitimately names a flag
+    /// granted three realms up the chain. A row missing its keyword or text is an error, because
+    /// the engine drops it silently and a builder would otherwise learn that from a player.
+    /// </para>
+    /// </remarks>
+    private static void CheckTopics(
+        WorldBundle bundle,
+        BundleMobTemplate mob,
+        Dictionary<string, object> behavior,
+        HashSet<string> questKeys,
+        HashSet<string> grantedFlags,
+        Action<string> error,
+        Action<string> warn)
+    {
+        var rows = JsonBag.Items(behavior, MobBehavior.TopicsKey);
+
+        foreach (var entry in rows)
+        {
+            // A warning rather than an error, to keep the rule that any known key with any value
+            // is accepted (a scalar here is dropped by the engine exactly as a scalar emote is
+            // not); an object with a half missing is the one shape a builder meant and got wrong.
+            if (JsonBag.AsBag(entry) is not { } row)
+            {
+                warn($"{mob.Key} has a topic that is not an object, which the engine ignores; each needs a keyword and a text");
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(JsonBag.Text(row, MobBehavior.TopicKeywordKey)))
+            {
+                error($"{mob.Key} has a topic with no keyword, which nothing can ask for");
+            }
+
+            if (string.IsNullOrWhiteSpace(JsonBag.Text(row, MobBehavior.TopicTextKey)))
+            {
+                error($"{mob.Key} has a topic with no text, which would be answered with silence");
+            }
+        }
+
+        var topics = MobBehavior.TopicsOf(behavior);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var given = bundle.Quests.Where(q => string.Equals(q.GiverMobKey, mob.Key, StringComparison.Ordinal)).ToList();
+
+        foreach (var topic in topics)
+        {
+            if (!seen.Add(topic.Keyword))
+            {
+                error($"{mob.Key} has two topics keyed '{topic.Keyword}'; only the first would ever answer");
+            }
+
+            foreach (var quest in given)
+            {
+                var offer = quest.Dialogue?.GetValueOrDefault(QuestDialogue.GiverOffer);
+                var marked = QuestOffer.Keywords(offer)
+                    .Any(word => word.Equals(topic.Keyword, StringComparison.OrdinalIgnoreCase));
+
+                if (marked || NameMatch.Matches(topic.Keyword, quest.Name, quest.Key))
+                {
+                    error($"{mob.Key} topic '{topic.Keyword}' is shadowed by quest {quest.Key}, "
+                        + "which answers to the same word first; nobody could ever ask it");
+                }
+            }
+
+            if (QuestOffer.Malformed(topic.Text) is { } why)
+            {
+                error($"{mob.Key} topic '{topic.Keyword}': {why}");
+            }
+
+            if (topic.RequiresFlag is { } flag && !grantedFlags.Contains(flag))
+            {
+                warn($"{mob.Key} topic '{topic.Keyword}' requires flag {flag}, which no quest in this bundle grants");
+            }
+
+            if (topic.RequiresQuest is { } key && !questKeys.Contains(key))
+            {
+                warn($"{mob.Key} topic '{topic.Keyword}' requires quest {key}, which this bundle does not carry");
             }
         }
     }

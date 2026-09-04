@@ -50,6 +50,26 @@ public static class MobBehavior
     /// </remarks>
     public const string GreetingKey = "greeting";
 
+    /// <summary>The behavior key holding what this mob can be asked about (PLAN.md §4.9).</summary>
+    /// <remarks>
+    /// A list of rows, each a <see cref="MobTopic"/>: the word that asks it, the answer, and
+    /// optionally the flag or the finished quest that opens it. The second half of a
+    /// conversation, where <see cref="GreetingKey"/> is the first.
+    /// </remarks>
+    public const string TopicsKey = "topics";
+
+    /// <summary>The keys a topic row is authored with.</summary>
+    public const string TopicKeywordKey = "keyword";
+
+    /// <inheritdoc cref="TopicKeywordKey"/>
+    public const string TopicTextKey = "text";
+
+    /// <inheritdoc cref="TopicKeywordKey"/>
+    public const string TopicRequiresFlagKey = "requiresFlag";
+
+    /// <inheritdoc cref="TopicKeywordKey"/>
+    public const string TopicRequiresQuestKey = "requiresQuest";
+
     /// <summary>The behavior key marking a mob as a shopkeeper.</summary>
     public const string ShopkeeperKey = "shopkeeper";
 
@@ -81,6 +101,7 @@ public static class MobBehavior
         TypeKey,
         EmotesKey,
         GreetingKey,
+        TopicsKey,
         ShopkeeperKey,
         SellsKey,
         MarkupKey,
@@ -179,6 +200,45 @@ public static class MobBehavior
     public static IReadOnlyList<string> GreetingsOf(
         IReadOnlyDictionary<string, object>? behavior) =>
         JsonBag.Strings(behavior, GreetingKey);
+
+    /// <summary>What this mob can be asked about, gates included. Empty when nothing is authored.</summary>
+    /// <remarks>
+    /// A row with no keyword or no text is dropped rather than half-spoken, for the reason a
+    /// textless emote is; the bundle validator is where such a row is reported. Keywords are
+    /// trimmed because they are compared against what a player types, and gates are kept null
+    /// rather than empty so "no gate" is one value.
+    /// </remarks>
+    public static IReadOnlyList<MobTopic> TopicsOf(IReadOnlyDictionary<string, object>? behavior)
+    {
+        var topics = new List<MobTopic>();
+
+        foreach (var entry in JsonBag.Items(behavior, TopicsKey))
+        {
+            if (JsonBag.AsBag(entry) is not { } row)
+            {
+                continue;
+            }
+
+            var keyword = JsonBag.Text(row, TopicKeywordKey)?.Trim();
+            var text = JsonBag.Text(row, TopicTextKey);
+
+            if (string.IsNullOrEmpty(keyword) || string.IsNullOrWhiteSpace(text))
+            {
+                continue;
+            }
+
+            topics.Add(new MobTopic(
+                keyword,
+                text,
+                Gate(JsonBag.Text(row, TopicRequiresFlagKey)),
+                Gate(JsonBag.Text(row, TopicRequiresQuestKey))));
+        }
+
+        return topics;
+    }
+
+    private static string? Gate(string? raw) =>
+        string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
 
     /// <summary>The keys a timed emote row is authored with.</summary>
     public const string EmoteTextKey = "text";

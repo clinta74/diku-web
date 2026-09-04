@@ -25,6 +25,14 @@ export interface EmoteDraft {
 export const DEFAULT_EMOTE_MIN_SECONDS = 20
 export const DEFAULT_EMOTE_MAX_SECONDS = 60
 
+/** One thing a mob can be asked about. Mirrors `MobTopic` in the engine. */
+export interface TopicDraft {
+  keyword: string
+  text: string
+  requiresFlag: string
+  requiresQuest: string
+}
+
 export interface BehaviorDraft {
   disposition: Disposition
   emotes: EmoteDraft[]
@@ -36,6 +44,12 @@ export interface BehaviorDraft {
    * happens when somebody speaks rather than on a schedule.
    */
   greeting: string[]
+  /**
+   * What this mob can be asked about (PLAN.md §4.9): `talk <npc> <keyword>` answers with the
+   * text. A gate - a character flag, or a quest key the character must have finished - keeps a
+   * topic closed until the story has got that far. Empty gates mean open to everyone.
+   */
+  topics: TopicDraft[]
   shopkeeper: boolean
   sells: string[]
   /** How far over base value this shop prices its stock: 0.1 is 1.1x. Zero is base price. */
@@ -140,6 +154,30 @@ function toDefaultEmote(text: string): EmoteDraft {
   }
 }
 
+/**
+ * Topic rows as stored. A row is kept only when it has both halves, matching the engine, which
+ * drops anything else rather than answering blank; gates read as '' when absent so the form has
+ * one representation for "no gate".
+ */
+function asTopics(raw: unknown): TopicDraft[] {
+  if (!Array.isArray(raw)) return []
+  const topics: TopicDraft[] = []
+  for (const entry of raw) {
+    if (typeof entry !== 'object' || entry === null) continue
+    const row = entry as Record<string, unknown>
+    const keyword = typeof row.keyword === 'string' ? row.keyword.trim() : ''
+    const text = typeof row.text === 'string' ? row.text : ''
+    if (keyword.length === 0 || text.trim().length === 0) continue
+    topics.push({
+      keyword,
+      text,
+      requiresFlag: typeof row.requiresFlag === 'string' ? row.requiresFlag.trim() : '',
+      requiresQuest: typeof row.requiresQuest === 'string' ? row.requiresQuest.trim() : '',
+    })
+  }
+  return topics
+}
+
 /** Pulls the keys the engine reads out of a stored behavior bag. */
 export function readBehavior(behavior: Record<string, unknown> | undefined): BehaviorDraft {
   const type = String(behavior?.type ?? 'passive').toLowerCase()
@@ -147,6 +185,7 @@ export function readBehavior(behavior: Record<string, unknown> | undefined): Beh
     disposition: type === 'aggressive' || type === 'npc' ? type : 'passive',
     emotes: asEmotes(behavior?.emotes),
     greeting: asStrings(behavior?.greeting),
+    topics: asTopics(behavior?.topics),
     shopkeeper: behavior?.shopkeeper === true || behavior?.shopkeeper === 'true',
     sells: asStrings(behavior?.sells),
     // Absent, unreadable, or negative all mean base price, matching the engine: §4.13 keeps
@@ -205,6 +244,28 @@ export function writeBehavior(
 
   if (greeting.length > 0) next.greeting = greeting
   else delete next.greeting
+
+  // A row needs both halves to mean anything; a gate is written only when it says something, so
+  // a topic open to everyone is stored as the two keys it needs and nothing else.
+  const topics = draft.topics
+    .map((topic) => ({
+      keyword: topic.keyword.trim(),
+      text: topic.text.trim(),
+      requiresFlag: topic.requiresFlag.trim(),
+      requiresQuest: topic.requiresQuest.trim(),
+    }))
+    .filter((topic) => topic.keyword.length > 0 && topic.text.length > 0)
+
+  if (topics.length > 0) {
+    next.topics = topics.map((topic) => ({
+      keyword: topic.keyword,
+      text: topic.text,
+      ...(topic.requiresFlag ? { requiresFlag: topic.requiresFlag } : {}),
+      ...(topic.requiresQuest ? { requiresQuest: topic.requiresQuest } : {}),
+    }))
+  } else {
+    delete next.topics
+  }
 
   if (draft.shopkeeper) {
     next.shopkeeper = true

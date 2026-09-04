@@ -20,6 +20,7 @@ describe('readBehavior', () => {
       disposition: 'passive',
       emotes: [],
       greeting: [],
+      topics: [],
       shopkeeper: false,
       sells: [],
       markup: 0,
@@ -204,6 +205,7 @@ describe('writeBehavior', () => {
         disposition: 'npc',
         emotes: [],
         greeting: [],
+        topics: [],
         shopkeeper: true,
         sells: ['bread', 'torch'],
         markup: 0,
@@ -314,5 +316,50 @@ describe('the markup', () => {
     expect(shopPrice(100, 0.1)).toBe(110)
     expect(shopPrice(20, 0.15)).toBe(23)
     expect(shopPrice(70, 0.7)).toBe(119)
+  })
+})
+
+describe('topics', () => {
+  it('reads topic rows and drops half-filled ones', () => {
+    // Matches the engine, which drops a row missing either half rather than answering blank.
+    const draft = readBehavior({
+      topics: [
+        { keyword: 'stone', text: "'Not me.'", requiresFlag: 'attuned.grask' },
+        { keyword: '', text: 'orphaned' },
+        { keyword: 'gate' },
+        'not a row',
+      ],
+    })
+
+    expect(draft.topics).toEqual([
+      { keyword: 'stone', text: "'Not me.'", requiresFlag: 'attuned.grask', requiresQuest: '' },
+    ])
+  })
+
+  it('writes a gate only when it says something', () => {
+    const bag = writeBehavior(undefined, {
+      ...readBehavior(undefined),
+      topics: [
+        { keyword: ' stone ', text: "'Not me.'", requiresFlag: '', requiresQuest: '' },
+        { keyword: 'ember', text: "'A knife.'", requiresFlag: '', requiresQuest: 'e1-adept' },
+      ],
+    })
+
+    expect(bag.topics).toEqual([
+      { keyword: 'stone', text: "'Not me.'" },
+      { keyword: 'ember', text: "'A knife.'", requiresQuest: 'e1-adept' },
+    ])
+  })
+
+  it('removes the key when every row is blank', () => {
+    const bag = writeBehavior(
+      { topics: [{ keyword: 'stone', text: 'old' }] },
+      {
+        ...readBehavior(undefined),
+        topics: [{ keyword: '', text: '', requiresFlag: '', requiresQuest: '' }],
+      },
+    )
+
+    expect(bag).not.toHaveProperty('topics')
   })
 })
