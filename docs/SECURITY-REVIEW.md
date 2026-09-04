@@ -30,7 +30,7 @@ pass as staff.
 | **Low** | Real, narrow, or needs a second weakness to matter |
 | **Info** | Verified sound; recorded so nobody re-audits it |
 
-## Do this first
+## Do this first — done
 
 **Confirm who owns the first account on beta.** The database was wiped and redeployed
 today. [AuthEndpoints.cs:106](../src/Muwbta.Server/Auth/AuthEndpoints.cs) promotes the
@@ -42,7 +42,8 @@ yours. One query settles it:
 select username, role, created_at from accounts order by created_at limit 3;
 ```
 
-If the first row is not you, that account is Admin and must be demoted before anything else.
+**Confirmed by the operator on 2026-09-03: the first account is theirs.** Kept here because
+it is the check to repeat after any future wipe; C1 is the fix that makes it unnecessary.
 
 ---
 
@@ -167,13 +168,16 @@ The cookie is already `HttpOnly` and `SameSite=Lax`, which is right.
 
 `5434:5432` and `3000:3000`
 ([docker-compose.truenas.beta.yml:153, :88](../tmp/docker-compose.truenas.beta.yml)) bind
-to every interface on the NAS. Confirmed LAN-only, and both are password-protected, which
-is why this is Low. It stays on the list because neither has any business being reachable
-from the LAN either: the prod example gets this right for Grafana — "bound to loopback:
-reach it over an SSH tunnel" — and the beta file diverged.
+to every interface on the NAS. Confirmed LAN-only, both password-protected, and — the
+correction from the first draft — *reachable from the LAN on purpose*: the operator works
+on Grafana and the database from other machines on it. Binding to loopback, as first
+suggested, would have removed exactly that access, and the prod example's "SSH tunnel"
+note describes a different operating model from this one.
 
-**Fix.** `127.0.0.1:5434:5432` and `127.0.0.1:3000:3000`, or drop the Postgres publish
-entirely; `adminer` and `psql` inside the compose network do not need it.
+**Fix.** Grafana stays as it is. The Postgres publish is the one worth removing, and only
+once the backup exports are trusted enough that nobody needs `psql` from outside the
+compose network — the operator's call and timing. Until then, it is a password-protected
+port on a private LAN, which is what Low means.
 
 ### A4 — Security headers — **Low**
 
@@ -477,10 +481,10 @@ cap in A1.
 
 | # | Item | Effort | Unlocks |
 |---|---|---|---|
-| 0 | Confirm the first beta account is yours | 5 min | — |
+| 0 | ~~Confirm the first beta account is yours~~ — done | — | — |
 | 1 | A1 TLS on the inner hop (self-signed at boot); forwarded headers in Kestrel, both hops pinned | 3 hr | A2, C2, D1 |
 | 2 | A2 `Secure` cookie unconditional in Production; HSTS toggle on NPM | 1 hr | — |
-| 3 | A3 bind Postgres and Grafana to loopback | 5 min | — |
+| 3 | A3 remove the Postgres publish once exports are trusted (operator's timing) | 5 min | — |
 | 4 | F1 reserved names + staff tag + welcome line | ½ day | F2, F4 |
 | 5 | F2 emote marker | 1 hr | — |
 | 6 | C2 per-account login backoff | ½ day | — |
