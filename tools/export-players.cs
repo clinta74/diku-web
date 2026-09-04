@@ -109,7 +109,7 @@ for (var i = 0; i < args.Length; i++)
                   --relocate <room key>  Rewrite every character's room on the way out, for a
                                          target that does not have the room they are standing in.
                   --connection <string>  Npgsql connection string. Falls back to
-                                         DIKUWEB_CONNECTION, then to the compose defaults.
+                                         MUWBTA_CONNECTION, then to the compose defaults.
                 """);
             return 0;
     }
@@ -139,7 +139,7 @@ outPath ??= Path.Combine(
 
 // The compose defaults are the fallback, because that is what a developer following the README is
 // running. Anything else is passed in or set in the environment.
-connection ??= Environment.GetEnvironmentVariable("DIKUWEB_CONNECTION")
+connection ??= Environment.GetEnvironmentVariable("MUWBTA_CONNECTION")
     ?? "Host=localhost;Port=5432;Database=dikuweb;Username=dikuweb;Password=password";
 
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(connection);
@@ -218,7 +218,7 @@ var questRows = await ReadAsync(
 
 var sql = new StringBuilder();
 
-sql.AppendLine($"-- diku-web player export, {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ssK}");
+sql.AppendLine($"-- muwbta player export, {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ssK}");
 sql.AppendLine($"-- account: {username} <{email}>");
 sql.AppendLine(
     $"-- {characterRows.Count} characters, {itemRows.Count} items, {questRows.Count} quest rows");
@@ -346,7 +346,7 @@ foreach (var room in characterRows
 
 Console.WriteLine();
 Console.WriteLine("Apply it yourself - this touched nothing:");
-Console.WriteLine($"  docker exec -i dikuweb-postgres psql -U dikuweb -d dikuweb < {outPath}");
+Console.WriteLine($"  docker exec -i muwbta-postgres psql -U dikuweb -d dikuweb < {outPath}");
 
 return 0;
 

@@ -81,10 +81,10 @@ Run it after any migration, and whenever you want to believe the backups.
 
 ```bash
 docker compose -f docker-compose.prod.yml stop web        # single writer; nothing else may be up
-docker cp backups/<dump> dikuweb-postgres:/tmp/restore.dump
-docker exec dikuweb-postgres psql -U dikuweb -d postgres -c 'drop database dikuweb;'
-docker exec dikuweb-postgres psql -U dikuweb -d postgres -c 'create database dikuweb;'
-docker exec dikuweb-postgres pg_restore -U dikuweb -d dikuweb --no-owner --no-privileges /tmp/restore.dump
+docker cp backups/<dump> muwbta-postgres:/tmp/restore.dump
+docker exec muwbta-postgres psql -U dikuweb -d postgres -c 'drop database dikuweb;'
+docker exec muwbta-postgres psql -U dikuweb -d postgres -c 'create database dikuweb;'
+docker exec muwbta-postgres pg_restore -U dikuweb -d dikuweb --no-owner --no-privileges /tmp/restore.dump
 docker compose -f docker-compose.prod.yml start web
 docker compose -f docker-compose.prod.yml logs -f web     # expect "Game loop starting with N rooms"
 ```

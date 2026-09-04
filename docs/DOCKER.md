@@ -71,11 +71,11 @@ docker-compose exec postgres psql -U dikuweb -d dikuweb
 
 ```bash
 # Terminal 1: Backend
-cd /path/to/diku-web
+cd /path/to/muwbta
 dotnet run --project src/Muwbta.Server
 
 # Terminal 2: Frontend
-cd /path/to/diku-web/client
+cd /path/to/muwbta/client
 npm run dev
 ```
 
@@ -86,8 +86,8 @@ For production, use `docker-compose.prod.yml` which includes the full applicatio
 ```bash
 # Set environment variables
 export REGISTRY=ghcr.io
-export IMAGE_REPO=your-org/diku-web
-export DIKUWEB_IMAGE_TAG=v1.0.0
+export IMAGE_REPO=your-org/muwbta
+export MUWBTA_IMAGE_TAG=v1.0.0
 
 # Start production services
 docker-compose -f docker-compose.prod.yml up -d
@@ -119,8 +119,8 @@ POSTGRES_PASSWORD=dikuweb_dev_only
 ```
 # Pre-built images from registry
 REGISTRY=ghcr.io
-IMAGE_REPO=your-org/diku-web
-DIKUWEB_IMAGE_TAG=latest
+IMAGE_REPO=your-org/muwbta
+MUWBTA_IMAGE_TAG=latest
 ```
 
 ## Database Connection
@@ -191,18 +191,18 @@ Then update connection string to use port 5433.
 
 ```bash
 # Build .NET image
-docker build -t ghcr.io/your-org/diku-web:v1.0.0 \
+docker build -t ghcr.io/your-org/muwbta-server:v1.0.0 \
   -f Dockerfile \
   .
 
 # Build client image
-docker build -t ghcr.io/your-org/diku-web-client:v1.0.0 \
+docker build -t ghcr.io/your-org/muwbta-client:v1.0.0 \
   -f client/Dockerfile \
   .
 
 # Push to registry
-docker push ghcr.io/your-org/diku-web:v1.0.0
-docker push ghcr.io/your-org/diku-web-client:v1.0.0
+docker push ghcr.io/your-org/muwbta-server:v1.0.0
+docker push ghcr.io/your-org/muwbta-client:v1.0.0
 ```
 
 ## See Also

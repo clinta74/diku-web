@@ -501,7 +501,7 @@ static string BuildConnectionString(IConfiguration config)
             Password = password,
             Pooling = true,
             MaxPoolSize = 20,
-            ApplicationName = "dikuweb-web",
+            ApplicationName = "muwbta-web",
             CommandTimeout = 30,
             Timezone = "UTC",
         };

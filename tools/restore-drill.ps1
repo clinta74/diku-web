@@ -37,7 +37,7 @@
 param(
     # Defaults to the newest dump in backups/.
     [string] $Dump,
-    [string] $Container = 'dikuweb-postgres',
+    [string] $Container = 'muwbta-postgres',
     [string] $User = 'dikuweb',
     # Read from .env, because that is what docker-compose.yml handed the container. Defaulting to
     # the compose fallback instead would produce a drill that fails on authentication and reads as

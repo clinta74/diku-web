@@ -166,7 +166,7 @@ toolkit would otherwise automate.
 Confirm it took by asking ollama what it found:
 
 ```sh
-docker logs dikuweb-ollama | grep "inference compute"
+docker logs muwbta-ollama | grep "inference compute"
 ```
 
 ```
@@ -210,7 +210,7 @@ is the bottom row**: a 12B at 16k reports 8.4 GB loaded. The check, if it ever n
 different hardware or a newer Ollama:
 
 ```sh
-docker exec dikuweb-ollama ollama ps
+docker exec muwbta-ollama ollama ps
 ```
 
 The `SIZE` column includes the KV cache, and `CONTEXT` shows the window actually loaded — which is
@@ -259,7 +259,7 @@ docker compose -f docker-compose.truenas.yml -f docker-compose.truenas.gpu.yml u
 ```
 
 `docker-compose.truenas.gpu.yml` carries the device reservation, the host prerequisites, and the
-verification steps. The short version of verifying: `docker exec dikuweb-ollama nvidia-smi` proves
+verification steps. The short version of verifying: `docker exec muwbta-ollama nvidia-smi` proves
 the device arrived, and `ollama ps`'s PROCESSOR column says what fraction is actually on it.
 
 **[GPU-SETUP.md](GPU-SETUP.md) is the step-by-step**, from installing the TrueNAS driver through

@@ -47,7 +47,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAMESPACE }}/dikuweb-server
+          images: ${{ env.IMAGE_NAMESPACE }}/muwbta-server
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
@@ -100,8 +100,8 @@ jobs:
           # an update available on every check, updated correctly, and then reported one again.
           provenance: false
           sbom: false
-          cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/dikuweb-server:buildcache
-          cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}/dikuweb-server:buildcache,mode=max', env.IMAGE_NAMESPACE) || '' }}
+          cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/muwbta-server:buildcache
+          cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}/muwbta-server:buildcache,mode=max', env.IMAGE_NAMESPACE) || '' }}
 
   build-client:
     runs-on: ubuntu-latest
@@ -124,7 +124,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAMESPACE }}/dikuweb-client
+          images: ${{ env.IMAGE_NAMESPACE }}/muwbta-client
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
@@ -156,8 +156,8 @@ jobs:
           # an update available on every check, updated correctly, and then reported one again.
           provenance: false
           sbom: false
-          cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/dikuweb-client:buildcache
-          cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}/dikuweb-client:buildcache,mode=max', env.IMAGE_NAMESPACE) || '' }}
+          cache-from: type=registry,ref=${{ env.IMAGE_NAMESPACE }}/muwbta-client:buildcache
+          cache-to: ${{ github.event_name != 'pull_request' && format('type=registry,ref={0}/muwbta-client:buildcache,mode=max', env.IMAGE_NAMESPACE) || '' }}
 
   # The three sidecars that used to read their config off a bind mount. They now carry it, because
   # a TrueNAS custom app renders its compose file with no repository beside it - a relative bind
@@ -174,13 +174,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: dikuweb-backup
+          - name: muwbta-backup
             context: ./tools/backup
             dockerfile: ./tools/backup/Dockerfile
-          - name: dikuweb-prometheus
+          - name: muwbta-prometheus
             context: ./tools/monitoring
             dockerfile: ./tools/monitoring/Dockerfile.prometheus
-          - name: dikuweb-grafana
+          - name: muwbta-grafana
             context: ./tools/monitoring
             dockerfile: ./tools/monitoring/Dockerfile.grafana
 

@@ -1,4 +1,4 @@
-# diku-web — Build Plan
+# muwbta-web — Build Plan
 
 A browser-played, text-driven multi-user dungeon. Original world and rules design,
 DikuMUD only in spirit. C# / .NET 10 server, PostgreSQL for data, React client.
@@ -143,8 +143,8 @@ A watchdog logs any pulse exceeding its budget.
 ### 2.2 Projects
 
 ```
-diku-web/
-├─ Muwbta.sln
+muwbta/
+├─ Muwbta.slnx
 ├─ Directory.Build.props            # shared TFM (net10.0), nullable, warnings-as-errors
 ├─ docker-compose.yml               # postgres:18 + adminer
 ├─ README.md                        # the only document in the root
@@ -2934,7 +2934,7 @@ Partly done ahead of schedule — the deployment pipeline landed alongside Phase
       in the first bucket and every quantile would be an interpolation inside it — a p99 panel
       drawing a flat line at ~4.95 ms forever, looking like a measurement.
       One trap worth naming: Prometheus 3 negotiates UTF-8 metric names and stores what the
-      exporter calls them, so it held `dikuweb.pulse.duration_…` with dots while `curl` of the same
+      exporter calls them, so it held `muwbta.pulse.duration_…` with dots while `curl` of the same
       endpoint showed underscores. Every panel read "No data". `metric_name_escaping_scheme:
       underscores` in `prometheus.yml` is what fixes it, and only running the stack finds it.
 - [x] **Scheduled `pg_dump` backups + a rehearsed restore drill.** A `backup` sidecar takes a
@@ -3194,7 +3194,7 @@ looks like it should catch this and cannot: eight bytes into a kernel send buffe
 thousands of pings, on a peer that stopped acknowledging long ago. Nothing fails until the kernel
 gives up retransmitting.
 
-Measured, 50 sessions, timing `dikuweb_sessions_active` to zero:
+Measured, 50 sessions, timing `muwbta_sessions_active` to zero:
 
 | the client goes away by… | before | after |
 |---|---|---|

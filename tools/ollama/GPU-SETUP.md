@@ -64,7 +64,7 @@ degrade gracefully — the container refuses to start — so the base file has t
 with no card.
 
 ```sh
-cd /path/to/diku-web
+cd /path/to/muwbta
 docker compose -f docker-compose.truenas.yml -f docker-compose.truenas.gpu.yml up -d ollama
 ```
 
@@ -103,13 +103,13 @@ only if a card ever holds the model outright.
 ## 3. Verify
 
 ```sh
-docker exec dikuweb-ollama nvidia-smi
+docker exec muwbta-ollama nvidia-smi
 ```
 The card, from inside the container. If this fails, the reservation did not take and nothing below
 will tell you anything useful.
 
 ```sh
-docker exec dikuweb-ollama ollama ps
+docker exec muwbta-ollama ollama ps
 ```
 Load a model first — ask for a draft in the builder, or run `create-models.sh`. **The PROCESSOR
 column is the real answer:**
@@ -119,7 +119,7 @@ column is the real answer:**
 - `100% GPU` — the whole model is resident.
 
 ```sh
-docker logs dikuweb-web | grep -i "assist warm"
+docker logs muwbta-web | grep -i "assist warm"
 ```
 What it was actually worth. The warm-up is pure prefill, and prefill is where a GPU helps most.
 Compare against the CPU-only baseline of roughly half an hour.
@@ -147,7 +147,7 @@ runtime` must list `nvidia`.
 
 **`nvidia-smi` works on the host but not in the container**
 The reservation is not being applied — almost always a compose command run without both `-f` flags.
-Check with `docker inspect dikuweb-ollama | grep -i -A5 devicerequest`.
+Check with `docker inspect muwbta-ollama | grep -i -A5 devicerequest`.
 
 **PROCESSOR says `100% CPU` with the card visible**
 The model could not be laid out on the GPU at all. Usually VRAM already in use by something else —

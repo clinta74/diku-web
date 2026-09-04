@@ -359,7 +359,7 @@ drops the raw SSE payload, which nothing reads on a load session.
 **The ramp ending is not everybody having arrived.** The last session's stagger lands on the ramp
 deadline and arriving takes four round trips after it, so a window opened on the deadline itself
 measures a world still filling — and the verdict correctly refused to answer. The runner now waits
-for the server's own `dikuweb_sessions_active` gauge to reach the target, and starts the hold clock
+for the server's own `muwbta_sessions_active` gauge to reach the target, and starts the hold clock
 from there.
 
 ### What it leaves behind

@@ -19,7 +19,7 @@
 
 set -e
 
-CONTAINER=${CONTAINER:-dikuweb-ollama}
+CONTAINER=${CONTAINER:-muwbta-ollama}
 MODEL=${MODEL:-dikuweb-builder}
 EMBED=${EMBED:-nomic-embed-text}
 HERE=$(dirname "$0")

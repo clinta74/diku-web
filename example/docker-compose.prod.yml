@@ -8,10 +8,10 @@ services:
   postgres:
     # PLAN.md §6: PostgreSQL 18, pinned for version consistency across dev/test/prod
     image: postgres:18
-    container_name: dikuweb-postgres
+    container_name: muwbta-postgres
     restart: always
     networks:
-      - dikuweb-network
+      - muwbta-network
     environment:
       # Database initialization - EDIT THESE VALUES
       POSTGRES_DB: dikuweb
@@ -50,13 +50,13 @@ services:
     # ASP.NET Core backend API server
     # REQUIRED: Set via environment variables:
     #   - REGISTRY (default: ghcr.io)
-    #   - IMAGE_REPO (default: your-org/diku-web)
-    #   - DIKUWEB_IMAGE_TAG (default: latest)
-    image: candrews74/dikuweb-server:latest
-    container_name: dikuweb-web
+    #   - IMAGE_REPO (default: your-org/muwbta)
+    #   - MUWBTA_IMAGE_TAG (default: latest)
+    image: candrews74/muwbta-server:latest
+    container_name: muwbta-web
     restart: always
     networks:
-      - dikuweb-network
+      - muwbta-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -146,10 +146,10 @@ services:
     # See tools/backup/backup.sh - it deletes any dump it could not restore, so a file in
     # ./backups has been proven at least once rather than merely written.
     image: postgres:18
-    container_name: dikuweb-backup
+    container_name: muwbta-backup
     restart: always
     networks:
-      - dikuweb-network
+      - muwbta-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -178,11 +178,11 @@ services:
     build:
       context: .
       dockerfile: client/Dockerfile
-    image: candrews74/dikuweb-client:latest
-    container_name: dikuweb-client
+    image: candrews74/muwbta-client:latest
+    container_name: muwbta-client
     restart: always
     networks:
-      - dikuweb-network
+      - muwbta-network
     depends_on:
       web:
         condition: service_healthy
@@ -210,10 +210,10 @@ services:
     # look at raw series, tunnel: ssh -L 9090:localhost:9090 <host>, after adding a
     # 127.0.0.1:9090:9090 mapping here.
     image: prom/prometheus:v3.6.0
-    container_name: dikuweb-prometheus
+    container_name: muwbta-prometheus
     restart: always
     networks:
-      - dikuweb-network
+      - muwbta-network
     volumes:
       - ./tools/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -234,10 +234,10 @@ services:
     # The dashboard. Provisioned from tools/monitoring/grafana, so it survives a container
     # recreate and lives in git rather than only in Grafana's own database.
     image: grafana/grafana:12.2.0
-    container_name: dikuweb-grafana
+    container_name: muwbta-grafana
     restart: always
     networks:
-      - dikuweb-network
+      - muwbta-network
     depends_on:
       - prometheus
     ports:
@@ -263,7 +263,7 @@ services:
         labels: "service=grafana"
 
 networks:
-  dikuweb-network:
+  muwbta-network:
     driver: bridge
     ipam:
       config:

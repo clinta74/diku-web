@@ -59,17 +59,17 @@ services:
 # Verifying it took
 # ---------------------------------------------------------------------------
 #
-#   docker exec dikuweb-ollama nvidia-smi
+#   docker exec muwbta-ollama nvidia-smi
 #       The card, from inside the container. If this fails the reservation did not work and
 #       nothing below will tell you anything useful.
 #
-#   docker exec dikuweb-ollama ollama ps
+#   docker exec muwbta-ollama ollama ps
 #       Load a model first (ask for a draft, or run create-models.sh). The PROCESSOR column is the
 #       answer: "100% CPU" means the card is present but unused, "38%/62% CPU/GPU" is a partial
 #       offload, "100% GPU" is the whole model resident. On a 6 GB card against 8.1 GB of weights,
 #       expect partial - that is the arithmetic, not a fault.
 #
-#   docker logs dikuweb-web | grep -i "assist warm"
+#   docker logs muwbta-web | grep -i "assist warm"
 #       What it was actually worth. The warm-up prefills the whole canon, and prefill is the part
 #       a GPU helps most with - it is compute-bound where generation is bandwidth-bound. Measured
 #       on CPU alone that step took about half an hour.

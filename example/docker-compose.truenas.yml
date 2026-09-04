@@ -14,10 +14,10 @@ name: diku-web
 services:
   postgres:
     image: postgres:18
-    container_name: dikuweb-postgres
+    container_name: muwbta-postgres
     restart: always
     networks:
-      - dikuweb-network
+      - muwbta-network
     environment:
       POSTGRES_DB: dikuweb
       POSTGRES_USER: dikuweb
@@ -50,12 +50,12 @@ services:
         max-size: 10m
 
   web:
-    image: candrews74/dikuweb-server:latest
-    container_name: dikuweb-web
+    image: candrews74/muwbta-server:latest
+    container_name: muwbta-web
     restart: always
     pull_policy: always
     networks:
-      - dikuweb-network
+      - muwbta-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -129,12 +129,12 @@ services:
         max-size: 50m
 
   client:
-    image: candrews74/dikuweb-client:latest
-    container_name: dikuweb-client
+    image: candrews74/muwbta-client:latest
+    container_name: muwbta-client
     restart: always
     pull_policy: always
     networks:
-      - dikuweb-network
+      - muwbta-network
     depends_on:
       web:
         condition: service_healthy
@@ -168,10 +168,10 @@ services:
     # the published images and have no repo checkout there, copy the script to a dataset and
     # point the mount at an absolute path instead, e.g. /mnt/tank/dikuweb/tools/backup:/scripts:ro
     image: postgres:18
-    container_name: dikuweb-backup
+    container_name: muwbta-backup
     restart: always
     networks:
-      - dikuweb-network
+      - muwbta-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -200,11 +200,11 @@ services:
     # AI assist for the world builder. CPU inference on a 9600K, so every setting here exists to
     # protect either the cached prompt prefix or the game loop.
     image: ollama/ollama:latest
-    container_name: dikuweb-ollama
+    container_name: muwbta-ollama
     restart: always
     pull_policy: always
     networks:
-      - dikuweb-network
+      - muwbta-network
     environment:
       # Never unload. The default is 5m, and an unload discards the KV cache for the canon
       # prefix - which costs minutes to rebuild on this CPU.
@@ -243,7 +243,7 @@ services:
         max-size: 10m
 
 networks:
-  dikuweb-network:
+  muwbta-network:
     driver: bridge
     ipam:
       config:

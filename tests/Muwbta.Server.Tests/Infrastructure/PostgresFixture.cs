@@ -14,9 +14,9 @@ namespace Muwbta.Server.Tests.Infrastructure;
 public sealed class PostgresFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:18")
-        .WithDatabase("dikuweb_test")
-        .WithUsername("dikuweb_test")
-        .WithPassword("dikuweb_test")
+        .WithDatabase("muwbta_test")
+        .WithUsername("muwbta_test")
+        .WithPassword("muwbta_test")
 
         // Postgres defaults to 100, which a run that boots a host per test can brush against
         // while a finished test's pool is still winding down. The per-host pool is capped in

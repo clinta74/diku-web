@@ -101,14 +101,14 @@ var chosen = (all ? catalogue.Values.AsEnumerable() : keys.Select(k => catalogue
 var effects = new EffectRegistry();
 var sql = new StringBuilder();
 
-sql.AppendLine("-- diku-web ability export, from AbilityCatalogue.");
+sql.AppendLine("-- muwbta ability export, from AbilityCatalogue.");
 sql.AppendLine($"-- {chosen.Count} {(chosen.Count == 1 ? "ability" : "abilities")}, "
     + $"generated {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm} UTC.");
 sql.AppendLine("--");
 sql.AppendLine("-- Every statement is an upsert and OVERWRITES the row it names, including any");
 sql.AppendLine("-- retune made through the builder. Read the comment above each one first.");
 sql.AppendLine("--");
-sql.AppendLine("--   docker exec -i dikuweb-postgres psql -U dikuweb -d dikuweb < this-file.sql");
+sql.AppendLine("--   docker exec -i muwbta-postgres psql -U dikuweb -d dikuweb < this-file.sql");
 sql.AppendLine();
 sql.AppendLine("BEGIN;");
 

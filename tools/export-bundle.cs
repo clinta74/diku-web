@@ -60,7 +60,7 @@ for (var i = 0; i < args.Length; i++)
 
                   -o, --out <file>       Default: build/live.json
                   --connection <string>  Npgsql connection string. Falls back to
-                                         DIKUWEB_CONNECTION, then to the compose defaults.
+                                         MUWBTA_CONNECTION, then to the compose defaults.
                   --world <key>          Export one world instead of everything
                   --zone <key>           Export one zone instead of everything
                   --abilities            Export only the abilities, as content/abilities.json is
@@ -73,7 +73,7 @@ for (var i = 0; i < args.Length; i++)
 
 // The compose defaults (docker-compose.yml) are the fallback, because that is what a developer
 // following the README is running. Anything else is passed in or set in the environment.
-connection ??= Environment.GetEnvironmentVariable("DIKUWEB_CONNECTION")
+connection ??= Environment.GetEnvironmentVariable("MUWBTA_CONNECTION")
     ?? "Host=localhost;Port=5432;Database=dikuweb;Username=dikuweb;Password=password";
 
 // EnableDynamicJson, exactly as PersistenceServiceCollectionExtensions does it. Every stat bag in

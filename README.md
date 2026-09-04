@@ -1,4 +1,6 @@
-# diku-web
+# Muwbta
+
+Multiuser Web Based Text Adventure — the engine. The world it ships is **The Reaches**.
 
 A browser-played, text-driven multi-user dungeon. C# / .NET 10 server, PostgreSQL 18,
 React client. Server→client push over Server-Sent Events; client→server commands over HTTP POST.

@@ -32,10 +32,10 @@ services:
   postgres:
     # PostgreSQL 18 - same as production
     image: postgres:18
-    container_name: dikuweb-postgres
+    container_name: muwbta-postgres
     restart: unless-stopped
     networks:
-      - dikuweb-network
+      - muwbta-network
     environment:
       # POSTGRES_*, matching the names the container itself uses, the names deploy.dev.conf uses,
       # and the names the prod and NAS compose files use.
@@ -77,10 +77,10 @@ services:
   # Optional: Database admin UI for development
   adminer:
     image: adminer:4
-    container_name: dikuweb-adminer
+    container_name: muwbta-adminer
     restart: unless-stopped
     networks:
-      - dikuweb-network
+      - muwbta-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -104,12 +104,12 @@ services:
   # inference is available, and the assist endpoints answer "not configured" rather than failing.
   ollama:
     image: ollama/ollama:latest
-    container_name: dikuweb-ollama
+    container_name: muwbta-ollama
     profiles:
       - assist
     restart: unless-stopped
     networks:
-      - dikuweb-network
+      - muwbta-network
     ports:
       # Loopback, and published unlike the NAS deployment - the server runs on the host here, so
       # there is no compose network for it to reach ollama across. This is the address
@@ -149,7 +149,7 @@ services:
         labels: "service=ollama"
 
 networks:
-  dikuweb-network:
+  muwbta-network:
     driver: bridge
     ipam:
       config:

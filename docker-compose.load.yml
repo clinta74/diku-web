@@ -17,7 +17,7 @@
 #
 # The measurement comes back on stdout and in ./runs.
 
-name: dikuweb-load
+name: muwbta-load
 
 services:
   # The server under test. Deliberately the same image the root Dockerfile builds — measuring a
@@ -26,7 +26,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: dikuweb-load-web
+    container_name: muwbta-load-web
 
     # The whole point of the file. Two cores and 2 GB is a small VPS, which is the deployment
     # worth knowing about: if the loop holds 200 sessions here it holds them anywhere, and if it
@@ -35,7 +35,7 @@ services:
     mem_limit: 2g
 
     networks:
-      - dikuweb-network
+      - muwbta-network
 
     ports:
       # Bound to loopback so the histogram can be read from the host during a run without exposing
@@ -52,7 +52,7 @@ services:
       # The cost is that this writes to that database: 200 throwaway accounts per run, prefixed
       # `playtest_`, with their characters swept afterwards by the janitor. See PLAYTEST.md for
       # the purge. Point it at a scratch database if that trade is wrong for you.
-      DatabaseConnection__Host: dikuweb-postgres
+      DatabaseConnection__Host: muwbta-postgres
       DatabaseConnection__Port: "5432"
       DatabaseConnection__Database: dikuweb
       DatabaseConnection__User: dikuweb
@@ -106,11 +106,11 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: dikuweb-load-proxy
+    container_name: muwbta-load-proxy
     profiles: ["proxy"]
 
     networks:
-      - dikuweb-network
+      - muwbta-network
 
     depends_on:
       web:
@@ -132,7 +132,7 @@ services:
     build:
       context: .
       dockerfile: tools/Muwbta.Playtest/Dockerfile
-    container_name: dikuweb-load-runner
+    container_name: muwbta-load-runner
     profiles: ["run"]
 
     # Half the server's budget. Enough to drive 200 SSE streams, and little enough that the
@@ -141,7 +141,7 @@ services:
     mem_limit: 2g
 
     networks:
-      - dikuweb-network
+      - muwbta-network
 
     depends_on:
       web:
@@ -168,6 +168,6 @@ networks:
   # The development stack's network, so this reaches the Postgres already running there rather
   # than standing up a second empty one. External because that stack owns it: `docker compose up`
   # in this file must never be able to delete the database's network out from under it.
-  dikuweb-network:
+  muwbta-network:
     external: true
-    name: diku-web-dev_dikuweb-network
+    name: diku-web-dev_muwbta-network
