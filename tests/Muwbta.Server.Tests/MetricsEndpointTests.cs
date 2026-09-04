@@ -24,12 +24,27 @@ namespace Muwbta.Server.Tests;
 /// </remarks>
 [Collection(PostgresCollection.Name)]
 [Trait("Category", "EndToEnd")]
-public sealed class MetricsEndpointTests(PostgresFixture postgres)
+public sealed class MetricsEndpointTests(PostgresFixture postgres) : IDisposable
 {
+    /// <summary>
+    /// Its own host, and the reason is worth keeping. Every test host creates a Muwbta.Engine
+    /// meter with the same instrument names, and a MeterListener is process-wide: when an
+    /// earlier test disposes its host, that meter's instruments report themselves completed,
+    /// and the SDK - keying by instrument identity - retires the shared host's observable
+    /// gauges with them. Counters and histograms come back on their next measurement; a gauge
+    /// has nothing to bring it back, so a scrape from the shared host loses rooms_loaded and
+    /// sessions_active depending on what ran before. Production runs one host per process and
+    /// cannot hit this. A host built here, after those teardowns, has instruments nothing has
+    /// completed.
+    /// </summary>
+    private readonly MuwbtaAppFactory _factory = new(postgres.ConnectionString);
+
+    public void Dispose() => _factory.Dispose();
+
     [Fact]
     public async Task Metrics_endpoint_exposes_the_engine_meter()
     {
-        using var client = postgres.App.CreateClient();
+        using var client = _factory.CreateClient();
 
         var response = await client.GetAsync(new Uri("/metrics", UriKind.Relative));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -90,7 +105,7 @@ public sealed class MetricsEndpointTests(PostgresFixture postgres)
         // Measured on a real run: p99 was 0.21 ms and the median 0.05 ms. Without these
         // boundaries none of that is visible. Asserting the two smallest is enough to prove the
         // view is applied rather than reverted to defaults.
-        using var client = postgres.App.CreateClient();
+        using var client = _factory.CreateClient();
 
         var body = await WaitForEngineSeriesAsync(client);
 

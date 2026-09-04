@@ -57,6 +57,18 @@ public sealed class LoginThrottleTests
     }
 
     [Fact]
+    public void The_failure_that_starts_a_pause_says_so_and_later_ones_do_not()
+    {
+        // The dashboard counts pauses as events. Every failure past the threshold lengthens the
+        // pause, but only the one that lit the fuse is a new pause.
+        var (throttle, _) = Build(failuresBefore: 2);
+
+        Assert.False(throttle.RecordFailure("kael"));
+        Assert.True(throttle.RecordFailure("kael"));
+        Assert.False(throttle.RecordFailure("kael"));
+    }
+
+    [Fact]
     public void The_pause_expires_with_the_clock()
     {
         var (throttle, clock) = Build(failuresBefore: 1, baseSeconds: 10);

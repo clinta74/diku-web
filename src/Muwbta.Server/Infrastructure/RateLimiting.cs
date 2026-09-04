@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Threading.RateLimiting;
 using Muwbta.Server.Auth;
+using Muwbta.Server.Telemetry;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace Muwbta.Server.Infrastructure;
@@ -99,6 +100,12 @@ public static class RateLimiting
                         ((int)Math.Ceiling(retryAfter.TotalSeconds))
                             .ToString(NumberFormatInfo.InvariantInfo);
                 }
+
+                // Counted by policy, because the policies mean different things: auth refusals
+                // are a stranger guessing, command refusals are a player flooding the loop.
+                var policy = context.HttpContext.GetEndpoint()?.Metadata
+                    .GetMetadata<EnableRateLimitingAttribute>()?.PolicyName ?? "unknown";
+                context.HttpContext.RequestServices.GetService<ServerMetrics>()?.RateLimited(policy);
 
                 return ValueTask.CompletedTask;
             };

@@ -5,6 +5,7 @@ using Muwbta.Engine;
 using Muwbta.Engine.Protocol;
 using Muwbta.Persistence;
 using Muwbta.Server.Infrastructure;
+using Muwbta.Server.Telemetry;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -84,6 +85,7 @@ public static partial class AuthEndpoints
         RegisterRequest request,
         MuwbtaDbContext db,
         IPasswordHasher<Account> hasher,
+        ServerMetrics metrics,
         HttpContext http,
         TimeProvider clock,
         CancellationToken cancellationToken)
@@ -97,6 +99,7 @@ public static partial class AuthEndpoints
 
         if (username is null || !UsernamePattern().IsMatch(username))
         {
+            metrics.Registration("refused");
             return Results.BadRequest(new { error = "Username must be 3-24 letters, digits, or underscores." });
         }
 
@@ -105,11 +108,13 @@ public static partial class AuthEndpoints
         // name gets to claim it is staff (the other is the character, checked at creation).
         if (ReservedNames.IsReserved(username))
         {
+            metrics.Registration("refused");
             return Results.BadRequest(new { error = "That username is reserved." });
         }
 
         if (string.IsNullOrWhiteSpace(email) || !email.Contains('@', StringComparison.Ordinal))
         {
+            metrics.Registration("refused");
             return Results.BadRequest(new { error = "A valid email address is required." });
         }
 
@@ -118,6 +123,7 @@ public static partial class AuthEndpoints
         // hashes whatever it is given and registration is the surface a stranger can reach.
         if (!PasswordPolicy.IsAcceptable(password, out var passwordError))
         {
+            metrics.Registration("refused");
             return Results.BadRequest(new { error = passwordError });
         }
 
@@ -129,6 +135,7 @@ public static partial class AuthEndpoints
 
         if (taken)
         {
+            metrics.Registration("refused");
             return Results.Conflict(new { error = "That username or email is already registered." });
         }
 
@@ -164,6 +171,7 @@ public static partial class AuthEndpoints
                 account.Username);
         }
 
+        metrics.Registration("created");
         await SignInAsync(http, account);
         return Results.Ok(ToResponse(account));
     }
@@ -173,6 +181,7 @@ public static partial class AuthEndpoints
         MuwbtaDbContext db,
         IPasswordHasher<Account> hasher,
         LoginThrottle throttle,
+        ServerMetrics metrics,
         HttpContext http,
         TimeProvider clock,
         CancellationToken cancellationToken)
@@ -184,6 +193,7 @@ public static partial class AuthEndpoints
         // before the lookup so an unknown name is slowed exactly like a known one.
         if (throttle.RetryAfter(username) is { } wait)
         {
+            metrics.SignIn(SignInOutcome.Paused);
             return TooManyFailures(http, wait);
         }
 
@@ -196,14 +206,24 @@ public static partial class AuthEndpoints
         if (account is null)
         {
             _ = hasher.VerifyHashedPassword(Decoy, DecoyHash(hasher), request.Password ?? string.Empty);
-            throttle.RecordFailure(username);
+            metrics.SignIn(SignInOutcome.UnknownUser);
+            if (throttle.RecordFailure(username))
+            {
+                metrics.SignInPaused();
+            }
+
             return Results.Unauthorized();
         }
 
         if (hasher.VerifyHashedPassword(account, account.PasswordHash, request.Password ?? string.Empty)
             == PasswordVerificationResult.Failed)
         {
-            throttle.RecordFailure(username);
+            metrics.SignIn(SignInOutcome.WrongPassword);
+            if (throttle.RecordFailure(username))
+            {
+                metrics.SignInPaused();
+            }
+
             return Results.Unauthorized();
         }
 
@@ -211,11 +231,13 @@ public static partial class AuthEndpoints
 
         if (account.IsBanned)
         {
+            metrics.SignIn(SignInOutcome.Banned);
             return Results.Json(
                 new { error = "This account is banned.", reason = account.BanReason },
                 statusCode: StatusCodes.Status403Forbidden);
         }
 
+        metrics.SignIn(SignInOutcome.Success);
         account.LastLoginAt = clock.GetUtcNow();
         account.LastLoginAddress = http.Connection.RemoteIpAddress?.ToString();
         await db.SaveChangesAsync(cancellationToken);

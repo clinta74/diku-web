@@ -1,4 +1,5 @@
 using Muwbta.Engine.Telemetry;
+using Muwbta.Server.Telemetry;
 using OpenTelemetry.Metrics;
 
 namespace Muwbta.Server.Infrastructure;
@@ -34,6 +35,10 @@ public static class MetricsExport
             .AddOpenTelemetry()
             .WithMetrics(metrics => metrics
                 .AddMeter(EngineMetrics.MeterName)
+                // The server's own counters: sign-ins by outcome, pauses, rate-limit refusals,
+                // moderation, save failures. The hardening work made the server refuse things,
+                // and a refusal nobody can see is a refusal nobody notices being attacked.
+                .AddMeter(ServerMetrics.MeterName)
                 // The loop is one thread that must not be starved, so GC pauses and thread-pool
                 // starvation are engine problems here in a way they are not in a request/response
                 // service: a blocked pulse is the whole world stopping, not one slow response.

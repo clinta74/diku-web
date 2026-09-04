@@ -18,6 +18,7 @@ using Muwbta.Server.Characters;
 using Muwbta.Server.Game;
 using Muwbta.Server.Infrastructure;
 using Muwbta.Server.Infrastructure.Repositories;
+using Muwbta.Server.Telemetry;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -136,6 +137,11 @@ builder.Services.AddSingleton(authOptions);
 // The per-account sign-in backoff (LoginThrottle). In memory and single-instance, like the rate
 // limiter and for the same reason.
 builder.Services.AddSingleton<LoginThrottle>();
+
+// The server's security counters (ServerMetrics), registered the way EngineMetrics is: through
+// the meter factory when there is one, so the exporter's listener finds them.
+builder.Services.AddSingleton<ServerMetrics>(sp =>
+    new ServerMetrics(sp.GetService<System.Diagnostics.Metrics.IMeterFactory>()));
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

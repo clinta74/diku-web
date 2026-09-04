@@ -60,15 +60,18 @@ public sealed class LoginThrottle(AuthOptions options, TimeProvider clock)
         }
     }
 
-    /// <summary>One more wrong password against this name.</summary>
-    public void RecordFailure(string username)
+    /// <summary>
+    /// One more wrong password against this name. True when this failure started a pause, so the
+    /// caller can count the event; a pause that merely lengthened is not a new one.
+    /// </summary>
+    public bool RecordFailure(string username)
     {
         ArgumentNullException.ThrowIfNull(username);
 
         if (options.LoginFailuresBeforeBackoff <= 0)
         {
             // Zero disables it - the same convention the revalidation interval uses.
-            return;
+            return false;
         }
 
         var now = clock.GetUtcNow();
@@ -95,11 +98,13 @@ public sealed class LoginThrottle(AuthOptions options, TimeProvider clock)
 
                 entry.LockedUntil = now.AddSeconds(seconds);
             }
-        }
 
-        if (_entries.Count > PruneAbove)
-        {
-            Prune(now);
+            if (_entries.Count > PruneAbove)
+            {
+                Prune(now);
+            }
+
+            return over == 0;
         }
     }
 

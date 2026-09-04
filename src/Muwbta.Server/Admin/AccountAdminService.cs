@@ -1,4 +1,5 @@
 using Muwbta.Domain.Accounts;
+using Muwbta.Server.Telemetry;
 using Muwbta.Persistence;
 using Muwbta.Server.Auth;
 using Microsoft.AspNetCore.Identity;
@@ -133,8 +134,20 @@ public sealed class AccountAdminService(
     MuwbtaDbContext db,
     TimeProvider clock,
     IPasswordHasher<Account> hasher,
-    LoginThrottle throttle)
+    LoginThrottle throttle,
+    ServerMetrics metrics)
 {
+    /// <summary>
+    /// The one place an audit row is written, so the counter beside it cannot be forgotten at
+    /// the next action somebody adds. The table is the record; the counter is the same record
+    /// as a rate, for the dashboard.
+    /// </summary>
+    private void Audit(AdminAudit row)
+    {
+        db.AdminAudits.Add(row);
+        metrics.Moderation(row.Action.ToString());
+    }
+
     /// <summary>
     /// Clears the sign-in backoff against an account (see <see cref="LoginThrottle"/>).
     /// </summary>
@@ -162,7 +175,7 @@ public sealed class AccountAdminService(
             return ModerationResult.Refused($"{target.Username} is not waiting out a sign-in pause.");
         }
 
-        db.AdminAudits.Add(new AdminAudit
+        Audit(new AdminAudit
         {
             ActorAccountId = actorAccountId,
             TargetAccountId = target.Id,
@@ -215,7 +228,7 @@ public sealed class AccountAdminService(
 
         target.Role = role;
 
-        db.AdminAudits.Add(new AdminAudit
+        Audit(new AdminAudit
         {
             ActorAccountId = actorAccountId,
             TargetAccountId = target.Id,
@@ -275,7 +288,7 @@ public sealed class AccountAdminService(
         target.IsBanned = banned;
         target.BanReason = banned ? reason : null;
 
-        db.AdminAudits.Add(new AdminAudit
+        Audit(new AdminAudit
         {
             ActorAccountId = actorAccountId,
             TargetAccountId = target.Id,
@@ -329,7 +342,7 @@ public sealed class AccountAdminService(
 
         target.MutedUntil = until;
 
-        db.AdminAudits.Add(new AdminAudit
+        Audit(new AdminAudit
         {
             ActorAccountId = actorAccountId,
             TargetAccountId = target.Id,
@@ -381,7 +394,7 @@ public sealed class AccountAdminService(
 
         character.DeletedAt = clock.GetUtcNow();
 
-        db.AdminAudits.Add(new AdminAudit
+        Audit(new AdminAudit
         {
             ActorAccountId = actorAccountId,
             TargetAccountId = character.AccountId,
@@ -451,7 +464,7 @@ public sealed class AccountAdminService(
         target.PasswordHash = hasher.HashPassword(target, newPassword!);
         target.PasswordChangedAt = now;
 
-        db.AdminAudits.Add(new AdminAudit
+        Audit(new AdminAudit
         {
             ActorAccountId = actorAccountId,
             TargetAccountId = target.Id,

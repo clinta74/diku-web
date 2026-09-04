@@ -60,7 +60,8 @@ public sealed class CharacterSaveQueue : ICharacterSaveQueue
 public sealed class CharacterSaveWorker(
     CharacterSaveQueue queue,
     IDbContextFactory<MuwbtaDbContext> factory,
-    ILogger<CharacterSaveWorker> logger) : BackgroundService
+    ILogger<CharacterSaveWorker> logger,
+    Telemetry.ServerMetrics metrics) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -92,6 +93,7 @@ public sealed class CharacterSaveWorker(
                 {
                     // A failed save must not kill the worker, or every later save is lost too.
                     ServerLog.CharacterSaveFailed(logger, batch.Count, ex);
+                    metrics.SaveFailed(batch.Count);
                 }
                 finally
                 {
