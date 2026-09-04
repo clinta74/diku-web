@@ -549,6 +549,8 @@ export interface GameConfiguration {
   description: string
   startingRoomKey: string
   welcomeMessage: string
+  /** Words nobody may say here: whole words, one per line or comma-separated. Empty means no filter. */
+  blockedWords: string
   isActive: boolean
   /**
    * False when the starting room names a room this server does not have. Advisory: writing a
@@ -986,7 +988,7 @@ export const builderApi = {
 
   saveConfiguration: (
     key: string,
-    body: Pick<GameConfiguration, 'name' | 'description' | 'startingRoomKey' | 'welcomeMessage'>,
+    body: Pick<GameConfiguration, 'name' | 'description' | 'startingRoomKey' | 'welcomeMessage' | 'blockedWords'>,
   ) =>
     request<GameConfiguration>(`${base}/configurations/${key}`, {
       method: 'POST',

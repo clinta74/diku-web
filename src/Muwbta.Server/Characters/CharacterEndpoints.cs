@@ -75,6 +75,13 @@ public static partial class CharacterEndpoints
             return Results.BadRequest(new { error = "That name is reserved." });
         }
 
+        // The active configuration's word list applies to names as it does to speech: a name is
+        // said in every room its owner walks into.
+        if (engineOptions.WordFilter.Matches(request.Name, out _))
+        {
+            return Results.BadRequest(new { error = "That name is not allowed here." });
+        }
+
         // IsDefined as well as TryParse: TryParse accepts any integer string, so "42" parsed to a
         // path that is not one - a character with no abilities and a number where its path
         // should be. The role endpoint already guards the same way; this one did not.

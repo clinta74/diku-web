@@ -85,10 +85,10 @@ public sealed class WorldMutationApplier(
             // one always does. Deleting one never does - the endpoint refuses to delete the live
             // one, so there is nothing here to undo.
             UpsertGameConfiguration change => change.Live
-                ? ApplyConfiguration(change, change.StartingRoomKey, change.WelcomeMessage)
+                ? ApplyConfiguration(change, change.StartingRoomKey, change.WelcomeMessage, change.BlockedWords)
                 : MutationResult.Ok([change]),
             ActivateGameConfiguration change =>
-                ApplyConfiguration(change, change.StartingRoomKey, change.WelcomeMessage),
+                ApplyConfiguration(change, change.StartingRoomKey, change.WelcomeMessage, change.BlockedWords),
             DeleteGameConfiguration change => MutationResult.Ok([change]),
             _ => MutationResult.Fail(MutationError.Invalid, "Unsupported change."),
         };
@@ -505,7 +505,8 @@ public sealed class WorldMutationApplier(
     private MutationResult ApplyConfiguration(
         WorldChange change,
         string startingRoomKey,
-        string welcomeMessage)
+        string welcomeMessage,
+        string blockedWords)
     {
         if (!RoomKey.TryParse(startingRoomKey, out var starting))
         {
@@ -516,6 +517,10 @@ public sealed class WorldMutationApplier(
 
         options.StartingRoom = starting;
         options.WelcomeMessage = welcomeMessage;
+
+        // Recompiled on the loop thread, once per change, which is the only place it should be:
+        // the filter is read on every line of speech and written about once a month.
+        options.BlockedWords = blockedWords;
 
         return MutationResult.Ok([change]);
     }

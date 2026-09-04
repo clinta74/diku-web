@@ -145,6 +145,29 @@ public sealed class CommandContext
         return true;
     }
 
+    /// <summary>
+    /// Whether <paramref name="text"/> contains a word the active configuration refuses, replying
+    /// so if it does. The same shape as <see cref="RefusedForMute"/>, and called at the same five
+    /// doors, because a filter with a way around it is a filter in name only.
+    /// </summary>
+    /// <remarks>
+    /// Refused rather than masked. Replacing the word with asterisks would send the sentence on
+    /// with a hole in it that everybody can fill, and would tell the speaker nothing. Saying no
+    /// tells them exactly what the rule is, and a player who was not trying to break it rewords.
+    /// </remarks>
+    public bool RefusedForLanguage(string text)
+    {
+        var filter = Options?.WordFilter ?? WordFilter.None;
+
+        if (!filter.Matches(text, out _))
+        {
+            return false;
+        }
+
+        Reply("That word is not allowed here.", "bad");
+        return true;
+    }
+
     public void Reply(string text) => Actor.SendText(text);
 
     public void Reply(string text, string style) => Actor.SendText(text, style);

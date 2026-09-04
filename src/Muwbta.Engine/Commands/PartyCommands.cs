@@ -450,6 +450,11 @@ public static class PartyCommands
             return;
         }
 
+        if (ctx.RefusedForLanguage(ctx.Argument))
+        {
+            return;
+        }
+
         // Reaches the whole party wherever they are - which is the point of having one channel
         // that is not the room.
         foreach (var memberId in party.Members)

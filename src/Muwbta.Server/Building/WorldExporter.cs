@@ -255,7 +255,7 @@ public sealed class WorldExporter(MuwbtaDbContext db, TimeProvider clock)
         await db.GameConfigurations.AsNoTracking()
             .OrderBy(c => c.Key)
             .Select(c => new BundleGameConfiguration(
-                c.Key, c.Name, c.Description, c.StartingRoomKey, c.WelcomeMessage))
+                c.Key, c.Name, c.Description, c.StartingRoomKey, c.WelcomeMessage, c.BlockedWords))
             .ToListAsync(cancellationToken);
 
     private async Task<IReadOnlyList<BundleAbility>> AbilitiesAsync(CancellationToken cancellationToken)

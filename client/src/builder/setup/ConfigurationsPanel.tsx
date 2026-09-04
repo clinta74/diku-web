@@ -28,6 +28,7 @@ interface Draft {
   description: string
   startingRoomKey: string
   welcomeMessage: string
+  blockedWords: string
   /** False for a new one, so the key field is editable exactly once. */
   existing: boolean
 }
@@ -42,6 +43,7 @@ const BLANK: Draft = {
   description: '',
   startingRoomKey: '',
   welcomeMessage: 'Welcome back, {name}.',
+  blockedWords: '',
   existing: false,
 }
 
@@ -102,6 +104,7 @@ export function ConfigurationsPanel({ list, onChanged }: Props) {
         description: draft.description,
         startingRoomKey: draft.startingRoomKey,
         welcomeMessage: draft.welcomeMessage,
+        blockedWords: draft.blockedWords,
       })
       toast.notify(draft.existing ? 'Configuration saved.' : 'Configuration created.')
       setDraft(null)
@@ -262,6 +265,24 @@ export function ConfigurationsPanel({ list, onChanged }: Props) {
               rows={2}
               value={draft.welcomeMessage}
               onChange={(value) => setDraft({ ...draft, welcomeMessage: value })}
+            />
+          </Field>
+
+          <Field
+            label="Blocked words"
+            hint={
+              <>
+                Words nobody may say here, one per line. Whole words only, any case: an entry
+                refuses the word on its own and nothing that merely contains it. Leave it empty for
+                no filter. Applies to speech, tells, chat, emotes, party chat and new character
+                names, and takes effect when this configuration is active.
+              </>
+            }
+          >
+            <Textarea
+              rows={4}
+              value={draft.blockedWords}
+              onChange={(value) => setDraft({ ...draft, blockedWords: value })}
             />
           </Field>
 

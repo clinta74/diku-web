@@ -182,12 +182,19 @@ public sealed record WorldBundle(
 /// Carried whole rather than scoped, like abilities: a configuration belongs to a server, not to a
 /// zone, so a zone-scoped export carries all of them or none.
 /// </remarks>
+/// <param name="BlockedWords">
+/// Optional, and the format version is deliberately not bumped for it: a bundle written before
+/// the field existed reads as "no list", which is exactly what those deployments had. The rule for
+/// bumping (see <see cref="WorldBundle.CurrentFormatVersion"/>) is a missing key changing
+/// meaning; here it keeps it.
+/// </param>
 public sealed record BundleGameConfiguration(
     string Key,
     string Name,
     string Description,
     string StartingRoomKey,
-    string WelcomeMessage);
+    string WelcomeMessage,
+    string? BlockedWords = null);
 
 /// <summary>
 /// What the export was asked for, recorded so a bundle can say what it is rather than leaving

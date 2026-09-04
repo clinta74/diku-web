@@ -660,6 +660,7 @@ public sealed record GameConfigurationResponse(
     string Description,
     string StartingRoomKey,
     string WelcomeMessage,
+    string BlockedWords,
     bool IsActive,
     bool StartingRoomExists,
     DateTimeOffset UpdatedAt);
@@ -674,8 +675,13 @@ public sealed record GameConfigurationList(
     string ActiveStartingRoomKey,
     string ActiveWelcomeMessage);
 
+/// <param name="BlockedWords">
+/// The word list, or null for none. Whole words, one per line or separated by commas; see
+/// <c>WordFilter</c> for what is and is not matched.
+/// </param>
 public sealed record GameConfigurationRequest(
     string Name,
     string? Description,
     string StartingRoomKey,
-    string? WelcomeMessage);
+    string? WelcomeMessage,
+    string? BlockedWords = null);

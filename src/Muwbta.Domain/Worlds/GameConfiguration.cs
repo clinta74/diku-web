@@ -34,6 +34,9 @@ public sealed class GameConfiguration
     public const int MaxNameLength = 96;
     public const int MaxWelcomeLength = 512;
 
+    /// <summary>Room for a few hundred words; a list longer than that is a policy, not a filter.</summary>
+    public const int MaxBlockedWordsLength = 4096;
+
     /// <summary>What <see cref="WelcomeMessage"/> substitutes for the character's name.</summary>
     public const string NameToken = "{name}";
 
@@ -71,6 +74,18 @@ public sealed class GameConfiguration
     /// their name; a message with no token is sent as written.
     /// </summary>
     public string WelcomeMessage { get; set; } = DefaultWelcomeMessage;
+
+    /// <summary>
+    /// Words nobody may say here - one per line, or separated by commas or spaces. Empty, the
+    /// default, means no filter at all. Compiled by <see cref="WordFilter"/>, which says what
+    /// matches and what deliberately does not.
+    /// </summary>
+    /// <remarks>
+    /// On the configuration rather than in appsettings so a builder can change it from the panel
+    /// and have it take effect without a restart, the way the welcome message does. Whole words,
+    /// case-insensitive; the same list refuses a character name that is exactly a listed word.
+    /// </remarks>
+    public string BlockedWords { get; set; } = string.Empty;
 
     /// <summary>
     /// Whether this is the one the running server uses. Exactly one row may have it.

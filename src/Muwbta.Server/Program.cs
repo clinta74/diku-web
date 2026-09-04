@@ -459,6 +459,9 @@ static async Task LoadActiveConfigurationAsync(
         options.WelcomeMessage = active.WelcomeMessage;
     }
 
+    // Empty is a real value here - "no filter" - so no blank check, unlike the welcome.
+    options.BlockedWords = active.BlockedWords;
+
     ServerLog.GameConfigurationLoaded(logger, active.Key, options.StartingRoom.ToString());
 }
 

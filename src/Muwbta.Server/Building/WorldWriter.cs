@@ -595,6 +595,7 @@ public sealed class WorldWriter(MuwbtaDbContext db, TimeProvider clock)
                 entity.Description = c.Description;
                 entity.StartingRoomKey = c.StartingRoomKey;
                 entity.WelcomeMessage = c.WelcomeMessage;
+                entity.BlockedWords = c.BlockedWords;
                 entity.UpdatedAt = clock.GetUtcNow();
 
                 // IsActive is untouched on purpose. An edit says what a configuration means, never
@@ -844,6 +845,7 @@ public sealed class WorldWriter(MuwbtaDbContext db, TimeProvider clock)
                     ["description"] = entity.Description,
                     ["startingRoomKey"] = entity.StartingRoomKey,
                     ["welcomeMessage"] = entity.WelcomeMessage,
+                    ["blockedWords"] = entity.BlockedWords,
 
                     // Included here though it never travels in a bundle: an activation's whole
                     // content is this field moving, and an audit pair that showed no difference

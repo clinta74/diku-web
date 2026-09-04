@@ -246,6 +246,7 @@ public static class BuilderEndpoints
                 c.Description,
                 c.StartingRoomKey,
                 c.WelcomeMessage,
+                c.BlockedWords,
                 c.IsActive,
                 rooms.Contains(c.StartingRoomKey),
                 c.UpdatedAt))
@@ -306,6 +307,16 @@ public static class BuilderEndpoints
             });
         }
 
+        var blockedWords = request.BlockedWords ?? string.Empty;
+
+        if (blockedWords.Length > GameConfiguration.MaxBlockedWordsLength)
+        {
+            return Results.BadRequest(new
+            {
+                error = $"The word list is limited to {GameConfiguration.MaxBlockedWordsLength} characters.",
+            });
+        }
+
         // Whether this edit also moves the running loop. The applier has no database, so the
         // question is answered here and carried on the mutation.
         var live = await db.GameConfigurations.AsNoTracking()
@@ -316,7 +327,7 @@ public static class BuilderEndpoints
         var outcome = await editor.ApplyAsync(
             new UpsertGameConfiguration(
                 key, request.Name, request.Description ?? string.Empty,
-                request.StartingRoomKey, welcome, live),
+                request.StartingRoomKey, welcome, blockedWords, live),
             accountId,
             ct);
 
@@ -329,7 +340,7 @@ public static class BuilderEndpoints
 
         return Results.Ok(new GameConfigurationResponse(
             key, request.Name, request.Description ?? string.Empty,
-            request.StartingRoomKey, welcome, live, exists, DateTimeOffset.UtcNow));
+            request.StartingRoomKey, welcome, blockedWords, live, exists, DateTimeOffset.UtcNow));
     }
 
     /// <remarks>
@@ -397,7 +408,7 @@ public static class BuilderEndpoints
         http.TryGetAccountId(out var accountId);
 
         var outcome = await editor.ApplyAsync(
-            new ActivateGameConfiguration(key, entity.StartingRoomKey, entity.WelcomeMessage),
+            new ActivateGameConfiguration(key, entity.StartingRoomKey, entity.WelcomeMessage, entity.BlockedWords),
             accountId,
             ct);
 
@@ -411,7 +422,7 @@ public static class BuilderEndpoints
 
         return Results.Ok(new GameConfigurationResponse(
             entity.Key, entity.Name, entity.Description, entity.StartingRoomKey,
-            entity.WelcomeMessage, IsActive: true, exists, DateTimeOffset.UtcNow));
+            entity.WelcomeMessage, entity.BlockedWords, IsActive: true, exists, DateTimeOffset.UtcNow));
     }
 
     /// <summary>

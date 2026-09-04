@@ -456,6 +456,7 @@ public sealed record UpsertGameConfiguration(
     string Description,
     string StartingRoomKey,
     string WelcomeMessage,
+    string BlockedWords,
     bool Live) : WorldChange
 {
     public override string EntityKind => "configuration";
@@ -488,7 +489,8 @@ public sealed record DeleteGameConfiguration(string Key) : WorldChange
 public sealed record ActivateGameConfiguration(
     string Key,
     string StartingRoomKey,
-    string WelcomeMessage) : WorldChange
+    string WelcomeMessage,
+    string BlockedWords) : WorldChange
 {
     public override string EntityKind => "configuration";
 

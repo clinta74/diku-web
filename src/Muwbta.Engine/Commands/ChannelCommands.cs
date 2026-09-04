@@ -107,6 +107,11 @@ public static class ChannelCommands
             return;
         }
 
+        if (ctx.RefusedForLanguage(message))
+        {
+            return;
+        }
+
         ctx.Reply($"You tell {target.Name}, '{message}'", "tell");
         target.SendText($"{ctx.Actor.TaggedName} tells you, '{message}'", "tell");
 
@@ -162,6 +167,11 @@ public static class ChannelCommands
         // Checked after the on/off branches, so a muted player can still turn the channel off and
         // back on — the mute is about what they send, not about what reaches them.
         if (ctx.RefusedForMute())
+        {
+            return;
+        }
+
+        if (ctx.RefusedForLanguage(argument))
         {
             return;
         }

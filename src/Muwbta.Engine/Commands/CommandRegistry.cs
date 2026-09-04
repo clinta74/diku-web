@@ -341,7 +341,7 @@ public sealed class CommandRegistry
             return;
         }
 
-        if (ctx.RefusedForMute())
+        if (ctx.RefusedForMute() || ctx.RefusedForLanguage(ctx.Argument))
         {
             return;
         }
@@ -1433,6 +1433,11 @@ public sealed class CommandRegistry
         // your password'" - the exact shape of a tell, in a different colour, and colour is not
         // something a player reads under pressure. Two defences: the line opens with a marker no
         // other verb produces, and text that begins with a speech verb is refused outright.
+        if (ctx.RefusedForLanguage(ctx.Argument))
+        {
+            return;
+        }
+
         if (OpensLikeSpeech(ctx.Argument))
         {
             ctx.Reply("An emote is something you do. To speak, use say or tell.", "bad");

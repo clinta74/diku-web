@@ -271,6 +271,26 @@ public sealed class EngineOptions
     /// </remarks>
     public string WelcomeMessage { get; set; } = GameConfiguration.DefaultWelcomeMessage;
 
+    private string _blockedWords = string.Empty;
+
+    /// <summary>
+    /// The active configuration's word list, as text. Setting it recompiles
+    /// <see cref="WordFilter"/>, so the loop asks a compiled filter rather than re-parsing a
+    /// list on every line of speech.
+    /// </summary>
+    public string BlockedWords
+    {
+        get => _blockedWords;
+        set
+        {
+            _blockedWords = value ?? string.Empty;
+            WordFilter = WordFilter.Parse(_blockedWords);
+        }
+    }
+
+    /// <summary>What <see cref="BlockedWords"/> compiles to. <see cref="WordFilter.None"/> until a list is set.</summary>
+    public WordFilter WordFilter { get; private set; } = WordFilter.None;
+
     /// <summary>PLAN.md §3.6: 90 seconds, expressed in pulses.</summary>
     public int LinkDeadGracePulses { get; set; } = 360;
 

@@ -32,6 +32,12 @@ internal sealed class GameConfigurationConfiguration : IEntityTypeConfiguration<
             .HasMaxLength(GameConfiguration.MaxWelcomeLength)
             .IsRequired();
 
+        builder.Property(c => c.BlockedWords)
+            .HasColumnName("blocked_words")
+            .HasMaxLength(GameConfiguration.MaxBlockedWordsLength)
+            .IsRequired()
+            .HasDefaultValue(string.Empty);
+
         builder.Property(c => c.IsActive).HasColumnName("is_active").IsRequired();
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at").IsRequired();
 
