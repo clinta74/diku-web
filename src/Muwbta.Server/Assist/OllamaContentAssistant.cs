@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text;
+using Muwbta.Engine;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
@@ -44,17 +45,22 @@ public sealed class OllamaContentAssistant : IContentAssistant
 
     private readonly HttpClient _http;
     private readonly AssistOptions _options;
+    // The live configuration's canon, read per request so an edit or an activation is heard
+    // with no cache to invalidate. Empty means the embedded one (Canon.Resolve).
+    private readonly EngineOptions _engine;
     private readonly ILogger<OllamaContentAssistant> _logger;
 
     public OllamaContentAssistant(
         HttpClient http,
         IOptions<AssistOptions> options,
+        EngineOptions engine,
         ILogger<OllamaContentAssistant> logger)
     {
         ArgumentNullException.ThrowIfNull(options);
 
         _http = http;
         _options = options.Value;
+        _engine = engine;
         _logger = logger;
     }
 
@@ -168,7 +174,7 @@ public sealed class OllamaContentAssistant : IContentAssistant
     /// go in as context precisely so they do not have to come out as output, which is where they
     /// would be dangerous (AssistSchema.MobNotGenerated).
     /// </remarks>
-    private static string ProsePrompt(ProseDraftRequest request, ProseContext context)
+    private string ProsePrompt(ProseDraftRequest request, ProseContext context)
     {
         var what = request.Kind switch
         {
@@ -177,7 +183,7 @@ public sealed class OllamaContentAssistant : IContentAssistant
             _ => "quest",
         };
 
-        var prompt = new StringBuilder(Canon.Prefix);
+        var prompt = new StringBuilder(Canon.Resolve(_engine.Canon));
 
         prompt.Append("\n---\n\nYou are writing the words for one ").Append(what)
             .Append(" in the world above. Someone else has already decided what it is; these are ")
@@ -254,9 +260,9 @@ public sealed class OllamaContentAssistant : IContentAssistant
     /// itself, because the canon is a document about a world and what follows is an instruction
     /// about a room - and without a visible seam the second reads as more of the first.
     /// </remarks>
-    private static string Prompt(RoomDraftRequest request, ZoneContext context)
+    private string Prompt(RoomDraftRequest request, ZoneContext context)
     {
-        var prompt = new StringBuilder(Canon.Prefix);
+        var prompt = new StringBuilder(Canon.Resolve(_engine.Canon));
 
         prompt.Append("\n---\n\nYou are drafting one room for a builder, in the world above.\n\n")
             .Append("Zone: ").Append(context.ZoneName).Append('\n')

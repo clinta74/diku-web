@@ -13,7 +13,7 @@ public sealed class CanonTests
     /// thing to keep in step with the model - and the question here is not "exactly how many
     /// tokens" but "has this grown past what the window can hold", which a ratio answers.
     /// </remarks>
-    private const double CharsPerToken = 3.34;
+    private const double CharsPerToken = Canon.CharsPerToken;
 
     /// <summary>
     /// What the prefix may occupy of the 16,384-token window.
@@ -25,6 +25,39 @@ public sealed class CanonTests
     /// decides it, rather than a builder noticing the model has started misremembering.
     /// </remarks>
     private const int PrefixTokenBudget = 12_000;
+
+    /// <summary>
+    /// The budget above is the model's, and the setting the panel measures against must agree
+    /// with it - two numbers for one window is how the panel says "fits" while the model stops
+    /// reading.
+    /// </summary>
+    [Fact]
+    public void The_budget_here_is_the_setting_the_panel_uses()
+    {
+        Assert.Equal(PrefixTokenBudget, new AssistOptions().CanonTokenBudget);
+    }
+
+    /// <summary>An empty configuration reads the embedded canon, so nothing changes until somebody writes one.</summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   \n")]
+    public void An_empty_live_canon_resolves_to_the_embedded_one(string? live)
+    {
+        Assert.Same(Canon.Prefix, Canon.Resolve(live));
+    }
+
+    /// <summary>
+    /// A live canon is normalised the way the embedded one is, because the cache is byte-exact
+    /// and a textarea is not - and cut at the marker, so pasting the whole document works.
+    /// </summary>
+    [Fact]
+    public void A_live_canon_is_normalised_and_cut_at_the_marker()
+    {
+        var pasted = "# Elsewhere\r\n\r\nA different world.  \r\n\r\n<!-- canon:end -->\r\n## Notes\r\n";
+
+        Assert.Equal("# Elsewhere\n\nA different world.\n", Canon.Resolve(pasted));
+    }
 
     [Fact]
     public void The_canon_is_embedded_and_not_empty()

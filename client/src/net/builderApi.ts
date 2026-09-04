@@ -576,6 +576,20 @@ export interface GameConfiguration {
    */
   startingRoomExists: boolean
   updatedAt: string
+  /**
+   * What the builder assist is told about this world before every request, as markdown. Empty
+   * means the canon compiled into the server (the Reaches). Activating the configuration makes
+   * the assist read this one; editing it takes effect on the next request.
+   */
+  canon: string
+  /** Roughly what `canon` costs the model, or what the built-in one costs when it is empty. */
+  canonTokens: number
+}
+
+/** The canon compiled into the server, as a starting point for writing one's own. */
+export interface CanonText {
+  text: string
+  tokens: number
 }
 
 export interface GameConfigurationList {
@@ -583,6 +597,10 @@ export interface GameConfigurationList {
   /** What the running loop is obeying, which is not always what a row says. */
   activeStartingRoomKey: string
   activeWelcomeMessage: string
+  /** What a canon may cost before the model stops reading all of it. */
+  canonTokenBudget: number
+  /** The ratio the server estimates tokens with, so the panel can show a live figure while typing. */
+  canonCharsPerToken: number
 }
 
 export interface ImportCount {
@@ -1004,9 +1022,14 @@ export const builderApi = {
 
   configurations: () => request<GameConfigurationList>(`${base}/configurations`),
 
+  embeddedCanon: () => request<CanonText>(`${base}/canon/embedded`),
+
   saveConfiguration: (
     key: string,
-    body: Pick<GameConfiguration, 'name' | 'description' | 'startingRoomKey' | 'welcomeMessage' | 'blockedWords'>,
+    body: Pick<
+      GameConfiguration,
+      'name' | 'description' | 'startingRoomKey' | 'welcomeMessage' | 'blockedWords' | 'canon'
+    >,
   ) =>
     request<GameConfiguration>(`${base}/configurations/${key}`, {
       method: 'POST',

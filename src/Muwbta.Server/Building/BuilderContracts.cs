@@ -684,6 +684,11 @@ public sealed record MultiplierPreview(
 /// an error: writing a configuration *before* importing the world it points into is the ordinary
 /// order of operations on a fresh server, so the panel warns and saves.
 /// </param>
+/// <param name="Canon">The assist's canon for this configuration, or empty for the built-in one.</param>
+/// <param name="CanonTokens">
+/// Roughly what <paramref name="Canon"/> costs the model (<c>Canon.EstimateTokens</c>), or what
+/// the built-in one costs when it is empty. Against <see cref="GameConfigurationList.CanonTokenBudget"/>.
+/// </param>
 public sealed record GameConfigurationResponse(
     string Key,
     string Name,
@@ -693,25 +698,42 @@ public sealed record GameConfigurationResponse(
     string BlockedWords,
     bool IsActive,
     bool StartingRoomExists,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    string Canon,
+    int CanonTokens);
 
 /// <param name="ActiveStartingRoomKey">
 /// What the running loop is obeying right now, which is not always what a row says. A database
 /// with no active configuration leaves the engine on its configured fallback, and a panel showing
 /// only an empty list would imply the server had no starting room at all.
 /// </param>
+/// <param name="CanonTokenBudget">What a canon may cost before the model stops reading all of it.</param>
+/// <param name="CanonCharsPerToken">
+/// The ratio the server estimates with, so the panel can show a live figure while somebody types
+/// without keeping a second constant of its own.
+/// </param>
 public sealed record GameConfigurationList(
     IReadOnlyList<GameConfigurationResponse> Configurations,
     string ActiveStartingRoomKey,
-    string ActiveWelcomeMessage);
+    string ActiveWelcomeMessage,
+    int CanonTokenBudget,
+    double CanonCharsPerToken);
+
+/// <summary>A block of markdown, for the one endpoint that hands the built-in canon to the panel.</summary>
+public sealed record CanonText(string Text, int Tokens);
 
 /// <param name="BlockedWords">
 /// The word list, or null for none. Whole words, one per line or separated by commas; see
 /// <c>WordFilter</c> for what is and is not matched.
+/// </param>
+/// <param name="Canon">
+/// The assist's canon, or null to leave the stored one as it is. Empty means "use the built-in
+/// one", which is how a builder goes back to it.
 /// </param>
 public sealed record GameConfigurationRequest(
     string Name,
     string? Description,
     string StartingRoomKey,
     string? WelcomeMessage,
-    string? BlockedWords = null);
+    string? BlockedWords = null,
+    string? Canon = null);

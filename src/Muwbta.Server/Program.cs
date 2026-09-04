@@ -468,6 +468,10 @@ static async Task LoadActiveConfigurationAsync(
     // Empty is a real value here - "no filter" - so no blank check, unlike the welcome.
     options.BlockedWords = active.BlockedWords;
 
+    // Empty is a real value here too: "the built-in canon". Read before the assist warms up,
+    // which is a hosted service and so starts after this.
+    options.Canon = active.Canon;
+
     ServerLog.GameConfigurationLoaded(logger, active.Key, options.StartingRoom.ToString());
 }
 

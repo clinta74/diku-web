@@ -481,9 +481,16 @@ thing that lets a *quest* NPC keep talking between quests (gated on their own ch
    bosses. Export, merge, check, import — the existing path.
 4. Re-read WORLD.md §7.1 and §10.4 against what landed and correct them. (§7.1 was rewritten
    with §4.1; §10.4 waits on the content pass.)
-5. Decide §4.5, and build it if the answer is yes.
+5. ~~Decide §4.5, and build it if the answer is yes.~~ Built 2026-09-04.
 
-### 4.5 The canon belongs to the active world — proposed
+### 4.5 The canon belongs to the active world — built
+
+**Built 2026-09-04.** As proposed below, with two details settled on contact: the canon rides only
+in a *full* export, so a realm's content file stays reviewable prose and a scoped import leaves the
+stored canon alone; and the assist reads it from `EngineOptions`, where the rest of the active
+configuration already lives, so a request costs no query and an edit needs no cache to invalidate.
+The panel's "Start from the built-in canon" button is the seed; `tools/sync-canon.cs` is the way
+back into `docs/WORLD.md`.
 
 WORLD.md's canon half is compiled into the server as an embedded resource and sent to the builder
 assist as its standing context (`Canon.cs`, budgeted by `CanonTests`). That ties the assist to the

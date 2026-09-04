@@ -600,6 +600,12 @@ public sealed class WorldWriter(MuwbtaDbContext db, TimeProvider clock)
                 entity.BlockedWords = c.BlockedWords;
                 entity.UpdatedAt = clock.GetUtcNow();
 
+                // Null leaves the stored canon alone - see UpsertGameConfiguration.Canon.
+                if (c.Canon is not null)
+                {
+                    entity.Canon = c.Canon;
+                }
+
                 // IsActive is untouched on purpose. An edit says what a configuration means, never
                 // which one the server obeys - that only moves through ActivateGameConfiguration,
                 // so an import can bring a configuration in without repointing a live server.
@@ -848,6 +854,7 @@ public sealed class WorldWriter(MuwbtaDbContext db, TimeProvider clock)
                     ["startingRoomKey"] = entity.StartingRoomKey,
                     ["welcomeMessage"] = entity.WelcomeMessage,
                     ["blockedWords"] = entity.BlockedWords,
+                    ["canon"] = entity.Canon,
 
                     // Included here though it never travels in a bundle: an activation's whole
                     // content is this field moving, and an audit pair that showed no difference

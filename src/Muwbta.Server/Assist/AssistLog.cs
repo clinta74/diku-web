@@ -33,6 +33,17 @@ internal static partial class AssistLog
             + "The builder works without it; the Suggest buttons will not appear.")]
     public static partial void Disabled(ILogger logger);
 
+    /// <summary>
+    /// An over-long prompt is truncated rather than refused, so the model would read as though
+    /// it had learned the world and forgotten most of it. Nothing else can notice; this does.
+    /// </summary>
+    [LoggerMessage(
+        EventId = 1605,
+        Level = LogLevel.Warning,
+        Message = "The active canon is ~{Tokens} tokens, over the {Budget} budgeted for it. "
+            + "The model will not read all of it. Shorten it in the configurations panel.")]
+    public static partial void CanonOverBudget(ILogger logger, int tokens, int budget);
+
     [LoggerMessage(
         EventId = 1601,
         Level = LogLevel.Debug,

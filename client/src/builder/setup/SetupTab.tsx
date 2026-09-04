@@ -46,7 +46,13 @@ export function SetupTab() {
         setError(null)
       })
       .catch((e: unknown) => {
-        setList({ configurations: [], activeStartingRoomKey: '', activeWelcomeMessage: '' })
+        setList({
+          configurations: [],
+          activeStartingRoomKey: '',
+          activeWelcomeMessage: '',
+          canonTokenBudget: 0,
+          canonCharsPerToken: 1,
+        })
         setError(e instanceof Error ? e.message : 'Could not load configurations.')
       })
   }, [])

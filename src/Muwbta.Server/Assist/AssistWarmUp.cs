@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Muwbta.Engine;
 using Microsoft.Extensions.Options;
 
 namespace Muwbta.Server.Assist;
@@ -36,6 +37,7 @@ namespace Muwbta.Server.Assist;
 public sealed class AssistWarmUp(
     IHttpClientFactory clients,
     IOptions<AssistOptions> options,
+    EngineOptions engine,
     ILogger<AssistWarmUp> logger) : BackgroundService
 {
     /// <summary>
@@ -104,11 +106,19 @@ public sealed class AssistWarmUp(
 
     private async Task<int> PrefillAsync(CancellationToken cancellationToken)
     {
+        var estimated = Canon.EstimateTokens(Canon.Resolve(engine.Canon));
+        if (estimated > options.Value.CanonTokenBudget)
+        {
+            AssistLog.CanonOverBudget(logger, estimated, options.Value.CanonTokenBudget);
+        }
+
         var payload = new System.Text.Json.Nodes.JsonObject
         {
             ["model"] = options.Value.Model,
             ["stream"] = false,
-            ["prompt"] = Canon.Prefix,
+            // The live one: the active configuration's, which Program.cs has loaded into
+            // EngineOptions before any hosted service starts, or the embedded fallback.
+            ["prompt"] = Canon.Resolve(engine.Canon),
             // One token. The cache is the point; the word is not.
             ["options"] = new System.Text.Json.Nodes.JsonObject { ["num_predict"] = 1 },
             ["keep_alive"] = -1,

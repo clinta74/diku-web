@@ -33,6 +33,46 @@ public static class Canon
     /// <summary>The line in <c>docs/WORLD.md</c> that ends the canon and begins the process notes.</summary>
     public const string EndMarker = "<!-- canon:end -->";
 
+    /// <summary>Measured against Gemma 3 on the Reaches canon: 33,970 chars to 10,183 tokens.</summary>
+    /// <remarks>
+    /// A ratio rather than a tokeniser, because a tokeniser is a dependency, a download and a
+    /// second thing to keep in step with the model - and the question is never "exactly how many"
+    /// but "has this grown past what the window holds", which a ratio answers.
+    /// </remarks>
+    public const double CharsPerToken = 3.34;
+
+    /// <summary>Roughly how many tokens <paramref name="text"/> costs the model.</summary>
+    public static int EstimateTokens(string? text) =>
+        string.IsNullOrEmpty(text) ? 0 : (int)(text.Length / CharsPerToken);
+
+    /// <summary>
+    /// The canon the assist should read: the active configuration's own when it has one,
+    /// otherwise the embedded <see cref="Prefix"/> (PLAN.md §4.16).
+    /// </summary>
+    /// <remarks>
+    /// Normalised the way the embedded one is - line endings, trailing whitespace, one final
+    /// newline - because the KV cache is byte-exact and the text arrives from a browser textarea,
+    /// which is not. Cut at <see cref="EndMarker"/> too, so a builder who pastes the whole of
+    /// docs/WORLD.md into the panel gets the same slice the build would have taken.
+    /// </remarks>
+    public static string Resolve(string? live)
+    {
+        if (string.IsNullOrWhiteSpace(live))
+        {
+            return Prefix;
+        }
+
+        var text = live.Replace("\r\n", "\n", StringComparison.Ordinal);
+        var end = text.IndexOf(EndMarker, StringComparison.Ordinal);
+
+        if (end >= 0)
+        {
+            text = text[..end];
+        }
+
+        return text.TrimEnd() + "\n";
+    }
+
     private const string ResourceName = "Muwbta.Server.Canon.WORLD.md";
 
     private static readonly Lazy<string> Loaded = new(Load, LazyThreadSafetyMode.ExecutionAndPublication);

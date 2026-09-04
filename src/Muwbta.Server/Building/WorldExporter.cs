@@ -70,7 +70,7 @@ public sealed class WorldExporter(MuwbtaDbContext db, TimeProvider clock)
 
         // Every configuration too, and for the same reason: one belongs to a server rather than to
         // a zone. Which one is live is left behind deliberately - see BundleGameConfiguration.
-        var configurations = await ConfigurationsAsync(cancellationToken);
+        var configurations = await ConfigurationsAsync(kind, cancellationToken);
 
         return new WorldBundle(
             WorldBundle.CurrentFormatVersion,
@@ -250,13 +250,24 @@ public sealed class WorldExporter(MuwbtaDbContext db, TimeProvider clock)
             []);
     }
 
+    /// <remarks>
+    /// The canon rides only in a full export. A scoped bundle is a realm's content file, meant to
+    /// be read in review, and forty kilobytes of the same markdown in each of six files is not
+    /// that; null there means "leave the stored one alone" on import.
+    /// </remarks>
     private async Task<IReadOnlyList<BundleGameConfiguration>> ConfigurationsAsync(
-        CancellationToken cancellationToken) =>
-        await db.GameConfigurations.AsNoTracking()
+        string kind,
+        CancellationToken cancellationToken)
+    {
+        var everything = IsEverything(kind);
+
+        return await db.GameConfigurations.AsNoTracking()
             .OrderBy(c => c.Key)
             .Select(c => new BundleGameConfiguration(
-                c.Key, c.Name, c.Description, c.StartingRoomKey, c.WelcomeMessage, c.BlockedWords))
+                c.Key, c.Name, c.Description, c.StartingRoomKey, c.WelcomeMessage, c.BlockedWords,
+                everything ? c.Canon : null))
             .ToListAsync(cancellationToken);
+    }
 
     private async Task<IReadOnlyList<BundleAbility>> AbilitiesAsync(CancellationToken cancellationToken)
     {

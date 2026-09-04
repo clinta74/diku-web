@@ -29,6 +29,7 @@ interface Draft {
   startingRoomKey: string
   welcomeMessage: string
   blockedWords: string
+  canon: string
   /** False for a new one, so the key field is editable exactly once. */
   existing: boolean
 }
@@ -44,6 +45,7 @@ const BLANK: Draft = {
   startingRoomKey: '',
   welcomeMessage: 'Welcome back, {name}.',
   blockedWords: '',
+  canon: '',
   existing: false,
 }
 
@@ -94,6 +96,39 @@ export function ConfigurationsPanel({ list, onChanged }: Props) {
     roomError === null &&
     draft.startingRoomKey !== ''
 
+  /**
+   * A live figure while somebody types, from the server's own ratio, against the server's own
+   * budget - the panel keeps no number of its own. Over budget is a warning, not a refusal: an
+   * over-long prompt is truncated by the model rather than rejected, so this is the one place a
+   * builder is told.
+   */
+  const canonEstimate = (() => {
+    if (!draft || !list) return null
+    const chars = draft.canon.trim().length
+    const tokens = chars === 0 ? null : Math.round(chars / list.canonCharsPerToken)
+    if (tokens === null) return <>Built-in canon in use.</>
+    const over = tokens > list.canonTokenBudget
+    return (
+      <span className={over ? 'bad' : undefined}>
+        About {tokens.toLocaleString()} of {list.canonTokenBudget.toLocaleString()} tokens
+        {over ? '. Over budget: the model will not read all of it.' : '.'}
+      </span>
+    )
+  })()
+
+  async function loadEmbedded() {
+    if (!draft) return
+    setBusy(true)
+    try {
+      const embedded = await builderApi.embeddedCanon()
+      setDraft({ ...draft, canon: embedded.text })
+    } catch (e: unknown) {
+      toast.notify(e instanceof Error ? e.message : 'Could not load the built-in canon.', 'bad')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function save() {
     if (!draft || !canSave) return
 
@@ -105,6 +140,7 @@ export function ConfigurationsPanel({ list, onChanged }: Props) {
         startingRoomKey: draft.startingRoomKey,
         welcomeMessage: draft.welcomeMessage,
         blockedWords: draft.blockedWords,
+        canon: draft.canon,
       })
       toast.notify(draft.existing ? 'Configuration saved.' : 'Configuration created.')
       setDraft(null)
@@ -285,6 +321,33 @@ export function ConfigurationsPanel({ list, onChanged }: Props) {
               onChange={(value) => setDraft({ ...draft, blockedWords: value })}
             />
           </Field>
+
+          <Field
+            label="Canon"
+            hint={
+              <>
+                What the builder assist is told about this world before every request, as
+                markdown. Leave it empty to use the canon built into the server. It takes effect
+                for the assist while this configuration is live, on the next request.{' '}
+                {canonEstimate}
+              </>
+            }
+          >
+            <Textarea
+              rows={14}
+              value={draft.canon}
+              onChange={(value) => setDraft({ ...draft, canon: value })}
+            />
+          </Field>
+
+          {draft.canon.trim() === '' && (
+            <p className="dim">
+              <button type="button" disabled={busy} onClick={() => void loadEmbedded()}>
+                Start from the built-in canon
+              </button>{' '}
+              Copies the server's own text in, to edit from.
+            </p>
+          )}
 
           <div className="spawner-actions">
             <Button variant="primary" disabled={!canSave || busy} onClick={() => void save()}>

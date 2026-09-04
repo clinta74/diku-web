@@ -85,10 +85,10 @@ public sealed class WorldMutationApplier(
             // one always does. Deleting one never does - the endpoint refuses to delete the live
             // one, so there is nothing here to undo.
             UpsertGameConfiguration change => change.Live
-                ? ApplyConfiguration(change, change.StartingRoomKey, change.WelcomeMessage, change.BlockedWords)
+                ? ApplyConfiguration(change, change.StartingRoomKey, change.WelcomeMessage, change.BlockedWords, change.Canon)
                 : MutationResult.Ok([change]),
             ActivateGameConfiguration change =>
-                ApplyConfiguration(change, change.StartingRoomKey, change.WelcomeMessage, change.BlockedWords),
+                ApplyConfiguration(change, change.StartingRoomKey, change.WelcomeMessage, change.BlockedWords, change.Canon),
             DeleteGameConfiguration change => MutationResult.Ok([change]),
             _ => MutationResult.Fail(MutationError.Invalid, "Unsupported change."),
         };
@@ -506,7 +506,8 @@ public sealed class WorldMutationApplier(
         WorldChange change,
         string startingRoomKey,
         string welcomeMessage,
-        string blockedWords)
+        string blockedWords,
+        string? canon)
     {
         if (!RoomKey.TryParse(startingRoomKey, out var starting))
         {
@@ -521,6 +522,12 @@ public sealed class WorldMutationApplier(
         // Recompiled on the loop thread, once per change, which is the only place it should be:
         // the filter is read on every line of speech and written about once a month.
         options.BlockedWords = blockedWords;
+
+        // Null is "leave it": a scoped bundle carries no canon and must not blank the live one.
+        if (canon is not null)
+        {
+            options.Canon = canon;
+        }
 
         return MutationResult.Ok([change]);
     }

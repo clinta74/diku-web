@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Muwbta.Engine;
 using Muwbta.Server.Assist;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -295,6 +296,7 @@ public sealed class OllamaContentAssistantTests
         var assistant = new OllamaContentAssistant(
             http,
             Options.Create(new AssistOptions { Model = "muwbta-builder" }),
+            new EngineOptions(),
             NullLogger<OllamaContentAssistant>.Instance);
 
         return (assistant, handler);

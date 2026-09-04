@@ -291,6 +291,18 @@ public sealed class EngineOptions
     /// <summary>What <see cref="BlockedWords"/> compiles to. <see cref="WordFilter.None"/> until a list is set.</summary>
     public WordFilter WordFilter { get; private set; } = WordFilter.None;
 
+    /// <summary>
+    /// The active configuration's canon for the builder assist, or empty for the one compiled
+    /// into the server. Same provenance as <see cref="BlockedWords"/>: seeded at boot, moved by
+    /// activation, edited live.
+    /// </summary>
+    /// <remarks>
+    /// The loop never reads it. It lives here because this object is where "what the active
+    /// configuration says" is kept, and the assist reads it from here rather than from the
+    /// database so a request costs no query and an edit needs no cache to invalidate.
+    /// </remarks>
+    public string Canon { get; set; } = string.Empty;
+
     /// <summary>PLAN.md §3.6: 90 seconds, expressed in pulses.</summary>
     public int LinkDeadGracePulses { get; set; } = 360;
 

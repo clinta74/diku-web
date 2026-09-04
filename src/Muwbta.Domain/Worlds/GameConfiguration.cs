@@ -37,6 +37,13 @@ public sealed class GameConfiguration
     /// <summary>Room for a few hundred words; a list longer than that is a policy, not a filter.</summary>
     public const int MaxBlockedWordsLength = 4096;
 
+    /// <summary>
+    /// A hard cap on <see cref="Canon"/>, well past anything a model window can read. The real
+    /// limit is the assist's token budget, which the panel reports; this only stops a paste of
+    /// the wrong file becoming a row.
+    /// </summary>
+    public const int MaxCanonLength = 262_144;
+
     /// <summary>What <see cref="WelcomeMessage"/> substitutes for the character's name.</summary>
     public const string NameToken = "{name}";
 
@@ -86,6 +93,30 @@ public sealed class GameConfiguration
     /// case-insensitive; the same list refuses a character name that is exactly a listed word.
     /// </remarks>
     public string BlockedWords { get; set; } = string.Empty;
+
+    /// <summary>
+    /// What the builder assist is told about this world before every request: the canon, as
+    /// markdown. Empty, the default, means the one compiled into the server from
+    /// <c>docs/WORLD.md</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>On the configuration, because the canon belongs to the world the server is running.</b>
+    /// It was an embedded resource - present, identical everywhere, and the Reaches' forever. A
+    /// second world built on this server would have inherited Ilvaro and the Regard, and the only
+    /// way to tell the model otherwise was a rebuild. A configuration already decides which world
+    /// a new character wakes up in, so it is the row that should decide what the assist knows;
+    /// activating one swaps the canon with it, and editing it in the panel takes effect on the
+    /// next request.
+    /// </para>
+    /// <para>
+    /// Empty falls back to the embedded text rather than to nothing, so a deployment that never
+    /// fills this in behaves exactly as it did. It travels in a full bundle and not in a scoped
+    /// one: a realm's content file should stay reviewable prose, not carry forty kilobytes of
+    /// the same canon six times over.
+    /// </para>
+    /// </remarks>
+    public string Canon { get; set; } = string.Empty;
 
     /// <summary>
     /// Whether this is the one the running server uses. Exactly one row may have it.

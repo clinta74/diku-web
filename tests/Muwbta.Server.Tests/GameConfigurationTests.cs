@@ -29,6 +29,7 @@ public sealed class GameConfigurationTests(PostgresFixture postgres) : IAsyncLif
 {
     private RoomKey _startingRoom;
     private string _welcome = string.Empty;
+    private string _canon = string.Empty;
 
     /// <summary>
     /// Snapshots the engine's starting room, and puts it back afterwards.
@@ -45,6 +46,7 @@ public sealed class GameConfigurationTests(PostgresFixture postgres) : IAsyncLif
         var options = postgres.App.Services.GetRequiredService<EngineOptions>();
         _startingRoom = options.StartingRoom;
         _welcome = options.WelcomeMessage;
+        _canon = options.Canon;
         return Task.CompletedTask;
     }
 
@@ -53,6 +55,7 @@ public sealed class GameConfigurationTests(PostgresFixture postgres) : IAsyncLif
         var options = postgres.App.Services.GetRequiredService<EngineOptions>();
         options.StartingRoom = _startingRoom;
         options.WelcomeMessage = _welcome;
+        options.Canon = _canon;
 
         // And the row, so a later restart of the fixture does not reload what this suite chose.
         using var scope = postgres.App.Services.CreateScope();
@@ -122,6 +125,67 @@ public sealed class GameConfigurationTests(PostgresFixture postgres) : IAsyncLif
 
         // Not live merely by existing. Writing one and choosing it are separate acts.
         Assert.False(mine.GetProperty("isActive").GetBoolean());
+    }
+
+    /// <summary>
+    /// The canon belongs to the configuration (PLAN.md §4.16): written with it, read back with a
+    /// token estimate, handed out as markdown, and moved into the running engine by activation -
+    /// which is what makes the assist read it with no restart.
+    /// </summary>
+    [Fact]
+    public async Task A_canon_is_written_estimated_served_and_activated()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var key = $"canon-{Guid.NewGuid():N}"[..24];
+        const string canon = "# Elsewhere\n\nThere is one Reach and it is round.\n";
+
+        var created = await BuilderClient.JsonAsync(await client.PostAsJsonAsync(
+            $"/api/builder/configurations/{key}",
+            new
+            {
+                name = "Elsewhere",
+                startingRoomKey = "aldenmoor.millbrook.north-gate",
+                canon,
+            }));
+
+        Assert.Equal(canon, created.GetProperty("canon").GetString());
+        Assert.True(created.GetProperty("canonTokens").GetInt32() > 0);
+
+        // A save that says nothing about the canon leaves it alone.
+        var kept = await BuilderClient.JsonAsync(await client.PostAsJsonAsync(
+            $"/api/builder/configurations/{key}",
+            new { name = "Elsewhere, renamed", startingRoomKey = "aldenmoor.millbrook.north-gate" }));
+        Assert.Equal(canon, kept.GetProperty("canon").GetString());
+
+        var served = await client.GetAsync(new Uri($"/api/builder/configurations/{key}/canon", UriKind.Relative));
+        served.EnsureSuccessStatusCode();
+        Assert.StartsWith("text/markdown", served.Content.Headers.ContentType?.MediaType, StringComparison.Ordinal);
+        Assert.Equal(canon, await served.Content.ReadAsStringAsync());
+
+        var list = await client.GetFromJsonAsync<JsonElement>(new Uri("/api/builder/configurations", UriKind.Relative));
+        Assert.True(list.GetProperty("canonTokenBudget").GetInt32() > 0);
+
+        (await client.PostAsync(new Uri($"/api/builder/configurations/{key}/activate", UriKind.Relative), null))
+            .EnsureSuccessStatusCode();
+
+        Assert.Equal(canon, factory.Services.GetRequiredService<EngineOptions>().Canon);
+    }
+
+    /// <summary>The built-in canon is on offer as a starting point, and is the Reaches.</summary>
+    [Fact]
+    public async Task The_embedded_canon_is_served_for_the_panel()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+
+        var embedded = await client.GetFromJsonAsync<JsonElement>(new Uri("/api/builder/canon/embedded", UriKind.Relative));
+
+        Assert.Contains("The Reaches", embedded.GetProperty("text").GetString(), StringComparison.Ordinal);
+        Assert.True(embedded.GetProperty("tokens").GetInt32() > 1000);
     }
 
     [Fact]

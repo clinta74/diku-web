@@ -7,6 +7,8 @@ using Muwbta.Domain.Items;
 using Muwbta.Domain.Spawning;
 using Muwbta.Domain.Worlds;
 using Muwbta.Engine;
+using Microsoft.Extensions.Options;
+using Muwbta.Server.Assist;
 using Muwbta.Engine.Mutations;
 using Muwbta.Persistence;
 using Muwbta.Server.Auth;
@@ -68,6 +70,8 @@ public static class BuilderEndpoints
         group.MapPost("/configurations/{key}", UpsertConfigurationAsync);
         group.MapDelete("/configurations/{key}", DeleteConfigurationAsync);
         group.MapPost("/configurations/{key}/activate", ActivateConfigurationAsync);
+        group.MapGet("/configurations/{key}/canon", ConfigurationCanonAsync);
+        group.MapGet("/canon/embedded", EmbeddedCanon);
 
         group.MapGet("/worlds", ListWorldsAsync);
         group.MapGet("/worlds/{key}", GetWorldAsync);
@@ -231,6 +235,7 @@ public static class BuilderEndpoints
     private static async Task<IResult> ListConfigurationsAsync(
         MuwbtaDbContext db,
         EngineOptions options,
+        IOptions<AssistOptions> assist,
         CancellationToken ct)
     {
         var stored = await db.GameConfigurations.AsNoTracking()
@@ -249,7 +254,9 @@ public static class BuilderEndpoints
                 c.BlockedWords,
                 c.IsActive,
                 rooms.Contains(c.StartingRoomKey),
-                c.UpdatedAt))
+                c.UpdatedAt,
+                c.Canon,
+                Canon.EstimateTokens(Canon.Resolve(c.Canon))))
             .ToList();
 
         // What the loop is actually obeying, which is not always what the rows say: a database
@@ -258,8 +265,33 @@ public static class BuilderEndpoints
         return Results.Ok(new GameConfigurationList(
             rows,
             options.StartingRoom.ToString(),
-            options.WelcomeMessage));
+            options.WelcomeMessage,
+            assist.Value.CanonTokenBudget,
+            Canon.CharsPerToken));
     }
+
+    /// <summary>The stored canon as markdown, for tools and for saving a copy. 404 when the key is unknown.</summary>
+    private static async Task<IResult> ConfigurationCanonAsync(
+        string key,
+        MuwbtaDbContext db,
+        CancellationToken ct)
+    {
+        var canon = await db.GameConfigurations.AsNoTracking()
+            .Where(c => c.Key == key)
+            .Select(c => c.Canon)
+            .FirstOrDefaultAsync(ct);
+
+        return canon is null
+            ? Results.NotFound(new { error = $"No configuration '{key}'." })
+            : Results.Text(Canon.Resolve(canon), "text/markdown; charset=utf-8");
+    }
+
+    /// <summary>
+    /// The canon compiled into the server, which is what an empty configuration uses. The panel
+    /// offers it as the starting point for writing one's own.
+    /// </summary>
+    private static IResult EmbeddedCanon() =>
+        Results.Ok(new CanonText(Canon.Prefix, Canon.EstimateTokens(Canon.Prefix)));
 
     private static async Task<IResult> UpsertConfigurationAsync(
         string key,
@@ -317,6 +349,18 @@ public static class BuilderEndpoints
             });
         }
 
+        // Null leaves the stored canon alone; anything else, empty included, replaces it. Stored
+        // as typed, and normalised on the way to the model (Canon.Resolve), so what a builder
+        // reads back is what they wrote.
+        if (request.Canon is { Length: > GameConfiguration.MaxCanonLength })
+        {
+            return Results.BadRequest(new
+            {
+                error = $"The canon is limited to {GameConfiguration.MaxCanonLength:N0} characters, and the "
+                    + "model reads far fewer than that. Cut it down in the panel.",
+            });
+        }
+
         // Whether this edit also moves the running loop. The applier has no database, so the
         // question is answered here and carried on the mutation.
         var live = await db.GameConfigurations.AsNoTracking()
@@ -327,7 +371,7 @@ public static class BuilderEndpoints
         var outcome = await editor.ApplyAsync(
             new UpsertGameConfiguration(
                 key, request.Name, request.Description ?? string.Empty,
-                request.StartingRoomKey, welcome, blockedWords, live),
+                request.StartingRoomKey, welcome, blockedWords, request.Canon, live),
             accountId,
             ct);
 
@@ -338,9 +382,16 @@ public static class BuilderEndpoints
 
         var exists = await db.Rooms.AsNoTracking().AnyAsync(r => r.Key == startingRoom, ct);
 
+        // Read back rather than echoed, because a null canon in the request meant "keep it".
+        var canon = await db.GameConfigurations.AsNoTracking()
+            .Where(c => c.Key == key)
+            .Select(c => c.Canon)
+            .FirstOrDefaultAsync(ct) ?? string.Empty;
+
         return Results.Ok(new GameConfigurationResponse(
             key, request.Name, request.Description ?? string.Empty,
-            request.StartingRoomKey, welcome, blockedWords, live, exists, DateTimeOffset.UtcNow));
+            request.StartingRoomKey, welcome, blockedWords, live, exists, DateTimeOffset.UtcNow,
+            canon, Canon.EstimateTokens(Canon.Resolve(canon))));
     }
 
     /// <remarks>
@@ -408,7 +459,8 @@ public static class BuilderEndpoints
         http.TryGetAccountId(out var accountId);
 
         var outcome = await editor.ApplyAsync(
-            new ActivateGameConfiguration(key, entity.StartingRoomKey, entity.WelcomeMessage, entity.BlockedWords),
+            new ActivateGameConfiguration(
+                key, entity.StartingRoomKey, entity.WelcomeMessage, entity.BlockedWords, entity.Canon),
             accountId,
             ct);
 
@@ -422,7 +474,8 @@ public static class BuilderEndpoints
 
         return Results.Ok(new GameConfigurationResponse(
             entity.Key, entity.Name, entity.Description, entity.StartingRoomKey,
-            entity.WelcomeMessage, entity.BlockedWords, IsActive: true, exists, DateTimeOffset.UtcNow));
+            entity.WelcomeMessage, entity.BlockedWords, IsActive: true, exists, DateTimeOffset.UtcNow,
+            entity.Canon, Canon.EstimateTokens(Canon.Resolve(entity.Canon))));
     }
 
     /// <summary>

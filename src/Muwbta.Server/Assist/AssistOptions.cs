@@ -80,4 +80,15 @@ public sealed class AssistOptions
     /// warm-up is one abandoned two minutes from the end, and because nobody is waiting on it.
     /// </remarks>
     public int WarmUpTimeoutSeconds { get; set; } = 3600;
+
+    /// <summary>
+    /// What the canon may occupy of the model's window, in tokens. The rest of the window - the
+    /// schema, a zone's exemplars, room to generate - is arithmetic in <c>Modelfile.builder</c>.
+    /// </summary>
+    /// <remarks>
+    /// A setting rather than a constant because it belongs with <see cref="Model"/>: a swapped
+    /// model has a different <c>num_ctx</c>, and the number the panel measures the canon against
+    /// should be the one for the model actually answering. 12,000 of 16,384 is Gemma 3's.
+    /// </remarks>
+    public int CanonTokenBudget { get; set; } = 12_000;
 }

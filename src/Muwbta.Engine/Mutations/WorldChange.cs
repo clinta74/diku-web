@@ -457,6 +457,13 @@ public sealed record DeleteQuest(string Key) : WorldChange
 /// applies to the running loop as well as to the row. The caller decides, because the applier has
 /// no database and asking it to know which row is active would mean giving it one.
 /// </param>
+/// <summary>Creates or replaces a starter configuration (PLAN.md §4.16).</summary>
+/// <remarks>
+/// <c>Canon</c> is the assist's canon, or null to leave the stored one as it is. Nullable because a
+/// scoped bundle deliberately does not carry it, and an import that merged a realm must not wipe
+/// the canon a builder wrote in the panel. The API always sends a string; empty means "use the
+/// built-in one".
+/// </remarks>
 public sealed record UpsertGameConfiguration(
     string Key,
     string Name,
@@ -464,6 +471,7 @@ public sealed record UpsertGameConfiguration(
     string StartingRoomKey,
     string WelcomeMessage,
     string BlockedWords,
+    string? Canon,
     bool Live) : WorldChange
 {
     public override string EntityKind => "configuration";
@@ -497,7 +505,8 @@ public sealed record ActivateGameConfiguration(
     string Key,
     string StartingRoomKey,
     string WelcomeMessage,
-    string BlockedWords) : WorldChange
+    string BlockedWords,
+    string Canon) : WorldChange
 {
     public override string EntityKind => "configuration";
 

@@ -38,6 +38,13 @@ internal sealed class GameConfigurationConfiguration : IEntityTypeConfiguration<
             .IsRequired()
             .HasDefaultValue(string.Empty);
 
+        // Text with no length: the cap is in code, and the real limit is the assist's token
+        // budget rather than anything the database should decide.
+        builder.Property(c => c.Canon)
+            .HasColumnName("canon")
+            .IsRequired()
+            .HasDefaultValue(string.Empty);
+
         builder.Property(c => c.IsActive).HasColumnName("is_active").IsRequired();
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at").IsRequired();
 
