@@ -100,6 +100,14 @@ public static partial class AuthEndpoints
             return Results.BadRequest(new { error = "Username must be 3-24 letters, digits, or underscores." });
         }
 
+        // Reserved after the pattern, so the message about the shape of a name comes first when
+        // both apply. A username is what the admin panel shows, which is one of the two places a
+        // name gets to claim it is staff (the other is the character, checked at creation).
+        if (ReservedNames.IsReserved(username))
+        {
+            return Results.BadRequest(new { error = "That username is reserved." });
+        }
+
         if (string.IsNullOrWhiteSpace(email) || !email.Contains('@', StringComparison.Ordinal))
         {
             return Results.BadRequest(new { error = "A valid email address is required." });

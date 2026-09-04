@@ -99,7 +99,7 @@ public static class ChannelCommands
         }
 
         ctx.Reply($"You tell {target.Name}, '{message}'", "tell");
-        target.SendText($"{ctx.Actor.Name} tells you, '{message}'", "tell");
+        target.SendText($"{ctx.Actor.TaggedName} tells you, '{message}'", "tell");
 
         // Set even when the recipient is link-dead: they may well reconnect inside the grace
         // window, and a reply target that quietly failed to update would answer the wrong person.
@@ -167,7 +167,7 @@ public static class ChannelCommands
             player.SendText(
                 player.CharacterId == ctx.Actor.CharacterId
                     ? $"You chat, '{argument}'"
-                    : $"{ctx.Actor.Name} chats, '{argument}'",
+                    : $"{ctx.Actor.TaggedName} chats, '{argument}'",
                 "chat");
         }
     }

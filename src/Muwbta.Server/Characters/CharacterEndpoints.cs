@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Muwbta.Domain.Accounts;
 using Muwbta.Domain.Characters;
 using Muwbta.Engine;
 using Muwbta.Persistence;
@@ -65,6 +66,13 @@ public static partial class CharacterEndpoints
         if (!NamePattern().IsMatch(request.Name ?? string.Empty))
         {
             return Results.BadRequest(new { error = "Name must be 3-16 letters." });
+        }
+
+        // The name every other player sees, so the one that matters most: "Admin tells you" is
+        // only a forgery if nobody can be Admin (ReservedNames says why the list is what it is).
+        if (ReservedNames.IsReserved(request.Name!))
+        {
+            return Results.BadRequest(new { error = "That name is reserved." });
         }
 
         // IsDefined as well as TryParse: TryParse accepts any integer string, so "42" parsed to a

@@ -28,6 +28,29 @@ public sealed class PlayerActor
     public bool IsBuilder => Role is AccountRole.Builder or AccountRole.Admin;
 
     /// <summary>
+    /// The name as other players see it on anything this character says: staff wear their role.
+    /// </summary>
+    /// <remarks>
+    /// The point is not decoration. Without it a real admin and a level-one Warden named to look
+    /// like one were indistinguishable on a tell, and "Admin tells you, 'send me your password'"
+    /// had nothing genuine to be compared against. The tag is something only the server can put
+    /// on a line — a name is letters only (see the creation regex), so nobody can type the
+    /// brackets into one — and the words inside it are reserved as names besides
+    /// (<see cref="ReservedNames"/>). Builders are staff for this purpose: what they write
+    /// arrives styled as the world, which is a claim of authority too.
+    ///
+    /// Used where the character speaks or is listed to others - who, tell, say, chat, emote -
+    /// and not where they are merely narrated moving about, which is not a claim of anything.
+    /// </remarks>
+    public string TaggedName => Role switch
+    {
+        AccountRole.Admin => $"[Admin] {Name}",
+        AccountRole.Moderator => $"[Moderator] {Name}",
+        AccountRole.Builder => $"[Builder] {Name}",
+        _ => Name,
+    };
+
+    /// <summary>
     /// When this account's mute expires, or null when it is not muted (PLAN.md §8, Phase 6).
     /// </summary>
     /// <remarks>

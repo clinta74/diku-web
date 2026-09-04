@@ -439,6 +439,10 @@ public sealed class GameLoop(
     // Message handling
     // -----------------------------------------------------------------------
 
+    /// <summary>Said to every character on arrival, after the welcome. See where it is sent.</summary>
+    internal const string StaffNotice =
+        "Staff never ask for your password. Anyone who does is not staff.";
+
     private void HandleEnter(EnterWorld message)
     {
         var existing = world.FindByCharacter(message.Character.Id);
@@ -521,6 +525,12 @@ public sealed class GameLoop(
         }
 
         actor.SendSys(GameConfiguration.Greet(options.WelcomeMessage, actor.Name), SysKinds.Info);
+
+        // Every arrival, not a builder-editable message: the one sentence that makes the staff tag
+        // mean something is the one that says what staff will never do. A player who has read it
+        // once has the comparison to hand when "Admin" asks.
+        actor.SendSys(StaffNotice, SysKinds.Info);
+
         PlayerView.SendVitals(actor);
         PlayerView.SendParty(world, actor);
         PlayerView.SendAbilities(actor, world, abilityCache, clock.CurrentPulse);

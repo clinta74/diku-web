@@ -346,7 +346,7 @@ public sealed class CommandRegistry
         }
 
         ctx.Reply($"You say, '{ctx.Argument}'", "speech");
-        ctx.Broadcast($"{ctx.Actor.Name} says, '{ctx.Argument}'", "speech");
+        ctx.Broadcast($"{ctx.Actor.TaggedName} says, '{ctx.Argument}'", "speech");
     }
 
     private static void Who(CommandContext ctx)
@@ -364,7 +364,7 @@ public sealed class CommandRegistry
         {
             var status = player.IsLinkDead ? " [link-dead]" : string.Empty;
             spans.Add(new TextSpan(
-                $"\n  {player.Name}  level {player.Character.Level} {player.Character.Path}{status}"));
+                $"\n  {player.TaggedName}  level {player.Character.Level} {player.Character.Path}{status}"));
         }
 
         ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
@@ -1401,7 +1401,7 @@ public sealed class CommandRegistry
             return;
         }
 
-        var line = $"{ctx.Actor.Name} {ctx.Argument}";
+        var line = $"{ctx.Actor.TaggedName} {ctx.Argument}";
 
         ctx.Reply(line, "emote");
 
