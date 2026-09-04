@@ -3486,7 +3486,7 @@
     },
     {
       "key": "ossara-rim-keeper",
-      "name": "Keeper Vess of Sulveth's stone",
+      "name": "Keeper Adda of Sulveth's stone",
       "description": "She keeps the blank stone at the rim, and has done for thirty years. She is not gloomy about it and has no patience for anyone who is.",
       "icon": "@",
       "level": 6,
@@ -6048,7 +6048,7 @@
       "paths": [],
       "dialogue": {
         "giverOffer": "'They are holding things,' Pell says, and stops, and starts again. 'Somebody is missing those <things>. That is all I am confident about.'",
-        "turninReady": "Vess lays them out on the blank stone without hurrying. 'These went first,' she says. 'The stones went second. The gate went third. He has the order backwards and the right idea.'",
+        "turninReady": "Adda lays them out on the blank stone without hurrying. 'These went first,' she says. 'The stones went second. The gate went third. He has the order backwards and the right idea.'",
         "giverComplete": "'Six. And do not sort them. I will sort them.'",
         "giverInProgress": "'Six should do. Take them to the Keeper, not to me. She will know what they are. I will only guess and be wrong in front of you.'"
       },
@@ -6058,8 +6058,8 @@
       "key": "a1-3-a-gate-does-not-break",
       "zoneKey": "ossara.the-rimwalk",
       "name": "A Gate Does Not Break",
-      "summary": "Take the shard from the Unclaimed to Keeper Vess.",
-      "description": "The last marker still carries its shard, and the Unclaimed is standing over it. Vess wants the stone, and she has decided you have earned the sentence that comes with it.",
+      "summary": "Take the shard from the Unclaimed to Keeper Adda.",
+      "description": "The last marker still carries its shard, and the Unclaimed is standing over it. Adda wants the stone, and she has decided you have earned the sentence that comes with it.",
       "giverMobKey": "ossara-rim-keeper",
       "turninMobKey": "ossara-rim-keeper",
       "requiredItemKey": "ossara-gate-shard",
@@ -6076,7 +6076,7 @@
       "autoStart": false,
       "paths": [],
       "dialogue": {
-        "giverOffer": "Vess does not look up. '<Last stone> still has its piece. The big one is standing on it. I am seventy and I am not going to be the one to ask it to move.'",
+        "giverOffer": "Adda does not look up. '<Last stone> still has its piece. The big one is standing on it. I am seventy and I am not going to be the one to ask it to move.'",
         "turninReady": "She turns the shard so the smooth broken face catches the light. 'A gate does not break,' she says. 'It forgets. Somebody stopped saying the name of the other side and it stopped being able to find it.' She presses the shard into your hand. 'It knows you now. Go and see what is left of Grask, and mind what looks back.'",
         "giverComplete": "'Still standing there, is it. Yes. It does that.'",
         "giverInProgress": "'One shard. Out past the ring, where the ground gives. Mind your footing and mind the thing that is already there.'"

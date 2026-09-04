@@ -370,7 +370,7 @@ public sealed class TalkTests
     [InlineData("Deacon Pell of Ilvaro's house", "pell")]
     [InlineData("Vesh, who follows the gates", "vesh")]
     [InlineData("Sister Aveth, who was expelled", "aveth")]
-    [InlineData("Keeper Vess of Sulveth's stone", "vess")]
+    [InlineData("Keeper Adda of Sulveth's stone", "adda")]
     [InlineData("Ista Roan, deep foreman", "foreman")]
     [InlineData("a bar maiden", "maiden")]
     public void A_giver_is_addressed_by_their_name_and_not_their_description(
