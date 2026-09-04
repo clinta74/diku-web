@@ -87,12 +87,27 @@ is entirely on this side.
 
 **Fix, three parts.**
 
-1. Compose nginx passes the proto through when an upstream already set it:
+1. Make the NPM → 7180 leg TLS, so `$scheme` on that hop is `https` and the existing
+   `X-Forwarded-Proto $scheme` sends the right value unchanged. NPM does not verify
+   upstream certificates, so nothing needs signing or managing: a script in
+   `/docker-entrypoint.d/` self-signs a throwaway certificate at container start unless one
+   is mounted, the server block adds `listen 443 ssl` beside the existing `listen 80` (kept
+   for the healthcheck and the dev stack), and the compose publishes `7180:443`. NPM's proxy
+   host switches to scheme `https`.
+
+   What this buys: the LAN leg is encrypted against passive listening. What it does not
+   buy: authentication of either end, or any restriction on who may connect to 7180 — NPM
+   accepts any certificate, and any LAN host can still reach the port. Step 2's known-proxy
+   list therefore remains the only lock on header spoofing. If a real lock is wanted later,
+   a private CA (two `openssl` commands; both ends are yours, so no public CA is involved)
+   lets the inner nginx require NPM's client certificate and makes 7180 unreachable to
+   anything else; NPM takes `proxy_ssl_certificate` in a proxy host's Advanced tab.
+
+   The plain-HTTP alternative, if the TLS leg is deferred, is a passthrough map:
 
    ```nginx
    map $http_x_forwarded_proto $fwd_proto { default $scheme; https https; }
-   # in both proxy locations:
-   proxy_set_header X-Forwarded-Proto $fwd_proto;
+   proxy_set_header X-Forwarded-Proto $fwd_proto;   # in both proxy locations
    ```
 
 2. Kestrel honours the headers, trusting exactly the two hops. `X-Forwarded-For` arrives
@@ -463,7 +478,7 @@ cap in A1.
 | # | Item | Effort | Unlocks |
 |---|---|---|---|
 | 0 | Confirm the first beta account is yours | 5 min | — |
-| 1 | A1 proto passthrough in compose nginx; forwarded headers in Kestrel, both hops pinned | 2 hr | A2, C2, D1 |
+| 1 | A1 TLS on the inner hop (self-signed at boot); forwarded headers in Kestrel, both hops pinned | 3 hr | A2, C2, D1 |
 | 2 | A2 `Secure` cookie unconditional in Production; HSTS toggle on NPM | 1 hr | — |
 | 3 | A3 bind Postgres and Grafana to loopback | 5 min | — |
 | 4 | F1 reserved names + staff tag + welcome line | ½ day | F2, F4 |
