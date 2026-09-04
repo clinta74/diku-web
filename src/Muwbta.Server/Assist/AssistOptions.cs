@@ -30,7 +30,7 @@ public sealed class AssistOptions
     /// <c>gemma3:12b</c> would answer to this and would answer at 4096 tokens, silently truncating
     /// the canon (tools/ollama/README.md). The name of the model is load-bearing.
     /// </remarks>
-    public string Model { get; set; } = "dikuweb-builder";
+    public string Model { get; set; } = "muwbta-builder";
 
     /// <summary>
     /// How long one generation may take before it is abandoned.

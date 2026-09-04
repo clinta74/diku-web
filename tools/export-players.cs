@@ -140,7 +140,7 @@ outPath ??= Path.Combine(
 // The compose defaults are the fallback, because that is what a developer following the README is
 // running. Anything else is passed in or set in the environment.
 connection ??= Environment.GetEnvironmentVariable("MUWBTA_CONNECTION")
-    ?? "Host=localhost;Port=5432;Database=dikuweb;Username=dikuweb;Password=password";
+    ?? "Host=localhost;Port=5432;Database=muwbta;Username=muwbta;Password=password";
 
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(connection);
 dataSourceBuilder.EnableDynamicJson();
@@ -346,7 +346,7 @@ foreach (var room in characterRows
 
 Console.WriteLine();
 Console.WriteLine("Apply it yourself - this touched nothing:");
-Console.WriteLine($"  docker exec -i muwbta-postgres psql -U dikuweb -d dikuweb < {outPath}");
+Console.WriteLine($"  docker exec -i muwbta-postgres psql -U muwbta -d muwbta < {outPath}");
 
 return 0;
 

@@ -1,4 +1,4 @@
-name: diku-web
+name: muwbta
 
 # Production docker-compose configuration
 # All settings are hardcoded below - edit this file to change values
@@ -14,8 +14,8 @@ services:
       - muwbta-network
     environment:
       # Database initialization - EDIT THESE VALUES
-      POSTGRES_DB: dikuweb
-      POSTGRES_USER: dikuweb
+      POSTGRES_DB: muwbta
+      POSTGRES_USER: muwbta
       POSTGRES_PASSWORD: change_this_password_in_production
       POSTGRES_INITDB_ARGS: >-
         -c timezone=UTC
@@ -32,7 +32,7 @@ services:
       # Optional: backup directory for pg_dump
       - ./backups:/backups:rw
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dikuweb -d dikuweb"]
+      test: ["CMD-SHELL", "pg_isready -U muwbta -d muwbta"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -74,8 +74,8 @@ services:
       # Edit these to match postgres service above
       DatabaseConnection__Host: postgres
       DatabaseConnection__Port: "5432"
-      DatabaseConnection__Database: dikuweb
-      DatabaseConnection__User: dikuweb
+      DatabaseConnection__Database: muwbta
+      DatabaseConnection__User: muwbta
       DatabaseConnection__Password: change_this_password_in_production
       # Logging
       Logging__LogLevel__Default: Warning
@@ -102,7 +102,7 @@ services:
       # contradict PLAN.md §11, which targets 200 concurrent sessions on one process and has
       # measured them being held.
       # Auth (PLAN.md §7.1)
-      Auth__CookieName: dikuweb.session
+      Auth__CookieName: muwbta.session
       Auth__SessionTimeoutMinutes: "20160"
       Auth__RevalidationIntervalSeconds: "60"
       # Game engine
@@ -155,8 +155,8 @@ services:
         condition: service_healthy
     environment:
       PGHOST: postgres
-      PGUSER: dikuweb
-      PGDATABASE: dikuweb
+      PGUSER: muwbta
+      PGDATABASE: muwbta
       # Must match the postgres service above.
       PGPASSWORD: change_this_password_in_production
       BACKUP_AT_HOUR: "3"

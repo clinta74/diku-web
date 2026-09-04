@@ -31,7 +31,7 @@ public sealed class AuthOptions
     /// parent domain overwrite each other's cookie unless they can be told apart, and that is a
     /// deploy-time fact the build cannot know.
     /// </remarks>
-    public string CookieName { get; set; } = "dikuweb.session";
+    public string CookieName { get; set; } = "muwbta.session";
 
     /// <summary>How long a session survives without use, in minutes.</summary>
     /// <remarks>

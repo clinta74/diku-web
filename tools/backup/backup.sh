@@ -22,8 +22,8 @@
 set -eu
 
 PGHOST="${PGHOST:-postgres}"
-PGUSER="${PGUSER:-dikuweb}"
-PGDATABASE="${PGDATABASE:-dikuweb}"
+PGUSER="${PGUSER:-muwbta}"
+PGDATABASE="${PGDATABASE:-muwbta}"
 BACKUP_DIR="${BACKUP_DIR:-/backups}"
 # Dumps to keep. The whole world is well under a megabyte compressed, so this is generous on
 # purpose: the cost of a month of history is nothing and the cost of not having yesterday's is the
@@ -33,13 +33,13 @@ BACKUP_KEEP="${BACKUP_KEEP:-30}"
 # circle, so a container restart does not permanently shift when backups happen.
 BACKUP_AT_HOUR="${BACKUP_AT_HOUR:-3}"
 # The scratch database the verify restores into. Dropped afterwards, always.
-VERIFY_DB="${VERIFY_DB:-dikuweb_verify}"
+VERIFY_DB="${VERIFY_DB:-muwbta_verify}"
 
-# Only files this script wrote are ever pruned. A plain 'dikuweb-*.dump' also matches dumps taken
+# Only files this script wrote are ever pruned. A plain 'muwbta-*.dump' also matches dumps taken
 # by hand - backups/ here already held a 'dikuweb-full-…' one - and retention that silently
 # deletes somebody's manual pre-migration snapshot is the sort of helpfulness nobody asked for.
 # The stamp shape is the signature: yyyy-mm-ddThhmmssZ.
-DUMP_GLOB='dikuweb-????-??-??T??????Z.dump'
+DUMP_GLOB='muwbta-????-??-??T??????Z.dump'
 
 log() { echo "[backup $(date -u '+%Y-%m-%dT%H:%M:%SZ')] $*"; }
 
@@ -92,7 +92,7 @@ run_once() {
     require_real_volume || return 1
 
     stamp=$(date -u '+%Y-%m-%dT%H%M%SZ')
-    final="$BACKUP_DIR/dikuweb-$stamp.dump"
+    final="$BACKUP_DIR/muwbta-$stamp.dump"
     # Written to .part and renamed only once pg_dump has exited cleanly. A container killed
     # mid-dump otherwise leaves a truncated file with a plausible name and a plausible size, which
     # is exactly the kind of backup that is discovered to be useless during an incident.

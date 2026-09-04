@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 /** Where the widths are kept, so they survive a reload rather than only a navigation. */
-const STORAGE_KEY = 'dikuweb.builder.rails'
+const STORAGE_KEY = 'muwbta.builder.rails'
 
 /** The widths the builder shipped with, and what a reset returns to. */
 export const DEFAULT_RAILS = { left: 240, right: 272 } as const

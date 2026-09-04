@@ -30,20 +30,20 @@ describe('what is under the key is not trusted', () => {
   it('survives text that is not JSON', () => {
     // The failure mode this rules out is a throw during the initial useState, which takes the
     // whole game screen down rather than just the history.
-    localStorage.setItem('dikuweb.history.c1', 'not json at all')
+    localStorage.setItem('muwbta.history.c1', 'not json at all')
 
     expect(loadHistory('c1')).toEqual([])
   })
 
   it('survives JSON of the wrong shape', () => {
-    localStorage.setItem('dikuweb.history.c1', '{"look":1}')
+    localStorage.setItem('muwbta.history.c1', '{"look":1}')
 
     expect(loadHistory('c1')).toEqual([])
   })
 
   it('drops entries that are not commands', () => {
     // A non-string would render as a blank line in the input on the way past.
-    localStorage.setItem('dikuweb.history.c1', '["look", null, 7, "north"]')
+    localStorage.setItem('muwbta.history.c1', '["look", null, 7, "north"]')
 
     expect(loadHistory('c1')).toEqual(['look', 'north'])
   })

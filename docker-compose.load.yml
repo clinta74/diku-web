@@ -54,9 +54,9 @@ services:
       # the purge. Point it at a scratch database if that trade is wrong for you.
       DatabaseConnection__Host: muwbta-postgres
       DatabaseConnection__Port: "5432"
-      DatabaseConnection__Database: dikuweb
-      DatabaseConnection__User: dikuweb
-      DatabaseConnection__Password: ${POSTGRES_PASSWORD:-dikuweb_dev_only}
+      DatabaseConnection__Database: muwbta
+      DatabaseConnection__User: muwbta
+      DatabaseConnection__Password: ${POSTGRES_PASSWORD:-muwbta_dev_only}
 
       # Warning only. At 200 sessions an Information-level log line per command is thousands of
       # writes a second into the container's json-file driver, and stdio backpressure would show
@@ -170,4 +170,4 @@ networks:
   # in this file must never be able to delete the database's network out from under it.
   muwbta-network:
     external: true
-    name: diku-web-dev_muwbta-network
+    name: muwbta-dev_muwbta-network

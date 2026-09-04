@@ -35,7 +35,7 @@ namespace Muwbta.Server.Auth;
 internal static class PrincipalRevalidator
 {
     /// <summary>Stored in the ticket so the check is time-based rather than per-request.</summary>
-    private const string LastCheckedKey = "dikuweb.revalidated";
+    private const string LastCheckedKey = "muwbta.revalidated";
 
     public static async Task ValidateAsync(CookieValidatePrincipalContext context)
     {

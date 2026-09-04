@@ -31,19 +31,19 @@
 
 .EXAMPLE
     tools/restore-drill.ps1
-    tools/restore-drill.ps1 -Dump backups/dikuweb-2026-08-14T143917Z.dump
+    tools/restore-drill.ps1 -Dump backups/muwbta-2026-08-14T143917Z.dump
 #>
 [CmdletBinding()]
 param(
     # Defaults to the newest dump in backups/.
     [string] $Dump,
     [string] $Container = 'muwbta-postgres',
-    [string] $User = 'dikuweb',
+    [string] $User = 'muwbta',
     # Read from .env, because that is what docker-compose.yml handed the container. Defaulting to
     # the compose fallback instead would produce a drill that fails on authentication and reads as
     # "the backup is bad", which is the most misleading way for a recovery rehearsal to fail.
     [string] $Password,
-    [string] $DrillDatabase = 'dikuweb_drill',
+    [string] $DrillDatabase = 'muwbta_drill',
     # Not 5180: the drill must not collide with a dev server somebody has running.
     [int] $Port = 5199
 )
@@ -71,11 +71,11 @@ try {
     if (-not $Dump) {
         # Matched on the timestamp shape the sidecar writes, not on '*.dump'. backups/ also holds
         # dumps taken by hand with arbitrary names, and a plain wildcard sorted by name picks
-        # 'dikuweb-full-2026-08-10.dump' over 'dikuweb-2026-08-14T…' because 'f' sorts after a
+        # 'muwbta-full-2026-08-10.dump' over 'muwbta-2026-08-14T…' because 'f' sorts after a
         # digit - so the default drilled the oldest file in the directory while claiming to drill
         # the newest. Found by running it.
         $newest = Get-ChildItem (Join-Path $repoRoot 'backups') -ErrorAction SilentlyContinue |
-            Where-Object Name -match '^dikuweb-\d{4}-\d{2}-\d{2}T\d{6}Z\.dump$' |
+            Where-Object Name -match '^muwbta-\d{4}-\d{2}-\d{2}T\d{6}Z\.dump$' |
             Sort-Object Name -Descending | Select-Object -First 1
         if (-not $newest) {
             throw 'No scheduled dump found in backups/. Take one: docker compose -f docker-compose.prod.yml exec backup /scripts/backup.sh --once'

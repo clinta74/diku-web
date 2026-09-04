@@ -1,4 +1,4 @@
-name: diku-web-dev
+name: muwbta-dev
 
 # Local development docker-compose
 #
@@ -24,7 +24,7 @@ name: diku-web-dev
 # it later changes nothing until the `pgdata` volume is recreated or the role is altered by hand.
 #
 # appsettings.Development.json already points the server at http://localhost:11434 and the model
-# `dikuweb-builder`, so nothing else needs configuring - which is also why ollama's port is
+# `muwbta-builder`, so nothing else needs configuring - which is also why ollama's port is
 # published here and deliberately is not on the NAS: there, `web` is a container on the compose
 # network and reaches it by service name. Here the server is on the host.
 
@@ -45,9 +45,9 @@ services:
       # the other dialect resolves happily to "password", so Postgres initialised with a password
       # the .env never mentioned and appsettings.Development.json did not share. Nothing errored;
       # the server simply could not authenticate.
-      POSTGRES_DB: ${POSTGRES_DB:-dikuweb}
-      POSTGRES_USER: ${POSTGRES_USER:-dikuweb}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dikuweb_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-muwbta}
+      POSTGRES_USER: ${POSTGRES_USER:-muwbta}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-muwbta_dev_only}
       POSTGRES_INITDB_ARGS: >-
         -c timezone=UTC
         -c shared_buffers=256MB
@@ -61,7 +61,7 @@ services:
       - pgdata:/var/lib/postgresql
       - ./backups:/backups:rw
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dikuweb} -d ${POSTGRES_DB:-dikuweb}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-muwbta} -d ${POSTGRES_DB:-muwbta}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -89,8 +89,8 @@ services:
       - ${ADMINER_PORT:-8080}:8080
     environment:
       ADMINER_DEFAULT_SERVER: postgres
-      ADMINER_DEFAULT_DB: ${POSTGRES_DB:-dikuweb}
-      ADMINER_DEFAULT_USER: ${POSTGRES_USER:-dikuweb}
+      ADMINER_DEFAULT_DB: ${POSTGRES_DB:-muwbta}
+      ADMINER_DEFAULT_USER: ${POSTGRES_USER:-muwbta}
     logging:
       driver: json-file
       options:

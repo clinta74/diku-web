@@ -64,7 +64,7 @@ docker-compose down
 docker-compose down -v
 
 # Shell into database container
-docker-compose exec postgres psql -U dikuweb -d dikuweb
+docker-compose exec postgres psql -U muwbta -d muwbta
 ```
 
 ### Running the Application
@@ -109,9 +109,9 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ```
 # Database for local development
-POSTGRES_DB=dikuweb
-POSTGRES_USER=dikuweb
-POSTGRES_PASSWORD=dikuweb_dev_only
+POSTGRES_DB=muwbta
+POSTGRES_USER=muwbta
+POSTGRES_PASSWORD=muwbta_dev_only
 ```
 
 ### Production (.env or command-line)
@@ -128,7 +128,7 @@ MUWBTA_IMAGE_TAG=latest
 Local development database connection string:
 
 ```
-Host=localhost;Port=5432;Database=dikuweb;Username=dikuweb;Password=dikuweb_dev_only
+Host=localhost;Port=5432;Database=muwbta;Username=muwbta;Password=muwbta_dev_only
 ```
 
 Copied from `appsettings.Development.json`, which is the file that actually holds it — the keys are
@@ -158,7 +158,7 @@ docker-compose up postgres
 docker-compose ps
 
 # Test connection manually
-docker-compose exec postgres psql -U dikuweb -d dikuweb
+docker-compose exec postgres psql -U muwbta -d muwbta
 ```
 
 ### Adminer won't load

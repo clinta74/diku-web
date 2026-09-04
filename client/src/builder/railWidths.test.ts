@@ -51,7 +51,7 @@ it('resets both rails together', () => {
 it('treats whatever is under the storage key as hostile', () => {
   // The same rule the command history follows: a throw while reading a preference would take the
   // whole builder down rather than costing one setting.
-  localStorage.setItem('dikuweb.builder.rails', 'not json at all')
+  localStorage.setItem('muwbta.builder.rails', 'not json at all')
 
   const { result } = renderHook(() => useRailWidths())
 
@@ -59,7 +59,7 @@ it('treats whatever is under the storage key as hostile', () => {
 })
 
 it('ignores a stored value of the wrong shape', () => {
-  localStorage.setItem('dikuweb.builder.rails', JSON.stringify({ left: 'wide', right: null }))
+  localStorage.setItem('muwbta.builder.rails', JSON.stringify({ left: 'wide', right: null }))
 
   const { result } = renderHook(() => useRailWidths())
 

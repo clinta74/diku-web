@@ -294,7 +294,7 @@ public sealed class OllamaContentAssistantTests
 
         var assistant = new OllamaContentAssistant(
             http,
-            Options.Create(new AssistOptions { Model = "dikuweb-builder" }),
+            Options.Create(new AssistOptions { Model = "muwbta-builder" }),
             NullLogger<OllamaContentAssistant>.Instance);
 
         return (assistant, handler);
@@ -431,7 +431,7 @@ public sealed class OllamaContentAssistantTests
 
         await assistant.DraftRoomAsync(Request(), Context, CancellationToken.None);
 
-        Assert.Equal("dikuweb-builder", handler.Sent!["model"]!.GetValue<string>());
+        Assert.Equal("muwbta-builder", handler.Sent!["model"]!.GetValue<string>());
     }
 
     /// <summary>

@@ -20,7 +20,7 @@
 set -e
 
 CONTAINER=${CONTAINER:-muwbta-ollama}
-MODEL=${MODEL:-dikuweb-builder}
+MODEL=${MODEL:-muwbta-builder}
 EMBED=${EMBED:-nomic-embed-text}
 HERE=$(dirname "$0")
 

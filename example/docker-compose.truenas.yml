@@ -1,4 +1,4 @@
-name: diku-web
+name: muwbta
 
 # TrueNAS SCALE deployment (custom app / docker compose).
 #
@@ -19,8 +19,8 @@ services:
     networks:
       - muwbta-network
     environment:
-      POSTGRES_DB: dikuweb
-      POSTGRES_USER: dikuweb
+      POSTGRES_DB: muwbta
+      POSTGRES_USER: muwbta
       # Must match DatabaseConnection__Password on `web` and PGPASSWORD on `backup`.
       POSTGRES_PASSWORD:
       POSTGRES_INITDB_ARGS: '-c timezone=UTC -c shared_buffers=256MB -c max_connections=200'
@@ -35,7 +35,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - pg_isready -U dikuweb -d dikuweb
+        - pg_isready -U muwbta -d muwbta
       interval: 10s
       timeout: 5s
       retries: 5
@@ -63,8 +63,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       DatabaseConnection__Host: postgres
       DatabaseConnection__Port: '5432'
-      DatabaseConnection__Database: dikuweb
-      DatabaseConnection__User: dikuweb
+      DatabaseConnection__Database: muwbta
+      DatabaseConnection__User: muwbta
       DatabaseConnection__Password:
       Logging__LogLevel__Default: Warning
       Logging__LogLevel__Microsoft: Warning
@@ -79,7 +79,7 @@ services:
       Sessions__HeartbeatTimeoutSeconds: '60'
       # No global session cap: Sessions__MaxConcurrentSessions was never a setting, and a hundred
       # would contradict the 200 concurrent sessions PLAN.md §11 targets and has now measured.
-      Auth__CookieName: dikuweb.session
+      Auth__CookieName: muwbta.session
       Auth__SessionTimeoutMinutes: '20160'
       Auth__RevalidationIntervalSeconds: '60'
       # 300, not 30. The engine default is 360 pulses (90s); 30 is shorter than that and drops a
@@ -104,7 +104,7 @@ services:
       # derived model, which means `sh tools/ollama/create-models.sh` has been run on this box.
       Assist__Enabled: 'true'
       Assist__BaseUrl: http://ollama:11434
-      Assist__Model: dikuweb-builder
+      Assist__Model: muwbta-builder
       SwaggerEnabled: 'false'
     volumes:
       - ./logs:/app/logs:rw
@@ -166,7 +166,7 @@ services:
     #
     # Requires tools/backup/backup.sh to exist next to this file ON THE NAS. If you deploy from
     # the published images and have no repo checkout there, copy the script to a dataset and
-    # point the mount at an absolute path instead, e.g. /mnt/tank/dikuweb/tools/backup:/scripts:ro
+    # point the mount at an absolute path instead, e.g. /mnt/tank/muwbta/tools/backup:/scripts:ro
     image: postgres:18
     container_name: muwbta-backup
     restart: always
@@ -177,8 +177,8 @@ services:
         condition: service_healthy
     environment:
       PGHOST: postgres
-      PGUSER: dikuweb
-      PGDATABASE: dikuweb
+      PGUSER: muwbta
+      PGDATABASE: muwbta
       PGPASSWORD:
       BACKUP_AT_HOUR: '3'
       BACKUP_KEEP: '30'

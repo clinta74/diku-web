@@ -17,7 +17,7 @@ A `backup` sidecar in `docker-compose.prod.yml`, on the same network as `postgre
 the server, so `pg_dump` is never older than the database it is dumping.
 
 Nightly at **03:00 UTC** (`BACKUP_AT_HOUR`), keeping **30** dumps (`BACKUP_KEEP`), in `./backups`
-on the host as `dikuweb-<ISO-stamp>.dump` (`pg_dump -Fc`, so `pg_restore` can be selective).
+on the host as `muwbta-<ISO-stamp>.dump` (`pg_dump -Fc`, so `pg_restore` can be selective).
 
 Each run dumps, **restores what it just dumped into a scratch database and compares exact row
 counts for every table**, then prunes. A dump that does not restore is **deleted, not kept** — a
@@ -29,7 +29,7 @@ Two guards worth knowing about, both from failures hit while building this:
 - **It refuses to run if `/backups` is not on a volume.** The dev container predated the mount, so
   dumps were landing in the container's writable layer: writable, plausible, and gone on the next
   `docker compose up`. From inside, that failure is invisible.
-- **Pruning only touches files it wrote** (`dikuweb-<stamp>.dump`). Hand-made dumps with other
+- **Pruning only touches files it wrote** (`muwbta-<stamp>.dump`). Hand-made dumps with other
   names are left alone.
 
 ### Take one now
@@ -57,7 +57,7 @@ container means backups are failing — read the log.
 
 ```powershell
 tools/restore-drill.ps1                                        # newest scheduled dump
-tools/restore-drill.ps1 -Dump backups/dikuweb-<stamp>.dump   # a specific one
+tools/restore-drill.ps1 -Dump backups/muwbta-<stamp>.dump   # a specific one
 ```
 
 Restores into a scratch database, **starts the server against it**, waits for `/health/ready`, and
@@ -82,9 +82,9 @@ Run it after any migration, and whenever you want to believe the backups.
 ```bash
 docker compose -f docker-compose.prod.yml stop web        # single writer; nothing else may be up
 docker cp backups/<dump> muwbta-postgres:/tmp/restore.dump
-docker exec muwbta-postgres psql -U dikuweb -d postgres -c 'drop database dikuweb;'
-docker exec muwbta-postgres psql -U dikuweb -d postgres -c 'create database dikuweb;'
-docker exec muwbta-postgres pg_restore -U dikuweb -d dikuweb --no-owner --no-privileges /tmp/restore.dump
+docker exec muwbta-postgres psql -U muwbta -d postgres -c 'drop database muwbta;'
+docker exec muwbta-postgres psql -U muwbta -d postgres -c 'create database muwbta;'
+docker exec muwbta-postgres pg_restore -U muwbta -d muwbta --no-owner --no-privileges /tmp/restore.dump
 docker compose -f docker-compose.prod.yml start web
 docker compose -f docker-compose.prod.yml logs -f web     # expect "Game loop starting with N rooms"
 ```
@@ -118,7 +118,7 @@ default for a database with no characters worth keeping is to drop and recreate 
 repair the history:
 
 ```sql
-DROP DATABASE dikuweb; CREATE DATABASE dikuweb;
+DROP DATABASE muwbta; CREATE DATABASE muwbta;
 ```
 
 Start `web`; the baseline builds the schema and the seeder plants abilities. Content comes back from
@@ -236,7 +236,7 @@ left alone. Importing one cannot empty a world.
    landed before going on:
 
    ```
-   docker exec <pg> psql -U dikuweb -d dikuweb -c      "select column_name from information_schema.columns
+   docker exec <pg> psql -U muwbta -d muwbta -c      "select column_name from information_schema.columns
       where table_name='abilities' and column_name='cooldown_group';"
    ```
 
@@ -254,13 +254,13 @@ left alone. Importing one cannot empty a world.
 3. **Snapshot the rows you are about to overwrite**, so you can diff and so you can put them back:
 
    ```
-   docker exec <pg> psql -U dikuweb -d dikuweb -At -c      "select key, cooldown_group, effects from abilities where key like 'warden.%' order by key;"      > before.txt
+   docker exec <pg> psql -U muwbta -d muwbta -At -c      "select key, cooldown_group, effects from abilities where key like 'warden.%' order by key;"      > before.txt
    ```
 
 4. **Apply.** The file is one transaction, so it is all-or-nothing:
 
    ```
-   docker exec -i <pg> psql -U dikuweb -d dikuweb < backups/ability-patch.sql
+   docker exec -i <pg> psql -U muwbta -d muwbta < backups/ability-patch.sql
    ```
 
 5. **Diff.** Re-run the query from step 3 into `after.txt` and compare. Only the rows you named

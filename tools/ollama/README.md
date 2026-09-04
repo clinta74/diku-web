@@ -113,11 +113,11 @@ From the repository root, on whichever machine runs the container:
 sh tools/ollama/create-models.sh
 ```
 
-It pulls the base, builds `dikuweb-builder` from `Modelfile.builder`, and then **asserts** that
+It pulls the base, builds `muwbta-builder` from `Modelfile.builder`, and then **asserts** that
 `num_ctx` came back as 16384 rather than trusting that it did. Rerun it whenever the Modelfile
 changes; that is also how a changed parameter is applied.
 
-Point the assist at `dikuweb-builder`, not at `gemma3:12b`. Requesting the base by name gets you
+Point the assist at `muwbta-builder`, not at `gemma3:12b`. Requesting the base by name gets you
 4096 again.
 
 ### Locally, for development
@@ -130,7 +130,7 @@ docker compose --profile assist up -d
 sh tools/ollama/create-models.sh
 ```
 
-`appsettings.Development.json` already names `http://localhost:11434` and `dikuweb-builder`, so
+`appsettings.Development.json` already names `http://localhost:11434` and `muwbta-builder`, so
 there is nothing further to configure — and that URL is why the dev compose publishes the port
 while the NAS one deliberately does not. There, `web` is a container and reaches ollama by service
 name across the compose network; locally the server runs on the host and has no such network.

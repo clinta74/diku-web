@@ -108,7 +108,7 @@ sql.AppendLine("--");
 sql.AppendLine("-- Every statement is an upsert and OVERWRITES the row it names, including any");
 sql.AppendLine("-- retune made through the builder. Read the comment above each one first.");
 sql.AppendLine("--");
-sql.AppendLine("--   docker exec -i muwbta-postgres psql -U dikuweb -d dikuweb < this-file.sql");
+sql.AppendLine("--   docker exec -i muwbta-postgres psql -U muwbta -d muwbta < this-file.sql");
 sql.AppendLine();
 sql.AppendLine("BEGIN;");
 

@@ -74,7 +74,7 @@ for (var i = 0; i < args.Length; i++)
 // The compose defaults (docker-compose.yml) are the fallback, because that is what a developer
 // following the README is running. Anything else is passed in or set in the environment.
 connection ??= Environment.GetEnvironmentVariable("MUWBTA_CONNECTION")
-    ?? "Host=localhost;Port=5432;Database=dikuweb;Username=dikuweb;Password=password";
+    ?? "Host=localhost;Port=5432;Database=muwbta;Username=muwbta;Password=password";
 
 // EnableDynamicJson, exactly as PersistenceServiceCollectionExtensions does it. Every stat bag in
 // the world is a jsonb Dictionary<string, object>, and without this the first template read throws

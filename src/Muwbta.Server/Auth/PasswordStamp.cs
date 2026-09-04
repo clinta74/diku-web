@@ -24,7 +24,7 @@ namespace Muwbta.Server.Auth;
 internal static class PasswordStamp
 {
     /// <summary>The authentication-properties key the stamp is stored under.</summary>
-    public const string Key = "dikuweb.password";
+    public const string Key = "muwbta.password";
 
     /// <summary>100-nanosecond ticks in the microsecond Postgres will keep.</summary>
     private const long TicksPerMicrosecond = 10;

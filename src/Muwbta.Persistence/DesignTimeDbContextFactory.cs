@@ -12,7 +12,7 @@ namespace Muwbta.Persistence;
 internal sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<MuwbtaDbContext>
 {
     private const string FallbackConnectionString =
-        "Host=localhost;Port=5432;Database=dikuweb;Username=dikuweb;Password=dikuweb_dev_only";
+        "Host=localhost;Port=5432;Database=muwbta;Username=muwbta;Password=muwbta_dev_only";
 
     public MuwbtaDbContext CreateDbContext(string[] args)
     {

@@ -22,7 +22,7 @@ function storage(): Storage | null {
 }
 
 function keyFor(characterId: string): string {
-  return `dikuweb.history.${characterId}`
+  return `muwbta.history.${characterId}`
 }
 
 export function loadHistory(characterId: string): string[] {
