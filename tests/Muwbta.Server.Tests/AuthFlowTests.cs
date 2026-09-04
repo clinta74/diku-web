@@ -115,6 +115,28 @@ public sealed class AuthFlowTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Over_long_passwords_are_rejected()
+    {
+        // The ceiling, not the floor, is the half of the policy that matters at this endpoint:
+        // PBKDF2 hashes whatever it is given, and registration is the one surface a stranger can
+        // reach. It used to enforce only a floor, with a private copy of the number, so the
+        // ceiling the policy promised applied at two of the three surfaces that set a password.
+        using var client = postgres.App.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            HandleCookies = true,
+        });
+
+        var response = await client.PostAsJsonAsync("/api/auth/register", new
+        {
+            email = $"{Unique("long")}@example.test",
+            username = Unique("long"),
+            password = new string('x', Muwbta.Server.Auth.PasswordPolicy.MaximumLength + 1),
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Protected_endpoints_answer_401_rather_than_redirecting()
     {
         // Cookie auth defaults to a 302 toward a login page, which reaches a fetch() caller

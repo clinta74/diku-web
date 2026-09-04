@@ -250,6 +250,37 @@ public sealed class RateLimitTests(PostgresFixture postgres) : IDisposable
     }
 
     [Fact]
+    public async Task Entering_and_leaving_are_charged_the_command_budget()
+    {
+        // Neither used to be limited. Leaving flushes two save queues and waits on them, entering
+        // runs three queries - so a client alternating the two was a cheap way to load the
+        // database without ever sending a command. Both now draw on the character's command
+        // bucket; a player reconnecting a few times never notices, a loop does.
+        var factory = Strict;
+        using var client = NewClient(factory);
+
+        var username = UniqueName("leaver");
+        var registered = await client.PostAsJsonAsync("/api/auth/register", new
+        {
+            email = $"{username}@example.test",
+            username,
+            password = "correcthorse",
+        });
+        registered.EnsureSuccessStatusCode();
+
+        var characterId = Guid.NewGuid();
+        var statuses = new List<HttpStatusCode>();
+
+        for (var i = 0; i < 40; i++)
+        {
+            var response = await client.PostAsync($"/api/game/{characterId}/leave", content: null);
+            statuses.Add(response.StatusCode);
+        }
+
+        Assert.Contains(HttpStatusCode.TooManyRequests, statuses);
+    }
+
+    [Fact]
     public async Task The_event_stream_is_never_limited()
     {
         // One long-lived request per character. A limiter here would never fire on honest use and

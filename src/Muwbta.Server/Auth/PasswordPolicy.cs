@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Muwbta.Server.Auth;
 
 /// <summary>
@@ -31,7 +33,7 @@ public static class PasswordPolicy
     /// lets one request spend arbitrary CPU on the thread pool — a cheap way to hurt a server whose
     /// world runs on a single loop.
     /// </remarks>
-    public static bool IsAcceptable(string? password, out string error)
+    public static bool IsAcceptable([NotNullWhen(true)] string? password, out string error)
     {
         if (password is null || password.Length < MinimumLength)
         {

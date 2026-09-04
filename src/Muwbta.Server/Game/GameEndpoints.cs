@@ -31,7 +31,14 @@ public static class GameEndpoints
         var group = routes.MapGroup("/api/game").RequireAuthorization();
 
         group.MapGet("/sessions", ListSessions);
-        group.MapPost("/{characterId:guid}/enter", EnterAsync);
+
+        // Charged to the same budget as a command, and for the same reason: entering costs three
+        // queries and a loop message, leaving flushes two save queues and waits on them, and
+        // neither was limited - so alternating the two in a loop was a cheap way to load the
+        // database and the writers. The partition is by character, as for commands, so a player
+        // reconnecting a few times is nowhere near it.
+        group.MapPost("/{characterId:guid}/enter", EnterAsync)
+            .RequireRateLimiting(RateLimiting.Commands);
 
         // The stream is deliberately unlimited. It is one long-lived request per character, so a
         // limiter would never fire on honest use and would be a way to break a session that had
@@ -43,7 +50,10 @@ public static class GameEndpoints
         group.MapPost("/{characterId:guid}/command", SubmitCommand)
             .RequireRateLimiting(RateLimiting.Commands);
 
-        group.MapPost("/{characterId:guid}/leave", Leave);
+        group.MapPost("/{characterId:guid}/leave", Leave)
+            .RequireRateLimiting(RateLimiting.Commands);
+
+        // Deliberately not limited - see Heartbeat.
         group.MapPost("/{characterId:guid}/heartbeat", Heartbeat);
     }
 

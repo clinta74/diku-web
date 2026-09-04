@@ -67,7 +67,11 @@ public static partial class CharacterEndpoints
             return Results.BadRequest(new { error = "Name must be 3-16 letters." });
         }
 
-        if (!Enum.TryParse<CharacterPath>(request.Path, ignoreCase: true, out var path))
+        // IsDefined as well as TryParse: TryParse accepts any integer string, so "42" parsed to a
+        // path that is not one - a character with no abilities and a number where its path
+        // should be. The role endpoint already guards the same way; this one did not.
+        if (!Enum.TryParse<CharacterPath>(request.Path, ignoreCase: true, out var path)
+            || !Enum.IsDefined(path))
         {
             var valid = string.Join(", ", Enum.GetNames<CharacterPath>());
             return Results.BadRequest(new { error = $"Path must be one of: {valid}." });

@@ -22,7 +22,30 @@ public sealed record AccountResponse(Guid Id, string Username, string Email, str
 
 public static partial class AuthEndpoints
 {
-    private const int MinPasswordLength = 8;
+    /// <summary>
+    /// An account that exists only to be verified against when the username does not.
+    /// </summary>
+    /// <remarks>
+    /// Login answers 401 for "no such user" and for "wrong password" so the two cannot be told
+    /// apart by the response — but the first used to return before hashing anything and the
+    /// second after the full cost of PBKDF2, which told them apart by the clock instead. An
+    /// unknown name is now verified against this account's hash, so both paths take the same
+    /// time. The hash is minted once per process by the same hasher, so it carries the same
+    /// iteration count as every real one; the password behind it is random and thrown away.
+    /// </remarks>
+    private static readonly Account Decoy = new()
+    {
+        Email = "decoy@invalid",
+        Username = "decoy",
+        PasswordHash = string.Empty,
+        Role = AccountRole.Player,
+        CreatedAt = DateTimeOffset.UnixEpoch,
+    };
+
+    private static string? _decoyHash;
+
+    private static string DecoyHash(IPasswordHasher<Account> hasher) =>
+        _decoyHash ??= hasher.HashPassword(Decoy, Guid.NewGuid().ToString("N"));
 
     public static void MapAuthEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -82,9 +105,12 @@ public static partial class AuthEndpoints
             return Results.BadRequest(new { error = "A valid email address is required." });
         }
 
-        if (password is null || password.Length < MinPasswordLength)
+        // The one policy, not a private copy of its floor. This surface had its own minimum and
+        // no maximum at all - and the maximum is the part that matters here, because PBKDF2
+        // hashes whatever it is given and registration is the surface a stranger can reach.
+        if (!PasswordPolicy.IsAcceptable(password, out var passwordError))
         {
-            return Results.BadRequest(new { error = $"Password must be at least {MinPasswordLength} characters." });
+            return Results.BadRequest(new { error = passwordError });
         }
 
         // citext makes these comparisons case-insensitive in the database, so this check
@@ -142,10 +168,16 @@ public static partial class AuthEndpoints
             .FirstOrDefaultAsync(a => a.Username == request.Username, cancellationToken);
 
         // Deliberately the same response for "no such user" and "wrong password", so the
-        // endpoint cannot be used to enumerate which usernames exist.
-        if (account is null
-            || hasher.VerifyHashedPassword(account, account.PasswordHash, request.Password ?? string.Empty)
-                == PasswordVerificationResult.Failed)
+        // endpoint cannot be used to enumerate which usernames exist - and, since the timing
+        // would otherwise give the game away, the same work too (see Decoy).
+        if (account is null)
+        {
+            _ = hasher.VerifyHashedPassword(Decoy, DecoyHash(hasher), request.Password ?? string.Empty);
+            return Results.Unauthorized();
+        }
+
+        if (hasher.VerifyHashedPassword(account, account.PasswordHash, request.Password ?? string.Empty)
+            == PasswordVerificationResult.Failed)
         {
             return Results.Unauthorized();
         }
