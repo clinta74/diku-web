@@ -72,7 +72,7 @@ export function AccountsTab() {
                     <input
                       className="tree-filter"
                       value={query}
-                      placeholder="search by username"
+                      placeholder="search by username or address"
                       spellCheck={false}
                       onChange={(e) => setQuery(e.target.value)}
                     />

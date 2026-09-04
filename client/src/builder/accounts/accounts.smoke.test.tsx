@@ -16,6 +16,9 @@ const account = vi.hoisted(
     createdAt: '2026-01-01T00:00:00Z',
     lastLoginAt: '2026-06-01T12:00:00Z',
     characters: ['Kaelwyn'],
+    loginLockedUntil: null,
+    registeredFromAddress: '203.0.113.7',
+    lastLoginAddress: '203.0.113.8',
   }),
 )
 

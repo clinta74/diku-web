@@ -20,6 +20,15 @@ export interface AdminAccount {
   createdAt: string
   lastLoginAt: string | null
   characters: string[]
+  /**
+   * When the sign-in backoff against this account ends, or null when there is none. Only ever a
+   * future instant: the server forgets an expired pause, so there is no "used to be paused".
+   */
+  loginLockedUntil: string | null
+  /** As the server saw the caller, after forwarded headers. Null for accounts older than the column. */
+  registeredFromAddress: string | null
+  /** The most recent sign-in, overwritten each time. Null until the first sign-in on a build that records it. */
+  lastLoginAddress: string | null
 }
 
 export const ROLES = ['Player', 'Builder', 'Moderator', 'Admin'] as const
@@ -46,10 +55,29 @@ export function isMuted(account: AdminAccount, now: number = Date.now()): boolea
   return account.mutedUntil !== null && Date.parse(account.mutedUntil) > now
 }
 
+/** Too many wrong passwords: the next sign-in attempt has to wait. */
+export function isLoginPaused(account: AdminAccount, now: number = Date.now()): boolean {
+  return account.loginLockedUntil !== null && Date.parse(account.loginLockedUntil) > now
+}
+
+/**
+ * Whether a search term is an address rather than a name. Names are letters, digits and
+ * underscores; anything with a dot or a colon in it can only be an address.
+ */
+export function looksLikeAddress(query: string): boolean {
+  return /[.:]/.test(query)
+}
+
 export const adminApi = {
+  /**
+   * By name fragment, or - when the term reads as an address - by exact address, which is the
+   * question a ban raises next: who else came from there.
+   */
   accounts: (query?: string) =>
     request<AdminAccount[]>(
-      `/api/admin/accounts${query ? `?q=${encodeURIComponent(query)}` : ''}`,
+      query
+        ? `/api/admin/accounts?${looksLikeAddress(query) ? 'address' : 'q'}=${encodeURIComponent(query)}`
+        : '/api/admin/accounts',
     ),
 
   account: (username: string) =>
@@ -72,6 +100,12 @@ export const adminApi = {
     request<AdminAccount>(`/api/admin/accounts/${encodeURIComponent(username)}/mute`, {
       method: 'PATCH',
       body: JSON.stringify({ minutes, reason: reason || null }),
+    }),
+
+  /** Clears the sign-in backoff, so somebody whose account was being hammered can get in now. */
+  unlock: (username: string) =>
+    request<AdminAccount>(`/api/admin/accounts/${encodeURIComponent(username)}/unlock`, {
+      method: 'POST',
     }),
 
   /**

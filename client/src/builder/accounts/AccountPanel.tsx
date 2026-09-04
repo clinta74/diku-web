@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   adminApi,
+  isLoginPaused,
   isMuted,
   MUTE_DURATIONS,
   ROLES,
@@ -43,6 +44,7 @@ export function AccountPanel({ account, onChanged }: AccountPanelProps) {
   const [confirming, setConfirming] = useState<'password' | { character: string } | null>(null)
 
   const muted = isMuted(account)
+  const paused = isLoginPaused(account)
 
   /**
    * One wrapper for every call: they all end in either a fresh account or a message to show, and
@@ -81,7 +83,26 @@ export function AccountPanel({ account, onChanged }: AccountPanelProps) {
           </div>
           <div>
             <dt>Last login</dt>
-            <dd>{when(account.lastLoginAt)}</dd>
+            <dd>
+              {when(account.lastLoginAt)}
+              {account.lastLoginAddress ? (
+                <span className="dim"> from {account.lastLoginAddress}</span>
+              ) : null}
+            </dd>
+          </div>
+          <div>
+            <dt>Registered from</dt>
+            <dd>{account.registeredFromAddress ?? <span className="dim">not recorded</span>}</dd>
+          </div>
+          <div>
+            <dt>Sign-in</dt>
+            <dd>
+              {paused ? (
+                <span className="bad">Paused until {when(account.loginLockedUntil)} — too many wrong passwords</span>
+              ) : (
+                <span className="dim">Open</span>
+              )}
+            </dd>
           </div>
           <div>
             <dt>Status</dt>
@@ -200,6 +221,22 @@ export function AccountPanel({ account, onChanged }: AccountPanelProps) {
                 </button>
               </>
             )}
+
+            {paused ? (
+              <button
+                type="button"
+                disabled={busy}
+                title="Too many wrong passwords paused sign-in for this account. Lifting it lets them try now; otherwise it clears on its own."
+                onClick={() =>
+                  void run(
+                    () => adminApi.unlock(account.username),
+                    `${account.username} may sign in again now.`,
+                  )
+                }
+              >
+                Unlock sign-in
+              </button>
+            ) : null}
           </div>
         </div>
       </section>
