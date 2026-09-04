@@ -390,7 +390,10 @@ Everything above is `content/` once §4.2 exists. No new quest, no new room.
 Two changes. Neither bumps `WorldBundle.CurrentFormatVersion` (16): in both cases a missing key
 keeps its old meaning, which is the documented rule for not bumping.
 
-### 4.1 Spawner name modifier
+### 4.1 Spawner name modifier — built
+
+**Built 2026-09-04** (commit `950df27`). As specified below; the only departure is that the
+change record has no default for the new field, so every call site states it.
 
 **Shape.** `Spawner.NameModifier : string?` — one word, or null. Applied once, at spawn, into
 `Mob.TemplateName`, which is already a per-instance snapshot; nothing downstream needs to know a
@@ -419,7 +422,11 @@ in-memory only — there is no mob table — so the runtime side needs no migrat
 | Tests | new `SpawnerNameModifierTests` beside `SpawnerLevelOverrideTests`; a `BundleValidatorTests` case; an API round-trip in `SpawnerLevelApiTests`' shape | |
 | Docs | `PLAN.md` §4.8, `WORLD.md` §7.1 (the "fifty rows" paragraph becomes false and should say so) | |
 
-### 4.2 NPC topics
+### 4.2 NPC topics — built
+
+**Built 2026-09-04.** As specified below, plus: a topic's answer may itself mark words, so one
+topic can lead to the next; whatever a greeting did not link is listed dim beneath it; and
+`ask <npc> about <topic>` is the same verb with the word taken out.
 
 **Shape.** A new behavior-bag key, `topics`, beside `greeting`:
 
@@ -469,7 +476,38 @@ thing that lets a *quest* NPC keep talking between quests (gated on their own ch
 ### 4.4 Order
 
 1. Review this document; settle the roster names and the thread list.
-2. Build §4.1 and §4.2 (independent; either first).
+2. ~~Build §4.1 and §4.2.~~ Done 2026-09-04.
 3. Content pass, one realm at a time, Ossara first: roster and modifiers, then topics, then the
    bosses. Export, merge, check, import — the existing path.
-4. Re-read WORLD.md §7.1 and §10.4 against what landed and correct them.
+4. Re-read WORLD.md §7.1 and §10.4 against what landed and correct them. (§7.1 was rewritten
+   with §4.1; §10.4 waits on the content pass.)
+5. Decide §4.5, and build it if the answer is yes.
+
+### 4.5 The canon belongs to the active world — proposed
+
+WORLD.md's canon half is compiled into the server as an embedded resource and sent to the builder
+assist as its standing context (`Canon.cs`, budgeted by `CanonTests`). That ties the assist to the
+Reaches: a second world built on this server would inherit Ilvaro and the Regard, and the only way
+to change what the model knows is a rebuild. Raised in review on 2026-09-04; the proposal:
+
+- **Store the canon as content, on the named configuration.** `GameConfiguration.Canon`, markdown
+  text. The configuration already decides the starting room, which is what "the active world"
+  means here, so activating one swaps the canon with it. The bundle carries it
+  (`BundleGameConfiguration.Canon`, optional, no format bump), which makes `content/` the source:
+  WORLD.md's canon half becomes something generated *from* the database rather than compiled
+  *into* the server. The authoring notes below the marker stay in the repo, since they are
+  process rather than world.
+- **Edit it in the builder.** A Canon tab on the configurations panel: a markdown editor, a live
+  token estimate against the assist's budget, and a warning past it. This is the "generate the
+  output of the file to edit in game" ask.
+- **Seed the assist from the live one.** `Canon.Prefix` reads the active configuration at request
+  time, cached and invalidated on activate or save, and falls back to the embedded WORLD.md when
+  the field is empty, so today's deployment does not change until somebody fills it in. The token
+  budget stops being a constant in a test and becomes a setting beside the model name, because a
+  swapped model has a different context window and the editor's estimate should be against the
+  model actually answering.
+- **Export.** `GET /api/builder/configurations/{key}/canon` returns the markdown; `export-bundle`
+  writes it into the bundle; a small tool regenerates `docs/WORLD.md` above the marker from it.
+
+Cost: one text column and migration, one bundle field, one endpoint, one panel, and `Canon.cs`
+reading from the database. About the size of §4.1.
