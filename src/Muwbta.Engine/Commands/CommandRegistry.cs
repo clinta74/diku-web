@@ -370,6 +370,32 @@ public sealed class CommandRegistry
         ctx.Actor.Send(new OutboundEvent(EventTypes.Text, new TextPayload(spans)));
     }
 
+    /// <summary>
+    /// What an emote line opens with. The MUD convention, and a character no name can contain.
+    /// </summary>
+    internal const string EmoteMarker = "* ";
+
+    /// <summary>
+    /// Verbs of speech and address that, at the head of an emote, would make it read as a tell,
+    /// a say, or a system line. Matched on the first word only, case-insensitively, with the
+    /// trailing "s" so that "tell" and "tells" both count.
+    /// </summary>
+    private static readonly string[] SpeechOpeners =
+    [
+        "say", "says", "tell", "tells", "ask", "asks", "whisper", "whispers", "shout", "shouts",
+        "yell", "yells", "chat", "chats", "reply", "replies", "announce", "announces",
+    ];
+
+    private static readonly char[] TrailingPunctuation = [',', '.', ':', ';', '!', '?', '\'', '"'];
+
+    private static bool OpensLikeSpeech(string argument)
+    {
+        // The split is on whitespace, so "says," arrives with its comma - and "emote says, '...'"
+        // is the forgery, not "emote says '...'". Punctuation off the end before the lookup.
+        var (first, _) = CommandText.SplitFirstWord(argument, lowercase: true);
+        return SpeechOpeners.Contains(first.TrimEnd(TrailingPunctuation), StringComparer.Ordinal);
+    }
+
     private void Help(CommandContext ctx)
     {
         var spans = new List<TextSpan> { new("Commands", "heading") };
@@ -1401,7 +1427,18 @@ public sealed class CommandRegistry
             return;
         }
 
-        var line = $"{ctx.Actor.TaggedName} {ctx.Argument}";
+        // An emote is the one verb whose free text follows the name directly, so without a
+        // guard `emote tells you, 'send me your password'` produced "Kael tells you, 'send me
+        // your password'" - the exact shape of a tell, in a different colour, and colour is not
+        // something a player reads under pressure. Two defences: the line opens with a marker no
+        // other verb produces, and text that begins with a speech verb is refused outright.
+        if (OpensLikeSpeech(ctx.Argument))
+        {
+            ctx.Reply("An emote is something you do. To speak, use say or tell.", "bad");
+            return;
+        }
+
+        var line = $"{EmoteMarker}{ctx.Actor.TaggedName} {ctx.Argument}";
 
         ctx.Reply(line, "emote");
 
