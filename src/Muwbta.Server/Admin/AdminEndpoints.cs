@@ -39,6 +39,10 @@ public static class AdminEndpoints
         // carries a password should not sit at a URL anyone would think to retry idly.
         group.MapPost("/accounts/{username}/password", SetPasswordAsync);
 
+        // Lifts the sign-in backoff (LoginThrottle). An action rather than a field, since there
+        // is nothing to set - only a fuse to clear.
+        group.MapPost("/accounts/{username}/unlock", UnlockLoginAsync);
+
         group.MapDelete("/characters/{name}", DeleteCharacterAsync);
     }
 
@@ -174,6 +178,21 @@ public static class AdminEndpoints
             AdminLiveEffects.AfterPasswordReset(gateway, id);
         }
 
+        return await RespondAsync(result, username, accounts, ct);
+    }
+
+    private static async Task<IResult> UnlockLoginAsync(
+        string username,
+        AccountAdminService accounts,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        if (!http.TryGetAccountId(out var actorId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await accounts.UnlockLoginAsync(actorId, username, ct);
         return await RespondAsync(result, username, accounts, ct);
     }
 

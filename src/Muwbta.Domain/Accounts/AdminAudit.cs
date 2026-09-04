@@ -75,4 +75,11 @@ public enum AdminAction
     /// material of any kind, only the fact and the hour.
     /// </remarks>
     PasswordReset = 5,
+
+    /// <summary>
+    /// The sign-in backoff cleared by an admin, so a player somebody was hammering can get back
+    /// in without waiting out the ceiling. Recorded because "who let them in" is a question here
+    /// as much as for a ban.
+    /// </summary>
+    LoginUnlocked = 6,
 }

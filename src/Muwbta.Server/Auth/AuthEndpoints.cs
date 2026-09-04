@@ -168,12 +168,23 @@ public static partial class AuthEndpoints
         LoginRequest request,
         MuwbtaDbContext db,
         IPasswordHasher<Account> hasher,
+        LoginThrottle throttle,
         HttpContext http,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
+        var username = request.Username ?? string.Empty;
+
+        // Per account, on top of the per-address limit: a guesser with many addresses has many
+        // address budgets and, without this, one account to spend them all against. Checked
+        // before the lookup so an unknown name is slowed exactly like a known one.
+        if (throttle.RetryAfter(username) is { } wait)
+        {
+            return TooManyFailures(http, wait);
+        }
+
         var account = await db.Accounts
-            .FirstOrDefaultAsync(a => a.Username == request.Username, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Username == username, cancellationToken);
 
         // Deliberately the same response for "no such user" and "wrong password", so the
         // endpoint cannot be used to enumerate which usernames exist - and, since the timing
@@ -181,14 +192,18 @@ public static partial class AuthEndpoints
         if (account is null)
         {
             _ = hasher.VerifyHashedPassword(Decoy, DecoyHash(hasher), request.Password ?? string.Empty);
+            throttle.RecordFailure(username);
             return Results.Unauthorized();
         }
 
         if (hasher.VerifyHashedPassword(account, account.PasswordHash, request.Password ?? string.Empty)
             == PasswordVerificationResult.Failed)
         {
+            throttle.RecordFailure(username);
             return Results.Unauthorized();
         }
+
+        throttle.RecordSuccess(username);
 
         if (account.IsBanned)
         {
@@ -216,6 +231,7 @@ public static partial class AuthEndpoints
         ChangePasswordRequest request,
         MuwbtaDbContext db,
         IPasswordHasher<Account> hasher,
+        LoginThrottle throttle,
         GameGateway gateway,
         HttpContext http,
         TimeProvider clock,
@@ -233,12 +249,22 @@ public static partial class AuthEndpoints
             return Results.Unauthorized();
         }
 
+        // The current password is a guess too, made by whoever holds the cookie. It draws on the
+        // same fuse as sign-in, so a stolen session cannot be turned into a password by trying.
+        if (throttle.RetryAfter(account.Username) is { } wait)
+        {
+            return TooManyFailures(http, wait);
+        }
+
         if (hasher.VerifyHashedPassword(
                 account, account.PasswordHash, request.CurrentPassword ?? string.Empty)
             == PasswordVerificationResult.Failed)
         {
+            throttle.RecordFailure(account.Username);
             return Results.BadRequest(new { error = "That is not your current password." });
         }
+
+        throttle.RecordSuccess(account.Username);
 
         if (!PasswordPolicy.IsAcceptable(request.NewPassword, out var error))
         {
@@ -266,6 +292,20 @@ public static partial class AuthEndpoints
         });
 
         return Results.NoContent();
+    }
+
+    /// <summary>
+    /// 429 with a Retry-After, the same shape the address limit answers with, so a client that
+    /// already knows how to wait for one knows how to wait for this.
+    /// </summary>
+    private static IResult TooManyFailures(HttpContext http, TimeSpan wait)
+    {
+        var seconds = Math.Max(1, (int)Math.Ceiling(wait.TotalSeconds));
+        http.Response.Headers.RetryAfter = seconds.ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
+
+        return Results.Json(
+            new { error = $"Too many failed sign-ins. Try again in {seconds} seconds." },
+            statusCode: StatusCodes.Status429TooManyRequests);
     }
 
     private static async Task<IResult> LogoutAsync(HttpContext http)

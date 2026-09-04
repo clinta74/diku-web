@@ -88,12 +88,14 @@ public sealed class RateLimitTests(PostgresFixture postgres) : IDisposable
         using var client = NewClient(factory);
 
         // Six guesses from one address: past the five-a-minute budget, so the last is refused.
-        var fromFirst = await FailedLoginsAsync(client, forwardedFor: "203.0.113.10", count: 6);
+        // Each address guesses at its own name, so the per-account backoff - which would pause a
+        // name after five failures from anywhere - cannot be what refuses the second caller.
+        var fromFirst = await FailedLoginsAsync(client, forwardedFor: "203.0.113.10", username: "nobody-ten", count: 6);
         Assert.Equal(HttpStatusCode.TooManyRequests, fromFirst[^1]);
 
         // A different caller, through the same proxy, has a budget of their own. Refusing them
         // here is exactly the site-wide lockout the trust list exists to prevent.
-        var fromSecond = await FailedLoginsAsync(client, forwardedFor: "203.0.113.11", count: 1);
+        var fromSecond = await FailedLoginsAsync(client, forwardedFor: "203.0.113.11", username: "nobody-eleven", count: 1);
         Assert.Equal(HttpStatusCode.Unauthorized, fromSecond[0]);
     }
 
@@ -108,16 +110,17 @@ public sealed class RateLimitTests(PostgresFixture postgres) : IDisposable
         var factory = NotBehindProxy;
         using var client = NewClient(factory);
 
-        var fromFirst = await FailedLoginsAsync(client, forwardedFor: "203.0.113.10", count: 6);
+        var fromFirst = await FailedLoginsAsync(client, forwardedFor: "203.0.113.10", username: "nobody-ten", count: 6);
         Assert.Equal(HttpStatusCode.TooManyRequests, fromFirst[^1]);
 
-        var fromSecond = await FailedLoginsAsync(client, forwardedFor: "203.0.113.11", count: 1);
+        var fromSecond = await FailedLoginsAsync(client, forwardedFor: "203.0.113.11", username: "nobody-eleven", count: 1);
         Assert.Equal(HttpStatusCode.TooManyRequests, fromSecond[0]);
     }
 
     private static async Task<List<HttpStatusCode>> FailedLoginsAsync(
         HttpClient client,
         string forwardedFor,
+        string username,
         int count)
     {
         var statuses = new List<HttpStatusCode>();
@@ -126,7 +129,7 @@ public sealed class RateLimitTests(PostgresFixture postgres) : IDisposable
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login")
             {
-                Content = JsonContent.Create(new { username = "nobody-at-all", password = "guess" }),
+                Content = JsonContent.Create(new { username, password = "guess" }),
             };
             request.Headers.Add("X-Forwarded-For", forwardedFor);
 

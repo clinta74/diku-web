@@ -47,4 +47,24 @@ public sealed class AuthOptions
 
     /// <summary>Floored at a minute: a zero here would expire the cookie that set it.</summary>
     public TimeSpan SessionTimeout => TimeSpan.FromMinutes(Math.Max(1, SessionTimeoutMinutes));
+
+    /// <summary>
+    /// Wrong passwords against one account before the next attempt has to wait. Zero turns the
+    /// per-account backoff off.
+    /// </summary>
+    /// <remarks>
+    /// Five is the number a person who has genuinely forgotten reaches before the pause is a
+    /// nuisance, and the number a guesser passes in the first second. See
+    /// <see cref="LoginThrottle"/> for why this exists beside the per-address limit.
+    /// </remarks>
+    public int LoginFailuresBeforeBackoff { get; set; } = 5;
+
+    /// <summary>The first pause, in seconds. Each further failure doubles it.</summary>
+    public int LoginBackoffSeconds { get; set; } = 30;
+
+    /// <summary>
+    /// The longest pause, in seconds. The cap is what stops "hammer an account" from becoming
+    /// "own an account": without it the real owner could never get back in.
+    /// </summary>
+    public int LoginBackoffMaxSeconds { get; set; } = 900;
 }

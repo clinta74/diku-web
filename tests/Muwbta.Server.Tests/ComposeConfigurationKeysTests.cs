@@ -125,6 +125,9 @@ public sealed class ComposeConfigurationKeysTests
         Assert.Equal(
             [
                 nameof(AuthOptions.CookieName),
+                nameof(AuthOptions.LoginBackoffMaxSeconds),
+                nameof(AuthOptions.LoginBackoffSeconds),
+                nameof(AuthOptions.LoginFailuresBeforeBackoff),
                 nameof(AuthOptions.RevalidationIntervalSeconds),
                 nameof(AuthOptions.SessionTimeoutMinutes),
             ],

@@ -109,6 +109,13 @@ public sealed record AccountSummary(
     /// would leave the panel unable to tell that from "never muted".
     /// </summary>
     public DateTimeOffset? MutedUntil { get; init; }
+
+    /// <summary>
+    /// When the sign-in backoff against this account ends, or null when there is none. Unlike
+    /// the mute this is only ever a future time: the throttle forgets an expired pause, so
+    /// there is no "used to be paused" to report.
+    /// </summary>
+    public DateTimeOffset? LoginLockedUntil { get; init; }
 }
 
 /// <summary>
@@ -120,8 +127,52 @@ public sealed record AccountSummary(
 public sealed class AccountAdminService(
     MuwbtaDbContext db,
     TimeProvider clock,
-    IPasswordHasher<Account> hasher)
+    IPasswordHasher<Account> hasher,
+    LoginThrottle throttle)
 {
+    /// <summary>
+    /// Clears the sign-in backoff against an account (see <see cref="LoginThrottle"/>).
+    /// </summary>
+    /// <remarks>
+    /// This is what the cap on the backoff is for. Whoever hammers an account can make its real
+    /// owner wait, and without a way to lift the wait that is a way to keep them out for as long
+    /// as the hammering lasts. Refused rather than a silent no-op when there is nothing to lift,
+    /// so the panel says so instead of pretending to have done something.
+    /// </remarks>
+    public async Task<ModerationResult> UnlockLoginAsync(
+        Guid actorAccountId,
+        string targetUsername,
+        CancellationToken cancellationToken)
+    {
+        var target = await db.Accounts
+            .FirstOrDefaultAsync(a => a.Username == targetUsername, cancellationToken);
+
+        if (target is null)
+        {
+            return ModerationResult.NoSuchAccount(targetUsername);
+        }
+
+        if (!throttle.Lift(target.Username))
+        {
+            return ModerationResult.Refused($"{target.Username} is not waiting out a sign-in pause.");
+        }
+
+        db.AdminAudits.Add(new AdminAudit
+        {
+            ActorAccountId = actorAccountId,
+            TargetAccountId = target.Id,
+            Action = AdminAction.LoginUnlocked,
+            Before = "paused",
+            After = "clear",
+            Reason = null,
+            At = clock.GetUtcNow(),
+        });
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new ModerationResult(true, $"{target.Username} may sign in again.", target.Id);
+    }
+
     public async Task<RoleChangeResult> SetRoleAsync(
         Guid actorAccountId,
         string targetUsername,
@@ -469,6 +520,7 @@ public sealed class AccountAdminService(
         {
             BanReason = account.BanReason,
             MutedUntil = account.MutedUntil,
+            LoginLockedUntil = throttle.LockedUntil(account.Username),
         };
     }
 }

@@ -133,6 +133,10 @@ var authOptions = new AuthOptions();
 builder.Configuration.GetSection("Auth").Bind(authOptions);
 builder.Services.AddSingleton(authOptions);
 
+// The per-account sign-in backoff (LoginThrottle). In memory and single-instance, like the rate
+// limiter and for the same reason.
+builder.Services.AddSingleton<LoginThrottle>();
+
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

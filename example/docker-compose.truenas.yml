@@ -82,6 +82,11 @@ services:
       Auth__CookieName: muwbta.session
       Auth__SessionTimeoutMinutes: '20160'
       Auth__RevalidationIntervalSeconds: '60'
+      # Wrong passwords against one account before the next attempt waits; the first pause and its
+      # ceiling, in seconds. Per account, on top of the per-address rate limit. Zero disables.
+      Auth__LoginFailuresBeforeBackoff: '5'
+      Auth__LoginBackoffSeconds: '30'
+      Auth__LoginBackoffMaxSeconds: '900'
       # Which proxies' X-Forwarded-* headers to believe. The compose network is the nginx hop; the
       # TLS terminator in front of port 7180 - on another host - goes in KnownProxies, or the walk
       # stops at it and every visitor shares its address for rate limiting. Both empty means the
