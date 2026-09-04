@@ -698,7 +698,8 @@ public sealed class WorldMutationApplier(
                 spawner.TargetCount,
                 spawner.RespawnSeconds,
                 spawner.Wanders,
-                spawner.FightsAtLevel);
+                spawner.FightsAtLevel,
+                spawner.NameModifier);
 
             ApplyUpsertSpawner(change);
             changes.Add(change);
@@ -1360,6 +1361,7 @@ public sealed class WorldMutationApplier(
             RespawnSeconds = change.RespawnSeconds,
             Wanders = change.Wanders,
             FightsAtLevel = change.FightsAtLevel,
+            NameModifier = change.NameModifier,
         });
 
         return MutationResult.Ok([change]);

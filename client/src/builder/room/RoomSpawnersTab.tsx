@@ -87,6 +87,11 @@ export function RoomSpawnersTab({ room }: Props) {
                         scaled it. */}
                     {spawner.templateKind === 'Mob' && spawner.fightsAtLevel > 0 &&
                       ` · fights at level ${spawner.fightsAtLevel}`}
+                    {/* The name this placement gives the mob, when it gives one. The template key
+                        above says what is placed; this says what the room will call it (§4.8). */}
+                    {spawner.templateKind === 'Mob' && spawner.nameModifier && spawner.spawnsAs
+                      ? ` · as ${spawner.spawnsAs}`
+                      : ''}
                     {/* Only an override is worth a word here. "Follows the template" is the
                         default on every spawner, so printing it would say nothing on most rows
                         and bury the two that are actually unusual. */}

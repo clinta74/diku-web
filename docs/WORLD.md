@@ -407,16 +407,15 @@ but dials.
 | `chassis-revenant` | 9 | Undead elite. Carries `control.stun` |
 | `chassis-warleader` | 10 | Boss chassis. Multi-attack, always a named re-skin |
 
-**A chassis is never placed under its own name.** Every zone gives its chassis a local name and
-description — Ossaran `chassis-brigand` are hill-toll bandits, Grask's are claim-jumpers, Azhen's
-are the maintenance that never stopped. Because templates are global and the *name* lives on the
-template, this means a re-skin is a **separate template row sharing the chassis's stat shape**, not
-a re-use of the same row. The chassis table is a design contract about levels and stat shapes, not
-a set of rows to point spawners at.
-
-That is the honest cost of the global-template rule and it should be recorded rather than
-discovered: ten chassis × five realms is roughly **fifty mob template rows**, each cheap to author
-because only name, description, icon, and flavour change.
+**A chassis is placed under a plain kind name, and the spawner adds the zone's word.** A
+template is "a brigand"; the spawner that places it carries a one-word `nameModifier`, and the
+mob appears as "a hill brigand" in Brackenfell and "a marsh brigand" in Stiltmarsh from the same
+row. So a kind is **one template wherever the arithmetic allows**, re-skinned by placement rather
+than by authoring a second row that differs in one word. Where the fiction or the numbers
+genuinely differ by realm — Azhimet's bronze, the kept who carry quest supply, Grask's trash at
+chassis 5–6 because experience follows the template's base value and not the floored level — the
+realm keeps its own row under the same kind name. Named characters and bosses never take a
+modifier. The roster and its keys are settled in STORY.md §3.2.
 
 ### 7.2 Named mobs
 

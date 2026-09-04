@@ -39,7 +39,9 @@ public sealed class RoomRenameCascadeTests
         var id = Guid.CreateVersion7();
 
         harness.Mutate(new UpsertSpawner(
-            id, "test.zone", "rat", TemplateKind.Mob, [.. rooms], 2, RespawnSeconds: 60, Wanders: null, fightsAtLevel));
+            id, "test.zone", "rat", TemplateKind.Mob, [.. rooms], 2, RespawnSeconds: 60, Wanders: null, fightsAtLevel,
+            // Every field is carried through a rename or quietly reset; the assertion below is the one that would notice.
+            NameModifier: "deep"));
 
         return id;
     }
@@ -199,6 +201,7 @@ public sealed class RoomRenameCascadeTests
         var spawner = Assert.Single(harness.Spawners.All, s => s.Id == id);
 
         Assert.Equal(27, spawner.FightsAtLevel);
+        Assert.Equal("deep", spawner.NameModifier);
         Assert.Equal(2, spawner.TargetCount);
         Assert.Contains(Renamed.ToString(), spawner.RoomKeys);
     }

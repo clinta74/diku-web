@@ -126,6 +126,12 @@ export interface PlacementSpawner {
   /** What mobs from this spawner actually fight at (§4.7); 0 for an item spawner. */
   fightsAtLevel: number
   rooms: PlacementRoom[]
+  /**
+   * What this placement calls the template's mobs once its name modifier is applied (§4.8).
+   * Null for an item, and null when there is no modifier — the panel is already headed by the
+   * template's own name.
+   */
+  spawnsAs: string | null
 }
 
 /** A mob an item comes from: its loot table, or its shop stock. */
@@ -438,15 +444,27 @@ export interface Spawner {
    * means "leave this alone", so a nullable number could not also spell "clear the pin".
    */
   level: string
+  /**
+   * One lower-case word put after the article of the template's name for mobs from this spawner
+   * (PLAN.md §4.8): `marsh` makes "a brigand" spawn as "a marsh brigand". Null uses the template's
+   * name as it is. On a PATCH, null leaves it alone and an empty string clears it.
+   */
+  nameModifier: string | null
+  /**
+   * What a mob from this spawner is called, modifier applied. Server-composed and read-only, like
+   * `fightsAtLevel`; null for an item spawner or a deleted template.
+   */
+  spawnsAs: string | null
 }
 
 /**
  * The subset of a spawner a client may write.
  *
  * `createSpawner`/`updateSpawner` used to take `Partial<Spawner>`, which now advertises the
- * server-computed `fightsAtLevel` as though setting it did something.
+ * server-computed `fightsAtLevel` as though setting it did something. `spawnsAs` is the same
+ * kind of field and is left out for the same reason.
  */
-export type SpawnerSave = Partial<Omit<Spawner, 'id' | 'fightsAtLevel'>>
+export type SpawnerSave = Partial<Omit<Spawner, 'id' | 'fightsAtLevel' | 'spawnsAs'>>
 
 export interface Quest {
   key: string

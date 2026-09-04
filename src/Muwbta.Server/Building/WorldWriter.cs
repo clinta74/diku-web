@@ -469,6 +469,7 @@ public sealed class WorldWriter(MuwbtaDbContext db, TimeProvider clock)
                         RespawnSeconds = c.RespawnSeconds,
                         Wanders = c.Wanders,
                         FightsAtLevel = c.FightsAtLevel,
+                        NameModifier = c.NameModifier,
                     });
 
                     return ContentAction.Create;
@@ -487,6 +488,7 @@ public sealed class WorldWriter(MuwbtaDbContext db, TimeProvider clock)
                     RespawnSeconds = c.RespawnSeconds,
                     Wanders = c.Wanders,
                     FightsAtLevel = c.FightsAtLevel,
+                    NameModifier = c.NameModifier,
                 });
                 return ContentAction.Update;
             }

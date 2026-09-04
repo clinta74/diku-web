@@ -300,8 +300,9 @@ public sealed class BundleValidatorTests
     // Spawners
     // -----------------------------------------------------------------------
 
-    private static BundleSpawner Spawner(Guid id, TemplateKind kind, string template, int? fightsAtLevel = null) =>
-        new(id, "test.zone", template, kind, ["test.zone.west"], 1, 60, null, fightsAtLevel);
+    private static BundleSpawner Spawner(
+        Guid id, TemplateKind kind, string template, int? fightsAtLevel = null, string? nameModifier = null) =>
+        new(id, "test.zone", template, kind, ["test.zone.west"], 1, 60, null, fightsAtLevel, nameModifier);
 
     [Fact]
     public void Two_spawners_sharing_an_id_is_an_error()
@@ -334,6 +335,62 @@ public sealed class BundleValidatorTests
     }
 
     [Fact]
+    public void An_item_spawner_with_a_name_modifier_is_an_error()
+    {
+        var bundle = Valid();
+
+        AssertError(
+            bundle with
+            {
+                ItemTemplates = [Item("torch")],
+                Spawners = [Spawner(Guid.CreateVersion7(), TemplateKind.Item, "torch", nameModifier: "hooded")],
+            },
+            "nameModifier");
+    }
+
+    [Fact]
+    public void A_name_modifier_that_starts_with_an_article_is_an_error()
+    {
+        var bundle = Valid();
+
+        AssertError(
+            bundle with
+            {
+                MobTemplates = [Mob("rat")],
+                Spawners = [Spawner(Guid.CreateVersion7(), TemplateKind.Mob, "rat", nameModifier: "a marsh")],
+            },
+            "article");
+    }
+
+    [Fact]
+    public void A_name_modifier_on_a_named_character_is_an_error()
+    {
+        // The one refusal only a bundle can make with certainty: the API may not have the
+        // template yet, but a bundle carries both halves.
+        var bundle = Valid();
+
+        AssertError(
+            bundle with
+            {
+                MobTemplates = [Mob("tessa", name: "Tessa Roke, armourer")],
+                Spawners = [Spawner(Guid.CreateVersion7(), TemplateKind.Mob, "tessa", nameModifier: "marsh")],
+            },
+            "named character");
+    }
+
+    [Fact]
+    public void A_name_modifier_on_a_kind_is_fine()
+    {
+        var bundle = Valid();
+
+        Assert.True(Check(bundle with
+        {
+            MobTemplates = [Mob("rat")],
+            Spawners = [Spawner(Guid.CreateVersion7(), TemplateKind.Mob, "rat", nameModifier: "wharf")],
+        }).Ok);
+    }
+
+    [Fact]
     public void A_spawner_placing_a_template_the_bundle_does_not_carry_is_a_warning()
     {
         var bundle = Valid();
@@ -347,8 +404,9 @@ public sealed class BundleValidatorTests
     // Mobs and quests: the keys the engine reads
     // -----------------------------------------------------------------------
 
-    private static BundleMobTemplate Mob(string key, Dictionary<string, object>? behavior = null) =>
-        new(key, "a rat", "", "r", 1, 16, new Dictionary<string, object>(), 10, 1,
+    private static BundleMobTemplate Mob(
+        string key, Dictionary<string, object>? behavior = null, string name = "a rat") =>
+        new(key, name, "", "r", 1, 16, new Dictionary<string, object>(), 10, 1,
             behavior ?? [], [], []);
 
     private static BundleItemTemplate Item(string key) =>

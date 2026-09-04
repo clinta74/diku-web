@@ -1,4 +1,5 @@
-﻿using Muwbta.Domain.Spawning;
+﻿using Muwbta.Domain.Inhabitants;
+using Muwbta.Domain.Spawning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -25,6 +26,11 @@ internal sealed class SpawnerConfiguration : IEntityTypeConfiguration<Spawner>
 
         // Nullable for the same reason: null is "let the zone decide" (PLAN.md §4.7).
         builder.Property(e => e.FightsAtLevel).HasColumnName("fights_at_level");
+
+        // Nullable for the same reason again: null is "the template's own name" (PLAN.md §4.8).
+        builder.Property(e => e.NameModifier)
+            .HasColumnName("name_modifier")
+            .HasMaxLength(MobNaming.MaxModifierLength);
 
         builder.HasIndex(e => e.ZoneKey).HasDatabaseName("ix_spawners_zone_key");
     }

@@ -335,6 +335,14 @@ public static class BundleValidator
     {
         var seen = new HashSet<Guid>();
 
+        // Names as well as keys, because a modifier is judged against the name it goes into. First
+        // one wins on a duplicate key; the duplicate is somebody else's finding.
+        var mobNames = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var mob in bundle.MobTemplates)
+        {
+            mobNames.TryAdd(mob.Key, mob.Name);
+        }
+
         foreach (var spawner in bundle.Spawners)
         {
             // Spawner ids are content: re-minting one doubles a zone's population, and two
@@ -359,6 +367,26 @@ public static class BundleValidator
             if (spawner.TemplateKind == TemplateKind.Item && spawner.FightsAtLevel is not null)
             {
                 error($"spawner {spawner.Id} is an item spawner with fightsAtLevel set");
+            }
+
+            // The same three refusals the builder API makes (PLAN.md §4.8), repeated here because
+            // an import is the one path that does not go through the API - and the third can only
+            // be judged with the template in hand, which a bundle has and a PATCH may not.
+            if (spawner.NameModifier is { } modifier)
+            {
+                if (spawner.TemplateKind == TemplateKind.Item)
+                {
+                    error($"spawner {spawner.Id} is an item spawner with nameModifier set");
+                }
+                else if (MobNaming.Problem(modifier) is { } problem)
+                {
+                    error($"spawner {spawner.Id} has nameModifier '{modifier}', which {problem}");
+                }
+                else if (mobNames.TryGetValue(spawner.TemplateKey, out var name) && !MobNaming.CanModify(name))
+                {
+                    error($"spawner {spawner.Id} puts nameModifier '{modifier}' on {spawner.TemplateKey}, "
+                        + $"whose name '{name}' is a named character's and cannot take one");
+                }
             }
 
             foreach (var roomKey in spawner.RoomKeys.Where(key => !rooms.Contains(key)))

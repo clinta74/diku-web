@@ -1315,6 +1315,15 @@ and a second field for it would be a second source of truth to disagree with.
   wait `respawnSeconds` before replacing one that is gone.* A population target, not an imperative
   reset script.
 
+  **`nameModifier` is the one word a placement owns.** A spawner may carry a single lower-case
+  word that is put after the article of the template's name for its mobs and nowhere else:
+  `marsh` makes a global `brigand` appear as "a marsh brigand" in Stiltmarsh while the same row
+  stands in Brackenfell as "a hill brigand". Applied once at spawn into the instance's display
+  name (`MobNaming.Apply`), so matching, ordinals and every printed line follow it for free. A
+  named character ("Tessa Roke", "the Creditor") never takes one; the API and the validator refuse
+  it, and the runtime leaves the name alone. This is what lets the chassis design of WORLD.md §7.1
+  be one template per kind rather than one per kind per zone.
+
   **`respawnSeconds` is how rare a thing is**, and it is the one dial that decides whether a room is
   worth leaving. Three rules:
 

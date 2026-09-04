@@ -165,7 +165,8 @@ public sealed class SpawnerSystem(
             {
                 var room = roomKeys[Random.Shared.Next(roomKeys.Count)];
                 var mob = mobSpawner.Spawn(
-                    template, zone, worldEnt, room, wanders, spawner.Id, spawner.FightsAtLevel);
+                    template, zone, worldEnt, room, wanders, spawner.Id, spawner.FightsAtLevel,
+                    spawner.NameModifier);
                 world.AddMob(mob);
                 touched.Add(room);
 

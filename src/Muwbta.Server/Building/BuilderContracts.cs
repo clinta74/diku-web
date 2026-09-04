@@ -343,7 +343,22 @@ public sealed record SpawnerResponse(
     /// Where <see cref="FightsAtLevel"/> came from: <see cref="SpawnLevel.Zone"/>, or the pinned
     /// number as text. Never null.
     /// </summary>
-    string Level);
+    string Level,
+    /// <summary>
+    /// The word put after the article of the template's name for these mobs, or null for the
+    /// template's name as it is (PLAN.md §4.8).
+    /// </summary>
+    string? NameModifier,
+    /// <summary>
+    /// What a mob from this spawner is called, modifier applied. Null for an item spawner, or for
+    /// a mob spawner whose template has since been deleted.
+    /// </summary>
+    /// <remarks>
+    /// Read-only and server-composed, like <see cref="FightsAtLevel"/>: the rule that puts the
+    /// word after the article lives in one place, and the browser showing "a marsh brigand" is
+    /// the whole reason to have the field.
+    /// </remarks>
+    string? SpawnsAs);
 
 /// <param name="Wander">One of <see cref="WanderMode"/>, or null to leave it as it is.</param>
 /// <param name="Level">
@@ -358,7 +373,17 @@ public sealed record SaveSpawnerRequest(
     int? TargetCount,
     int? RespawnSeconds,
     string? Wander,
-    string? Level);
+    string? Level,
+    /// <summary>
+    /// The word to put after the article of the template's name. Null leaves the stored answer
+    /// alone; an empty string clears it; anything else is validated
+    /// (<see cref="Muwbta.Domain.Inhabitants.MobNaming.Problem"/>) and stored trimmed.
+    /// </summary>
+    /// <remarks>
+    /// Empty-means-clear rather than a word, because unlike <see cref="Level"/> the stored value
+    /// is text, and an empty text field is what a builder produces when they clear one.
+    /// </remarks>
+    string? NameModifier);
 
 /// <summary>
 /// How a spawner answers "what level do these mobs fight at": let the zone decide, or pin it
@@ -543,7 +568,12 @@ public sealed record PlacementSpawner(
     int TargetCount,
     int RespawnSeconds,
     int FightsAtLevel,
-    IReadOnlyList<PlacementRoom> Rooms);
+    IReadOnlyList<PlacementRoom> Rooms,
+    /// <summary>
+    /// What this placement calls the template's mobs once its name modifier is applied. Null for
+    /// an item, and null when there is no modifier — the panel already shows the template's name.
+    /// </summary>
+    string? SpawnsAs = null);
 
 /// <summary>
 /// A mob an item comes from: its loot table, or its shop stock.

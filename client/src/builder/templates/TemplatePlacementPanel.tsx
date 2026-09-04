@@ -120,6 +120,9 @@ export function TemplatePlacementPanel({ kind, templateKey, revision }: Props) {
                         killing this teaches anyone anything (§4.7). */}
                     {kind === 'mob' && spawner.fightsAtLevel > 0 &&
                       ` · fights at level ${spawner.fightsAtLevel}`}
+                    {/* Null unless this placement renames the template (§4.8), so it only
+                        appears on the rows where the word differs from the heading. */}
+                    {kind === 'mob' && spawner.spawnsAs ? ` · as ${spawner.spawnsAs}` : ''}
                   </span>
                 </div>
 

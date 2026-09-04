@@ -332,12 +332,23 @@ public sealed class BuilderQueries(MuwbtaDbContext db)
         }
 
         var spawners = await query.OrderBy(s => s.Id).ToListAsync(cancellationToken);
-        var levels = await FightingLevelsAsync(spawners, cancellationToken);
+        var facts = await SpawnFactsAsync(spawners, cancellationToken);
 
-        return [.. spawners.Select(s => new SpawnerResponse(
+        return [.. spawners.Select(s => Response(s, facts))];
+    }
+
+    /// <summary>One spawner as the wire carries it, with what the server worked out about it.</summary>
+    private static SpawnerResponse Response(
+        Muwbta.Domain.Spawning.Spawner s,
+        IReadOnlyDictionary<Guid, SpawnFacts> facts)
+    {
+        var fact = facts.GetValueOrDefault(s.Id);
+
+        return new SpawnerResponse(
             s.Id, s.ZoneKey, s.TemplateKey, s.TemplateKind,
             new List<string>(s.RoomKeys), s.TargetCount, s.RespawnSeconds, WanderMode.From(s.Wanders),
-            levels.GetValueOrDefault(s.Id), SpawnLevel.From(s.FightsAtLevel)))];
+            fact?.Level ?? 0, SpawnLevel.From(s.FightsAtLevel),
+            s.NameModifier, fact?.SpawnsAs);
     }
 
     public async Task<SpawnerResponse?> SpawnerAsync(
@@ -351,17 +362,19 @@ public sealed class BuilderQueries(MuwbtaDbContext db)
             return null;
         }
 
-        var levels = await FightingLevelsAsync([spawner], cancellationToken);
+        var facts = await SpawnFactsAsync([spawner], cancellationToken);
 
-        return new SpawnerResponse(
-            spawner.Id, spawner.ZoneKey, spawner.TemplateKey, spawner.TemplateKind,
-            new List<string>(spawner.RoomKeys), spawner.TargetCount, spawner.RespawnSeconds,
-            WanderMode.From(spawner.Wanders), levels.GetValueOrDefault(spawner.Id),
-            SpawnLevel.From(spawner.FightsAtLevel));
+        return Response(spawner, facts);
     }
 
     /// <summary>
-    /// The level each mob spawner's mobs will fight at, by spawner id.
+    /// What a mob spawner produces beyond what its row says: the level its mobs fight at and the
+    /// name they appear under.
+    /// </summary>
+    private sealed record SpawnFacts(int Level, string SpawnsAs);
+
+    /// <summary>
+    /// The level each mob spawner's mobs will fight at, and the name they will carry, by spawner id.
     /// </summary>
     /// <remarks>
     /// <b>Computed here rather than in the client.</b> The whole argument for
@@ -373,7 +386,7 @@ public sealed class BuilderQueries(MuwbtaDbContext db)
     /// Batched into three round trips for the whole list — templates, zones, worlds — rather than
     /// three per row. Item spawners are skipped: an item has no level.
     /// </remarks>
-    private async Task<Dictionary<Guid, int>> FightingLevelsAsync(
+    private async Task<Dictionary<Guid, SpawnFacts>> SpawnFactsAsync(
         IReadOnlyList<Muwbta.Domain.Spawning.Spawner> spawners,
         CancellationToken cancellationToken)
     {
@@ -402,7 +415,7 @@ public sealed class BuilderQueries(MuwbtaDbContext db)
             .Where(w => worldKeys.Contains(w.Key))
             .ToDictionaryAsync(w => w.Key, cancellationToken);
 
-        var levels = new Dictionary<Guid, int>();
+        var facts = new Dictionary<Guid, SpawnFacts>();
 
         foreach (var spawner in mobs)
         {
@@ -417,13 +430,19 @@ public sealed class BuilderQueries(MuwbtaDbContext db)
 
             // A pin replaces the zone's dials outright, so it is the answer rather than an input
             // to one - the same branch MobSpawner takes.
-            levels[spawner.Id] = spawner.FightsAtLevel
+            var level = spawner.FightsAtLevel
                 ?? Muwbta.Domain.Inhabitants.MobScaling
                     .FromZone(template.Level, world.Multipliers, zone.Multipliers, zone.MinLevel)
                     .Level;
+
+            // The same composition the spawn path performs, so the browser shows the name the
+            // room will - rather than a second rule for where the word goes.
+            facts[spawner.Id] = new SpawnFacts(
+                level,
+                Muwbta.Domain.Inhabitants.MobNaming.Apply(template.Name, spawner.NameModifier));
         }
 
-        return levels;
+        return facts;
     }
 
     /// <summary>
@@ -495,7 +514,7 @@ public sealed class BuilderQueries(MuwbtaDbContext db)
                     .Where(r => candidates.Contains(r.Key))
                     .ToDictionaryAsync(r => r.Key, r => r.Title, cancellationToken);
 
-            var levels = await FightingLevelsAsync(spawners, cancellationToken);
+            var facts = await SpawnFactsAsync(spawners, cancellationToken);
 
             placed.AddRange(spawners.Select(s => new PlacementSpawner(
                 s.Id,
@@ -503,12 +522,15 @@ public sealed class BuilderQueries(MuwbtaDbContext db)
                 zoneNames.GetValueOrDefault(s.ZoneKey, string.Empty),
                 s.TargetCount,
                 s.RespawnSeconds,
-                levels.GetValueOrDefault(s.Id),
+                facts.GetValueOrDefault(s.Id)?.Level ?? 0,
                 [.. s.RoomKeys.Select(raw => new PlacementRoom(
                     raw,
                     parsed.TryGetValue(raw, out var key) && titles.TryGetValue(key, out var title)
                         ? title
-                        : null))])));
+                        : null))],
+                // Only worth a word when the placement has one: the panel is already headed by
+                // the template's name, so repeating it on every row would say nothing.
+                s.NameModifier is null ? null : facts.GetValueOrDefault(s.Id)?.SpawnsAs)));
         }
 
         if (kind == TemplateKind.Mob)
@@ -1005,7 +1027,7 @@ public sealed class BuilderQueries(MuwbtaDbContext db)
             return warnings;
         }
 
-        var levels = await FightingLevelsAsync(spawners, cancellationToken);
+        var facts = await SpawnFactsAsync(spawners, cancellationToken);
         var keys = spawners.Select(s => s.TemplateKey).Distinct().ToList();
         var templates = await db.MobTemplates.AsNoTracking()
             .Where(t => keys.Contains(t.Key))
@@ -1013,11 +1035,13 @@ public sealed class BuilderQueries(MuwbtaDbContext db)
 
         foreach (var spawner in spawners)
         {
-            if (!levels.TryGetValue(spawner.Id, out var level) ||
+            if (!facts.TryGetValue(spawner.Id, out var fact) ||
                 !templates.TryGetValue(spawner.TemplateKey, out var template))
             {
                 continue;
             }
+
+            var level = fact.Level;
 
             if (level < zone.MinLevel || level > zone.MaxLevel)
             {

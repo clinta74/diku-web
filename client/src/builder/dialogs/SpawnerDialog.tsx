@@ -59,6 +59,9 @@ export function SpawnerDialog({
   // 'zone' or a pinned level. Held as the wire's own word so there is no third representation to
   // keep in step (PLAN.md §4.7).
   const [level, setLevel] = useState('zone')
+  // The placement's one word (PLAN.md §4.8). Held as text; '' is "none", which is also what the
+  // wire reads as "clear it".
+  const [nameModifier, setNameModifier] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -71,6 +74,7 @@ export function SpawnerDialog({
     setRespawnSeconds(editing?.respawnSeconds ?? 60)
     setWander(editing?.wander ?? 'template')
     setLevel(editing?.level ?? 'zone')
+    setNameModifier(editing?.nameModifier ?? '')
     setError(null)
     setBusy(false)
   }, [open, editing, roomKey])
@@ -112,6 +116,8 @@ export function SpawnerDialog({
           // An item has no level, and the server refuses a pin on one. Cleared here rather than
           // relying on the refusal, so flipping the kind cannot strand a value nobody can see.
           level: kind === 'Mob' ? level : 'zone',
+          // Same for the name: an item keeps its own. Empty clears a stored word.
+          nameModifier: kind === 'Mob' ? nameModifier.trim() : '',
         })
       } else {
         await builderApi.createSpawner({
@@ -123,6 +129,7 @@ export function SpawnerDialog({
           respawnSeconds,
           wander,
           level: kind === 'Mob' ? level : 'zone',
+          nameModifier: kind === 'Mob' ? nameModifier.trim() : '',
         })
       }
       onSaved()
@@ -159,8 +166,11 @@ export function SpawnerDialog({
             // The template lists do not overlap, so a key from the other kind would dangle.
             setKind(v as Kind)
             setTemplateKey('')
-            // See the submit path: an item cannot carry a pinned level.
-            if (v === 'Item') setLevel('zone')
+            // See the submit path: an item cannot carry a pinned level, or a name modifier.
+            if (v === 'Item') {
+              setLevel('zone')
+              setNameModifier('')
+            }
           }}
         >
           <option value="Mob">Mobs</option>
@@ -255,6 +265,25 @@ export function SpawnerDialog({
             min={1}
             value={Number(level) || 1}
             onChange={(v) => setLevel(String(Math.max(1, v)))}
+          />
+        </Field>
+      )}
+
+      {kind === 'Mob' && (
+        <Field
+          label="Named here as"
+          hint={
+            nameModifier.trim()
+              ? `One word from this zone, put after the article: "a brigand" becomes "a ${nameModifier.trim()} brigand". Named characters cannot take one.`
+              : "Leave blank to use the template's own name. One lower-case word from this zone — marsh, rim, claim — goes after the article, so one template can stand in every zone under that zone's word."
+          }
+        >
+          <input
+            type="text"
+            value={nameModifier}
+            maxLength={32}
+            placeholder="e.g. marsh"
+            onChange={(e) => setNameModifier(e.target.value)}
           />
         </Field>
       )}

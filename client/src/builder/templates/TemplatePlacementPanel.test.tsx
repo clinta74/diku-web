@@ -68,6 +68,7 @@ it('lists each spawner with the rooms it fills', async () => {
         targetCount: 2,
         respawnSeconds: 60,
         fightsAtLevel: 5,
+        spawnsAs: null,
         rooms: [
           { key: 'aldenmoor.millbrook.burrow', title: 'The Rat Burrow' },
           { key: 'aldenmoor.millbrook.ditch', title: 'A Wet Ditch' },
@@ -97,6 +98,7 @@ it('goes to the room when one is clicked', async () => {
         targetCount: 1,
         respawnSeconds: 60,
         fightsAtLevel: 3,
+        spawnsAs: null,
         rooms: [{ key: 'aldenmoor.millbrook.burrow', title: 'The Rat Burrow' }],
       },
     ],
@@ -121,6 +123,7 @@ it('shows a spawner room that no longer exists rather than hiding it', async () 
         targetCount: 1,
         respawnSeconds: 60,
         fightsAtLevel: 3,
+        spawnsAs: null,
         rooms: [{ key: 'aldenmoor.millbrook.gone', title: null }],
       },
     ],

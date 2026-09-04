@@ -96,6 +96,26 @@ public sealed class Spawner
     /// stored value would go live the day someone flips the kind to Mob.
     /// </remarks>
     public int? FightsAtLevel { get; set; }
+
+    /// <summary>
+    /// One word put after the article of the template's name, for mobs from this spawner only:
+    /// <c>marsh</c> makes "a brigand" spawn as "a marsh brigand". <b>Null uses the template's
+    /// name as it is</b>, which is the default (PLAN.md §4.8).
+    /// </summary>
+    /// <remarks>
+    /// <b>On the spawner, because the name of a placement is a property of the placement.</b>
+    /// Templates are global so that one row can stand in every zone; the name living on that row
+    /// meant every zone that wanted its own word had to author a second row differing in nothing
+    /// else, which is most of why the Reaches carried sixty-eight templates for eighteen zones.
+    /// This is the same argument <see cref="FightsAtLevel"/> and <see cref="Wanders"/> already
+    /// make, applied to the one thing a player actually reads.
+    ///
+    /// Applied once at spawn, into the instance's display name
+    /// (<see cref="Inhabitants.MobNaming.Apply"/>). Meaningless on an item spawner, and refused on
+    /// one by the builder API and the bundle validator, for the reason <see cref="FightsAtLevel"/>
+    /// is: a stored value that means nothing today goes live the day the kind is flipped.
+    /// </remarks>
+    public string? NameModifier { get; set; }
 }
 
 /// <summary>What kind of thing a spawner creates.</summary>

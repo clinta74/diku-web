@@ -328,7 +328,16 @@ public sealed record BundleSpawner(
     /// of the database and has no PATCH semantics to disambiguate against, so null here means only
     /// one thing - the same reason <see cref="Wanders"/> is a <c>bool?</c> here and a word there.
     /// </remarks>
-    int? FightsAtLevel);
+    int? FightsAtLevel,
+    /// <summary>
+    /// The word put after the article of the template's name for these mobs, or null for the
+    /// template's name as it is (PLAN.md §4.8).
+    /// </summary>
+    /// <remarks>
+    /// Optional, and the format version is deliberately not bumped for it: a bundle written before
+    /// the field existed reads as "no modifier", which is exactly what those spawners did.
+    /// </remarks>
+    string? NameModifier = null);
 
 public sealed record BundleQuest(
     string Key,

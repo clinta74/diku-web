@@ -1296,6 +1296,17 @@ public static class BuilderEndpoints
             return refusal;
         }
 
+        var (modifier, refusedModifier) = ResolveModifier(request.NameModifier, existing: null, kind);
+        if (refusedModifier is not null)
+        {
+            return refusedModifier;
+        }
+
+        if (await RefuseUnmodifiableAsync(queries, request.TemplateKey, modifier, ct) is { } named)
+        {
+            return named;
+        }
+
         var id = Guid.CreateVersion7();
         var change = new UpsertSpawner(
             id,
@@ -1306,7 +1317,8 @@ public static class BuilderEndpoints
             request.TargetCount ?? 1,
             request.RespawnSeconds ?? 60,
             wanders,
-            fightsAt);
+            fightsAt,
+            modifier);
 
         return await SaveAsync(editor, change, http, ct, () => queries.SpawnerAsync(id, ct));
     }
@@ -1352,16 +1364,31 @@ public static class BuilderEndpoints
             return refusal;
         }
 
+        // Same PATCH rule as the level, and checked against the resulting kind for the same
+        // reason: a modifier left on a spawner flipped to Item would come back to life with it.
+        var (modifier, refusedModifier) = ResolveModifier(request.NameModifier, existing.NameModifier, kind);
+        if (refusedModifier is not null)
+        {
+            return refusedModifier;
+        }
+
+        var templateKey = request.TemplateKey ?? existing.TemplateKey;
+        if (await RefuseUnmodifiableAsync(queries, templateKey, modifier, ct) is { } named)
+        {
+            return named;
+        }
+
         var change = new UpsertSpawner(
             id,
             zoneKey,
-            request.TemplateKey ?? existing.TemplateKey,
+            templateKey,
             kind,
             request.RoomKeys ?? existing.RoomKeys,
             request.TargetCount ?? existing.TargetCount,
             request.RespawnSeconds ?? existing.RespawnSeconds,
             wanders,
-            fightsAt);
+            fightsAt,
+            modifier);
 
         return await SaveAsync(editor, change, http, ct, () => queries.SpawnerAsync(id, ct));
     }
@@ -1390,6 +1417,57 @@ public static class BuilderEndpoints
         kind == TemplateKind.Item && fightsAt is not null
             ? Invalid("An item has no level, so an item spawner cannot pin one.")
             : null;
+
+    /// <summary>
+    /// The name modifier a save results in, or why it was refused (PLAN.md §4.8).
+    /// </summary>
+    /// <remarks>
+    /// Null on the wire leaves the stored word alone; an empty string clears it; anything else is
+    /// trimmed and judged by <see cref="Muwbta.Domain.Inhabitants.MobNaming.Problem"/>. An item
+    /// spawner cannot carry one at all, for the reason <see cref="RefuseLevelOnItem"/> gives.
+    /// </remarks>
+    private static (string? Modifier, IResult? Refusal) ResolveModifier(
+        string? requested, string? existing, TemplateKind kind)
+    {
+        var modifier = requested is null
+            ? existing
+            : string.IsNullOrWhiteSpace(requested) ? null : requested.Trim();
+
+        if (modifier is null)
+        {
+            return (null, null);
+        }
+
+        if (kind == TemplateKind.Item)
+        {
+            return (null, Invalid("An item keeps its own name, so an item spawner cannot carry a name modifier."));
+        }
+
+        if (Muwbta.Domain.Inhabitants.MobNaming.Problem(modifier) is { } problem)
+        {
+            return (null, Invalid($"The name modifier '{modifier}' {problem}."));
+        }
+
+        return (modifier, null);
+    }
+
+    /// <summary>
+    /// Refuses a modifier on a template whose name is a person's. A template the builder has not
+    /// written yet is allowed through — the spawner goes dormant until it exists (§7.4), and the
+    /// bundle validator repeats this check with both halves in hand.
+    /// </summary>
+    private static async Task<IResult?> RefuseUnmodifiableAsync(
+        BuilderQueries queries, string templateKey, string? modifier, CancellationToken ct)
+    {
+        if (modifier is null || await queries.MobTemplateAsync(templateKey, ct) is not { } template)
+        {
+            return null;
+        }
+
+        return Muwbta.Domain.Inhabitants.MobNaming.CanModify(template.Name)
+            ? null
+            : Invalid($"'{template.Name}' is a named character and cannot take a name modifier.");
+    }
 
     private static async Task<IResult> DeleteSpawnerAsync(
         Guid id,

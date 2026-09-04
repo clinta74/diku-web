@@ -26,7 +26,8 @@ public sealed class MobSpawner
         RoomKey roomKey,
         bool wanders = false,
         Guid? spawnerId = null,
-        int? fightsAtLevel = null)
+        int? fightsAtLevel = null,
+        string? nameModifier = null)
     {
         ArgumentNullException.ThrowIfNull(template);
         ArgumentNullException.ThrowIfNull(zone);
@@ -75,7 +76,9 @@ public sealed class MobSpawner
             Id = Guid.NewGuid(),
             TemplateKey = template.Key,
             SpawnerId = spawnerId,
-            TemplateName = template.Name,
+            // The placement's one word, put after the article (PLAN.md §4.8). Applied here and
+            // nowhere else: everything downstream reads the instance's name, not the template's.
+            TemplateName = MobNaming.Apply(template.Name, nameModifier),
             Icon = template.Icon,
             Level = template.Level,
             EffectiveLevel = scaling.Level,

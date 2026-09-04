@@ -373,6 +373,12 @@ public sealed record DeleteItemTemplate(string Key) : WorldChange
     public override string EntityKey => Key;
 }
 
+/// <summary>Creates or replaces a spawner (PLAN.md §4.8).</summary>
+/// <remarks>
+/// <see cref="NameModifier"/> has no default, on purpose: every site that builds one of these
+/// states every field, so a field added here and forgotten at a call site is a compile error
+/// rather than a quiet reset on the next room rename.
+/// </remarks>
 public sealed record UpsertSpawner(
     Guid Id,
     string ZoneKey,
@@ -382,7 +388,8 @@ public sealed record UpsertSpawner(
     int TargetCount,
     int RespawnSeconds,
     bool? Wanders,
-    int? FightsAtLevel) : WorldChange
+    int? FightsAtLevel,
+    string? NameModifier) : WorldChange
 {
     public override string EntityKind => "spawner";
 

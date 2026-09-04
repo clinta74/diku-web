@@ -19,7 +19,11 @@ public sealed class Mob
     /// <summary>Which spawner created this mob (for proper population tracking).</summary>
     public Guid? SpawnerId { get; init; }
 
-    /// <summary>Display name from template at spawn time (cached for consistency).</summary>
+    /// <summary>
+    /// Display name at spawn time: the template's name, with the spawner's modifier applied
+    /// (<see cref="MobNaming.Apply"/>). Cached for consistency, and because it is the one place the
+    /// placement's word lives.
+    /// </summary>
     public string TemplateName { get; init; } = string.Empty;
 
     /// <summary>
