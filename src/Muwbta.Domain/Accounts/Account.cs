@@ -41,6 +41,22 @@ public sealed class Account
 
     public DateTimeOffset? LastLoginAt { get; set; }
 
+    /// <summary>
+    /// The caller's address when the account was created, as the server saw it after the
+    /// forwarded headers were applied. Null for accounts that predate the column.
+    /// </summary>
+    /// <remarks>
+    /// Recorded so a banned player's second account can be set beside their first, which is the
+    /// question a ban raises next. The only other thing it is for is the admin panel; it is never
+    /// shown to a player, never used to decide anything on its own, and the operator owns its
+    /// retention. It is the one piece of personal data here beyond an email address, and it is
+    /// worth remembering that when deciding how long to keep a row.
+    /// </remarks>
+    public string? RegisteredFromAddress { get; set; }
+
+    /// <summary>The address of the most recent sign-in, overwritten each time. See above.</summary>
+    public string? LastLoginAddress { get; set; }
+
     public bool IsBanned { get; set; }
 
     public string? BanReason { get; set; }

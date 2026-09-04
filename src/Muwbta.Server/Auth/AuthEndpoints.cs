@@ -146,6 +146,10 @@ public static partial class AuthEndpoints
             PasswordHash = string.Empty,
             Role = isFirstAccount ? AccountRole.Admin : AccountRole.Player,
             CreatedAt = clock.GetUtcNow(),
+
+            // The caller as the server sees it - which, behind a proxy, is only the caller once
+            // the forwarded headers are honoured (ProxyOptions). Before that it was the proxy.
+            RegisteredFromAddress = http.Connection.RemoteIpAddress?.ToString(),
         };
 
         account.PasswordHash = hasher.HashPassword(account, password);
@@ -213,6 +217,7 @@ public static partial class AuthEndpoints
         }
 
         account.LastLoginAt = clock.GetUtcNow();
+        account.LastLoginAddress = http.Connection.RemoteIpAddress?.ToString();
         await db.SaveChangesAsync(cancellationToken);
 
         await SignInAsync(http, account);

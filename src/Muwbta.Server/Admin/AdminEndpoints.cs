@@ -48,10 +48,11 @@ public static class AdminEndpoints
 
     private static async Task<IResult> SearchAsync(
         string? q,
+        string? address,
         int? limit,
         AccountAdminService accounts,
         CancellationToken ct) =>
-        Results.Ok(await accounts.SearchAsync(q, limit ?? 50, ct));
+        Results.Ok(await accounts.SearchAsync(q, address, limit ?? 50, ct));
 
     private static async Task<IResult> GetAsync(
         string username,

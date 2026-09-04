@@ -116,6 +116,11 @@ public sealed record AccountSummary(
     /// there is no "used to be paused" to report.
     /// </summary>
     public DateTimeOffset? LoginLockedUntil { get; init; }
+
+    /// <summary>Where the account was created from, and where it last signed in from. See <see cref="Account"/>.</summary>
+    public string? RegisteredFromAddress { get; init; }
+
+    public string? LastLoginAddress { get; init; }
 }
 
 /// <summary>
@@ -474,6 +479,7 @@ public sealed class AccountAdminService(
 
     public async Task<IReadOnlyList<AccountSummary>> SearchAsync(
         string? query,
+        string? address,
         int limit,
         CancellationToken cancellationToken)
     {
@@ -484,6 +490,14 @@ public sealed class AccountAdminService(
             // citext makes Contains case-insensitive without a lower() wrapper, so the index
             // stays usable and the behaviour matches how usernames compare everywhere else.
             accounts = accounts.Where(a => a.Username.Contains(query));
+        }
+
+        // "Accounts from this address" - the question a ban raises next. Exact match on either
+        // column: an address is not a name, and a prefix search would make 10.0.0.1 find 10.0.0.10.
+        if (!string.IsNullOrWhiteSpace(address))
+        {
+            accounts = accounts.Where(a =>
+                a.RegisteredFromAddress == address || a.LastLoginAddress == address);
         }
 
         var rows = await accounts
@@ -521,6 +535,8 @@ public sealed class AccountAdminService(
             BanReason = account.BanReason,
             MutedUntil = account.MutedUntil,
             LoginLockedUntil = throttle.LockedUntil(account.Username),
+            RegisteredFromAddress = account.RegisteredFromAddress,
+            LastLoginAddress = account.LastLoginAddress,
         };
     }
 }

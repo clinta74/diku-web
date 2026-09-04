@@ -49,6 +49,14 @@ internal sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
 
         builder.Property(a => a.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(a => a.LastLoginAt).HasColumnName("last_login_at");
+
+        // 45 is the longest textual IPv6 address, mapped-IPv4 form included.
+        builder.Property(a => a.RegisteredFromAddress)
+            .HasColumnName("registered_from_address")
+            .HasMaxLength(45);
+        builder.Property(a => a.LastLoginAddress)
+            .HasColumnName("last_login_address")
+            .HasMaxLength(45);
         builder.Property(a => a.IsBanned).HasColumnName("is_banned").IsRequired();
         builder.Property(a => a.BanReason).HasColumnName("ban_reason").HasMaxLength(512);
         builder.Property(a => a.MutedUntil).HasColumnName("muted_until");
