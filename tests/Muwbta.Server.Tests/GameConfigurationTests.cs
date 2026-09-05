@@ -376,6 +376,42 @@ public sealed class GameConfigurationTests(PostgresFixture postgres) : IAsyncLif
         // says the old thing - now from a row somebody can edit.
         Assert.Contains(GameConfiguration.NameToken, seeded.WelcomeMessage, StringComparison.Ordinal);
         Assert.Contains("Aldenmoor", seeded.WelcomeMessage, StringComparison.Ordinal);
+
+        // And its own canon, so the assist on a development server drafts Millbrook rather than
+        // the Reaches - which is what it did while the embedded text was the only canon there was.
+        Assert.Contains("Millbrook", seeded.Canon, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_starter_row_with_no_canon_is_given_one_and_a_written_one_is_kept()
+    {
+        using var scope = postgres.App.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MuwbtaDbContext>();
+
+        await db.GameConfigurations
+            .Where(c => c.Key == StarterWorldSeeder.ConfigurationKey)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.Canon, string.Empty));
+
+        Assert.False(await StarterWorldSeeder.ReconcileStarterConfigurationAsync(db));
+
+        var refilled = await db.GameConfigurations.AsNoTracking()
+            .SingleAsync(c => c.Key == StarterWorldSeeder.ConfigurationKey);
+        Assert.Equal(StarterWorldSeeder.StarterCanon, refilled.Canon);
+
+        await db.GameConfigurations
+            .Where(c => c.Key == StarterWorldSeeder.ConfigurationKey)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.Canon, "# Mine"));
+
+        Assert.False(await StarterWorldSeeder.ReconcileStarterConfigurationAsync(db));
+
+        var kept = await db.GameConfigurations.AsNoTracking()
+            .SingleAsync(c => c.Key == StarterWorldSeeder.ConfigurationKey);
+        Assert.Equal("# Mine", kept.Canon);
+
+        // Put back, so the fixture's other tests see the seeded state.
+        await db.GameConfigurations
+            .Where(c => c.Key == StarterWorldSeeder.ConfigurationKey)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.Canon, StarterWorldSeeder.StarterCanon));
     }
 
     [Fact]

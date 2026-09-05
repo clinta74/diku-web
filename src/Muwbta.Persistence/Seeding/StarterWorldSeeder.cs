@@ -1,4 +1,8 @@
 ﻿using Muwbta.Domain.Abilities;
+using Muwbta.Domain.Inhabitants;
+using Muwbta.Domain.Items;
+using Muwbta.Domain.Quests;
+using Muwbta.Domain.Spawning;
 using Muwbta.Domain.Worlds;
 using Microsoft.EntityFrameworkCore;
 
@@ -240,13 +244,13 @@ public static class StarterWorldSeeder
             + "nothing on it. The light from the high windows arrives already tired.",
             [
                 "┌─────────··────────┐",
-                "│═══════..═════════.│",
-                "│═══════..═════════.│",
-                "│═══════..═════════.│",
+                "│.══════..═════════.│",
+                "│.══════..═════════.│",
+                "│.══════..═════════.│",
                 "│........†..........│",
-                "│═══════..═════════.│",
-                "│═══════..═════════.│",
-                "│═══════..═════════.│",
+                "│.══════..═════════.│",
+                "│.══════..═════════.│",
+                "│.══════..═════════.│",
                 "└───────────────────┘",
             ],
             new() { ["."] = "floor", ["·"] = "path", ["†"] = "altar", ["─"] = "wall", ["│"] = "wall", ["┌"] = "wall", ["┐"] = "wall", ["└"] = "wall", ["┘"] = "wall", ["═"] = "bench" })
@@ -316,11 +320,77 @@ public static class StarterWorldSeeder
             });
         }
 
+        // The inhabitants, added only with the world: a database that already has one is a
+        // database somebody has been building in, and a template row arriving under their feet
+        // is the surprise the import path exists to prevent. tools/export-seed.cs is the way to
+        // bring these into a database that already exists.
+        db.MobTemplates.AddRange(MobTemplates);
+        db.ItemTemplates.AddRange(ItemTemplates);
+        db.Quests.AddRange(Quests);
+        db.Spawners.AddRange(Spawners);
+
         // Abilities are reconciled separately, on every startup - see ReconcileAbilitiesAsync.
         // So is the starter configuration - see ReconcileStarterConfigurationAsync.
         await db.SaveChangesAsync(cancellationToken);
         return true;
     }
+
+    /// <summary>
+    /// What the builder assist is told about Aldenmoor (PLAN.md §4.16). Short on purpose: a
+    /// sandbox needs a register and a map, not a theology.
+    /// </summary>
+    /// <remarks>
+    /// Without this, a development server's assist read the Reaches - the only canon there was -
+    /// and drafted Millbrook rooms with rims and gates in them. The configuration carries its own
+    /// now, and the embedded WORLD.md is what a configuration with <em>no</em> canon gets, which
+    /// is what production wants and what development did not.
+    /// </remarks>
+    public const string StarterCanon = """
+        # Aldenmoor
+
+        The development world: one zone, twelve rooms, kept as the fixture the playtest plans run
+        against and as a sandbox for trying the builder. Nothing here is linked to the Reaches and
+        nothing here is canon for them.
+
+        ## Setting
+
+        Aldenmoor is a damp northern kingdom of failing villages and older stone. Millbrook is one
+        of the villages, two generations into emptying: the mill has stopped, the market is not
+        held, and the portcullis on the north gate has rusted half-raised because nobody has
+        needed to lower it in living memory. The people who remain are practical and unhurried.
+        The Drowned Rat is warm and the chapel is cold, and both are open.
+
+        ## Tone
+
+        Plain, close, faintly damp. Describe what is there: rot on the mill paddles, a heron that
+        does not acknowledge you, straw drifting against the kerb. No dread and no doom. Things
+        are old and running down and nobody is dramatic about it. Second person, present tense,
+        two or three short paragraphs to a room, and the room describes what is there rather than
+        how to feel about it.
+
+        ## Places
+
+        The Old Mill and the Millpond to the west. The Hill Road climbing north into gorse. The
+        North Gate, where new characters wake. Market Row. The Village Green at the centre, with
+        its lightning-split oak and a bench worn smooth. The Smithy. The Drowned Rat and the street
+        outside it. The Well Yard. The Chapel Steps, and the Chapel Nave below them. The zone is
+        `aldenmoor.millbrook`, levels 1 to 5; a new zone stays under `aldenmoor.` and keeps to the
+        same register.
+
+        ## What lives here
+
+        Rats in the tavern, Nell behind the bar of the Drowned Rat, Old Marrow at his end table
+        with an empty glass, and whatever a builder adds to test with: a priest with an empty
+        altar, a road bandit or two on the Hill Road. Keep it small and local. Names are plain
+        English with an article, "a rat", "a hill bandit"; named people are capitalised with a
+        clause, "Nell, who keeps the Drowned Rat". Keys are `aldenmoor-<thing>`, or bare for
+        staples like `bread`. Loot is honest and a little worn.
+
+        ## Keys
+
+        Room keys are `aldenmoor.millbrook.<slug>`: three segments, lowercase letters, digits and
+        hyphens. Exits pair up. Nothing here has a god, a gate, or a rim.
+        """;
 
     /// <summary>The starter configuration's key (PLAN.md §4.16).</summary>
     public const string ConfigurationKey = "aldenmoor-starter";
@@ -355,8 +425,20 @@ public static class StarterWorldSeeder
     {
         ArgumentNullException.ThrowIfNull(db);
 
-        if (await db.GameConfigurations.AnyAsync(c => c.Key == ConfigurationKey, cancellationToken))
+        var existing = await db.GameConfigurations
+            .FirstOrDefaultAsync(c => c.Key == ConfigurationKey, cancellationToken);
+
+        if (existing is not null)
         {
+            // A row planted before the canon existed gets it once. A builder's own text is never
+            // replaced: empty is the only state this fills, and empty is what those rows have.
+            if (string.IsNullOrWhiteSpace(existing.Canon))
+            {
+                existing.Canon = StarterCanon;
+                existing.UpdatedAt = DateTimeOffset.UtcNow;
+                await db.SaveChangesAsync(cancellationToken);
+            }
+
             return false;
         }
 
@@ -373,6 +455,7 @@ public static class StarterWorldSeeder
 
             // The line GameLoop used to hold as a literal, now where it can be changed.
             WelcomeMessage = "Welcome to Aldenmoor, {name}.",
+            Canon = StarterCanon,
             IsActive = !anyActive,
             UpdatedAt = DateTimeOffset.UtcNow,
         });
@@ -380,6 +463,217 @@ public static class StarterWorldSeeder
         await db.SaveChangesAsync(cancellationToken);
         return true;
     }
+
+    /// <summary>
+    /// Who and what lives in Millbrook: two rats, the landlady, the old man, what she sells,
+    /// and one errand between them.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Authored in the builder on a development server, then brought here</b>, so a fresh
+    /// database has something to fight, buy and talk to on the first evening rather than twelve
+    /// empty rooms. It is the smallest set that exercises every loop the engine has - spawn,
+    /// wander, attack, loot, shop, talk, quest - and it is deliberately not more than that: this
+    /// is a fixture the playtest plans and the tests run against, and every row added here is a
+    /// row those have to keep agreeing with.
+    /// </para>
+    /// <para>
+    /// The names follow the content conventions the Reaches settled (docs/STORY.md §3.2): an
+    /// article on a creature, a name and a clause on a person, keys under <c>aldenmoor-</c> with
+    /// the two staples bare because the Reaches use those keys too. Spawner ids are fixed so an
+    /// export of this world re-imports without doubling the tavern.
+    /// </para>
+    /// </remarks>
+    public static IReadOnlyList<MobTemplate> MobTemplates { get; } =
+    [
+        new()
+        {
+            Key = "aldenmoor-rat",
+            Name = "a rat",
+            Description = "A common brown rat, scurrying amongst the debris. Beady, bright-eyed, "
+                + "whiskers twitching. It seems more frightened than aggressive.",
+            Icon = "r",
+            Level = 1,
+            BaseStats = new Dictionary<string, object> { ["health"] = 8, ["damage"] = "1-3" },
+            BaseXp = 10,
+            BaseGold = 0,
+            Behavior = new Dictionary<string, object>
+            {
+                ["type"] = "passive",
+                ["wanders"] = true,
+                ["emotes"] = new List<object>
+                {
+                    new Dictionary<string, object> { ["text"] = "scurries along the floor", ["minSeconds"] = 90, ["maxSeconds"] = 120 },
+                },
+            },
+            Loot = [new Dictionary<string, object> { ["itemTemplateKey"] = "aldenmoor-rat-skin", ["chance"] = 0.25 }],
+            Attacks = [new MobAttack { Verb = "bites", DelayPulses = 8 }],
+        },
+        new()
+        {
+            Key = "aldenmoor-nell",
+            Name = "Nell, who keeps the Drowned Rat",
+            Description = "She keeps the fire, the bar and the peace, in that order, and has the arms "
+                + "for all three. The floor is sticky and she knows.",
+            Icon = "@",
+            Level = 5,
+            BaseStats = new Dictionary<string, object> { ["health"] = 40 },
+            BaseXp = 0,
+            BaseGold = 0,
+            Behavior = new Dictionary<string, object>
+            {
+                ["type"] = "npc",
+                ["wanders"] = false,
+                ["shopkeeper"] = true,
+                ["sells"] = new List<object> { "bread", "waterskin", "aldenmoor-ale" },
+                ["markup"] = 0.1,
+                ["greeting"] = new List<object>
+                {
+                    "'Sit anywhere that is not on fire. Ale is two, bread is one, and the old man is not for sale.'",
+                },
+                ["emotes"] = new List<object>
+                {
+                    new Dictionary<string, object> { ["text"] = "wipes the same patch of bar for the third time", ["minSeconds"] = 200, ["maxSeconds"] = 400 },
+                },
+            },
+        },
+        new()
+        {
+            Key = "aldenmoor-old-marrow",
+            Name = "Old Marrow, who has forgotten your name",
+            Description = "He has sat at the end table since before the mill stopped, and he can tell "
+                + "you what the village was like then, if you do not mind hearing it twice.",
+            Icon = "@",
+            Level = 5,
+            BaseStats = new Dictionary<string, object> { ["health"] = 40 },
+            BaseXp = 0,
+            BaseGold = 0,
+            Behavior = new Dictionary<string, object>
+            {
+                ["type"] = "npc",
+                ["wanders"] = false,
+                ["greeting"] = new List<object>
+                {
+                    "'When I was younger... Who are you again?'",
+                    "'Do you think it will rain?'",
+                    "'What time is it?'",
+                },
+                ["emotes"] = new List<object>
+                {
+                    new Dictionary<string, object> { ["text"] = "turns the empty glass in front of him", ["minSeconds"] = 120, ["maxSeconds"] = 140 },
+                },
+            },
+        },
+    ];
+
+    /// <inheritdoc cref="MobTemplates"/>
+    public static IReadOnlyList<ItemTemplate> ItemTemplates { get; } =
+    [
+        new()
+        {
+            Key = "aldenmoor-rat-skin",
+            Name = "a rat skin",
+            Description = "Small, grey, and worth about what you would think. The tanner will not thank you.",
+            Icon = "i",
+            Weight = 1,
+            BaseValue = 2,
+        },
+        new()
+        {
+            Key = "bread",
+            Name = "a loaf of bread",
+            Description = "Yesterday's, at best. It does the job.",
+            Icon = "i",
+            Weight = 1,
+            BaseValue = 1,
+            FoodValue = 5,
+        },
+        new()
+        {
+            Key = "waterskin",
+            Name = "a waterskin",
+            Description = "A skin of some animal, filled from the well.",
+            Icon = "i",
+            Weight = 2,
+            BaseValue = 1,
+            DrinkValue = 3,
+        },
+        new()
+        {
+            Key = "aldenmoor-ale",
+            Name = "a pint of the Drowned Rat's ale",
+            Description = "Cool, brown, and with a head on it that Nell is proud of.",
+            Icon = "i",
+            Weight = 1,
+            BaseValue = 2,
+            DrinkValue = 1,
+        },
+    ];
+
+    /// <inheritdoc cref="MobTemplates"/>
+    public static IReadOnlyList<Quest> Quests { get; } =
+    [
+        new()
+        {
+            Key = "millbrook-a-drink-for-the-old-man",
+            ZoneKey = ZoneKey,
+            Name = "A Drink for the Old Man",
+            Summary = "Buy Old Marrow a pint and take it to him.",
+            Description = "Nell would like the old man kept happy. He has done a lot for the Drowned "
+                + "Rat, and a pint from the bar is the going rate.",
+            GiverMobKey = "aldenmoor-nell",
+            TurninMobKey = "aldenmoor-old-marrow",
+            RequiredItemKey = "aldenmoor-ale",
+            RequiredCount = 1,
+            RewardXp = 25,
+            RewardGold = 0,
+            IsRepeatable = true,
+            Dialogue = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["giverOffer"] = "'Could you keep the customers happy for me? The old man has done a lot for "
+                    + "this place. Buy him a <drink> and take it over, and I will call it a favour returned.'",
+                ["giverInProgress"] = "'He looks thirsty. A pint from the bar, and take it to him yourself. He likes to be handed things.'",
+                ["giverComplete"] = "'He liked that. He will not remember it, but he liked it.'",
+                ["turninReady"] = "Old Marrow takes the pint in both hands and nods, slowly, as though you had said something wise.",
+            },
+        },
+    ];
+
+    /// <inheritdoc cref="MobTemplates"/>
+    public static IReadOnlyList<Spawner> Spawners { get; } =
+    [
+        new()
+        {
+            Id = Guid.Parse("9d3c7d2e-0000-4000-8000-0000000000a1"),
+            ZoneKey = ZoneKey,
+            TemplateKey = "aldenmoor-rat",
+            TemplateKind = TemplateKind.Mob,
+            RoomKeys = ["aldenmoor.millbrook.tavern-common"],
+            TargetCount = 2,
+            RespawnSeconds = 120,
+            Wanders = true,
+        },
+        new()
+        {
+            Id = Guid.Parse("9d3c7d2e-0000-4000-8000-0000000000a2"),
+            ZoneKey = ZoneKey,
+            TemplateKey = "aldenmoor-nell",
+            TemplateKind = TemplateKind.Mob,
+            RoomKeys = ["aldenmoor.millbrook.tavern-common"],
+            TargetCount = 1,
+            RespawnSeconds = 60,
+        },
+        new()
+        {
+            Id = Guid.Parse("9d3c7d2e-0000-4000-8000-0000000000a3"),
+            ZoneKey = ZoneKey,
+            TemplateKey = "aldenmoor-old-marrow",
+            TemplateKind = TemplateKind.Mob,
+            RoomKeys = ["aldenmoor.millbrook.tavern-common"],
+            TargetCount = 1,
+            RespawnSeconds = 60,
+        },
+    ];
 
     private sealed record RoomSeed(
         string Slug,

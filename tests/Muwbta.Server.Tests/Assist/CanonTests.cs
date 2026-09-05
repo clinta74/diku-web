@@ -37,6 +37,18 @@ public sealed class CanonTests
         Assert.Equal(PrefixTokenBudget, new AssistOptions().CanonTokenBudget);
     }
 
+    /// <summary>
+    /// The sandbox's canon is a register and a map, not a theology, and leaves the model most of
+    /// its window for the room it is drafting.
+    /// </summary>
+    [Fact]
+    public void The_starter_canon_is_small()
+    {
+        var tokens = Canon.EstimateTokens(Canon.Resolve(Muwbta.Persistence.Seeding.StarterWorldSeeder.StarterCanon));
+
+        Assert.InRange(tokens, 200, 1_500);
+    }
+
     /// <summary>An empty configuration reads the embedded canon, so nothing changes until somebody writes one.</summary>
     [Theory]
     [InlineData(null)]
