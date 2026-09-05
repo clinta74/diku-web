@@ -488,9 +488,14 @@ thing that lets a *quest* NPC keep talking between quests (gated on their own ch
    (Kheddran has a voice: Vech is his man, Vance swore to him). **Azhen done 2026-09-04**: five
    bronze names become `azhen-servitor` and `azhen-engine` (the engine keeps the clamp arm's grip),
    the instrument warden becomes `azhen-warden`, the one who stayed becomes `azhen-kept` "a kept
-   scholar", the flitter keeps its name and key, thirteen spawners re-pointed as hall, yard and
-   tower, and topics on Immeth (the measure, and the milestone once Nemhal is attuned), Vane and
-   Sask. Nemhal and the Unlit remain.
+   scholar", the flitter keeps its name as `azhen-flitter`, thirteen spawners re-pointed as hall,
+   yard and tower, and topics on Immeth (the measure, and the milestone once Nemhal is attuned),
+   Vane and Sask. **Nemhal done 2026-09-04**: the bier bearer and shroud binder become
+   `nemhal-bearer` (the binder's grip kept), the vigil keeper `nemhal-warden`, the hollow hound
+   `nemhal-hound` placed as "a hollow hound", the untold `nemhal-kept` "a kept priest"; the moth,
+   lay brother and bell-ringer keep their plain names; ten spawners re-pointed as road, station
+   and vigil; topics on Orrun, Aveth and Dell, which gives Sevveth his voice (Aveth prayed to him
+   when she said the word) and Dell the milestone that answers Immeth. The Unlit remains.
 4. Re-read WORLD.md §7.1 and §10.4 against what landed and correct them. (§7.1 was rewritten
    with §4.1; §10.4 waits on the content pass.)
 5. ~~Decide §4.5, and build it if the answer is yes.~~ Built 2026-09-04.

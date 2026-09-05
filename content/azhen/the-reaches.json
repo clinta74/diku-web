@@ -3190,25 +3190,6 @@
   ],
   "mobTemplates": [
     {
-      "key": "azhen-brass-flitter",
-      "name": "a brass flitter",
-      "description": "A hand-sized maintenance thing on four wings, still doing its round of a room nobody is in.",
-      "icon": "c",
-      "level": 7,
-      "wanderIntervalPulses": 360,
-      "baseStats": {
-        "damage": "5-9",
-        "health": 58
-      },
-      "baseXp": 140,
-      "baseGold": 21,
-      "behavior": {
-        "wanders": true
-      },
-      "loot": [],
-      "attacks": []
-    },
-    {
       "key": "azhen-camp-trader",
       "name": "Ordrel Sask, trader",
       "description": "One tent, thin stock, and a buying book far fatter than a selling one. He is here for what comes out, not for what goes in.",
@@ -3304,6 +3285,25 @@
           }
         }
       ]
+    },
+    {
+      "key": "azhen-flitter",
+      "name": "a brass flitter",
+      "description": "A hand-sized maintenance thing on four wings, still doing its round of a room nobody is in.",
+      "icon": "c",
+      "level": 7,
+      "wanderIntervalPulses": 360,
+      "baseStats": {
+        "damage": "5-9",
+        "health": 58
+      },
+      "baseXp": 140,
+      "baseGold": 21,
+      "behavior": {
+        "wanders": true
+      },
+      "loot": [],
+      "attacks": []
     },
     {
       "key": "azhen-instrument-scholar",
@@ -5606,7 +5606,7 @@
     {
       "id": "74d1d343-f35f-5fdb-8fac-9671c2306026",
       "zoneKey": "azhen.ummath",
-      "templateKey": "azhen-brass-flitter",
+      "templateKey": "azhen-flitter",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.ummath.the-long-gallery",
@@ -5744,7 +5744,7 @@
     {
       "id": "db46f1dc-1c62-509e-91de-51cdf41084b3",
       "zoneKey": "azhen.serrivet",
-      "templateKey": "azhen-brass-flitter",
+      "templateKey": "azhen-flitter",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.serrivet.the-alignment-marks"

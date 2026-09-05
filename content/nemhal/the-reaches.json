@@ -3348,6 +3348,41 @@
       "attacks": []
     },
     {
+      "key": "nemhal-bearer",
+      "name": "a bearer",
+      "description": "Enormous, patient, and carrying one end of nothing at shoulder height. Its other work is wrapping, and it does not distinguish between the dead and the standing.",
+      "icon": "B",
+      "level": 9,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "armor": 13,
+        "damage": "7-12",
+        "health": 108
+      },
+      "baseXp": 180,
+      "baseGold": 27,
+      "behavior": {},
+      "loot": [],
+      "attacks": [
+        {
+          "verb": "wind",
+          "delayPulses": 8,
+          "damageMultiplier": null,
+          "effectKey": null,
+          "effectParams": null
+        },
+        {
+          "verb": "bind fast",
+          "delayPulses": 32,
+          "damageMultiplier": null,
+          "effectKey": "control.root",
+          "effectParams": {
+            "durationPulses": "28"
+          }
+        }
+      ]
+    },
+    {
       "key": "nemhal-bell-ringer",
       "name": "a bell-ringer",
       "description": "Fast on the rope and faster off it. The bell is still rung on the hour.",
@@ -3361,24 +3396,6 @@
       },
       "baseXp": 160,
       "baseGold": 24,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
-      "key": "nemhal-bier-bearer",
-      "name": "a bier bearer",
-      "description": "Enormous, patient, and carrying one end of nothing at shoulder height.",
-      "icon": "B",
-      "level": 9,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "armor": 13,
-        "damage": "7-12",
-        "health": 108
-      },
-      "baseXp": 180,
-      "baseGold": 27,
       "behavior": {},
       "loot": [],
       "attacks": []
@@ -3409,7 +3426,29 @@
             "minSeconds": 300
           }
         ],
-        "wanders": false
+        "wanders": false,
+        "greeting": [
+          "'They are not lying to you. Nobody has ever told them. Ask me what I said that got me put out, and I will say it again: she is <dead>.'"
+        ],
+        "topics": [
+          {
+            "keyword": "dead",
+            "text": "'I said it out loud in the chapter house. Nemhalla is dead. They put me out that afternoon, and I have stood within sight of them for nine years since, and I would say it again. Whether it is true is a different question. I have started to think the answer is no, and that is worse.'"
+          },
+          {
+            "keyword": "sevveth",
+            "text": "'The dead are Sevveth's. No temples, no words on the stones. I prayed to him when I said what I said, because if she was dead she was his and somebody should have told him. He did not answer. He says less than you want. That is rather his point.'"
+          },
+          {
+            "keyword": "sulveth",
+            "text": "'Sulveth keeps what is lost. There is a keeper of hers on Ossara's rim who could tell you the difference between lost and dead in one sentence. I have been trying to tell it for nine years. Nemhalla is not dead and she is not lost. She is in the way. There is no god for that.'"
+          },
+          {
+            "keyword": "nemhalla",
+            "text": "'You saw her. Lying in the gap she is filling, the exact shape of the hole. She stood in the way on purpose, and it cost her everything, and it worked, and the Reach has been failing at exactly her rate ever since, because she is what is left holding it. They are not mourning her. They are nursing her. And past the next gate, recall does not work. Say it back to me.'",
+            "requiresQuest": "a4-3-she-stood-in-the-way"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
@@ -3443,15 +3482,35 @@
         "wanders": false,
         "greeting": [
           "'Eleven of us hold this. You would be the twelfth, if you were staying. You are not staying.'",
-          "'Do not go west of the wall after dark. That is not an order I can enforce, which is why I am asking.'"
+          "'Do not go west of the wall after dark. That is not an order I can enforce, which is why I am asking.'",
+          "'Eleven of us and a <wall>. Ask about either.'"
+        ],
+        "topics": [
+          {
+            "keyword": "wall",
+            "text": "'Built to face an enemy. It faces the edge instead, which does not care. We have moved it twice, back from where the land stopped being there, and we will move it again. That is not despair. It is masonry.'"
+          },
+          {
+            "keyword": "west",
+            "text": "'Nothing to see, and I mean that exactly. Past the parapet the land is gone, and what is past it is not distance. Do not go west of the wall after dark. I cannot enforce that. I am asking.'"
+          },
+          {
+            "keyword": "eleven",
+            "text": "'Eleven. It was forty when I took the post. Nobody died. They went back through the gate one at a time, and I wrote each name down and shook each hand. You would be the twelfth if you were staying. You are not staying.'"
+          },
+          {
+            "keyword": "edge",
+            "text": "'You have read the office, then. Every prayer for a recovery. They think she is ill. I think the wall is where she stops holding, and every year it is a little nearer, and I do not know what that makes her. Aveth knows. Ask Aveth.'",
+            "requiresQuest": "a4-2-the-office"
+          }
         ]
       },
       "loot": [],
       "attacks": []
     },
     {
-      "key": "nemhal-hollow-hound",
-      "name": "a hollow hound",
+      "key": "nemhal-hound",
+      "name": "a hound",
       "description": "It was somebody's and it still runs the route it was walked on.",
       "icon": "d",
       "level": 8,
@@ -3465,6 +3524,51 @@
       "behavior": {},
       "loot": [],
       "attacks": []
+    },
+    {
+      "key": "nemhal-kept",
+      "name": "a kept priest",
+      "description": "A priest of Nemhalla in full vestment, keeping the office. Nobody has told them and there is nobody left who could.",
+      "icon": "W",
+      "level": 10,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "armor": 19,
+        "damage": "8-14",
+        "health": 160,
+        "defense": 3
+      },
+      "baseXp": 200,
+      "baseGold": 30,
+      "behavior": {},
+      "loot": [
+        {
+          "chance": 0.5,
+          "itemTemplateKey": "nemhal-vigil-token"
+        },
+        {
+          "chance": 0.3,
+          "itemTemplateKey": "nemhal-office-page"
+        }
+      ],
+      "attacks": [
+        {
+          "verb": "strike",
+          "delayPulses": 8,
+          "damageMultiplier": null,
+          "effectKey": null,
+          "effectParams": null
+        },
+        {
+          "verb": "still",
+          "delayPulses": 40,
+          "damageMultiplier": null,
+          "effectKey": "control.stun",
+          "effectParams": {
+            "durationPulses": "8"
+          }
+        }
+      ]
     },
     {
       "key": "nemhal-lay-brother",
@@ -3528,46 +3632,23 @@
         ],
         "markup": 0.2,
         "wanders": false,
-        "shopkeeper": true
+        "shopkeeper": true,
+        "greeting": [
+          "'Take what you need. Write what you took. Somebody will want to know. Ask about the <rations> if you think I am being difficult.'"
+        ],
+        "topics": [
+          {
+            "keyword": "rations",
+            "text": "'I do not trade. I ration. Everything on these shelves is priced by how badly the next person through will need it, not by what it cost, because there is no next delivery. There has not been a delivery in two years.'"
+          },
+          {
+            "keyword": "milestone",
+            "text": "'The stone on the road, giving the distance to Keshvaun in a measure nobody uses? It has been re-cut. The figure is smaller than it was, and the old figure is still faintly there. Somebody measured that road before there was a road. The survey people in Azhen would know the unit. I only know the distance is shorter.'"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
-    },
-    {
-      "key": "nemhal-shroud-binder",
-      "name": "a shroud binder",
-      "description": "Its whole work is wrapping, and it does not distinguish between the dead and the standing.",
-      "icon": "L",
-      "level": 9,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "armor": 16,
-        "damage": "7-12",
-        "health": 112,
-        "defense": 3
-      },
-      "baseXp": 180,
-      "baseGold": 27,
-      "behavior": {},
-      "loot": [],
-      "attacks": [
-        {
-          "verb": "wind",
-          "delayPulses": 8,
-          "damageMultiplier": null,
-          "effectKey": null,
-          "effectParams": null
-        },
-        {
-          "verb": "bind fast",
-          "delayPulses": 32,
-          "damageMultiplier": null,
-          "effectKey": "control.root",
-          "effectParams": {
-            "durationPulses": "28"
-          }
-        }
-      ]
     },
     {
       "key": "nemhal-the-first-mourner",
@@ -3618,53 +3699,27 @@
       ]
     },
     {
-      "key": "nemhal-the-untold",
-      "name": "one of the untold",
-      "description": "A priest of Nemhalla in full vestment, keeping the office. Nobody has told them and there is nobody left who could.",
-      "icon": "W",
-      "level": 10,
-      "wanderIntervalPulses": 24,
+      "key": "nemhal-vigil-moth",
+      "name": "a vigil moth",
+      "description": "Enormous and drawn to the lamps that are never lit.",
+      "icon": "c",
+      "level": 7,
+      "wanderIntervalPulses": 72,
       "baseStats": {
-        "armor": 19,
-        "damage": "8-14",
-        "health": 160,
-        "defense": 3
+        "damage": "5-9",
+        "health": 62
       },
-      "baseXp": 200,
-      "baseGold": 30,
-      "behavior": {},
-      "loot": [
-        {
-          "chance": 0.5,
-          "itemTemplateKey": "nemhal-vigil-token"
-        },
-        {
-          "chance": 0.3,
-          "itemTemplateKey": "nemhal-office-page"
-        }
-      ],
-      "attacks": [
-        {
-          "verb": "strike",
-          "delayPulses": 8,
-          "damageMultiplier": null,
-          "effectKey": null,
-          "effectParams": null
-        },
-        {
-          "verb": "still",
-          "delayPulses": 40,
-          "damageMultiplier": null,
-          "effectKey": "control.stun",
-          "effectParams": {
-            "durationPulses": "8"
-          }
-        }
-      ]
+      "baseXp": 140,
+      "baseGold": 21,
+      "behavior": {
+        "wanders": true
+      },
+      "loot": [],
+      "attacks": []
     },
     {
-      "key": "nemhal-vigil-keeper",
-      "name": "a vigil keeper",
+      "key": "nemhal-warden",
+      "name": "a warden",
       "description": "Armoured, posted, and standing a watch that ended before Grask was opened.",
       "icon": "t",
       "level": 9,
@@ -3684,25 +3739,6 @@
           "itemTemplateKey": "nemhal-vigil-token"
         }
       ],
-      "attacks": []
-    },
-    {
-      "key": "nemhal-vigil-moth",
-      "name": "a vigil moth",
-      "description": "Enormous and drawn to the lamps that are never lit.",
-      "icon": "c",
-      "level": 7,
-      "wanderIntervalPulses": 72,
-      "baseStats": {
-        "damage": "5-9",
-        "health": 62
-      },
-      "baseXp": 140,
-      "baseGold": 21,
-      "behavior": {
-        "wanders": true
-      },
-      "loot": [],
       "attacks": []
     }
   ],
@@ -5645,7 +5681,7 @@
     {
       "id": "1ad964e4-6698-5386-998b-8061946a19b4",
       "zoneKey": "nemhal.keshvaun",
-      "templateKey": "nemhal-vigil-keeper",
+      "templateKey": "nemhal-warden",
       "templateKind": "Mob",
       "roomKeys": [
         "nemhal.keshvaun.the-outer-court",
@@ -5655,12 +5691,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "vigil"
     },
     {
       "id": "25e4c9de-448d-5551-9916-d222ab1dbcb4",
       "zoneKey": "nemhal.vurrach",
-      "templateKey": "nemhal-hollow-hound",
+      "templateKey": "nemhal-hound",
       "templateKind": "Mob",
       "roomKeys": [
         "nemhal.vurrach.the-hold-road",
@@ -5670,7 +5706,7 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "hollow"
     },
     {
       "id": "3b73e926-27dc-511b-8323-eb2167a44560",
@@ -5720,7 +5756,7 @@
     {
       "id": "574fe857-7b95-5377-955b-a785c7186657",
       "zoneKey": "nemhal.vurrach",
-      "templateKey": "nemhal-vigil-keeper",
+      "templateKey": "nemhal-warden",
       "templateKind": "Mob",
       "roomKeys": [
         "nemhal.vurrach.the-village-green",
@@ -5732,7 +5768,7 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "road"
     },
     {
       "id": "5a414d4c-d490-5011-992d-18c456fc7f94",
@@ -5752,7 +5788,7 @@
     {
       "id": "717e8cd1-572e-5139-9f17-32ff40e4c3aa",
       "zoneKey": "nemhal.keshvaun",
-      "templateKey": "nemhal-shroud-binder",
+      "templateKey": "nemhal-bearer",
       "templateKind": "Mob",
       "roomKeys": [
         "nemhal.keshvaun.the-folding-table",
@@ -5763,12 +5799,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "vigil"
     },
     {
       "id": "724ccf43-7ffc-5339-8b9c-97c389a976d4",
       "zoneKey": "nemhal.vurrach",
-      "templateKey": "nemhal-bier-bearer",
+      "templateKey": "nemhal-bearer",
       "templateKind": "Mob",
       "roomKeys": [
         "nemhal.vurrach.the-gorge-floor",
@@ -5778,12 +5814,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "road"
     },
     {
       "id": "76bd784f-e0e0-592a-ad12-a8c293ab81b1",
       "zoneKey": "nemhal.olmenneth",
-      "templateKey": "nemhal-vigil-keeper",
+      "templateKey": "nemhal-warden",
       "templateKind": "Mob",
       "roomKeys": [
         "nemhal.olmenneth.the-processional-head",
@@ -5794,12 +5830,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "station"
     },
     {
       "id": "7dad0640-589f-5c46-b860-8eb2696a7211",
       "zoneKey": "nemhal.olmenneth",
-      "templateKey": "nemhal-bier-bearer",
+      "templateKey": "nemhal-bearer",
       "templateKind": "Mob",
       "roomKeys": [
         "nemhal.olmenneth.the-last-station",
@@ -5810,7 +5846,7 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "station"
     },
     {
       "id": "c5bdfded-379f-5d71-b29c-a9274c000143",
@@ -5829,7 +5865,7 @@
     {
       "id": "d3039f6f-7874-5626-9c71-9157b095f7dd",
       "zoneKey": "nemhal.olmenneth",
-      "templateKey": "nemhal-shroud-binder",
+      "templateKey": "nemhal-bearer",
       "templateKind": "Mob",
       "roomKeys": [
         "nemhal.olmenneth.the-shroud-house",
@@ -5840,12 +5876,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "station"
     },
     {
       "id": "dd9c3808-7c8f-5d5e-815f-db96ec399fa1",
       "zoneKey": "nemhal.olmenneth",
-      "templateKey": "nemhal-the-untold",
+      "templateKey": "nemhal-kept",
       "templateKind": "Mob",
       "roomKeys": [
         "nemhal.olmenneth.the-keening-court",
@@ -5862,7 +5898,7 @@
     {
       "id": "ef8be87a-1bb1-5e7a-8e3e-4b2e0e65b7b5",
       "zoneKey": "nemhal.keshvaun",
-      "templateKey": "nemhal-the-untold",
+      "templateKey": "nemhal-kept",
       "templateKind": "Mob",
       "roomKeys": [
         "nemhal.keshvaun.the-chapter-house",
@@ -5913,7 +5949,7 @@
       "key": "a4-1-the-rota",
       "zoneKey": "nemhal.olmenneth",
       "name": "The Rota",
-      "summary": "Collect ten vigil tokens from the untold.",
+      "summary": "Collect ten vigil tokens from the kept priests.",
       "description": "Aveth wants to know how many are still on the rota. The only way to count them is to take the tokens off them, and she is direct about what that involves.",
       "giverMobKey": "nemhal-heretic",
       "turninMobKey": "nemhal-heretic",
