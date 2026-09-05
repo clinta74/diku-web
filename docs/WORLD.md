@@ -715,6 +715,12 @@ were so the difference is visible rather than tidied away.
   what that section asked for: nothing in the last zone is a boss fight against the Unlit, the
   final beat is an answer rather than a kill, and the one thing standing between the player and
   the niche is the oldest person who ever walked in on purpose.
+- **The roster is kinds, not re-skins.** Sixty-eight templates became fifty-nine in the story
+  pass of 2026-09-04: nine global kinds (`rat` to `lurcher`, and `bruiser`) placed by spawners
+  that carry a zone word, realm rows only where the fiction or the arithmetic needs them (Azhimet's
+  bronze; Grask's trash at chassis 5–6, because experience follows the base value and not the
+  floored level), and the kept as one kind in five realms. STORY.md §3.2 is the record; §7.1
+  above was rewritten to match, and the "fifty rows" this section used to promise never happened.
 
 ### 10.3 What this design asks of the engine, and what it leaves alone
 
@@ -741,7 +747,7 @@ Four things beyond that are deliberately left as *later* rather than assumed:
   window, so clearing a room of four buys four windows (`PLAN.md` §4.8).
 
   **The five act bosses are at 600 seconds** — `ossara-the-unclaimed`, `grask-the-creditor`,
-  `azhen-the-last-reader`, `nemhal-the-first-mourner`, `unlit-the-oldest-held`. Ten minutes rather
+  `azhen-the-last-reader`, `nemhal-the-first-mourner`, `unlit-the-first-held`. Ten minutes rather
   than the hour first proposed, and the reason is worth keeping: **each one drops its act's gate item
   at chance 1.0**, so its respawn is a progression gate. At an hour, a wipe costs an hour and two
   players who both need the item queue. A boss that should genuinely be hourly wants loot that gates

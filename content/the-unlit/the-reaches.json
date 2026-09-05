@@ -162,7 +162,7 @@
       "key": "the-unlit.the-crossing.the-held-things",
       "zoneKey": "the-unlit.the-crossing",
       "title": "The Held Things",
-      "description": "A place where the long held have gathered without meaning to, each of them holding what they came in with, none of them within reach of another.\n\nSulveth keeps what is lost. This is where it is kept.",
+      "description": "A place where the kept crossers have gathered without meaning to, each of them holding what they came in with, none of them within reach of another.\n\nSulveth keeps what is lost. This is where it is kept.",
       "flags": {},
       "grid": [
         "          .          ",
@@ -1344,8 +1344,8 @@
       "attacks": []
     },
     {
-      "key": "unlit-drift",
-      "name": "a drift",
+      "key": "unlit-drifter",
+      "name": "a drifter",
       "description": "A person shape that has been in the binding long enough to stop being one. It is not hostile. It is only still going.",
       "icon": "d",
       "level": 7,
@@ -1368,9 +1368,9 @@
       "attacks": []
     },
     {
-      "key": "unlit-the-long-held",
-      "name": "one of the long held",
-      "description": "It has been here since before Azhen measured anything, and it is still holding what it came in with.",
+      "key": "unlit-kept",
+      "name": "a kept crosser",
+      "description": "It has been here since before Azhen measured anything, and it is still holding what it came in with. Sulveth keeps what is lost, and this is where it is kept.",
       "icon": "L",
       "level": 8,
       "wanderIntervalPulses": 24,
@@ -1413,8 +1413,53 @@
       ]
     },
     {
-      "key": "unlit-the-oldest-held",
-      "name": "the oldest thing still holding on",
+      "key": "unlit-recognised",
+      "name": "a recognised crosser",
+      "description": "The Regard found this one. Whatever that means, it is what is left afterwards, and it is walking.",
+      "icon": "W",
+      "level": 9,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "armor": 28,
+        "damage": "8-14",
+        "health": 150,
+        "defense": 4
+      },
+      "baseXp": 180,
+      "baseGold": 27,
+      "behavior": {},
+      "loot": [
+        {
+          "chance": 0.35,
+          "itemTemplateKey": "unlit-carried-thing"
+        },
+        {
+          "chance": 0.12,
+          "itemTemplateKey": "unlit-long-blade"
+        }
+      ],
+      "attacks": [
+        {
+          "verb": "strike",
+          "delayPulses": 8,
+          "damageMultiplier": null,
+          "effectKey": null,
+          "effectParams": null
+        },
+        {
+          "verb": "fix",
+          "delayPulses": 40,
+          "damageMultiplier": null,
+          "effectKey": "control.stun",
+          "effectParams": {
+            "durationPulses": "8"
+          }
+        }
+      ]
+    },
+    {
+      "key": "unlit-the-first-held",
+      "name": "the First Held",
       "description": "It is not a god and it is not the binding. It is the first person who walked in here on purpose and did not stop.",
       "icon": "U",
       "level": 10,
@@ -1461,53 +1506,8 @@
       ]
     },
     {
-      "key": "unlit-the-recognised",
-      "name": "one of the recognised",
-      "description": "The Regard found this one. Whatever that means, it is what is left afterwards, and it is walking.",
-      "icon": "W",
-      "level": 9,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "armor": 28,
-        "damage": "8-14",
-        "health": 150,
-        "defense": 4
-      },
-      "baseXp": 180,
-      "baseGold": 27,
-      "behavior": {},
-      "loot": [
-        {
-          "chance": 0.35,
-          "itemTemplateKey": "unlit-carried-thing"
-        },
-        {
-          "chance": 0.12,
-          "itemTemplateKey": "unlit-long-blade"
-        }
-      ],
-      "attacks": [
-        {
-          "verb": "strike",
-          "delayPulses": 8,
-          "damageMultiplier": null,
-          "effectKey": null,
-          "effectParams": null
-        },
-        {
-          "verb": "fix",
-          "delayPulses": 40,
-          "damageMultiplier": null,
-          "effectKey": "control.stun",
-          "effectParams": {
-            "durationPulses": "8"
-          }
-        }
-      ]
-    },
-    {
       "key": "unlit-the-waiting-one",
-      "name": "someone who has been waiting",
+      "name": "the Waiting One",
       "description": "A woman sitting on a marker stone with her pack beside her, entirely present, entirely calm, and not from any Reach you can place. She walked in on purpose.",
       "icon": "@",
       "level": 24,
@@ -1536,7 +1536,34 @@
             "minSeconds": 240
           }
         ],
-        "wanders": false
+        "wanders": false,
+        "greeting": [
+          "'You can go <back>. I want you to know that before we talk.'",
+          "'Sit if you like. There is nothing here that minds.'"
+        ],
+        "topics": [
+          {
+            "keyword": "back",
+            "text": "'Most people do. The ring is a ring from this side too, and the way back is up, the same as everywhere. It costs you nothing but the walk. I would like you to. I say that to everyone, and I mean it every time.'"
+          },
+          {
+            "keyword": "markers",
+            "text": "'Ossara's road stones, at a hundred paces, all the way in. The old ones are worn smooth. There is no weather here, so that is not weather. I set the first one. I meant to walk to the face and back, and I wanted to be able to find the door.'"
+          },
+          {
+            "keyword": "forty",
+            "text": "'Forty sets of gear on the standing ground, laid out the way people lay out gear they mean to pick up again. I have counted arrivals for a very long time, and the number is much higher than forty. Most people go back. I want that written down somewhere.'"
+          },
+          {
+            "keyword": "face",
+            "text": "'Go and put your palm on it. It is neither warm nor cold; it is exactly the temperature of whatever touches it. It is curved, very slightly, towards you, and it is the size of everything. What it is watching for is behind you. That is not a riddle. Turn round.'"
+          },
+          {
+            "keyword": "yrriska",
+            "text": "She looks at you for a while. 'Everyone leaves her the same coin at the same shrine, and nobody agrees what she did. Untidy, they say. Got across by not minding what she stepped in.' She turns a worn stone over in her hands and does not say anything else, and after a while you understand that this is the answer.",
+            "requiresQuest": "a5-2-who-set-the-stones"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
@@ -3437,7 +3464,7 @@
     {
       "id": "04150229-b8b2-5c78-9778-385454115750",
       "zoneKey": "the-unlit.the-regard",
-      "templateKey": "unlit-the-recognised",
+      "templateKey": "unlit-recognised",
       "templateKind": "Mob",
       "roomKeys": [
         "the-unlit.the-regard.the-threshold",
@@ -3454,7 +3481,7 @@
     {
       "id": "208e98cc-df65-5001-8716-dc5a9f389dd3",
       "zoneKey": "the-unlit.the-crossing",
-      "templateKey": "unlit-the-long-held",
+      "templateKey": "unlit-kept",
       "templateKind": "Mob",
       "roomKeys": [
         "the-unlit.the-crossing.the-held-things",
@@ -3469,7 +3496,7 @@
     {
       "id": "21041aa7-2135-54f5-b9de-05ba9ef93c59",
       "zoneKey": "the-unlit.the-crossing",
-      "templateKey": "unlit-the-recognised",
+      "templateKey": "unlit-recognised",
       "templateKind": "Mob",
       "roomKeys": [
         "the-unlit.the-crossing.the-thinning-out",
@@ -3502,7 +3529,7 @@
     {
       "id": "bf8300a5-b32f-51ff-ab57-470402b06ebb",
       "zoneKey": "the-unlit.the-regard",
-      "templateKey": "unlit-the-long-held",
+      "templateKey": "unlit-kept",
       "templateKind": "Mob",
       "roomKeys": [
         "the-unlit.the-regard.the-carried-in",
@@ -3545,7 +3572,7 @@
     {
       "id": "eaae7863-31ee-58e7-baeb-df64acd3f65d",
       "zoneKey": "the-unlit.the-crossing",
-      "templateKey": "unlit-drift",
+      "templateKey": "unlit-drifter",
       "templateKind": "Mob",
       "roomKeys": [
         "the-unlit.the-crossing.the-first-stretch",
@@ -3561,7 +3588,7 @@
     {
       "id": "f65fbb5e-2b90-57c1-95b2-a2f0c95af8fc",
       "zoneKey": "the-unlit.the-regard",
-      "templateKey": "unlit-the-oldest-held",
+      "templateKey": "unlit-the-first-held",
       "templateKind": "Mob",
       "roomKeys": [
         "the-unlit.the-regard.the-facing-place"
@@ -3596,7 +3623,7 @@
       "dialogue": {
         "giverOffer": "'You can go back,' she says first. 'Say it back to me.' Then, when you have: 'Good. Bring me <eight things> that people carried in. Not things they dropped - things they were still holding.'",
         "turninReady": "She turns each one over. 'Forty sets of gear on the standing ground,' she says, 'and I have been counting arrivals for a very long time, and the number is much higher than forty.' She sets them down in a row. 'Most people go back. I want that written down somewhere.'",
-        "giverInProgress": "'Eight. The long held have them. They will not give them up, because that is the entire remaining content of them.'"
+        "giverInProgress": "'Eight. The kept crossers have them. They will not give them up, because that is the entire remaining content of them.'"
       },
       "sortOrder": 1
     },
@@ -3604,7 +3631,7 @@
       "key": "a5-2-who-set-the-stones",
       "zoneKey": "the-unlit.the-crossing",
       "name": "Who Set The Stones",
-      "summary": "Bring five worn markers to the one who has been waiting.",
+      "summary": "Bring five worn markers to the Waiting One.",
       "description": "The marker stones go all the way in, at a hundred paces, worn smoother the further you get. Somebody has been carrying Ossara's road into the binding for a very long time.",
       "giverMobKey": "unlit-the-waiting-one",
       "turninMobKey": "unlit-the-waiting-one",
@@ -3632,7 +3659,7 @@
       "key": "a5-3-what-is-owed",
       "zoneKey": "the-unlit.the-regard",
       "name": "What Is Owed",
-      "summary": "Take the answer from the oldest thing still holding on, and give it back.",
+      "summary": "Take the answer from the First Held, and give it back.",
       "description": "The instrument at Thessivar has held one position for four hundred years without ever needing to search. From the facing place you can see what it is looking at, and it is behind you.",
       "giverMobKey": "unlit-the-waiting-one",
       "turninMobKey": "unlit-the-waiting-one",

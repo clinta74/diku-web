@@ -495,9 +495,15 @@ thing that lets a *quest* NPC keep talking between quests (gated on their own ch
    `nemhal-hound` placed as "a hollow hound", the untold `nemhal-kept` "a kept priest"; the moth,
    lay brother and bell-ringer keep their plain names; ten spawners re-pointed as road, station
    and vigil; topics on Orrun, Aveth and Dell, which gives Sevveth his voice (Aveth prayed to him
-   when she said the word) and Dell the milestone that answers Immeth. The Unlit remains.
-4. Re-read WORLD.md §7.1 and §10.4 against what landed and correct them. (§7.1 was rewritten
-   with §4.1; §10.4 waits on the content pass.)
+   when she said the word) and Dell the milestone that answers Immeth. **The Unlit done
+   2026-09-04**: a drift is `unlit-drifter`, the long held `unlit-kept` "a kept crosser", the
+   recognised `unlit-recognised` "a recognised crosser", the boss `unlit-the-first-held` "the First
+   Held", and "someone who has been waiting" is **the Waiting One** on the template; seven
+   spawners re-pointed, three quest lines and one room reworded; the Waiting One has back,
+   markers, forty and the face, and - once the stones are brought - Yrriska, which she answers by
+   not answering. **The content pass is complete.**
+4. ~~Re-read WORLD.md §7.1 and §10.4 against what landed and correct them.~~ Done 2026-09-04: §7.1
+   was rewritten with §4.1, and §10.4 records the roster pass and the boss key.
 5. ~~Decide §4.5, and build it if the answer is yes.~~ Built 2026-09-04.
 
 ### 4.5 The canon belongs to the active world — built

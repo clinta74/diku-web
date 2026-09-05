@@ -3,7 +3,7 @@
 `WorldBundle` JSON for the Reaches. The design these transcribe is
 [docs/WORLD.md](../docs/WORLD.md).
 
-**The whole world is here**: five realms, eighteen zones, 238 rooms, 67 mob templates, 93 items,
+**The whole world is here**: five realms, eighteen zones, 238 rooms, 59 mob templates, 93 items,
 100 spawners and all five acts.
 
 **Merge them and import once** — see [Applying them](#applying-them). Importing the six files one at
