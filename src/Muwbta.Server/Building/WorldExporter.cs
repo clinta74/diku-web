@@ -322,12 +322,17 @@ public sealed class WorldExporter(MuwbtaDbContext db, TimeProvider clock)
             query = query.Where(c => c.Key == key);
         }
 
+        // Resolved, not stored: an empty row means "the text compiled into this server", and a
+        // bundle that carried the emptiness would hand the receiving server's build the decision.
+        // What travels is what the assist here is actually told (Assist.Canon.Resolve), so the
+        // bundle is complete on its own - and importing it back fills the row with the same words
+        // it was already reading.
         var carriesCanon = IsEverything(kind) || kind == ConfigurationScope;
         var configurations = await query.OrderBy(c => c.Key).ToListAsync(cancellationToken);
 
         return [.. configurations.Select(c => new BundleGameConfiguration(
             c.Key, c.Name, c.Description, c.StartingRoomKey, c.WelcomeMessage, c.BlockedWords,
-            carriesCanon ? c.Canon : null,
+            carriesCanon ? Assist.Canon.Resolve(c.Canon) : null,
             new List<string>(c.WorldKeys)))];
     }
 

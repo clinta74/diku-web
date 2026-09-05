@@ -196,9 +196,11 @@ public sealed record BundleGameConfiguration(
     string WelcomeMessage,
     string? BlockedWords = null,
     /// <summary>
-    /// The assist's canon, carried by a full export only. Null in a scoped bundle, and null on
-    /// import means "leave the stored one alone" - a realm's file must not blank what a builder
-    /// wrote in the panel. Optional for the same reason <paramref name="BlockedWords"/> is.
+    /// The assist's canon as the exporting server actually reads it - the row's own text, or the
+    /// one compiled into that server when the row is empty. Carried by a full export and by a
+    /// configuration's own; null in a realm's scoped bundle, and null on import means "leave the
+    /// stored one alone", so a realm's file cannot blank what a builder wrote in the panel.
+    /// Optional for the same reason <paramref name="BlockedWords"/> is.
     /// </summary>
     string? Canon = null,
     /// <summary>

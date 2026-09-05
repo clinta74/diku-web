@@ -108,6 +108,31 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
     }
 
+    /// <summary>
+    /// A configuration with no canon of its own is reading the built-in one, and that is what its
+    /// bundle carries - so the file stands on its own wherever it is imported.
+    /// </summary>
+    [Fact]
+    public async Task A_configuration_bundle_carries_the_canon_the_assist_actually_reads()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+        var (mine, myZone) = await BuilderClient.NewZoneAsync(client);
+
+        var key = $"plain-{Guid.NewGuid():N}"[..24];
+        (await client.PostAsJsonAsync(
+            $"/api/builder/configurations/{key}",
+            new { name = "Plain", startingRoomKey = $"{myZone}.start", worldKeys = new[] { mine } }))
+            .EnsureSuccessStatusCode();
+
+        var bundle = await BuilderClient.JsonAsync(await client.GetAsync(
+            new Uri($"/api/builder/export?configuration={key}", UriKind.Relative)));
+
+        var configuration = Assert.Single(bundle.GetProperty("configurations").EnumerateArray());
+        Assert.Contains("The Reaches", configuration.GetProperty("canon").GetString(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_zone_bundle_carries_the_templates_its_content_needs()
     {
