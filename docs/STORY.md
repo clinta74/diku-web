@@ -481,7 +481,12 @@ thing that lets a *quest* NPC keep talking between quests (gated on their own ch
    bosses. Export, merge, check, import — the existing path. **Ossara done 2026-09-04**: the eight
    global kinds seeded from its rows, `ossara-kept`, thirteen spawners re-pointed with their zone
    words, topics and marked greetings on Hesper, Corun, Adda, Pell, Sesk, Old Ossa and Vesh, and
-   the two unplaceable mites deleted. Grask, Azhen, Nemhal and the Unlit remain.
+   the two unplaceable mites deleted. **Grask done 2026-09-04**: cutpurse, boar, brigand and
+   lurcher reused from the global rows, `bruiser` added from its own, its trash kept at chassis
+   5–6 as `grask-rat`, `grask-crow` and `grask-hound`, the owed become `grask-kept` "a kept
+   miner", fifteen spawners re-pointed, and topics on Vance, Vech, Roan and the three shops
+   (Kheddran has a voice: Vech is his man, Vance swore to him). Azhen, Nemhal and the Unlit
+   remain.
 4. Re-read WORLD.md §7.1 and §10.4 against what landed and correct them. (§7.1 was rewritten
    with §4.1; §10.4 waits on the content pass.)
 5. ~~Decide §4.5, and build it if the answer is yes.~~ Built 2026-09-04.

@@ -370,7 +370,7 @@
       "key": "grask.stiltmarsh.the-hog-wallow",
       "zoneKey": "grask.stiltmarsh",
       "title": "The Hog Wallow",
-      "description": "A shelf of firm mud among the reeds, churned to soup and stinking, where the marsh hogs come out of the water to lie in the sun.\n\nThey are the size of the punts and they are not afraid of them.",
+      "description": "A shelf of firm mud among the reeds, churned to soup and stinking, where the marsh boars come out of the water to lie in the sun.\n\nThey are the size of the punts and they are not afraid of them.",
       "flags": {},
       "grid": [
         "\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
@@ -3022,6 +3022,80 @@
   ],
   "mobTemplates": [
     {
+      "key": "boar",
+      "name": "a boar",
+      "description": "Waist high at the shoulder and built entirely for going forward. It commits early and it takes a long moment to turn.",
+      "icon": "B",
+      "level": 6,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "armor": 6,
+        "damage": "5-10",
+        "health": 72
+      },
+      "baseXp": 120,
+      "baseGold": 18,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "brigand",
+      "name": "a brigand",
+      "description": "One of a crew holding ground nobody gave them. Well equipped, badly led, and very committed to the fiction.",
+      "icon": "t",
+      "level": 7,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "armor": 4,
+        "damage": "5-9",
+        "health": 58,
+        "defense": 1
+      },
+      "baseXp": 140,
+      "baseGold": 21,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "bruiser",
+      "name": "a bruiser",
+      "description": "Paid to be somewhere and be large about it. Not enthusiastic, extremely thorough.",
+      "icon": "t",
+      "level": 8,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "armor": 5,
+        "damage": "6-11",
+        "health": 84,
+        "defense": 1
+      },
+      "baseXp": 160,
+      "baseGold": 24,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "cutpurse",
+      "name": "a cutpurse",
+      "description": "Light, fast, and a week ahead of a question they did not want to answer.",
+      "icon": "p",
+      "level": 5,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "damage": "3-7",
+        "health": 40,
+        "defense": 1
+      },
+      "baseXp": 100,
+      "baseGold": 15,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
       "key": "epic-smith-vesh",
       "name": "Vesh, who follows the gates",
       "description": "A smith with a travelling anvil and no forge, who has been at every crossing anyone can remember and looks no older in any of the stories. She works for materials and will not take coin.",
@@ -3072,43 +3146,6 @@
       "attacks": []
     },
     {
-      "key": "grask-claimjumper",
-      "name": "a claimjumper",
-      "description": "Fast, light, and holding a cleaver over a boundary that was redrawn last week by somebody neither of you has met.",
-      "icon": "p",
-      "level": 7,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "damage": "5-9",
-        "health": 58,
-        "defense": 1
-      },
-      "baseXp": 140,
-      "baseGold": 21,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
-      "key": "grask-company-bruiser",
-      "name": "a company bruiser",
-      "description": "Paid to be somewhere and be large about it. Not enthusiastic, extremely thorough.",
-      "icon": "t",
-      "level": 8,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "armor": 5,
-        "damage": "6-11",
-        "health": 84,
-        "defense": 1
-      },
-      "baseXp": 160,
-      "baseGold": 24,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
       "key": "grask-company-clerk",
       "name": "Reddick Vance, company clerk",
       "description": "He hires crews for the deep cut, is scrupulously honest about the pay, and changes the subject with real skill when asked what is down there.",
@@ -3134,7 +3171,45 @@
             "minSeconds": 300
           }
         ],
-        "wanders": false
+        "wanders": false,
+        "greeting": [
+          "'The pay is the pay. I have never short-changed anyone. Ask about the <pay> if you doubt it.'",
+          "'Names on the left, marks on the right. Everything I hire is on this list, and most of what I hire comes back.'"
+        ],
+        "topics": [
+          {
+            "keyword": "pay",
+            "text": "'Company rate, paid weekly, paid in full. I swore to Kheddran on it when I took the post and I have not needed to think about the oath since, which is what an oath is for.'"
+          },
+          {
+            "keyword": "kheddran",
+            "text": "'The given word. A clerk's god, if a clerk has one. You write a name against a promise and the promise is kept or you are not a clerk any more. That is the whole religion, and it fits on a ledger line.'"
+          },
+          {
+            "keyword": "company",
+            "text": "'The first company. Two generations back, before the Landing had a name. They opened the gate and went down, and the book says they were paid. It does not say by whom. I have hired for eleven years and never once seen one of their tags come up on its own.'",
+            "requiresQuest": "a2-1-signed-on"
+          }
+        ]
+      },
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "grask-crow",
+      "name": "a crow",
+      "description": "It has worked out which crates hold food and which hands hold food, and it prefers the hands.",
+      "icon": "c",
+      "level": 5,
+      "wanderIntervalPulses": 180,
+      "baseStats": {
+        "damage": "3-7",
+        "health": 40
+      },
+      "baseXp": 100,
+      "baseGold": 15,
+      "behavior": {
+        "wanders": true
       },
       "loot": [],
       "attacks": []
@@ -3165,14 +3240,32 @@
             "minSeconds": 300
           }
         ],
-        "wanders": false
+        "wanders": false,
+        "greeting": [
+          "'It does not pay down there. Work it out, and then come and ask me about the <sump>.'"
+        ],
+        "topics": [
+          {
+            "keyword": "sump",
+            "text": "'Black water at the bottom of a shaft, and a rope going into it that has been there long enough to grow a skin. The rope is taut. Do not touch the rope. I am not superstitious, and I am telling you not to touch the rope.'"
+          },
+          {
+            "keyword": "pumps",
+            "text": "'Three of them, two working, and the mountings they sit on were cut by somebody who knew what they were doing and did not work for the company. Square, to a tolerance, older than the cut. We built on top of them. We did not build them.'"
+          },
+          {
+            "keyword": "azhen",
+            "text": "'You have seen it, then. Every gate in the Reaches, and the mountings under my pumps, and the stone the first company cut its mark into. They were here before any of us and they left the instruments running. Ask them what the terms were. We plainly did not.'",
+            "requiresFlag": "attuned.azhen"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
     },
     {
-      "key": "grask-dock-cur",
-      "name": "a dock cur",
+      "key": "grask-hound",
+      "name": "a hound",
       "description": "Half the Landing feeds them and none of them belong to anybody. They work in fours.",
       "icon": "d",
       "level": 6,
@@ -3184,25 +3277,6 @@
       "baseXp": 120,
       "baseGold": 18,
       "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
-      "key": "grask-gullrat",
-      "name": "a pier gull",
-      "description": "It has worked out which crates hold food and which hands hold food, and it prefers the hands.",
-      "icon": "c",
-      "level": 5,
-      "wanderIntervalPulses": 180,
-      "baseStats": {
-        "damage": "3-7",
-        "health": 40
-      },
-      "baseXp": 100,
-      "baseGold": 15,
-      "behavior": {
-        "wanders": true
-      },
       "loot": [],
       "attacks": []
     },
@@ -3234,28 +3308,60 @@
         ],
         "markup": 0.4,
         "wanders": false,
-        "shopkeeper": true
+        "shopkeeper": true,
+        "greeting": [
+          "'Broken metal by weight, shaped metal by the piece. The difference is my <margin>.'"
+        ],
+        "topics": [
+          {
+            "keyword": "margin",
+            "text": "'Fair, if you ask. Generous, if you do not. Everything in Grask is marked up twice on its way to you, and I am only one of the two.'"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
     },
     {
-      "key": "grask-marsh-hog",
-      "name": "a marsh hog",
-      "description": "It has been eating well. Everything in Grask has been eating well. That is the problem with Ravvan.",
-      "icon": "B",
-      "level": 8,
+      "key": "grask-kept",
+      "name": "a kept miner",
+      "description": "A crew member of the first company, still in their kit, still on shift. Mhorrek does not forgive and does not forget to collect.",
+      "icon": "W",
+      "level": 9,
       "wanderIntervalPulses": 24,
       "baseStats": {
-        "armor": 7,
-        "damage": "6-11",
-        "health": 88
+        "armor": 11,
+        "damage": "7-12",
+        "health": 100,
+        "defense": 2
       },
-      "baseXp": 160,
-      "baseGold": 24,
+      "baseXp": 180,
+      "baseGold": 27,
       "behavior": {},
-      "loot": [],
-      "attacks": []
+      "loot": [
+        {
+          "chance": 0.5,
+          "itemTemplateKey": "grask-crew-tag"
+        }
+      ],
+      "attacks": [
+        {
+          "verb": "strike",
+          "delayPulses": 8,
+          "damageMultiplier": null,
+          "effectKey": null,
+          "effectParams": null
+        },
+        {
+          "verb": "call in",
+          "delayPulses": 40,
+          "damageMultiplier": null,
+          "effectKey": "control.stun",
+          "effectParams": {
+            "durationPulses": "8"
+          }
+        }
+      ]
     },
     {
       "key": "grask-outfitter",
@@ -3290,7 +3396,16 @@
         ],
         "markup": 0.35,
         "wanders": false,
-        "shopkeeper": true
+        "shopkeeper": true,
+        "greeting": [
+          "'You will want the boots. You will not want the price of the boots. Ask about the <lamp> before you go down.'"
+        ],
+        "topics": [
+          {
+            "keyword": "lamp",
+            "text": "'Hooded pit lamp. Hangs off you, not off your hand, so you keep the hand for a shield. Eight times the price of a torch, and the Owing is dark all the way down, so you decide what a hand is worth.'"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
@@ -3325,7 +3440,16 @@
         ],
         "markup": 0.3,
         "wanders": false,
-        "shopkeeper": true
+        "shopkeeper": true,
+        "greeting": [
+          "'Three days of water. Not two. I have seen two. Ask about <water> and I will say it again.'"
+        ],
+        "topics": [
+          {
+            "keyword": "water",
+            "text": "'The cut is dry and the marsh is not drinkable and the Owing is neither. Three days, in skins, on your back. The people who took two are the reason I say three.'"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
@@ -3359,64 +3483,48 @@
         "wanders": false,
         "greeting": [
           "'If you carried it through the gate, it is in the book. If it is not in the book, you did not.'",
-          "He blinks at you, slowly. 'Name and load. Or step aside. Preferably both.'"
+          "He blinks at you, slowly. 'Name and load. Or step aside. Preferably both.'",
+          "'Everything that crosses is in the <book>. Ask about it and I will show you the column it is in.'"
+        ],
+        "topics": [
+          {
+            "keyword": "book",
+            "text": "'Every load, every name, both directions, since the crossing opened. I have never once been caught out on a number. I am also, as you can see, a week from falling over. Those are the same fact.'"
+          },
+          {
+            "keyword": "gate",
+            "text": "'It works. It has always worked. A crew of four steps loads off all day and nobody has ever asked it to do anything else. The Ossaran one stopped, I hear. Ask me what that costs and I will tell you I do not know.'"
+          },
+          {
+            "keyword": "kheddran",
+            "text": "'Mine, as it happens. A notary who logs a gate is exactly what his clergy look like. The book is the oath: if it is not in the book, it did not cross. If that sounds like theology, it is because it is.'"
+          },
+          {
+            "keyword": "company",
+            "text": "'The first company is in the book. Eleven names, going down. There is no line for them coming back up, and the book has never been wrong, so draw your own conclusion. I drew mine years ago and I have not slept properly since.'",
+            "requiresQuest": "a2-1-signed-on"
+          }
         ]
       },
       "loot": [],
       "attacks": []
     },
     {
-      "key": "grask-spoil-picker",
-      "name": "a spoil picker",
-      "description": "Working the tailings for anything the company missed, which is a crime, which is why they swing first.",
-      "icon": "h",
-      "level": 6,
+      "key": "grask-rat",
+      "name": "a rat",
+      "description": "Bigger than the Ossaran kind and entirely unbothered by lamplight.",
+      "icon": "r",
+      "level": 5,
       "wanderIntervalPulses": 24,
       "baseStats": {
-        "damage": "5-10",
-        "health": 72
+        "damage": "3-7",
+        "health": 40
       },
-      "baseXp": 120,
-      "baseGold": 18,
+      "baseXp": 100,
+      "baseGold": 15,
       "behavior": {},
       "loot": [],
       "attacks": []
-    },
-    {
-      "key": "grask-stilt-lurker",
-      "name": "a stilt lurker",
-      "description": "It lives under the walkways where the water is black and it takes hold of a leg and does not let go.",
-      "icon": "L",
-      "level": 9,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "armor": 9,
-        "damage": "7-12",
-        "health": 96,
-        "defense": 2
-      },
-      "baseXp": 180,
-      "baseGold": 27,
-      "behavior": {},
-      "loot": [],
-      "attacks": [
-        {
-          "verb": "seize",
-          "delayPulses": 8,
-          "damageMultiplier": null,
-          "effectKey": null,
-          "effectParams": null
-        },
-        {
-          "verb": "drag under",
-          "delayPulses": 32,
-          "damageMultiplier": null,
-          "effectKey": "control.root",
-          "effectParams": {
-            "durationPulses": "20"
-          }
-        }
-      ]
     },
     {
       "key": "grask-the-creditor",
@@ -3467,62 +3575,40 @@
       ]
     },
     {
-      "key": "grask-the-owed",
-      "name": "one of the owed",
-      "description": "A crew member of the first company, still in their kit, still on shift. Mhorrek does not forgive and does not forget to collect.",
-      "icon": "W",
-      "level": 9,
+      "key": "lurcher",
+      "name": "a lurcher",
+      "description": "Long, low and the colour of whatever it is lying in. It does not chase. It waits where the way narrows and it gets a grip on you.",
+      "icon": "L",
+      "level": 8,
       "wanderIntervalPulses": 24,
       "baseStats": {
-        "armor": 11,
-        "damage": "7-12",
-        "health": 100,
+        "armor": 8,
+        "damage": "6-11",
+        "health": 84,
         "defense": 2
       },
-      "baseXp": 180,
-      "baseGold": 27,
+      "baseXp": 160,
+      "baseGold": 24,
       "behavior": {},
-      "loot": [
-        {
-          "chance": 0.5,
-          "itemTemplateKey": "grask-crew-tag"
-        }
-      ],
+      "loot": [],
       "attacks": [
         {
-          "verb": "strike",
+          "verb": "bite",
           "delayPulses": 8,
           "damageMultiplier": null,
           "effectKey": null,
           "effectParams": null
         },
         {
-          "verb": "call in",
-          "delayPulses": 40,
+          "verb": "drag down",
+          "delayPulses": 32,
           "damageMultiplier": null,
-          "effectKey": "control.stun",
+          "effectKey": "control.root",
           "effectParams": {
-            "durationPulses": "8"
+            "durationPulses": "16"
           }
         }
       ]
-    },
-    {
-      "key": "grask-wharf-rat",
-      "name": "a wharf rat",
-      "description": "Bigger than the Ossaran kind and entirely unbothered by lamplight.",
-      "icon": "r",
-      "level": 5,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "damage": "3-7",
-        "health": 40
-      },
-      "baseXp": 100,
-      "baseGold": 15,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
     }
   ],
   "abilities": [
@@ -5437,7 +5523,7 @@
     {
       "id": "3460f3da-0ff3-50b9-9e25-374f422c0ee7",
       "zoneKey": "grask.stiltmarsh",
-      "templateKey": "grask-marsh-hog",
+      "templateKey": "boar",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.stiltmarsh.the-hog-wallow",
@@ -5447,12 +5533,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "marsh"
     },
     {
       "id": "5084bf24-4375-5985-8569-c083e2c7bd34",
       "zoneKey": "grask.stiltmarsh",
-      "templateKey": "grask-claimjumper",
+      "templateKey": "brigand",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.stiltmarsh.the-sunk-claim",
@@ -5462,12 +5548,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "marsh"
     },
     {
       "id": "52d1534c-ed32-56a6-a8cb-b5f5927ffc23",
       "zoneKey": "grask.the-cutting",
-      "templateKey": "grask-claimjumper",
+      "templateKey": "brigand",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.the-cutting.the-claim-line",
@@ -5477,12 +5563,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "claim"
     },
     {
       "id": "6be8bbfc-a501-53f6-9db0-4c80779239ab",
       "zoneKey": "grask.the-owing",
-      "templateKey": "grask-stilt-lurker",
+      "templateKey": "lurcher",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.the-owing.the-deep-sump",
@@ -5492,12 +5578,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "deep"
     },
     {
       "id": "750ca7ad-2cd0-5f7c-bea6-b023d9037dd0",
       "zoneKey": "grask.stiltmarsh",
-      "templateKey": "grask-gullrat",
+      "templateKey": "grask-crow",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.stiltmarsh.the-eel-traps",
@@ -5507,12 +5593,12 @@
       "respawnSeconds": 60,
       "wanders": true,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "pier"
     },
     {
       "id": "764ad736-924e-5930-b942-1a2477609626",
       "zoneKey": "grask.the-cutting",
-      "templateKey": "grask-company-bruiser",
+      "templateKey": "bruiser",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.the-cutting.the-third-bench",
@@ -5523,12 +5609,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "company"
     },
     {
       "id": "7e19aaab-9f26-5882-a190-a8b3aac28424",
       "zoneKey": "grask.the-cutting",
-      "templateKey": "grask-stilt-lurker",
+      "templateKey": "lurcher",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.the-cutting.the-drowned-bench"
@@ -5537,7 +5623,7 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "stilt"
     },
     {
       "id": "7f52bbd0-1071-58bf-acf7-f83dc3e2a76c",
@@ -5570,7 +5656,7 @@
     {
       "id": "8be728a6-e7e0-538a-bd2f-427232840725",
       "zoneKey": "grask.the-cutting",
-      "templateKey": "grask-wharf-rat",
+      "templateKey": "grask-rat",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.the-cutting.the-water-adit"
@@ -5579,7 +5665,7 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "wharf"
     },
     {
       "id": "8dc228db-46e2-5581-b32c-6135cdba452a",
@@ -5598,7 +5684,7 @@
     {
       "id": "96c83f34-e9b8-55c5-8abc-2da15f781624",
       "zoneKey": "grask.the-cutting",
-      "templateKey": "grask-spoil-picker",
+      "templateKey": "cutpurse",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.the-cutting.the-spoil-run",
@@ -5608,7 +5694,7 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "claim"
     },
     {
       "id": "9a66f4be-8122-5371-8a0c-4a0e7909183b",
@@ -5627,7 +5713,7 @@
     {
       "id": "9eca856a-e339-5b78-ad07-30536c11313c",
       "zoneKey": "grask.the-owing",
-      "templateKey": "grask-the-owed",
+      "templateKey": "grask-kept",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.the-owing.the-abandoned-face",
@@ -5701,7 +5787,7 @@
     {
       "id": "b5749437-79c3-5588-9ff5-d493a138a381",
       "zoneKey": "grask.the-cutting",
-      "templateKey": "grask-dock-cur",
+      "templateKey": "grask-hound",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.the-cutting.the-first-ramp",
@@ -5711,12 +5797,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "dock"
     },
     {
       "id": "ba265a30-5583-5b55-98c9-9b0789b7f5b5",
       "zoneKey": "grask.stiltmarsh",
-      "templateKey": "grask-the-owed",
+      "templateKey": "grask-kept",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.stiltmarsh.the-old-piles",
@@ -5731,7 +5817,7 @@
     {
       "id": "d2cfb0e1-0d1e-595a-b61a-29e8077b3a24",
       "zoneKey": "grask.stiltmarsh",
-      "templateKey": "grask-company-bruiser",
+      "templateKey": "bruiser",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.stiltmarsh.the-first-platform",
@@ -5741,12 +5827,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "company"
     },
     {
       "id": "da7d6493-7783-500f-8743-b3a367e2209e",
       "zoneKey": "grask.stiltmarsh",
-      "templateKey": "grask-stilt-lurker",
+      "templateKey": "lurcher",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.stiltmarsh.the-underdeck",
@@ -5757,12 +5843,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "stilt"
     },
     {
       "id": "dc34d86d-d1af-5609-9df5-4f262bbf14b6",
       "zoneKey": "grask.the-owing",
-      "templateKey": "grask-company-bruiser",
+      "templateKey": "bruiser",
       "templateKind": "Mob",
       "roomKeys": [
         "grask.the-owing.the-first-turn",
@@ -5772,7 +5858,7 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "company"
     }
   ],
   "quests": [
@@ -5780,7 +5866,7 @@
       "key": "a2-1-signed-on",
       "zoneKey": "grask.the-owing",
       "name": "Signed On",
-      "summary": "Recover eight crew tags from the owed.",
+      "summary": "Recover eight crew tags from the kept miners.",
       "description": "The company would like its tags back. Vance is careful to say that this is about the tags, and careful not to say anything about who is wearing them.",
       "giverMobKey": "grask-company-clerk",
       "turninMobKey": "grask-company-clerk",
