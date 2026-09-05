@@ -3251,23 +3251,31 @@
         ],
         "markup": 0.25,
         "wanders": false,
-        "shopkeeper": true
+        "shopkeeper": true,
+        "greeting": [
+          "'Bring me cogs. I will buy every cog you find and I will not ask. Ask me about the <book> if you want to know why.'"
+        ],
+        "topics": [
+          {
+            "keyword": "book",
+            "text": "'Buying book, not selling. Nine years of it. Everything that comes out of the halls goes in with a weight beside it, and the weights add up to a number I send back through the gate every month, to people who do not tell me what they want it for. That is the whole trade in Azhen.'"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
     },
     {
-      "key": "azhen-clamp-arm",
-      "name": "a clamp arm",
-      "description": "A mounting arm that has come off its rail and retained its whole purpose, which is to hold something absolutely still.",
-      "icon": "L",
+      "key": "azhen-engine",
+      "name": "an engine",
+      "description": "Built to move counterweights and to hold them absolutely still. Slow, direct, and it does not know what it is pushing.",
+      "icon": "B",
       "level": 9,
       "wanderIntervalPulses": 24,
       "baseStats": {
-        "armor": 12,
+        "armor": 10,
         "damage": "7-12",
-        "health": 104,
-        "defense": 2
+        "health": 100
       },
       "baseXp": 180,
       "baseGold": 27,
@@ -3298,24 +3306,6 @@
       ]
     },
     {
-      "key": "azhen-housing-hauler",
-      "name": "a housing hauler",
-      "description": "Built to move counterweights. Slow, direct, and it does not know what it is pushing.",
-      "icon": "B",
-      "level": 9,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "armor": 10,
-        "damage": "7-12",
-        "health": 100
-      },
-      "baseXp": 180,
-      "baseGold": 27,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
       "key": "azhen-instrument-scholar",
       "name": "Bellic Vane, who reads the plates",
       "description": "The only person alive who can work an Azhen instrument, and painfully aware that this is a low bar and that he set it.",
@@ -3341,50 +3331,32 @@
             "minSeconds": 300
           }
         ],
-        "wanders": false
+        "wanders": false,
+        "greeting": [
+          "'It is still taking readings. That is not the strange part. Ask about the <readings> if you want the strange part.'"
+        ],
+        "topics": [
+          {
+            "keyword": "readings",
+            "text": "'Four hundred years of plates, one a day, and the last hundred scraped blank from the inside. Not lost. Removed. People do not carefully destroy a thing they think is wrong.'"
+          },
+          {
+            "keyword": "regard",
+            "text": "'Everyone says attention, as though the dark were looking at us. The instrument does not agree. It has held one position for four centuries and never once had to search. That is not attention. Attention wanders.'"
+          },
+          {
+            "keyword": "seat",
+            "text": "'One seat on the observation floor, occupied since the last reading. I did not look through the eyepiece on the way past. I asked you not to, and I did not myself. I have the blank. I do not need to see the thing it describes.'",
+            "requiresQuest": "a3-3-what-it-is-watching-for"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
     },
     {
-      "key": "azhen-instrument-warden",
-      "name": "an instrument warden",
-      "description": "Bronze, human-shaped, and posted. It has held this door since Azhimet had clergy.",
-      "icon": "t",
-      "level": 9,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "armor": 8,
-        "damage": "7-12",
-        "health": 96,
-        "defense": 2
-      },
-      "baseXp": 180,
-      "baseGold": 27,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
-      "key": "azhen-lens-grinder",
-      "name": "a lens grinder",
-      "description": "A frame with arms, still grinding, still to the same tolerance, on glass that ran out a century ago.",
-      "icon": "h",
-      "level": 8,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "damage": "6-11",
-        "health": 84
-      },
-      "baseXp": 160,
-      "baseGold": 24,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
-      "key": "azhen-one-who-stayed",
-      "name": "one who stayed",
+      "key": "azhen-kept",
+      "name": "a kept scholar",
       "description": "A scholar of Azhimet in a bronze mantle, still at the instrument, still taking the reading. They did not die and they did not leave.",
       "icon": "W",
       "level": 10,
@@ -3424,6 +3396,29 @@
       ]
     },
     {
+      "key": "azhen-servitor",
+      "name": "a servitor",
+      "description": "A maintenance thing of bronze, knee high or head high depending on its station, still doing its round of a hall nobody is in. It objects to obstructions.",
+      "icon": "p",
+      "level": 8,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "damage": "6-11",
+        "health": 84,
+        "defense": 2
+      },
+      "baseXp": 160,
+      "baseGold": 24,
+      "behavior": {},
+      "loot": [
+        {
+          "chance": 0.4,
+          "itemTemplateKey": "azhen-drive-cog"
+        }
+      ],
+      "attacks": []
+    },
+    {
       "key": "azhen-survey-lead",
       "name": "Survey-lead Immeth",
       "description": "She has been cataloguing Azhen for nine years with a crew of four and has stopped expecting to finish.",
@@ -3452,55 +3447,30 @@
         "wanders": false,
         "greeting": [
           "'Nine years,' she says, not looking up. 'I am about a third through. Do not ask me a third of what.'",
-          "'If you find a room in Azhen that is not square, come and tell me. It has not happened yet.'"
+          "'If you find a room in Azhen that is not square, come and tell me. It has not happened yet.'",
+          "'Everything here was built to a <tolerance>. Everything. Ask why.'"
+        ],
+        "topics": [
+          {
+            "keyword": "tolerance",
+            "text": "'A cog cut four hundred years ago seats in a housing today with a click. They built as though they expected to be replacing parts this afternoon. Either they were very sure of themselves, or they were very sure of something else.'"
+          },
+          {
+            "keyword": "square",
+            "text": "'Nine years, four of us, and not one room out of true. Not one. People call it craftsmanship. Craftsmanship has an off day. This never did.'"
+          },
+          {
+            "keyword": "measure",
+            "text": "'They had a unit. It is not ours and it is not any settler's, and it is cut into every doorframe in Azhen. I have it to four places and I do not know what it is a fraction of.'"
+          },
+          {
+            "keyword": "milestone",
+            "text": "'There is a milestone on the road in Nemhal cut in that same unit. I have seen a rubbing. They were there before the Hold, before the cult, before anybody, and they measured the distance to where a god would later lie down. I do not sleep well on that one.'",
+            "requiresFlag": "attuned.nemhal"
+          }
         ]
       },
       "loot": [],
-      "attacks": []
-    },
-    {
-      "key": "azhen-sweeper",
-      "name": "a floor sweeper",
-      "description": "Knee high, six legs, and it works in threes because it was designed to. It objects to obstructions.",
-      "icon": "d",
-      "level": 8,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "damage": "6-11",
-        "health": 84
-      },
-      "baseXp": 160,
-      "baseGold": 24,
-      "behavior": {},
-      "loot": [
-        {
-          "chance": 0.35,
-          "itemTemplateKey": "azhen-drive-cog"
-        }
-      ],
-      "attacks": []
-    },
-    {
-      "key": "azhen-tally-servitor",
-      "name": "a tally servitor",
-      "description": "It moves fast between stations and it does not stop for people because people were never on its route.",
-      "icon": "p",
-      "level": 8,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "damage": "6-11",
-        "health": 84,
-        "defense": 2
-      },
-      "baseXp": 160,
-      "baseGold": 24,
-      "behavior": {},
-      "loot": [
-        {
-          "chance": 0.4,
-          "itemTemplateKey": "azhen-drive-cog"
-        }
-      ],
       "attacks": []
     },
     {
@@ -3550,6 +3520,25 @@
           }
         }
       ]
+    },
+    {
+      "key": "azhen-warden",
+      "name": "a warden",
+      "description": "Bronze, human-shaped, and posted. It has held this door since Azhimet had clergy.",
+      "icon": "t",
+      "level": 9,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "armor": 8,
+        "damage": "7-12",
+        "health": 96,
+        "defense": 2
+      },
+      "baseXp": 180,
+      "baseGold": 27,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
     },
     {
       "key": "epic-smith-vesh",
@@ -5525,7 +5514,7 @@
     {
       "id": "339b5fb6-061b-5166-8d97-5cfb1ddec8aa",
       "zoneKey": "azhen.serrivet",
-      "templateKey": "azhen-clamp-arm",
+      "templateKey": "azhen-engine",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.serrivet.the-broken-mount",
@@ -5536,12 +5525,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "yard"
     },
     {
       "id": "3466fc8d-e2df-5a7b-a6f4-0477489aae7e",
       "zoneKey": "azhen.thessivar",
-      "templateKey": "azhen-instrument-warden",
+      "templateKey": "azhen-warden",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.thessivar.the-entry-court",
@@ -5551,12 +5540,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "tower"
     },
     {
       "id": "383537a0-3c78-549f-a7d6-a1c5ebccd5fc",
       "zoneKey": "azhen.serrivet",
-      "templateKey": "azhen-housing-hauler",
+      "templateKey": "azhen-engine",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.serrivet.the-drag-line",
@@ -5566,12 +5555,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "yard"
     },
     {
       "id": "3bb47792-4c36-5273-a381-5cfbd44c1147",
       "zoneKey": "azhen.ummath",
-      "templateKey": "azhen-instrument-warden",
+      "templateKey": "azhen-warden",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.ummath.the-warden-post",
@@ -5582,7 +5571,7 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "hall"
     },
     {
       "id": "47b8425b-b9b3-582d-8a95-5c2ebfbeb853",
@@ -5601,7 +5590,7 @@
     {
       "id": "624652a9-69b0-5f6c-8ddd-192fed2c4c8f",
       "zoneKey": "azhen.thessivar",
-      "templateKey": "azhen-clamp-arm",
+      "templateKey": "azhen-engine",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.thessivar.the-lower-gearing",
@@ -5612,7 +5601,7 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "tower"
     },
     {
       "id": "74d1d343-f35f-5fdb-8fac-9671c2306026",
@@ -5646,7 +5635,7 @@
     {
       "id": "8a9f3ffb-2e28-5918-928c-2724b73ea6f2",
       "zoneKey": "azhen.ummath",
-      "templateKey": "azhen-lens-grinder",
+      "templateKey": "azhen-servitor",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.ummath.the-grinding-room",
@@ -5656,7 +5645,7 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "hall"
     },
     {
       "id": "b3143753-b42a-5cd4-bd2f-bbfe9b2f8266",
@@ -5675,7 +5664,7 @@
     {
       "id": "b4e58994-9e32-5ec7-83dd-f5f3844aaf4a",
       "zoneKey": "azhen.ummath",
-      "templateKey": "azhen-housing-hauler",
+      "templateKey": "azhen-engine",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.ummath.the-counterweight-shaft",
@@ -5685,12 +5674,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "hall"
     },
     {
       "id": "b96b9779-dc58-5f29-9c31-1548f86f5f75",
       "zoneKey": "azhen.ummath",
-      "templateKey": "azhen-sweeper",
+      "templateKey": "azhen-servitor",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.ummath.the-sweeper-run",
@@ -5701,12 +5690,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "hall"
     },
     {
       "id": "be4c08e9-bc8b-5b4a-9148-4e5190882283",
       "zoneKey": "azhen.thessivar",
-      "templateKey": "azhen-one-who-stayed",
+      "templateKey": "azhen-kept",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.thessivar.the-observation-floor",
@@ -5724,7 +5713,7 @@
     {
       "id": "c3bcf7cc-7f03-52cc-84ea-664e973caa62",
       "zoneKey": "azhen.serrivet",
-      "templateKey": "azhen-instrument-warden",
+      "templateKey": "azhen-warden",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.serrivet.the-approach",
@@ -5735,12 +5724,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "yard"
     },
     {
       "id": "d9ab7be9-afdf-50df-9709-ad3e9ac1190f",
       "zoneKey": "azhen.serrivet",
-      "templateKey": "azhen-one-who-stayed",
+      "templateKey": "azhen-kept",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.serrivet.the-counting-house",
@@ -5769,7 +5758,7 @@
     {
       "id": "f2d87d48-50e2-5dd5-b901-e3f550ea8d8a",
       "zoneKey": "azhen.serrivet",
-      "templateKey": "azhen-tally-servitor",
+      "templateKey": "azhen-servitor",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.serrivet.the-cable-run",
@@ -5779,12 +5768,12 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "yard"
     },
     {
       "id": "f5f6468c-3cec-556c-bcf3-958cca1d30d3",
       "zoneKey": "azhen.ummath",
-      "templateKey": "azhen-tally-servitor",
+      "templateKey": "azhen-servitor",
       "templateKind": "Mob",
       "roomKeys": [
         "azhen.ummath.the-standing-rail",
@@ -5794,7 +5783,7 @@
       "respawnSeconds": 60,
       "wanders": false,
       "fightsAtLevel": null,
-      "nameModifier": null
+      "nameModifier": "hall"
     },
     {
       "id": "fabb5d2c-2d5d-5d96-991e-3754404d7fbe",
