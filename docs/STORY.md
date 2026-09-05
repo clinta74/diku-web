@@ -478,7 +478,10 @@ thing that lets a *quest* NPC keep talking between quests (gated on their own ch
 1. Review this document; settle the roster names and the thread list.
 2. ~~Build §4.1 and §4.2.~~ Done 2026-09-04.
 3. Content pass, one realm at a time, Ossara first: roster and modifiers, then topics, then the
-   bosses. Export, merge, check, import — the existing path.
+   bosses. Export, merge, check, import — the existing path. **Ossara done 2026-09-04**: the eight
+   global kinds seeded from its rows, `ossara-kept`, thirteen spawners re-pointed with their zone
+   words, topics and marked greetings on Hesper, Corun, Adda, Pell, Sesk, Old Ossa and Vesh, and
+   the two unplaceable mites deleted. Grask, Azhen, Nemhal and the Unlit remain.
 4. Re-read WORLD.md §7.1 and §10.4 against what landed and correct them. (§7.1 was rewritten
    with §4.1; §10.4 waits on the content pass.)
 5. ~~Decide §4.5, and build it if the answer is yes.~~ Built 2026-09-04.

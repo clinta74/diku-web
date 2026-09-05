@@ -1287,7 +1287,17 @@
         "wanders": false,
         "greeting": [
           "'You want across? Then you want me standing up. Give me a moment.'",
-          "'Ossa is the river and Ossa is me. Pick whichever one gets you over.'"
+          "'Ossa is the river and Ossa is me. Pick whichever one gets you over. Ask about the <rope> if you doubt it.'"
+        ],
+        "topics": [
+          {
+            "keyword": "rope",
+            "text": "'Spliced in eleven places and each splice dated in tar. The newest is this spring. The oldest is older than the deacon. It has never once let go, which is more than I can say for the deacon.'"
+          },
+          {
+            "keyword": "river",
+            "text": "'Slow and brown and close enough to shout across, which everybody does. It does not go anywhere in particular. Neither do I. We get on.'"
+          }
         ]
       },
       "loot": [],
@@ -1358,7 +1368,25 @@
             "minSeconds": 300
           }
         ],
-        "wanders": false
+        "wanders": false,
+        "greeting": [
+          "'Ilvaro's house. Weddings, inquests, and the big pot. Ask me about the <markers> if you are going out that way.'"
+        ],
+        "topics": [
+          {
+            "keyword": "ilvaro",
+            "text": "'Open-handed, faintly ridiculous, and genuinely beloved. His festivals involve too much food. I am the fourth deacon in six years, which tells you how demanding the post is and how badly I wanted it.'"
+          },
+          {
+            "keyword": "markers",
+            "text": "'Shaped stones every thirty paces, out to the rim, each cut with a mark that is not any letter we use. Nobody here cut them. Nobody here knows who did. Half of them are down, which is where you come in.'"
+          },
+          {
+            "keyword": "keeper",
+            "text": "'Adda. Thirty years at the blank stone and not gloomy about it. She had the order of things right before I did. She usually does. Take what you find out there to her, not to me.'",
+            "requiresQuest": "a1-1-the-road-out"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
@@ -1397,7 +1425,22 @@
         "wanders": false,
         "greeting": [
           "'Sit where you like. The near side is warmer and everyone chooses the far.'",
-          "'Nineteen years I have kept this in. Ask me in twenty and it will be twenty.'"
+          "'Nineteen years I have kept this <fire> in. Ask me in twenty and it will be twenty.'"
+        ],
+        "topics": [
+          {
+            "keyword": "fire",
+            "text": "'Khaldra's. Kept, not lit - lighting a fire is easy, keeping one is the job. It has not been out in nineteen years and it will not be out tonight.'"
+          },
+          {
+            "keyword": "khaldra",
+            "text": "'The Kept Fire. Bread, hearth, a roof that does not leak. Nothing mystical about her and everything necessary. Her clergy are mostly cooks. I am one.'"
+          },
+          {
+            "keyword": "ember",
+            "text": "'A woman took a coal from this fire the first winter I had it. Paid in a knife I still use. She has not aged a day in nineteen years and she has never come back for the coal. If you meet a smith with no forge, that is her.'",
+            "requiresQuest": "a1-3-a-gate-does-not-break"
+          }
         ]
       },
       "loot": [],
@@ -1476,7 +1519,23 @@
         "wanders": false,
         "greeting": [
           "'Mind your feet. I have done that bit.'",
-          "'The pigeons are not sacred. I have asked. Twice.'"
+          "'The pigeons are not sacred. I have asked. Twice.'",
+          "'Touch the bowl if you like. Everyone does. I sweep round <Yrriska> and that is the whole of my arrangement with her.'"
+        ],
+        "topics": [
+          {
+            "keyword": "yrriska",
+            "text": "'Untidy, they say. She got across by not minding what she stepped in, and every crossing since has been untidy in her honour. I sweep round the bowl. I do not sweep it. Ask anyone who has tried.'"
+          },
+          {
+            "keyword": "pigeons",
+            "text": "'They sit on the ring. The ring has not moved in living memory and they have decided that makes it theirs. I asked the deacon whether they were sacred. He looked it up. They are not.'"
+          },
+          {
+            "keyword": "stone",
+            "text": "'The Watch Stone, out past the markers? Older than any of them, and nobody cut it. Somebody keeps the turf clear round it. Not Adda. Ask her who, and watch her not answer.'",
+            "requiresQuest": "a1-1-the-road-out"
+          }
         ]
       },
       "loot": [],
@@ -3425,7 +3484,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "45eb8fc4-9659-4360-af16-893037118829",
@@ -3438,7 +3498,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "8ab70872-ea4a-4652-b3ae-e04c5e23b70c",
@@ -3451,7 +3512,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "8c438677-db60-4cdb-a120-bd4206cb4149",
@@ -3464,7 +3526,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "ad142e2d-8ee9-462a-abb9-7564b83e1a5c",
@@ -3477,7 +3540,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "bbd53962-0c10-49df-9355-683a36c25ddd",
@@ -3490,7 +3554,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "cf7705fb-e925-4ff1-8c5c-e9079d64e417",
@@ -3503,7 +3568,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "efc7a1d8-bce4-447e-9484-d1d5f1d09709",
@@ -3516,7 +3582,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     }
   ],
   "quests": [],

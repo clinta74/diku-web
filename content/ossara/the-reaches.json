@@ -3075,6 +3075,80 @@
   ],
   "mobTemplates": [
     {
+      "key": "boar",
+      "name": "a boar",
+      "description": "Waist high at the shoulder and built entirely for going forward. It commits early and it takes a long moment to turn.",
+      "icon": "B",
+      "level": 6,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "armor": 6,
+        "damage": "5-10",
+        "health": 72
+      },
+      "baseXp": 120,
+      "baseGold": 18,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "brigand",
+      "name": "a brigand",
+      "description": "One of a crew holding ground nobody gave them. Well equipped, badly led, and very committed to the fiction.",
+      "icon": "t",
+      "level": 7,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "armor": 4,
+        "damage": "5-9",
+        "health": 58,
+        "defense": 1
+      },
+      "baseXp": 140,
+      "baseGold": 21,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "crow",
+      "name": "a crow",
+      "description": "One of a flock that has learned two things: people carry food, and people are slow.",
+      "icon": "c",
+      "level": 2,
+      "wanderIntervalPulses": 240,
+      "baseStats": {
+        "damage": "2-4",
+        "health": 18
+      },
+      "baseXp": 40,
+      "baseGold": 6,
+      "behavior": {
+        "wanders": true
+      },
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "cutpurse",
+      "name": "a cutpurse",
+      "description": "Light, fast, and a week ahead of a question they did not want to answer.",
+      "icon": "p",
+      "level": 5,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "damage": "3-7",
+        "health": 40,
+        "defense": 1
+      },
+      "baseXp": 100,
+      "baseGold": 15,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
       "key": "epic-smith-vesh",
       "name": "Vesh, who follows the gates",
       "description": "A smith with a travelling anvil and no forge, who has been at every crossing anyone can remember and looks no older in any of the stories. She works for materials and will not take coin.",
@@ -3105,10 +3179,77 @@
             "minSeconds": 240
           }
         ],
-        "wanders": false
+        "wanders": false,
+        "greeting": [
+          "'You have seen me before. You will again. I do not explain that and neither should you.'",
+          "'I do not sell. Bring me something that has been through something and I will make it better. Ask about the <embers> if you want to know what I work with.'"
+        ],
+        "topics": [
+          {
+            "keyword": "embers",
+            "text": "'They do not go out and they do not warm anything. I keep a jar. Where the first one came from is a thing I know and a thing you do not need to.'"
+          },
+          {
+            "keyword": "gates",
+            "text": "'Every crossing anyone can remember, and I am at every one of them. I do not go through. I am at. Those are different, and the difference is most of what I know.'"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
+    },
+    {
+      "key": "hound",
+      "name": "a hound",
+      "description": "Nobody owns it and it does not hunt alone. There are always others just out of sight.",
+      "icon": "d",
+      "level": 3,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "damage": "2-5",
+        "health": 22
+      },
+      "baseXp": 60,
+      "baseGold": 9,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "lurcher",
+      "name": "a lurcher",
+      "description": "Long, low and the colour of whatever it is lying in. It does not chase. It waits where the way narrows and it gets a grip on you.",
+      "icon": "L",
+      "level": 8,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "armor": 8,
+        "damage": "6-11",
+        "health": 84,
+        "defense": 2
+      },
+      "baseXp": 160,
+      "baseGold": 24,
+      "behavior": {},
+      "loot": [],
+      "attacks": [
+        {
+          "verb": "bite",
+          "delayPulses": 8,
+          "damageMultiplier": null,
+          "effectKey": null,
+          "effectParams": null
+        },
+        {
+          "verb": "drag down",
+          "delayPulses": 32,
+          "damageMultiplier": null,
+          "effectKey": "control.root",
+          "effectParams": {
+            "durationPulses": "16"
+          }
+        }
+      ]
     },
     {
       "key": "ossara-armourer",
@@ -3153,41 +3294,6 @@
       "attacks": []
     },
     {
-      "key": "ossara-barn-rat",
-      "name": "a barn rat",
-      "description": "Fat on spilled grain and entirely uninterested in you until you are between it and the sack.",
-      "icon": "r",
-      "level": 1,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "damage": "1-3",
-        "health": 12
-      },
-      "baseXp": 20,
-      "baseGold": 3,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
-      "key": "ossara-bracken-boar",
-      "name": "a bracken boar",
-      "description": "Waist high at the shoulder and built entirely for going forward. It commits early and it takes a long moment to turn.",
-      "icon": "B",
-      "level": 6,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "armor": 6,
-        "damage": "5-10",
-        "health": 72
-      },
-      "baseXp": 120,
-      "baseGold": 18,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
       "key": "ossara-ferryman",
       "name": "Old Ossa",
       "description": "Nobody agrees whether the Reach is named after him or he is named after it, and he has stopped correcting either version. He runs the rope-ferry when he feels like walking, which is most days.",
@@ -3216,7 +3322,17 @@
         "wanders": false,
         "greeting": [
           "'You want across? Then you want me standing up. Give me a moment.'",
-          "'Ossa is the river and Ossa is me. Pick whichever one gets you over.'"
+          "'Ossa is the river and Ossa is me. Pick whichever one gets you over. Ask about the <rope> if you doubt it.'"
+        ],
+        "topics": [
+          {
+            "keyword": "rope",
+            "text": "'Spliced in eleven places and each splice dated in tar. The newest is this spring. The oldest is older than the deacon. It has never once let go, which is more than I can say for the deacon.'"
+          },
+          {
+            "keyword": "river",
+            "text": "'Slow and brown and close enough to shout across, which everybody does. It does not go anywhere in particular. Neither do I. We get on.'"
+          }
         ]
       },
       "loot": [],
@@ -3262,78 +3378,6 @@
       "attacks": []
     },
     {
-      "key": "ossara-gorse-lurcher",
-      "name": "a gorse lurcher",
-      "description": "Long, low and the colour of dead bracken. It does not chase. It waits where the path narrows and it gets a grip on you.",
-      "icon": "L",
-      "level": 8,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "armor": 8,
-        "damage": "6-11",
-        "health": 84,
-        "defense": 2
-      },
-      "baseXp": 160,
-      "baseGold": 24,
-      "behavior": {},
-      "loot": [],
-      "attacks": [
-        {
-          "verb": "bite",
-          "delayPulses": 8,
-          "damageMultiplier": null,
-          "effectKey": null,
-          "effectParams": null
-        },
-        {
-          "verb": "drag down",
-          "delayPulses": 32,
-          "damageMultiplier": null,
-          "effectKey": "control.root",
-          "effectParams": {
-            "durationPulses": "16"
-          }
-        }
-      ]
-    },
-    {
-      "key": "ossara-hedge-thief",
-      "name": "a hedge thief",
-      "description": "Working the field edges for anything unattended. Comes off the wall swinging a billhook and is genuinely surprised when that does not settle it.",
-      "icon": "h",
-      "level": 4,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "damage": "3-6",
-        "health": 34
-      },
-      "baseXp": 80,
-      "baseGold": 12,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
-      "key": "ossara-hill-toller",
-      "name": "a hill toller",
-      "description": "One of the crew charging a toll on a road nobody gave them. Well equipped, badly led, and very committed to the fiction.",
-      "icon": "t",
-      "level": 7,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "armor": 4,
-        "damage": "5-9",
-        "health": 58,
-        "defense": 1
-      },
-      "baseXp": 140,
-      "baseGold": 21,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
       "key": "ossara-ilvaro-deacon",
       "name": "Deacon Pell of Ilvaro's house",
       "description": "Young, enormously enthusiastic, and about three years short of knowing what he is doing. He is the fourth deacon in six years and the first who seems to be enjoying it.",
@@ -3359,7 +3403,25 @@
             "minSeconds": 300
           }
         ],
-        "wanders": false
+        "wanders": false,
+        "greeting": [
+          "'Ilvaro's house. Weddings, inquests, and the big pot. Ask me about the <markers> if you are going out that way.'"
+        ],
+        "topics": [
+          {
+            "keyword": "ilvaro",
+            "text": "'Open-handed, faintly ridiculous, and genuinely beloved. His festivals involve too much food. I am the fourth deacon in six years, which tells you how demanding the post is and how badly I wanted it.'"
+          },
+          {
+            "keyword": "markers",
+            "text": "'Shaped stones every thirty paces, out to the rim, each cut with a mark that is not any letter we use. Nobody here cut them. Nobody here knows who did. Half of them are down, which is where you come in.'"
+          },
+          {
+            "keyword": "keeper",
+            "text": "'Adda. Thirty years at the blank stone and not gloomy about it. She had the order of things right before I did. She usually does. Take what you find out there to her, not to me.'",
+            "requiresQuest": "a1-1-the-road-out"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
@@ -3398,15 +3460,30 @@
         "wanders": false,
         "greeting": [
           "'Sit where you like. The near side is warmer and everyone chooses the far.'",
-          "'Nineteen years I have kept this in. Ask me in twenty and it will be twenty.'"
+          "'Nineteen years I have kept this <fire> in. Ask me in twenty and it will be twenty.'"
+        ],
+        "topics": [
+          {
+            "keyword": "fire",
+            "text": "'Khaldra's. Kept, not lit - lighting a fire is easy, keeping one is the job. It has not been out in nineteen years and it will not be out tonight.'"
+          },
+          {
+            "keyword": "khaldra",
+            "text": "'The Kept Fire. Bread, hearth, a roof that does not leak. Nothing mystical about her and everything necessary. Her clergy are mostly cooks. I am one.'"
+          },
+          {
+            "keyword": "ember",
+            "text": "'A woman took a coal from this fire the first winter I had it. Paid in a knife I still use. She has not aged a day in nineteen years and she has never come back for the coal. If you meet a smith with no forge, that is her.'",
+            "requiresQuest": "a1-3-a-gate-does-not-break"
+          }
         ]
       },
       "loot": [],
       "attacks": []
     },
     {
-      "key": "ossara-left-behind",
-      "name": "one of the left behind",
+      "key": "ossara-kept",
+      "name": "a kept traveller",
       "description": "It is a person shape and it is carrying something, and it will not put the thing down. Sulveth keeps what is lost. She does not always keep it still.",
       "icon": "W",
       "level": 9,
@@ -3510,43 +3587,36 @@
             "minSeconds": 300
           }
         ],
-        "wanders": false
+        "wanders": false,
+        "greeting": [
+          "'The <stone> is for what is lost. You are not lost yet. Sit if you like.'",
+          "'Thirty years out here. People expect me to be gloomy about it. I have not the time.'"
+        ],
+        "topics": [
+          {
+            "keyword": "stone",
+            "text": "'Blank. Nothing written on it and nothing ever will be. Things get laid on it and nobody takes them and nobody moves them. That is Sulveth's whole liturgy, and it took me thirty years to see that it was enough.'"
+          },
+          {
+            "keyword": "sulveth",
+            "text": "'She keeps what is lost. She does not give it back. Two facts, and people keep trying to make them one. The ones on the forgetting ground are hers. They are not dead - Sevveth has the dead. These simply stopped being anywhere, and she kept them.'"
+          },
+          {
+            "keyword": "crossing",
+            "text": "'The gate did not break. It forgot. Somebody stopped saying the name of the other side and it could not find it any more. Which somebody, and why, is the part I do not have.'"
+          },
+          {
+            "keyword": "watch",
+            "text": "'The Watch Stone. Older than the markers, and I did not cut it and neither did anyone who ever lived here. Somebody clears the turf round it. With a blade, and recently, and it is not me, and in thirty years I have not once seen them at it.'",
+            "requiresQuest": "a1-1-the-road-out"
+          },
+          {
+            "keyword": "grask",
+            "text": "'You have been through, then. Mind what looks back. The people over there write everything down - every load, every name. Ask them what it costs. They will not have asked themselves.'",
+            "requiresFlag": "attuned.grask"
+          }
+        ]
       },
-      "loot": [],
-      "attacks": []
-    },
-    {
-      "key": "ossara-road-cutpurse",
-      "name": "a road cutpurse",
-      "description": "Light, fast, and out of Gatetown a week ahead of a question they did not want to answer.",
-      "icon": "p",
-      "level": 5,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "damage": "3-7",
-        "health": 40,
-        "defense": 1
-      },
-      "baseXp": 100,
-      "baseGold": 15,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
-      "key": "ossara-scrub-dog",
-      "name": "a scrub dog",
-      "description": "Nobody owns it and it does not hunt alone. There are always others in the gorse.",
-      "icon": "d",
-      "level": 3,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "damage": "2-5",
-        "health": 22
-      },
-      "baseXp": 60,
-      "baseGold": 9,
-      "behavior": {},
       "loot": [],
       "attacks": []
     },
@@ -3584,27 +3654,24 @@
         "wanders": false,
         "greeting": [
           "'Mind your feet. I have done that bit.'",
-          "'The pigeons are not sacred. I have asked. Twice.'"
+          "'The pigeons are not sacred. I have asked. Twice.'",
+          "'Touch the bowl if you like. Everyone does. I sweep round <Yrriska> and that is the whole of my arrangement with her.'"
+        ],
+        "topics": [
+          {
+            "keyword": "yrriska",
+            "text": "'Untidy, they say. She got across by not minding what she stepped in, and every crossing since has been untidy in her honour. I sweep round the bowl. I do not sweep it. Ask anyone who has tried.'"
+          },
+          {
+            "keyword": "pigeons",
+            "text": "'They sit on the ring. The ring has not moved in living memory and they have decided that makes it theirs. I asked the deacon whether they were sacred. He looked it up. They are not.'"
+          },
+          {
+            "keyword": "stone",
+            "text": "'The Watch Stone, out past the markers? Older than any of them, and nobody cut it. Somebody keeps the turf clear round it. Not Adda. Ask her who, and watch her not answer.'",
+            "requiresQuest": "a1-1-the-road-out"
+          }
         ]
-      },
-      "loot": [],
-      "attacks": []
-    },
-    {
-      "key": "ossara-terrace-crow",
-      "name": "a terrace crow",
-      "description": "One of the flock that works the terraces. It has learned that people carry food and that people are slow.",
-      "icon": "c",
-      "level": 2,
-      "wanderIntervalPulses": 240,
-      "baseStats": {
-        "damage": "2-4",
-        "health": 18
-      },
-      "baseXp": 40,
-      "baseGold": 6,
-      "behavior": {
-        "wanders": true
       },
       "loot": [],
       "attacks": []
@@ -3638,7 +3705,17 @@
         "wanders": false,
         "greeting": [
           "'Walk the path, not the wall. The wall is older than the path and it is not for you.'",
-          "'Autumn repair, that one. You can tell by the moss.'"
+          "'Autumn repair, that one. You can tell by the moss. Ask me about the <walls> and I will bore you properly.'"
+        ],
+        "topics": [
+          {
+            "keyword": "walls",
+            "text": "'Dry stone, every shelf, no mortar anywhere. Wall holds the soil, soil holds the wall. I can tell you which season each repair is from, and I will, if you stand still long enough.'"
+          },
+          {
+            "keyword": "rim",
+            "text": "'The shelves step down to the haze and then they stop. People picnic at the edge and swing their heels. I mend walls. I do not go and look at where there are none.'"
+          }
         ]
       },
       "loot": [],
@@ -3740,6 +3817,40 @@
         "wanders": false,
         "shopkeeper": true
       },
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "rat",
+      "name": "a rat",
+      "description": "Fat on whatever people spill and entirely uninterested in you until you are between it and the next thing.",
+      "icon": "r",
+      "level": 1,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "damage": "1-3",
+        "health": 12
+      },
+      "baseXp": 20,
+      "baseGold": 3,
+      "behavior": {},
+      "loot": [],
+      "attacks": []
+    },
+    {
+      "key": "thief",
+      "name": "a thief",
+      "description": "Working the edges for anything unattended. Comes at you swinging whatever was to hand and is genuinely surprised when that does not settle it.",
+      "icon": "h",
+      "level": 4,
+      "wanderIntervalPulses": 24,
+      "baseStats": {
+        "damage": "3-6",
+        "health": 34
+      },
+      "baseXp": 80,
+      "baseGold": 12,
+      "behavior": {},
       "loot": [],
       "attacks": []
     }
@@ -5647,7 +5758,8 @@
       "targetCount": 1,
       "respawnSeconds": 600,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "1e1707b8-7166-4077-89af-ba05237b07ed",
@@ -5660,12 +5772,13 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "1e4808ef-1e25-5db7-8669-8d8151f2ce16",
       "zoneKey": "ossara.brackenfell",
-      "templateKey": "ossara-hedge-thief",
+      "templateKey": "thief",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.brackenfell.the-stile-path",
@@ -5674,12 +5787,13 @@
       "targetCount": 3,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": "hedge"
     },
     {
       "id": "2439a298-00ac-568e-a6d0-0a72f9c70692",
       "zoneKey": "ossara.the-rimwalk",
-      "templateKey": "ossara-hill-toller",
+      "templateKey": "brigand",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.the-rimwalk.the-picnic-stones",
@@ -5688,7 +5802,8 @@
       "targetCount": 3,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": "rim"
     },
     {
       "id": "254c5d3b-cf57-5716-86af-ae48e0f1e167",
@@ -5701,12 +5816,13 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "25b6f0a4-8e3f-5107-ba3d-92f3d979bd04",
       "zoneKey": "ossara.the-terraces",
-      "templateKey": "ossara-hedge-thief",
+      "templateKey": "thief",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.the-terraces.the-lower-rows",
@@ -5715,12 +5831,13 @@
       "targetCount": 2,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": "hedge"
     },
     {
       "id": "2c379755-54d8-53db-923d-3fdf86180c78",
       "zoneKey": "ossara.the-rimwalk",
-      "templateKey": "ossara-gorse-lurcher",
+      "templateKey": "lurcher",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.the-rimwalk.the-gorse-tongue",
@@ -5729,12 +5846,13 @@
       "targetCount": 3,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": "gorse"
     },
     {
       "id": "2d955708-6cfa-53fd-b775-e0c5e80d115f",
       "zoneKey": "ossara.brackenfell",
-      "templateKey": "ossara-gorse-lurcher",
+      "templateKey": "lurcher",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.brackenfell.the-long-bracken",
@@ -5743,12 +5861,13 @@
       "targetCount": 2,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": "gorse"
     },
     {
       "id": "3f4b4114-b63f-5acf-80c5-4a2d7f3cc91f",
       "zoneKey": "ossara.the-terraces",
-      "templateKey": "ossara-scrub-dog",
+      "templateKey": "hound",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.the-terraces.the-terrace-foot",
@@ -5757,7 +5876,8 @@
       "targetCount": 3,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": "scrub"
     },
     {
       "id": "45eb8fc4-9659-4360-af16-893037118829",
@@ -5770,12 +5890,13 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "487d0aa5-0191-512e-a6fd-40ef11bf6fc6",
       "zoneKey": "ossara.brackenfell",
-      "templateKey": "ossara-bracken-boar",
+      "templateKey": "boar",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.brackenfell.the-boar-wallow",
@@ -5785,7 +5906,8 @@
       "targetCount": 3,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": "bracken"
     },
     {
       "id": "60c81c1c-dce4-593c-8224-17650187f731",
@@ -5802,12 +5924,13 @@
       "targetCount": 5,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "7437d3b0-bf0a-53e9-a416-4ef910001afa",
       "zoneKey": "ossara.the-terraces",
-      "templateKey": "ossara-barn-rat",
+      "templateKey": "rat",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.the-terraces.the-root-cellar",
@@ -5816,12 +5939,13 @@
       "targetCount": 4,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": "barn"
     },
     {
       "id": "7d1ab979-33e0-581a-b0f6-b70bcb56c644",
       "zoneKey": "ossara.brackenfell",
-      "templateKey": "ossara-road-cutpurse",
+      "templateKey": "cutpurse",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.brackenfell.the-cutting-bank",
@@ -5830,7 +5954,8 @@
       "targetCount": 3,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": "road"
     },
     {
       "id": "8ab70872-ea4a-4652-b3ae-e04c5e23b70c",
@@ -5843,7 +5968,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "8c438677-db60-4cdb-a120-bd4206cb4149",
@@ -5856,12 +5982,13 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "9a290678-8dd9-52e9-b28c-8229d3a049ee",
       "zoneKey": "ossara.the-rimwalk",
-      "templateKey": "ossara-left-behind",
+      "templateKey": "ossara-kept",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.the-rimwalk.the-forgetting-ground",
@@ -5872,12 +5999,13 @@
       "targetCount": 6,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "a865f5cb-b95e-56f0-abd1-923a01afdc68",
       "zoneKey": "ossara.brackenfell",
-      "templateKey": "ossara-hill-toller",
+      "templateKey": "brigand",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.brackenfell.the-toll-post",
@@ -5887,7 +6015,8 @@
       "targetCount": 5,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": "hill"
     },
     {
       "id": "ad142e2d-8ee9-462a-abb9-7564b83e1a5c",
@@ -5900,7 +6029,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "bbd53962-0c10-49df-9355-683a36c25ddd",
@@ -5913,12 +6043,13 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "cbd31afe-bea8-5c49-b31f-bbda93359f64",
       "zoneKey": "ossara.the-terraces",
-      "templateKey": "ossara-terrace-crow",
+      "templateKey": "crow",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.the-terraces.the-orchard-shelf",
@@ -5928,7 +6059,8 @@
       "targetCount": 4,
       "respawnSeconds": 60,
       "wanders": true,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": "terrace"
     },
     {
       "id": "cf7705fb-e925-4ff1-8c5c-e9079d64e417",
@@ -5941,12 +6073,13 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "de5a9872-5eb6-5617-b7cd-181e6cbff875",
       "zoneKey": "ossara.brackenfell",
-      "templateKey": "ossara-scrub-dog",
+      "templateKey": "hound",
       "templateKind": "Mob",
       "roomKeys": [
         "ossara.brackenfell.the-gorse-run",
@@ -5955,7 +6088,8 @@
       "targetCount": 4,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": "scrub"
     },
     {
       "id": "df6c7fd4-e5c4-594b-958d-ed9f48e90e95",
@@ -5968,7 +6102,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "efc7a1d8-bce4-447e-9484-d1d5f1d09709",
@@ -5981,7 +6116,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "f0c7b5ae-5757-57d9-90fb-ecc8d1c38a9b",
@@ -5994,7 +6130,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     }
   ],
   "quests": [
@@ -6029,7 +6166,7 @@
       "key": "a1-2-what-sulveth-keeps",
       "zoneKey": "ossara.the-rimwalk",
       "name": "What Sulveth Keeps",
-      "summary": "Collect six keepsakes from the left behind.",
+      "summary": "Collect six keepsakes from the kept on the forgetting ground.",
       "description": "The things standing about on the forgetting ground are carrying what they were carrying. Pell wants them back. He has not thought past that.",
       "giverMobKey": "ossara-ilvaro-deacon",
       "turninMobKey": "ossara-rim-keeper",

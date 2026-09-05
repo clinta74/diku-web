@@ -3328,7 +3328,21 @@
             "minSeconds": 240
           }
         ],
-        "wanders": false
+        "wanders": false,
+        "greeting": [
+          "'You have seen me before. You will again. I do not explain that and neither should you.'",
+          "'I do not sell. Bring me something that has been through something and I will make it better. Ask about the <embers> if you want to know what I work with.'"
+        ],
+        "topics": [
+          {
+            "keyword": "embers",
+            "text": "'They do not go out and they do not warm anything. I keep a jar. Where the first one came from is a thing I know and a thing you do not need to.'"
+          },
+          {
+            "keyword": "gates",
+            "text": "'Every crossing anyone can remember, and I am at every one of them. I do not go through. I am at. Those are different, and the difference is most of what I know.'"
+          }
+        ]
       },
       "loot": [],
       "attacks": []
@@ -5595,7 +5609,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "0777b790-eddb-54af-a8fb-9a7654dffc0b",
@@ -5608,7 +5623,8 @@
       "targetCount": 1,
       "respawnSeconds": 600,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "0958ca7c-c14b-5686-84f6-247767efc8ec",
@@ -5623,7 +5639,8 @@
       "targetCount": 5,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "1ad964e4-6698-5386-998b-8061946a19b4",
@@ -5637,7 +5654,8 @@
       "targetCount": 4,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "25e4c9de-448d-5551-9916-d222ab1dbcb4",
@@ -5651,7 +5669,8 @@
       "targetCount": 5,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "3b73e926-27dc-511b-8323-eb2167a44560",
@@ -5664,7 +5683,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "4d5b9880-bd92-50b7-b57b-f5591974b037",
@@ -5678,7 +5698,8 @@
       "targetCount": 4,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "57368007-3c11-578c-9bd0-9df6d919e914",
@@ -5693,7 +5714,8 @@
       "targetCount": 3,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "574fe857-7b95-5377-955b-a785c7186657",
@@ -5709,7 +5731,8 @@
       "targetCount": 6,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "5a414d4c-d490-5011-992d-18c456fc7f94",
@@ -5723,7 +5746,8 @@
       "targetCount": 3,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "717e8cd1-572e-5139-9f17-32ff40e4c3aa",
@@ -5738,7 +5762,8 @@
       "targetCount": 5,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "724ccf43-7ffc-5339-8b9c-97c389a976d4",
@@ -5752,7 +5777,8 @@
       "targetCount": 4,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "76bd784f-e0e0-592a-ad12-a8c293ab81b1",
@@ -5767,7 +5793,8 @@
       "targetCount": 5,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "7dad0640-589f-5c46-b860-8eb2696a7211",
@@ -5782,7 +5809,8 @@
       "targetCount": 5,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "c5bdfded-379f-5d71-b29c-a9274c000143",
@@ -5795,7 +5823,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "d3039f6f-7874-5626-9c71-9157b095f7dd",
@@ -5810,7 +5839,8 @@
       "targetCount": 5,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "dd9c3808-7c8f-5d5e-815f-db96ec399fa1",
@@ -5826,7 +5856,8 @@
       "targetCount": 7,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "ef8be87a-1bb1-5e7a-8e3e-4b2e0e65b7b5",
@@ -5844,7 +5875,8 @@
       "targetCount": 9,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "f70aa59c-89c3-5d56-89b6-c7d8c3ac00ba",
@@ -5858,7 +5890,8 @@
       "targetCount": 3,
       "respawnSeconds": 60,
       "wanders": true,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     },
     {
       "id": "fe2feba6-2bdc-5279-84f1-52d74fac5524",
@@ -5871,7 +5904,8 @@
       "targetCount": 1,
       "respawnSeconds": 60,
       "wanders": false,
-      "fightsAtLevel": null
+      "fightsAtLevel": null,
+      "nameModifier": null
     }
   ],
   "quests": [

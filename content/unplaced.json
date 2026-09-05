@@ -157,7 +157,7 @@
     {
       "key": "unlit-worn-hood",
       "name": "a hood worn thin",
-      "description": "It was somebody\u0027s, and the binding has had it long enough to take the colour out and nothing else.",
+      "description": "It was somebody's, and the binding has had it long enough to take the colour out and nothing else.",
       "icon": "^",
       "slots": [
         "Head"
@@ -181,23 +181,6 @@
   ],
   "mobTemplates": [
     {
-      "key": "azhen-dust-mite",
-      "name": "a dust mite",
-      "description": "Bred out of something kept for study and never told to stop.",
-      "icon": "r",
-      "level": 7,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "damage": "5-9",
-        "health": 58
-      },
-      "baseXp": 140,
-      "baseGold": 21,
-      "behavior": {},
-      "loot": [],
-      "attacks": []
-    },
-    {
       "key": "golden-goose",
       "name": "The Golden Goose",
       "description": "The golden goose that lays the golden egg designed to make you rich.",
@@ -212,23 +195,6 @@
       "behavior": {
         "type": "passive"
       },
-      "loot": [],
-      "attacks": []
-    },
-    {
-      "key": "nemhal-crypt-mite",
-      "name": "a crypt mite",
-      "description": "Small, pale, and living off the wax.",
-      "icon": "r",
-      "level": 7,
-      "wanderIntervalPulses": 24,
-      "baseStats": {
-        "damage": "5-9",
-        "health": 62
-      },
-      "baseXp": 140,
-      "baseGold": 21,
-      "behavior": {},
       "loot": [],
       "attacks": []
     }
