@@ -54,7 +54,60 @@ public sealed class WorldExporter(MuwbtaDbContext db, TimeProvider clock)
 
         var (kind, key, zoneKeys) = scope.Value;
 
-        var worlds = await WorldsAsync(kind, key, zoneKeys, cancellationToken);
+        return await BuildAsync(kind, key, zoneKeys, [], cancellationToken);
+    }
+
+    /// <summary>The scope kind for a whole configuration: its worlds, and itself.</summary>
+    public const string ConfigurationScope = "configuration";
+
+    /// <summary>
+    /// A configuration and everything it is for (PLAN.md §4.16): the worlds it tags, all of their
+    /// zones and rooms, the templates those need, every ability, and the one configuration row
+    /// with its canon. Null when no configuration has that key.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The scope somebody moving a world actually wants.</b> "Everything" carries every other
+    /// configuration on the server and every world that is none of this one's business; a world
+    /// is one row of the five the Reaches are. This is the unit a story is authored in, and it
+    /// is the unit that should travel.
+    /// </para>
+    /// <para>
+    /// A tagged world that does not exist yet is simply absent, the same way a configuration may
+    /// name a starting room that is not imported yet. Templates nothing in these worlds places
+    /// are not carried; <see cref="ExportUnplacedAsync"/> is for those, and they belong to no
+    /// configuration.
+    /// </para>
+    /// </remarks>
+    public async Task<WorldBundle?> ExportConfigurationAsync(
+        string configurationKey,
+        CancellationToken cancellationToken)
+    {
+        var configuration = await db.GameConfigurations.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Key == configurationKey, cancellationToken);
+
+        if (configuration is null)
+        {
+            return null;
+        }
+
+        var worldKeys = configuration.WorldKeys;
+        var zoneKeys = await db.Zones.AsNoTracking()
+            .Where(z => worldKeys.Contains(z.WorldKey))
+            .Select(z => z.Key)
+            .ToListAsync(cancellationToken);
+
+        return await BuildAsync(ConfigurationScope, configurationKey, zoneKeys, worldKeys, cancellationToken);
+    }
+
+    private async Task<WorldBundle> BuildAsync(
+        string kind,
+        string? key,
+        IReadOnlyList<string> zoneKeys,
+        IReadOnlyList<string> worldKeys,
+        CancellationToken cancellationToken)
+    {
+        var worlds = await WorldsAsync(kind, key, zoneKeys, worldKeys, cancellationToken);
         var zones = await ZonesAsync(kind, zoneKeys, cancellationToken);
         var rooms = await RoomsAsync(kind, zoneKeys, cancellationToken);
         var spawners = await SpawnersAsync(kind, zoneKeys, cancellationToken);
@@ -70,7 +123,7 @@ public sealed class WorldExporter(MuwbtaDbContext db, TimeProvider clock)
 
         // Every configuration too, and for the same reason: one belongs to a server rather than to
         // a zone. Which one is live is left behind deliberately - see BundleGameConfiguration.
-        var configurations = await ConfigurationsAsync(kind, cancellationToken);
+        var configurations = await ConfigurationsAsync(kind, key, cancellationToken);
 
         return new WorldBundle(
             WorldBundle.CurrentFormatVersion,
@@ -257,16 +310,25 @@ public sealed class WorldExporter(MuwbtaDbContext db, TimeProvider clock)
     /// </remarks>
     private async Task<IReadOnlyList<BundleGameConfiguration>> ConfigurationsAsync(
         string kind,
+        string? key,
         CancellationToken cancellationToken)
     {
-        var everything = IsEverything(kind);
+        var query = db.GameConfigurations.AsNoTracking();
 
-        return await db.GameConfigurations.AsNoTracking()
-            .OrderBy(c => c.Key)
-            .Select(c => new BundleGameConfiguration(
-                c.Key, c.Name, c.Description, c.StartingRoomKey, c.WelcomeMessage, c.BlockedWords,
-                everything ? c.Canon : null))
-            .ToListAsync(cancellationToken);
+        // A configuration's own bundle carries that configuration and no other: the whole point
+        // of the scope is that the rest of the server is none of its business.
+        if (kind == ConfigurationScope)
+        {
+            query = query.Where(c => c.Key == key);
+        }
+
+        var carriesCanon = IsEverything(kind) || kind == ConfigurationScope;
+        var configurations = await query.OrderBy(c => c.Key).ToListAsync(cancellationToken);
+
+        return [.. configurations.Select(c => new BundleGameConfiguration(
+            c.Key, c.Name, c.Description, c.StartingRoomKey, c.WelcomeMessage, c.BlockedWords,
+            carriesCanon ? c.Canon : null,
+            new List<string>(c.WorldKeys)))];
     }
 
     private async Task<IReadOnlyList<BundleAbility>> AbilitiesAsync(CancellationToken cancellationToken)
@@ -337,6 +399,7 @@ public sealed class WorldExporter(MuwbtaDbContext db, TimeProvider clock)
         string kind,
         string? key,
         IReadOnlyList<string> zoneKeys,
+        IReadOnlyList<string> worldKeys,
         CancellationToken cancellationToken)
     {
         var query = db.Worlds.AsNoTracking();
@@ -344,6 +407,10 @@ public sealed class WorldExporter(MuwbtaDbContext db, TimeProvider clock)
         if (kind == "world")
         {
             query = query.Where(w => w.Key == key);
+        }
+        else if (kind == ConfigurationScope)
+        {
+            query = query.Where(w => worldKeys.Contains(w.Key));
         }
         else if (kind == "zone")
         {

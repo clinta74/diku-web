@@ -29,6 +29,7 @@ var outPath = "build/live.json";
 string? connection = null;
 string? worldKey = null;
 string? zoneKey = null;
+string? configurationKey = null;
 var abilitiesOnly = false;
 var unplacedOnly = false;
 
@@ -48,6 +49,9 @@ for (var i = 0; i < args.Length; i++)
         case "--zone":
             zoneKey = args[++i];
             break;
+        case "--configuration":
+            configurationKey = args[++i];
+            break;
         case "--abilities":
             abilitiesOnly = true;
             break;
@@ -63,6 +67,7 @@ for (var i = 0; i < args.Length; i++)
                                          MUWBTA_CONNECTION, then to the compose defaults.
                   --world <key>          Export one world instead of everything
                   --zone <key>           Export one zone instead of everything
+                  --configuration <key>  Export one configuration: the worlds it tags, and itself
                   --abilities            Export only the abilities, as content/abilities.json is
                   --unplaced             Export only the templates nothing places. A scoped export
                                          cannot reach those, so this is what keeps content/ complete
@@ -98,12 +103,16 @@ var bundle = abilitiesOnly
     ? await exporter.ExportAbilitiesAsync(CancellationToken.None)
     : unplacedOnly
         ? await exporter.ExportUnplacedAsync(CancellationToken.None)
-        : await exporter.ExportAsync(worldKey, zoneKey, CancellationToken.None);
+        : configurationKey is not null
+            ? await exporter.ExportConfigurationAsync(configurationKey, CancellationToken.None)
+            : await exporter.ExportAsync(worldKey, zoneKey, CancellationToken.None);
 
 if (bundle is null)
 {
     await Console.Error.WriteLineAsync(
-        $"Nothing to export for world '{worldKey}' zone '{zoneKey}'.");
+        configurationKey is not null
+            ? $"No configuration '{configurationKey}'."
+            : $"Nothing to export for world '{worldKey}' zone '{zoneKey}'.");
     return 1;
 }
 

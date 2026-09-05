@@ -584,6 +584,11 @@ export interface GameConfiguration {
   canon: string
   /** Roughly what `canon` costs the model, or what the built-in one costs when it is empty. */
   canonTokens: number
+  /**
+   * The worlds this configuration is for. A world belongs to at most one configuration, and
+   * "Download bundle" on a configuration exports these worlds together with it and its canon.
+   */
+  worldKeys: string[]
 }
 
 /** The canon compiled into the server, as a starting point for writing one's own. */
@@ -1028,7 +1033,7 @@ export const builderApi = {
     key: string,
     body: Pick<
       GameConfiguration,
-      'name' | 'description' | 'startingRoomKey' | 'welcomeMessage' | 'blockedWords' | 'canon'
+      'name' | 'description' | 'startingRoomKey' | 'welcomeMessage' | 'blockedWords' | 'canon' | 'worldKeys'
     >,
   ) =>
     request<GameConfiguration>(`${base}/configurations/${key}`, {
@@ -1058,9 +1063,16 @@ export const builderApi = {
    * file. It wins over world and zone rather than narrowing them — an ability belongs to a Path
    * and not to a place.
    */
-  exportUrl: (scope?: { world?: string; zone?: string; only?: 'abilities' }) => {
+  exportUrl: (scope?: {
+    world?: string
+    zone?: string
+    only?: 'abilities'
+    /** A whole configuration: the worlds it tags, and itself with its canon. Wins over the rest. */
+    configuration?: string
+  }) => {
     const query = new URLSearchParams()
-    if (scope?.only) query.set('only', scope.only)
+    if (scope?.configuration) query.set('configuration', scope.configuration)
+    else if (scope?.only) query.set('only', scope.only)
     else if (scope?.zone) query.set('zone', scope.zone)
     else if (scope?.world) query.set('world', scope.world)
     const suffix = query.toString()

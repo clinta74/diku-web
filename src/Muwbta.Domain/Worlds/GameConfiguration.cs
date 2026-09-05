@@ -119,6 +119,27 @@ public sealed class GameConfiguration
     public string Canon { get; set; } = string.Empty;
 
     /// <summary>
+    /// The worlds this configuration is for. A world belongs to at most one configuration.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>What makes a configuration exportable as a whole.</b> A bundle used to be a zone, a
+    /// world, or everything on the server. Everything is too much once a server holds two
+    /// worlds that are not each other's, and a world is too little when a story spans five of
+    /// them: the Reaches are five <c>World</c> rows and one configuration. Tagging the worlds
+    /// here lets the export say "this configuration" and mean its worlds, the templates they
+    /// need, and the configuration itself with its canon - which is the thing somebody moving a
+    /// world to another server actually wants.
+    /// </para>
+    /// <para>
+    /// One owner, enforced by the API rather than the database, because the question is asked
+    /// across rows. Keys rather than a relation, for the reason <see cref="StartingRoomKey"/> is:
+    /// a configuration is written before the worlds it names are imported.
+    /// </para>
+    /// </remarks>
+    public List<string> WorldKeys { get; set; } = [];
+
+    /// <summary>
     /// Whether this is the one the running server uses. Exactly one row may have it.
     /// </summary>
     /// <remarks>

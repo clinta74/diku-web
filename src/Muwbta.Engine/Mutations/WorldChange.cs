@@ -462,7 +462,8 @@ public sealed record DeleteQuest(string Key) : WorldChange
 /// <c>Canon</c> is the assist's canon, or null to leave the stored one as it is. Nullable because a
 /// scoped bundle deliberately does not carry it, and an import that merged a realm must not wipe
 /// the canon a builder wrote in the panel. The API always sends a string; empty means "use the
-/// built-in one".
+/// built-in one". <c>WorldKeys</c> follows the same rule: null leaves the stored list alone, and
+/// an empty list clears it.
 /// </remarks>
 public sealed record UpsertGameConfiguration(
     string Key,
@@ -472,6 +473,7 @@ public sealed record UpsertGameConfiguration(
     string WelcomeMessage,
     string BlockedWords,
     string? Canon,
+    List<string>? WorldKeys,
     bool Live) : WorldChange
 {
     public override string EntityKind => "configuration";

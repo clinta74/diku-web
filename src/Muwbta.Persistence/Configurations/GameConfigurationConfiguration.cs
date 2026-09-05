@@ -45,6 +45,11 @@ internal sealed class GameConfigurationConfiguration : IEntityTypeConfiguration<
             .IsRequired()
             .HasDefaultValue(string.Empty);
 
+        builder.Property(c => c.WorldKeys)
+            .HasColumnName("world_keys")
+            .HasColumnType("text[]")
+            .IsRequired();
+
         builder.Property(c => c.IsActive).HasColumnName("is_active").IsRequired();
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at").IsRequired();
 

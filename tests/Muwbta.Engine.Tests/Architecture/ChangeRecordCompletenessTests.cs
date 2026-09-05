@@ -57,6 +57,7 @@ public sealed class ChangeRecordCompletenessTests
         ["applier:UpsertGameConfiguration.Name"] = "presentation only",
         ["applier:UpsertGameConfiguration.Description"] = "presentation only",
         ["writer:UpsertGameConfiguration.Live"] = "IsActive moves only through activation",
+        ["applier:UpsertGameConfiguration.WorldKeys"] = "which worlds a configuration owns is export scope, not loop state",
     };
 
     private static string Source(params string[] parts) =>

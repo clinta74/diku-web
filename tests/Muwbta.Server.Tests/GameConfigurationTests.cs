@@ -174,6 +174,44 @@ public sealed class GameConfigurationTests(PostgresFixture postgres) : IAsyncLif
         Assert.Equal(canon, factory.Services.GetRequiredService<EngineOptions>().Canon);
     }
 
+    /// <summary>
+    /// A configuration tags the worlds it is for, and a world belongs to one configuration.
+    /// </summary>
+    [Fact]
+    public async Task Worlds_are_tagged_and_a_world_belongs_to_one_configuration()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+        var (worldKey, _) = await BuilderClient.NewZoneAsync(client);
+
+        var first = $"owner-{Guid.NewGuid():N}"[..24];
+        var created = await BuilderClient.JsonAsync(await client.PostAsJsonAsync(
+            $"/api/builder/configurations/{first}",
+            new { name = "Owner", startingRoomKey = "aldenmoor.millbrook.north-gate", worldKeys = new[] { worldKey } }));
+
+        Assert.Equal([worldKey], created.GetProperty("worldKeys").EnumerateArray().Select(w => w.GetString()));
+
+        // A save that says nothing about the worlds leaves them alone.
+        var kept = await BuilderClient.JsonAsync(await client.PostAsJsonAsync(
+            $"/api/builder/configurations/{first}",
+            new { name = "Owner, renamed", startingRoomKey = "aldenmoor.millbrook.north-gate" }));
+        Assert.Single(kept.GetProperty("worldKeys").EnumerateArray());
+
+        var second = $"rival-{Guid.NewGuid():N}"[..24];
+        var refused = await client.PostAsJsonAsync(
+            $"/api/builder/configurations/{second}",
+            new { name = "Rival", startingRoomKey = "aldenmoor.millbrook.north-gate", worldKeys = new[] { worldKey } });
+
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+        Assert.Contains(first, await refused.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        var badKey = await client.PostAsJsonAsync(
+            $"/api/builder/configurations/{second}",
+            new { name = "Rival", startingRoomKey = "aldenmoor.millbrook.north-gate", worldKeys = new[] { "Not A Key" } });
+        Assert.Equal(HttpStatusCode.BadRequest, badKey.StatusCode);
+    }
+
     /// <summary>The built-in canon is on offer as a starting point, and is the Reaches.</summary>
     [Fact]
     public async Task The_embedded_canon_is_served_for_the_panel()

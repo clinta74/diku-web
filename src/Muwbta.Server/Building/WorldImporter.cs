@@ -413,7 +413,7 @@ public sealed class WorldImporter(MuwbtaDbContext db, WorldEditor editor)
             ? new UpsertGameConfiguration(
                 c.Key, c.Name, c.Description ?? string.Empty,
                 c.StartingRoomKey, c.WelcomeMessage ?? string.Empty, c.BlockedWords ?? string.Empty,
-                c.Canon, Live: false)
+                c.Canon, c.WorldKeys, Live: false)
             : null;
 
     private static WorldChange SpawnerChangeFor(BundleSpawner s) =>

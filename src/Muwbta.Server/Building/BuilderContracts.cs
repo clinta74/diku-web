@@ -700,7 +700,9 @@ public sealed record GameConfigurationResponse(
     bool StartingRoomExists,
     DateTimeOffset UpdatedAt,
     string Canon,
-    int CanonTokens);
+    int CanonTokens,
+    /// <summary>The worlds this configuration is for; a world belongs to at most one.</summary>
+    IReadOnlyList<string> WorldKeys);
 
 /// <param name="ActiveStartingRoomKey">
 /// What the running loop is obeying right now, which is not always what a row says. A database
@@ -736,4 +738,9 @@ public sealed record GameConfigurationRequest(
     string StartingRoomKey,
     string? WelcomeMessage,
     string? BlockedWords = null,
-    string? Canon = null);
+    string? Canon = null,
+    /// <summary>
+    /// The worlds this configuration is for, or null to leave the stored list alone. A world
+    /// another configuration already lists is refused, with its owner named.
+    /// </summary>
+    List<string>? WorldKeys = null);

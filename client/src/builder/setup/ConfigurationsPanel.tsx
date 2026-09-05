@@ -3,6 +3,7 @@ import {
   builderApi,
   type GameConfiguration,
   type GameConfigurationList,
+  type WorldSummary,
 } from '../../net/builderApi'
 import { Button } from '../../ui/Button'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
@@ -30,6 +31,7 @@ interface Draft {
   welcomeMessage: string
   blockedWords: string
   canon: string
+  worldKeys: string[]
   /** False for a new one, so the key field is editable exactly once. */
   existing: boolean
 }
@@ -46,6 +48,7 @@ const BLANK: Draft = {
   welcomeMessage: 'Welcome back, {name}.',
   blockedWords: '',
   canon: '',
+  worldKeys: [],
   existing: false,
 }
 
@@ -66,6 +69,16 @@ interface Props {
 export function ConfigurationsPanel({ list, onChanged }: Props) {
   const toast = useToast()
   const [draft, setDraft] = useState<Draft | null>(null)
+
+  // The worlds on this server, for the tag list. Loaded here rather than passed down because the
+  // rest of the Setup tab has no use for them; an empty list is a server with no worlds yet.
+  const [worlds, setWorlds] = useState<WorldSummary[]>([])
+  useEffect(() => {
+    void builderApi
+      .worlds()
+      .then(setWorlds)
+      .catch(() => setWorlds([]))
+  }, [])
   const [busy, setBusy] = useState(false)
   const [confirming, setConfirming] = useState<GameConfiguration | null>(null)
   const [activating, setActivating] = useState<GameConfiguration | null>(null)
@@ -116,6 +129,25 @@ export function ConfigurationsPanel({ list, onChanged }: Props) {
     )
   })()
 
+
+  /** Which other configuration already lists a world, or null when it is free or ours. */
+  function ownerOf(worldKey: string): string | null {
+    const owner = list?.configurations.find(
+      (c) => c.key !== draft?.key && c.worldKeys.includes(worldKey),
+    )
+    return owner ? owner.name || owner.key : null
+  }
+
+  function toggleWorld(worldKey: string) {
+    if (!draft) return
+    setDraft({
+      ...draft,
+      worldKeys: draft.worldKeys.includes(worldKey)
+        ? draft.worldKeys.filter((k) => k !== worldKey)
+        : [...draft.worldKeys, worldKey],
+    })
+  }
+
   async function loadEmbedded() {
     if (!draft) return
     setBusy(true)
@@ -141,6 +173,7 @@ export function ConfigurationsPanel({ list, onChanged }: Props) {
         welcomeMessage: draft.welcomeMessage,
         blockedWords: draft.blockedWords,
         canon: draft.canon,
+        worldKeys: draft.worldKeys,
       })
       toast.notify(draft.existing ? 'Configuration saved.' : 'Configuration created.')
       setDraft(null)
@@ -221,10 +254,34 @@ export function ConfigurationsPanel({ list, onChanged }: Props) {
               </p>
 
               <p className="dim">{configuration.welcomeMessage}</p>
+
+              {configuration.worldKeys.length > 0 && (
+                <p className="dim">
+                  Worlds:{' '}
+                  {configuration.worldKeys.map((k, i) => (
+                    <span key={k}>
+                      {i > 0 && ', '}
+                      <code>{k}</code>
+                    </span>
+                  ))}
+                </p>
+              )}
             </div>
 
             <div className="spawner-actions">
               <Button onClick={() => setDraft(draftOf(configuration))}>Edit</Button>
+
+              {/* The whole configuration as one file: its worlds, and itself with its canon. A
+                  real link, so the browser honours the attachment filename. Absent until the
+                  configuration tags a world, because an empty bundle is a surprise to save. */}
+              {configuration.worldKeys.length > 0 && (
+                <a
+                  className="setup-download"
+                  href={builderApi.exportUrl({ configuration: configuration.key })}
+                >
+                  Download bundle
+                </a>
+              )}
 
               {!configuration.isActive && (
                 <Button variant="primary" onClick={() => setActivating(configuration)}>
@@ -320,6 +377,32 @@ export function ConfigurationsPanel({ list, onChanged }: Props) {
               value={draft.blockedWords}
               onChange={(value) => setDraft({ ...draft, blockedWords: value })}
             />
+          </Field>
+
+          <Field
+            label="Worlds"
+            hint="Which worlds this configuration is for. A world belongs to one configuration, and the row's Download bundle exports these together with the configuration and its canon."
+          >
+            <ul className="room-picker">
+              {worlds.length === 0 && <li className="dim">No worlds on this server yet.</li>}
+              {worlds.map((world) => {
+                const owner = ownerOf(world.key)
+                return (
+                  <li key={world.key}>
+                    <label className="field-check">
+                      <input
+                        type="checkbox"
+                        disabled={owner !== null}
+                        checked={draft.worldKeys.includes(world.key)}
+                        onChange={() => toggleWorld(world.key)}
+                      />
+                      {world.name || world.key} <code className="dim">{world.key}</code>
+                      {owner !== null && <span className="dim"> · belongs to {owner}</span>}
+                    </label>
+                  </li>
+                )
+              })}
+            </ul>
           </Field>
 
           <Field

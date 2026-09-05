@@ -34,6 +34,14 @@ purpose — a test fixture, or something held back for later. Regenerate it with
 `dotnet run tools/export-bundle.cs -- --unplaced -o content/unplaced.json`; a scoped export names
 what it could not carry so you know when to.
 
+**A configuration is the unit that travels.** A starter configuration tags the worlds it is for
+(the Reaches are five worlds and one configuration), and
+`dotnet run tools/export-bundle.cs -- --configuration the-reaches -o build/the-reaches.json` - or
+the row's *Download bundle* in the builder's Setup tab - exports those worlds, the templates they
+need, every ability, and that one configuration with its canon. The world and zone scopes stay for
+the smaller job. A world belongs to one configuration, which is what makes "export this
+configuration" have one answer.
+
 **Progression is four conditional exits and nothing else.** Each realm's story chain ends in a
 quest whose reward is a character flag, and the gate onward requires it (`PLAN.md` §4.15):
 `attuned.grask`, `attuned.azhen`, `attuned.nemhal`, `attuned.the-unlit`. The gates are one-way

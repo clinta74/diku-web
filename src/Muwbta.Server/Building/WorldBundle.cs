@@ -200,7 +200,12 @@ public sealed record BundleGameConfiguration(
     /// import means "leave the stored one alone" - a realm's file must not blank what a builder
     /// wrote in the panel. Optional for the same reason <paramref name="BlockedWords"/> is.
     /// </summary>
-    string? Canon = null);
+    string? Canon = null,
+    /// <summary>
+    /// The worlds this configuration is for, or null to leave the stored list alone. Carried by
+    /// every export, since it is what a configuration <em>is</em> and costs a few bytes.
+    /// </summary>
+    List<string>? WorldKeys = null);
 
 /// <summary>
 /// What the export was asked for, recorded so a bundle can say what it is rather than leaving

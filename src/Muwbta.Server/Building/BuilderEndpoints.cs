@@ -256,7 +256,8 @@ public static class BuilderEndpoints
                 rooms.Contains(c.StartingRoomKey),
                 c.UpdatedAt,
                 c.Canon,
-                Canon.EstimateTokens(Canon.Resolve(c.Canon))))
+                Canon.EstimateTokens(Canon.Resolve(c.Canon)),
+                [.. c.WorldKeys]))
             .ToList();
 
         // What the loop is actually obeying, which is not always what the rows say: a database
@@ -361,6 +362,44 @@ public static class BuilderEndpoints
             });
         }
 
+        // Null leaves the stored list alone. Otherwise every key must be a world key and must not
+        // already be another configuration's: one owner, so "export this configuration" has one
+        // answer. Checked in memory - there are a handful of rows - rather than through an array
+        // query the provider may or may not translate.
+        List<string>? worldKeys = null;
+
+        if (request.WorldKeys is not null)
+        {
+            worldKeys = [.. request.WorldKeys
+                .Select(k => k?.Trim() ?? string.Empty)
+                .Where(k => k.Length > 0)
+                .Distinct(StringComparer.Ordinal)];
+
+            if (worldKeys.FirstOrDefault(k => !GameConfiguration.IsValidKey(k)) is { } badWorld)
+            {
+                return Results.BadRequest(new
+                {
+                    error = $"'{badWorld}' is not a world key (lowercase letters, digits and inner hyphens).",
+                });
+            }
+
+            var others = await db.GameConfigurations.AsNoTracking()
+                .Where(c => c.Key != key)
+                .ToListAsync(ct);
+
+            foreach (var other in others)
+            {
+                if (other.WorldKeys.Intersect(worldKeys, StringComparer.Ordinal).FirstOrDefault() is { } taken)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = $"'{taken}' already belongs to configuration '{other.Key}'. "
+                            + "A world belongs to one configuration; remove it there first.",
+                    });
+                }
+            }
+        }
+
         // Whether this edit also moves the running loop. The applier has no database, so the
         // question is answered here and carried on the mutation.
         var live = await db.GameConfigurations.AsNoTracking()
@@ -371,7 +410,7 @@ public static class BuilderEndpoints
         var outcome = await editor.ApplyAsync(
             new UpsertGameConfiguration(
                 key, request.Name, request.Description ?? string.Empty,
-                request.StartingRoomKey, welcome, blockedWords, request.Canon, live),
+                request.StartingRoomKey, welcome, blockedWords, request.Canon, worldKeys, live),
             accountId,
             ct);
 
@@ -382,16 +421,16 @@ public static class BuilderEndpoints
 
         var exists = await db.Rooms.AsNoTracking().AnyAsync(r => r.Key == startingRoom, ct);
 
-        // Read back rather than echoed, because a null canon in the request meant "keep it".
-        var canon = await db.GameConfigurations.AsNoTracking()
-            .Where(c => c.Key == key)
-            .Select(c => c.Canon)
-            .FirstOrDefaultAsync(ct) ?? string.Empty;
+        // Read back rather than echoed, because a null canon or world list in the request meant
+        // "keep it".
+        var stored = await db.GameConfigurations.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Key == key, ct);
+        var canon = stored?.Canon ?? string.Empty;
 
         return Results.Ok(new GameConfigurationResponse(
             key, request.Name, request.Description ?? string.Empty,
             request.StartingRoomKey, welcome, blockedWords, live, exists, DateTimeOffset.UtcNow,
-            canon, Canon.EstimateTokens(Canon.Resolve(canon))));
+            canon, Canon.EstimateTokens(Canon.Resolve(canon)), [.. stored?.WorldKeys ?? []]));
     }
 
     /// <remarks>
@@ -475,7 +514,7 @@ public static class BuilderEndpoints
         return Results.Ok(new GameConfigurationResponse(
             entity.Key, entity.Name, entity.Description, entity.StartingRoomKey,
             entity.WelcomeMessage, entity.BlockedWords, IsActive: true, exists, DateTimeOffset.UtcNow,
-            entity.Canon, Canon.EstimateTokens(Canon.Resolve(entity.Canon))));
+            entity.Canon, Canon.EstimateTokens(Canon.Resolve(entity.Canon)), [.. entity.WorldKeys]));
     }
 
     /// <summary>
@@ -797,6 +836,7 @@ public static class BuilderEndpoints
         string? world,
         string? zone,
         string? only,
+        string? configuration,
         WorldExporter exporter,
         HttpContext http,
         CancellationToken ct)
@@ -816,6 +856,15 @@ public static class BuilderEndpoints
             {
                 error = $"'{only}' is not something this can export on its own. Try 'abilities'.",
             });
+        }
+
+        // A whole configuration: its worlds, and itself. Wins over world and zone because it is
+        // the larger claim, and a request naming both has said which it means.
+        if (!string.IsNullOrWhiteSpace(configuration))
+        {
+            return await exporter.ExportConfigurationAsync(configuration, ct) is { } owned
+                ? Download(http, owned, configuration)
+                : Results.NotFound(new { error = $"No configuration '{configuration}'." });
         }
 
         if (await exporter.ExportAsync(world, zone, ct) is not { } bundle)

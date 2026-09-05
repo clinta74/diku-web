@@ -21,6 +21,7 @@ const reaches = vi.hoisted(
     blockedWords: '',
     canon: '',
     canonTokens: 0,
+    worldKeys: [],
     isActive: false,
     startingRoomExists: true,
     updatedAt: '2026-08-15T00:00:00Z',
@@ -37,6 +38,7 @@ const aldenmoor = vi.hoisted(
     blockedWords: '',
     canon: '',
     canonTokens: 0,
+    worldKeys: [],
     isActive: true,
     startingRoomExists: true,
     updatedAt: '2026-08-01T00:00:00Z',
@@ -86,7 +88,8 @@ vi.mock('../../net/builderApi', async (importOriginal) => {
         calls.saved = key
         return Promise.resolve(reaches)
       },
-      exportUrl: (scope?: { world?: string; zone?: string; only?: string }) =>
+      worlds: () => Promise.resolve([]),
+      exportUrl: (scope?: { world?: string; zone?: string; only?: string; configuration?: string }) =>
         scope?.only ? `/api/builder/export?only=${scope.only}` : '/api/builder/export',
       importBundle: (_bundle: unknown, dryRun: boolean) => {
         calls.imports.push(dryRun)

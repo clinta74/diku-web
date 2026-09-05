@@ -606,6 +606,11 @@ public sealed class WorldWriter(MuwbtaDbContext db, TimeProvider clock)
                     entity.Canon = c.Canon;
                 }
 
+                if (c.WorldKeys is not null)
+                {
+                    entity.WorldKeys = new List<string>(c.WorldKeys);
+                }
+
                 // IsActive is untouched on purpose. An edit says what a configuration means, never
                 // which one the server obeys - that only moves through ActivateGameConfiguration,
                 // so an import can bring a configuration in without repointing a live server.
@@ -855,6 +860,7 @@ public sealed class WorldWriter(MuwbtaDbContext db, TimeProvider clock)
                     ["welcomeMessage"] = entity.WelcomeMessage,
                     ["blockedWords"] = entity.BlockedWords,
                     ["canon"] = entity.Canon,
+                    ["worldKeys"] = new JsonArray([.. entity.WorldKeys.Select(k => (JsonNode?)k)]),
 
                     // Included here though it never travels in a bundle: an activation's whole
                     // content is this field moving, and an audit pair that showed no difference

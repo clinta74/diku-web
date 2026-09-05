@@ -69,6 +69,45 @@ public sealed class WorldTransferTests(PostgresFixture postgres)
     // What a scoped bundle carries
     // -----------------------------------------------------------------------
 
+    /// <summary>
+    /// A configuration's bundle is its worlds and itself: not the other configuration on the
+    /// server, not the world that is none of its business, and with its canon on board.
+    /// </summary>
+    [Fact]
+    public async Task A_configuration_bundle_carries_its_worlds_and_itself()
+    {
+        var factory = postgres.App;
+        using var client = NewClient(factory);
+        await BuilderClient.RegisterBuilderAsync(factory, client);
+        var (mine, myZone) = await BuilderClient.NewZoneAsync(client);
+        var (theirs, theirZone) = await BuilderClient.NewZoneAsync(client);
+
+        var key = $"whole-{Guid.NewGuid():N}"[..24];
+        (await client.PostAsJsonAsync(
+            $"/api/builder/configurations/{key}",
+            new { name = "Whole", startingRoomKey = $"{myZone}.start", worldKeys = new[] { mine }, canon = "# Mine\n" }))
+            .EnsureSuccessStatusCode();
+
+        var bundle = await BuilderClient.JsonAsync(await client.GetAsync(
+            new Uri($"/api/builder/export?configuration={key}", UriKind.Relative)));
+
+        Assert.Equal("configuration", bundle.GetProperty("scope").GetProperty("kind").GetString());
+        Assert.Equal([mine], bundle.GetProperty("worlds").EnumerateArray().Select(w => w.GetProperty("key").GetString()));
+
+        var zones = bundle.GetProperty("zones").EnumerateArray().Select(z => z.GetProperty("key").GetString()).ToList();
+        Assert.Contains(myZone, zones);
+        Assert.DoesNotContain(theirZone, zones);
+        Assert.NotEqual(mine, theirs);
+
+        var configuration = Assert.Single(bundle.GetProperty("configurations").EnumerateArray());
+        Assert.Equal(key, configuration.GetProperty("key").GetString());
+        Assert.Equal("# Mine\n", configuration.GetProperty("canon").GetString());
+        Assert.Equal([mine], configuration.GetProperty("worldKeys").EnumerateArray().Select(w => w.GetString()));
+
+        var missing = await client.GetAsync(new Uri("/api/builder/export?configuration=nosuch", UriKind.Relative));
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+    }
+
     [Fact]
     public async Task A_zone_bundle_carries_the_templates_its_content_needs()
     {
